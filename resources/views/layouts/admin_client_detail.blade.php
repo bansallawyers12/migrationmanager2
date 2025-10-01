@@ -487,28 +487,54 @@
         .main-navbar .nav-link i { 
             filter: none !important; 
         }
-        /* Ensure header starts from the very left */
-        .main-navbar, .navbar-bg { left: 0 !important; }
-        .main-navbar .form-inline { padding-left: 0 !important; }
-        /* Dropdowns in top quick icons */
-        .top-quick-icons .dropdown { position: relative !important; }
-        .top-quick-icons .dropdown-menu { 
-            min-width: 240px !important; 
-            z-index: 1055 !important; 
-            display: none !important; 
-            position: absolute !important; 
-            top: 100% !important; 
-            left: 0 !important; 
-            margin-top: 6px !important; 
-            box-shadow: 0 8px 24px rgba(0,0,0,.12) !important; 
-            border: 1px solid #e9ecef !important; 
+        /* Modern topbar layout */
+        .main-topbar { 
+            display: grid !important; 
+            grid-template-columns: 1fr minmax(400px, 640px) auto !important; 
+            align-items: center !important; 
+            gap: 16px !important; 
+            position: sticky !important; 
+            top: 0 !important; 
+            z-index: 1000 !important; 
+            height: 70px !important; 
+            padding: 10px 16px !important; 
+            background: #fff !important; 
+            border-bottom: 1px solid #eef0f2 !important; 
         }
-        .top-quick-icons .dropdown-menu.show { display: block !important; }
-        /* Remove focus blue highlight/underline on icon buttons */
-        .top-quick-icons .nav-link:focus, .top-quick-icons .dropdown-toggle:focus { 
-            box-shadow: none !important; outline: none !important; 
+        .topbar-left .icon-group { display: flex !important; gap: 10px !important; align-items: center !important; }
+        .icon-btn { 
+            display: inline-flex !important; align-items: center !important; justify-content: center !important; 
+            width: 38px !important; height: 38px !important; border-radius: 8px !important; 
+            color: #495057 !important; text-decoration: none !important; 
+            transition: background-color .15s ease, color .15s ease !important; 
         }
-        .top-quick-icons .nav-link { border-bottom: 0 !important; }
+        .icon-btn:hover { background: rgba(0,123,255,.1) !important; color: #0d6efd !important; }
+        .icon-btn .countbell { position: relative !important; top: -10px !important; left: -6px !important; background: #1f1655 !important; color:#fff !important; border-radius: 10px !important; padding: 0 5px !important; font-size: 11px !important; }
+        .topbar-center .topbar-search { 
+            display: flex !important; align-items: center !important; gap: 8px !important; 
+            padding: 8px 12px !important; border: 1px solid #e9ecef !important; border-radius: 10px !important; 
+            background: #f8f9fb !important; 
+        }
+        .topbar-center .topbar-search i { color: #868e96 !important; }
+        .topbar-center .topbar-search .form-control { border: 0 !important; background: transparent !important; width: 100% !important; }
+        .topbar-right { display: flex !important; align-items: center !important; gap: 10px !important; }
+        /* Dropdowns */
+        .icon-dropdown { position: relative !important; }
+        .icon-dropdown-menu { 
+            position: absolute !important; top: 44px !important; left: 0 !important; min-width: 240px !important; 
+            background: #fff !important; border: 1px solid #e9ecef !important; border-radius: 8px !important; 
+            padding: 6px 0 !important; display: none !important; box-shadow: 0 12px 24px rgba(0,0,0,.08) !important; 
+        }
+        .icon-dropdown:hover .icon-dropdown-menu { display: block !important; }
+        .icon-dropdown-menu .dropdown-item { padding: 8px 12px !important; color: #343a40 !important; }
+        .icon-dropdown-menu .dropdown-item:hover { background: #f1f5ff !important; color: #0d6efd !important; }
+        /* Profile */
+        .profile-dropdown { position: relative !important; }
+        .profile-trigger img { width: 36px !important; height: 36px !important; border-radius: 50% !important; object-fit: cover !important; }
+        .profile-menu { position: absolute !important; right: 0 !important; top: 48px !important; background: #fff !important; border: 1px solid #e9ecef !important; border-radius: 8px !important; min-width: 200px !important; padding: 6px 0 !important; display: none !important; box-shadow: 0 12px 24px rgba(0,0,0,.08) !important; }
+        .profile-dropdown:hover .profile-menu { display: block !important; }
+        .profile-menu a { display: block !important; padding: 8px 12px !important; color: #343a40 !important; text-decoration: none !important; }
+        .profile-menu a:hover { background: #f1f5ff !important; color: #0d6efd !important; }
     </style>
     @yield('styles')
 </head>
@@ -517,7 +543,7 @@
     <div class="popuploader" style="display: none;"></div>
     <div id="app">
         <div class="main-wrapper main-wrapper-1">
-            <div class="navbar-bg" style="left:0; right:0;"></div>
+            <div class="navbar-bg"></div>
             @include('../Elements/Admin/header_client_detail')
             @include('../Elements/Admin/left-side-bar_client_detail')
             @yield('content')
@@ -1503,24 +1529,8 @@
             'z-index': '999'
         });
         
-        // Top quick-icons dropdowns: reliable toggle and outside-click close
-        $(document).on('click', '.top-quick-icons .dropdown-toggle', function(e){
-            e.preventDefault();
-            e.stopPropagation();
-            var $menu = $(this).closest('.dropdown').find('.dropdown-menu');
-            // close others first
-            $('.top-quick-icons .dropdown .dropdown-menu').not($menu).removeClass('show');
-            $menu.toggleClass('show');
-        });
-
-        // Close on selecting a link inside menu
-        $(document).on('click', '.top-quick-icons .dropdown-menu a', function(){
-            $('.top-quick-icons .dropdown .dropdown-menu').removeClass('show');
-        });
-
-        $(document).on('click', function(){
-            $('.top-quick-icons .dropdown .dropdown-menu').removeClass('show');
-        });
+        // Simple fix for dropdown menus - let CSS handle the hover
+        // Remove any conflicting JavaScript that might interfere with the existing theme
     });
     </script>
 
