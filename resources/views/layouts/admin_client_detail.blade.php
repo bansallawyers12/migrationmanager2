@@ -498,13 +498,34 @@
             z-index: 1000 !important; 
             height: 70px !important; 
             padding: 10px 16px !important; 
-            background: #fff !important; 
-            border-bottom: 1px solid #eef0f2 !important; 
+            background: #ffffff !important; 
+            border-bottom: 1px solid #dfe3e6 !important; 
+            box-shadow: 0 2px 8px rgba(0,0,0,.06) !important;
+            transition: transform .2s ease-in-out !important;
         }
+        /* Hide on scroll (keep a small top gap visible) */
+        .main-topbar.is-hidden {
+            transform: translateY(calc(-100% + 6px)) !important;
+        }
+        /* Collapsed state */
+        .main-topbar.is-collapsed { 
+            grid-template-columns: auto !important; 
+            height: 48px !important; 
+            padding: 6px 12px !important; 
+        }
+        .main-topbar.is-collapsed .topbar-left,
+        .main-topbar.is-collapsed .topbar-center,
+        .main-topbar.is-collapsed .topbar-right { display: none !important; }
+        .main-topbar .topbar-toggle { 
+            display: inline-flex !important; align-items: center !important; justify-content: center !important; 
+            width: 36px !important; height: 36px !important; border-radius: 8px !important; 
+            background: #f3f5f7 !important; border: 1px solid #e9ecef !important; color: #495057 !important; 
+        }
+        .main-topbar:not(.is-collapsed) .topbar-toggle { display: none !important; }
         .topbar-left .icon-group { display: flex !important; gap: 10px !important; align-items: center !important; }
         .icon-btn { 
             display: inline-flex !important; align-items: center !important; justify-content: center !important; 
-            width: 38px !important; height: 38px !important; border-radius: 8px !important; 
+            width: 44px !important; height: 44px !important; border-radius: 10px !important; 
             color: #495057 !important; text-decoration: none !important; 
             transition: background-color .15s ease, color .15s ease !important; 
         }
@@ -525,16 +546,21 @@
             background: #fff !important; border: 1px solid #e9ecef !important; border-radius: 8px !important; 
             padding: 6px 0 !important; display: none !important; box-shadow: 0 12px 24px rgba(0,0,0,.08) !important; 
         }
-        .icon-dropdown:hover .icon-dropdown-menu { display: block !important; }
+        /* click-driven dropdowns, JS toggles .show */
+        .icon-dropdown .icon-dropdown-menu.show { display: block !important; }
         .icon-dropdown-menu .dropdown-item { padding: 8px 12px !important; color: #343a40 !important; }
         .icon-dropdown-menu .dropdown-item:hover { background: #f1f5ff !important; color: #0d6efd !important; }
         /* Profile */
         .profile-dropdown { position: relative !important; }
         .profile-trigger img { width: 36px !important; height: 36px !important; border-radius: 50% !important; object-fit: cover !important; }
+        .profile-trigger { display: inline-flex !important; align-items: center !important; justify-content: center !important; width: 44px !important; height: 44px !important; border-radius: 50% !important; }
         .profile-menu { position: absolute !important; right: 0 !important; top: 48px !important; background: #fff !important; border: 1px solid #e9ecef !important; border-radius: 8px !important; min-width: 200px !important; padding: 6px 0 !important; display: none !important; box-shadow: 0 12px 24px rgba(0,0,0,.08) !important; }
-        .profile-dropdown:hover .profile-menu { display: block !important; }
+        .profile-dropdown .profile-menu.show { display: block !important; }
         .profile-menu a { display: block !important; padding: 8px 12px !important; color: #343a40 !important; text-decoration: none !important; }
         .profile-menu a:hover { background: #f1f5ff !important; color: #0d6efd !important; }
+
+        /* When topbar is hidden, reclaim space for content (leave 6px gap) */
+        body.topbar-hidden .crm-container { margin-top: 6px !important; }
     </style>
     @yield('styles')
 </head>
@@ -587,6 +613,52 @@
     <script src="{{asset('js/scripts.js')}}"></script>
     <script src="{{asset('js/iziToast.min.js')}}"></script>
     <script src="{{asset('js/custom.js')}}"></script>
+    <script>
+        // Hide header on scroll down; show on scroll up or at top
+        (function(){
+            var lastY = window.pageYOffset || document.documentElement.scrollTop || 0;
+            var ticking = false;
+            var $topbar = $('.main-topbar');
+
+            function update() {
+                var currentY = window.pageYOffset || document.documentElement.scrollTop || 0;
+                var atTop = currentY <= 0;
+                var scrollingDown = currentY > lastY && !atTop;
+
+                if (scrollingDown) {
+                    if (!$topbar.hasClass('is-hidden')) {
+                        $topbar.addClass('is-hidden');
+                        document.body.classList.add('topbar-hidden');
+                    }
+                } else {
+                    if ($topbar.hasClass('is-hidden') || atTop) {
+                        $topbar.removeClass('is-hidden');
+                        document.body.classList.remove('topbar-hidden');
+                    }
+                }
+
+                lastY = currentY;
+                ticking = false;
+            }
+
+            function requestTick() {
+                if (!ticking) {
+                    ticking = true;
+                    window.requestAnimationFrame(update);
+                }
+            }
+
+            // Initial state: hide if not at top
+            $(function(){
+                if ((window.pageYOffset || document.documentElement.scrollTop || 0) > 0) {
+                    $topbar.addClass('is-hidden');
+                    document.body.classList.add('topbar-hidden');
+                }
+            });
+
+            window.addEventListener('scroll', requestTick, { passive: true });
+        })();
+    </script>
     <script>
         $(document).ready(function () { 
             $(".tel_input").on("blur", function() {
@@ -1531,6 +1603,39 @@
         
         // Simple fix for dropdown menus - let CSS handle the hover
         // Remove any conflicting JavaScript that might interfere with the existing theme
+    });
+    </script>
+    <script>
+        // Topbar interactions: keep expanded and click-to-open dropdowns
+    $(document).ready(function(){
+        var $topbar = $('.main-topbar');
+            // Always expanded; ignore previous collapsed state
+            $topbar.removeClass('is-collapsed');
+            localStorage.removeItem('topbarCollapsed');
+            // Disable toggle control when present
+            $(document).off('click', '.topbar-toggle');
+
+        // Click to open icon dropdowns
+        $(document).on('click', '.js-dropdown > .icon-btn', function(e){
+            e.preventDefault();
+            e.stopPropagation();
+            var $menu = $(this).siblings('.icon-dropdown-menu');
+            $('.icon-dropdown-menu').not($menu).removeClass('show');
+            $menu.toggleClass('show');
+        });
+        // Profile dropdown click
+        $(document).on('click', '.js-dropdown-right > .profile-trigger', function(e){
+            e.preventDefault();
+            e.stopPropagation();
+            var $menu = $(this).siblings('.profile-menu');
+            $('.profile-menu').not($menu).removeClass('show');
+            $menu.toggleClass('show');
+        });
+        // Close on outside click
+        $(document).on('click', function(){
+            $('.icon-dropdown-menu').removeClass('show');
+            $('.profile-menu').removeClass('show');
+        });
     });
     </script>
 

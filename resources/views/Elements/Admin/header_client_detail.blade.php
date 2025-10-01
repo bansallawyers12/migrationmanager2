@@ -1,8 +1,11 @@
 <nav class="main-topbar">
+    <button class="topbar-toggle" title="Show menu" aria-label="Toggle topbar">
+        <i class="fas fa-ellipsis-h"></i>
+    </button>
     <div class="topbar-left">
         <div class="icon-group">
             <a href="{{route('admin.dashboard')}}" class="icon-btn" title="Dashboard"><i class="fas fa-tachometer-alt"></i></a>
-            <div class="icon-dropdown">
+            <div class="icon-dropdown js-dropdown">
                 <a href="{{ route('appointments.index') }}" class="icon-btn" title="Appointments"><i class="fas fa-calendar-alt"></i></a>
                 <div class="icon-dropdown-menu">
                     <a class="dropdown-item" href="{{ route('appointments.index') }}"><i class="far fa-calendar-alt mr-2"></i> Listings</a>
@@ -19,7 +22,7 @@
             </div>
             <a href="{{route('admin.officevisits.waiting')}}" class="icon-btn" title="In Person"><i class="fas fa-user-check"></i></a>
             <a href="{{route('assignee.activities')}}" class="icon-btn" title="Action"><i class="fas fa-tasks"></i></a>
-            <div class="icon-dropdown">
+            <div class="icon-dropdown js-dropdown">
                 <a href="{{route('admin.clients.index')}}" class="icon-btn" title="Clients"><i class="fas fa-users"></i></a>
                 <div class="icon-dropdown-menu">
                     <a class="dropdown-item" href="{{route('admin.clients.index')}}"><i class="fas fa-list mr-2"></i> Client List</a>
@@ -29,7 +32,7 @@
                     <a class="dropdown-item" href="{{route('admin.leads.create')}}"><i class="fas fa-plus-circle mr-2"></i> Add Lead</a>
                 </div>
             </div>
-            <div class="icon-dropdown">
+            <div class="icon-dropdown js-dropdown">
                 <a href="{{route('admin.clients.invoicelist')}}" class="icon-btn" title="Accounts"><i class="fas fa-briefcase"></i></a>
                 <div class="icon-dropdown-menu">
                     <a class="dropdown-item" href="{{route('admin.clients.clientreceiptlist')}}"><i class="fas fa-receipt mr-2"></i> Client Receipts</a>
@@ -52,7 +55,7 @@
             <i class="fas fa-bell"></i><span class="countbell" id="countbell_notification"><?php echo \App\Models\Notification::where('receiver_id', Auth::user()->id)->where('receiver_status', 0)->count(); ?></span>
         </a>
         @endif
-        <div class="profile-dropdown">
+        <div class="profile-dropdown js-dropdown-right">
             <a href="#" class="profile-trigger">
                 @if(Auth::user() && Auth::user()->profile_img == '')
                     <img alt="user image" src="{{ asset('img/user.png') }}" class="user-img-radious-style">
