@@ -1,59 +1,64 @@
-# Outlook Web - Email Management Application
+# Migration Manager - Immigration CRM System
 
-A Laravel-based web application for managing email accounts and sending emails through various providers, with a focus on Zoho Mail integration.
+A comprehensive Laravel-based Customer Relationship Management (CRM) system specifically designed for immigration consultancies and migration agencies to manage clients, applications, appointments, invoices, and all aspects of the immigration process.
 
 ## Purpose
 
-- Centralize email account management for multiple providers in a single UI.
-- Synchronize and store messages locally for fast search and offline-friendly access.
-- Provide reliable SMTP sending with provider-specific settings and diagnostics.
-- Offer a Windows/XAMPP-friendly stack that is easy to run on a developer machine.
-- Serve as a reference implementation for integrating OAuth (Zoho), IMAP sync, and SMTP send with Laravel.
+- Streamline immigration case management from lead to visa approval
+- Centralize client information, documents, and communication in one platform
+- Automate appointment scheduling and reminders
+- Track visa applications, progress, and important deadlines
+- Manage invoices, payments, and financial transactions
+- Provide secure client portal access for document submission and status tracking
+- Offer comprehensive reporting for business insights and compliance
 
 ## Features
 
-- **User Authentication**: Registration, login, profile management (Laravel Breeze)
-- **Authorization**: Policies for per-user access to `EmailAccount` resources
-- **Multi-Account**: Connect and manage multiple accounts per user
-- **OAuth & Password Auth**: OAuth (Zoho) and classic username/password
-- **Connection & Auth Tests**: Validate connectivity and credentials before saving
-- **IMAP Email Sync**: Incremental sync with Message-ID de-duplication
-- **Local Email Storage**: Automatic local folder creation and email archiving
-- **SMTP Sending**: Provider-aware SMTP via Python script with TLS
-- **Attachments**: Store and download attachments to/from `storage/app/attachments`
-- **Email Drafts**: Save and manage email drafts for later composition
-- **Labels/Tags**: Manage labels and email-label relationships
-- **Rich Email Storage**: Persist headers, HTML, text, dates, flags, and metadata
-- **Network Diagnostics**: DNS, socket, TLS, IMAP diagnostics with JSON reports
-- **Error Handling & Logging**: Detailed logs in `storage/logs/laravel.log`
-- **Modern UI**: Tailwind CSS + Alpine.js, Vite HMR for development
-- **Queue Friendly**: Ready to run queue workers for background tasks
-- **Windows Friendly**: Tested with XAMPP on Windows
+- **Client Management**: Complete client profiles with personal information, visa history, and documents
+- **Application Tracking**: Monitor visa applications with workflow stages and status updates
+- **Appointment System**: Schedule consultations with calendar integration and automated reminders
+- **Invoice & Payment Management**: Generate invoices, track payments, and manage receipts
+- **Document Management**: Secure storage and organization of client documents and checklists
+- **Lead Management**: Track potential clients from inquiry to conversion
+- **Office Visit Tracking**: Manage walk-in clients and office visit queues
+- **Email Integration**: Built-in email management with client correspondence tracking
+- **Quotation System**: Create and send professional service quotations
+- **Matter Management**: Organize cases by matter type and service category
+- **Team & Staff Management**: Role-based access control for team members
+- **Reporting & Analytics**: Comprehensive reports on clients, applications, and revenue
+- **Client Portal**: Secure portal for clients to view status and submit documents
+- **Multi-Currency Support**: Handle international payments and multiple currencies
+- **Task Management**: Assign and track tasks related to cases and clients
+- **Windows Friendly**: Optimized for XAMPP on Windows environments
 
 ## Technology Stack
 
-- **Backend**: Laravel 12.x (PHP 8.2+)
-- **Frontend**: Tailwind CSS 3.1+, Alpine.js 3.4+, Vite 7.0+
-- **Database**: SQLite (default) or MySQL/PostgreSQL
-- **Email Processing**: Python 3.x scripts for IMAP/SMTP operations
-- **Authentication**: Laravel Breeze with OAuth support (Laravel Socialite)
-- **Testing**: Pest PHP testing framework
-- **Development Tools**: Laravel Pail (log viewer), Laravel Pint (code style)
+- **Backend**: Laravel 10.x (PHP 8.1+)
+- **Frontend**: Bootstrap 4, jQuery, DataTables, Select2
+- **Database**: MySQL (Primary), SQLite (Development)
+- **PDF Generation**: DomPDF for invoices and reports
+- **Document Processing**: Python scripts for DOCX to PDF conversion
+- **Email System**: Laravel Mail with SMTP/IMAP integration
+- **Payment Integration**: Stripe, PayU payment gateways
+- **File Storage**: Local storage with S3 support for attachments
+- **Authentication**: Multi-role authentication (Admin, Staff, Agent, Client)
+- **Development Environment**: XAMPP on Windows
 
 ## Prerequisites
 
-- PHP 8.2 or higher
+- PHP 8.1 or higher
 - Composer
 - Node.js and npm
-- Python 3.x (for email operations)
-- SQLite (or MySQL/PostgreSQL)
+- Python 3.x (for document conversion)
+- MySQL 5.7+ or MariaDB 10.3+
+- XAMPP (recommended for Windows)
 
 ## Installation
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
-   cd outlook-web
+   git clone https://github.com/viplucmca/migrationmanager.git
+   cd migrationmanager
    ```
 
 2. **Install PHP dependencies**
@@ -73,365 +78,390 @@ A Laravel-based web application for managing email accounts and sending emails t
    ```
 
 5. **Database setup**
+   - Create a MySQL database
+   - Update `.env` file with your database credentials:
+   ```env
+   DB_CONNECTION=mysql
+   DB_HOST=127.0.0.1
+   DB_PORT=3306
+   DB_DATABASE=migration_manager
+   DB_USERNAME=root
+   DB_PASSWORD=
+   ```
+   - Run migrations and seeders:
    ```bash
-   # Create SQLite database file if using SQLite (default)
-   # Windows PowerShell example:
-   if (!(Test-Path -Path "database/database.sqlite")) { New-Item -ItemType File -Path "database/database.sqlite" | Out-Null }
-
-   # Or bash:
-   # touch database/database.sqlite
-
-   # Run migrations
-   php artisan migrate
+   php artisan migrate --seed
    ```
 
-6. **Configure AWS S3 for file storage (attachments and public assets)**
-   
-   Make sure you have the following environment variables set in your `.env` file:
+6. **Storage setup**
+   ```bash
+   php artisan storage:link
+   ```
+   - Create necessary directories:
+   ```bash
+   mkdir -p storage/app/public/agreements
+   mkdir -p storage/app/public/checklists
+   mkdir -p storage/app/public/attachments
+   ```
+
+7. **Configure mail settings**
+   Update `.env` with your mail server details:
    ```env
-   FILESYSTEM_DISK=s3
-   AWS_ACCESS_KEY_ID=your_access_key_here
-   AWS_SECRET_ACCESS_KEY=your_secret_key_here
-   AWS_DEFAULT_REGION=your_region_here
-   AWS_BUCKET=your_bucket_name_here
-   AWS_URL=https://your_bucket_name.s3.your_region.amazonaws.com
-   ```
-   
-   **Note:** The AWS S3 bucket should be properly configured with appropriate permissions for your application to read and write files.
-
-   **AWS S3 Bucket Setup:**
-   
-   1. Create an S3 bucket in your AWS account
-   2. Configure bucket permissions (CORS, public access if needed)
-   3. Create an IAM user with S3 permissions
-   4. Add the following to your `.env` file:
-   ```env
-   FILESYSTEM_DISK=s3
-   AWS_ACCESS_KEY_ID=AKIA...
-   AWS_SECRET_ACCESS_KEY=...
-   AWS_DEFAULT_REGION=us-east-1
-   AWS_BUCKET=your-bucket-name
-   AWS_URL=https://your-bucket-name.s3.us-east-1.amazonaws.com
-   ```
-   
-   **Required S3 Permissions:**
-   ```json
-   {
-     "Version": "2012-10-17",
-     "Statement": [
-       {
-         "Effect": "Allow",
-         "Action": [
-           "s3:GetObject",
-           "s3:PutObject",
-           "s3:DeleteObject",
-           "s3:ListBucket"
-         ],
-         "Resource": [
-           "arn:aws:s3:::your-bucket-name",
-           "arn:aws:s3:::your-bucket-name/*"
-         ]
-       }
-     ]
-   }
+   MAIL_MAILER=smtp
+   MAIL_HOST=smtp.gmail.com
+   MAIL_PORT=587
+   MAIL_USERNAME=your_email@gmail.com
+   MAIL_PASSWORD=your_app_password
+   MAIL_ENCRYPTION=tls
+   MAIL_FROM_ADDRESS=your_email@gmail.com
+   MAIL_FROM_NAME="Migration Manager"
    ```
 
-7. **Build frontend assets**
+8. **Build frontend assets**
    ```bash
    npm run build
+   # Or for development:
+   npm run dev
    ```
 
-8. **Install Python dependencies** (for email operations)
+9. **Install Python dependencies** (for document conversion)
    ```bash
-   # Python scripts use standard library modules only
-   # No additional pip packages required
+   cd python
+   pip install -r requirements.txt
+   # For LibreOffice converter:
+   pip install -r requirements_libreoffice.txt
    ```
 
-9. **(Optional) Configure OAuth for Zoho**
-   - Create a client in your Zoho developer console
-   - Set the redirect URL to: `http://localhost:8000/auth/zoho/callback` (adjust host if different)
-   - Add the credentials to your `.env` (see Configuration section)
+10. **Configure payment gateways** (Optional)
+    Add to `.env`:
+    ```env
+    STRIPE_KEY=your_stripe_publishable_key
+    STRIPE_SECRET=your_stripe_secret_key
+    
+    PAYU_MERCHANT_KEY=your_payu_merchant_key
+    PAYU_SALT=your_payu_salt
+    ```
 
-10. **Start services**
-    - Development script (recommended):
-      ```bash
-      composer run dev
-      ```
-    - Or run individually (in separate terminals):
+11. **Start the application**
+    - If using XAMPP:
+      - Point your virtual host to the `public` directory
+      - Or access via `http://localhost/migrationmanager/public`
+    
+    - Using PHP's built-in server:
       ```bash
       php artisan serve
-      php artisan queue:listen
-      npm run dev
       ```
-
-11. **Configure Scheduler (recommended for periodic syncs)**
-    - Windows Task Scheduler example (run every 5 minutes):
-      - Program/script: `pwsh`
-      - Arguments: `-NoProfile -NonInteractive -Command "cd C:\xampp\htdocs\outlook-web; php artisan schedule:run --verbose --no-interaction"`
-      - Start in: `C:\xampp\htdocs\outlook-web`
-    - Or use a background PowerShell job or a cron on Linux.
+    
+    - For queue workers (run in separate terminal):
+      ```bash
+      php artisan queue:work
+      ```
 
 ## Development
 
 ### Running the application
 
-For development, you can use the built-in development script that runs multiple services concurrently:
+For development with XAMPP:
+1. Start Apache and MySQL from XAMPP Control Panel
+2. Access the application at `http://localhost/migrationmanager/public`
 
+For development with PHP built-in server:
 ```bash
-composer run dev
-```
-
-This will start:
-- Laravel development server (http://localhost:8000)
-- Queue worker for background jobs
-- Log viewer (Pail) for real-time log monitoring
-- Vite development server for hot module replacement
-
-The development script uses `concurrently` to run all services with color-coded output and automatic cleanup on exit.
-
-### Manual development setup
-
-Alternatively, you can run services individually:
-
-```bash
-# Start Laravel server
 php artisan serve
-
-# Start queue worker (in another terminal)
-php artisan queue:listen
-
-# Start Vite dev server (in another terminal)
-npm run dev
 ```
 
-Note: If you're running under XAMPP/Apache, point your virtual host/document root to the `public` directory of this project.
+Access at: `http://localhost:8000`
+
+### Background Jobs
+
+Start the queue worker for processing background jobs:
+```bash
+php artisan queue:work
+```
+
+### Default Login Credentials
+
+After running migrations with seed, use these credentials:
+
+**Admin:**
+- Email: admin@admin.com
+- Password: (check `database/seeders/AdminUserSeeder.php`)
+
+### Virtual Host Setup (XAMPP)
+
+Add to `C:\xampp\apache\conf\extra\httpd-vhosts.conf`:
+```apache
+<VirtualHost *:80>
+    DocumentRoot "C:/xampp/htdocs/migrationmanager/public"
+    ServerName migrationmanager.local
+    <Directory "C:/xampp/htdocs/migrationmanager/public">
+        AllowOverride All
+        Require all granted
+    </Directory>
+</VirtualHost>
+```
+
+Add to `C:\Windows\System32\drivers\etc\hosts`:
+```
+127.0.0.1 migrationmanager.local
+```
 
 ## Usage Guide
 
-### 1) Create or connect an email account
-- Go to `Accounts > Create` and choose either:
-  - OAuth (Zoho): Click "Connect with Zoho", complete consent, and save
-  - Password auth: Enter IMAP/SMTP credentials (for supported providers)
-- Use "Test Connection" and/or "Test Authentication" before saving.
+### 1) Manage Leads
+- Navigate to `Leads` to view all potential clients
+- Create new leads with inquiry details, source, and interested services
+- Track lead status: New, Follow-up, Converted, Lost
+- Convert leads to clients when ready to proceed
+- View lead history and notes
 
-### 2) Synchronize emails
-- Navigate to `Emails > Sync` for the chosen account.
-- Optionally specify folder, limit, or date range.
-- Start sync and monitor progress; errors appear in logs and UI.
-- **Local Storage**: All synced emails are automatically saved to local folders for offline access.
+### 2) Client Management
+- Go to `Clients` to view all active clients
+- Create detailed client profiles with personal information
+- Upload client documents and visa history
+- Track client relationships (spouse, children, dependents)
+- View client summary with all applications, invoices, and documents
+- Access client portal credentials
 
-### 3) View and manage emails
-- `Emails` page lists messages with pagination and filters.
-- Click a message to view details, headers, HTML, and attachments.
-- Download attachments stored under `storage/app/attachments`.
-- **Local Access**: All emails are stored locally in organized folder structure under `storage/app/email-accounts/`.
+### 3) Application Tracking
+- Navigate to `Applications` to manage visa applications
+- Create new applications linked to clients
+- Select visa type and upload required documents
+- Track application workflow stages
+- Set important dates (submission, interview, decision)
+- Add notes and updates for each application
 
-### 4) Email Drafts
-- Save email compositions as drafts for later editing and sending.
-- Access drafts from the compose interface.
-- Edit and resume draft emails at any time.
-- Delete drafts when no longer needed.
+### 4) Appointment Scheduling
+- Go to `Appointments` to manage client consultations
+- Use calendar view to see all scheduled appointments
+- Create appointments with date, time, and service type
+- Send automated appointment reminders to clients
+- Track appointment status: Scheduled, Completed, Cancelled
+- Handle walk-in appointments
 
-### 5) Labels
-- Create and manage labels under `Labels`.
-- Assign labels to emails to organize your inbox.
+### 5) Invoice Management
+- Navigate to `Invoices` to create and manage invoices
+- Generate professional invoices for services
+- Track payment status: Paid, Unpaid, Partially Paid
+- Send invoices via email to clients
+- Create payment schedules for installments
+- View invoice history and reports
 
-### 6) Send email
-- Use `Compose` (or API endpoint) to send via SMTP.
-- Save drafts for later completion and editing.
-- Reply to emails with pre-filled recipient and subject.
-- Ensure your account has valid SMTP settings or OAuth token.
+### 6) Document Management
+- Go to `Documents` to manage client documents
+- Organize documents by categories and checklists
+- Upload and download client documents securely
+- Track document expiry dates
+- Generate document requests for clients
+- Sign documents electronically
 
-### 7) Local Email Storage
-- **Automatic Folder Creation**: Each email account gets its own local folder structure
-- **Organized Storage**: Emails are saved in folders matching your email provider's structure (Inbox, Sent, Drafts, etc.)
-- **Offline Access**: All synced emails are available locally even without internet connection
-- **File Format**: Emails are stored as `.eml` files in RFC 2822 format for compatibility
-- **Storage Location**: `storage/app/email-accounts/{sanitized-email-address}/`
-- **Test Functionality**: Use `php artisan emails:test-folders` to verify folder operations
+### 7) Quotations
+- Navigate to `Quotations` to create service quotes
+- Use templates for standard services
+- Customize quotations with line items and pricing
+- Send quotations to potential clients
+- Track quotation status: Draft, Sent, Accepted, Rejected
+- Convert accepted quotations to invoices
 
-### 8) Diagnostics
-- Run network diagnostics:
-  ```bash
-  python test_network.py imap.zoho.com 993
-  ```
-- See JSON reports written at repository root (e.g., `network_test_*.json`).
-- Test local folder functionality:
-  ```bash
-  php artisan emails:test-folders [account_id]
-  ```
-- Clear all email data for fresh start:
-  ```bash
-  php artisan emails:refresh --force
-  ```
+### 8) Reports & Analytics
+- Access `Reports` for business insights
+- View client reports by country, visa type, and status
+- Generate revenue reports and forecasts
+- Track application success rates
+- Monitor staff performance
+- Export reports to PDF or Excel
 
-## Processes
+## Business Workflows
 
-- **Sync Process**: Validate network → connect IMAP → fetch headers/bodies → parse parts → store email/attachments → save to local folders → record Message-ID to prevent duplicates.
-- **Send Process**: Build SMTP connection with provider settings → TLS → authenticate (password or OAuth token if supported) → send → record result.
-- **Draft Process**: Save email composition state → store in database → allow editing and resuming → send when ready.
-- **Local Storage Process**: Create account folders → organize emails by folder → save as .eml files → maintain folder structure.
-- **Labeling Process**: Manage labels in DB and pivot to emails to support many-to-many classification.
-- **Refresh Process**: Clear all email data → remove attachments → reset sync state → prepare for fresh sync.
+- **Lead to Client Process**: Capture lead inquiry → Follow up and qualify → Send quotation → Convert to client → Create client profile
+- **Client Onboarding**: Create client account → Collect personal information → Upload documents → Assign case manager → Set up client portal access
+- **Application Process**: Receive client documents → Review checklist → Prepare application → Submit to immigration → Track progress → Receive decision
+- **Invoice & Payment**: Generate invoice → Send to client → Process payment → Issue receipt → Update payment records
+- **Appointment Management**: Client requests appointment → Schedule consultation → Send reminders → Conduct meeting → Update client notes
+- **Document Processing**: Client uploads document → Staff reviews → Convert DOCX to PDF → Store securely → Track expiry dates
+- **Reporting**: Generate reports → Filter by criteria → Export data → Analyze trends → Make business decisions
 
-### Testing
+## Key Modules
 
-Run the test suite:
+### Admin Module
+- Dashboard with key metrics
+- Complete client management
+- Application tracking
+- Invoice and payment management
+- Staff and team management
+- System settings and configuration
 
-```bash
-composer run test
-```
+### Client Portal
+- View application status
+- Upload documents
+- Download receipts and invoices
+- Book appointments
+- Track visa expiry dates
+- Communication with case manager
+
+### Agent Module
+- Manage assigned clients
+- Track applications
+- Create invoices
+- Schedule appointments
+- Commission tracking
 
 ## Project Structure
 
 ### Key Components
 
 - **Models**: 
-  - `User` - User authentication and profile management
-  - `EmailAccount` - Email account storage with OAuth and password support
-  - `Email` - Synchronized email storage with full metadata
-  - `EmailDraft` - Email draft storage for composing messages
-  - `Attachment` - Email attachment management and storage
-  - `Label` - Email labeling and categorization system
+  - `User` - Multi-role user authentication (Admin, Staff, Agent, Client)
+  - `Client` - Client profiles with personal information and relationships
+  - `Application` - Visa application tracking with workflow stages
+  - `Invoice` - Invoice generation and payment tracking
+  - `Receipt` - Payment receipts and transaction records
+  - `Appointment` - Consultation scheduling and management
+  - `Lead` - Lead tracking and conversion management
+  - `Document` - Document storage and electronic signatures
+  - `Matter` - Case/matter management with categories
+  - `Quotation` - Service quotation generation
+  
 - **Controllers**: 
-  - `EmailController` - Handles email sending, synchronization, and draft management
-  - `EmailAccountController` - Manages email account CRUD operations and connection testing
-  - `AuthController` - Manages OAuth authentication flows
-  - `ProfileController` - User profile management
-  - `AttachmentController` - Handles attachment downloads and viewing
-  - `LabelController` - Manages email labeling and categorization
+  - `ClientsController` - Client CRUD operations and relationship management
+  - `ApplicationsController` - Application tracking and workflow management
+  - `InvoiceController` - Invoice generation, payment processing, and schedules
+  - `AppointmentsController` - Appointment scheduling and calendar management
+  - `DocumentController` - Document upload, download, and signature handling
+  - `OfficeVisitController` - Walk-in client management
+  - `AdminController` - Admin dashboard and system management
+  
 - **Services**:
-  - `EmailFolderService` - Manages local folder structure and email file storage
-- **Console Commands**:
-  - `SyncEmails` - Command-line email synchronization
-  - `TestEmailFolders` - Test local folder functionality and email storage
-  - `RefreshEmailData` - Clear all email data and reset sync state for fresh start
+  - `PythonConverterService` - DOCX to PDF document conversion
+  - `EmailService` - Email sending and SMTP integration
+  - `PaymentService` - Payment gateway integration
+  
 - **Python Scripts**:
-  - `send_mail.py` - SMTP email sending with provider-specific configuration
-  - `sync_emails.py` - IMAP email synchronization with comprehensive error handling
-  - `test_network.py` - Network diagnostics for troubleshooting connectivity issues
-- **Database Migrations**: User management, email accounts, email storage, and authentication tokens
-- **Policies**: `EmailAccountPolicy` - Authorization for email account access
+  - `libreoffice_converter.py` - Convert DOCX to PDF using LibreOffice
+  - `python_converter.py` - Alternative document conversion utility
+  - `test_libreoffice_converter.py` - Test document conversion functionality
+  
+- **Database Migrations**: 
+  - User roles and permissions
+  - Client management tables
+  - Application tracking
+  - Financial transactions
+  - Document storage
+  - Appointment scheduling
+  
+- **Policies**: 
+  - Role-based access control for Admin, Staff, Agent, and Client
+  - Client data privacy and access restrictions
 
-### Email Provider Support
+### Storage Structure
 
-Currently supports:
-- **Zoho Mail** (IMAP/SMTP)
-
-Planned support for additional providers through OAuth integration.
-
-### Local Storage Structure
-
-The application automatically creates and maintains a local folder structure for each email account:
+The application organizes files in the following structure:
 
 ```
-storage/app/email-accounts/
-├── {sanitized-email-address}/
-│   ├── Inbox/
-│   │   └── {message-id}.eml
-│   ├── Sent/
-│   ├── Drafts/
-│   ├── Trash/
-│   ├── Spam/
-│   ├── Archive/
-│   ├── Important/ (provider-specific)
-│   └── All Mail/ (provider-specific)
-└── {another-email-address}/
-    └── ...
+storage/app/public/
+├── agreements/           # Client service agreements
+├── checklists/          # Document checklists
+├── attachments/         # Email and document attachments
+└── documents/           # Client uploaded documents
+
+public/
+├── assets/              # UI assets and images
+├── css/                 # Custom stylesheets
+├── js/                  # JavaScript files
+└── img/                 # Public images
 ```
 
-**Features:**
-- **Automatic Creation**: Folders are created when email accounts are added
-- **Provider-Specific**: Additional folders based on email provider (Gmail, Outlook, Zoho)
-- **Email Files**: Each email is saved as a `.eml` file with sanitized message ID
-- **Offline Access**: All emails remain accessible without internet connection
-- **Backup Friendly**: Easy to backup and restore email data
+### Background Jobs & Scheduling
 
-### Schedules and Queues
+- Use Laravel's scheduler for automated tasks:
+  - Appointment reminders
+  - Visa expiry notifications
+  - Follow-up reminders
+  - Invoice payment reminders
+- Queue workers handle:
+  - Email sending
+  - Document processing
+  - PDF generation
+  - Report generation
 
-- Use Laravel's scheduler (`schedule:run`) to trigger periodic sync jobs.
-- Use queue worker (`queue:listen` or `queue:work`) for background tasks.
+### Document Conversion
 
-### Python Scripts
+The system includes Python-based document conversion:
 
-The application uses Python scripts for email operations to leverage existing email libraries:
-
-#### `send_mail.py`
-- **Purpose**: Send emails via SMTP
-- **Usage**: `python send_mail.py <provider> <email_user> <token> <to> <subject> <body>`
+#### `libreoffice_converter.py`
+- **Purpose**: Convert DOCX documents to PDF format
+- **Usage**: Automatically called when documents are uploaded
 - **Features**: 
-  - Provider-specific SMTP configuration
-  - TLS encryption support
-  - Error handling and timeout management
+  - Uses LibreOffice for high-quality conversion
+  - Maintains document formatting
+  - Handles multiple file formats
+  - Error logging and recovery
 
-#### `sync_emails.py`
-- **Purpose**: Synchronize emails from IMAP servers
-- **Usage**: `python sync_emails.py <provider> <email_user> <token> [folder] [limit] [start_date] [end_date]`
-- **Features**:
-  - Comprehensive error handling with detailed debugging
-  - Network connectivity testing before connection attempts
-  - Support for date range filtering
-  - Message ID tracking for duplicate prevention
-  - Multi-part email body extraction
+#### Integration with Laravel
+- Documents uploaded as DOCX are automatically converted to PDF
+- Conversion happens in background queue
+- Original and converted files are both stored
+- Fallback to alternative conversion methods if needed
 
-#### `test_network.py`
-- **Purpose**: Network diagnostics for troubleshooting email connectivity
-- **Usage**: `python test_network.py <hostname> [port]`
-- **Features**:
-  - DNS resolution testing
-  - Socket connection testing
-  - SSL certificate validation
-  - IMAP connection testing
-  - Detailed diagnostic reports saved to JSON files
-
-## API Endpoints
+## Main Routes
 
 ### Public Routes
-- `GET /` - Welcome page
-- `GET /auth/{provider}` - OAuth redirect
-- `GET /auth/{provider}/callback` - OAuth callback
+- `GET /` - Welcome/Landing page
+- `GET /login` - Login page
+- `POST /login` - Authenticate user
+- `GET /register` - Registration page (if enabled)
 
-### Protected Routes (Authentication Required)
-- `GET /dashboard` - Main dashboard with email account overview
-- `GET /profile` - User profile management
-- `PATCH /profile` - Update user profile
-- `DELETE /profile` - Delete user account
+### Admin Routes (Protected)
+- `GET /admin/dashboard` - Admin dashboard with key metrics
+- **Clients:**
+  - `GET /admin/clients` - List all clients
+  - `GET /admin/clients/create` - Create new client
+  - `GET /admin/clients/{id}` - View client details
+  - `GET /admin/clients/{id}/edit` - Edit client
+  - `DELETE /admin/clients/{id}` - Delete client
+  
+- **Applications:**
+  - `GET /admin/applications` - List all applications
+  - `GET /admin/applications/create` - Create application
+  - `GET /admin/applications/{id}` - View application details
+  - `PUT /admin/applications/{id}` - Update application status
+  
+- **Invoices:**
+  - `GET /admin/invoices` - List invoices
+  - `GET /admin/invoices/create` - Create invoice
+  - `GET /admin/invoices/{id}` - View invoice
+  - `POST /admin/invoices/{id}/send` - Email invoice
+  - `POST /admin/invoices/{id}/payment` - Record payment
+  
+- **Appointments:**
+  - `GET /admin/appointments` - Calendar view
+  - `POST /admin/appointments` - Create appointment
+  - `PUT /admin/appointments/{id}` - Update appointment
+  - `DELETE /admin/appointments/{id}` - Cancel appointment
+  
+- **Leads:**
+  - `GET /admin/leads` - List leads
+  - `POST /admin/leads` - Create lead
+  - `PUT /admin/leads/{id}/convert` - Convert to client
+  
+- **Reports:**
+  - `GET /admin/reports/clients` - Client reports
+  - `GET /admin/reports/applications` - Application reports
+  - `GET /admin/reports/revenue` - Financial reports
+  - `GET /admin/reports/export` - Export data
 
-### Email Account Management
-- `GET /accounts` - List user's email accounts
-- `GET /accounts/create` - Show create email account form
-- `POST /accounts` - Store new email account
-- `GET /accounts/{account}` - Show email account details
-- `GET /accounts/{account}/edit` - Show edit email account form
-- `PATCH /accounts/{account}` - Update email account
-- `DELETE /accounts/{account}` - Delete email account
-- `POST /accounts/{account}/test-connection` - Test email account connection
-- `POST /accounts/{account}/test-authentication` - Test email account authentication
+### Client Portal Routes (Protected)
+- `GET /portal/dashboard` - Client dashboard
+- `GET /portal/applications` - View my applications
+- `GET /portal/documents` - View and upload documents
+- `GET /portal/invoices` - View invoices and payments
+- `GET /portal/appointments` - Book appointments
+- `POST /portal/documents/upload` - Upload document
 
-### Email Operations
-- `POST /emails/send` - Send email through connected account
-- `POST /emails/save-draft` - Save email draft
-- `GET /emails/drafts` - List email drafts
-- `GET /emails/draft/{id}` - Get specific email draft
-- `DELETE /emails/draft/{id}` - Delete email draft
-- `GET /emails/reply/{id}` - Get reply data for email
-- `GET /emails/compose` - Show email composition form
-- `GET /emails/sync/{accountId}` - Show email sync form
-- `POST /emails/sync/{accountId}` - Synchronize emails from account
-- `POST /auth/zoho/add` - Add Zoho account via OAuth
-
-### Attachments
-- `GET /attachments/{id}/download` - Download email attachment
-- `GET /attachments/{id}/view` - View email attachment in browser
-
-### Labels
-- `GET /labels` - List labels
-- `POST /labels/apply` - Apply label to email
-- `POST /labels/remove` - Remove label from email
-
-### OAuth
-- `GET /auth/{provider}` - OAuth redirect
-- `GET /auth/{provider}/callback` - OAuth callback
+### Agent Routes (Protected)
+- `GET /agent/dashboard` - Agent dashboard
+- `GET /agent/clients` - Assigned clients
+- `GET /agent/commissions` - Commission tracking
 
 ## Configuration
 
@@ -440,25 +470,45 @@ The application uses Python scripts for email operations to leverage existing em
 Key environment variables in `.env`:
 
 ```env
-APP_NAME="Outlook Web"
+APP_NAME="Migration Manager"
 APP_ENV=local
 APP_DEBUG=true
 APP_URL=http://localhost:8000
 
-DB_CONNECTION=sqlite
-DB_DATABASE=/absolute/path/to/database/database.sqlite
+# Database
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=migration_manager
+DB_USERNAME=root
+DB_PASSWORD=
 
-# Email provider configurations
-# (Add as needed for OAuth setup)
+# Mail Configuration
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your_email@gmail.com
+MAIL_PASSWORD=your_app_password
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS=your_email@gmail.com
+MAIL_FROM_NAME="Migration Manager"
 
-# Zoho OAuth (example)
-ZOHO_CLIENT_ID=
-ZOHO_CLIENT_SECRET=
-ZOHO_REDIRECT_URI="http://localhost:8000/auth/zoho/callback"
+# Payment Gateways
+STRIPE_KEY=your_stripe_key
+STRIPE_SECRET=your_stripe_secret
+PAYU_MERCHANT_KEY=your_payu_key
+PAYU_SALT=your_payu_salt
 
-# Queue/worker tuning (optional)
+# File Storage
+FILESYSTEM_DISK=local
+
+# Queue Configuration
 QUEUE_CONNECTION=database
 QUEUE_RETRY_AFTER=90
+
+# Session & Cache
+SESSION_DRIVER=file
+CACHE_DRIVER=file
 
 # Logging
 LOG_CHANNEL=stack
@@ -467,7 +517,7 @@ LOG_LEVEL=debug
 
 ### Database
 
-The application uses SQLite by default but can be configured for MySQL or PostgreSQL by updating the database configuration in `.env`.
+The application uses MySQL as the primary database. For development, you can use SQLite by changing the `DB_CONNECTION` to `sqlite` in `.env`.
 
 ## Contributing
 
@@ -481,43 +531,107 @@ The application uses SQLite by default but can be configured for MySQL or Postgr
 
 This project is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
 
-## Notes
+## Important Notes
 
-- The application is designed to work with XAMPP on Windows [[memory:7264487]]
-- Python scripts are used for email operations to leverage existing email libraries
-- OAuth integration for Zoho is implemented using Laravel Socialite
-- The application uses Laravel's built-in authentication and session management
-- Email accounts support both OAuth tokens and password authentication
-- **Local Email Storage**: All synced emails are automatically saved to local folders for offline access
-- Network diagnostics are available for troubleshooting email connectivity issues
-- All Python scripts use only standard library modules (no external dependencies required)
-- The application includes comprehensive error handling and logging for email operations
-- Email files are stored in RFC 2822 format for maximum compatibility with email clients
+- The application is optimized to work with XAMPP on Windows
+- Python scripts are used for document conversion (DOCX to PDF)
+- MySQL database is recommended for production environments
+- The application uses Laravel's built-in authentication with multi-role support
+- Document storage is handled locally by default, with optional S3 integration
+- Comprehensive logging is available in `storage/logs/laravel.log`
+- Email integration supports both SMTP and IMAP protocols
+- Payment gateways (Stripe, PayU) need to be configured for online payments
+- Client portal provides secure access for clients to track their applications
 
 ## Troubleshooting
 
-- "Database file does not exist" with SQLite: ensure `database/database.sqlite` exists and `.env` `DB_DATABASE` points to its absolute path on Windows, e.g. `C:\\xampp\\htdocs\\outlook-web\\database\\database.sqlite`.
-- 404 on assets/images: ensure AWS S3 is properly configured in `.env` and you built assets with `npm run dev` (dev) or `npm run build` (prod).
-- Email sync/send issues: check `storage/logs/laravel.log`. Use `python test_network.py imap.zoho.com 993` to validate connectivity.
-- OAuth redirect mismatch: verify `APP_URL` and `ZOHO_REDIRECT_URI` match your configured callback in the provider.
+### Database Issues
+- **Connection refused**: Ensure MySQL is running in XAMPP Control Panel
+- **Access denied**: Verify database credentials in `.env` file
+- **Table not found**: Run `php artisan migrate --seed` to create tables
 
-## Security
+### PDF Generation Issues
+- **DOCX conversion fails**: Ensure Python is installed and accessible
+- **LibreOffice not found**: Install LibreOffice or use alternative converter
+- **Permission denied**: Check storage folder permissions (775 or 777)
 
-- Keep OAuth secrets in `.env` and never commit them.
-- Rotate tokens and passwords regularly; prefer OAuth over password auth when possible.
-- Limit access via Laravel policies; ensure accounts are only visible to their owners.
+### Email Issues
+- **Emails not sending**: Verify MAIL_* configuration in `.env`
+- **SMTP authentication failed**: Use app-specific passwords for Gmail
+- **Emails going to spam**: Configure SPF and DKIM records for your domain
 
-## Backup & Data
+### Performance Issues
+- **Slow page loads**: Run `php artisan optimize` and `npm run build`
+- **Queue not processing**: Ensure `php artisan queue:work` is running
+- **High memory usage**: Increase PHP memory_limit in php.ini
 
-- Back up `database/` (SQLite) or your external DB and `storage/` for attachments and local emails.
-- **Local Email Storage**: Back up `storage/app/email-accounts/` to preserve all synced emails.
-- **Attachments**: Stored in `storage/app/attachments/` and `storage/app/email-attachments/`.
-- Logs are in `storage/logs/`; prune or rotate as needed for disk space.
+## Security Best Practices
+
+- **Never commit `.env` file** - Contains sensitive credentials
+- **Use strong passwords** - Enforce password policies for users
+- **Enable HTTPS** - Use SSL certificates in production
+- **Regular backups** - Automated daily database backups recommended
+- **Update dependencies** - Run `composer update` and `npm update` regularly
+- **Role-based access** - Limit admin access to trusted staff only
+- **Two-factor authentication** - Consider implementing 2FA for admin accounts
+- **Data encryption** - Sensitive client data should be encrypted at rest
+
+## Backup & Data Management
+
+### What to Backup
+- **Database**: MySQL database dumps (daily recommended)
+- **Storage folder**: `storage/app/public/` containing:
+  - Client documents
+  - Agreements
+  - Attachments
+  - Generated PDFs
+- **Environment file**: `.env` (store securely, not in repository)
+- **Uploaded files**: All content in `public/` except framework files
+
+### Backup Commands
+```bash
+# Database backup
+mysqldump -u root -p migration_manager > backup_$(date +%Y%m%d).sql
+
+# Storage backup
+tar -czf storage_backup_$(date +%Y%m%d).tar.gz storage/app/public/
+```
+
+### Data Retention
+- Keep client records for minimum 7 years (immigration regulations)
+- Archive old applications after case closure
+- Regularly clean up old logs and temporary files
 
 ## FAQ
 
-- "Nothing appears after login" → Ensure migrations ran and queues/Vite are running in dev.
-- "Attachments not accessible" → Verify AWS S3 configuration in `.env` and check S3 bucket permissions.
-- "SMTP auth failed" → Confirm provider settings, app passwords, or OAuth tokens are valid and not expired.
-- "Want to start fresh with email data" → Use `php artisan emails:refresh --force` to clear all email data and start over.
-- "Local folders not created" → Use `php artisan emails:test-folders` to verify folder functionality.
+**Q: Nothing appears after login**
+- Ensure migrations have been run: `php artisan migrate --seed`
+- Check that Apache and MySQL are running in XAMPP
+- Verify `.env` database configuration
+
+**Q: PDF generation not working**
+- Install Python 3.x and add to system PATH
+- Install LibreOffice for document conversion
+- Check `storage/logs/laravel.log` for conversion errors
+
+**Q: Client portal not accessible**
+- Ensure client has portal access enabled in their profile
+- Client must use the email address registered in the system
+- Check that routes are properly configured in `routes/web.php`
+
+**Q: Payment gateway errors**
+- Verify Stripe/PayU credentials in `.env`
+- Ensure SSL is enabled for production payments
+- Test with sandbox/test keys before going live
+
+**Q: Can I customize invoice templates?**
+- Yes, edit templates in `resources/views/Admin/invoice/`
+- Customize email templates in `resources/views/emails/`
+
+**Q: How to add new visa types?**
+- Go to Admin → Settings → Visa Types
+- Add new visa type with required documents checklist
+
+**Q: How to export client data?**
+- Use Reports section to generate and export data
+- Available formats: PDF, Excel, CSV
