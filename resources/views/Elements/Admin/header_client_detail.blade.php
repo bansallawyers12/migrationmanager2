@@ -1,26 +1,63 @@
 <nav class="navbar navbar-expand-lg main-navbar sticky">
     <div class="form-inline mr-auto">
         <ul class="navbar-nav mr-3">
-            <li><a href="#" data-toggle="sidebar" class="nav-link nav-link-lg collapse-btn"><i data-feather="align-justify" id="feather-icon"></i></a></li>
-            <li><a href="#" class="nav-link nav-link-lg fullscreen-btn"><i data-feather="maximize"></i></a></li>
-            @if(Auth::user() && (Auth::user()->role == 1 || Auth::user()->role == 12))
-            <li class="dropdown dropdown-list-toggle">
-                <a href="#" data-toggle="dropdown" class="nav-link nav-link-lg message-toggle"><i data-feather="plus"></i></a>
-                <div style="width: 50px;" class="dropdown-menu dropdown-list dropdown-menu-right pullDown">
-                    <div class="">
-                        <a href="{{URL::to('/admin/leads/create')}}" class="dropdown-item">Add Lead</a>
-                        <a href="{{URL::to('/admin/users/active')}}" class="dropdown-item">User</a>
-                    </div>
-                </div>
-            </li>
-            @endif
+            
             <li>
                 <form class="form-inline mr-auto">
                     <div class="search-element">
-                        <select class="form-control js-data-example-ajaxccsearch" type="search" placeholder="Search" aria-label="Search" data-width="200"></select>
+                        <select class="form-control js-data-example-ajaxccsearch" type="search" placeholder="Search" aria-label="Search" data-width="260"></select>
                         <button class="btn" type="submit"><i class="fas fa-search"></i></button>
                     </div>
                 </form>
+            </li>
+            <li class="nav-item d-flex align-items-center top-quick-icons">
+                <a href="{{route('admin.dashboard')}}" class="nav-link nav-link-lg" title="Dashboard"><i class="fas fa-tachometer-alt"></i></a>
+                <a href="{{route('admin.officevisits.waiting')}}" class="nav-link nav-link-lg" title="In Person"><i class="fas fa-user-check"></i></a>
+                <a href="{{route('assignee.activities')}}" class="nav-link nav-link-lg" title="Action"><i class="fas fa-tasks"></i></a>
+
+                <div class="dropdown">
+                    <a href="#" class="nav-link nav-link-lg dropdown-toggle" data-toggle="dropdown" title="Appointments">
+                        <i class="fas fa-calendar-alt"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-left pullDown">
+                        <a class="dropdown-item" href="{{ route('appointments.index') }}"><i class="far fa-calendar-alt mr-2"></i> Listings</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="{{URL::to('/admin/appointments-others')}}"><i class="far fa-calendar-check mr-2"></i> Arun Calendar</a>
+                        <a class="dropdown-item" href="{{URL::to('/admin/appointments-jrp')}}"><i class="far fa-calendar mr-2"></i> Tr Calendar</a>
+                        <a class="dropdown-item" href="{{URL::to('/admin/appointments-education')}}"><i class="fas fa-graduation-cap mr-2"></i> Education</a>
+                        <a class="dropdown-item" href="{{URL::to('/admin/appointments-tourist')}}"><i class="fas fa-plane mr-2"></i> Tourist Visa</a>
+                        <a class="dropdown-item" href="{{URL::to('/admin/appointments-adelaide')}}"><i class="fas fa-city mr-2"></i> Adelaide</a>
+                        @if(Auth::user() && (Auth::user()->role == 1 || Auth::user()->role == 12))
+                        <a class="dropdown-item" href="{{route('admin.feature.appointmentdisabledate.index')}}"><i class="fas fa-ban mr-2"></i> Block Slot</a>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="dropdown">
+                    <a href="#" class="nav-link nav-link-lg dropdown-toggle" data-toggle="dropdown" title="Clients">
+                        <i class="fas fa-users"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-left pullDown">
+                        <a class="dropdown-item" href="{{route('admin.clients.index')}}"><i class="fas fa-list mr-2"></i> Client List</a>
+                        <a class="dropdown-item" href="{{route('admin.clients.clientsmatterslist')}}"><i class="fas fa-folder-open mr-2"></i> Matter List</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="{{route('admin.leads.index')}}"><i class="fas fa-list-alt mr-2"></i> Lead List</a>
+                        <a class="dropdown-item" href="{{route('admin.leads.create')}}"><i class="fas fa-plus-circle mr-2"></i> Add Lead</a>
+                    </div>
+                </div>
+
+                <div class="dropdown">
+                    <a href="#" class="nav-link nav-link-lg dropdown-toggle" data-toggle="dropdown" title="Accounts">
+                        <i class="fas fa-briefcase"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-left pullDown">
+                        <a class="dropdown-item" href="{{route('admin.clients.clientreceiptlist')}}"><i class="fas fa-receipt mr-2"></i> Client Receipts</a>
+                        <a class="dropdown-item" href="{{route('admin.clients.invoicelist')}}"><i class="fas fa-file-invoice-dollar mr-2"></i> Invoice Lists</a>
+                        <a class="dropdown-item" href="{{route('admin.clients.officereceiptlist')}}"><i class="fas fa-building mr-2"></i> Office Receipts</a>
+                    </div>
+                </div>
+
+                <a href="{{route('admin.logout')}}" class="nav-link nav-link-lg text-danger" title="Logout" onclick="event.preventDefault(); document.getElementById('logout-form').submit();"><i class="fas fa-sign-out-alt"></i></a>
             </li>
         </ul>
     </div>

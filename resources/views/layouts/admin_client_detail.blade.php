@@ -62,17 +62,8 @@
         }
         /* Override existing main-sidebar styles for fixed positioning */
         .main-sidebar {
-            position: fixed !important;
-            top: 70px !important;
-            left: 0 !important;
-            width: 60px !important;
-            height: calc(100vh - 70px) !important;
-            background-color: #fff !important;
-            transition: width 0.3s ease !important;
-            z-index: 999 !important;
-            overflow: hidden !important;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1) !important;
-            margin-top: 0 !important;
+            /* Hidden to move navigation to top menu */
+            display: none !important;
         }
         .sidebar-expanded {
             width: 220px !important;
@@ -86,7 +77,7 @@
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
             min-width: 0;
-            margin-left: 80px !important;
+            margin-left: 0 !important;
             transition: margin-left 0.3s ease;
             position: relative;
             z-index: 1;
@@ -375,20 +366,11 @@
         }
         .sidebar-mini .main-content { 
             padding-left: 25px !important; 
-            margin-left: 80px !important;
+            margin-left: 0 !important;
         }
         
         /* Override sidebar-mini styles */
-        .sidebar-mini .main-sidebar {
-            position: fixed !important;
-            top: 70px !important;
-            left: 0 !important;
-            width: 60px !important;
-            height: calc(100vh - 70px) !important;
-            overflow: initial !important;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1) !important;
-            z-index: 999 !important;
-        }
+        .sidebar-mini .main-sidebar { display: none !important; }
         
         /* Additional sidebar styles for better scrolling */
         .main-sidebar .sidebar-menu {
@@ -416,10 +398,7 @@
         }
         
         /* Force sidebar to stay fixed */
-        .main-sidebar {
-            position: fixed !important;
-            transform: none !important;
-        }
+        .main-sidebar { display: none !important; }
         
         /* Simple fix for dropdown menus - let the existing theme handle most styling */
         .sidebar-mini .main-sidebar .sidebar-menu li ul.dropdown-menu {
@@ -472,6 +451,64 @@
             text-overflow: ellipsis !important;
             flex: 1 !important;
         }
+        /* Top quick icons – improve visibility and spacing */
+        .top-quick-icons { 
+            gap: 10px !important; 
+            padding-left: 10px !important; 
+            overflow-x: auto !important; 
+            white-space: nowrap !important; 
+            scrollbar-width: thin !important; 
+        }
+        .top-quick-icons .nav-link { 
+            color: #495057 !important; 
+            opacity: 1 !important; 
+            padding: 6px 8px !important; 
+            border-radius: 6px !important; 
+            transition: background-color .15s ease, color .15s ease, transform .1s ease !important; 
+            display: inline-flex !important; 
+            align-items: center !important; 
+        }
+        .top-quick-icons .nav-link i { 
+            font-size: 18px !important; 
+            line-height: 1 !important; 
+        }
+        .top-quick-icons .nav-link:hover { 
+            background-color: rgba(0,123,255,.1) !important; 
+            color: #007bff !important; 
+        }
+        .top-quick-icons .nav-link.text-danger { 
+            color: #dc3545 !important; 
+        }
+        .top-quick-icons .nav-link.text-danger:hover { 
+            background-color: rgba(220,53,69,.1) !important; 
+            color: #c82333 !important; 
+        }
+        /* Keep icons crisp on light navbar */
+        .main-navbar .nav-link i { 
+            filter: none !important; 
+        }
+        /* Ensure header starts from the very left */
+        .main-navbar, .navbar-bg { left: 0 !important; }
+        .main-navbar .form-inline { padding-left: 0 !important; }
+        /* Dropdowns in top quick icons */
+        .top-quick-icons .dropdown { position: relative !important; }
+        .top-quick-icons .dropdown-menu { 
+            min-width: 240px !important; 
+            z-index: 1055 !important; 
+            display: none !important; 
+            position: absolute !important; 
+            top: 100% !important; 
+            left: 0 !important; 
+            margin-top: 6px !important; 
+            box-shadow: 0 8px 24px rgba(0,0,0,.12) !important; 
+            border: 1px solid #e9ecef !important; 
+        }
+        .top-quick-icons .dropdown-menu.show { display: block !important; }
+        /* Remove focus blue highlight/underline on icon buttons */
+        .top-quick-icons .nav-link:focus, .top-quick-icons .dropdown-toggle:focus { 
+            box-shadow: none !important; outline: none !important; 
+        }
+        .top-quick-icons .nav-link { border-bottom: 0 !important; }
     </style>
     @yield('styles')
 </head>
@@ -480,7 +517,7 @@
     <div class="popuploader" style="display: none;"></div>
     <div id="app">
         <div class="main-wrapper main-wrapper-1">
-            <div class="navbar-bg"></div>
+            <div class="navbar-bg" style="left:0; right:0;"></div>
             @include('../Elements/Admin/header_client_detail')
             @include('../Elements/Admin/left-side-bar_client_detail')
             @yield('content')
@@ -1466,8 +1503,24 @@
             'z-index': '999'
         });
         
-        // Simple fix for dropdown menus - let CSS handle the hover
-        // Remove any conflicting JavaScript that might interfere with the existing theme
+        // Top quick-icons dropdowns: reliable toggle and outside-click close
+        $(document).on('click', '.top-quick-icons .dropdown-toggle', function(e){
+            e.preventDefault();
+            e.stopPropagation();
+            var $menu = $(this).closest('.dropdown').find('.dropdown-menu');
+            // close others first
+            $('.top-quick-icons .dropdown .dropdown-menu').not($menu).removeClass('show');
+            $menu.toggleClass('show');
+        });
+
+        // Close on selecting a link inside menu
+        $(document).on('click', '.top-quick-icons .dropdown-menu a', function(){
+            $('.top-quick-icons .dropdown .dropdown-menu').removeClass('show');
+        });
+
+        $(document).on('click', function(){
+            $('.top-quick-icons .dropdown .dropdown-menu').removeClass('show');
+        });
     });
     </script>
 
