@@ -6,13 +6,6 @@
 <link rel="stylesheet" href="{{URL::asset('public/css/bootstrap-datepicker.min.css')}}">
 
 <style>
-/* Force prevent horizontal scroll on this page */
-html, body {
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
-    max-width: 100% !important;
-}
-
 .fc-event-container .fc-h-event{cursor:pointer;}
 #openassigneview .modal-body ul.navbar-nav li .dropdown-menu{transform: none!important; top:40px!important;}
 
@@ -57,140 +50,8 @@ html, body {
     background-color: #007bff;
     border-color: #007bff;
 }
-
-/* Fix horizontal scrollbar issue - Force override */
-.card-body {
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
-    max-width: 100% !important;
-    max-height: none !important;
-}
-
-.table-responsive {
-    overflow-x: auto !important;
-    overflow-y: visible !important;
-    max-width: 100% !important;
-    width: 100% !important;
-    max-height: none !important;
-}
-
-.table-responsive table {
-    min-width: 800px !important;
-    width: 100% !important;
-    table-layout: fixed !important;
-}
-
-.table-responsive table th,
-.table-responsive table td {
-    white-space: nowrap !important;
-    vertical-align: middle !important;
-    padding: 8px 12px !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-}
-
-/* Optimize column widths with !important */
-.table-responsive table th:nth-child(1), /* # */
-.table-responsive table td:nth-child(1) {
-    width: 50px !important;
-    min-width: 50px !important;
-    max-width: 50px !important;
-}
-
-.table-responsive table th:nth-child(2), /* Client */
-.table-responsive table td:nth-child(2) {
-    width: 150px !important;
-    min-width: 150px !important;
-    max-width: 150px !important;
-    white-space: normal !important;
-}
-
-.table-responsive table th:nth-child(3), /* DateTime */
-.table-responsive table td:nth-child(3) {
-    width: 120px !important;
-    min-width: 120px !important;
-    max-width: 120px !important;
-}
-
-.table-responsive table th:nth-child(4), /* Nature of enquiry */
-.table-responsive table td:nth-child(4) {
-    width: 140px !important;
-    min-width: 140px !important;
-    max-width: 140px !important;
-    white-space: normal !important;
-}
-
-.table-responsive table th:nth-child(5), /* Description */
-.table-responsive table td:nth-child(5) {
-    width: 200px !important;
-    min-width: 200px !important;
-    max-width: 200px !important;
-    white-space: normal !important;
-    word-wrap: break-word !important;
-}
-
-.table-responsive table th:nth-child(6), /* Added By */
-.table-responsive table td:nth-child(6) {
-    width: 120px !important;
-    min-width: 120px !important;
-    max-width: 120px !important;
-    white-space: normal !important;
-}
-
-.table-responsive table th:nth-child(7), /* Status */
-.table-responsive table td:nth-child(7) {
-    width: 140px !important;
-    min-width: 140px !important;
-    max-width: 140px !important;
-}
-
-.table-responsive table th:nth-child(8), /* Action */
-.table-responsive table td:nth-child(8) {
-    width: 200px !important;
-    min-width: 200px !important;
-    max-width: 200px !important;
-}
-
-/* Make action buttons more compact */
-.table-responsive table .btn {
-    padding: 4px 8px !important;
-    font-size: 12px !important;
-    margin: 2px !important;
-    white-space: nowrap !important;
-}
-
-/* Force container to prevent horizontal scroll */
-.main-content {
-    overflow-x: hidden !important;
-    max-width: 100% !important;
-}
-
-.section-body {
-    overflow-x: hidden !important;
-    max-width: 100% !important;
-}
-
-/* Responsive adjustments for smaller screens */
-@media (max-width: 768px) {
-    .table-responsive table {
-        min-width: 600px !important;
-    }
-    
-    .table-responsive table th:nth-child(5), /* Description */
-    .table-responsive table td:nth-child(5) {
-        width: 150px !important;
-        min-width: 150px !important;
-        max-width: 150px !important;
-    }
-    
-    .table-responsive table th:nth-child(8), /* Action */
-    .table-responsive table td:nth-child(8) {
-        width: 180px !important;
-        min-width: 180px !important;
-        max-width: 180px !important;
-    }
-}
 </style>
+
 <!-- Main Content -->
 <div class="main-content">
 	<section class="section">
@@ -202,9 +63,9 @@ html, body {
 			</div>
 			<div class="row">
 				<div class="col-12 col-md-12 col-lg-12">
-					<div class="card" style="margin-top: 70px;">
+					<div class="card">
 						<div class="card-header">
-							<h4 style="color: #212529;">Appointments</h4>
+							<h4>Appointments</h4>
 							<div class="card-header-action">
 								<!-- <a href="{{--URL::to('admin/quotations/template/create')--}}"  class="btn btn-primary is_checked_clientn">Create Template</a> -->
 							</div>
@@ -213,18 +74,21 @@ html, body {
 							<div class="tab-content" id="quotationContent">
                                 <form action="{{ route('appointments.index') }}" method="get">
                                     <div class="row">
-                                        
-                                       <div class="col-md-3">
-                                            <input type="text" class="form-control mb-3 appointment_date_fields" placeholder="Search with appointment date" name="r" value="<?php if( isset($_REQUEST['r']) && $_REQUEST['r'] != ""){ echo $_REQUEST['r'];}?>" autocomplete="off">
+                                        <div class="col-md-3">
+                                            <input type="text" class="form-control mb-3 appointment_date_fields" placeholder="Search with appointment date" name="appointment_date_field" value="{{ $currentParams['appointment_date_field'] ?? '' }}" autocomplete="off">
                                         </div>
                                         <div class="col-md-4">
-                                            <input type="text" class="form-control mb-3" placeholder="Search with Client refernce,description" name="q" value="<?php if( isset($_REQUEST['q']) && $_REQUEST['q'] != ""){ echo $_REQUEST['q'];}?>" autocomplete="off">
+                                            <input type="text" class="form-control mb-3" placeholder="Search with Client refernce,description" name="other_field" value="{{ $currentParams['other_field'] ?? '' }}" autocomplete="off">
                                         </div>
                                         <div class="col-md-2">
                                             <input type="submit" class="form-control mb-3 btn btn-primary" value="Search">
                                         </div>
+                                        <div class="col-md-2">
+                                            <a href="{{ route('appointments.index') }}" class="form-control mb-3 btn btn-secondary">Clear</a>
+                                        </div>
                                     </div>
                                 </form>
+
 								<div class="tab-pane fade show active" id="active_quotation" role="tabpanel" aria-labelledby="active_quotation-tab">
 									<div class="table-responsive common_table">
 									<!-- @if ($message = Session::get('success'))
@@ -240,70 +104,127 @@ html, body {
                                             <th>Nature of enquiry</th>
 											<th>Desciption</th>
                                             <th>Added By</th>
-											<!-- <th>Invites</th> -->
 											<th>status</th>
-											<th>Action</th>
+											<th width="280px">Action</th>
 										</tr>
-										@foreach ($appointments as $appointment)
-                                            <?php //dd($appointment);?>
+                                        @php
+                                            $pagination = $appointments['data']['pagination'] ?? [];
+                                            $currentPage = $pagination['current_page'] ?? 1;
+                                            $perPage = $pagination['per_page'] ?? 20;
+                                            $startNumber = (($currentPage - 1) * $perPage) + 1;
+                                            $i = $startNumber;
+                                        @endphp
+										@foreach ($appointments['data']['data'] ?? [] as $appointment)
 										<tr>
-											<td>{{ ++$i }}</td>
+											<td>{{ $i++ }}</td>
                                             <td>
-                                                {{ $appointment->clients->first_name }}  {{$appointment->clients->last_name}} <br>
-                                                <a href="{{URL::to('/admin/clients/detail/'.base64_encode(convert_uuencode(@$appointment->client_id)))}}" target="_blank" >{{ $appointment->clients->client_id }}</a>
-                                            </td>
-											<td>{{date('d/m/Y', strtotime($appointment->date ))}} {{ $appointment->time }}</td>
-                                            @if($appointment->natureOfEnquiry)
-											<td>{{$appointment->natureOfEnquiry->title}}</td>
-											@else
-											<td>N/A</td>
-											@endif
-                                            <td>{{ $appointment->description }}</td>
-                                            @if($appointment->user)
-											   <td>{{ $appointment->user->first_name }}  {{$appointment->user->last_name}}</td>
-											@else
-											   <td>{{ 'N/A' }}</td>
-											@endif
-											<!-- <td>{{--$appointment->invites ?? 0--}}</td> -->
+                                                {{ $appointment['client']['name'] ?? 'NA' }}  <br>
 
-											@if($appointment->status == 0)
+                                                <a href="{{ $appointment['client_unique_id'] ? URL::to('/admin/clients/detail/' . base64_encode(convert_uuencode($appointment['client_id']))) : '#' }}" target="_blank">
+                                                    {{ $appointment['client_unique_id'] ?? 'NA' }}
+                                                </a>
+                                            </td>
+											<td>{{date('d/m/Y', strtotime($appointment['date'] ))}} {{ $appointment['time'] }}</td>
+                                            @if(isset($appointment['nature_of_enquiry']))
+                                                <td>{{ $appointment['nature_of_enquiry']['title'] ?? 'N/A' }}</td>
+                                            @else
+                                                <td>N/A</td>
+                                            @endif
+
+                                            <td>{{ $appointment['description'] }}</td>
+
+                                            @if(isset($appointment['user']))
+                                                <td>{{ $appointment['user']['name'] ?? 'N/A' }}</td>
+                                            @else
+                                                <td>N/A</td>
+                                            @endif
+
+											@if($appointment['status'] == 0)
 											<td><span title="draft" class="ui label uppercase badge bg-warning">Pending/Not confirmed</span></td>
 
-											@elseif($appointment->status == 2)
+											@elseif($appointment['status'] == 2)
 											<td><span title="draft" class="ui label uppercase badge bg-success">Completed</span></td>
 
-											@elseif($appointment->status == 4)
+											@elseif($appointment['status']== 4)
 											<td><span title="draft" class="ui label uppercase badge bg-primary">N/P</span></td>
 
-											@elseif($appointment->status == 6)
+											@elseif($appointment['status'] == 6)
 											<td><span title="draft" class="ui label uppercase badge bg-primary">Did Not Come</span></td>
-											@elseif($appointment->status == 7)
+
+                                            @elseif($appointment['status'] == 7)
 											<td><span title="draft" class="ui label uppercase badge bg-primary">Cancelled</span></td>
-											@elseif($appointment->status == 8)
+
+                                            @elseif($appointment['status'] == 8)
 											<td><span title="draft" class="ui label uppercase badge bg-primary">Missed</span></td>
-											@elseif($appointment->status == 9)
+
+                                            @elseif($appointment['status'] == 9)
 											<td><span title="draft" class="ui label uppercase badge bg-warning">Payment Pending</span></td>
-											@elseif($appointment->status == 10)
+
+                                            @elseif($appointment['status'] == 10)
 											<td><span title="draft" class="ui label uppercase badge bg-success">Payment Success</span></td>
-											@elseif($appointment->status == 11)
+
+                                            @elseif($appointment['status'] == 11)
 											<td><span title="draft" class="ui label uppercase badge bg-warning">Payment Failed</span></td>
 											@endif
 
                                             <td>
-												<form action="{{ route('appointments.destroy',$appointment->id) }}" method="POST">
-                                                    <a class="btn btn-info" href="{{ route('appointments.show',$appointment->id) }}">Show</a>
-                                                    <a class="btn btn-primary" href="{{route('appointments.edit',$appointment->id)}}">Edit</a>
+												<form action="{{ route('appointments.destroy',$appointment['id']) }}" method="POST">
+                                                    <a class="btn btn-info" href="{{ route('appointments.show',$appointment['id']) }}">Show</a>
+                                                    <a class="btn btn-primary" href="{{route('appointments.edit',$appointment['id'])}}">Edit</a>
 
                                                     @csrf
 													@method('DELETE')
                                                     <button type="submit" class="btn btn-danger">Delete</button>
-													{{--<a class="btn btn-primary openassigneview" id="{{$appointment->id}}" href="#">Assign</a> --}}
 												</form>
 											</td>
 										</tr>
 										@endforeach
 									</table>
-   										 {!! $appointments->appends($_GET)->links() !!}
+
+                                    {{-- Pagination --}}
+                                    @if(isset($appointments['data']['pagination']))
+                                        @php
+                                            $pagination = $appointments['data']['pagination'];
+                                            $currentPage = $pagination['current_page'] ?? 1;
+                                            $lastPage = $pagination['last_page'] ?? 1;
+                                            $perPage = $pagination['per_page'] ?? 20;
+                                            $total = $pagination['total'] ?? 0;
+                                        @endphp
+
+                                        @if($lastPage > 1)
+                                            <nav aria-label="Appointments pagination">
+                                                <ul class="pagination">
+                                                    {{-- Previous Page --}}
+                                                    @if($currentPage > 1)
+                                                        <li class="page-item">
+                                                            <a class="page-link" href="{{ route('appointments.index', array_merge($currentParams, ['page' => $currentPage - 1])) }}">Previous</a>
+                                                        </li>
+                                                    @endif
+
+                                                    {{-- Page Numbers --}}
+                                                    @for($i = max(1, $currentPage - 2); $i <= min($lastPage, $currentPage + 2); $i++)
+                                                        <li class="page-item {{ $i == $currentPage ? 'active' : '' }}">
+                                                            <a class="page-link" href="{{ route('appointments.index', array_merge($currentParams, ['page' => $i])) }}">{{ $i }}</a>
+                                                        </li>
+                                                    @endfor
+
+                                                    {{-- Next Page --}}
+                                                    @if($currentPage < $lastPage)
+                                                        <li class="page-item">
+                                                            <a class="page-link" href="{{ route('appointments.index', array_merge($currentParams, ['page' => $currentPage + 1])) }}">Next</a>
+                                                        </li>
+                                                    @endif
+                                                </ul>
+                                            </nav>
+
+                                            {{-- Pagination Info --}}
+                                            <div class="text-center mt-2">
+                                                <small class="text-muted">
+                                                    Showing {{ (($currentPage - 1) * $perPage) + 1 }} to {{ min($currentPage * $perPage, $total) }} of {{ $total }} appointments
+                                                </small>
+                                            </div>
+                                        @endif
+                                    @endif
 								</div>
 								<div class="card-footer">
 
@@ -517,3 +438,4 @@ html, body {
 });
 </script>
 @endsection
+

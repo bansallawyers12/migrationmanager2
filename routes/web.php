@@ -472,7 +472,7 @@ Route::prefix('admin')->group(function() {
 		Route::get('/all-notifications', 'Admin\AdminController@allnotification');
 
 		// Appointment modulle
-		//Route::resource('appointments', Admin\AppointmentsController::class);
+		Route::resource('appointments', Admin\AppointmentsController::class);
 		Route::get('/get-assigne-detail', 'Admin\AppointmentsController@assignedetail');
 		Route::post('/update_appointment_status', 'Admin\AppointmentsController@update_appointment_status');
 		Route::post('/update_appointment_priority', 'Admin\AppointmentsController@update_appointment_priority');
