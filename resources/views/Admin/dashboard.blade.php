@@ -3,33 +3,33 @@
 @section('content')
     <main class="main-content">
         <header class="header">
-            <h1 style="margin-top: 60px;">Dashboard</h1>
+            <h1>Dashboard</h1>
         </header>
 
 
+        {{-- KPI Cards Section --}}
         <section class="kpi-cards">
-            <div class="card">
-                <i class="fas fa-briefcase icon-active"></i>
-                <div class="card-content">
-                    <h3>Active Matters</h3>
-                    <p><a href="{{route('admin.clients.clientsmatterslist')}}">{{$count_active_matter}}</a></p>
-                </div>
-            </div>
-            <div class="card">
-                <i class="fas fa-hourglass-half icon-pending"></i>
-                <div class="card-content">
-                    <h3>Urgent Notes Deadlines</h3>
-                    <p>{{$count_note_deadline}}</p>
-                </div>
-            </div>
-            <div class="card">
-                <i class="fas fa-check-circle icon-success"></i>
-                <div class="card-content">
-                    <h3>Cases Requiring Attention</h3>
-                    <p>{{$count_cases_requiring_attention_data}}</p>
-                </div>
-            </div>
-
+            <x-dashboard.kpi-card 
+                :title="'Active Matters'" 
+                :count="$count_active_matter" 
+                :route="route('admin.clients.clientsmatterslist')"
+                icon="fas fa-briefcase"
+                icon-class="icon-active" 
+            />
+            
+            <x-dashboard.kpi-card 
+                :title="'Urgent Notes Deadlines'" 
+                :count="$count_note_deadline"
+                icon="fas fa-hourglass-half"
+                icon-class="icon-pending" 
+            />
+            
+            <x-dashboard.kpi-card 
+                :title="'Cases Requiring Attention'" 
+                :count="$count_cases_requiring_attention_data"
+                icon="fas fa-check-circle"
+                icon-class="icon-success" 
+            />
         </section>
 
         <section class="priority-focus">
@@ -364,9 +364,6 @@
                             </div>
                             <div class="col-12 col-md-6 col-lg-6">
                                 <div class="form-group">
-                                <?php
-                                    $assignee = \App\Models\Admin::select('id','first_name','email')->where('role','!=',1)->get();
-                                    ?>
                                     <label for="assignee">Assignee</label>
                                     <select data-valid="" class="form-control cleintselect2 select2" name="assignee">
                                         <option value="">Select</option>
@@ -640,7 +637,9 @@
 @endsection
 
 @push('styles')
-    <style>
+@once
+<link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
+<style>
         :root {
             --primary-color: #005792; /* Deeper Blue */
             --secondary-color: #00BBF0; /* Lighter Blue Accent */
@@ -1521,12 +1520,29 @@
             }
         }
     </style>
+@endonce
 @endpush
 
 
 @push('scripts')
-
+@once
+<script>
+    // Dashboard routes for JavaScript
+    window.dashboardRoutes = {
+        dashboard: "{{ route('admin.dashboard') }}",
+        updateStage: "{{ route('admin.dashboard.update-stage') }}",
+        extendDeadline: "{{ route('admin.dashboard.extend-deadline') }}",
+        updateTaskCompleted: "{{ route('admin.dashboard.update-task-completed') }}",
+        columnPreferences: "{{ route('admin.dashboard.column-preferences') }}"
+    };
+    
+    // Dashboard data for JavaScript
+    window.dashboardData = {
+        visibleColumns: @json($visibleColumns)
+    };
+</script>
 <script src="{{URL::to('/')}}/js/popover.js"></script>
+<script src="{{ asset('js/dashboard-optimized.js') }}"></script>
 <script>
 $(document).ready(function() {
     //Ajax change on workflow status change
@@ -1812,7 +1828,7 @@ function closeNotesDeadlineAction( noteid, noteuniqueid) {
             $.ajax({
                 type:'post',
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
-                url:"{{URL::to('/')}}/admin/update-task-completed",
+                url:"{{ route('admin.dashboard.update-task-completed') }}",
                 data:{'id': noteid,'unique_group_id':noteuniqueid},
                 success:function(resp) {
                     $('.popuploader').hide();
@@ -1868,4 +1884,5 @@ jQuery(document).ready(function($){
     });
 });
 </script>
+@endonce
 @endpush
