@@ -14,10 +14,12 @@ use App\Models\Notification;
 use Carbon\Carbon;
 use App\Models\Admin;
 use App\Models\ActivitiesLog;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use DataTables;
+use Illuminate\Support\Facades\Log;
+use Yajra\DataTables\Facades\DataTables;
 use App\Helpers\Utf8Helper;
+use Illuminate\Support\Facades\URL;
 
 class AssigneeController extends Controller
 {
@@ -42,10 +44,10 @@ class AssigneeController extends Controller
             ->where('folloup',1)
             ->where('status','<>','1');
 
-        if(\Auth::user()->role == 1){
+        if(Auth::user()->role == 1){
             $assignees = $query->whereNotNull('client_id')->paginate(20);
         }else{
-            $assignees = $query->where('assigned_to',\Auth::user()->id)->paginate(20);
+            $assignees = $query->where('assigned_to',Auth::user()->id)->paginate(20);
         }
 
         return view('Admin.assignee.index',compact('assignees'))
@@ -55,10 +57,10 @@ class AssigneeController extends Controller
     //All completed task lists
     public function completed(Request $request)
     {
-        if(\Auth::user()->role == 1){
+        if(Auth::user()->role == 1){
             $assignees = \App\Models\Note::with(['noteUser','noteClient','lead.natureOfEnquiry','lead.service','assigned_user'])->where('type','client')->whereNotNull('client_id')->where('folloup',1)->where('status','1')->orderBy('created_at', 'desc')->latest()->paginate(20); //where('status','like','Closed')
         }else{
-            $assignees = \App\Models\Note::with(['noteUser','noteClient','lead.natureOfEnquiry','lead.service','assigned_user'])->where('assigned_to',\Auth::user()->id)->where('type','client')->where('folloup',1)->where('status','1')->orderBy('created_at', 'desc')->latest()->paginate(20);
+            $assignees = \App\Models\Note::with(['noteUser','noteClient','lead.natureOfEnquiry','lead.service','assigned_user'])->where('assigned_to',Auth::user()->id)->where('type','client')->where('folloup',1)->where('status','1')->orderBy('created_at', 'desc')->latest()->paginate(20);
         }  //dd( $assignees);
         return view('Admin.assignee.completed',compact('assignees'))
          ->with('i', (request()->input('page', 1) - 1) * 20);
@@ -126,10 +128,10 @@ class AssigneeController extends Controller
      //All assigned by me task list which r incomplete
      public function assigned_by_me(Request $request)
      {
-        if(\Auth::user()->role == 1){
+        if(Auth::user()->role == 1){
              $assignees_notCompleted = \App\Models\Note::with(['noteUser','noteClient','lead.natureOfEnquiry','lead.service','assigned_user'])->where('status','<>','1')->where('type','client')->whereNotNull('client_id')->where('folloup',1)->orderBy('created_at', 'desc')->latest()->paginate(20);
         } else {
-             $assignees_notCompleted = \App\Models\Note::with(['noteUser','noteClient','lead.natureOfEnquiry','lead.service','assigned_user'])->where('status','<>','1')->where('user_id',\Auth::user()->id)->where('type','client')->where('folloup',1)->orderBy('created_at', 'desc')->latest()->paginate(20);
+             $assignees_notCompleted = \App\Models\Note::with(['noteUser','noteClient','lead.natureOfEnquiry','lead.service','assigned_user'])->where('status','<>','1')->where('user_id',Auth::user()->id)->where('type','client')->where('folloup',1)->orderBy('created_at', 'desc')->latest()->paginate(20);
         }
          #dd($assignees_notCompleted);
          return view('Admin.assignee.assign_by_me',compact('assignees_notCompleted'))
@@ -139,14 +141,14 @@ class AssigneeController extends Controller
     //All assigned to me task list
     public function assigned_to_me(Request $request)
     {
-        if(\Auth::user()->role == 1){
-            $assignees_notCompleted = \App\Models\Note::with(['noteUser','noteClient','lead.natureOfEnquiry','lead.service','assigned_user'])->where('status','<>','1')->where('assigned_to',\Auth::user()->id)->where('type','client')->whereNotNull('client_id')->where('folloup',1)->orderBy('created_at', 'desc')->latest()->paginate(20);//where('status','not like','Closed')
+        if(Auth::user()->role == 1){
+            $assignees_notCompleted = \App\Models\Note::with(['noteUser','noteClient','lead.natureOfEnquiry','lead.service','assigned_user'])->where('status','<>','1')->where('assigned_to',Auth::user()->id)->where('type','client')->whereNotNull('client_id')->where('folloup',1)->orderBy('created_at', 'desc')->latest()->paginate(20);//where('status','not like','Closed')
 
-            $assignees_completed = \App\Models\Note::with(['noteUser','noteClient','lead.natureOfEnquiry','lead.service','assigned_user'])->where('status','1')->where('assigned_to',\Auth::user()->id)->where('type','client')->whereNotNull('client_id')->where('folloup',1)->orderBy('created_at', 'desc')->latest()->paginate(20);
+            $assignees_completed = \App\Models\Note::with(['noteUser','noteClient','lead.natureOfEnquiry','lead.service','assigned_user'])->where('status','1')->where('assigned_to',Auth::user()->id)->where('type','client')->whereNotNull('client_id')->where('folloup',1)->orderBy('created_at', 'desc')->latest()->paginate(20);
         }else{
-            $assignees_notCompleted = \App\Models\Note::with(['noteUser','noteClient','lead.natureOfEnquiry','lead.service','assigned_user'])->where('status','<>','1')->where('assigned_to',\Auth::user()->id)->where('type','client')->where('folloup',1)->orderBy('created_at', 'desc')->latest()->paginate(20);
+            $assignees_notCompleted = \App\Models\Note::with(['noteUser','noteClient','lead.natureOfEnquiry','lead.service','assigned_user'])->where('status','<>','1')->where('assigned_to',Auth::user()->id)->where('type','client')->where('folloup',1)->orderBy('created_at', 'desc')->latest()->paginate(20);
 
-            $assignees_completed = \App\Models\Note::with(['noteUser','noteClient','lead.natureOfEnquiry','lead.service','assigned_user'])->where('status','1')->where('assigned_to',\Auth::user()->id)->where('type','client')->where('folloup',1)->orderBy('created_at', 'desc')->latest()->paginate(20);
+            $assignees_completed = \App\Models\Note::with(['noteUser','noteClient','lead.natureOfEnquiry','lead.service','assigned_user'])->where('status','1')->where('assigned_to',Auth::user()->id)->where('type','client')->where('folloup',1)->orderBy('created_at', 'desc')->latest()->paginate(20);
         }
         return view('Admin.assignee.assign_to_me',compact('assignees_notCompleted','assignees_completed'))
          ->with('i', (request()->input('page', 1) - 1) * 20);
@@ -160,7 +162,7 @@ class AssigneeController extends Controller
         } else {
             $task_group = 'All';
         }
-        $user = \Auth::user();
+        $user = Auth::user();
 
         $assignees_completed = \App\Models\Note::with([
                 'noteUser',
@@ -191,186 +193,208 @@ class AssigneeController extends Controller
 
     public function getActivities(Request $request)
     {
-        if ($request->ajax()) {
-            // Select specific columns from the notes table, using the correct column name 'user_id'
-            $query = Note::select([
-                    'notes.id',
-                    'notes.user_id', // Changed from 'created_by' to 'user_id'
-                    'notes.client_id',
-                    'notes.assigned_to',
-                    'notes.status',
-                    'notes.type',
-                    'notes.folloup',
-                    'notes.followup_date',
-                    'notes.task_group',
-                    'notes.description',
-                    'notes.unique_group_id',
-                    'notes.created_at'
-                ])
-                ->with(['noteUser', 'noteClient', 'lead.natureOfEnquiry', 'lead.service', 'assigned_user'])
-                ->where('notes.status', '<>', '1')
-                ->where('notes.type', 'client')
-                ->where('notes.folloup', 1);
+        try {
+            if ($request->ajax()) {
+                // Select specific columns from the notes table, using the correct column name 'user_id'
+                $query = Note::select([
+                        'notes.id',
+                        'notes.user_id', // Changed from 'created_by' to 'user_id'
+                        'notes.client_id',
+                        'notes.assigned_to',
+                        'notes.status',
+                        'notes.type',
+                        'notes.folloup',
+                        'notes.followup_date',
+                        'notes.task_group',
+                        'notes.description',
+                        'notes.unique_group_id',
+                        'notes.created_at'
+                    ])
+                    ->with(['noteUser', 'noteClient', 'assigned_user'])
+                    ->where('notes.status', '<>', '1')
+                    ->where('notes.type', 'client')
+                    ->where('notes.folloup', 1);
 
-            if (Auth::user()->role != 1) {
-                $query->where('notes.assigned_to', Auth::user()->id);
-            }
-
-            // Apply filter based on tab
-            if ($request->filter && $request->filter != 'all') {
-                if ($request->filter == 'assigned_by_me') {
-                    $query->whereHas('noteUser', function ($q) {
-                        $q->where('id', Auth::user()->id);
-                    });
-                } elseif ($request->filter == 'completed') {
-                    $query->where('notes.status', 'completed');
-                } else {
-                    // Handle special case for personal_task to convert underscore to space
-                    $taskGroup = $request->filter;
-                    if ($taskGroup == 'personal_task') {
-                        $taskGroup = 'Personal Task';
-                    } else {
-                        $taskGroup = ucfirst($taskGroup);
-                    }
-                    $query->where('notes.task_group', $taskGroup);
+                // Check if user is authenticated and has proper role
+                if (Auth::check() && Auth::user()->role != 1) {
+                    $query->where('notes.assigned_to', Auth::user()->id);
                 }
-            }
 
-            // Apply search functionality
-            if ($request->has('search') && !empty($request->search)) {
-                $searchTerm = $request->search;
-                $query->where(function ($q) use ($searchTerm) {
-                    $q->whereHas('noteUser', function ($q) use ($searchTerm) {
-                        $q->where('first_name', 'LIKE', '%' . $searchTerm . '%')
-                        ->orWhere('last_name', 'LIKE', '%' . $searchTerm . '%');
-                    })
-                    ->orWhereHas('noteClient', function ($q) use ($searchTerm) {
-                        $q->where('first_name', 'LIKE', '%' . $searchTerm . '%')
-                        ->orWhere('last_name', 'LIKE', '%' . $searchTerm . '%')
-                        ->orWhere('client_id', 'LIKE', '%' . $searchTerm . '%');
-                    })
-                    ->orWhere('notes.followup_date', 'LIKE', '%' . $searchTerm . '%')
-                    ->orWhere('notes.task_group', 'LIKE', '%' . $searchTerm . '%')
-                    ->orWhere('notes.description', 'LIKE', '%' . $searchTerm . '%');
-                });
-            }
-
-            // Apply sorting
-            if ($request->has('order')) {
-                $orderColumnIndex = $request->order[0]['column'];
-                $orderDirection = $request->order[0]['dir'];
-                $columns = $request->columns;
-
-                $columnName = $columns[$orderColumnIndex]['name'];
-
-                // Map DataTables column names to database columns
-                switch ($columnName) {
-                    case 'assigner_name':
-                        $query->leftJoin('users as note_user', 'notes.user_id', '=', 'note_user.id') // Changed from 'created_by' to 'user_id'
-                            ->orderByRaw("CONCAT(COALESCE(note_user.first_name, ''), ' ', COALESCE(note_user.last_name, '')) $orderDirection");
-                        break;
-                    case 'client_reference':
-                        $query->leftJoin('users as note_client', 'notes.client_id', '=', 'note_client.id')
-                            ->orderByRaw("CONCAT(COALESCE(note_client.first_name, ''), ' ', COALESCE(note_client.last_name, '')) $orderDirection");
-                        break;
-                    case 'assign_date':
-                        $query->orderBy('notes.followup_date', $orderDirection);
-                        break;
-                    case 'task_group':
-                        $query->orderBy('notes.task_group', $orderDirection);
-                        break;
-                    case 'note_description':
-                        $query->orderBy('notes.description', $orderDirection);
-                        break;
-                    default:
-                        $query->orderBy('notes.created_at', 'desc'); // Fallback sorting
-                        break;
-                }
-            } else {
-                $query->orderBy('notes.created_at', 'desc'); // Default sorting
-            }
-
-            $dataTable = DataTables::of($query)
-                ->addIndexColumn()
-                ->addColumn('done_task', function($data) {
-                    $done_task = '<input type="radio" class="complete_task" data-toggle="tooltip" title="Mark Complete!" data-id="'.$data->id.'" data-unique_group_id="'.$data->unique_group_id.'">';
-                    return $done_task;
-                })
-                ->addColumn('assigner_name', function($data) {
-                    if ($data->noteUser) {
-                        $firstName = Utf8Helper::safeSanitize($data->noteUser->first_name);
-                        $lastName = Utf8Helper::safeSanitize($data->noteUser->last_name);
-                        return $firstName . ' ' . $lastName;
-                    }
-                    return 'N/P';
-                })
-                ->addColumn('client_reference', function($data) {
-                    if ($data->noteClient) {
-                        $firstName = Utf8Helper::safeSanitize($data->noteClient->first_name);
-                        $lastName = Utf8Helper::safeSanitize($data->noteClient->last_name);
-                        $clientId = Utf8Helper::safeSanitize($data->noteClient->client_id);
-                        
-                        $user_name = $firstName . ' ' . $lastName;
-                        $user_name .= "<br>";
-                        $client_encoded_id = base64_encode(convert_uuencode(@$data->client_id));
-                        $user_name .= '<a href="'.url('/admin/clients/detail/'.$client_encoded_id).'" target="_blank">'.$clientId.'</a>';
+                // Apply filter based on tab
+                if ($request->filter && $request->filter != 'all') {
+                    if ($request->filter == 'assigned_by_me') {
+                        $query->where('notes.user_id', Auth::user()->id);
+                    } elseif ($request->filter == 'completed') {
+                        $query->where('notes.status', '1');
                     } else {
-                        $user_name = 'N/P';
-                    }
-                    return $user_name;
-                })
-                ->addColumn('assign_date', function($data) {
-                    return $data->followup_date ? date('d/m/Y', strtotime($data->followup_date)) : 'N/P';
-                })
-                ->addColumn('task_group', function($data) {
-                    return $data->task_group ? Utf8Helper::safeSanitize($data->task_group) : 'N/P';
-                })
-                ->addColumn('note_description', function($data) {
-                    if (isset($data->description) && $data->description != "") {
-                        // Sanitize the description for UTF-8
-                        $sanitized_description = Utf8Helper::safeSanitize($data->description);
-                        
-                        if (mb_strlen($sanitized_description, 'UTF-8') > 190) {
-                            // Use safe HTML encoding for the full description
-                            $full_description = Utf8Helper::safeHtmlSpecialChars($sanitized_description);
-                            // Use safe truncation that preserves UTF-8
-                            $truncated_desc = Utf8Helper::safeTruncate($sanitized_description, 190, '');
-                            $final_desc = $truncated_desc . '<button type="button" class="btn btn-link btn_readmore" data-toggle="popover" data-trigger="click" data-html="true" data-full-content="'.$full_description.'" data-placement="top">Read more</button>';
+                        // Handle special case for personal_task to convert underscore to space
+                        $taskGroup = $request->filter;
+                        if ($taskGroup == 'personal_task') {
+                            $taskGroup = 'Personal Task';
                         } else {
-                            $final_desc = $sanitized_description;
+                            $taskGroup = ucfirst($taskGroup);
                         }
-                    } else {
-                        $final_desc = "N/P";
+                        $query->where('notes.task_group', $taskGroup);
                     }
-                    return $final_desc;
-                })
-                ->addColumn('action', function($list) {
-                    $actionBtn = '';
-                    $current_date1 = $list->followup_date ?: date('Y-m-d');
+                }
 
-                    if ($list->task_group != 'Personal Task') {
-                        // Update Task button with data attributes but no inline data-content
-                        $safe_description = Utf8Helper::safeHtmlSpecialChars($list->description);
-                        $safe_task_group = Utf8Helper::safeHtmlSpecialChars($list->task_group);
-                        $actionBtn .= '<button type="button" data-assignedto="'.$list->assigned_to.'" data-noteid="'.$safe_description.'" data-taskid="'.$list->id.'" data-taskgroupid="'.$safe_task_group.'" data-followupdate="'.$current_date1.'" data-clientid="'.base64_encode(convert_uuencode(@$list->client_id)).'" class="btn btn-primary btn-block update_task" data-toggle="popover" data-role="popover" title="" data-placement="left" style="width: 40px;display: inline;margin-top:0px;"><i class="fa fa-edit" aria-hidden="true"></i></button>';
+                // Apply search functionality
+                if ($request->has('search') && !empty($request->search)) {
+                    $searchTerm = $request->search;
+                    $query->where(function ($q) use ($searchTerm) {
+                        $q->where('notes.followup_date', 'LIKE', '%' . $searchTerm . '%')
+                        ->orWhere('notes.task_group', 'LIKE', '%' . $searchTerm . '%')
+                        ->orWhere('notes.description', 'LIKE', '%' . $searchTerm . '%');
+                    });
+                }
+
+                // Apply sorting - simplified to avoid join issues
+                if ($request->has('order')) {
+                    $orderColumnIndex = $request->order[0]['column'];
+                    $orderDirection = $request->order[0]['dir'];
+                    $columns = $request->columns;
+
+                    $columnName = $columns[$orderColumnIndex]['name'];
+
+                    // Map DataTables column names to database columns
+                    switch ($columnName) {
+                        case 'assign_date':
+                            $query->orderBy('notes.followup_date', $orderDirection);
+                            break;
+                        case 'task_group':
+                            $query->orderBy('notes.task_group', $orderDirection);
+                            break;
+                        case 'note_description':
+                            $query->orderBy('notes.description', $orderDirection);
+                            break;
+                        default:
+                            $query->orderBy('notes.created_at', 'desc'); // Fallback sorting
+                            break;
                     }
+                } else {
+                    $query->orderBy('notes.created_at', 'desc'); // Default sorting
+                }
 
-                    // Delete button
-                    $actionBtn .= ' <button class="btn btn-danger deleteNote" data-remote="/admin/destroy_activity/'.$list->id.'"><i class="fa fa-trash" aria-hidden="true"></i></button>';
+                $dataTable = DataTables::of($query)
+                    ->addIndexColumn()
+                    ->addColumn('done_task', function($data) {
+                        $done_task = '<input type="radio" class="complete_task" data-toggle="tooltip" title="Mark Complete!" data-id="'.$data->id.'" data-unique_group_id="'.$data->unique_group_id.'">';
+                        return $done_task;
+                    })
+                    ->addColumn('assigner_name', function($data) {
+                        try {
+                            if ($data->noteUser) {
+                                $firstName = Utf8Helper::safeSanitize($data->noteUser->first_name ?? '');
+                                $lastName = Utf8Helper::safeSanitize($data->noteUser->last_name ?? '');
+                                return $firstName . ' ' . $lastName;
+                            }
+                            return 'N/P';
+                        } catch (\Exception $e) {
+                            return 'N/P';
+                        }
+                    })
+                    ->addColumn('client_reference', function($data) {
+                        try {
+                            if ($data->noteClient) {
+                                $firstName = Utf8Helper::safeSanitize($data->noteClient->first_name ?? '');
+                                $lastName = Utf8Helper::safeSanitize($data->noteClient->last_name ?? '');
+                                $clientId = Utf8Helper::safeSanitize($data->noteClient->client_id ?? '');
+                                
+                                $user_name = $firstName . ' ' . $lastName;
+                                $user_name .= "<br>";
+                                $client_encoded_id = base64_encode(convert_uuencode(@$data->client_id));
+                                $user_name .= '<a href="'.url('/admin/clients/detail/'.$client_encoded_id).'" target="_blank">'.$clientId.'</a>';
+                            } else {
+                                $user_name = 'N/P';
+                            }
+                            return $user_name;
+                        } catch (\Exception $e) {
+                            return 'N/P';
+                        }
+                    })
+                    ->addColumn('assign_date', function($data) {
+                        try {
+                            return $data->followup_date ? date('d/m/Y', strtotime($data->followup_date)) : 'N/P';
+                        } catch (\Exception $e) {
+                            return 'N/P';
+                        }
+                    })
+                    ->addColumn('task_group', function($data) {
+                        try {
+                            return $data->task_group ? Utf8Helper::safeSanitize($data->task_group) : 'N/P';
+                        } catch (\Exception $e) {
+                            return 'N/P';
+                        }
+                    })
+                    ->addColumn('note_description', function($data) {
+                        try {
+                            if (isset($data->description) && $data->description != "") {
+                                // Sanitize the description for UTF-8
+                                $sanitized_description = Utf8Helper::safeSanitize($data->description);
+                                
+                                if (mb_strlen($sanitized_description, 'UTF-8') > 190) {
+                                    // Use safe HTML encoding for the full description
+                                    $full_description = Utf8Helper::safeHtmlSpecialChars($sanitized_description);
+                                    // Use safe truncation that preserves UTF-8
+                                    $truncated_desc = Utf8Helper::safeTruncate($sanitized_description, 190, '');
+                                    $final_desc = $truncated_desc . '<button type="button" class="btn btn-link btn_readmore" data-toggle="popover" data-trigger="click" data-html="true" data-full-content="'.$full_description.'" data-placement="top">Read more</button>';
+                                } else {
+                                    $final_desc = $sanitized_description;
+                                }
+                            } else {
+                                $final_desc = "N/P";
+                            }
+                            return $final_desc;
+                        } catch (\Exception $e) {
+                            return "N/P";
+                        }
+                    })
+                    ->addColumn('action', function($list) {
+                        try {
+                            $actionBtn = '';
+                            $current_date1 = $list->followup_date ?: date('Y-m-d');
 
-                    return $actionBtn;
-                })
-                ->rawColumns(['done_task', 'client_reference', 'note_description', 'action']);
+                            if ($list->task_group != 'Personal Task') {
+                                // Update Task button with data attributes but no inline data-content
+                                $safe_description = Utf8Helper::safeHtmlSpecialChars($list->description ?? '');
+                                $safe_task_group = Utf8Helper::safeHtmlSpecialChars($list->task_group ?? '');
+                                $actionBtn .= '<button type="button" data-assignedto="'.$list->assigned_to.'" data-noteid="'.$safe_description.'" data-taskid="'.$list->id.'" data-taskgroupid="'.$safe_task_group.'" data-followupdate="'.$current_date1.'" data-clientid="'.base64_encode(convert_uuencode(@$list->client_id)).'" class="btn btn-primary btn-block update_task" data-toggle="popover" data-role="popover" title="" data-placement="left" style="width: 40px;display: inline;margin-top:0px;"><i class="fa fa-edit" aria-hidden="true"></i></button>';
+                            }
 
-            // Get the response and ensure UTF-8 encoding
-            $response = $dataTable->make(true);
-            
-            // Set proper UTF-8 headers
-            if ($response instanceof \Illuminate\Http\JsonResponse) {
-                $response->header('Content-Type', 'application/json; charset=utf-8');
+                            // Delete button
+                            $actionBtn .= ' <button class="btn btn-danger deleteNote" data-remote="/admin/destroy_activity/'.$list->id.'"><i class="fa fa-trash" aria-hidden="true"></i></button>';
+
+                            return $actionBtn;
+                        } catch (\Exception $e) {
+                            return '';
+                        }
+                    })
+                    ->rawColumns(['done_task', 'client_reference', 'note_description', 'action']);
+
+                // Get the response and ensure UTF-8 encoding
+                $response = $dataTable->make(true);
+                
+                // Set proper UTF-8 headers
+                if ($response instanceof \Illuminate\Http\JsonResponse) {
+                    $response->header('Content-Type', 'application/json; charset=utf-8');
+                }
+                
+                return $response;
             }
+        } catch (\Exception $e) {
+            Log::error('Error in getActivities: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
             
-            return $response;
+            return response()->json([
+                'draw' => intval($request->get('draw')),
+                'recordsTotal' => 0,
+                'recordsFiltered' => 0,
+                'data' => [],
+                'error' => 'An error occurred while processing the request'
+            ], 500);
         }
     }
 
@@ -415,23 +439,6 @@ class AssigneeController extends Controller
         return view('appointment.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        $request->validate([
-            'name' => 'required',
-            'detail' => 'required',
-        ]);
-
-        Product::create($request->all());
-        return redirect()->route('appointment.index')
-                        ->with('success','Product created successfully.');
-    }
 
     /**
      * Display the specified resource.
@@ -797,7 +804,7 @@ public function update_appointment_status(Request $request){
     if($saved){
         $objs = new AppointmentLog;
         $objs->title = 'changed status from '.$status.' to '.$request->statusname;
-        $objs->created_by = \Auth::user()->id;
+        $objs->created_by = Auth::user()->id;
         $objs->appointment_id = $request->id;
 
         $saved = $objs->save();
@@ -844,7 +851,7 @@ public function update_appointment_priority(Request $request){
     if($saved){
         $objs = new AppointmentLog;
         $objs->title = 'changed priority from '.$status.' to '.$request->status;
-        $objs->created_by = \Auth::user()->id;
+        $objs->created_by = Auth::user()->id;
         $objs->appointment_id = $request->id;
 
         $saved = $objs->save();
@@ -865,12 +872,12 @@ public function change_assignee(Request $request){
     $saved = $objs->save();
     if($saved){
         $o = new \App\Models\Notification;
-        $o->sender_id = \Auth::user()->id;
+        $o->sender_id = Auth::user()->id;
         $o->receiver_id = $request->assinee;
         $o->module_id = $request->id;
-        $o->url = \URL::to('/admin/appointments');
+        $o->url = URL::to('/admin/appointments');
         $o->notification_type = 'appointment';
-        $o->message = $objs->title.' Appointments Assigned by '.\Auth::user()->first_name.' '.\Auth::user()->last_name;
+        $o->message = $objs->title.' Appointments Assigned by '.Auth::user()->first_name.' '.Auth::user()->last_name;
         $o->save();
         $response['status'] 	= 	true;
         $response['message']	=	'Updated successfully';
@@ -884,7 +891,7 @@ public function change_assignee(Request $request){
 public function update_apppointment_comment(Request $request){
     $objs = new AppointmentLog;
     $objs->title = 'has commented';
-    $objs->created_by = \Auth::user()->id;
+    $objs->created_by = Auth::user()->id;
     $objs->appointment_id = $request->id;
     $objs->message = $request->visit_comment;
     $saved = $objs->save();
@@ -905,7 +912,7 @@ public function update_apppointment_description(Request $request){
     if($saved){
         $objs = new AppointmentLog;
         $objs->title = 'changed description';
-        $objs->created_by = \Auth::user()->id;
+        $objs->created_by = Auth::user()->id;
         $objs->appointment_id = $request->id;
         $objs->message = $request->visit_purpose;
         $saved = $objs->save();
@@ -967,7 +974,7 @@ public function update_apppointment_description(Request $request){
 
         try {
             // Log the incoming assigned_to value for debugging
-            \Log::info('Updating task with assigned_to: ' . $validated['assigned_to']);
+            Log::info('Updating task with assigned_to: ' . $validated['assigned_to']);
 
             // Decode client_id if it was encoded
             $clientId = convert_uudecode(base64_decode($validated['client_id']));
@@ -1039,7 +1046,7 @@ public function update_apppointment_description(Request $request){
 
         } catch (\Exception $e) {
             // Log the exception for debugging
-            \Log::error('Error updating task: ' . $e->getMessage());
+            Log::error('Error updating task: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred while updating the task: ' . $e->getMessage()
