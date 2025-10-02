@@ -91,10 +91,22 @@ Route::prefix('admin')->group(function() {
     //Route::post('/captcha-validation', [CaptchaServiceController::class, 'capthcaFormValidate']);
     //Route::get('/reload-captcha', 'Auth\AdminLoginController@reloadCaptcha');
 
-	//General
-    Route::get('/dashboard', 'Admin\AdminController@dashboard')->name('admin.dashboard');
-    Route::post('/dashboard/column-preferences', 'Admin\AdminController@saveColumnPreferences')->name('admin.dashboard.column-preferences');
-    //Route::get('/dashboard', 'Admin\NewWordController@dashboard')->name('new_word.dashboard');
+	//Dashboard Routes
+    Route::get('/dashboard', 'Admin\DashboardController@index')->name('admin.dashboard');
+    Route::post('/dashboard/column-preferences', 'Admin\DashboardController@saveColumnPreferences')->name('admin.dashboard.column-preferences');
+    Route::post('/dashboard/update-stage', 'Admin\DashboardController@updateStage')->name('admin.dashboard.update-stage');
+    Route::post('/dashboard/extend-deadline', 'Admin\DashboardController@extendDeadlineDate')->name('admin.dashboard.extend-deadline');
+    Route::post('/dashboard/update-task-completed', 'Admin\DashboardController@updateTaskCompleted')->name('admin.dashboard.update-task-completed');
+    Route::get('/dashboard/fetch-notifications', 'Admin\DashboardController@fetchNotifications')->name('admin.dashboard.fetch-notifications');
+    Route::get('/dashboard/fetch-office-visit-notifications', 'Admin\DashboardController@fetchOfficeVisitNotifications')->name('admin.dashboard.fetch-office-visit-notifications');
+    Route::post('/dashboard/mark-notification-seen', 'Admin\DashboardController@markNotificationSeen')->name('admin.dashboard.mark-notification-seen');
+    Route::get('/dashboard/fetch-visa-expiry-messages', 'Admin\DashboardController@fetchVisaExpiryMessages')->name('admin.dashboard.fetch-visa-expiry-messages');
+    Route::get('/dashboard/fetch-in-person-waiting-count', 'Admin\DashboardController@fetchInPersonWaitingCount')->name('admin.dashboard.fetch-in-person-waiting-count');
+    Route::get('/dashboard/fetch-total-activity-count', 'Admin\DashboardController@fetchTotalActivityCount')->name('admin.dashboard.fetch-total-activity-count');
+    Route::post('/dashboard/check-checkin-status', 'Admin\DashboardController@checkCheckinStatus')->name('admin.dashboard.check-checkin-status');
+    Route::post('/dashboard/update-checkin-status', 'Admin\DashboardController@updateCheckinStatus')->name('admin.dashboard.update-checkin-status');
+
+	//General Admin Routes
 
     Route::get('/get_customer_detail', 'Admin\AdminController@CustomerDetail')->name('admin.get_customer_detail');
     Route::get('/my_profile', 'Admin\AdminController@myProfile')->name('admin.my_profile');
