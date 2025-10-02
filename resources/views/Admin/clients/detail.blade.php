@@ -3955,6 +3955,7 @@ use App\Http\Controllers\Controller;
                                                    <i class="fas  <?php echo $payClassMap[$off_val->payment_method]; ?> type-icon"></i>
                                                    <span>
                                                     {{$off_val->payment_method}}
+                                                    
 
                                                     <?php
                                                     if( isset($off_val->extra_amount_receipt) &&  $off_val->extra_amount_receipt == 'exceed' ) {

@@ -2630,7 +2630,7 @@
                                                 <input data-valid="required" class="form-control report_entry_date_fields_office" name="entry_date[]" type="text" value="" />
                                             </td>
                                             <td>
-                                                <select class="form-control invoice_no_cls"  name="invoice_no[]" data-valid="required">
+                                                <select class="form-control invoice_no_cls"  name="invoice_no[]">
                                                 </select>
                                             </td>
                                             <td>
