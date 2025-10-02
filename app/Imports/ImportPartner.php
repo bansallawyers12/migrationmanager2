@@ -2,8 +2,7 @@
 namespace App\Imports;
 use App\Models\PartnerType;
 use App\Models\PartnerBranch;
-use App\Models\ProductType;
-use App\Models\Product;
+
 use App\Models\Partner;
 use App\Models\Workflow;
 use Illuminate\Support\Facades\DB;
@@ -119,23 +118,15 @@ class ImportPartner implements ToModel, WithHeadingRow
                      
                      $branchid = $partnerbranch->id;
            }
-           
-            $ProductType = ProductType::where('name', $row['product_type'])->first();
-    	  
-    	  if($ProductType){
-                $ptypeid = $ProductType->name;
-           }else{
+
                if($row['product_type'] != 'courses'){
-                 $wtobj = new ProductType;
+                 
                  $wtobj->name =$row['product_type'];
                 $wtobj->save();
                  $ptypeid = $row['product_type'];
                }else{
                    $ptypeid = 'Course';
                }
-               
-               
-           }
            
               $productty = new Product;
                 $productty->name = $row['product_name'];

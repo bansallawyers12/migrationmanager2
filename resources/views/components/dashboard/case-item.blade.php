@@ -7,6 +7,16 @@
     $interval = $today->diff($lastUpdated);
     $daysStalled = $interval->days;
     
+    // Safety check for null client
+    if (!$client) {
+        $client = (object) [
+            'id' => null,
+            'first_name' => null,
+            'last_name' => null,
+            'client_id' => null
+        ];
+    }
+    
     if ($daysStalled < 1) {
         $daysStalledText = 'Today';
     } else {

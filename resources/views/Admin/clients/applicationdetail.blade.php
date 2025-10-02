@@ -1,7 +1,5 @@
 <?php
-$productdetail = \App\Models\Product::where('id', $fetchData->product_id)->first();
-$partnerdetail = \App\Models\Partner::where('id', $fetchData->partner_id)->first();
-$PartnerBranch = \App\Models\PartnerBranch::where('id', $fetchData->branch)->first();
+
 $workflow = \App\Models\Workflow::where('id', $fetchData->workflow)->first();
 ?>
 <style>
@@ -54,7 +52,7 @@ $workflow = \App\Models\Workflow::where('id', $fetchData->workflow)->first();
 			?>
 			<a href="javascript:;" style="<?php if($fetchData->status == 2 || $fetchData->status == 1 || $fetchData->status == 8){ echo 'display:none;'; } ?>" data-stage="{{$fetchData->stage}}" data-id="{{$fetchData->id}}" class="btn btn-outline-primary backstage ifdiscont"><i class="fa fa-angle-left"></i> Back to Previous Stage</a>
 
-			<a href="javascript:;" style="<?php if($fetchData->status == 2){ echo 'display:none;'; } ?> <?php if($displayback){  }else{ echo 'display:none;'; } ?>" data-stage="{{$fetchData->stage}}" data-id="{{$fetchData->id}}" class="btn btn-success completestage ifdiscont">Complete Application</a>
+			<a href="javascript:;" style="<?php if($fetchData->status == 2){ echo 'display:none;'; } ?> <?php if($displayback) { } else { echo 'display:none;'; } ?>" data-stage="{{$fetchData->stage}}" data-id="{{$fetchData->id}}" class="btn btn-success completestage ifdiscont">Complete Application</a>
 			<a href="javascript:;" style="<?php if($displayback || $fetchData->status == 2 || $fetchData->status == 8){ echo 'display:none;'; } ?>" data-stage="{{$fetchData->stage}}" data-id="{{$fetchData->id}}" class="btn btn-success nextstage ifdiscont">Proceed to Next Stage <i class="fa fa-angle-right"></i></a>
 
 			<a href="javascript:;" style="<?php if($fetchData->status == 1 || $fetchData->status == 2){ echo ''; }else{ echo 'display:none;'; } ?>"  data-id="{{$fetchData->id}}" class="btn btn-success revertapp">Revert <i class="fa fa-angle-right"></i></a>
@@ -64,7 +62,6 @@ $workflow = \App\Models\Workflow::where('id', $fetchData->workflow)->first();
             <span id="discontinue_note" style="<?php if($fetchData->status == 2){ echo 'display:block;'; } else { echo 'display:none;'; } ?>">Discontinue Note - <span id="discontinue_note_text"><?php echo $fetchData->discontinue_note; ?></span></span>
 
             <span id="refund_note" style="<?php if($fetchData->status == 8){ echo 'display:block;'; } else { echo 'display:none;'; } ?>">Refund Note - <span id="refund_note_text"><?php echo $fetchData->refund_notes; ?></span></span>
-
 
 		</div>
 	</div>
@@ -179,8 +176,7 @@ $workflow = \App\Models\Workflow::where('id', $fetchData->workflow)->first();
 									$stagearray[] = $pre->id;
 								}
 							}
-					
-							
+
 							if(in_array($stages->id, $stagearray)){
 								$stage1 = 'app_green';
 							}
@@ -441,9 +437,7 @@ $workflow = \App\Models\Workflow::where('id', $fetchData->workflow)->first();
 							<?php
 							$invoiceschedules = \App\Models\InvoiceSchedule::where('application_id', $fetchData->id)->get();
 							foreach($invoiceschedules as $invoiceschedule){
-								$scheduleitem = \App\Models\ScheduleItem::where('schedule_id', $invoiceschedule->id)->get();
-								
-								
+
 							?>
 								<tr id="{{@$invoiceschedule->id}}">
 									<td>{{@$invoiceschedule->id}}</td> 
@@ -652,12 +646,9 @@ $workflow = \App\Models\Workflow::where('id', $fetchData->workflow)->first();
 			?>
 				<a href="javascript:;" data-id="{{$fetchData->id}}" class="openpaymentfeeLatest"><i class="fa fa-edit"></i></a>
 
-				
-				
 				<div class="clearfix"></div>
 			</div>
-          
-          
+
             <p class="clearfix appsaleforcast">
 				<span class="float-left">Total Fee Paid</span>
 				<span class="float-right text-muted fee_reported_by_college"><?php 
@@ -666,8 +657,6 @@ $workflow = \App\Models\Workflow::where('id', $fetchData->workflow)->first();
 				} else { echo "0.00";} ?></span>
 			</p>
 
-			
-          
 			<div class="form-group">
 				<label for="expect_win_date">Expected Win Date:</label>
 				<input type="text" name="expect_win_date" id="expect_win_date" value="{{ $fetchData->expect_win_date }}" class="form-control expectdatepicker" data-valid="" autocomplete="off" placeholder="Select Date" />
@@ -792,6 +781,3 @@ $workflow = \App\Models\Workflow::where('id', $fetchData->workflow)->first();
 		<div class="clearfix"></div> 
 	</div>
 </div>
-
-
-

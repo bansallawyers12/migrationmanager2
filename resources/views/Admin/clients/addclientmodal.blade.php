@@ -272,8 +272,6 @@
 
 						</div>
 
-
-
 						<div class="col-12 col-md-12 col-lg-12">
 							<div class="form-group row align-items-center">
 								<label for="client_name" class="col-sm-3 col-form-label">Client Reference No<span class="span_req">*</span></label>
@@ -282,7 +280,6 @@
                                 </div>
                             </div>
 						</div>
-
 
                         <input type="hidden" name="timezone" value="Australia/Melbourne">
 
@@ -420,7 +417,6 @@
                                                         <div class="timeslots" style="overflow:scroll !important;height:166px;"></div>
                                                     </div>
 
-
                                                     <div class="slotTimeOverwriteDivCls" style="display: none;">
 														<?php
                                                         if (!function_exists('generateTimeDropdown')) {
@@ -552,7 +548,6 @@
 							<div class="form-group">
 								<label for="contact_name">Contact Name <span class="span_req">*</span></label>
 								<select data-valid="" class="form-control contact_name js-data-example-ajaxcc" name="contact_name[]">
-
 
 								</select>
 								<span class="custom-error contact_name_error" role="alert">
@@ -1066,22 +1061,7 @@
 							</div>
 						</div>
 						<div class="col-12 col-md-6 col-lg-6">
-							<div class="form-group">
-								<label for="subject_area">Subject Area</label>
-								<select data-valid="" class="form-control subject_area select2" id="subjectlist" name="subject_area">
-									<option value="">Please Select Subject Area</option>
-									<?php
-									foreach(\App\Models\SubjectArea::all() as $sublist){
-										?>
-										<option value="{{$sublist->id}}">{{$sublist->name}}</option>
-										<?php
-									}
-									?>
-								</select>
-								<span class="custom-error subject_area_error" role="alert">
-									<strong></strong>
-								</span>
-							</div>
+							<!-- Subject Area field removed -->
 						</div>
 						<div class="col-12 col-md-6 col-lg-6">
 							<div class="form-group">
@@ -1121,7 +1101,6 @@
 		</div>
 	</div>
 </div>
-
 
 <!-- Note & Terms Modal -->
 <div class="modal fade custom_modal" id="opencommissionmodal" tabindex="-1" role="dialog" aria-labelledby="create_noteModalLabel" aria-hidden="true">
@@ -1174,12 +1153,10 @@
 									<option value="">Select</option>
 									@foreach(\App\Models\Application::where('client_id',$fetchedData->id)->get() as $aplist)
 									<?php
-									$productdetail = \App\Models\Product::where('id', $aplist->product_id)->first();
-				$partnerdetail = \App\Models\Partner::where('id', $aplist->partner_id)->first();
-				$PartnerBranch = \App\Models\PartnerBranch::where('id', $aplist->branch)->first();
+
 				$workflow = \App\Models\Workflow::where('id', $aplist->workflow)->first();
 									?>
-										<option value="{{$aplist->id}}">{{@$productdetail->name}} ({{@$partnerdetail->partner_name}})</option>
+										<option value="{{$aplist->id}}">Application #{{$aplist->id}} (Partner #{{$aplist->partner_id}})</option>
 									@endforeach
 								</select>
 
@@ -1852,7 +1829,6 @@
 	</div>
 </div>
 
-
 <div id="applicationemailmodal"  data-backdrop="static" data-keyboard="false" class="modal fade custom_modal" tabindex="-1" role="dialog" aria-labelledby="clientModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
@@ -1956,7 +1932,6 @@
 	</div>
 </div>
 
-
 <!-- Payment Schedule Modal -->
 <div class="modal fade custom_modal paymentschedule" id="create_apppaymentschedule" tabindex="-1" role="dialog" aria-labelledby="create_paymentscheduleModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-lg">
@@ -2056,7 +2031,6 @@
 	</div>
 </div>
 
-
 <!-- Payment Schedule Modal -->
 <div class="modal fade custom_modal" id="editpaymentschedule" tabindex="-1" role="dialog" aria-labelledby="paymentscheModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-lg">
@@ -2073,7 +2047,6 @@
 		</div>
 	</div>
 </div>
-
 
 <!-- Payment Schedule Modal -->
 <div class="modal fade add_payment_schedule custom_modal" id="addpaymentschedule" tabindex="-1" role="dialog" aria-labelledby="paymentscheModalLabel" aria-hidden="true">
@@ -2231,7 +2204,6 @@
 	</div>
 </div>
 
-
 <!-- Create Personal Docs Modal -->
 <div class="modal fade create_education_docs custom_modal" id="openeducationdocsmodal" tabindex="-1" role="dialog" aria-labelledby="taskModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-lg">
@@ -2250,7 +2222,6 @@
                     <input type="hidden" name="doctype" value="personal">
                     <input type="hidden" name="doccategory" id="doccategory" value="">
                     <input type="hidden" name="folder_name" id="folder_name" value="">
-
 
                     <div class="row">
                         <div class="col-6 col-md-6 col-lg-6">
@@ -2284,7 +2255,6 @@
 		</div>
 	</div>
 </div>
-
 
 <!-- Create Migration Docs Modal -->
 <div class="modal fade create_migration_docs custom_modal" id="openmigrationdocsmodal" tabindex="-1" role="dialog" aria-labelledby="taskModalLabel" aria-hidden="true">
@@ -2338,7 +2308,6 @@
 		</div>
 	</div>
 </div>
-
 
 <!-- Create Receipt  -->
 <div class="modal fade custom_modal" id="createreceiptmodal" tabindex="-1" role="dialog" aria-labelledby="receiptModalLabel" aria-hidden="true">
@@ -2932,8 +2901,6 @@
                     </div>
 				</form>
 
-
-
 			</div>
 		</div>
 	</div>
@@ -3081,7 +3048,6 @@
 	</div>
 </div>
 
-
 <!-- Create Office Receipt Modal -->
 <div class="modal fade custom_modal" id="createofficereceiptmodal" tabindex="-1" role="dialog" aria-labelledby="create_noteModalLabel" aria-hidden="true">
 	<div class="modal-dialog">
@@ -3208,12 +3174,10 @@
                     </div>
 				</form>
 
-
 			</div>
 		</div>
 	</div>
 </div>
-
 
 <!-- Create Journal Modal -->
 <div class="modal fade custom_modal" id="createjournalreceiptmodal" tabindex="-1" role="dialog" aria-labelledby="create_noteModalLabel" aria-hidden="true">
@@ -3340,8 +3304,6 @@
 	</div>
 </div>
 
-
-
 <!-- Convert Lead to Client Popup -->
 <div class="modal fade custom_modal" id="convertLeadToClientModal" tabindex="-1" role="dialog" aria-labelledby="create_noteModalLabel" aria-hidden="true">
 	<div class="modal-dialog">
@@ -3423,8 +3385,6 @@
 		</div>
 	</div>
 </div>
-
-
 
 <!-- Upload inbox email Modal -->
 <div class="modal fade custom_modal" id="uploadAndFetchMailModel" tabindex="-1" role="dialog" aria-labelledby="" aria-hidden="true">
@@ -3673,7 +3633,6 @@
                     <div class="clearfix"></div>
                 </div>
 
-
                 <div class="form-group row note_deadline">
                     <label for="inputSub3" class="col-sm-3 control-label c6 f13" style="margin-top:8px;">Note Deadline
                         <input class="note_deadline_checkbox" type="checkbox" id="note_deadline_checkbox" name="note_deadline_checkbox" value="">
@@ -3707,7 +3666,6 @@
         <p style="margin-top: 10px; margin-bottom: 0;">Processing...</p>
     </div>
 </div>
-
 
 <!-- Edit Ledger Entry Modal -->
 <div class="modal fade" id="editLedgerModal" tabindex="-1" role="dialog" aria-labelledby="editLedgerModalLabel" aria-hidden="true">
@@ -3764,7 +3722,6 @@
         </div>
     </div>
 </div>
-
 
 <!-- Form 956 -->
 <div class="modal fade custom_modal" id="form956CreateFormModel" tabindex="-1" role="dialog" aria-labelledby="form956ModalLabel" aria-hidden="true">
@@ -4011,7 +3968,6 @@
 	</div>
 </div>
 
-
 <!-- Cost assignment Form -->
 <div class="modal fade custom_modal" id="costAssignmentCreateFormModel" tabindex="-1" role="dialog" aria-labelledby="costAssignmentModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-lg">
@@ -4058,7 +4014,6 @@
 					</div>
 
                     <div class="accordion-body collapse show" id="primary_info" data-parent="#accordion">
-
 
 						<div style="margin-bottom: 15px;" class="accordion-header" role="button" data-toggle="collapse" data-target="#primary_info" aria-expanded="true">
 							<h4>Block Fee</h4>
@@ -4167,7 +4122,6 @@
                                 </div>
                             </div>
                         </div>
-
 
                         <div class="row">
                             <div class="col-12 col-md-6 col-lg-6">
@@ -4290,7 +4244,6 @@
                             </div>
                         </div>
 
-
                         <div class="row">
                             <div class="col-12 col-md-6 col-lg-6">
                                 <div class="form-group">
@@ -4304,7 +4257,6 @@
                                 </div>
                             </div>
                         </div>
-
 
                         <div class="row">
                             <div class="col-12 col-md-6 col-lg-6">
@@ -4320,7 +4272,6 @@
                                 </div>
                             </div>
                         </div>
-
 
 						<div style="margin-bottom: 15px;" class="accordion-header" role="button" data-toggle="collapse" data-target="#primary_info" aria-expanded="true">
                             <h4>Additional Fee</h4>
@@ -4418,7 +4369,6 @@
 	</div>
 </div>
 
-
 <!-- Create Personal Document category Modal -->
 <div class="modal fade addpersonaldoccatmodel custom_modal" id="addpersonaldoccatmodel" tabindex="-1" role="dialog" aria-labelledby="addPersDocCatModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-lg">
@@ -4499,7 +4449,6 @@
 		</div>
 	</div>
 </div>
-
 
 <!-- Lead Cost assignment Form -->
 <div class="modal fade custom_modal" id="costAssignmentCreateFormModelLead" tabindex="-1" role="dialog" aria-labelledby="costAssignmentModalLabelLead" aria-hidden="true">
@@ -4677,7 +4626,6 @@
                             </div>
                         </div>
 
-
                         <div class="row">
                             <div class="col-12 col-md-6 col-lg-6">
                                 <div class="form-group">
@@ -4799,7 +4747,6 @@
                             </div>
                         </div>
 
-
                         <div class="row">
                             <div class="col-12 col-md-6 col-lg-6">
                                 <div class="form-group">
@@ -4813,7 +4760,6 @@
                                 </div>
                             </div>
                         </div>
-
 
                         <div class="row">
                             <div class="col-12 col-md-6 col-lg-6">
@@ -4829,7 +4775,6 @@
                                 </div>
                             </div>
                         </div>
-
 
 						<div style="margin-bottom: 15px;" class="accordion-header" role="button" data-toggle="collapse" data-target="#primary_info" aria-expanded="true">
                             <h4>Additional Fee</h4>
@@ -4886,7 +4831,6 @@
 	</div>
 </div>
 
-
 <!-- Edit Date Time Modal -->
 <div class="modal fade custom_modal" id="edit_datetime_modal" tabindex="-1" role="dialog" aria-labelledby="editDatetimeModalLabel" aria-hidden="true">
 	<div class="modal-dialog">
@@ -4921,7 +4865,6 @@
 		</div>
 	</div>
 </div>
-
 
 <!-- NP message -->
 <div class="modal fade" id="notPickedCallModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">

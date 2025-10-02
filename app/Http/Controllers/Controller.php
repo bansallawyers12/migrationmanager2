@@ -553,7 +553,7 @@ class Controller extends BaseController
             <div class="attach-demo" title="Change file">
                 <?php  if ($file != '') {
 
-                    printf('<img class="w_150" src="'.asset('public/img/media_gallery/'.$file).'" class="image-responsive">');
+                    printf('<img class="w_150" src="'.asset('public/img/'.$file).'" class="image-responsive">');
                 }  ?>
             </div>
             <div class="upload-actions justify-content-between" v-show="value">

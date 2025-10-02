@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Redirect;
 
 use App\Models\WebsiteSetting;
 use App\Models\Slider;
-use App\Models\Contact;
 use App\Models\OurService;
 use App\Models\Testimonial;
 use App\Models\HomeContent;
@@ -91,58 +90,7 @@ class HomeController extends Controller
 		echo $cap['image'];
 	}
 
-	public function contact(Request $request){
-
-		$this->validate($request, [
-                'fullname' => 'required',
-                'email' => 'required',
-               // 'g-recaptcha-response' => 'required|recaptcha'
-            ]);
-
-			$set = \App\Models\Admin::where('id',1)->first();
-
-			$obj = new Contact;
-			$obj->name = $request->fullname;
-			$obj->contact_email = $request->email;
-			$obj->contact_phone = $request->phone;
-			$obj->subject = $request->subject;
-			$obj->message = $request->message;
-			$saved = $obj->save();
-			// dd($set->primary_email);
-			// $mailmessage = '<b>Hi Admin,</b><br> You have a New Query<br><b>Name:</b> '.$request->fullname.'<br><b>Email:</b> '.$request->email.'<br><b>Phone:</b> '.$request->phone.'<br><b>Subject:</b> '.$request->subject.'<br><b>Message:</b> '.$request->message;
-
-
-			// $message = '<html><body>';
-			// 	$message .= '<p>Hi Admin,</p>';
-			// 	$message .= '<p>You have a New Query<br><b> '.$request->fullname.' </b></p>';
-			// 	$message .= '<table><tr>
-			// 		<td><b>Email: </b>'.$request->email.'</td></tr>
-			// 		<tr><td><b>Name: </b>'.$request->fullname.'</td></tr>
-			// 		<tr><td><b>Description: </b>'.$description.'</td></tr>
-			// 		<tr><td><b>Phone: </b>'.$request->phone.'</td></tr>
-			// 		<tr><td><b>Apoimtment Date/Time: </b>'.$requestData['date'].'/'.$requestData['time'].'</td></tr>
-			// 	</table>';
-			// $message .= '</body></html>';
-			$subject = 'You have a New Query  from  '.$request->fullname;
-			// $this->send_compose_template('test@gmail.com', $subject, 'test@gmail.com', $mailmessage,'test mail');
-
-
-			$details = [
-				'title' => 'You have a New Query  from  '.$request->fullname,
-				'body' => 'This is for testing email using smtp',
-				'subject'=>$subject,
-				'fullname' => 'Admin',
-				'from' =>$request->fullname,
-				'email'=> $request->email,
-				'phone' => $request->phone,
-				'description' => $request->message
-			];
-
-			\Mail::to('test@gmail.com')->send(new \App\Mail\ContactUsMail($details));
-
-			return back()->with('success', 'Thanks for sharing your interest. our team will respond to you with in 24 hours.');
-
-	}
+	
 
 
      public function getdatetime(Request $request)

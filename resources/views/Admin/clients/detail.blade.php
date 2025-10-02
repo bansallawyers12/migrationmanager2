@@ -1687,20 +1687,100 @@ input:checked + .toggle-slider:before {
     display: flex;
     align-items: center;
 }
+
+/* Compact Client Header Styles */
+.compact-client-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+    padding: 10px 0;
+    border-bottom: 1px solid #e9ecef;
+    margin-bottom: 20px;
+}
+
+.client-lead-toggle {
+    display: flex;
+    gap: 5px;
+}
+
+.star-btn {
+    padding: 6px 12px !important;
+    border-radius: 5px !important;
+    margin: 0 !important;
+}
+
+.custom-switches {
+    display: inline-block;
+    margin: 0 !important;
+}
+
+.matter-selection {
+    flex: 1;
+    min-width: 200px;
+}
+
+.compact-select {
+    width: 200px !important;
+    height: 32px !important;
+    font-size: 0.9rem;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.action-buttons .btn {
+    padding: 6px 12px !important;
+    font-size: 0.85rem;
+    height: 32px;
+}
+
+.client-portal-section {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.portal-label {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #495057;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .compact-client-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .matter-selection {
+        width: 100%;
+    }
+    
+    .compact-select {
+        width: 100% !important;
+    }
+    
+    .action-buttons {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
 </style>
 <?php
 use App\Http\Controllers\Controller;
 ?>
 <div class="crm-container">
-    <main class="main-content" id="main-content">
-        <div class="server-error">
-            @include('../Elements/flash-message')
-        </div>
-        <div class="custom-error-msg">
-        </div>
-        <header class="client-header">
-            <div class="client-identity">
-                <h1 style="max-width:343px;">
+    <!-- Client Navigation Sidebar -->
+    <aside class="client-navigation-sidebar">
+        <div class="sidebar-header">
+            <div class="client-info">
+                <h3 class="client-id">
                     <?php
                     if($id1) { //if client unique reference id is present in url
                         $matter_info_arr = \App\Models\ClientMatter::select('client_unique_matter_no')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
@@ -1720,22 +1800,136 @@ use App\Http\Controllers\Controller;
                         <?php
                         }
                     } ?>
-                    <br/> {{$fetchedData->first_name}} {{$fetchedData->last_name}}
-                </h1>
-                <span class="">
-                    <div class="author-mail_sms">
-                        <a style="color: #0d6efd !important;" href="javascript:;" data-id="{{@$fetchedData->id}}" data-email="{{@$fetchedData->email}}" data-name="{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}" class="sendmsg" title="Send Message"><i class="fas fa-comment-alt"></i></a>
-                        <a style="color: #0d6efd !important;" href="javascript:;" data-id="{{@$fetchedData->id}}" data-email="{{@$fetchedData->email}}" data-name="{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}" class="clientemail" title="Compose Mail"><i class="fa fa-envelope"></i></a>
-                        <a style="color: #0d6efd !important;" href="{{URL::to('/admin/clients/edit/'.base64_encode(convert_uuencode(@$fetchedData->id)))}}" title="Edit"><i class="fa fa-edit"></i></a>
-                        @if($fetchedData->is_archived == 0)
-                            <a style="color: #0d6efd !important;"  class="arcivedval" href="javascript:;" onclick="arcivedAction({{$fetchedData->id}}, 'admins')" title="Archive"><i class="fas fa-archive"></i></a>
-                        @else
-                            <a style="color: #0d6efd !important;"  class="arcivedval" style="background-color:#007bff;" href="javascript:;" onclick="arcivedAction({{$fetchedData->id}}, 'admins')" title="UnArchive"><i style="color: #fff;" class="fas fa-archive"></i></a>
-                        @endif
-                    </div>
-                </span>
-
+                </h3>
+                <p class="client-matter">Australia_1</p>
+                <p class="client-name">{{$fetchedData->first_name}} {{$fetchedData->last_name}}</p>
             </div>
+            <div class="client-actions">
+                <a style="color: #0d6efd !important;" href="javascript:;" data-id="{{@$fetchedData->id}}" data-email="{{@$fetchedData->email}}" data-name="{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}" class="sendmsg" title="Send Message"><i class="fas fa-comment-alt"></i></a>
+                <a style="color: #0d6efd !important;" href="javascript:;" data-id="{{@$fetchedData->id}}" data-email="{{@$fetchedData->email}}" data-name="{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}" class="clientemail" title="Compose Mail"><i class="fa fa-envelope"></i></a>
+                <a style="color: #0d6efd !important;" href="{{URL::to('/admin/clients/edit/'.base64_encode(convert_uuencode(@$fetchedData->id)))}}" title="Edit"><i class="fa fa-edit"></i></a>
+                @if($fetchedData->is_archived == 0)
+                    <a style="color: #0d6efd !important;"  class="arcivedval" href="javascript:;" onclick="arcivedAction({{$fetchedData->id}}, 'admins')" title="Archive"><i class="fas fa-archive"></i></a>
+                @else
+                    <a style="color: #0d6efd !important;"  class="arcivedval" style="background-color:#007bff;" href="javascript:;" onclick="arcivedAction({{$fetchedData->id}}, 'admins')" title="UnArchive"><i style="color: #fff;" class="fas fa-archive"></i></a>
+                @endif
+            </div>
+            <h3 class="initial-consultation-heading">
+                <?php
+                // Get the current workflow stage for this client matter
+                $workflow_stage_arr = null;
+                
+                if ($id1) {
+                    // If client unique reference id is present in url
+                    $workflow_stage_arr = DB::table('client_matters')
+                        ->join('workflow_stages', 'client_matters.workflow_stage_id', '=', 'workflow_stages.id')
+                        ->select('workflow_stages.name')
+                        ->where('client_id', $fetchedData->id)
+                        ->where('client_unique_matter_no', $id1)
+                        ->first();
+                } else {
+                    // Get the most recent active matter
+                    $clientMatterInfo = DB::table('client_matters')
+                        ->select('client_unique_matter_no')
+                        ->where('client_id', $fetchedData->id)
+                        ->where('matter_status', 1)
+                        ->orderBy('id', 'desc')
+                        ->first();
+
+                    if ($clientMatterInfo) {
+                        $workflow_stage_arr = DB::table('client_matters')
+                            ->join('workflow_stages', 'client_matters.workflow_stage_id', '=', 'workflow_stages.id')
+                            ->select('workflow_stages.name')
+                            ->where('client_id', $fetchedData->id)
+                            ->where('client_unique_matter_no', $clientMatterInfo->client_unique_matter_no)
+                            ->first();
+                    }
+                }
+
+                // Display the workflow stage name or default to "Initial Consultation"
+                if ($workflow_stage_arr && $workflow_stage_arr->name) {
+                    echo $workflow_stage_arr->name;
+                } else {
+                    echo "Initial Consultation";
+                }
+                ?>
+            </h3>
+        </div>
+        <nav class="client-sidebar-nav">
+            <?php
+            $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
+            if( isset($id1) && $id1 != "" || $matter_cnt >0 )
+            {  //if client unique reference id is present in url
+            ?>
+                <button class="client-nav-button active" data-tab="personaldetails">
+                    <i class="fas fa-user"></i>
+                    <span>Personal Details</span>
+                </button>
+                <button class="client-nav-button" data-tab="noteterm">
+                    <i class="fas fa-sticky-note"></i>
+                    <span>Notes</span>
+                </button>
+                <button class="client-nav-button" data-tab="documentalls">
+                    <i class="fas fa-folder"></i>
+                    <span>Documents</span>
+                </button>
+                <button class="client-nav-button" data-tab="accounts">
+                    <i class="fas fa-calculator"></i>
+                    <span>Accounts</span>
+                </button>
+                <button class="client-nav-button" data-tab="conversations">
+                    <i class="fas fa-envelope"></i>
+                    <span>Emails</span>
+                </button>
+                <button class="client-nav-button" data-tab="formgenerations">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Form Generation</span>
+                </button>
+                <button class="client-nav-button" data-tab="appointments">
+                    <i class="fas fa-calendar"></i>
+                    <span>Appointments</span>
+                </button>
+                <button class="client-nav-button" data-tab="application">
+                    <i class="fas fa-globe"></i>
+                    <span>Client Portal</span>
+                </button>
+            <?php
+            }
+            else
+            {  //If no matter is exist
+            ?>
+                <button class="client-nav-button active" data-tab="personaldetails">
+                    <i class="fas fa-user"></i>
+                    <span>Personal Details</span>
+                </button>
+                <button class="client-nav-button" data-tab="noteterm">
+                    <i class="fas fa-sticky-note"></i>
+                    <span>Notes</span>
+                </button>
+                <button class="client-nav-button" data-tab="documentalls">
+                    <i class="fas fa-folder"></i>
+                    <span>Documents</span>
+                </button>
+                <button class="client-nav-button" data-tab="formgenerationsL">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Form Generation</span>
+                </button>
+                <button class="client-nav-button" data-tab="appointments">
+                    <i class="fas fa-calendar"></i>
+                    <span>Appointments</span>
+                </button>
+            <?php
+            }
+            ?>
+        </nav>
+    </aside>
+
+    <main class="main-content" id="main-content">
+        <div class="server-error">
+            @include('../Elements/flash-message')
+        </div>
+        <div class="custom-error-msg">
+        </div>
 
             <style>
                 .badge-outline {
@@ -1755,26 +1949,28 @@ use App\Http\Controllers\Controller;
                     color: #9b9f9b !important;
                 }
             </style>
-            <div class="convert-lead-to-cient">
-                <h4 class="author-box-name clientNameCls">
+            <!-- Compact Client Header -->
+            <div class="compact-client-header">
+                <!-- Client/Lead Toggle -->
+                <div class="client-lead-toggle">
                     <a class="badge-outline col-greenf convertLeadToClient <?php if($fetchedData->type == 'client'){ echo 'active'; }?>" href="javascript:;" role="button">Client</a>
                     <a href="javascript:;" class="badge-outline col-greenf <?php if($fetchedData->type == 'lead'){ echo 'active'; } ?>">Lead</a>
-                    <div class="card-header-action" style="margin-top: 5px;">
-                        <!--<a href="javascript:;" id="open-rating-modal" class="btn btn-primary" style="padding: 0px 17px;border-radius:5px !important;margin-left: 5px;"><i class="fas fa-star"></i></a>-->
-                        <a href="javascript:;" data-admin-id="{{ $fetchedData->id }}" title="Mark Star Client" id="mark-star-client-modal" class="btn btn-primary" style="padding: 0px 17px;border-radius:5px !important;margin-left: 5px;"><i class="fas fa-star"></i></a>
+                </div>
 
-                        <div class="custom-switches" style="display: inline-block;float: left;margin-left: -25px;">
-                            <label class="custom-switch">
-                                <input type="checkbox" name="custom-switch-checkbox" class="custom-switch-input" checked>
-                                <span class="custom-switch-indicator"></span>
-                            </label>
-                        </div>
-                    </div>
-                </h4>
-            </div>
+                <!-- Star Button -->
+                <a href="javascript:;" data-admin-id="{{ $fetchedData->id }}" title="Mark Star Client" id="mark-star-client-modal" class="btn btn-primary btn-sm star-btn"><i class="fas fa-star"></i></a>
 
-            <div class="client-status">
-                <span class="status-badge" style="background-color:#FFF !important;"><?php
+                <!-- Custom Switch -->
+                <div class="custom-switches">
+                    <label class="custom-switch">
+                        <input type="checkbox" name="custom-switch-checkbox" class="custom-switch-input" checked>
+                        <span class="custom-switch-indicator"></span>
+                    </label>
+                </div>
+
+                <!-- Matter Selection -->
+                <div class="matter-selection">
+                    <span class="status-badge" style="background-color:#FFF !important;"><?php
                     $assign_info_arr = \App\Models\Admin::select('type')->where('id',@$fetchedData->id)->first();
                     ?>
                     @if($assign_info_arr->type == 'client')
@@ -1831,7 +2027,7 @@ use App\Http\Controllers\Controller;
                                     return 0; // Maintain original order for other matters
                                 });
                                 ?>
-                            <select name="matter_id" id="sel_matter_id_client_detail" class="form-control select2" data-valid="required" style="width: 200px !important;">
+                            <select name="matter_id" id="sel_matter_id_client_detail" class="form-control select2 compact-select" data-valid="required">
                                 <option value="">Select Matters</option>
                                 @foreach($matter_list_arr as $matterlist)
                                     <option value="{{$matterlist->id}}" {{ $matterlist->id == $latestClientMatterId ? 'selected' : '' }} data-clientuniquematterno="{{@$matterlist->client_unique_matter_no}}">{{@$matterlist->title}}({{@$matterlist->client_unique_matter_no}})</option>
@@ -1861,7 +2057,7 @@ use App\Http\Controllers\Controller;
                                 $latestClientMatter = \App\Models\ClientMatter::where('client_id',$fetchedData->id)->where('matter_status',1)->latest()->first();
                                 $latestClientMatterId = $latestClientMatter ? $latestClientMatter->id : null;
                                 ?>
-                            <select name="matter_id" id="sel_matter_id_client_detail" class="form-control select2" data-valid="required" style="width: 200px;">
+                            <select name="matter_id" id="sel_matter_id_client_detail" class="form-control select2 compact-select" data-valid="required">
                                 <option value="">Select Matters</option>
                                 @foreach($matter_list_arr as $matterlist)
                                     <option value="{{$matterlist->id}}" {{ $matterlist->id == $latestClientMatterId ? 'selected' : '' }} data-clientuniquematterno="{{@$matterlist->client_unique_matter_no}}">{{@$matterlist->title}}({{@$matterlist->client_unique_matter_no}})</option>
@@ -1873,8 +2069,13 @@ use App\Http\Controllers\Controller;
                         ?>
                     @endif
                 </span>
-                <a href="javascript:;" style="padding: 8px 15px;background-color:#0d6efd !important;" datatype="not_picked_call" class="not_picked_call btn btn-primary btn-sm">NP</a>
-                <button class="btn btn-primary btn-sm create_note_d" datatype="note" style="background-color:#0d6efd !important;padding: 8px 15px;"><i class="fas fa-plus"></i> Add Notes</button>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <a href="javascript:;" datatype="not_picked_call" class="not_picked_call btn btn-primary btn-sm">NP</a>
+                    <button class="btn btn-primary btn-sm create_note_d" datatype="note"><i class="fas fa-plus"></i> Add Notes</button>
+                </div>
                 
                 <!-- Client Portal Toggle -->
                 <?php
@@ -1884,8 +2085,8 @@ use App\Http\Controllers\Controller;
                     ->exists();
                 ?>
                 @if($client_matters_exist)
-                <div style="display: inline-block;">
-                    <span style="font-weight: 600; font-size: 14px;">Client Portal:</span>
+                <div class="client-portal-section">
+                    <span class="portal-label">Client Portal:</span>
                     <label class="toggle-switch">
                         <input type="checkbox" id="client-portal-toggle" 
                                data-client-id="{{ $fetchedData->id}}" 
@@ -1897,81 +2098,10 @@ use App\Http\Controllers\Controller;
              </div>
         </header>
 
-        <h5 style="text-align: right;">
-            <?php
-            // Initialize $workflow_stage_arr to null to avoid undefined variable issues
-            $workflow_stage_arr = null;
-
-            // Check if $id1 is set and truthy
-            if ($id1) {
-                $workflow_stage_arr = DB::table('client_matters')
-                    ->join('workflow_stages', 'client_matters.workflow_stage_id', '=', 'workflow_stages.id')
-                    ->select('workflow_stages.name')
-                    ->where('client_id', $fetchedData->id)
-                    ->where('client_unique_matter_no', $id1)
-                    ->first();
-            } else {
-                $clientMatterInfo = DB::table('client_matters')
-                    ->select('client_unique_matter_no')
-                    ->where('client_id', $fetchedData->id)
-                    ->where('matter_status', 1)
-                    ->orderBy('id', 'desc')
-                    ->first();
-
-                if ($clientMatterInfo) {
-                    $workflow_stage_arr = DB::table('client_matters')
-                        ->join('workflow_stages', 'client_matters.workflow_stage_id', '=', 'workflow_stages.id')
-                        ->select('workflow_stages.name')
-                        ->where('client_id', $fetchedData->id)
-                        ->where('client_unique_matter_no', $clientMatterInfo->client_unique_matter_no)
-                        ->first();
-                }
-            }
-
-            // Check if $workflow_stage_arr is set and not null before accessing its property
-            if ($workflow_stage_arr) {
-                echo $workflow_stage_arr->name;
-            } else {
-                // Handle the case where $workflow_stage_arr is not set
-                echo "";
-            }
-            ?>
-        </h5>
-        <nav class="content-tabs">
-            <?php
-            $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
-            if( isset($id1) && $id1 != "" || $matter_cnt >0 )
-            {  //if client unique reference id is present in url
-            ?>
-                <button class="tab-button active" data-tab="personaldetails">Personal Details</button>
-                <button class="tab-button" data-tab="noteterm">Notes</button>
-                <button class="tab-button" data-tab="documentalls">Documents</button>
-                <button class="tab-button" data-tab="accounts">Accounts</button>
-                <button class="tab-button" data-tab="conversations">Emails</button>
-                <!--<button class="tab-button" data-tab="emailhandling">Email Handling</button>
-                <button class="tab-button" data-tab="artificialintelligences">Matter AI</button>-->
-                <button class="tab-button" data-tab="formgenerations">Form Generation</button>
-                 <button class="tab-button" data-tab="appointments">Appointments</button>
-                 <button class="tab-button" data-tab="application">Client Portal</button>
-            <?php
-            }
-            else
-            {  //If no matter is exist
-            ?>
-                <button class="tab-button active" data-tab="personaldetails">Personal Details</button>
-                <button class="tab-button" data-tab="noteterm">Notes</button>
-                <button class="tab-button" data-tab="documentalls">Documents</button>
-                <!--<button class="tab-button" data-tab="artificialintelligences">Matter AI</button>-->
-                <button class="tab-button" data-tab="formgenerationsL">Form Generation</button>
-                <button class="tab-button" data-tab="appointments">Appointments</button>
-
-            <?php
-            }
-            ?>
-        </nav>
-
-        <!-- Tab Contents -->
-        <div class="tab-content" id="tab-content">
+        <!-- Main Content Container with Vertical Tabs -->
+        <div class="main-content-with-tabs">
+            <!-- Tab Contents -->
+            <div class="tab-content" id="tab-content">
             <!-- Personal Details Tab (Default Active) -->
             <div class="tab-pane active" id="personaldetails-tab">
                 <div class="content-grid">
@@ -4866,6 +4996,7 @@ use App\Http\Controllers\Controller;
                 
             </div>
 
+            </div>
         </div>
     </main>
 
@@ -5529,38 +5660,6 @@ use App\Http\Controllers\Controller;
 	</div>
 </div>
 
-<div class="modal fade custom_modal" id="new_fee_option" tabindex="-1" role="dialog" aria-labelledby="feeoptionModalLabel" aria-hidden="true">
-	<div class="modal-dialog modal-xl">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title" id="feeoptionModalLabel">Fee Option</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-					<span aria-hidden="true">&times;</span>
-				</button>
-			</div>
-			<div class="modal-body showproductfee">
-
-			</div>
-		</div>
-	</div>
-</div>
-
-
-<div class="modal fade custom_modal" id="new_fee_option_serv" tabindex="-1" role="dialog" aria-labelledby="feeoptionModalLabel" aria-hidden="true">
-	<div class="modal-dialog modal-xl">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title" id="feeoptionModalLabel">Fee Option</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-					<span aria-hidden="true">&times;</span>
-				</button>
-			</div>
-			<div class="modal-body showproductfeeserv">
-
-			</div>
-		</div>
-	</div>
-</div>
 
 <div class="modal fade custom_modal" id="application_opensaleforcast" tabindex="-1" role="dialog" aria-labelledby="applicationModalLabel" aria-hidden="true">
 	<div class="modal-dialog">
@@ -5981,7 +6080,7 @@ use App\Http\Controllers\Controller;
 
             if (mainContentHeight <= activityFeedHeight) { 
                 // Case 1: main-content smaller → activity-feed should use viewport height
-                $('.activity-feed').css('max-height', `calc(100vh)`);
+                $('.activity-feed').css('max-height', `calc(100vh - 120px)`);
             } else { 
                 // Case 2: main-content bigger → activity-feed should match main-content height
                 $('.activity-feed').css('max-height', mainContentHeight + 'px');
@@ -6228,7 +6327,7 @@ use App\Http\Controllers\Controller;
         }
 
         // When Matter AI tab is clicked
-        $(document).delegate('.tab-button[data-tab="artificialintelligences"]', 'click', function() { //alert('click');
+        $(document).delegate('.tab-button[data-tab="artificialintelligences"], .vertical-tab-button[data-tab="artificialintelligences"], .client-nav-button[data-tab="artificialintelligences"]', 'click', function() { //alert('click');
             // Show loading states
             $('.loading-data').show();
             $('.ai-ready-message').hide();
@@ -6917,10 +7016,10 @@ $(document).ready(function() {
     });
 
     $('.grid_data').hide();
-    // Handle main tab switching
-    $('.tab-button').click(function() { 
+    // Handle main tab switching (both horizontal and vertical tabs)
+    $('.tab-button, .vertical-tab-button, .client-nav-button').click(function() { 
         // Remove active class from all buttons and panes
-        $('.tab-button').removeClass('active');
+        $('.tab-button, .vertical-tab-button, .client-nav-button').removeClass('active');
         $('.tab-pane').removeClass('active');
 
         // Add active class to clicked button
@@ -6985,7 +7084,7 @@ $(document).ready(function() {
     const activeTab = localStorage.getItem('activeTab');
     if (activeTab) {
         // Find the button corresponding to the stored tabId and trigger its click event
-        const $targetButton = $(`.tab-button[data-tab="${activeTab}"]`);
+        const $targetButton = $(`.tab-button[data-tab="${activeTab}"], .vertical-tab-button[data-tab="${activeTab}"]`);
         if ($targetButton.length) {
             $targetButton.click(); // Trigger the click event to reuse the existing logic
         }
@@ -13518,39 +13617,6 @@ Bansal Immigration`;
             $('#application_opensaleforcast').modal('show');
         });
 
-        $(document).delegate('.openpaymentfee', 'click', function(){
-            var appliid = $(this).attr('data-id');
-            $('.popuploader').show();
-            $('#new_fee_option').modal('show');
-            $.ajax({
-                url: '{{URL::to('/admin/showproductfee')}}',
-                type:'GET',
-                data:{id:appliid},
-                success:function(response){
-                    $('.popuploader').hide();
-                    $('.showproductfee').html(response);
-                }
-            });
-        });
-
-        $(document).delegate('.openpaymentfeeserv', 'click', function(){
-            var appliid = $(this).attr('data-id');
-            $('.popuploader').show();
-            $('#interest_service_view').modal('hide');
-            $('#new_fee_option_serv').modal('show');
-            $.ajax({
-                url: '{{URL::to('/admin/showproductfeeserv')}}',
-                type:'GET',
-                data:{id:appliid},
-                success:function(response){
-                    $('.popuploader').hide();
-                    $('.showproductfeeserv').html(response);
-                }
-            });
-            $(document).on("hidden.bs.modal", "#interest_service_view", function (e) {
-                $('body').addClass('modal-open');
-            });
-        });
 
         $(document).delegate('.opensaleforcastservice', 'click', function(){
             var fapp_id = $(this).attr('data-id');

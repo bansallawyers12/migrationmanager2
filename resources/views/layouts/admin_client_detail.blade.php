@@ -54,9 +54,8 @@
         }
         .crm-container {
             display: flex;
-            flex-wrap: wrap;
-            margin-top: 70px;
-            min-height: calc(100vh - 120px);
+            margin-top: 0;
+            min-height: calc(100vh - 70px);
             padding: 15px;
             gap: 20px;
         }
@@ -70,6 +69,137 @@
             overflow-y: auto !important;
             overflow-x: hidden !important;
         }
+        /* Client Navigation Sidebar */
+        .client-navigation-sidebar {
+            flex: 0 0 280px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            max-height: calc(100vh - 100px);
+            overflow: visible;
+            position: sticky;
+            top: 20px;
+        }
+        
+        
+        .sidebar-header {
+            padding: 20px 16px 16px;
+            border-bottom: 1px solid #e9ecef;
+            background: #ffffff;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .client-info {
+            margin-bottom: 15px;
+        }
+        
+        .client-id {
+            margin: 0 0 8px 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #343a40;
+            line-height: 1.2;
+        }
+        
+        .client-matter {
+            margin: 0 0 4px 0;
+            font-size: 0.9rem;
+            color: #6c757d;
+            font-weight: 500;
+        }
+        
+        .client-name {
+            margin: 0 0 0 0;
+            font-size: 1rem;
+            color: #212529;
+            font-weight: 500;
+        }
+        
+        .client-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: flex-start;
+        }
+        
+        .client-actions a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            background: #f8f9fa;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+        
+        .client-actions a:hover {
+            background: #e9ecef;
+            transform: translateY(-1px);
+        }
+        
+        .client-actions a i {
+            font-size: 14px;
+        }
+        
+        .initial-consultation-heading {
+            margin: 15px 0 0 0;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #495057;
+            text-align: center;
+            padding: 8px 0;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .client-sidebar-nav {
+            padding: 8px;
+        }
+        
+        .client-nav-button {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            padding: 12px 16px;
+            margin-bottom: 4px;
+            border: none;
+            background: transparent;
+            color: #6c757d;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-radius: 6px;
+            text-align: left;
+            position: relative;
+        }
+        
+        .client-nav-button:hover {
+            background: rgba(0, 123, 255, 0.1);
+            color: #007bff;
+            transform: translateX(2px);
+        }
+        
+        .client-nav-button.active {
+            background: white;
+            color: #007bff;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-left: 3px solid #007bff;
+        }
+        
+        .client-nav-button i {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .client-nav-button span {
+            font-size: 0.9em;
+            line-height: 1.2;
+        }
+
         .main-content {
             flex: 1;
             background-color: #ffffff;
@@ -88,8 +218,8 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            /*max-height: calc(100vh);*/
-            overflow-y: auto;
+            max-height: calc(100vh - 120px);
+            overflow: visible;
         }
         .client-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid #dee2e6; }
         .client-header h1 { font-size: 1.8em; font-weight: 600; color: #212529; margin: 0; }
@@ -107,6 +237,94 @@
         .tab-button { background-color: transparent; border: none; border-bottom: 3px solid transparent; padding: 10px 18px; cursor: pointer; font-size: 0.95em; color: #6c757d; transition: color 0.2s ease, border-color 0.2s ease; margin-bottom: -1px; }
         .tab-button:hover { color: #0d6efd; }
         .tab-button.active { color: #0d6efd; border-bottom-color: #0d6efd; font-weight: 600; }
+        
+        /* Vertical Tabs Styles */
+        .main-content-with-tabs {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+        
+        .vertical-tabs {
+            display: flex;
+            flex-direction: column;
+            width: 280px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 20px;
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+        
+        .vertical-tabs::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .vertical-tabs::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 2px;
+        }
+        
+        .vertical-tabs::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 2px;
+        }
+        
+        .vertical-tabs::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+        
+        .vertical-tab-button {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            padding: 12px 16px;
+            margin-bottom: 4px;
+            border: none;
+            background: transparent;
+            color: #6c757d;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-radius: 6px;
+            text-align: left;
+            position: relative;
+        }
+        
+        .vertical-tab-button:hover {
+            background: rgba(0, 123, 255, 0.1);
+            color: #007bff;
+            transform: translateX(2px);
+        }
+        
+        .vertical-tab-button.active {
+            background: white;
+            color: #007bff;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-left: 3px solid #007bff;
+        }
+        
+        .vertical-tab-button i {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .vertical-tab-button span {
+            font-size: 0.9em;
+            line-height: 1.2;
+        }
+        
+        .tab-content {
+            flex: 1;
+            min-width: 0;
+        }
         .content-grid { 
             display: grid; 
             grid-template-columns: 1fr; 
@@ -333,9 +551,88 @@
         @media (max-width: 1200px) {
             .activity-feed { flex: 0 0 280px; }
             .main-content { margin-left: 70px; }
+            .client-navigation-sidebar { flex: 0 0 250px; }
+        }
+        
+        @media (max-width: 768px) {
+            .client-navigation-sidebar {
+                flex: 0 0 auto;
+                width: 100%;
+                max-height: none;
+                position: relative;
+                top: auto;
+                margin-bottom: 15px;
+                order: 2;
+            }
+            
+            .main-content {
+                order: 1;
+            }
+            
+            .sidebar-header {
+                padding: 15px 12px 12px;
+            }
+            
+            .client-info {
+                margin-bottom: 12px;
+            }
+            
+            .client-id {
+                font-size: 1rem;
+            }
+            
+            .client-matter {
+                font-size: 0.85rem;
+            }
+            
+            .client-name {
+                font-size: 0.9rem;
+            }
+            
+            .client-actions {
+                gap: 8px;
+            }
+            
+            .client-actions a {
+                width: 28px;
+                height: 28px;
+            }
+            
+            .client-actions a i {
+                font-size: 12px;
+            }
+            
+            .initial-consultation-heading {
+                font-size: 0.9rem;
+                margin: 12px 0 0 0;
+                padding: 6px 0;
+            }
+            
+            .client-sidebar-nav {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                padding: 12px;
+            }
+            
+            .client-nav-button {
+                flex: 1;
+                min-width: calc(50% - 4px);
+                margin-bottom: 0;
+                padding: 10px 12px;
+                font-size: 0.85rem;
+            }
+            
+            .client-nav-button i {
+                font-size: 14px;
+                width: 16px;
+            }
         }
         @media (max-width: 992px) {
-            .crm-container { flex-direction: column; margin-top: 60px; }
+            .crm-container { 
+                flex-direction: column; 
+                margin-top: 0; 
+            }
             .main-sidebar { 
                 position: fixed; 
                 top: 70px; 
@@ -356,6 +653,25 @@
             .content-tabs { flex-wrap: wrap; }
             .content-grid { grid-template-columns: 1fr !important; }
             .main-footer { position: relative; }
+            
+            /* Client navigation sidebar responsive */
+            .client-navigation-sidebar {
+                flex: 0 0 auto;
+                width: 100%;
+                max-height: none;
+                position: relative;
+                top: auto;
+                margin-bottom: 20px;
+                order: 1;
+            }
+            
+            .main-content {
+                order: 2;
+            }
+            
+            .activity-feed {
+                order: 3;
+            }
             
             .teams-notification-container {
                 bottom: 10px;

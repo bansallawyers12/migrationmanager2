@@ -361,12 +361,7 @@
 		
 		<script type="text/javascript">
 			var site_url = "<?php echo URL::to('/'); ?>"; 
-			var media_url = "<?php echo route('admin.media.store'); ?>";
-			var media_index_url = "<?php echo route('admin.media.index'); ?>";
-			var media_remove_url = "<?php echo route('admin.media.delete'); ?>";
-			var media_image_url = "<?php echo URL::to('/public/img/media_gallery'); ?>";
-			var followuplist = "<?php echo URL::to('/'); ?>";
-			var followupstore = "<?php echo URL::to('/admin/followup/store'); ?>";
+			// Followup functionality removed
 		</script>
 		<!--<script async src="https://app.appzi.io/bootstrap/bundle.js?token=unZ6A"></script><div id="zbwid-3c79022e"></div>-->
 		

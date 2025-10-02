@@ -226,7 +226,7 @@
                                     <th>Info</th>
                                     <th>Contact Date</th>
                                     <th>Level & Status</th>
-                                    <th>Followup</th>
+                                    <th>Status</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -235,16 +235,7 @@
                                 <?php $i = 0; ?>
                                 @foreach (@$lists as $list)
                                     <?php
-                                    $followpe = \App\Models\Followup::where('lead_id', '=', $list->id)
-                                    ->where('followup_type', '!=', 'assigned_to')
-                                    ->orderby('id', 'DESC')
-                                    ->with(['followutype'])
-                                    ->first();
-                                    $followp = \App\Models\Followup::where('lead_id', '=', $list->id)
-                                    ->where('followup_type', '=', 'follow_up')
-                                    ->orderby('id', 'DESC')
-                                    ->with(['followutype'])
-                                    ->first();
+                                    // Followup functionality removed
                                     ?>
                                     <tr id="id_{{@$list->id}}">
                                         <td style="white-space: initial;" class="text-center">
@@ -262,16 +253,8 @@
                                         </td>
                                         <td><i class="fa fa-mobile"></i> {{@$list->phone}} <br/> <i class="fa fa-envelope"></i> {{@$list->email}}</td>
                                         <td>{{@$list->service}} <br/> {{date('d/m/Y h:i:s a', strtotime($list->created_at))}}</td>
-                                        <td><div class="lead_stars"><i class="fa fa-star"></i><span>{{@$list->lead_quality}}</span> {{@$followpe->followutype->name}}</div></td>
-                                        @if($followp)
-                                            @if(@$followp->followutype->type == 'follow_up')
-                                                <td>{{$followp->followutype->name}}<br> {{date('d/m/Y h:i:s a', strtotime($followp->followup_date))}}</td>
-                                            @else
-                                                <td>{{@$followp->followutype->name}}</td>
-                                            @endif
-                                        @else
-                                            <td>Not Contacted</td>
-                                        @endif
+                                        <td><div class="lead_stars"><i class="fa fa-star"></i><span>{{@$list->lead_quality}}</span></div></td>
+                                        <td>{{@$list->status}}</td>
                                         <td>
                                             <div class="dropdown action_toggle">
                                                 <a class="dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i data-feather="more-vertical"></i></a>

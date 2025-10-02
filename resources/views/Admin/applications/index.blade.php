@@ -43,7 +43,7 @@
 										<div class="col-md-4">
 											<div class="form-group">
 											    <?php
-											    $par = \App\Models\Partner::where('id', Request::get('partner'))->first();
+											    // Partner functionality removed
 											    ?>
 												<label for="partner" class="col-form-label">Partner</label>
 												{{ Form::text('partner', @$par->partner_name, array('class' => 'form-control agent_company_name', 'data-valid'=>'', 'autocomplete'=>'off','placeholder'=>'Partner', 'id' => 'partner', 'onkeyup' => "suggest(this.value)" )) }}
@@ -63,7 +63,6 @@
 												</select>
 											</div>
 										</div>
-
 
 									</div>
 									<div class="row">
@@ -102,10 +101,9 @@
 									@if(@$totalData !== 0)
 									@foreach (@$lists as $list)
 									<?php
-									$productdetail = \App\Models\Product::where('id', $list->product_id)->first();
-									$partnerdetail = \App\Models\Partner::where('id', $list->partner_id)->first();
+
 									$clientdetail = \App\Models\Admin::where('id', $list->client_id)->first();
-									$PartnerBranch = \App\Models\PartnerBranch::where('id', $list->branch)->first();
+									
 									$workflow = \App\Models\Workflow::where('id', $list->workflow)->first();
 									?>
 									<tbody class="tdata">
@@ -116,8 +114,8 @@
 											{{--<td>@$clientdetail->phone }}</td> --}}
 											<td style="white-space: initial;">{{@$list->application_assignee->first_name}}</td>
 
-											<td style="white-space: initial;">{{@$productdetail->name}}</td>
-											<td style="white-space: initial;">{{@$partnerdetail->partner_name}}</td>
+											<td style="white-space: initial;">Application #{{$aplist->id}}</td>
+											<td style="white-space: initial;">Partner #{{$aplist->partner_id}}</td>
 											<td style="white-space: initial;">{{$PartnerBranch->name ?? 'N/P'}}</td>
 
 											<td style="white-space: initial;"><?php echo @$workflow->name; ?></td>
@@ -141,7 +139,6 @@
 												<div class="dropdown d-inline">
 													<button class="btn btn-primary dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
 													<div class="dropdown-menu">
-
 
 													</div>
 												</div>
@@ -273,7 +270,6 @@ jQuery(document).ready(function($){
 $('.filter_btn').on('click', function(){
 		$('.filter_panel').slideToggle();
 	});
-
 
 });
 $(document).delegate('.importmodal', 'click', function(){

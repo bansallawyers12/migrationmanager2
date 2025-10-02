@@ -35,13 +35,5 @@ class Lead extends Authenticatable
     {
         return $this->belongsTo('App\\Models\\\Models\\Admin','assign_to','id');
     }
-	public function followupload()
-    {
-        return $this->belongsTo('App\\Models\\Followup','id','lead_id');
-    }
-    public function likes()
-    {
-        return $this->hasMany('App\\Models\\Followup','id');
-    } 
    
 }

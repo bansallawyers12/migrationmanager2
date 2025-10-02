@@ -99,16 +99,17 @@ class DashboardService
      */
     private function getCasesRequiringAttention($user)
     {
-        $query = ClientMatter::join('admins as clients', 'client_matters.client_id', '=', 'clients.id')
-            ->where('client_matters.matter_status', 1)
-            ->where('client_matters.updated_at', '>=', Carbon::now()->subDays(100))
-            ->select('client_matters.*', 'clients.first_name', 'clients.last_name', 'clients.client_id', 'clients.is_star_client');
+        $query = ClientMatter::with([
+                'client:id,first_name,last_name,client_id',
+                'matter:id,title'
+            ])
+            ->where('matter_status', 1)
+            ->where('updated_at', '>=', Carbon::now()->subDays(100));
 
         // Apply role-based filtering
         $this->applyRoleBasedFiltering($query, $user);
 
-        return $query->orderByDesc('clients.is_star_client')
-            ->orderByDesc('client_matters.updated_at')
+        return $query->orderByDesc('updated_at')
             ->get();
     }
 

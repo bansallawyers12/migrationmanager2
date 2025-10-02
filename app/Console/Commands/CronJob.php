@@ -10,8 +10,6 @@ use App\Models\InvoicePayment;
 use App\Models\InvoiceFollowup;
 use App\Models\EmailTemplate;
 use App\Models\ShareInvoice;
-use App\Models\TaxRate;
-use App\Models\Currency;
  use PDF;
  use DateTime;
  use App\Mail\CommonMail;
@@ -66,8 +64,7 @@ class CronJob extends Command
 				if($diff == '2'){
 					$amount_rec = InvoicePayment::where('invoice_id',$invoice->id)->get()->sum("amount_rec");
 				$baldue = $invoice->amount - $amount_rec;
-				$currencydata = Currency::where('id',$invoice->currency_id)->first();
-				$currency_sign = $currencydata->currency_symbol;
+				$currency_sign = '$'; // Default currency symbol
 				 $replace = array('{customer_name}', '{invoice_no}', '{invoice_date}', '{due_date}','{amount}','{company_name}');					
 					$replace_with = array(@$invoice->customer->first_name.' '.@$invoice->customer->last_name, @$invoice->invoice,@$invoice->invoice_date, @$invoice->due_date, $currency_sign.$baldue, @$invoice->company->company_name);
 				
@@ -107,8 +104,7 @@ class CronJob extends Command
 				}else if(strtotime($today) == strtotime($invoice->due_date)){
 					$amount_rec = InvoicePayment::where('invoice_id',$invoice->id)->get()->sum("amount_rec");
 				$baldue = $invoice->amount - $amount_rec;
-				$currencydata = Currency::where('id',$invoice->currency_id)->first();
-				$currency_sign = $currencydata->currency_symbol;
+				$currency_sign = '$'; // Default currency symbol
 				 $replace = array('{customer_name}', '{invoice_no}', '{invoice_date}', '{due_date}','{amount}','{company_name}');					
 					$replace_with = array(@$invoice->customer->first_name.' '.@$invoice->customer->last_name, @$invoice->invoice,@$invoice->invoice_date, @$invoice->due_date, $currency_sign.$baldue, @$invoice->company->company_name);
 				

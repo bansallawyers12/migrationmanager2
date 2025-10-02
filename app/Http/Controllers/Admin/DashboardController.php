@@ -23,7 +23,7 @@ class DashboardController extends Controller
     {
         $dashboardData = $this->dashboardService->getDashboardData($request);
         
-        return view('Admin.dashboard', $dashboardData);
+        return view('Admin.dashboard-optimized', $dashboardData);
     }
 
     /**

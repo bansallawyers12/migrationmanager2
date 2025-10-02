@@ -77,12 +77,11 @@ class ApplicationsController extends Controller
 		//return view('Admin.applications.index');
 	}
 
-	public function prospects(Request $request)
-	{
-
-		//return view('Admin.prospects.index');
-
-	}
+	// REMOVED - prospects method
+	// public function prospects(Request $request)
+	// {
+	//     //return view('Admin.prospects.index');
+	// }
 
 	public function create(Request $request)
 	{
@@ -91,7 +90,6 @@ class ApplicationsController extends Controller
 
 		//return view('Admin.clients.create');
 	}
-
 
 	public function detail(){
 		return view('Admin.applications.detail');
@@ -239,7 +237,6 @@ class ApplicationsController extends Controller
 			$saved = $fetchData->save();
 			if($saved){
 
-
 				$obj = new \App\Models\ApplicationActivitiesLog;
 				$obj->stage = $workflowstage->stage;
 				$obj->type = 'stage';
@@ -370,7 +367,6 @@ class ApplicationsController extends Controller
 
 	public function getapplicationnotes(Request $request){
 		$noteid =  $request->id;
-
 
 		$lists = \App\Models\ApplicationActivitiesLog::where('type','note')->where('app_id',$noteid)->orderby('created_at', 'DESC')->get();
 
@@ -543,7 +539,6 @@ class ApplicationsController extends Controller
 
 		echo json_encode($response);
 	}
-
 
 	public function revert_application(Request $request){
 		$requestData = $request->all();
@@ -761,189 +756,13 @@ class ApplicationsController extends Controller
 		<option value="">Select Application</option>
 		<?php
 		foreach($applications as $application){
-			$productdetail = \App\Models\Product::where('id', $application->product_id)->first();
-			$partnerdetail = \App\Models\Partner::where('id', $application->partner_id)->first();
+
 			$clientdetail = \App\Models\Admin::where('id', $application->client_id)->first();
-			$PartnerBranch = \App\Models\PartnerBranch::where('id', $application->branch)->first();
+			
 			?>
 			<option value="<?php echo $application->id; ?>"><?php echo @$productdetail->name.'('.@$partnerdetail->partner_name; ?> <?php echo @$PartnerBranch->name; ?>)</option>
 			<?php
 		}
-		return ob_get_clean();
-	}
-
-
-	public function showproductfee(Request $request){
-		$id = $request->id;
-		ob_start();
-		$appfeeoption = ApplicationFeeOption::where('app_id', $id)->first();
-
-		?>
-		<form method="post" action="<?php echo \URL::to('/admin/applicationsavefee'); ?>" name="applicationfeeform" id="applicationfeeform" autocomplete="off" enctype="multipart/form-data">
-				<input type="hidden" name="_token" value="<?php echo csrf_token(); ?>">
-				<input type="hidden" name="id" value="<?php echo $id; ?>">
-					<div class="row">
-						<div class="col-12 col-md-4 col-lg-4">
-							<div class="form-group">
-								<label for="fee_option_name">Fee Option Name <span class="span_req">*</span></label>
-								<input type="text" readonly name="fee_option_name" class="form-control" value="Default Fee">
-
-								<span class="custom-error feeoption_name_error" role="alert">
-									<strong></strong>
-								</span>
-							</div>
-						</div>
-						<div class="col-12 col-md-4 col-lg-4">
-							<div class="form-group">
-								<label for="country_residency">Country of Residency <span class="span_req">*</span></label>
-								<input type="text" readonly name="country_residency" class="form-control" value="All Countries">
-								<span class="custom-error country_residency_error" role="alert">
-									<strong></strong>
-								</span>
-							</div>
-						</div>
-						<div class="col-12 col-md-4 col-lg-4">
-							<div class="form-group">
-								<label for="degree_level">Installment Type <span class="span_req">*</span></label>
-								<select data-valid="required" class="form-control degree_level installment_type select2" name="degree_level">
-									<option value="">Select Type</option>
-									<option value="Full Fee" <?php if(@$appfeeoption->installment_type == 'Full Fee'){ echo 'selected'; }?>>Full Fee</option>
-									<option value="Per Year" <?php if(@$appfeeoption->installment_type == 'Per Year'){ echo 'selected'; }?>>Per Year</option>
-									<option value="Per Month" <?php if(@$appfeeoption->installment_type == 'Per Month'){ echo 'selected'; }?>>Per Month</option>
-									<option value="Per Term" <?php if(@$appfeeoption->installment_type == 'Per Term'){ echo 'selected'; }?>>Per Term</option>
-									<option value="Per Trimester" <?php if(@$appfeeoption->installment_type == 'Per Trimester'){ echo 'selected'; }?>>Per Trimester</option>
-									<option value="Per Semester" <?php if(@$appfeeoption->installment_type == 'Per Semester'){ echo 'selected'; }?>>Per Semester</option>
-									<option value="Per Week" <?php if(@$appfeeoption->installment_type == 'Per Week'){ echo 'selected'; }?>>Per Week</option>
-									<option value="Installment" <?php if(@$appfeeoption->installment_type == 'Installment'){ echo 'selected'; }?>>Installment</option>
-								</select>
-								<span class="custom-error degree_level_error" role="alert">
-									<strong></strong>
-								</span>
-							</div>
-						</div>
-						<div class="col-12 col-md-12 col-lg-12">
-							<div class="table-responsive">
-								<table class="table text_wrap" id="productitemview">
-									<thead>
-										<tr>
-											<th>Fee Type <span class="span_req">*</span></th>
-											<th>Per Semester Amount <span class="span_req">*</span></th>
-											<th>No. of Semester <span class="span_req">*</span></th>
-											<th>Total Fee</th>
-											<th>Claimable Semester</th>
-											<th>Commission %</th>
-
-
-										</tr>
-									</thead>
-									<tbody class="tdata">
-									<?php
-									$totl = 0.00;
-									$discount = 0.00;
-									if($appfeeoption){
-										$appfeeoptiontype = \App\Models\ApplicationFeeOptionType::where('fee_id', $appfeeoption->id)->get();
-										foreach($appfeeoptiontype as $fee){
-											$totl += $fee->total_fee;
-										?>
-										<tr class="add_fee_option cus_fee_option">
-											<td>
-												<select data-valid="required" class="form-control course_fee_type " name="course_fee_type[]">
-													<option value="">Select Type</option>
-													<option value="Accommodation Fee" <?php if(@$fee->fee_type == 'Accommodation Fee'){ echo 'selected'; }?>>Accommodation Fee</option>
-													<option value="Administration Fee" <?php if(@$fee->fee_type == 'Administration Fee'){ echo 'selected'; }?>>Administration Fee</option>
-													<option value="Airline Ticket" <?php if(@$fee->fee_type == 'Airline Ticket'){ echo 'selected'; }?>>Airline Ticket</option>
-													<option value="Airport Transfer Fee" <?php if(@$fee->fee_type == 'Airport Transfer Fee'){ echo 'selected'; }?>>Airport Transfer Fee</option>
-													<option value="Application Fee" <?php if(@$fee->fee_type == 'Application Fee'){ echo 'selected'; }?>>Application Fee</option>
-													<option value="Bond" <?php if(@$fee->fee_type == 'Bond'){ echo 'selected'; }?>>Bond</option>
-												</select>
-											</td>
-											<td>
-												<input type="number" value="<?php echo @$fee->inst_amt; ?>" class="form-control semester_amount" name="semester_amount[]">
-											</td>
-											<td>
-												<input type="number" value="<?php echo @$fee->installment; ?>" class="form-control no_semester" name="no_semester[]">
-											</td>
-											<td class="total_fee"><span><?php echo @$fee->total_fee; ?></span><input value="<?php echo @$fee->total_fee; ?>" type="hidden"  class="form-control total_fee_am" name="total_fee[]"></td>
-											<td>
-												<input type="number" value="<?php echo @$fee->claim_term; ?>" class="form-control claimable_terms" name="claimable_semester[]">
-											</td>
-											<td>
-												<input type="number" value="<?php echo @$fee->commission; ?>" class="form-control commission" name="commission[]">
-											</td>
-
-										</tr>
-										<?php
-										}
-									}else{
-									?>
-										<tr class="add_fee_option cus_fee_option">
-											<td>
-												<select data-valid="required" class="form-control course_fee_type " name="course_fee_type[]">
-													<option value="">Select Type</option>
-													<option value="Accommodation Fee">Accommodation Fee</option>
-													<option value="Administration Fee">Administration Fee</option>
-													<option value="Airline Ticket">Airline Ticket</option>
-													<option value="Airport Transfer Fee">Airport Transfer Fee</option>
-													<option value="Application Fee">Application Fee</option>
-													<option value="Bond">Bond</option>
-												</select>
-											</td>
-											<td>
-												<input type="number" value="0" class="form-control semester_amount" name="semester_amount[]">
-											</td>
-											<td>
-												<input type="number" value="1" class="form-control no_semester" name="no_semester[]">
-											</td>
-											<td class="total_fee"><span>0.00</span><input value="0" type="hidden"  class="form-control total_fee_am" name="total_fee[]"></td>
-											<td>
-												<input type="number" value="1" class="form-control claimable_terms" name="claimable_semester[]">
-											</td>
-											<td>
-												<input type="number" class="form-control commission" name="commission[]">
-											</td>
-
-										</tr>
-	<?php }
-
-	$net = $totl -  $discount;
-	?>
-									</tbody>
-									<tfoot>
-										<tr>
-											<td><input type="text" readonly value="Discounts" name="discount" class="form-control"></td>
-											<td><input type="number"  value="<?php echo @$appfeeoption->discount_amount; ?>" name="discount_amount" class="form-control discount_amount"></td>
-											<td><input type="number"  value="<?php if(@$appfeeoption->discount_sem != ''){ echo @$appfeeoption->discount_sem; }else{ echo 0.00; } ?>" name="discount_sem" class="form-control discount_sem"></td>
-											<td class="totaldis" style="color:#ff0000;"><span><?php if(@$appfeeoption->total_discount != ''){ echo @$appfeeoption->total_discount; }else{ echo 0.00; } ?></span><input value="<?php if(@$appfeeoption->total_discount != ''){ echo @$appfeeoption->total_discount; }else{ echo 0.00; } ?>" type="hidden" class="form-control total_dis_am" name="total_discount"></td>
-											<td><input type="text"  readonly value="" name="" class="form-control"></td>
-											<td><input type="text"  readonly value="" name="" class="form-control"></td>
-										</tr>
-										<tr>
-											<?php
-											$dis = 0.00;
-											if(@$appfeeoption->total_discount != ''){
-												$dis = @$appfeeoption->total_discount;
-											}
-											$duductamt = $net - $dis;
-											?>
-											<td colspan="3" style="text-align: right;"><b>Net Total</b></td>
-											<td class="net_totl text-info"><?php echo $duductamt; ?></td>
-											<td colspan="3"></td>
-										</tr>
-									</tfoot>
-								</table>
-							</div>
-							<div class="fee_option_addbtn">
-								<a href="#" class="btn btn-primary"><i class="fas fa-plus"></i> Add Fee</a>
-							</div>
-
-						</div>
-						<div class="col-12 col-md-12 col-lg-12">
-							<button onclick="customValidate('applicationfeeform')" type="button" class="btn btn-primary">Save</button>
-							<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-						</div>
-					</div>
-				</form>
-		<?php
 		return ob_get_clean();
 	}
 
@@ -1035,10 +854,9 @@ class ApplicationsController extends Controller
 
 	public function exportapplicationpdf(Request $request, $id){
 		$applications = \App\Models\Application::where('id', $id)->first();
-		$partnerdetail = \App\Models\Partner::where('id', @$applications->partner_id)->first();
-		$productdetail = \App\Models\Product::where('id', @$applications->product_id)->first();
+
 		$cleintname = \App\Models\Admin::where('role',7)->where('id',@$applications->client_id)->first();
-		$PartnerBranch = \App\Models\PartnerBranch::where('id', @$applications->branch)->first();
+		
 		$pdf = PDF::setOptions([
 			'isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true,
 			'logOutputFile' => storage_path('logs/log.htm'),
@@ -1160,7 +978,6 @@ class ApplicationsController extends Controller
 		$response['doclistdata']	=	$doclistdata;
 		$response['applicationuploadcount']	=	@$applicationuploadcount[0]->cnt;
 
-
 		$applicationdocuments = \App\Models\ApplicationDocumentList::where('application_id', $application_id)->where('type', $request->type)->get();
 			$checklistdata = '<table class="table"><tbody>';
 			foreach($applicationdocuments as $applicationdocument){
@@ -1190,8 +1007,6 @@ class ApplicationsController extends Controller
 			if($res){
 				$response['status'] 	= 	true;
 				$response['message'] 	= 	'Record removed successfully';
-
-
 
 				$doclists = \App\Models\ApplicationDocument::where('application_id',$appdoc->application_id)->orderby('created_at','DESC')->get();
 		$doclistdata = '';
@@ -1234,7 +1049,6 @@ class ApplicationsController extends Controller
 		$response['doclistdata']	=	$doclistdata;
 		$response['applicationuploadcount']	=	@$applicationuploadcount[0]->cnt;
 
-
 		$applicationdocuments = \App\Models\ApplicationDocumentList::where('application_id', $application_id)->where('type', $appdoc->type)->get();
 			$checklistdata = '<table class="table"><tbody>';
 			foreach($applicationdocuments as $applicationdocument){
@@ -1264,7 +1078,6 @@ class ApplicationsController extends Controller
 		}
 		echo json_encode($response);
 	}
-
 
 	public function publishdoc(Request $request){
 		if(\App\Models\ApplicationDocument::where('id', $request->appid)->exists()){
@@ -1333,10 +1146,10 @@ class ApplicationsController extends Controller
 		<option value="">Choose Application</option>
 		<?php
 		foreach($applications as $application){
-			$Products = \App\Models\Product::where('id', '=', @$application->product_id)->first();
-			$Partners = \App\Models\Partner::where('id', '=', @$application->partner_id)->first();
+			
+			// Partner functionality removed
 			?>
-		<option value="<?php echo $application->id; ?>">(#<?php echo $application->id; ?>) <?php echo @$Products->name; ?>  (<?php echo @$Partners->partner_name; ?>)</option>
+		<option value="<?php echo $application->id; ?>">(#<?php echo $application->id; ?>) Application (Partner)</option>
 			<?php
 		}
 		return ob_get_clean();

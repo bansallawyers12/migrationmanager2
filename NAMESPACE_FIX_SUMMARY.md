@@ -74,7 +74,6 @@ The following renamed models were automatically mapped:
 |----------|----------|--------|
 | `App\Agent` | `App\Models\AgentDetails` | ✅ Fixed |
 | `App\Tax` | `App\Models\TaxRate` | ✅ Fixed |
-| `App\Quotation` | `App\Models\QuotationInfo` | ✅ Fixed |
 
 ---
 
@@ -230,10 +229,10 @@ $invoice = \App\Models\Invoice::find($id);
 ### Pattern 3: Object Instantiation
 ```php
 // Before
-$obj = new \App\IncomeSharing;
+$obj = new \App\ModelName;
 
 // After
-$obj = new \App\Models\IncomeSharing;
+$obj = new \App\Models\ModelName;
 ```
 
 ### Pattern 4: Blade Templates

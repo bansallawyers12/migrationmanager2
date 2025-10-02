@@ -2,7 +2,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Product;
+
 use Illuminate\Http\Request;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -123,7 +123,6 @@ class AssigneeController extends Controller
         echo json_encode($response);
     }
 
-
      //All assigned by me task list which r incomplete
      public function assigned_by_me(Request $request)
      {
@@ -136,7 +135,6 @@ class AssigneeController extends Controller
          return view('Admin.assignee.assign_by_me',compact('assignees_notCompleted'))
           ->with('i', (request()->input('page', 1) - 1) * 20);
      }
-
 
     //All assigned to me task list
     public function assigned_to_me(Request $request)
@@ -153,7 +151,6 @@ class AssigneeController extends Controller
         return view('Admin.assignee.assign_to_me',compact('assignees_notCompleted','assignees_completed'))
          ->with('i', (request()->input('page', 1) - 1) * 20);
     }
-
 
     public function activities_completed(Request $request)
     {   //dd($request->all());
@@ -188,11 +185,9 @@ class AssigneeController extends Controller
         return view('Admin.assignee.activities_completed',compact('assignees_completed','task_group'))->with('i', (request()->input('page', 1) - 1) * 20);
     }
 
-
     public function activities() {
         return view('Admin.assignee.activities');
     }
-
 
     public function getActivities(Request $request)
     {
@@ -410,7 +405,6 @@ class AssigneeController extends Controller
         return response()->json($counts);
     }
 
-
     /**
      * Show the form for creating a new resource.
      *
@@ -545,7 +539,6 @@ class AssigneeController extends Controller
         return redirect()->route('assignee.assigned_to_me')->with('success','Assingee deleted successfully');
     }
 
-
     //incomplete activity remove
     public function destroy_activity($id,Note $Note)
     {
@@ -609,7 +602,6 @@ class AssigneeController extends Controller
         }
     }
 
-
     public function assignedetail(Request $request){
         $appointmentdetail = Appointment::with(['user','clients','service','assignee_user','natureOfEnquiry'])->where('id',$request->id)->first();
       ?>
@@ -638,7 +630,6 @@ class AssigneeController extends Controller
                         $status = '<span style="color: rgb(113, 204, 83);" class="">N/P</span>';
                     }
                     ?>
-
 
                     <ul class="navbar-nav navbar-right">
                         <li class="dropdown dropdown-list-toggle">
@@ -948,7 +939,6 @@ public function update_apppointment_description(Request $request){
        echo json_encode($response);
     }
 
-
     // Helper function to get assignee name
     protected function getAssigneeName($assigneeId)
     {
@@ -1058,5 +1048,3 @@ public function update_apppointment_description(Request $request){
     }
 
 }
-
-

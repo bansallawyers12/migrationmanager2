@@ -1,0 +1,56 @@
+Migration Scripts Test Report
+===========================
+
+Generated on: 2025-10-02 13:02:23
+
+Component: Controller import mapper
+--------------------------------------------------
+Tests passed: 5/5
+Tests failed: 0/5
+  - generate_use_statements: PASS
+  - generate_grouped_statements: PASS
+  - get_controller_mapping: PASS
+  - validate_controllers: PASS
+  - generate_import_file: PASS
+
+Component: Route converter
+--------------------------------------------------
+Tests passed: 4/4
+Tests failed: 0/4
+  - convert_single_route: PASS
+  - get_conversion_stats: PASS
+  - generate_report: PASS
+  - validate_conversions: PASS
+
+Component: Backup system
+--------------------------------------------------
+Tests passed: 4/4
+Tests failed: 0/4
+  - create_backup: PASS
+  - list_backups: PASS
+  - verify_backup: PASS
+  - delete_backup: PASS
+
+Component: File permissions
+--------------------------------------------------
+Tests passed: 5/5
+Tests failed: 0/5
+  - file_permission_web: PASS
+  - file_permission_api: PASS
+  - file_permission_channels: PASS
+  - file_permission_console: PASS
+  - file_permission_emailUser: PASS
+
+Component: Route file access
+--------------------------------------------------
+Tests passed: 3/3
+Tests failed: 0/3
+  - read_web_routes: PASS
+  - count_routes: PASS
+  - count_controllers: PASS
+
+Overall Summary
+==================================================
+Total tests passed: 21
+Total tests failed: 0
+Success rate: 100%

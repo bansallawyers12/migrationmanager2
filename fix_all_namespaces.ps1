@@ -16,9 +16,9 @@ $validModels = @(
     'AcademicRequirement', 'AccountClientReceipt', 'ActivitiesLog', 'Admin', 'AgentDetails',
     'AiChat', 'AiChatMessage', 'Airport', 'Application', 'ApplicationActivitiesLog',
     'ApplicationDocument', 'ApplicationDocumentList', 'ApplicationFeeOption', 'ApplicationFeeOptionType',
-    'Appointment', 'AppointmentLog', 'AttachFile', 'Attachment', 'AuditLog',
+    'Appointment', 'AppointmentLog', 'Attachment', 'AuditLog',
     'BookService', 'BookServiceDisableSlot', 'BookServiceSlotPerPerson', 'Branch',
-    'Category', 'CheckinHistory', 'CheckinLog', 'Checklist', 'City', 'Client',
+    'Category', 'CheckinHistory', 'CheckinLog', 'Checklist', 'Client',
     'ClientAddress', 'ClientCharacter', 'ClientContact', 'ClientEmail', 'ClientEoiReference',
     'ClientExperience', 'ClientMatter', 'ClientOccupation', 'ClientPassportInformation',
     'ClientPoint', 'ClientQualification', 'ClientRelationship', 'clientServiceTaken',
@@ -26,14 +26,14 @@ $validModels = @(
     'Contact', 'CostAssignmentForm', 'Country', 'Course', 'CrmEmailTemplate', 'Currency',
     'DeviceToken', 'Document', 'DocumentChecklist', 'Email', 'EmailAccount', 'EmailDraft',
     'EmailRecord', 'EmailSignature', 'EmailTemplate', 'Enquiry', 'EnquirySource',
-    'FeeOption', 'FeeOptionType', 'FeeType', 'FileStatus', 'Followup', 'FollowupType',
-    'Form956', 'FreeDownload', 'Group', 'HomeContent', 'IncomeSharing', 'InterestedService',
+    'FeeOption', 'FeeOptionType', 'FileStatus', 'Followup', 'FollowupType',
+    'Form956', 'FreeDownload', 'Group', 'HomeContent',
     'Invoice', 'InvoiceDetail', 'InvoiceFollowup', 'InvoicePayment', 'InvoiceSchedule',
-    'Item', 'Label', 'Lead', 'LeadService', 'MailReport', 'Matter', 'MatterEmailTemplate',
+    'Item', 'Label', 'Lead', 'MailReport', 'Matter', 'MatterEmailTemplate',
     'MatterOtherEmailTemplate', 'NatureOfEnquiry', 'Note', 'Notification', 'OfficeVisit',
     'OnlineForm', 'OurService', 'Partner', 'PartnerBranch', 'PartnerType', 'PasswordResetLink',
     'PersonalDocumentType', 'Product', 'ProductAreaLevel', 'ProductType', 'Profile',
-    'PromoCode', 'Promotion', 'QuotationInfo', 'RefreshToken', 'Relationship', 'ScheduleItem',
+    'PromoCode', 'Promotion', 'RefreshToken', 'Relationship',
     'SeoPage', 'Service', 'ServiceFeeOption', 'ServiceFeeOptionType', 'Setting', 'ShareInvoice',
     'SignatureField', 'Signer', 'Slider', 'Source', 'State', 'SubCategory', 'Subject',
     'SubjectArea', 'Tag', 'Task', 'TaxRate', 'Team', 'Testimonial', 'TestScore',
@@ -45,7 +45,6 @@ $validModels = @(
 $modelMappings = @{
     'Agent' = 'AgentDetails'
     'Tax' = 'TaxRate'
-    'Quotation' = 'QuotationInfo'
 }
 
 # Statistics

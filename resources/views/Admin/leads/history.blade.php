@@ -275,7 +275,7 @@
 				<button type="button" class="close" data-dismiss="modal">&times;</button>
 				
 			</div>
-			{{ Form::open(array('url' => 'admin/followup/store', 'name'=>"add-note", 'autocomplete'=>'off', "enctype"=>"multipart/form-data", 'id'=>"addnoteform")) }}
+			{{ Form::open(array('url' => '#', 'name'=>"add-note", 'autocomplete'=>'off', "enctype"=>"multipart/form-data", 'id'=>"addnoteform")) }}
 			<div class="modal-body">
 				<div class="customerror"></div> 
 				<div class="form-group row">
@@ -319,7 +319,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				{{ Form::open(array('url' => 'admin/followup/compose', 'name'=>"add-compose", 'autocomplete'=>'off', "enctype"=>"multipart/form-data", 'id'=>"addnoteform")) }}
+				{{ Form::open(array('url' => '#', 'name'=>"add-compose", 'autocomplete'=>'off', "enctype"=>"multipart/form-data", 'id'=>"addnoteform")) }}
 				<input id="" name="lead_id" type="hidden" value="{{base64_encode(convert_uuencode(@$fetchedData->id))}}">
 					<div class="row">
 						
@@ -416,14 +416,7 @@ jQuery(document).ready(function($){
 
 });
 function myfollowuplist(lead_id) {
-	$.ajax({
-		type:'get',
-		url:  '{{URL::to('/')}}/admin/followup/list',
-		data: {leadid:lead_id},
-		success: function(response){
-			$('.followuphistory').html(response);
-		}
-	});
+	$('.followuphistory').html('<div class="alert alert-info">Followup functionality has been removed.</div>');
 }
 $(function () {
 	$(document).delegate('.clientemail', 'click', function(){ 
@@ -596,7 +589,7 @@ $(document).delegate('#setreminder','click', function(){
 		if(flag){
 			$.ajax({
 				type:'post',
-					url:"{{URL::to('/')}}/admin/followup/store",
+					url:"#",
 					headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
 					
 					data: {note_type:'follow_up',description:$('#remindernote').val(),remindersubject:$('#remindersubject').val(),lead_id:$('#leadid').val(),followup_date:$('#popoverdate').val(),followup_time:$('#popovertime').val(),rem_cat:$('#rem_cat option:selected').val()},

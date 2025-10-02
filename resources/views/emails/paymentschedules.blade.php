@@ -75,7 +75,6 @@
 													<?php
 													$nettotal = 0;
 													foreach($invoiceschedules as $invoiceschedule){
-														$scheduleitem = \App\Models\ScheduleItem::where('schedule_id', $invoiceschedule->id)->get();
 														?>
 														<tr >
 															<td>

@@ -45,7 +45,7 @@
 					<div class="card">
 						<div class="card-body p-0" style="display: block;">
 							<ul class="nav nav-pills flex-column"> <!---->
-								<li class="nav-item"> <a href="{{route('admin.taxrates')}}" id="ember5167" class="nav-link active ember-view"> Tax Rates </a> </li><!----><!----><!----><!----><li class="nav-item"> <a href="{{route('admin.returnsetting')}}" id="ember5168" class="nav-link ember-view"> GST Settings </a> </li> <!----><!----> </ul>
+								<li class="nav-item"> <a href="{{route('admin.returnsetting')}}" id="ember5168" class="nav-link ember-view"> GST Settings </a> </li> <!----><!----> </ul>
 						</div>
 					</div>
 				</div>
@@ -56,7 +56,7 @@
 					  </div> 
 					  <!-- /.card-header -->
 					  <!-- form start -->
-					  {{ Form::open(array('url' => 'admin/settings/taxes/taxrates/edit', 'name'=>"add-city", 'autocomplete'=>'off', "enctype"=>"multipart/form-data")) }}
+					  {{ Form::open(array('url' => 'admin/settings/taxes/savereturnsetting', 'name'=>"add-city", 'autocomplete'=>'off', "enctype"=>"multipart/form-data")) }}
 					  {{ Form::hidden('id', @$fetchedData->id) }}
 						<div class="card-body">
 							<div class="row">

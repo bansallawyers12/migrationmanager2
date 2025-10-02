@@ -62,7 +62,6 @@ The script automatically handles renamed models:
 |----------|----------|
 | Agent | AgentDetails |
 | Tax | TaxRate |
-| Quotation | QuotationInfo |
 
 ## Files Processed
 

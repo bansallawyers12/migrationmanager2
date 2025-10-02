@@ -6,7 +6,6 @@
             <h1>Dashboard</h1>
         </header>
 
-
         {{-- KPI Cards Section --}}
         <section class="kpi-cards">
             <x-dashboard.kpi-card 
@@ -44,8 +43,8 @@
                         <li>
                             <div class="task-details">
                                 <span class="client-name">
-                                    {{ @$note_client->first_name == "" ? config('constants.empty') : str_limit(@$note_client->first_name, '50', '...') }} {{ @$note_client->last_name == "" ? config('constants.empty') : str_limit(@$note_client->last_name, '50', '...') }}
-                                    (<a href="{{URL::to('/admin/clients/detail/'.base64_encode(convert_uuencode(@$note_client->id)) )}}">{{ @$note_client->client_id == "" ? config('constants.empty') : str_limit(@$note_client->client_id, '50', '...') }}</a>)
+                                    {{ $note_client && $note_client->first_name ? str_limit($note_client->first_name, '50', '...') : config('constants.empty') }} {{ $note_client && $note_client->last_name ? str_limit($note_client->last_name, '50', '...') : config('constants.empty') }}
+                                    (<a href="{{ $note_client ? URL::to('/admin/clients/detail/'.base64_encode(convert_uuencode($note_client->id))) : '#' }}">{{ $note_client && $note_client->client_id ? str_limit($note_client->client_id, '50', '...') : config('constants.empty') }}</a>)
                                 </span>
                                 <span class="task-desc">
                                     <?php echo preg_replace('/<\/?p>/', '', $note->description ); ?>
@@ -87,8 +86,8 @@
                         <li>
                             <div class="case-details">
                                 <span class="client-name">
-                                    {{ @$client_attention->first_name == "" ? config('constants.empty') : str_limit(@$client_attention->first_name, '50', '...') }} {{ @$client_attention->last_name == "" ? config('constants.empty') : str_limit(@$client_attention->last_name, '50', '...') }}
-                                    (<a href="{{URL::to('/admin/clients/detail/'.base64_encode(convert_uuencode(@$client_attention->id)).'/'.$attention->client_unique_matter_no )}}">{{ @$client_attention->client_id == "" ? config('constants.empty') : str_limit(@$client_attention->client_id, '50', '...') }}</a>)
+                                    {{ $client_attention && $client_attention->first_name ? str_limit($client_attention->first_name, '50', '...') : config('constants.empty') }} {{ $client_attention && $client_attention->last_name ? str_limit($client_attention->last_name, '50', '...') : config('constants.empty') }}
+                                    (<a href="{{ $client_attention ? URL::to('/admin/clients/detail/'.base64_encode(convert_uuencode($client_attention->id)).'/'.$attention->client_unique_matter_no) : '#' }}">{{ $client_attention && $client_attention->client_id ? str_limit($client_attention->client_id, '50', '...') : config('constants.empty') }}</a>)
                                 </span>
                                 <span class="case-info">
                                 <?php
@@ -275,12 +274,12 @@
                             <a href="{{URL::to('/admin/clients/detail/'.base64_encode(convert_uuencode(@$item->client_id)).'/'.$item->client_unique_matter_no )}}">{{ $matter_name}} ({{$item->client_unique_matter_no }}) </a>
                             <span class="totalEmailCntToClientMatter">{{$total_email_assign_cnt}}</span>
                         </td>
-                        <td class="col-client_id"><a href="{{URL::to('/admin/clients/detail/'.base64_encode(convert_uuencode(@$item->client_id)) )}}">{{ @$client_info->client_id == "" ? config('constants.empty') : str_limit(@$client_info->client_id, '50', '...') }}</a></td>
-                        <td class="col-client_name">{{ @$client_info->first_name == "" ? config('constants.empty') : str_limit(@$client_info->first_name, '50', '...') }} {{ @$client_info->last_name == "" ? config('constants.empty') : str_limit(@$client_info->last_name, '50', '...') }}</td>
+                        <td class="col-client_id"><a href="{{URL::to('/admin/clients/detail/'.base64_encode(convert_uuencode(@$item->client_id)) )}}">{{ $client_info && $client_info->client_id ? str_limit($client_info->client_id, '50', '...') : config('constants.empty') }}</a></td>
+                        <td class="col-client_name">{{ $client_info && $client_info->first_name ? str_limit($client_info->first_name, '50', '...') : config('constants.empty') }} {{ $client_info && $client_info->last_name ? str_limit($client_info->last_name, '50', '...') : config('constants.empty') }}</td>
                         <td class="col-dob">{{ @$item->dob == "" ? config('constants.empty') : (strtotime(@$item->dob) ? date('d/m/Y', strtotime(@$item->dob)) : str_limit(@$item->dob, '50', '...')) }}</td>
-                        <td class="col-migration_agent">{{ @$mig_agent_info->first_name == "" ? config('constants.empty') : str_limit(@$mig_agent_info->first_name, '50', '...') }} {{ @$mig_agent_info->last_name == "" ? config('constants.empty') : str_limit(@$mig_agent_info->last_name, '50', '...') }}</td>
-                        <td class="col-person_responsible">{{ @$person_responsible->first_name == "" ? config('constants.empty') : str_limit(@$person_responsible->first_name, '50', '...') }} {{ @$person_responsible->last_name == "" ? config('constants.empty') : str_limit(@$person_responsible->last_name, '50', '...') }}</td>
-                        <td class="col-person_assisting">{{ @$person_assisting->first_name == "" ? config('constants.empty') : str_limit(@$person_assisting->first_name, '50', '...') }} {{ @$person_assisting->last_name == "" ? config('constants.empty') : str_limit(@$person_assisting->last_name, '50', '...') }}</td>
+                        <td class="col-migration_agent">{{ $mig_agent_info && $mig_agent_info->first_name ? str_limit($mig_agent_info->first_name, '50', '...') : config('constants.empty') }} {{ $mig_agent_info && $mig_agent_info->last_name ? str_limit($mig_agent_info->last_name, '50', '...') : config('constants.empty') }}</td>
+                        <td class="col-person_responsible">{{ $person_responsible && $person_responsible->first_name ? str_limit($person_responsible->first_name, '50', '...') : config('constants.empty') }} {{ $person_responsible && $person_responsible->last_name ? str_limit($person_responsible->last_name, '50', '...') : config('constants.empty') }}</td>
+                        <td class="col-person_assisting">{{ $person_assisting && $person_assisting->first_name ? str_limit($person_assisting->first_name, '50', '...') : config('constants.empty') }} {{ $person_assisting && $person_assisting->last_name ? str_limit($person_assisting->last_name, '50', '...') : config('constants.empty') }}</td>
                         <td class="col-stage">
                             <select class="form-select stageCls" id="stage_<?php echo $item->id;?>" style="height: 30px;border-color: #e0e0e0;">
                                 @foreach(\App\Models\WorkflowStage::where('id','!=','')->orderby('id','ASC')->get() as $stage)
@@ -441,10 +440,6 @@
                                         <input class="form-check-input" type="radio" id="contact" value="Contact" name="related_to" checked>
                                         <label class="form-check-label" for="contact">Contact</label>
                                     </div>
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" id="partner" value="Partner" name="related_to">
-                                        <label class="form-check-label" for="partner">Partner</label>
-                                    </div>
                                     {{--<div class="form-check form-check-inline">
                                         <input class="form-check-input" type="radio" id="application" value="Application" name="related_to">
                                         <label class="form-check-label" for="application">Application</label>
@@ -474,24 +469,6 @@
                                         <?php } ?>
                                     </select>
                                     <span class="custom-error contact_name_error" role="alert">
-                                        <strong></strong>
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div class="col-12 col-md-6 col-lg-6 is_partner">
-                                <div class="form-group">
-                                    <label for="partner_name">Partner Name <span class="span_req">*</span></label>
-                                    <select data-valid="" class="form-control cleintselect2 select2" name="partner_name">
-                                        <option value="">Choose Partner</option>
-                                        <?php
-                                        $Partners = \App\Models\Partner::select('id','partner_name','email')->where('id', '!=', '')->get();
-                                        foreach($Partners as $Partner){
-                                        ?>
-                                        <option value="{{$Partner->id}} ">{{$Partner->partner_name}} ({{$Partner->email}})</option>
-                                        <?php } ?>
-                                    </select>
-                                    <span class="custom-error partner_name_error" role="alert">
                                         <strong></strong>
                                     </span>
                                 </div>
@@ -588,7 +565,6 @@
             </div>
         </div>
     </div>
-
 
     <!-- Action Popup Modal -->
     <div class="modal fade custom_modal" id="extend_note_popup" tabindex="-1" role="dialog" aria-labelledby="create_action_popupLabel" aria-hidden="true">
@@ -1523,7 +1499,6 @@
 @endonce
 @endpush
 
-
 @push('scripts')
 @once
 <script>
@@ -1815,7 +1790,6 @@ $(document).ready(function() {
 
 });
 
-
 //close Notes Deadline Action
 function closeNotesDeadlineAction( noteid, noteuniqueid) {
     var conf = confirm('Are you sure, you want to close this note deadline.');
@@ -1863,7 +1837,6 @@ jQuery(document).ready(function($){
 			dropdownParent: $('#create_task_modal .modal-content'),
 		});
 	});
-
 
 	$(document).delegate('.opentaskview', 'click', function(){
 		$('#opentaskview').modal('show');

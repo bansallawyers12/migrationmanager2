@@ -566,9 +566,6 @@
 											<label for="service">Service <span style="color:#ff0000;">*</span></label>
 												<select class="form-control select2" name="service" data-valid="required">
 											<option value="">- Select Lead Service -</option>
-													@foreach(\App\Models\LeadService::orderby('name', 'ASC')->get() as $leadservlist)
-												<option @if($fetchedData->service == $leadservlist->name) selected @endif value="{{$leadservlist->name}}">{{$leadservlist->name}}</option>
-											@endforeach
 											</select>
 											@if ($errors->has('service'))
 												<span class="custom-error" role="alert">

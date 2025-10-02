@@ -28,8 +28,6 @@ use App\Models\FileStatus;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Mail;
 
-
-
 use Hfig\MAPI;
 use Hfig\MAPI\OLE\Pear;
 use Hfig\MAPI\Message\Msg;
@@ -56,7 +54,6 @@ use Illuminate\Validation\Rule;
 
 use Illuminate\Support\Facades\Validator;
 use GuzzleHttp\Client;
-
 
 use App\Models\ClientPassportInformation;
 use App\Models\ClientTravelInformation;
@@ -268,16 +265,16 @@ class ClientsController extends Controller
         return view('Admin.archived.index', compact(['lists', 'totalData']));
     }
 
-	public function prospects(Request $request)
-	{
-        return view('Admin.prospects.index');
-    }
+	// REMOVED - prospects method
+	// public function prospects(Request $request)
+	// {
+    //     return view('Admin.prospects.index');
+    // }
 
 	public function create(Request $request)
 	{
 		return view('Admin.clients.create');
 	}
-
 
     public function store(Request $request)
     {   //dd($request->all());
@@ -1118,7 +1115,6 @@ class ClientsController extends Controller
                         $companyType = $companyArray[$key] ?? null;
                         $gender = $genderArray[$key] ?? null;
                         $dob = $dobArray[$key] ?? null;
-                       
 
                         // Skip if neither details nor relationship type is provided
                         if (empty($details) && empty($relationshipType)) {
@@ -1210,7 +1206,6 @@ class ClientsController extends Controller
         }
     }
 
-
     public function getNextCounter($currentCounter) {
         // Convert current counter to an integer
         $counter = intval($currentCounter);
@@ -1252,7 +1247,6 @@ class ClientsController extends Controller
         // Return the generated PDF
         return $pdf->stream('codeplaners.pdf');
     }
-
 
     public function edit(Request $request, $id = NULL)
     {
@@ -1737,7 +1731,6 @@ class ClientsController extends Controller
                 }
             }
 
-
             // Update validation for Source field
             $validationRules['source'] = 'required|in:SubAgent,Others';
 			
@@ -1801,7 +1794,6 @@ class ClientsController extends Controller
                 'address_end_date.*.date_format' => 'Address End Date must be in the format dd/mm/yyyy.',
                 'address_end_date.*.after_or_equal' => 'Address End Date must be on or after 1000-01-01.',
 
-
                 'visa_country.string' => 'Country of Passport must be a valid string.',
                 'visa_country.max' => 'Country of Passport must not exceed 255 characters.',
                 'passports.*.passport_number.string' => 'Passport Number must be a valid string.',
@@ -1817,7 +1809,6 @@ class ClientsController extends Controller
                 'visas.*.expiry_date.after_or_equal' => 'Visa Expiry Date must be on or after 1000-01-01.',
                 'visas.*.description.string' => 'Visa Description must be a valid string.',
                 'visas.*.description.max' => 'Visa Description must not exceed 255 characters.',
-
 
                 'travel_country_visited.*.string' => 'Country Visited must be a valid string.',
                 'travel_country_visited.*.max' => 'Country Visited must not exceed 255 characters.',
@@ -1898,7 +1889,6 @@ class ClientsController extends Controller
                 'health_declarations.*.details.max' => 'Health Declarations Details must not exceed 1000 characters.',
                 'health_declarations.*.date.date_format' => 'Health Declarations Date must be in the format dd/mm/yyyy.',
                 'health_declarations.*.date.after_or_equal' => 'Health Declarations Date must be on or after 1000-01-01.',
-
 
                 // Validation messages for Partner fields
                 'partner_details.*.string' => 'Partner Details must be a valid string.',
@@ -2165,7 +2155,6 @@ class ClientsController extends Controller
 
             $obj->regional_points = $requestData['regional_points'] ?? null;
 
-
             $obj->type = $requestData['type'] ?? null; // Update type field
             $obj->source = $requestData['source'] ?? null;
             if ($requestData['source'] == 'Sub Agent') {
@@ -2347,7 +2336,6 @@ class ClientsController extends Controller
                 }
             }
 
-
             // Handle Email Deletion
             if (isset($requestData['delete_email_ids']) && is_array($requestData['delete_email_ids'])) {
                 foreach ($requestData['delete_email_ids'] as $emailId) {
@@ -2453,7 +2441,6 @@ class ClientsController extends Controller
                 }
             }
 
-
             // Handle Passport Deletion
             if (isset($requestData['delete_passport_ids']) && is_array($requestData['delete_passport_ids'])) {
                 foreach ($requestData['delete_passport_ids'] as $passportId) {
@@ -2534,7 +2521,6 @@ class ClientsController extends Controller
                 $obj->visa_expiry_verified_at = null;
                 $obj->visa_expiry_verified_by = null;
             }
-
 
             // Visa Details Handling
             if (
@@ -2713,8 +2699,6 @@ class ClientsController extends Controller
                     }
                 }
             }
-
-
 
             // Updated Address Handling
             if (
@@ -3003,7 +2987,6 @@ class ClientsController extends Controller
                 }
             }
 
-
             if ( isset($requestData['nomi_occupation']) && is_array($requestData['nomi_occupation']))
             {
                 // Delete existing occupation records for the client to start fresh
@@ -3033,7 +3016,6 @@ class ClientsController extends Controller
                     $occ_reference_no = $requestData['occ_reference_no'][$key] ?? null;
                     $date = $requestData['dates'][$key] ?? null;
                     $expiry_dates = $requestData['expiry_dates'][$key] ?? null;
-
 
                     // Convert dates from dd/mm/yyyy to Y-m-d for database storage
                     $formatted_date = null;
@@ -3077,7 +3059,6 @@ class ClientsController extends Controller
                 $savedOccupations = ClientOccupation::where('client_id', $obj->id)->count();
                 \Log::info('Occupations Saved:', ['count' => $savedOccupations]);
             }
-
 
             // Test Score Handling
             if (isset($requestData['test_type_hidden']) && is_array($requestData['test_type_hidden'])) {
@@ -3214,7 +3195,6 @@ class ClientsController extends Controller
                 }
             }
 
-
             // Update Partner Handling to include all family member types
             $familyTypes = [
                 'partner' => ['Husband', 'Wife', 'Ex-Wife', 'Defacto'],
@@ -3348,9 +3328,6 @@ class ClientsController extends Controller
                         } else {
                             $dobFormated = null;
                         }
-            
-                        
-                       
 
                         // Skip if neither details nor relationship type is provided
                         if (empty($details) && empty($relationshipType)) {
@@ -3410,8 +3387,7 @@ class ClientsController extends Controller
                     } //End foreach inner
                 }
             } //End foreach
-			
-			
+
 			// Handle EOI Reference Deletion
 			if (isset($requestData['delete_eoi_ids']) && is_array($requestData['delete_eoi_ids'])) {
 				foreach ($requestData['delete_eoi_ids'] as $eoiId) {
@@ -3479,8 +3455,6 @@ class ClientsController extends Controller
 				}
 			}
 
-			
-
 			$saved = $obj->save();
             if (!$saved) {
                 return redirect()->back()->with('error', Config::get('constants.server_error'));
@@ -3490,7 +3464,6 @@ class ClientsController extends Controller
             if (DB::table('client_service_takens')->where('client_id', $requestData['id'])->exists()) {
                 DB::table('client_service_takens')->where('client_id', $requestData['id'])->update(['is_saved_db' => 1]);
             }
-
 
             //simiar related files
             if(isset($requestData['related_files']))
@@ -3546,7 +3519,6 @@ class ClientsController extends Controller
                     $req_arr11 = array();
                 }
 
-
                 if( !empty($db_arr)  ){
 
                     $commaPosition11 = strpos($db_arr[0]->related_files, ',');
@@ -3563,7 +3535,6 @@ class ClientsController extends Controller
                     $diff_arr = array_values($diff_arr);
                     //echo "<pre>diff_arr=";print_r($diff_arr);die;
                 }
-
 
                     if( isset($diff_arr) && !empty($diff_arr))
                     {
@@ -3646,7 +3617,6 @@ class ClientsController extends Controller
             }
         }
     }
-
 
     public function getVisaTypes()
     {
@@ -3960,7 +3930,6 @@ class ClientsController extends Controller
 						$obj->save();
 					}
 				}
-
 
                 // Loop through each address in the request
                 foreach ($requestData['address'] as $key => $addr) {
@@ -4432,8 +4401,6 @@ class ClientsController extends Controller
             \Log::info('No partner data provided to process.');
         }
 
-
-
 			/*$obj->total_points	=	@$requestData['total_points'];
 			$obj->type	=	@$requestData['type'];
 			$obj->source	=	@$requestData['source'];
@@ -4590,7 +4557,14 @@ class ClientsController extends Controller
                 $clientFamilyDetails = ClientRelationship::Where('client_id', $id)->get()?? [];
                 //dd($clientFamilyDetails);
                 //Return the view with all data
-                return view('Admin.clients.detail', compact(
+                $viewName = 'Admin.clients.detail';
+                
+                // Check if this is the test route
+                if (request()->route()->getName() === 'admin.clients.detail-test') {
+                    $viewName = 'Admin.clients.detail_test';
+                }
+                
+                return view($viewName, compact(
                     'fetchedData', 'clientAddresses', 'clientContacts', 'emails', 'qualifications',
                     'experiences', 'testScores', 'visaCountries', 'clientOccupations','ClientPoints', 'clientSpouseDetail',
                     'encodeId', 'id1','clientFamilyDetails'
@@ -4709,7 +4683,6 @@ class ClientsController extends Controller
         return [$points, $numericPoints]; // Return both variables
     }
 
-
     public function saveRelationship(Request $request)
     {
         $clientId = auth()->user()->id; // Assuming the logged-in user is the client
@@ -4745,7 +4718,6 @@ class ClientsController extends Controller
         }
         echo json_encode($response);
     }
-
 
 	public function getrecipients(Request $request){
 		$squery = $request->q;
@@ -4809,7 +4781,6 @@ class ClientsController extends Controller
 			echo json_encode(array('items'=>$m));
 		}
 	}
-
 
     /*public function getallclients(Request $request)
     {
@@ -4973,7 +4944,6 @@ class ClientsController extends Controller
         }
     }*/
 
-
     public function getallclients(Request $request)
     {
         $squery = $request->q;
@@ -5084,8 +5054,6 @@ class ClientsController extends Controller
         }
     }
 
-    
-
     public function getAllUser(Request $request, Admin $product) {
             $products = $request->q
                 ? Admin::select('id', 'first_name')->where('first_name', 'LIKE', "%$request->q%")
@@ -5093,7 +5061,6 @@ class ClientsController extends Controller
 
             return $products->paginate(10, ['*'], 'page', $request->page)->toArray();
     }
-
 
 	public function activities(Request $request){ 
 		if(Admin::where('role', '=', '7')->where('id', $request->id)->exists()){
@@ -5179,9 +5146,7 @@ class ClientsController extends Controller
             $obj->client_matter_id = $request->client_matter_id;
 			$saved = $obj->save();
 			if($saved){
-				$productdetail = \App\Models\Product::where('id', $product)->first();
-				$partnerdetail = \App\Models\Partner::where('id', $partner)->first();
-				$PartnerBranch = \App\Models\PartnerBranch::where('id', $branch)->first();
+
 				$subject = 'has started an application';
 				$objs = new ActivitiesLog;
 				$objs->client_id = $request->client_id;
@@ -5209,9 +5174,7 @@ class ClientsController extends Controller
 			$data = array();
 			ob_start();
 			foreach($applications as $alist){
-				$productdetail = \App\Models\Product::where('id', $alist->product_id)->first();
-				$partnerdetail = \App\Models\Partner::where('id', $alist->partner_id)->first();
-				$PartnerBranch = \App\Models\PartnerBranch::where('id', $alist->branch)->first();
+
 				$workflow = \App\Models\Workflow::where('id', $alist->workflow)->first();
 				?>
 				<tr id="id_<?php echo $alist->id; ?>">
@@ -5245,10 +5208,9 @@ class ClientsController extends Controller
 			}
 
 			return ob_get_clean();
-		}else{
-
+		}else {
+			return '';
 		}
-
 	}
 
     //Save create and update note
@@ -5311,8 +5273,6 @@ class ClientsController extends Controller
 		}
         echo json_encode($response);
 	}
-
-	
 
 	//Update note datetime
 	public function updateNoteDatetime(Request $request){
@@ -5398,7 +5358,6 @@ class ClientsController extends Controller
 		echo json_encode($response);
 	}
 
-	
     //Notes Tab redesign
     public function getnotes(Request $request){
         $client_id = $request->clientid;
@@ -5552,163 +5511,7 @@ class ClientsController extends Controller
 		echo json_encode($response);
 	}
 
-	public function interestedService(Request $request){
-		if(Admin::where('role', '=', '7')->where('id', $request->client_id)->exists()){
-			if(\App\Models\InterestedService::where('client_id', $request->client_id)->where('partner', $request->partner)->where('product', $request->product)->exists()){
-				$response['status'] 	= 	false;
-				$response['message']	=	'This interested service already exists.';
-			}else{
-				$obj = new \App\Models\InterestedService;
-				$obj->client_id = $request->client_id;
-				$obj->user_id = Auth::user()->id;
-				$obj->workflow = $request->workflow;
-				$obj->partner = $request->partner;
-				$obj->product = $request->product;
-				$obj->branch = $request->branch;
-				$obj->start_date = $request->expect_start_date;
-				$obj->exp_date = $request->expect_win_date;
-				$obj->status = 0;
-				$saved = $obj->save();
-				if($saved){
-					$subject = 'added an interested service';
 
-					$partnerdetail = \App\Models\Partner::where('id', $request->partner)->first();
-					$PartnerBranch = \App\Models\PartnerBranch::where('id', $request->branch)->first();
-					$objs = new ActivitiesLog;
-					$objs->client_id = $request->client_id;
-					$objs->created_by = Auth::user()->id;
-					$objs->description = '<span class="text-semi-bold">'.$PartnerBranch->name.'</span><p>'.$partnerdetail->name.'</p>';
-					$objs->subject = $subject;
-					$objs->save();
-					$response['status'] 	= 	true;
-					$response['message']	=	'You’ve successfully added interested service';
-				}else{
-				$response['status'] 	= 	false;
-				$response['message']	=	'Please try again';
-				}
-			}
-		}else{
-			$response['status'] 	= 	false;
-			$response['message']	=	'Please try again';
-		}
-		echo json_encode($response);
-	}
-
-
-
-	public function getServices(Request $request){
-		$client_id = $request->clientid;
-		$inteservices = \App\Models\InterestedService::where('client_id',$client_id)->orderby('created_at', 'DESC')->get();
-		foreach($inteservices as $inteservice){
-			$workflowdetail = \App\Models\Workflow::where('id', $inteservice->workflow)->first();
-			 $productdetail = \App\Models\Product::where('id', $inteservice->product)->first();
-			$partnerdetail = \App\Models\Partner::where('id', $inteservice->partner)->first();
-			$PartnerBranch = \App\Models\PartnerBranch::where('id', $inteservice->branch)->first();
-			$admin = \App\Models\Admin::where('id', $inteservice->user_id)->first();
-			ob_start();
-			?>
-			<div class="interest_column">
-			<?php
-				if($inteservice->status == 1){
-					?>
-					<div class="interest_serv_status status_active">
-						<span>Converted</span>
-					</div>
-					<?php
-				}else{
-					?>
-					<div class="interest_serv_status status_default">
-						<span>Draft</span>
-					</div>
-					<?php
-				}
-				?>
-			<div class="interest_serv_info">
-				<h4><?php echo @$workflowdetail->name; ?></h4>
-				<h6><?php echo @$productdetail->name; ?></h6>
-				<p><?php echo @$partnerdetail->partner_name; ?></p>
-				<p><?php echo @$PartnerBranch->name; ?></p>
-			</div>
-			<?php
-			$client_revenue = '0.00';
-			if($inteservice->client_revenue != ''){
-				$client_revenue = $inteservice->client_revenue;
-			}
-			$partner_revenue = '0.00';
-			if($inteservice->partner_revenue != ''){
-				$partner_revenue = $inteservice->partner_revenue;
-			}
-			$discounts = '0.00';
-			if($inteservice->discounts != ''){
-				$discounts = $inteservice->discounts;
-			}
-			$nettotal = $client_revenue + $partner_revenue - $discounts;
-
-			$appfeeoption = \App\Models\ServiceFeeOption::where('app_id', $inteservice->id)->first();
-			$totl = 0.00;
-			$net = 0.00;
-			$discount = 0.00;
-			if($appfeeoption){
-				$appfeeoptiontype = \App\Models\ServiceFeeOptionType::where('fee_id', $appfeeoption->id)->get();
-				foreach($appfeeoptiontype as $fee){
-					$totl += $fee->total_fee;
-				}
-			}
-
-			if(@$appfeeoption->total_discount != ''){
-				$discount = @$appfeeoption->total_discount;
-			}
-			$net = $totl -  $discount;
-			?>
-			<div class="interest_serv_fees">
-				<div class="fees_col cus_col">
-					<span class="cus_label">Product Fees</span>
-					<span class="cus_value">AUD: <?php echo number_format($net,2,'.',''); ?></span>
-				</div>
-				<div class="fees_col cus_col">
-					<span class="cus_label">Sales Forecast</span>
-					<span class="cus_value">AUD: <?php echo number_format($nettotal,2,'.',''); ?></span>
-				</div>
-			</div>
-			<div class="interest_serv_date">
-				<div class="date_col cus_col">
-					<span class="cus_label">Expected Start Date</span>
-					<span class="cus_value"><?php echo $inteservice->start_date; ?></span>
-				</div>
-				<div class="fees_col cus_col">
-					<span class="cus_label">Expected Win Date</span>
-					<span class="cus_value"><?php echo $inteservice->exp_date; ?></span>
-				</div>
-			</div>
-			<div class="interest_serv_row">
-				<div class="serv_user_data">
-					<div class="serv_user_img"><?php echo substr($admin->first_name, 0, 1); ?></div>
-					<div class="serv_user_info">
-						<span class="serv_name"><?php echo $admin->first_name; ?></span>
-						<span class="serv_create"><?php echo date('Y-m-d', strtotime($inteservice->exp_date)); ?></span>
-					</div>
-				</div>
-				<div class="serv_user_action">
-					<a href="javascript:;" data-id="<?php echo $inteservice->id; ?>" class="btn btn-primary interest_service_view">View</a>
-					<div class="dropdown d-inline dropdown_ellipsis_icon" style="margin-left:10px;">
-						<a class="dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
-						<div class="dropdown-menu">
-						<?php if($inteservice->status == 0){ ?>
-							<a class="dropdown-item converttoapplication" data-id="<?php echo $inteservice->id; ?>" href="javascript:;">Create Appliation</a>
-						<?php } ?>
-							<a class="dropdown-item" href="javascript:;">Delete</a>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-			<?php
-
-		}
-		return ob_get_clean();
-	}
-
-   
 
     //Add personal Doc checklist
     public function addedudocchecklist(Request $request){
@@ -6099,7 +5902,6 @@ class ClientsController extends Controller
         echo json_encode($response);
         exit;
     }
-    
 
     public function addvisadocchecklist(Request $request){ //dd($request->all());
         $clientid = $request->clientid;
@@ -6409,7 +6211,6 @@ class ClientsController extends Controller
                 $response['status'] 	= 	true;
                 $response['message']	=	'You have successfully uploaded your visa document';
 
-
                 $fetchd = \App\Models\Document::where('client_id',$clientid)->whereNull('not_used_doc')->where('doc_type',$doctype)->where('type',$request->type)->orderby('updated_at', 'DESC')->get();
                 ob_start();
                 foreach($fetchd as $visaKey=>$fetch)
@@ -6466,7 +6267,6 @@ class ClientsController extends Controller
                             <?php
                             }?>
                         </td>
-
 
                         <td style="white-space: initial;">
                             <?php
@@ -6684,124 +6484,6 @@ class ClientsController extends Controller
         exit;
     }
   
-	public function convertapplication(Request $request){
-		$id = $request->cat_id;
-		$clientid = $request->clientid;
-
-		if(\App\Models\InterestedService::where('client_id',$clientid)->where('id',$id)->exists()){
-			$app = \App\Models\InterestedService::where('client_id',$clientid)->where('id',$id)->first();
-			$workflow = $app->workflow;
-			$workflowstage = \App\Models\WorkflowStage::where('w_id', $workflow)->orderby('id','ASC')->first();
-			$partner = $app->partner;
-			$branch = $app->branch;
-			$product = $app->product;
-			$client_id = $request->client_id;
-			$status = 0;
-			$stage = $workflowstage->name;
-			$sale_forcast = 0.00;
-			$obj = new \App\Models\Application;
-			$obj->user_id = Auth::user()->id;
-			$obj->workflow = $workflow;
-			$obj->partner_id = $partner;
-			$obj->branch = $branch;
-			$obj->product_id = $product;
-			$obj->status = $status;
-			$obj->stage = $stage;
-			$obj->client_id = $clientid;
-			$obj->client_revenue = @$app->client_revenue;
-			$obj->partner_revenue = @$app->partner_revenue;
-			$obj->discounts = @$app->discounts;
-
-			$saved = $obj->save();
-
-			if(\App\Models\ServiceFeeOption::where('app_id', $app->id)->exists()){
-				$servicedata = \App\Models\ServiceFeeOption::where('app_id', $app->id)->first();
-
-				$aobj = new \App\Models\ApplicationFeeOption;
-				$aobj->user_id = Auth::user()->id;
-				$aobj->app_id = $obj->id;
-				$aobj->name = $servicedata->name;
-				$aobj->country = $servicedata->country;
-				$aobj->installment_type = $servicedata->installment_type;
-				$aobj->discount_amount = $servicedata->discount_amount;
-				$aobj->discount_sem = $servicedata->discount_sem;
-				$aobj->total_discount = $servicedata->total_discount;
-				$aobj->save();
-				if(\App\Models\ServiceFeeOptionType::where('fee_id', $servicedata->id)->exists()){
-					$totl = 0.00;
-					$appfeeoptiontype = \App\Models\ServiceFeeOptionType::where('fee_id', $servicedata->id)->get();
-					foreach($appfeeoptiontype as $fee){
-						$totl += $fee->total_fee;
-						$aobjs = new \App\Models\ApplicationFeeOptionType;
-						$aobjs->fee_id = $aobj->id;
-						$aobjs->fee_type = $fee->fee_type;
-						$aobjs->inst_amt = $fee->inst_amt;
-						$aobjs->installment = $fee->installment;
-						$aobjs->total_fee = $fee->total_fee;
-						$aobjs->claim_term = $fee->claim_term;
-						$aobjs->commission = $fee->commission;
-						$saved = $aobjs->save();
-					}
-				}
-			}
-
-			$app = \App\Models\InterestedService::find($id);
-			$app->status = 1;
-			$saved = $app->save();
-			if($saved){
-				$productdetail = \App\Models\Product::where('id', $product)->first();
-				$partnerdetail = \App\Models\Partner::where('id', $partner)->first();
-				$PartnerBranch = \App\Models\PartnerBranch::where('id', $branch)->first();
-				$subject = 'has started an application';
-				$objs = new ActivitiesLog;
-				$objs->client_id = $request->clientid;
-				$objs->created_by = Auth::user()->id;
-				$objs->description = '<span class="text-semi-bold">'.@$productdetail->name.'</span><p>'.@$partnerdetail->partner_name.' ('.@$PartnerBranch->name.')</p>';
-				$objs->subject = $subject;
-				$objs->save();
-				$response['status'] 	= 	true;
-				$response['message']	=	'You’ve successfully updated your client’s information.';
-			}else{
-				$response['status'] 	= 	false;
-				$response['message']	=	'Please try again';
-			}
-		}else{
-			$response['status'] 	= 	false;
-			$response['message']	=	'Please try again';
-		}
-		echo json_encode($response);
-	}
-
-	public function deleteservices(Request $request){
-		$note_id = $request->note_id;
-		if(\App\Models\InterestedService::where('id',$note_id)->exists()){
-			$data = \App\Models\InterestedService::where('id',$note_id)->first();
-			$res = DB::table('interested_services')->where('id', @$note_id)->delete();
-			if($res){
-				$productdetail = \App\Models\Product::where('id', $data->product)->first();
-				$partnerdetail = \App\Models\Partner::where('id', $data->partner)->first();
-				$PartnerBranch = \App\Models\PartnerBranch::where('id', $data->branch)->first();
-				$subject = 'deleted an interested service';
-
-				$objs = new ActivitiesLog;
-				$objs->client_id = $data->client_id;
-				$objs->created_by = Auth::user()->id;
-				$objs->description = '<span class="text-semi-bold">'.@$productdetail->name.'</span><p>'.@$partnerdetail->partner_name.' ('.@$PartnerBranch->name.')</p>';
-				$objs->subject = $subject;
-				$objs->save();
-			$response['status'] 	= 	true;
-			$response['data']	=	$data;
-			}else{
-				$response['status'] 	= 	false;
-			$response['message']	=	'Please try again';
-			}
-		}else{
-			$response['status'] 	= 	false;
-			$response['message']	=	'Please try again';
-		}
-		echo json_encode($response);
-	}
-
 
 
 	/*public function renamedoc(Request $request){
@@ -6945,9 +6627,9 @@ class ClientsController extends Controller
 		    $tag = array();
 		    foreach($tagg as $tg){
 		        $stagd = \App\Models\Tag::where('name','=',$tg)->first();
-		        if($stagd){
-
-		        }else{
+		        if($stagd) {
+		            $tag[] = $stagd->id;
+		        } else {
 		            $stagds = \App\Models\Tag::where('id','=',$tg)->first();
 		            if($stagds){
 		                $tag[] = $stagds->id;
@@ -7134,7 +6816,6 @@ class ClientsController extends Controller
                     $objs->description = '<p><span class="text-semi-bold">scheduled an appointment on '.$appoint_date_val_formated.' at '.$request->appoint_time.'</span></p>';
                 }*/
 
-
                 $objs->description = '<div style="display: -webkit-inline-box;">
 						<span style="height: 60px; width: 60px; border: 1px solid rgb(3, 169, 244); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2px;overflow: hidden;">
 							<span  style="flex: 1 1 0%; width: 100%; text-align: center; background: rgb(237, 237, 237); border-top-left-radius: 120px; border-top-right-radius: 120px; font-size: 12px;line-height: 24px;">
@@ -7295,7 +6976,6 @@ class ClientsController extends Controller
 			$objs->save();
 			}
 
-
 			$response['status'] 	= 	true;
 			$response['data']	=	'Appointment saved successfully';
 				if(isset($requestData['is_ajax']) && $requestData['is_ajax'] == 1){
@@ -7311,7 +6991,6 @@ class ClientsController extends Controller
 		 echo json_encode($response);
 
 	}
-
 
 	public function editappointment(Request $request){
 		$requestData = $request->all();
@@ -7688,7 +7367,6 @@ class ClientsController extends Controller
 		die;
 	}
 
-
 	public function getAppointmentdetail(Request $request){
 		$obj = \App\Models\Appointment::find($request->id);
 		if($obj){
@@ -7868,358 +7546,7 @@ class ClientsController extends Controller
 		echo json_encode($response);
 	}
 
-	public function editinterestedService(Request $request){
-		if(Admin::where('role', '=', '7')->where('id', $request->client_id)->exists()){
 
-			$obj = \App\Models\InterestedService::find($request->id);
-			$obj->workflow = $request->workflow;
-			$obj->partner = $request->partner;
-			$obj->product = $request->product;
-			$obj->branch = $request->branch;
-			$obj->start_date = $request->expect_start_date;
-			$obj->exp_date = $request->expect_win_date;
-			$obj->status = 0;
-			$saved = $obj->save();
-			if($saved){
-				$subject = 'updated an interested service';
-
-				$partnerdetail = \App\Models\Partner::where('id', $request->partner)->first();
-				$PartnerBranch = \App\Models\PartnerBranch::where('id', $request->branch)->first();
-				$objs = new ActivitiesLog;
-				$objs->client_id = $request->client_id;
-				$objs->created_by = Auth::user()->id;
-				$objs->description = '<span class="text-semi-bold">'.$PartnerBranch->name.'</span><p>'.$partnerdetail->name.'</p>';
-				$objs->subject = $subject;
-				$objs->save();
-				$response['status'] 	= 	true;
-				$response['message']	=	'You’ve successfully updated interested service';
-			}else{
-			$response['status'] 	= 	false;
-			$response['message']	=	'Please try again';
-			}
-		}else{
-			$response['status'] 	= 	false;
-			$response['message']	=	'Please try again';
-		}
-		echo json_encode($response);
-	}
-
-	public function getintrestedserviceedit(Request $request){
-		$obj = \App\Models\InterestedService::find($request->id);
-		if($obj){
-			?>
-			<form method="post" action="<?php echo \URL::to('/admin/edit-interested-service'); ?>" name="editinter_servform" autocomplete="off" id="editinter_servform" enctype="multipart/form-data">
-				<input type="hidden" name="_token" value="<?php echo csrf_token(); ?>">
-				<input type="hidden" name="client_id" value="<?php echo $obj->client_id; ?>">
-				<input type="hidden" name="id" value="<?php echo $obj->id; ?>">
-					<div class="row">
-						<div class="col-12 col-md-6 col-lg-6">
-							<div class="form-group">
-								<label for="edit_intrested_workflow">Select Workflow <span class="span_req">*</span></label>
-								<select data-valid="required" class="form-control workflowselect2" id="edit_intrested_workflow" name="workflow">
-									<option value="">Please Select a Workflow</option>
-									<?php foreach(\App\Models\Workflow::all() as $wlist){
-										?>
-										<option <?php if($obj->workflow == $wlist->id){ echo 'selected'; } ?> value="<?php echo $wlist->id; ?>"><?php echo $wlist->name; ?></option>
-									<?php } ?>
-								</select>
-								<span class="custom-error workflow_error" role="alert">
-									<strong></strong>
-								</span>
-							</div>
-						</div>
-						<div class="col-12 col-md-6 col-lg-6">
-							<div class="form-group">
-								<label for="edit_intrested_partner">Select Partner</label>
-								<select data-valid="required" class="form-control partnerselect2" id="edit_intrested_partner" name="partner">
-									<option value="">Please Select a Partner</option>
-									<?php foreach(\App\Models\Partner::where('service_workflow', $obj->workflow)->orderby('created_at', 'DESC')->get() as $plist){
-										?>
-										<option <?php if($obj->partner == $plist->id){ echo 'selected'; } ?> value="<?php echo $plist->id; ?>"><?php echo @$plist->partner_name; ?></option>
-									<?php } ?>
-								</select>
-								<span class="custom-error partner_error" role="alert">
-									<strong></strong>
-								</span>
-							</div>
-						</div>
-						<div class="col-12 col-md-6 col-lg-6">
-							<div class="form-group">
-								<label for="edit_intrested_product">Select Product</label>
-								<select data-valid="required" class="form-control productselect2" id="edit_intrested_product" name="product">
-									<option value="">Please Select a Product</option>
-									<?php foreach(\App\Models\Product::where('partner', $obj->partner)->orderby('created_at', 'DESC')->get() as $pplist){
-										?>
-										<option <?php if($obj->product == $pplist->id){ echo 'selected'; } ?> value="<?php echo $pplist->id; ?>"><?php echo $pplist->name; ?></option>
-									<?php } ?>
-								</select>
-								<span class="custom-error product_error" role="alert">
-									<strong></strong>
-								</span>
-							</div>
-						</div>
-						<div class="col-12 col-md-6 col-lg-6">
-							<div class="form-group">
-								<label for="branch">Select Branch</label>
-								<select data-valid="required" class="form-control getintrestedserviceedit" id="edit_intrested_branch" name="branch">
-									<option value="">Please Select a Branch</option>
-									<?php
-								$catid = $obj->product;
-		$pro = \App\Models\Product::where('id', $catid)->first();
-		if($pro){
-		$user_array = explode(',',$pro->branches);
-		$lists = \App\Models\PartnerBranch::WhereIn('id',$user_array)->Where('partner_id',$pro->partner)->orderby('name','ASC')->get();
-
-									foreach($lists as $list){
-										?>
-										<option  <?php if($obj->branch == $list->id){ echo 'selected'; } ?> value="<?php echo $list->id; ?>"><?php echo $list->name; ?></option>
-									<?php } ?>
-								</select>
-								<span class="custom-error branch_error" role="alert">
-									<strong></strong>
-								</span>
-							</div>
-						</div>
-						<div class="col-12 col-md-6 col-lg-6">
-							<div class="form-group">
-								<label for="expect_start_date">Expected Start Date</label>
-								<div class="input-group">
-									<div class="input-group-prepend">
-										<div class="input-group-text">
-											<i class="fas fa-calendar-alt"></i>
-										</div>
-									</div>
-									<input type="text" name="expect_start_date" class="form-control datepicker" data-valid="required" autocomplete="off" placeholder="Select Date" value="<?php echo $obj->start_date; ?>">
-
-								</div>
-								<span class="span_note">Date must be in YYYY-MM-DD (2012-12-22) format.</span>
-								<span class="custom-error expect_start_error" role="alert">
-									<strong></strong>
-								</span>
-							</div>
-						</div>
-						<div class="col-12 col-md-6 col-lg-6">
-							<div class="form-group">
-								<label for="expect_win_date">Expected Win Date</label>
-								<div class="input-group">
-									<div class="input-group-prepend">
-										<div class="input-group-text">
-											<i class="fas fa-calendar-alt"></i>
-										</div>
-									</div>
-									<input type="text" name="expect_win_date" class="form-control datepicker" data-valid="required" autocomplete="off" placeholder="Select Date" value="<?php echo $obj->exp_date; ?>">
-
-								</div>
-								<span class="span_note">Date must be in YYYY-MM-DD (2012-12-22) format.</span>
-								<span class="custom-error expect_win_error" role="alert">
-									<strong></strong>
-								</span>
-							</div>
-						</div>
-						<div class="col-12 col-md-12 col-lg-12">
-							<button onclick="customValidate('editinter_servform')" type="button" class="btn btn-primary">Submit</button>
-							<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-						</div>
-					</div>
-				</form>
-			<?php
-		}else{
-			?>
-			Not Found
-			<?php
-		}
-	}
-	}
-	public function getintrestedservice(Request $request){
-		$obj = \App\Models\InterestedService::find($request->id);
-		if($obj){
-			$workflowdetail = \App\Models\Workflow::where('id', $obj->workflow)->first();
-			 $productdetail = \App\Models\Product::where('id', $obj->product)->first();
-			$partnerdetail = \App\Models\Partner::where('id', $obj->partner)->first();
-			$PartnerBranch = \App\Models\PartnerBranch::where('id', $obj->branch)->first();
-			$admin = \App\Models\Admin::where('id', $obj->user_id)->first();
-			?>
-			<div class="modal-header">
-				<h5 class="modal-title" id="interestModalLabel"><?php echo $workflowdetail->name; ?></h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-					<span aria-hidden="true">×</span>
-				</button>
-			</div>
-			<div class="modal-body ">
-				<div class="interest_serv_detail">
-					<div class="serv_status_added">
-						<p>Status <?php if($obj->status == 1){ ?><span style="color:#6777ef;">Converted</span><?php }else{ ?><span style="">Draft</span><?php } ?></p>
-						<p>Added On: <span class="text-muted"><?php echo date('Y-m-d', strtotime($obj->created_at)); ?></span></p>
-						<p>Added By:<span class="text-muted"><span class="name"><?php echo substr($admin->first_name, 0, 1); ?></span><?php echo $admin->first_name; ?></span></p>
-					</div>
-					<div class="serv_detail">
-						<h6>Service Details</h6>
-						<?php if($obj->status == 0){ ?><a href="javascript:;" data-id="<?php echo $obj->id; ?>" class="openeditservices"><i class="fa fa-edit"></i></a><?php } ?>
-						<div class="clearfix"></div>
-						<div class="service_list">
-							<ul>
-								<li>Workflow <span><?php echo @$workflowdetail->name; ?></span></li>
-								<li>Partner <span><?php echo @$partnerdetail->partner_name; ?></span></li>
-								<li>Branch <span><?php echo @$PartnerBranch->name; ?></span></li>
-								<li>Product <span><?php echo @$productdetail->name; ?></span></li>
-								<li>Expected Start Date <span><?php echo $obj->start_date; ?></span></li>
-								<li>Expected Win Date <span><?php echo $obj->exp_date; ?></span></li>
-							</ul>
-							<div class="clearfix"></div>
-						</div>
-					</div>
-					<div class="divider"></div>
-					<div class="prod_fees_sec productfeedata">
-						<div class="cus_prod_fees">
-							<h5>Product Fees <span>AUD</span></h5>
-							<?php if($obj->status == 0){ ?><a href="javascript:;" data-id="<?php echo $obj->id; ?>" class="openpaymentfeeserv"><i class="fa fa-edit"></i></a><?php } ?>
-							<div class="clearfix"></div>
-						</div>
-						<?php
-						$totl = 0.00;
-						$discount = 0.00;
-						$appfeeoption = \App\Models\ServiceFeeOption::where('app_id', $obj->id)->first();
-						if($appfeeoption){
-							?>
-							<div class="prod_type">Installment Type: <span class="installtype"><?php echo $appfeeoption->installment_type; ?></span></div>
-						<div class="feedata">
-						<?php
-						$appfeeoptiontype = \App\Models\ServiceFeeOptionType::where('fee_id', $appfeeoption->id)->get();
-						foreach($appfeeoptiontype as $fee){
-							$totl += $fee->total_fee;
-						?>
-						<p class="clearfix">
-							<span class="float-left">Tuition Fee <span class="note">(<?php echo $fee->installment; ?> installments at <span class="classfee"><?php echo $fee->inst_amt; ?></span> each)</span></span>
-							<span class="float-right text-muted feetotl"><?php echo $fee->inst_amt * $fee->installment; ?></span>
-						</p>
-						<?php }
-
-						if(@$appfeeoption->total_discount != ''){
-								$discount = @$appfeeoption->total_discount;
-							}
-							$net = $totl -  $discount;
-						?>
-						</div>
-						<p class="clearfix" style="color:#ff0000;">
-							<span class="float-left">Client Discounts</span>
-							<span class="float-right text-muted client_dicounts"><?php echo $discount; ?></span>
-						</p>
-						<p class="clearfix" style="color:#6777ef;">
-							<span class="float-left">Total</span>
-							<span class="float-right text-muted client_totl"><?php echo $net; ?></span>
-						</p>
-							<?php
-						}else{
-							?>
-							<div class="prod_type">Installment Type: <span class="installtype">Per Semester</span></div>
-						<div class="feedata">
-						<p class="clearfix">
-							<span class="float-left">Tuition Fee <span class="note">(1 installments at <span class="classfee">0.00</span> each)</span></span>
-							<span class="float-right text-muted feetotl">0.00</span>
-						</p>
-						</div>
-						<p class="clearfix" style="color:#ff0000;">
-							<span class="float-left">Client Discounts</span>
-							<span class="float-right text-muted client_dicounts">0.00</span>
-						</p>
-						<p class="clearfix" style="color:#6777ef;">
-							<span class="float-left">Total</span>
-							<span class="float-right text-muted client_totl">0.00</span>
-						</p>
-							<?php
-						}
-						?>
-
-					</div>
-					<div class="divider"></div>
-					<div class="prod_fees_sec">
-						<div class="cus_prod_fees">
-						<?php
-			$client_revenue = '0.00';
-			if($obj->client_revenue != ''){
-				$client_revenue = $obj->client_revenue;
-			}
-			$partner_revenue = '0.00';
-			if($obj->partner_revenue != ''){
-				$partner_revenue = $obj->partner_revenue;
-			}
-			$discounts = '0.00';
-			if($obj->discounts != ''){
-				$discounts = $obj->discounts;
-			}
-			$nettotal = $client_revenue + $partner_revenue - $discounts;
-			?>
-							<h5>Sales Forecast <span>AUD</span></h5>
-							<?php if($obj->status == 0){ ?><a href="javascript:;" data-id="<?php echo $obj->id; ?>" data-client_revenue="<?php echo $client_revenue; ?>" data-partner_revenue="<?php echo $partner_revenue; ?>" data-discounts="<?php echo $discounts; ?>" class="opensaleforcastservice"><i class="fa fa-edit"></i></a><?php } ?>
-							<div class="clearfix"></div>
-						</div>
-						<p class="clearfix appsaleforcastserv">
-							<span class="float-left">Partner Revenue</span></span>
-							<span class="float-right text-muted partner_revenue"><?php echo $partner_revenue; ?></span>
-						</p>
-						<p class="clearfix appsaleforcastserv">
-							<span class="float-left">Client Revenue</span></span>
-							<span class="float-right text-muted client_revenue"><?php echo $client_revenue; ?></span>
-						</p>
-						<p class="clearfix appsaleforcastserv" style="color:#ff0000;">
-							<span class="float-left">Client Discounts</span>
-							<span class="float-right text-muted discounts"><?php echo $discounts; ?></span>
-						</p>
-						<p class="clearfix appsaleforcastserv" style="color:#6777ef;">
-							<span class="float-left">Total</span>
-							<span class="float-right text-muted netrevenue"><?php echo number_format($nettotal,2,'.',''); ?></span>
-						</p>
-					</div>
-					<!--<div class="prod_comment">
-						<h6>Comment</h6>
-						<div class="form-group">
-							<textarea class="form-control" name="comment" placeholder="Enter comment here"></textarea>
-						</div>
-						<div class="form-btn">
-							<button type="button" class="btn btn-primary">Save</button>
-						</div>
-					</div>
-					<div class="serv_logs">
-						<h6>Logs</h6>
-						<div class="logs_list">
-							<div class=""></div>
-						</div>
-					</div>-->
-				</div>
-			</div>
-			<?php
-		}else{
-			?>
-			Record Not Found
-			<?php
-		}
-	}
-
-	public function saleforcastservice(Request $request){
-		$requestData = $request->all();
-
-			$user_id = @Auth::user()->id;
-			$obj = \App\Models\InterestedService::find($request->fapp_id);
-			$obj->client_revenue = $request->client_revenue;
-			$obj->partner_revenue = $request->partner_revenue;
-			$obj->discounts = $request->discounts;
-			$saved = $obj->save();
-			if($saved){
-
-				$response['status'] 	= 	true;
-				$response['message']	=	'Sales Forecast successfully updated.';
-				$response['client_revenue']	=	$obj->client_revenue;
-				$response['partner_revenue']	=	$obj->partner_revenue;
-				$response['discounts']	=	$obj->discounts;
-				$response['client_id']	=	$obj->client_id;
-
-			}else{
-				$response['status'] 	= 	false;
-				$response['message']	=	'Please try again';
-			}
-
-		echo json_encode($response);
-	}
 
 
 	public function savetoapplication(Request $request){
@@ -8249,9 +7576,7 @@ class ClientsController extends Controller
 				$obj->client_id = $client_id;
 				$saved = $obj->save();
 				if($saved){
-					$productdetail = \App\Models\Product::where('id', $product)->first();
-					$partnerdetail = \App\Models\Partner::where('id', $partner)->first();
-					$PartnerBranch = \App\Models\PartnerBranch::where('id', $branch)->first();
+
 					$subject = 'has started an application';
 					$objs = new ActivitiesLog;
 					$objs->client_id = $request->client_id;
@@ -8274,293 +7599,6 @@ class ClientsController extends Controller
 	}
 
 
-	public function showproductfeeserv(Request $request){
-		$id = $request->id;
-		ob_start();
-		$appfeeoption = \App\Models\ServiceFeeOption::where('app_id', $id)->first();
-
-		?>
-		<form method="post" action="<?php echo \URL::to('/admin/servicesavefee'); ?>" name="servicefeeform" id="servicefeeform" autocomplete="off" enctype="multipart/form-data">
-				<input type="hidden" name="_token" value="<?php echo csrf_token(); ?>">
-				<input type="hidden" name="id" value="<?php echo $id; ?>">
-					<div class="row">
-						<div class="col-12 col-md-4 col-lg-4">
-							<div class="form-group">
-								<label for="fee_option_name">Fee Option Name <span class="span_req">*</span></label>
-								<input type="text" readonly name="fee_option_name" class="form-control" value="Default Fee">
-
-								<span class="custom-error feeoption_name_error" role="alert">
-									<strong></strong>
-								</span>
-							</div>
-						</div>
-						<div class="col-12 col-md-4 col-lg-4">
-							<div class="form-group">
-								<label for="country_residency">Country of Residency <span class="span_req">*</span></label>
-								<input type="text" readonly name="country_residency" class="form-control" value="All Countries">
-								<span class="custom-error country_residency_error" role="alert">
-									<strong></strong>
-								</span>
-							</div>
-						</div>
-						<div class="col-12 col-md-4 col-lg-4">
-							<div class="form-group">
-								<label for="degree_level">Installment Type <span class="span_req">*</span></label>
-								<select data-valid="required" class="form-control degree_level installment_type select2" name="degree_level">
-									<option value="">Select Type</option>
-									<option value="Full Fee" <?php if(@$appfeeoption->installment_type == 'Full Fee'){ echo 'selected'; }?>>Full Fee</option>
-									<option value="Per Year" <?php if(@$appfeeoption->installment_type == 'Per Year'){ echo 'selected'; }?>>Per Year</option>
-									<option value="Per Month" <?php if(@$appfeeoption->installment_type == 'Per Month'){ echo 'selected'; }?>>Per Month</option>
-									<option value="Per Term" <?php if(@$appfeeoption->installment_type == 'Per Term'){ echo 'selected'; }?>>Per Term</option>
-									<option value="Per Trimester" <?php if(@$appfeeoption->installment_type == 'Per Trimester'){ echo 'selected'; }?>>Per Trimester</option>
-									<option value="Per Semester" <?php if(@$appfeeoption->installment_type == 'Per Semester'){ echo 'selected'; }?>>Per Semester</option>
-									<option value="Per Week" <?php if(@$appfeeoption->installment_type == 'Per Week'){ echo 'selected'; }?>>Per Week</option>
-									<option value="Installment" <?php if(@$appfeeoption->installment_type == 'Installment'){ echo 'selected'; }?>>Installment</option>
-								</select>
-								<span class="custom-error degree_level_error" role="alert">
-									<strong></strong>
-								</span>
-							</div>
-						</div>
-						<div class="col-12 col-md-12 col-lg-12">
-							<div class="table-responsive">
-								<table class="table text_wrap" id="productitemview">
-									<thead>
-										<tr>
-											<th>Fee Type <span class="span_req">*</span></th>
-											<th>Per Semester Amount <span class="span_req">*</span></th>
-											<th>No. of Semester <span class="span_req">*</span></th>
-											<th>Total Fee</th>
-											<th>Claimable Semester</th>
-											<th>Commission %</th>
-
-
-										</tr>
-									</thead>
-									<tbody class="tdata">
-									<?php
-									$totl = 0.00;
-									$discount = 0.00;
-									if($appfeeoption){
-										$appfeeoptiontype = \App\Models\ServiceFeeOptionType::where('fee_id', $appfeeoption->id)->get();
-										foreach($appfeeoptiontype as $fee){
-											$totl += $fee->total_fee;
-										?>
-										<tr class="add_fee_option cus_fee_option">
-											<td>
-												<select data-valid="required" class="form-control course_fee_type " name="course_fee_type[]">
-													<option value="">Select Type</option>
-													<option value="Accommodation Fee" <?php if(@$fee->fee_type == 'Accommodation Fee'){ echo 'selected'; }?>>Accommodation Fee</option>
-													<option value="Administration Fee" <?php if(@$fee->fee_type == 'Administration Fee'){ echo 'selected'; }?>>Administration Fee</option>
-													<option value="Airline Ticket" <?php if(@$fee->fee_type == 'Airline Ticket'){ echo 'selected'; }?>>Airline Ticket</option>
-													<option value="Airport Transfer Fee" <?php if(@$fee->fee_type == 'Airport Transfer Fee'){ echo 'selected'; }?>>Airport Transfer Fee</option>
-													<option value="Application Fee" <?php if(@$fee->fee_type == 'Application Fee'){ echo 'selected'; }?>>Application Fee</option>
-													<option value="Bond" <?php if(@$fee->fee_type == 'Bond'){ echo 'selected'; }?>>Bond</option>
-												</select>
-											</td>
-											<td>
-												<input type="number" value="<?php echo @$fee->inst_amt; ?>" class="form-control semester_amount" name="semester_amount[]">
-											</td>
-											<td>
-												<input type="number" value="<?php echo @$fee->installment; ?>" class="form-control no_semester" name="no_semester[]">
-											</td>
-											<td class="total_fee"><span><?php echo @$fee->total_fee; ?></span><input value="<?php echo @$fee->total_fee; ?>" type="hidden"  class="form-control total_fee_am" name="total_fee[]"></td>
-											<td>
-												<input type="number" value="<?php echo @$fee->claim_term; ?>" class="form-control claimable_terms" name="claimable_semester[]">
-											</td>
-											<td>
-												<input type="number" value="<?php echo @$fee->commission; ?>" class="form-control commission" name="commission[]">
-											</td>
-
-										</tr>
-										<?php
-										}
-									}else{
-									?>
-										<tr class="add_fee_option cus_fee_option">
-											<td>
-												<select data-valid="required" class="form-control course_fee_type " name="course_fee_type[]">
-													<option value="">Select Type</option>
-													<option value="Accommodation Fee">Accommodation Fee</option>
-													<option value="Administration Fee">Administration Fee</option>
-													<option value="Airline Ticket">Airline Ticket</option>
-													<option value="Airport Transfer Fee">Airport Transfer Fee</option>
-													<option value="Application Fee">Application Fee</option>
-													<option value="Bond">Bond</option>
-												</select>
-											</td>
-											<td>
-												<input type="number" value="0" class="form-control semester_amount" name="semester_amount[]">
-											</td>
-											<td>
-												<input type="number" value="1" class="form-control no_semester" name="no_semester[]">
-											</td>
-											<td class="total_fee"><span>0.00</span><input value="0" type="hidden"  class="form-control total_fee_am" name="total_fee[]"></td>
-											<td>
-												<input type="number" value="1" class="form-control claimable_terms" name="claimable_semester[]">
-											</td>
-											<td>
-												<input type="number" class="form-control commission" name="commission[]">
-											</td>
-
-										</tr>
-	<?php }
-
-	$net = $totl -  $discount;
-	?>
-									</tbody>
-									<tfoot>
-										<tr>
-											<td><input type="text" readonly value="Discounts" name="discount" class="form-control"></td>
-											<td><input type="number"  value="<?php echo @$appfeeoption->discount_amount; ?>" name="discount_amount" class="form-control discount_amount"></td>
-											<td><input type="number"  value="<?php if(@$appfeeoption->discount_sem != ''){ echo @$appfeeoption->discount_sem; }else{ echo 0.00; } ?>" name="discount_sem" class="form-control discount_sem"></td>
-											<td class="totaldis" style="color:#ff0000;"><span><?php if(@$appfeeoption->total_discount != ''){ echo @$appfeeoption->total_discount; }else{ echo 0.00; } ?></span><input value="<?php if(@$appfeeoption->total_discount != ''){ echo @$appfeeoption->total_discount; }else{ echo 0.00; } ?>" type="hidden" class="form-control total_dis_am" name="total_discount"></td>
-											<td><input type="text"  readonly value="" name="" class="form-control"></td>
-											<td><input type="text"  readonly value="" name="" class="form-control"></td>
-										</tr>
-										<tr>
-											<?php
-											$dis = 0.00;
-											if(@$appfeeoption->total_discount != ''){
-												$dis = @$appfeeoption->total_discount;
-											}
-											$duductamt = $net - $dis;
-											?>
-											<td colspan="3" style="text-align: right;"><b>Net Total</b></td>
-											<td class="net_totl text-info"><?php echo $duductamt; ?></td>
-											<td colspan="3"></td>
-										</tr>
-									</tfoot>
-								</table>
-							</div>
-							<div class="fee_option_addbtn">
-								<a href="#" class="btn btn-primary"><i class="fas fa-plus"></i> Add Fee</a>
-							</div>
-
-						</div>
-						<div class="col-12 col-md-12 col-lg-12">
-							<button onclick="customValidate('servicefeeform')" type="button" class="btn btn-primary">Save</button>
-							<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-						</div>
-					</div>
-				</form>
-		<?php
-		return ob_get_clean();
-	}
-
-
-
-	public function servicesavefee(Request $request){
-		$requestData = $request->all();
-		$InterestedService = \App\Models\InterestedService::find($request->id);
-		if(ServiceFeeOption::where('app_id', $request->id)->exists()){
-			$o = ServiceFeeOption::where('app_id', $request->id)->first();
-			$obj = ServiceFeeOption::find($o->id);
-			$obj->user_id = Auth::user()->id;
-			$obj->app_id = $request->id;
-			$obj->name = $requestData['fee_option_name'];
-			$obj->country = $requestData['country_residency'];
-			$obj->installment_type = $requestData['degree_level'];
-			$obj->discount_amount = $requestData['discount_amount'];
-			$obj->discount_sem = $requestData['discount_sem'];
-			$obj->total_discount = $requestData['total_discount'];
-			$saved = $obj->save();
-			if($saved){
-				ServiceFeeOptionType::where('fee_id', $obj->id)->delete();
-				$course_fee_type = $requestData['course_fee_type'];
-				$totl = 0;
-				for($i = 0; $i< count($course_fee_type); $i++){
-					$totl += $requestData['total_fee'][$i];
-					$objs = new ServiceFeeOptionType;
-					$objs->fee_id = $obj->id;
-					$objs->fee_type = $requestData['course_fee_type'][$i];
-					$objs->inst_amt = $requestData['semester_amount'][$i];
-					$objs->installment = $requestData['no_semester'][$i];
-					$objs->total_fee = $requestData['total_fee'][$i];
-					$objs->claim_term = $requestData['claimable_semester'][$i];
-					$objs->commission = $requestData['commission'][$i];
-
-					$saved = $objs->save();
-					$p = '<p class="clearfix">
-							<span class="float-left">'.$requestData['course_fee_type'][$i].' <span class="note">('.$requestData['no_semester'][$i].' installments at <span class="classfee">'.$requestData['total_fee'][$i].'</span> each)</span></span>
-							<span class="float-right text-muted feetotl">'.$requestData['total_fee'][$i].'</span>
-						</p>';
-				}
-				$discount = 0.00;
-				if(@$obj->total_discount != ''){
-				$discount = @$obj->total_discount;
-				}
-				$response['status'] 	= 	true;
-					$response['message']	=	'Fee Option added successfully';
-					$response['installment_type']	=	$obj->installment_type;
-				$response['feedata']			=	$p;
-				$response['totalfee']			=	$totl;
-				$response['discount']			=	$discount;
-				$response['client_id']			=	$InterestedService->client_id;
-			}else{
-				$response['status'] 	= 	false;
-				$response['message']	=	'Record not found';
-			}
-		}else{
-			$obj = new ServiceFeeOption;
-			$obj->user_id = Auth::user()->id;
-			$obj->app_id = $request->id;
-			$obj->name = $requestData['fee_option_name'];
-			$obj->country = $requestData['country_residency'];
-			$obj->installment_type = $requestData['degree_level'];
-			$obj->discount_amount = $requestData['discount_amount'];
-			$obj->discount_sem = $requestData['discount_sem'];
-			$obj->total_discount = $requestData['total_discount'];
-			$saved = $obj->save();
-			if($saved){
-				$course_fee_type = $requestData['course_fee_type'];
-				$totl = 0;
-				$p = '';
-				for($i = 0; $i< count($course_fee_type); $i++){
-					$totl += $requestData['total_fee'][$i];
-					$objs = new ServiceFeeOptionType;
-					$objs->fee_id = $obj->id;
-					$objs->fee_type = $requestData['course_fee_type'][$i];
-					$objs->inst_amt = $requestData['semester_amount'][$i];
-					$objs->installment = $requestData['no_semester'][$i];
-					$objs->total_fee = $requestData['total_fee'][$i];
-					$objs->claim_term = $requestData['claimable_semester'][$i];
-					$objs->commission = $requestData['commission'][$i];
-
-					$saved = $objs->save();
-
-				}
-				$discount = 0.00;
-				if(@$obj->total_discount != ''){
-					$discount = @$obj->total_discount;
-				}
-				$appfeeoption = \App\Models\ServiceFeeOption::where('app_id', $obj->id)->first();
-				$totl = 0.00;
-
-				if($appfeeoption){
-					$appfeeoptiontype = \App\Models\ServiceFeeOptionType::where('fee_id', $appfeeoption->id)->get();
-					foreach($appfeeoptiontype as $fee){
-						$totl += $fee->total_fee;
-						$p = '<p class="clearfix">
-							<span class="float-left">'.$fee->installment.' <span class="note">('.$fee->installment.' installments at <span class="classfee">'.$fee->inst_amt.'</span> each)</span></span>
-							<span class="float-right text-muted feetotl">'.$fee->inst_amt * $fee->installment.'</span>
-						</p>';
-					}
-				}
-				$response['status'] 				= 	true;
-				$response['message']			=	'Fee Option added successfully';
-				$response['installment_type']	=	$obj->installment_type;
-				$response['feedata']			=	$p;
-				$response['totalfee']			=	$totl;
-				$response['discount']			=	$discount;
-				$response['client_id']			=	$InterestedService->client_id;
-			}else{
-				$response['status'] 	= 	false;
-				$response['message']	=	'Record not found';
-			}
-		}
-		echo json_encode($response);
-	}
 
 	public function pinnote(Request $request){
 		$requestData = $request->all();
@@ -8636,7 +7674,6 @@ class ClientsController extends Controller
             return Redirect::to('/admin/clients')->with('error', Config::get('constants.unauthorized'));
         }
 	}
-
 
 public function followupstore(Request $request)
 {
@@ -8865,7 +7902,6 @@ protected function getAssigneeName($assigneeId)
 		}
 	}
 
-
     //personal followup
     /*public function personalfollowup(Request $request){
 	    $requestData 		= 	$request->all();
@@ -8933,7 +7969,6 @@ protected function getAssigneeName($assigneeId)
 			exit;
 		}
 	}*/
-
 
     //personal followup
 public function personalfollowup(Request $request){
@@ -9283,7 +8318,6 @@ private function getUserName($userId) {
                 $obj->client_matter_id = $request->upload_inbox_mail_client_matter_id;
                 $obj->save();
 
-
                 // Fetch email content and save it to mail report
                 $fileUploadedPath = $file->getPathname();
                 $messageFactory = new MAPI\MapiMessageFactory();
@@ -9291,13 +8325,11 @@ private function getUserName($userId) {
                 $ole = $documentFactory->createFromFile($fileUploadedPath);
                 $message = $messageFactory->parseMessage($ole);
 
-
                 $mail_subject = $message->properties['subject'];
                 $mail_sender = $message->getSender();
                 $mail_body = $message->getBody();
                 $mail_to = array_map(fn($recipient) => (string)$recipient, $message->getRecipients());
                 $mail_to_arr = implode(",", $mail_to);
-
 
                 // Get mail sent time
                 $sentTimeFinal = "";
@@ -9322,7 +8354,6 @@ private function getUserName($userId) {
                 $mailReport->client_matter_id = $request->upload_inbox_mail_client_matter_id;
                 $mailReport->fetch_mail_sent_time = $sentTimeFinal;
                 $mailReport->save();
-
 
                 //Update date in client matter table
                 if( isset($request->upload_inbox_mail_client_matter_id) && $request->upload_inbox_mail_client_matter_id != ""){
@@ -9411,7 +8442,6 @@ private function getUserName($userId) {
                 $ole = $documentFactory->createFromFile($fileUploadedPath);
                 $message = $messageFactory->parseMessage($ole);
 
-
                 $mail_subject = $message->properties['subject'];
                 $mail_sender = $message->getSender();
                 $mail_body = $message->getBody();
@@ -9441,7 +8471,6 @@ private function getUserName($userId) {
                 $mailReport->client_matter_id = $request->upload_sent_mail_client_matter_id;
                 $mailReport->fetch_mail_sent_time = $sentTimeFinal;
                 $mailReport->save();
-
 
                 //Update date in client matter table
                 if( isset($request->upload_sent_mail_client_matter_id) && $request->upload_sent_mail_client_matter_id != ""){
@@ -9620,7 +8649,6 @@ private function getUserName($userId) {
                 }
             }
 
-
             //applications
             $applications = DB::table('applications')->where('client_id', $request->merge_from)->get(); //dd($applications);
             if(!empty($applications)){
@@ -9654,7 +8682,6 @@ private function getUserName($userId) {
                 }
             }
 
-
             //interested_services
             $interested_services = DB::table('interested_services')->where('client_id', $request->merge_from)->get(); //dd($interested_services);
             if(!empty($interested_services)){
@@ -9679,7 +8706,6 @@ private function getUserName($userId) {
                     );
                 }
             }
-
 
             //education documents and migration documents
             $documents = DB::table('documents')->where('client_id', $request->merge_from)->get(); //dd($documents);
@@ -9735,7 +8761,6 @@ private function getUserName($userId) {
                     );
                 }
             }
-
 
             //quotations
             $quotations = DB::table('quotations')->where('client_id', $request->merge_from)->get(); //dd($quotations);
@@ -9898,7 +8923,6 @@ private function getUserName($userId) {
                 }
             }
 
-
             //Previous History
             $prevHis = DB::table('admins')->where('id', $request->merge_from)->select('id','prev_visa')->get(); //dd($prevHis);
             if(!empty($prevHis)){
@@ -9954,7 +8978,6 @@ private function getUserName($userId) {
         echo json_encode($response);
     }
 
-
     //Update email to be verified wrt client id
     public function updateemailverified(Request $request)
     {
@@ -9979,7 +9002,6 @@ private function getUserName($userId) {
          }
          echo json_encode($response);
     }
-
 
     //address_auto_populate
     public function address_auto_populate(Request $request){
@@ -10082,7 +9104,6 @@ private function getUserName($userId) {
 		echo json_encode($response);
 	}
 
-
     public function createservicetaken(Request $request){ //dd( $request->all() );
         $id = $request->logged_client_id;
         if( \App\Models\Admin::where('id',$id)->exists() ) {
@@ -10176,7 +9197,6 @@ private function getUserName($userId) {
         }
         echo json_encode($response);
     }
-
 
     //Save client account reports
     public function saveaccountreport(Request $request, $id = NULL)
@@ -10573,7 +9593,6 @@ private function getUserName($userId) {
         return $prefix . '-' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
     }
 
-
     //Save adjust invoice reports
     public function saveadjustinvoicereport(Request $request, $id = NULL)
     {
@@ -10961,7 +9980,6 @@ private function getUserName($userId) {
         echo json_encode($response);
     }
 
-
     public function isAnyInvoiceNoExistInDB(Request $request)
 	{
         $requestData 		= 	$request->all();
@@ -10978,7 +9996,6 @@ private function getUserName($userId) {
         }
         echo json_encode($response);
     }
-
 
     public function listOfInvoice(Request $request)
 	{
@@ -11062,7 +10079,6 @@ private function getUserName($userId) {
         echo json_encode($response);
     }
 
-
     public function getTopReceiptValInDB(Request $request)
 	{
         $requestData = 	$request->all();
@@ -11089,7 +10105,6 @@ private function getUserName($userId) {
         }
         echo json_encode($response);
     }
-
 
     public function getTopInvoiceNoFromDB(Request $request)
 	{
@@ -11572,7 +10587,6 @@ private function getUserName($userId) {
         return response()->json($response, 200);
     }
 
-
     // Helper methods
     private function generateTransNo()
     {
@@ -11619,8 +10633,6 @@ private function getUserName($userId) {
         $is_record_exist = DB::table('account_client_receipts')->select('receipt_id')->where('receipt_type', $receipt_type)->orderBy('receipt_id', 'desc')->first();
         return !$is_record_exist ? 1 : $is_record_exist->receipt_id + 1;
     }
-
-
 
     //Save Journal reports
     public function savejournalreport(Request $request, $id = NULL)
@@ -11746,8 +10758,6 @@ private function getUserName($userId) {
         echo json_encode($response);
     }
 
-
-
     public function genInvoice(Request $request, $id){
         $record_get = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$id)->get();
         //dd($record_get);
@@ -11769,7 +10779,6 @@ private function getUserName($userId) {
 
         $record_get_Discount_cnt = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Discount')->count();
         //dd($record_get_Discount_cnt);
-
 
         $record_get_Professional_Fee = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Professional Fee')->get();
         //dd($record_get_Professional_Fee);
@@ -11870,7 +10879,6 @@ private function getUserName($userId) {
             $client_matter_no = '';
         }
 
-
         $pdf = PDF::setOptions([
 			'isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true,
 			'logOutputFile' => storage_path('logs/log.htm'),
@@ -11896,7 +10904,6 @@ private function getUserName($userId) {
             'total_GST_amount',
             'total_Pending_amount',
 
-
             'clientname',
             'invoice_payment_method',
             'client_matter_no'
@@ -11904,8 +10911,6 @@ private function getUserName($userId) {
 		//
 		return $pdf->stream('Invoice.pdf');
 	}
-
-
 
     public function uploadclientreceiptdocument(Request $request){ // dd($request->all());
         $id = $request->clientid;
@@ -12347,7 +11352,6 @@ private function getUserName($userId) {
 		 echo json_encode($response);
 	}
 
-
     public function invoicelist(Request $request)
     {
         $query 	= AccountClientReceipt::where('receipt_type',3)->groupBy('receipt_id');
@@ -12471,7 +11475,6 @@ private function getUserName($userId) {
         }
         echo json_encode($response);
     }
-
 
     public function clientreceiptlist(Request $request)
     {
@@ -12600,7 +11603,6 @@ private function getUserName($userId) {
 
         return view('Admin.clients.officereceiptlist', compact(['lists', 'totalData', 'clientIds', 'matterIds']));
     }
-
 
     public function journalreceiptlist(Request $request)
 	{
@@ -12755,7 +11757,6 @@ private function getUserName($userId) {
 		return $pdf->stream('ClientReceipt.pdf');
 	}
 
-
     public function previewMsgFile($filename)
     {
         //dd($filename);
@@ -12789,7 +11790,6 @@ private function getUserName($userId) {
         return $html;
     }
 
-
     //Fetch all contact list of any client at create note popup
     public function fetchClientContactNo(Request $request){ //dd($request->all());
         if( ClientContact::where('client_id', $request->client_id)->exists()){
@@ -12813,7 +11813,6 @@ private function getUserName($userId) {
         echo json_encode($response);
 	}
 
-
     public function updateAddress(Request $request)
     {
         $postcode = $request->input('postcode');
@@ -12835,7 +11834,6 @@ private function getUserName($userId) {
         $data = json_decode($response, true); //dd($data);
         return response()->json($data);
     }
-
 
     public function showRatings()
     {
@@ -12859,7 +11857,6 @@ private function getUserName($userId) {
             'average_migration_rating' => $averageMigrationRating,
         ]);
     }
-
 
     public function saveRating(Request $request)
 	{
@@ -12915,7 +11912,6 @@ private function getUserName($userId) {
 		]);
 	}
 
-
     //Re-assign inbox email
     public function reassiginboxemail(Request $request) {
 		$requestData = $request->all(); //dd($requestData);
@@ -12929,7 +11925,6 @@ private function getUserName($userId) {
 
             $source_doc_admin_info = \App\Models\Admin::select('client_id')->where('id', '=', $source_doc_client_id)->first();
             $source_doc_client_unique_id = $source_doc_admin_info['client_id'];
-
 
             $dest_assign_client_id = $requestData['reassign_client_id'];
             $dest_doc_admin_info = \App\Models\Admin::select('client_id')->where('id', '=', $dest_assign_client_id)->first();
@@ -13009,7 +12004,6 @@ private function getUserName($userId) {
 
             $source_doc_admin_info = \App\Models\Admin::select('client_id')->where('id', '=', $source_doc_client_id)->first();
             $source_doc_client_unique_id = $source_doc_admin_info['client_id'];
-
 
             $dest_assign_client_id = $requestData['reassign_sent_client_id'];
             $dest_doc_admin_info = \App\Models\Admin::select('client_id')->where('id', '=', $dest_assign_client_id)->first();
@@ -13101,7 +12095,6 @@ private function getUserName($userId) {
         echo json_encode($response);
 	}
 
-
     public function verifydoc(Request $request){ //dd($request->all());
 		$doc_id = $request->doc_id;
         $doc_type = $request->doc_type;
@@ -13156,7 +12149,6 @@ private function getUserName($userId) {
 		echo json_encode($response);
 	}
 
-
     //Get Visa check list wrt matter id
     public function getvisachecklist(Request $request){ //dd($request->all());
         if( ClientMatter::where('id', $request->client_matter_id)->exists()){
@@ -13198,7 +12190,6 @@ private function getUserName($userId) {
 
         return response()->json(['occupations' => $occupations]);
     }
-
 
     public function checkEmail(Request $request)
     {
@@ -13256,7 +12247,6 @@ private function getUserName($userId) {
                         $response['Added_By'] = "N/A";
                         $response['Added_date'] = "N/A";
                     }
-
 
                     if( isset($docInfo->checklist_verified_by) && $docInfo->checklist_verified_by!= "" ){
                         $verifyInfo = \App\Models\Admin::select('first_name')->where('id',$docInfo->checklist_verified_by)->first();
@@ -13354,7 +12344,6 @@ private function getUserName($userId) {
         echo json_encode($response);
 	}
 
-
     //Back To their respective Document List From Not Used Tab
     public function backtodoc(Request $request){ //dd($request->all());
 		$doc_id = $request->doc_id;
@@ -13380,7 +12369,6 @@ private function getUserName($userId) {
                         $response['Added_By'] = "N/A";
                         $response['Added_date'] = "N/A";
                     }
-
 
                     if( isset($docInfo->checklist_verified_by) && $docInfo->checklist_verified_by!= "" ){
                         $verifyInfo = \App\Models\Admin::select('first_name')->where('id',$docInfo->checklist_verified_by)->first();
@@ -13459,7 +12447,6 @@ private function getUserName($userId) {
             return response()->json(['error' => 'Failed to enhance message: ' . $e->getMessage()], 500);
         }
     }
-
 
     //Filter Inbox emails
     public function filterEmails(Request $request)
@@ -13657,7 +12644,6 @@ private function getUserName($userId) {
 		}
 	}
 
-
     public function genClientFundLedgerInvoice(Request $request, $id){
         $record_get = DB::table('account_client_receipts')->where('receipt_type',1)->where('id',$id)->first();
         //dd($record_get);
@@ -13685,7 +12671,6 @@ private function getUserName($userId) {
             $client_matter_no = '';
         }
 
-
         $pdf = PDF::setOptions([
 			'isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true,
 			'logOutputFile' => storage_path('logs/log.htm'),
@@ -13694,7 +12679,6 @@ private function getUserName($userId) {
 		//
 		return $pdf->stream('Invoice.pdf');
 	}
-
 
     public function genofficereceiptInvoice(Request $request, $id){
         $record_get = DB::table('account_client_receipts')->where('receipt_type',2)->where('id',$id)->first();
@@ -13723,7 +12707,6 @@ private function getUserName($userId) {
             $client_matter_no = '';
         }
 
-
         $pdf = PDF::setOptions([
 			'isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true,
 			'logOutputFile' => storage_path('logs/log.htm'),
@@ -13732,7 +12715,6 @@ private function getUserName($userId) {
 		//
 		return $pdf->stream('Invoice.pdf');
 	}
-
 
     /*public function updateClientFundsLedger(Request $request)
     {   //dd($request->all());
@@ -13994,7 +12976,6 @@ private function getUserName($userId) {
         ], 500);
     }
 
-
     public function getInvoiceAmount(Request $request)
     {
         // Validate the request
@@ -14038,8 +13019,6 @@ private function getUserName($userId) {
                 $clientAge = 'NA';
             }
             $final_arr['clientAge'] = $clientAge;
-
-
 
             //Get Test Type and Score
             $today = Carbon::today();
@@ -14116,7 +13095,6 @@ private function getUserName($userId) {
         }
         echo json_encode($response);
     }
-
 
     public function CalculatePoints(Request $request)
     {
@@ -14320,9 +13298,6 @@ private function getUserName($userId) {
             'partners' => $partners->toArray(),
         ], 200);
     }
-
-
-
 
     public function loadMatterAiData(Request $request)
     {
@@ -14544,8 +13519,6 @@ private function getUserName($userId) {
         }
     }
 
-    
-
     //Generate agreemnt
     public function generateagreement(Request $request)
     {
@@ -14621,7 +13594,6 @@ private function getUserName($userId) {
             $DoHAAdditionalApplicantCharge18PlusPersonCount = 0;
             $DoHAAdditionalApplicantCharge18Plus = 0;
             $DoHAAdditional18PlusSurcharge = 0;
-
 
             $DoHAAdditionalApplicantChargeUnder18PersonCount = 0;
             $DoHAAdditionalApplicantChargeUnder18 = 0;
@@ -14708,7 +13680,6 @@ private function getUserName($userId) {
                     $DoHAAdditionalApplicantCharge18PlusPersonCount = $matter_info->Dept_Additional_Applicant_Charge_18_Plus_no_of_person ."Person" ;
                     $DoHAAdditionalApplicantCharge18Plus = $matter_info->Dept_Additional_Applicant_Charge_18_Plus_after_person;
                     $DoHAAdditional18PlusSurcharge = $matter_info->Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge;
-
 
                     $DoHAAdditionalApplicantChargeUnder18PersonCount = $matter_info->Dept_Additional_Applicant_Charge_Under_18_no_of_person ."Person" ;
                     $DoHAAdditionalApplicantChargeUnder18 = $matter_info->Dept_Additional_Applicant_Charge_Under_18_after_person;
@@ -14927,7 +13898,6 @@ private function getUserName($userId) {
         echo json_encode($response);
     }
 
-
     //Get Cost assignment Migration Agent Detail
     public function getCostAssignmentMigrationAgentDetail(Request $request)
     {
@@ -14998,7 +13968,6 @@ private function getUserName($userId) {
             // Step 3: Final total after surcharge
             $Dept_Base_Application_Charge_after_person_surcharge = $Dept_Base_Application_Charge_after_person + $Dept_Base_Application_Surcharge; //dd($Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge);
 
-
             $Dept_Non_Internet_Application_Charge = floatval($requestData['Dept_Non_Internet_Application_Charge'] ?? 0); //dd($Dept_Non_Internet_Application_Charge);
             $Dept_Non_Internet_Application_Charge_no_of_person = intval($requestData['Dept_Non_Internet_Application_Charge_no_of_person'] ?? 1); //dd($Dept_Non_Internet_Application_Charge_no_of_person);
             $Dept_Non_Internet_Application_Charge_after_person = $Dept_Non_Internet_Application_Charge * $Dept_Non_Internet_Application_Charge_no_of_person;
@@ -15012,7 +13981,6 @@ private function getUserName($userId) {
             }
             // Step 3: Final total after surcharge
             $Dept_Non_Internet_Application_Charge_after_person_surcharge = $Dept_Non_Internet_Application_Surcharge + $Dept_Non_Internet_Application_Charge_after_person; //dd($Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge);
-
 
             $Dept_Additional_Applicant_Charge_18_Plus = floatval($requestData['Dept_Additional_Applicant_Charge_18_Plus'] ?? 0);
             $Dept_Additional_Applicant_Charge_18_Plus_no_of_person = intval($requestData['Dept_Additional_Applicant_Charge_18_Plus_no_of_person'] ?? 1);
@@ -15028,7 +13996,6 @@ private function getUserName($userId) {
             // Step 3: Final total after surcharge
             $Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge = $Dept_Additional_Applicant_Charge_18_Surcharge + $Dept_Additional_Applicant_Charge_18_Plus_after_person;
 
-
             $Dept_Additional_Applicant_Charge_Under_18 = floatval($requestData['Dept_Additional_Applicant_Charge_Under_18'] ?? 0);
             $Dept_Additional_Applicant_Charge_Under_18_no_of_person = intval($requestData['Dept_Additional_Applicant_Charge_Under_18_no_of_person'] ?? 1);
             $Dept_Additional_Applicant_Charge_Under_18_after_person = $Dept_Additional_Applicant_Charge_Under_18 * $Dept_Additional_Applicant_Charge_Under_18_no_of_person;
@@ -15042,7 +14009,6 @@ private function getUserName($userId) {
             }
             // Step 3: Final total after surcharge
             $Dept_Additional_Applicant_Charge_Under_18_after_person_surcharge = $Dept_Additional_Applicant_Charge_Under_18_Surcharge + $Dept_Additional_Applicant_Charge_Under_18_after_person;
-
 
             $Dept_Subsequent_Temp_Application_Charge = floatval($requestData['Dept_Subsequent_Temp_Application_Charge'] ?? 0);
             $Dept_Subsequent_Temp_Application_Charge_no_of_person = intval($requestData['Dept_Subsequent_Temp_Application_Charge_no_of_person'] ?? 1);
@@ -15058,7 +14024,6 @@ private function getUserName($userId) {
             // Step 3: Final total after surcharge
             $Dept_Subsequent_Temp_Application_Charge_after_person_surcharge = $Dept_Subsequent_Temp_Application_Surcharge + $Dept_Subsequent_Temp_Application_Charge_after_person;
 
-
             $Dept_Second_VAC_Instalment_Charge_18_Plus = floatval($requestData['Dept_Second_VAC_Instalment_Charge_18_Plus'] ?? 0);
             $Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person = intval($requestData['Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person'] ?? 1);
             $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person = $Dept_Second_VAC_Instalment_Charge_18_Plus * $Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person;
@@ -15072,7 +14037,6 @@ private function getUserName($userId) {
             }
             // Step 3: Final total after surcharge
             $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person_surcharge = $Dept_Second_VAC_Instalment_18_Plus_Surcharge + $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person;
-
 
             $Dept_Second_VAC_Instalment_Under_18 = floatval($requestData['Dept_Second_VAC_Instalment_Under_18'] ?? 0);
             $Dept_Second_VAC_Instalment_Under_18_no_of_person = intval($requestData['Dept_Second_VAC_Instalment_Under_18_no_of_person'] ?? 1);
@@ -15137,7 +14101,6 @@ private function getUserName($userId) {
                         'Dept_Additional_Applicant_Charge_Under_18_no_of_person' => $requestData['Dept_Additional_Applicant_Charge_Under_18_no_of_person'],
                         'Dept_Additional_Applicant_Charge_Under_18_after_person' => $Dept_Additional_Applicant_Charge_Under_18_after_person,
                         'Dept_Additional_Applicant_Charge_Under_18_after_person_surcharge' => $Dept_Additional_Applicant_Charge_Under_18_after_person_surcharge,
-
 
                         'Dept_Subsequent_Temp_Application_Charge' => $requestData['Dept_Subsequent_Temp_Application_Charge'],
                         'Dept_Subsequent_Temp_Application_Charge_no_of_person' => $requestData['Dept_Subsequent_Temp_Application_Charge_no_of_person'],
@@ -15478,7 +14441,6 @@ private function getUserName($userId) {
         return response()->json(['success' => false, 'message' => 'Only client-generated categories can be deleted.']);
     }*/
 
-
     //Add Visa Doucment Category
     public function addVisaDocCategory(Request $request)
     {
@@ -15660,8 +14622,6 @@ private function getUserName($userId) {
         return response()->json(['exists' => $exists]);
     }
 
-
-
     //Store Cost Assignment Form Values of Lead
     public function savecostassignmentlead(Request $request)
     {   
@@ -15692,7 +14652,6 @@ private function getUserName($userId) {
             {
                 //update type client from lead in admins table
                 \App\Models\Admin::where('id', $requestData['client_id'])->update(['type' => 'client']);
-               
 
                 if( isset($requestData['surcharge']) && $requestData['surcharge'] != '') {
                     $surcharge = $requestData['surcharge'];
@@ -15715,7 +14674,6 @@ private function getUserName($userId) {
                 // Step 3: Final total after surcharge
                 $Dept_Base_Application_Charge_after_person_surcharge = $Dept_Base_Application_Charge_after_person + $Dept_Base_Application_Surcharge; //dd($Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge);
 
-
                 $Dept_Non_Internet_Application_Charge = floatval($requestData['Dept_Non_Internet_Application_Charge'] ?? 0); //dd($Dept_Non_Internet_Application_Charge);
                 $Dept_Non_Internet_Application_Charge_no_of_person = intval($requestData['Dept_Non_Internet_Application_Charge_no_of_person'] ?? 1); //dd($Dept_Non_Internet_Application_Charge_no_of_person);
                 $Dept_Non_Internet_Application_Charge_after_person = $Dept_Non_Internet_Application_Charge * $Dept_Non_Internet_Application_Charge_no_of_person;
@@ -15729,7 +14687,6 @@ private function getUserName($userId) {
                 }
                 // Step 3: Final total after surcharge
                 $Dept_Non_Internet_Application_Charge_after_person_surcharge = $Dept_Non_Internet_Application_Surcharge + $Dept_Non_Internet_Application_Charge_after_person; //dd($Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge);
-
 
                 $Dept_Additional_Applicant_Charge_18_Plus = floatval($requestData['Dept_Additional_Applicant_Charge_18_Plus'] ?? 0);
                 $Dept_Additional_Applicant_Charge_18_Plus_no_of_person = intval($requestData['Dept_Additional_Applicant_Charge_18_Plus_no_of_person'] ?? 1);
@@ -15745,7 +14702,6 @@ private function getUserName($userId) {
                 // Step 3: Final total after surcharge
                 $Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge = $Dept_Additional_Applicant_Charge_18_Surcharge + $Dept_Additional_Applicant_Charge_18_Plus_after_person;
 
-
                 $Dept_Additional_Applicant_Charge_Under_18 = floatval($requestData['Dept_Additional_Applicant_Charge_Under_18'] ?? 0);
                 $Dept_Additional_Applicant_Charge_Under_18_no_of_person = intval($requestData['Dept_Additional_Applicant_Charge_Under_18_no_of_person'] ?? 1);
                 $Dept_Additional_Applicant_Charge_Under_18_after_person = $Dept_Additional_Applicant_Charge_Under_18 * $Dept_Additional_Applicant_Charge_Under_18_no_of_person;
@@ -15759,7 +14715,6 @@ private function getUserName($userId) {
                 }
                 // Step 3: Final total after surcharge
                 $Dept_Additional_Applicant_Charge_Under_18_after_person_surcharge = $Dept_Additional_Applicant_Charge_Under_18_Surcharge + $Dept_Additional_Applicant_Charge_Under_18_after_person;
-
 
                 $Dept_Subsequent_Temp_Application_Charge = floatval($requestData['Dept_Subsequent_Temp_Application_Charge'] ?? 0);
                 $Dept_Subsequent_Temp_Application_Charge_no_of_person = intval($requestData['Dept_Subsequent_Temp_Application_Charge_no_of_person'] ?? 1);
@@ -15775,7 +14730,6 @@ private function getUserName($userId) {
                 // Step 3: Final total after surcharge
                 $Dept_Subsequent_Temp_Application_Charge_after_person_surcharge = $Dept_Subsequent_Temp_Application_Surcharge + $Dept_Subsequent_Temp_Application_Charge_after_person;
 
-
                 $Dept_Second_VAC_Instalment_Charge_18_Plus = floatval($requestData['Dept_Second_VAC_Instalment_Charge_18_Plus'] ?? 0);
                 $Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person = intval($requestData['Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person'] ?? 1);
                 $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person = $Dept_Second_VAC_Instalment_Charge_18_Plus * $Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person;
@@ -15789,7 +14743,6 @@ private function getUserName($userId) {
                 }
                 // Step 3: Final total after surcharge
                 $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person_surcharge = $Dept_Second_VAC_Instalment_18_Plus_Surcharge + $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person;
-
 
                 $Dept_Second_VAC_Instalment_Under_18 = floatval($requestData['Dept_Second_VAC_Instalment_Under_18'] ?? 0);
                 $Dept_Second_VAC_Instalment_Under_18_no_of_person = intval($requestData['Dept_Second_VAC_Instalment_Under_18_no_of_person'] ?? 1);
@@ -15856,7 +14809,6 @@ private function getUserName($userId) {
                             'Dept_Additional_Applicant_Charge_Under_18_no_of_person' => $requestData['Dept_Additional_Applicant_Charge_Under_18_no_of_person'],
                             'Dept_Additional_Applicant_Charge_Under_18_after_person' => $Dept_Additional_Applicant_Charge_Under_18_after_person,
                             'Dept_Additional_Applicant_Charge_Under_18_after_person_surcharge' => $Dept_Additional_Applicant_Charge_Under_18_after_person_surcharge,
-
 
                             'Dept_Subsequent_Temp_Application_Charge' => $requestData['Dept_Subsequent_Temp_Application_Charge'],
                             'Dept_Subsequent_Temp_Application_Charge_no_of_person' => $requestData['Dept_Subsequent_Temp_Application_Charge_no_of_person'],
@@ -15984,7 +14936,6 @@ private function getUserName($userId) {
 		echo json_encode($response);
     }
 
-    
     //Upload agreement in PDF
     public function uploadAgreement(Request $request, $clientId)
     {
@@ -16308,9 +15259,6 @@ private function getUserName($userId) {
         }
     }
 
-
-   
-
     //Convert activity to note
 	public function convertActivityToNote(Request $request){
 		try {
@@ -16424,7 +15372,6 @@ private function getUserName($userId) {
 			]);
 		}
 	}
-
 
      /**
      * Toggle Client Portal Status and Send Email
@@ -16576,6 +15523,3 @@ private function getUserName($userId) {
     }
 
 }
-
-
-

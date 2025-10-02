@@ -148,7 +148,6 @@ return [
         Illuminate\Validation\ValidationServiceProvider::class,
         Illuminate\View\ViewServiceProvider::class,
 		Spatie\Html\HtmlServiceProvider::class,
-		// Tzsk\Payu\Provider\PayuServiceProvider::class,
 		Barryvdh\DomPDF\ServiceProvider::class,
 
         App\Providers\AppServiceProvider::class,
@@ -208,7 +207,6 @@ return [
         'Validator' => Illuminate\Support\Facades\Validator::class,
         'View' => Illuminate\Support\Facades\View::class,
 		'Html' => Spatie\Html\Facades\Html::class,
-		'Payment' => Tzsk\Payu\Facade\Payment::class,
 		'PDF' => Barryvdh\DomPDF\Facade::class,
 		'Excel' =>  Maatwebsite\Excel\Facades\Excel::class,
 		'Settings' => App\Helpers\Settings::class,

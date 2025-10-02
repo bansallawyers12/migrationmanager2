@@ -9,9 +9,7 @@ use Illuminate\Support\Facades\Redirect;
 
 use App\Models\Admin;
 use App\Models\Lead;
-use App\Models\FollowupType;
 use App\Package;
-use App\Models\Followup;
 
 use Auth;
 use Config;
@@ -121,18 +119,7 @@ class LeadController extends Controller
 					$ld = Lead::find($id);
 					$ld->assign_to = $requestData['assignto'];
 					$ld->save();
-					$followup 					= new Followup;
-					$followup->lead_id			= @$id;
-					$followup->user_id			= Auth::user()->id;
-					$followup->note				= 'changed from '.$assignfrom->first_name.' '.$assignfrom->last_name.' to '.$assignto->first_name.' '.$assignto->last_name;
-					$followup->followup_type	= 'assigned_to';
-					$saved				=	$followup->save();
-					if(!$saved)
-					{
-						return redirect()->back()->with('error', 'Please try again');
-					}else{
-						return redirect()->back()->with('success', 'Lead transfer successfully');
-					}
+					return redirect()->back()->with('success', 'Lead transfer successfully');
 				}
 			}else{
 				$ld = Lead::find($id);
@@ -407,20 +394,7 @@ class LeadController extends Controller
 
     public function leadPin(Request $request, $id)
 	{
-	    if(Followup::where('id', $id)->exists()){
-	        $a = Followup::find($id);
-	        if($a->pin == 1){
-	           $a->pin =  0;
-	        }else{
-	           $a->pin =  1;
-	        }
-	        $save = $a->save();
-	        if($save){
-	            return Redirect::to('/admin/leads/history/'.base64_encode(convert_uuencode(@$a->lead_id)))->with('success', 'Record Updated successfully');
-	        }else{
-	            return Redirect::to('/admin/leads/history/'.base64_encode(convert_uuencode(@$a->lead_id)))->with('error', 'Please try again');
-	        }
-	    }
+	    return redirect()->back()->with('error', 'Followup functionality has been removed');
 	}
 	public function convertoClient(Request $request)
 	{
@@ -501,35 +475,6 @@ class LeadController extends Controller
 				    $o->converted = 1;
 				    $o->converted_date = date('Y-m-d');
 				    $o->save();
-				    $Followups = Followup::where('lead_id', $id)->get();
-				    foreach($Followups as $Followup){
-	                	$Followupstype = FollowupType::where('type', $Followup->followup_type)->first();
-	                	$r = '';
-	                	if(@$Followup->subject != ''){
-	                	    $r .= @$Followup->subject.'<br>';
-	                	}
-	                	if(@$Followup->followup_date != ''){
-	                	    $r .= @$Followup->followup_date.'<br>';
-	                	}
-	                	if(@$Followup->note != ''){
-	                	    $r .= @$Followup->note;
-	                	}
-				        $objn = new \App\Models\Note;
-				        $objn->client_id = $obj->id;
-		            	$objn->user_id = Auth::user()->id;
-		        	    $objn->title = @$Followupstype->name;
-		        	    $objn->description = $r;
-		        	    $objn->mail_id = 0;
-		        	    $objn->type = 'client';
-		        	      $objn->save();
-				    }
-
-    				$enq = new Followup;
-    				$enq->lead_id = $id;
-    				$enq->user_id = @Auth::user()->id;
-    				$enq->note = 'Lead converted to client';
-    				$enq->followup_type = 'converted';
-    				$enq->save();
 					$response['status'] 	= 	true;
 					$response['message']	=	'Client saved successfully';
 				//	return Redirect::to('/admin/leads')->with('success', 'Client saved successfully');
@@ -542,39 +487,11 @@ class LeadController extends Controller
 	}
 
 	public function leaddeleteNotes(Request $request, $id = Null){
-	    if(isset($id) && !empty($id))
-			{
-
-				if(Followup::where('id', '=', $id)->exists())
-				{
-				    $leadid = Followup::where('id', '=', $id)->first()->lead_id;
-				    $res = Followup::where('id', '=', $id)->delete();
-					if($res){
-					    return Redirect::to('/admin/leads/history/'.base64_encode(convert_uuencode(@$leadid)))->with('success', 'Record deleted successfully');
-					}else{
-					    return Redirect::to('/admin/leads/history/'.base64_encode(convert_uuencode(@$leadid)))->with('error', 'Lead Not Exist');
-					}
-				}
-				else
-				{
-					return Redirect::to('/admin/leads/')->with('error', 'Lead Not Exist');
-				}
-			}
-			else
-			{
-				return Redirect::to('/admin/leads/')->with('error', Config::get('constants.unauthorized'));
-			}
+	    return redirect()->back()->with('error', 'Followup functionality has been removed');
 	}
 
 	public function getnotedetail(Request $request){
-	    $id = $request->id;
-	    if(Followup::where('id', '=', $id)->exists())
-		{
-		    $fetchedData = Followup::where('id', '=', $id)->first();
-		    	return view('Admin.leads.editnotemodal', compact(['fetchedData']));
-		}else{
-		    echo 'No Found';
-		}
+	    echo 'Followup functionality has been removed';
 	}
 
     //Check Email is unique or not
