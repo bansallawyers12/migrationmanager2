@@ -56,20 +56,29 @@
         </a>
         @endif
         <div class="profile-dropdown js-dropdown-right">
-            <a href="#" class="profile-trigger">
+            <a href="#" class="profile-trigger" id="profile-trigger">
                 @if(Auth::user() && Auth::user()->profile_img == '')
                     <img alt="user image" src="{{ asset('img/user.png') }}" class="user-img-radious-style">
                 @else
                     <img alt="{{Auth::user() ? str_limit(Auth::user()->first_name.' '.Auth::user()->last_name, 150, '...') : 'User'}}" src="{{ asset('img/user.png') }}" class="user-img-radious-style"/>
                 @endif
             </a>
-            <div class="profile-menu">
-                <a href="{{route('admin.my_profile')}}"><i class="far fa-user mr-2"></i> Profile</a>
+            <div class="profile-menu" id="profile-menu">
+                <a href="{{route('admin.my_profile')}}">
+                    <i class="far fa-user"></i> 
+                    <span>Profile</span>
+                </a>
                 @if(Auth::user() && Auth::user()->role == 1)
-                <a href="{{route('admin.feature.matter.index')}}"><i class="fas fa-cogs mr-2"></i> Admin Console</a>
+                <a href="{{route('admin.feature.matter.index')}}">
+                    <i class="fas fa-cogs"></i> 
+                    <span>Admin Console</span>
+                </a>
                 @endif
                 <div class="dropdown-divider"></div>
-                <a href="{{route('admin.logout')}}" class="text-danger" onclick="event.preventDefault(); document.getElementById('logout-form').submit();"><i class="fas fa-sign-out-alt mr-2"></i> Logout</a>
+                <a href="{{route('admin.logout')}}" class="text-danger" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                    <i class="fas fa-sign-out-alt"></i> 
+                    <span>Logout</span>
+                </a>
             </div>
         </div>
     </div>

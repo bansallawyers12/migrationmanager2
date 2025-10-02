@@ -110,12 +110,50 @@
         .icon-dropdown-menu .dropdown-item:hover { background: #f1f5ff !important; color: #0d6efd !important; }
         /* Profile */
         .profile-dropdown { position: relative !important; }
-        .profile-trigger img { width: 36px !important; height: 36px !important; border-radius: 50% !important; object-fit: cover !important; }
-        .profile-trigger { display: inline-flex !important; align-items: center !important; justify-content: center !important; width: 44px !important; height: 44px !important; border-radius: 50% !important; }
-        .profile-menu { position: absolute !important; right: 0 !important; top: 48px !important; background: #fff !important; border: 1px solid #e9ecef !important; border-radius: 8px !important; min-width: 200px !important; padding: 6px 0 !important; display: none !important; box-shadow: 0 12px 24px rgba(0,0,0,.08) !important; }
-        .profile-dropdown .profile-menu.show { display: block !important; }
-        .profile-menu a { display: block !important; padding: 8px 12px !important; color: #343a40 !important; text-decoration: none !important; }
+        .profile-trigger img { width: 36px !important; height: 36px !important; border-radius: 50% !important; object-fit: cover !important; cursor: pointer !important; transition: all 0.2s ease !important; }
+        .profile-trigger { display: inline-flex !important; align-items: center !important; justify-content: center !important; width: 44px !important; height: 44px !important; border-radius: 50% !important; cursor: pointer !important; transition: all 0.2s ease !important; }
+        .profile-trigger:hover { background: #f3f5f7 !important; }
+        .profile-menu { 
+            position: absolute !important; 
+            right: 0 !important; 
+            top: 48px !important; 
+            background: #fff !important; 
+            border: 1px solid #e9ecef !important; 
+            border-radius: 8px !important; 
+            min-width: 200px !important; 
+            padding: 6px 0 !important; 
+            display: none !important; 
+            box-shadow: 0 12px 24px rgba(0,0,0,.08) !important; 
+            z-index: 1000 !important;
+            opacity: 0 !important;
+            transform: translateY(-10px) !important;
+            transition: all 0.2s ease !important;
+        }
+        .profile-dropdown .profile-menu.show { 
+            display: block !important; 
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+        }
+        .profile-menu a { 
+            display: flex !important; 
+            align-items: center !important;
+            padding: 10px 16px !important; 
+            color: #343a40 !important; 
+            text-decoration: none !important; 
+            transition: all 0.2s ease !important;
+            font-size: 14px !important;
+        }
         .profile-menu a:hover { background: #f1f5ff !important; color: #0d6efd !important; }
+        .profile-menu a i { 
+            margin-right: 10px !important; 
+            width: 16px !important; 
+            text-align: center !important;
+        }
+        .profile-menu .dropdown-divider {
+            height: 1px !important;
+            margin: 6px 0 !important;
+            background-color: #e9ecef !important;
+        }
 
         /* When topbar is hidden, reclaim space for content (leave 6px gap) */
         body.topbar-hidden .crm-container { margin-top: 6px !important; }
@@ -1406,9 +1444,48 @@
                 loadOfficeVisitNotifications();
             }, 10000);
             
-            // Initial load
-            loadOfficeVisitNotifications();
-        });
+        // Initial load
+        loadOfficeVisitNotifications();
+        
+        // Profile dropdown hover functionality
+        let profileHoverTimeout;
+        const profileTrigger = document.getElementById('profile-trigger');
+        const profileMenu = document.getElementById('profile-menu');
+        
+        if (profileTrigger && profileMenu) {
+            // Show dropdown on hover
+            profileTrigger.addEventListener('mouseenter', function() {
+                clearTimeout(profileHoverTimeout);
+                profileMenu.classList.add('show');
+            });
+            
+            // Hide dropdown when mouse leaves
+            profileTrigger.addEventListener('mouseleave', function() {
+                profileHoverTimeout = setTimeout(function() {
+                    profileMenu.classList.remove('show');
+                }, 150);
+            });
+            
+            // Keep dropdown open when hovering over menu
+            profileMenu.addEventListener('mouseenter', function() {
+                clearTimeout(profileHoverTimeout);
+            });
+            
+            // Hide dropdown when mouse leaves menu
+            profileMenu.addEventListener('mouseleave', function() {
+                profileHoverTimeout = setTimeout(function() {
+                    profileMenu.classList.remove('show');
+                }, 150);
+            });
+            
+            // Hide dropdown when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!profileTrigger.contains(event.target) && !profileMenu.contains(event.target)) {
+                    profileMenu.classList.remove('show');
+                }
+            });
+        }
+    });
     </script>
     <script>
     $(document).ready(function () {
