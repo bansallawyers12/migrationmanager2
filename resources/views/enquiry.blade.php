@@ -51,7 +51,7 @@
 							<label for="country">Country</label>
 							<select required class="form-control  select2" name="country" >
 							<?php
-								foreach(\App\Country::all() as $list){
+								foreach(\App\Models\Country::all() as $list){
 								?>
 								<option @if($list->sortname == 'AU') selected @endif value="{{@$list->sortname}}" >{{@$list->name}}</option>
 								<?php
@@ -95,7 +95,7 @@
 							<label for="address">Source</label>
 							<select required class="form-control" name="source">
 								<option value="">Select Source</option>
-								@foreach(\App\EnquirySource::all() as $sources)
+								@foreach(\App\Models\EnquirySource::all() as $sources)
 								  <option value="{{$sources->name}}">{{$sources->name}}</option>
 								  @endforeach
 							</select>

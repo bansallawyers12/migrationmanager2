@@ -287,7 +287,7 @@
                             $dob_verify_by_name = '';
                             if( isset($fetchedData->dob_verified_by) && $fetchedData->dob_verified_by != "")
                             {
-                                $dob_verify_by_arr = \App\Admin::select('first_name', 'last_name')->where('id', $fetchedData->dob_verified_by)->first();
+                                $dob_verify_by_arr = \App\Models\Admin::select('first_name', 'last_name')->where('id', $fetchedData->dob_verified_by)->first();
                                 if($dob_verify_by_arr){
                                     $dob_verify_by_name = $dob_verify_by_arr->first_name.' '.$dob_verify_by_arr->last_name;
                                 }
@@ -492,7 +492,7 @@
                                 <option value="">Select Country</option>
                                 <option value="India" {{ $fetchedData->country_passport == 'India' ? 'selected' : '' }}>India</option>
                                 <option value="Australia" {{ $fetchedData->country_passport == 'Australia' ? 'selected' : '' }}>Australia</option>
-                                @foreach(\App\Country::all() as $list)
+                                @foreach(\App\Models\Country::all() as $list)
                                     @if($list->name != 'India' && $list->name != 'Australia')
                                         <option value="{{ $list->name }}" {{ $fetchedData->country_passport == $list->name ? 'selected' : '' }}>{{ $list->name }}</option>
                                     @endif
@@ -552,7 +552,7 @@
                                             <label>Visa Type / Subclass</label>
                                             <select name="visas[{{ $index }}][visa_type]" class="visa-type-field">
                                                 <option value="">Select Visa Type</option>
-                                                @foreach(\App\Matter::select('id', 'title', 'nick_name')->where('status', 1)->where('title', 'not like', '%skill assessment%')->orderBy('title', 'ASC')->get() as $matterlist)
+                                                @foreach(\App\Models\Matter::select('id', 'title', 'nick_name')->where('status', 1)->where('title', 'not like', '%skill assessment%')->orderBy('title', 'ASC')->get() as $matterlist)
                                                     <option value="{{ $matterlist->id }}" {{ $visa->visa_type == $matterlist->id ? 'selected' : '' }}>{{ $matterlist->title }} ({{ @$matterlist->nick_name }})</option>
                                                 @endforeach
                                             </select>
@@ -660,7 +660,7 @@
                                             <select name="travel_country_visited[{{ $index }}]">
                                                 <option value="India" {{ $travel->travel_country_visited == 'India' ? 'selected' : '' }}>India</option>
                                                 <option value="Australia" {{ $travel->travel_country_visited == 'Australia' ? 'selected' : '' }}>Australia</option>
-                                                @foreach(\App\Country::all() as $list)
+                                                @foreach(\App\Models\Country::all() as $list)
                                                     @if($list->name != 'India' && $list->name != 'Australia')
                                                         <option value="{{ $list->name }}" {{ $travel->travel_country_visited == $list->name ? 'selected' : '' }}>{{ $list->name }}</option>
                                                     @endif
@@ -748,7 +748,7 @@
                                             <select name="country_hidden[{{ $index }}]">
                                                 <option value="India" {{ @$qualification->country == 'India' ? 'selected' : '' }}>India</option>
                                                 <option value="Australia" {{ @$qualification->country == 'Australia' ? 'selected' : '' }}>Australia</option>
-                                                @foreach(\App\Country::all() as $list)
+                                                @foreach(\App\Models\Country::all() as $list)
                                                     @if($list->name != 'India' && $list->name != 'Australia')
                                                         <option value="{{ $list->name }}" {{ $qualification->country == $list->name ? 'selected' : '' }}>{{ $list->name }}</option>
                                                     @endif
@@ -806,7 +806,7 @@
                                             <select name="job_country_hidden[{{ $index }}]">
                                                 <option value="India" {{ @$experience->job_country == 'India' ? 'selected' : '' }}>India</option>
                                                 <option value="Australia" {{ @$experience->job_country == 'Australia' ? 'selected' : '' }}>Australia</option>
-                                                @foreach(\App\Country::all() as $list)
+                                                @foreach(\App\Models\Country::all() as $list)
                                                     @if($list->name != 'India' && $list->name != 'Australia')
                                                         <option value="{{ $list->name }}" {{ $experience->job_country == $list->name ? 'selected' : '' }}>{{ $list->name }}</option>
                                                     @endif
@@ -1921,7 +1921,7 @@
                                     <span class="summary-value">
                                         @php
                                             if($visa->visa_type) {
-                                                $matter = \App\Matter::select('title', 'nick_name')->where('id', $visa->visa_type)->first();
+                                                $matter = \App\Models\Matter::select('title', 'nick_name')->where('id', $visa->visa_type)->first();
                                                 if($matter) {
                                                     echo $matter->title . ' (' . $matter->nick_name . ')';
                                                 } else {
@@ -2162,7 +2162,7 @@
                             <h3 class="summary-section-header">EOI Reference</h3>
                             <div class="summary-content">
                                 @php
-                                    $clientEoiReferences = \App\ClientEoiReference::where('client_id', $fetchedData->id)->orderBy('id', 'desc')->get();
+                                    $clientEoiReferences = \App\Models\ClientEoiReference::where('client_id', $fetchedData->id)->orderBy('id', 'desc')->get();
                                 @endphp
                                 @if($clientEoiReferences->count() > 0)
                                     @foreach($clientEoiReferences as $eoi)
@@ -2224,7 +2224,7 @@
     if($fetchedData->related_files != ''){
         $exploderel = explode(',', $fetchedData->related_files);
         foreach($exploderel AS $EXP){
-            $relatedclients = \App\Admin::where('id', $EXP)->first();
+            $relatedclients = \App\Models\Admin::where('id', $EXP)->first();
         ?>
         <input type="hidden" class="relatedfile" data-email="<?php echo $relatedclients->email; ?>" data-name="<?php echo $relatedclients->first_name.' '.$relatedclients->last_name; ?>" data-id="<?php echo $relatedclients->id; ?>">
         <?php

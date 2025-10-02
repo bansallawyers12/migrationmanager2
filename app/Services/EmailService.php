@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Email;
+use App\Models\Email;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Mail\Message;
 

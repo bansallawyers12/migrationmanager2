@@ -39,7 +39,7 @@
                     <ul class="task-list">
                         @foreach($notesData as $note)
                         <?php
-                        $note_client = \App\Admin::select('id','first_name','last_name','client_id')->where('id', $note->client_id)->first();
+                        $note_client = \App\Models\Admin::select('id','first_name','last_name','client_id')->where('id', $note->client_id)->first();
                         ?>
                         <li>
                             <div class="task-details">
@@ -81,7 +81,7 @@
                     <ul class="case-list">
                         @foreach($cases_requiring_attention_data as $attention)
                         <?php
-                        $client_attention = \App\Admin::select('id','first_name','last_name','client_id')->where('id', $attention->client_id)->first();
+                        $client_attention = \App\Models\Admin::select('id','first_name','last_name','client_id')->where('id', $attention->client_id)->first();
                         //dd(base64_encode(convert_uuencode($client_attention->id)));
                         ?>
                         <li>
@@ -96,7 +96,7 @@
                                     $matter_name = 'General matter';
                                 } else {
                                     if($attention->sel_matter_id != ''){
-                                        $matter = \App\Matter::select('title')->where('id', $attention->sel_matter_id)->first();
+                                        $matter = \App\Models\Matter::select('title')->where('id', $attention->sel_matter_id)->first();
                                         if($matter){
                                             $matter_name = $matter->title;
                                         } else {
@@ -200,7 +200,7 @@
 
                         <select name="client_stage" class="stage-select">
                             <option value="">All Stages</option>
-                            @foreach(\App\WorkflowStage::where('id','!=','')->orderby('id','ASC')->get() as $stage)
+                            @foreach(\App\Models\WorkflowStage::where('id','!=','')->orderby('id','ASC')->get() as $stage)
                                 <option value="{{ $stage->id }}" {{ (isset($filters['client_stage']) && $filters['client_stage'] == $stage->id) ? 'selected' : '' }}>
                                     {{ $stage->name }}
                                 </option>
@@ -240,12 +240,12 @@
                     @if(@count($data) !== 0)
                     @foreach($data as $index => $item)
                         <?php
-                        $admin = \App\Admin::select('first_name')->where('id', $item->client_id)->first();
+                        $admin = \App\Models\Admin::select('first_name')->where('id', $item->client_id)->first();
                         if($item->sel_matter_id == 1) {
                             $matter_name = 'Genral matter';
                         } else {
                             if($item->sel_matter_id != ''){
-                                $matter = \App\Matter::select('title')->where('id', $item->sel_matter_id)->first();
+                                $matter = \App\Models\Matter::select('title')->where('id', $item->sel_matter_id)->first();
                                 if($matter){
                                     $matter_name = $matter->title;
                                 } else {
@@ -255,13 +255,13 @@
                                 $matter_name = 'NA';
                             }
                         }
-                        $client_info = \App\Admin::select('client_id','first_name','last_name')->where('id', $item->client_id)->first();
-                        $mig_agent_info = \App\Admin::select('first_name','last_name')->where('id', $item->sel_migration_agent)->first();
-                        $person_responsible = \App\Admin::select('first_name','last_name')->where('id', $item->sel_person_responsible)->first();
-                        $person_assisting = \App\Admin::select('first_name','last_name')->where('id', $item->sel_person_assisting)->first();
+                        $client_info = \App\Models\Admin::select('client_id','first_name','last_name')->where('id', $item->client_id)->first();
+                        $mig_agent_info = \App\Models\Admin::select('first_name','last_name')->where('id', $item->sel_migration_agent)->first();
+                        $person_responsible = \App\Models\Admin::select('first_name','last_name')->where('id', $item->sel_person_responsible)->first();
+                        $person_assisting = \App\Models\Admin::select('first_name','last_name')->where('id', $item->sel_person_assisting)->first();
 
                         //Get Total mail assign to any specific client matter
-                        $total_email_assign_cnt = \App\MailReport::where('client_matter_id', $item->id)
+                        $total_email_assign_cnt = \App\Models\MailReport::where('client_matter_id', $item->id)
                         ->where('client_id', $item->client_id)
                         ->where('conversion_type', 'conversion_email_fetch')
                         ->whereNull('mail_is_read')
@@ -283,7 +283,7 @@
                         <td class="col-person_assisting">{{ @$person_assisting->first_name == "" ? config('constants.empty') : str_limit(@$person_assisting->first_name, '50', '...') }} {{ @$person_assisting->last_name == "" ? config('constants.empty') : str_limit(@$person_assisting->last_name, '50', '...') }}</td>
                         <td class="col-stage">
                             <select class="form-select stageCls" id="stage_<?php echo $item->id;?>" style="height: 30px;border-color: #e0e0e0;">
-                                @foreach(\App\WorkflowStage::where('id','!=','')->orderby('id','ASC')->get() as $stage)
+                                @foreach(\App\Models\WorkflowStage::where('id','!=','')->orderby('id','ASC')->get() as $stage)
                                 <option value="<?php echo $stage->id; ?>" <?php echo $item->workflow_stage_id == $stage->id ? 'selected' : ''; ?>><?php echo $stage->name; ?></option>
                                 @endforeach
                             </select>
@@ -330,7 +330,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <form method="post" action="{{URL::to('/admin/tasks/store/')}}" name="newtaskform" autocomplete="off" id="tasktermform" enctype="multipart/form-data">
+                    <form method="post" action="#" name="newtaskform" autocomplete="off" id="tasktermform" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="is_ajax" value="0">
                     <input type="hidden" name="is_dashboard" value="true">
@@ -365,7 +365,7 @@
                             <div class="col-12 col-md-6 col-lg-6">
                                 <div class="form-group">
                                 <?php
-                                    $assignee = \App\Admin::select('id','first_name','email')->where('role','!=',1)->get();
+                                    $assignee = \App\Models\Admin::select('id','first_name','email')->where('role','!=',1)->get();
                                     ?>
                                     <label for="assignee">Assignee</label>
                                     <select data-valid="" class="form-control cleintselect2 select2" name="assignee">
@@ -470,7 +470,7 @@
                                     <select data-valid="required" class="form-control cleintselect2 select2" name="contact_name[]">
                                         <option value="">Choose Contact</option>
                                         <?php
-                                        $clients = \App\Admin::select('id','first_name','email')->where('is_archived', '=', '0')->where('role', '=', '7')->get();
+                                        $clients = \App\Models\Admin::select('id','first_name','email')->where('is_archived', '=', '0')->where('role', '=', '7')->get();
                                         foreach($clients as $client){
                                         ?>
                                         <option value="{{$client->id}} ">{{$client->first_name}} ({{$client->email}})</option>
@@ -488,7 +488,7 @@
                                     <select data-valid="" class="form-control cleintselect2 select2" name="partner_name">
                                         <option value="">Choose Partner</option>
                                         <?php
-                                        $Partners = \App\Partner::select('id','partner_name','email')->where('id', '!=', '')->get();
+                                        $Partners = \App\Models\Partner::select('id','partner_name','email')->where('id', '!=', '')->get();
                                         foreach($Partners as $Partner){
                                         ?>
                                         <option value="{{$Partner->id}} ">{{$Partner->partner_name}} ({{$Partner->email}})</option>
@@ -506,7 +506,7 @@
                                     <select data-valid="" id="getapplications" class="form-control client_name cleintselect2" name="client_name">
                                         <option value="">Choose Client</option>
                                         <?php
-                                    //$clientsss = \App\Admin::where('is_archived', '0')->where('role', '7')->get();
+                                    //$clientsss = \App\Models\Admin::where('is_archived', '0')->where('role', '7')->get();
                                     /*	foreach($clientsss as $clientsssss){
                                         ?>
                                         <option value="{{@$clientsssss->id}}">{{@$clientsssss->first_name}} ({{@$clientsssss->email}})</option>
@@ -557,7 +557,7 @@
                                     <select data-valid="" class="form-control cleintselect2 select2" name="followers">
                                         <option value="">Choose Followers</option>
                                         <?php
-                                        $followers = \App\Admin::select('id','first_name','email')->where('role', '!=', '7')->get();
+                                        $followers = \App\Models\Admin::select('id','first_name','email')->where('role', '!=', '7')->get();
                                         foreach($followers as $follower){
                                         ?>
                                         <option value="{{$follower->id}} ">{{$follower->first_name}} ({{$follower->email}})</option>

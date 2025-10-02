@@ -7,9 +7,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 
-use App\Admin;
-use App\InvoicePayment;
-use App\IncomeSharing;
+use App\Models\Admin;
+use App\Models\InvoicePayment;
+use App\Models\IncomeSharing;
 use PDF;
 use Auth;
 use Config;

@@ -49,7 +49,7 @@
 													<select class="form-control" data-valid="required" name="category">
 													    
 													    <option value="">Select</option>
-										@foreach(\App\Category::all() as $clists)
+										@foreach(\App\Models\Category::all() as $clists)
 										<option value="{{$clists->id}}">{{$clists->category_name}}</option>
 										@endforeach
 													</select>

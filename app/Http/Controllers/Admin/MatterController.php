@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
-use App\Matter;
+use App\Models\Matter;
 use Config;
 
 class MatterController extends Controller

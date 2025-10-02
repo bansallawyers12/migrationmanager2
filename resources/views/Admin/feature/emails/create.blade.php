@@ -86,7 +86,7 @@
 														<select data-valid="required" multiple class="form-control select2" name="users[]">
 															<option value="">Select User</option>
 															<?php
-																$users = \App\Admin::Where('role', '!=', '7')->Where('status', '=', 1)->get();
+																$users = \App\Models\Admin::Where('role', '!=', '7')->Where('status', '=', 1)->get();
 																foreach($users as $user){
 																	?>
 																	<option value="{{$user->id}}">{{$user->first_name}} {{$user->last_name}}</option>

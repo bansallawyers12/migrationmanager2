@@ -139,7 +139,7 @@ class EmailAccount extends Model
      */
     public function getStorageStats(): array
     {
-        $folderService = new \App\Services\EmailFolderService();
+        $folderService = new \App\Models\Services\EmailFolderService();
         return $folderService->getAccountStorageStats($this);
     }
 
@@ -148,7 +148,7 @@ class EmailAccount extends Model
      */
     public function getLocalFolderPath(): string
     {
-        $folderService = new \App\Services\EmailFolderService();
+        $folderService = new \App\Models\Services\EmailFolderService();
         return $folderService->getAccountPath($this);
     }
 }

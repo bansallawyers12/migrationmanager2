@@ -61,7 +61,7 @@
 															<div class="form-group">
 																<label for="master_category">Master Category <span class="span_req">*</span></label>
 																<?php
-																$cat = \App\Category::where('id', $fetchedData->master_category)->first();
+																$cat = \App\Models\Category::where('id', $fetchedData->master_category)->first();
 																?>
 																<input type="text" class="form-control" disabled name="" value="{{@$cat->category_name}}">
 																@if ($errors->has('master_category'))
@@ -72,7 +72,7 @@
 															</div>
 														</div>
 														<?php
-																$partner_type = \App\PartnerType::where('category_id', $fetchedData->master_category)->get();
+																$partner_type = \App\Models\PartnerType::where('category_id', $fetchedData->master_category)->get();
 																?>
 														<div class="col-12 col-md-6 col-lg-6">
 															<div class="form-group">
@@ -117,7 +117,7 @@
 																<label for="service_workflow">Service Workflow <span class="span_req">*</span></label>
 																<select class="form-control addressselect2" name="service_workflow">
 																<option value="">Choose Service workflow</option>
-																	@foreach(\App\Workflow::all() as $wlist)
+																	@foreach(\App\Models\Workflow::all() as $wlist)
 																		<option <?php if($wlist->id == $fetchedData->service_workflow){ echo 'selected'; } ?> value="{{$wlist->id}}">{{$wlist->name}}</option>
 																	@endforeach
 																</select>
@@ -211,7 +211,7 @@
 
 														<select class="form-control  addressselect2" name="country" >
 														<?php
-															foreach(\App\Country::all() as $list){
+															foreach(\App\Models\Country::all() as $list){
 																?>
 																<option value="{{@$list->name}}" <?php if($fetchedData->country == @$list->name){ echo 'selected'; } ?>>{{@$list->name}}</option>
 																<?php
@@ -310,7 +310,7 @@
 											<script> var branchdata = new Array(); </script>
 												<div class="branchdata">
 												<?php
-													$branches = \App\PartnerBranch::where('partner_id', $fetchedData->id)->get();
+													$branches = \App\Models\PartnerBranch::where('partner_id', $fetchedData->id)->get();
 													$i=0;
 													$branchdata = array();
                                                     if(count($branches)>0)
@@ -422,7 +422,7 @@
 								<select class="form-control branch_country select2" name="branch_country" >
 									<option value="">Select</option>
 									<?php
-									foreach(\App\Country::all() as $list){
+									foreach(\App\Models\Country::all() as $list){
 										?>
 										<option @if(@$list->name == 'Australia') selected @endif value="{{@$list->name}}">{{@$list->name}}</option>
 										<?php

@@ -40,7 +40,7 @@
 								<tbody class="tdata">	
 								@foreach (@$lists as $list)
 								<?php
-								$SubjectArea = \App\SubjectArea::where('id', '=', $list->subject_area)->first();
+								$SubjectArea = \App\Models\SubjectArea::where('id', '=', $list->subject_area)->first();
 								?>
 									<tr id="id_{{@$list->id}}">
 										

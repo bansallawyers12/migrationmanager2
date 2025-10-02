@@ -858,7 +858,7 @@ class EmailController extends Controller
                         try {
                             // Get client name if client_id is set
                             if ($email->assign_client_id) {
-                                $client = \App\Admin::where('id', $email->assign_client_id)
+                                $client = \App\Models\Admin::where('id', $email->assign_client_id)
                                     ->where('role', 7)
                                     ->select('first_name', 'last_name', 'client_id')
                                     ->first();
@@ -876,7 +876,7 @@ class EmailController extends Controller
                             
                             // Get matter name if matter_id is set
                             if ($email->assign_client_matter_id) {
-                                $matter = \App\ClientMatter::where('client_matters.id', $email->assign_client_matter_id)
+                                $matter = \App\Models\ClientMatter::where('client_matters.id', $email->assign_client_matter_id)
                                     ->leftJoin('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
                                     ->select('client_matters.client_unique_matter_no', 'matters.title', 'client_matters.sel_matter_id')
                                     ->first();
@@ -1027,7 +1027,7 @@ class EmailController extends Controller
                         try {
                             // Get client name if client_id is set
                             if ($email->assign_client_id) {
-                                $client = \App\Admin::where('id', $email->assign_client_id)
+                                $client = \App\Models\Admin::where('id', $email->assign_client_id)
                                     ->where('role', 7)
                                     ->select('first_name', 'last_name', 'client_id')
                                     ->first();
@@ -1042,7 +1042,7 @@ class EmailController extends Controller
                             
                             // Get matter name if matter_id is set
                             if ($email->assign_client_matter_id) {
-                                $matter = \App\ClientMatter::where('client_matters.id', $email->assign_client_matter_id)
+                                $matter = \App\Models\ClientMatter::where('client_matters.id', $email->assign_client_matter_id)
                                     ->leftJoin('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
                                     ->select('client_matters.client_unique_matter_no', 'matters.title', 'client_matters.sel_matter_id')
                                     ->first();
@@ -2219,7 +2219,7 @@ class EmailController extends Controller
                             try {
                                 // Get client name if client_id is set
                                 if ($email->assign_client_id) {
-                                    $client = \App\Admin::where('id', $email->assign_client_id)
+                                    $client = \App\Models\Admin::where('id', $email->assign_client_id)
                                         ->where('role', 7)
                                         ->select('first_name', 'last_name', 'client_id')
                                         ->first();
@@ -2234,7 +2234,7 @@ class EmailController extends Controller
                                 
                                 // Get matter name if matter_id is set
                                 if ($email->assign_client_matter_id) {
-                                    $matter = \App\ClientMatter::where('client_matters.id', $email->assign_client_matter_id)
+                                    $matter = \App\Models\ClientMatter::where('client_matters.id', $email->assign_client_matter_id)
                                         ->leftJoin('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
                                         ->select('client_matters.client_unique_matter_no', 'matters.title', 'client_matters.sel_matter_id')
                                         ->first();
@@ -2947,7 +2947,7 @@ class EmailController extends Controller
     public function getClients()
     {
         try {
-            $clients = \App\Admin::where('role', 7)
+            $clients = \App\Models\Admin::where('role', 7)
                 ->where('is_archived', 0)
                 ->whereNull('is_deleted')
                 ->select('id', 'first_name', 'last_name', 'client_id', 'email')
@@ -2972,7 +2972,7 @@ class EmailController extends Controller
     public function getClientMatters($clientId)
     {
         try {
-            $matters = \App\ClientMatter::where('client_id', $clientId)
+            $matters = \App\Models\ClientMatter::where('client_id', $clientId)
                 ->where('matter_status', 1)
                 ->join('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
                 ->select('client_matters.id', 'client_matters.client_unique_matter_no', 'matters.title')
@@ -3088,7 +3088,7 @@ class EmailController extends Controller
                     }
 
                     // Check if client exists using primary database (admins table)
-                    $clientExists = \App\Admin::where('id', $request->input('client_id'))
+                    $clientExists = \App\Models\Admin::where('id', $request->input('client_id'))
                         ->where('role', 7)
                         ->exists();
 
@@ -3097,7 +3097,7 @@ class EmailController extends Controller
                     }
 
                     // Check if matter exists using primary database (client_matters table)
-                    $matterExists = \App\ClientMatter::where('id', $request->input('matter_id'))
+                    $matterExists = \App\Models\ClientMatter::where('id', $request->input('matter_id'))
                         ->where('matter_status', 1)
                         ->exists();
 
@@ -3212,7 +3212,7 @@ class EmailController extends Controller
                         }
 
                         // Create new mail report record using second database
-                        $mailReport = \App\MailReport::create([
+                        $mailReport = \App\Models\MailReport::create([
                             'conversion_type' => 'conversion_email_fetch',
                             'mail_body_type' => $mailBodyType,
                             'from_mail' => $email->from_email,
@@ -3261,7 +3261,7 @@ class EmailController extends Controller
                         ]);
                         
                         // Delete existing mail report record using second database
-                        \App\MailReport::where('id', $email->mail_report_tbl_id)->delete();
+                        \App\Models\MailReport::where('id', $email->mail_report_tbl_id)->delete();
 
                         // Determine mail_body_type based on folder
                         $mailBodyType = 'inbox'; // default
@@ -3270,7 +3270,7 @@ class EmailController extends Controller
                         }
 
                         // Create new mail report record using second database
-                        $mailReport = \App\MailReport::create([
+                        $mailReport = \App\Models\MailReport::create([
                             'conversion_type' => 'conversion_email_fetch',
                             'mail_body_type' => $mailBodyType,
                             'from_mail' => $email->from_email,
@@ -3359,7 +3359,7 @@ class EmailController extends Controller
                         try {
                             // Get client name if client_id is set
                             if ($email->assign_client_id) {
-                                $client = \App\Admin::where('id', $email->assign_client_id)
+                                $client = \App\Models\Admin::where('id', $email->assign_client_id)
                                     ->where('role', 7)
                                     ->select('first_name', 'last_name', 'client_id')
                                     ->first();
@@ -3374,7 +3374,7 @@ class EmailController extends Controller
                             
                             // Get matter name if matter_id is set
                             if ($email->assign_client_matter_id) {
-                                $matter = \App\ClientMatter::where('client_matters.id', $email->assign_client_matter_id)
+                                $matter = \App\Models\ClientMatter::where('client_matters.id', $email->assign_client_matter_id)
                                     ->leftJoin('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
                                     ->select('client_matters.client_unique_matter_no', 'matters.title', 'client_matters.sel_matter_id')
                                     ->first();

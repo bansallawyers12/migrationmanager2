@@ -1111,7 +1111,6 @@
 								</div>
 								<div class="tab-pane fade" id="quotations" role="tabpanel" aria-labelledby="quotations-tab">
 									<div class="card-header-action text-right" style="padding-bottom:15px;">
-										<a href="{{URL::to('/admin/quotations/client/create/104')}}" class="btn btn-primary"><i class="fa fa-plus"></i> Add</a>
 									</div>
 									<div class="table-responsive"> 
 										<table class="table text_wrap">

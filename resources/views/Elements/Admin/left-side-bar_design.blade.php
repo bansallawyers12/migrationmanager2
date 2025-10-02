@@ -5,7 +5,7 @@
         </div>
         <ul class="sidebar-menu">
             <?php
-            $roles = \App\UserRole::find(Auth::user()->role);
+            $roles = \App\Models\UserRole::find(Auth::user()->role);
             $newarray = json_decode($roles->module_access);
             $module_access = (array) $newarray;
             ?>
@@ -41,9 +41,9 @@
                 $assigneetype = 'active';
             }
             if(\Auth::user()->role == 1){
-                $assigneesCount = \App\Note::where('type','client')->whereNotNull('client_id')->where('folloup',1)->where('status',0)->count();
+                $assigneesCount = \App\Models\Note::where('type','client')->whereNotNull('client_id')->where('folloup',1)->where('status',0)->count();
             }else{
-                $assigneesCount = \App\Note::where('assigned_to',Auth::user()->id)->where('type','client')->where('folloup',1)->where('status',0)->count();
+                $assigneesCount = \App\Models\Note::where('assigned_to',Auth::user()->id)->where('type','client')->where('folloup',1)->where('status',0)->count();
             }
             ?>
             <li class="dropdown {{@$assigneetype}}">
@@ -97,58 +97,6 @@
                         <a href="{{route('admin.clients.journalreceiptlist')}}" class="nav-link"><i data-feather="file-text"></i><span>Journal Receipts</span></a>
                     </li>
                 </ul>
-            </li>
-            <?php } ?>
-            <?php
-            if(Route::currentRouteName() == 'admin.agents.active' || Route::currentRouteName() == 'admin.agents.inactive' || Route::currentRouteName() == 'admin.agents.create' || Route::currentRouteName() == 'admin.agents.edit' || Route::currentRouteName() == 'admin.agents.detail'){
-                $agentclasstype = 'active';
-            }
-            if(array_key_exists('15', $module_access)) {
-            ?>
-            <li class="dropdown {{@$agentclasstype}}">
-                <a href="{{route('admin.agents.active')}}" class="nav-link"><i data-feather="users"></i><span>Migration Agent</span></a>
-            </li>
-            <?php } ?>
-            <?php if(Auth::user()->role == 1 || Auth::user()->role == 12) { ?>
-            <li class="dropdown">
-                <a href="#" class="menu-toggle nav-link has-dropdown"><i data-feather="file-text"></i><span>Reports</span></a>
-                <ul class="dropdown-menu">
-                    <?php if(array_key_exists('62', $module_access)) { ?>
-                    <li class=""><a class="nav-link" href="{{route('admin.reports.client')}}">Client</a></li>
-                    <li class=""><a class="nav-link" href="{{route('admin.reports.application')}}">Applications</a></li>
-                    <?php } ?>
-                    <?php if(array_key_exists('63', $module_access)) { ?>
-                    <li class=""><a class="nav-link" href="{{route('admin.reports.invoice')}}">Invoice</a></li>
-                    <?php } ?>
-                    <?php if(array_key_exists('64', $module_access)) { ?>
-                    <li class=""><a class="nav-link" href="{{route('admin.reports.office-visit')}}">Office Check-In</a></li>
-                    <?php } ?>
-                    <?php if(array_key_exists('65', $module_access)) { ?>
-                    <li class=""><a class="nav-link" href="{{route('admin.reports.saleforecast-application')}}">Sale Forecast</a></li>
-                    <?php } ?>
-                    <?php if(array_key_exists('68', $module_access)) { ?>
-                    <li class=""><a class="nav-link" href="{{route('admin.reports.personal-task-report')}}">Tasks</a></li>
-                    <?php } ?>
-                    <li class=""><a class="nav-link" href="{{URL::to('/admin/reports/visaexpires')}}">Visa Expires</a></li>
-                    <li class=""><a class="nav-link" href="{{URL::to('/admin/reports/agreementexpires')}}">Agreement Expires</a></li>
-                    @if(Auth::user()->role === 1)
-                    <li class=""><a class="nav-link" href="{{route('admin.reports.noofpersonofficevisit')}}">Office Visit Report Date wise</a></li>
-                    <li class=""><a class="nav-link" href="{{route('admin.reports.clientrandomlyselectmonthly')}}">Client Select Monthly Report</a></li>
-                    @endif
-                </ul>
-            </li>
-            <li class="dropdown">
-                <a href="#" class="menu-toggle nav-link has-dropdown"><i data-feather="briefcase"></i><span>Blogs section</span></a>
-                <ul class="dropdown-menu">
-                    <li class=""><a class="nav-link" href="{{ route('admin.blogcategory.index') }}">Blogs Category</a></li>
-                    <li class=""><a class="nav-link" href="{{ route('admin.blog.index') }}">Blogs</a></li>
-                </ul>
-            </li>
-            @if(Route::currentRouteName() == 'admin.cms_pages.index' || Route::currentRouteName() == 'admin.cms_pages.create' || Route::currentRouteName() == 'admin.cms_pages.edit')
-                @php $cmsclasstype = 'active'; @endphp
-            @endif
-            <li class="dropdown {{@$cmsclasstype}}">
-                <a href="{{route('admin.cms_pages.index')}}" class="nav-link"><i data-feather="briefcase"></i><span>CMS Pages</span></a>
             </li>
             <?php } ?>
             <?php

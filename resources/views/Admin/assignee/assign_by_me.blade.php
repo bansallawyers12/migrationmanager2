@@ -151,7 +151,7 @@
                                         @if (count($assignees_notCompleted) > 0)
                                             @foreach ($assignees_notCompleted as $list)
                                                 @php
-                                                    $admin = \App\Admin::where('id', $list->assigned_to)->first();
+                                                    $admin = \App\Models\Admin::where('id', $list->assigned_to)->first();
                                                     $full_name = $admin ? ($admin->first_name ?? 'N/A') . ' ' . ($admin->last_name ?? 'N/A') : 'N/P';
                                                     $user_name = $list->noteClient ? $list->noteClient->first_name . ' ' . $list->noteClient->last_name : 'N/P';
                                                 @endphp
@@ -192,9 +192,9 @@
                                                                         <div class="col-sm-9">
                                                                             <select class="assigneeselect2 form-control selec_reg" id="rem_cat" name="rem_cat">
                                                                                 <option value="">Select</option>
-                                                                                @foreach (\App\Admin::where('role', '!=', 7)->where('status', 1)->orderBy('first_name', 'ASC')->get() as $admin)
+                                                                                @foreach (\App\Models\Admin::where('role', '!=', 7)->where('status', 1)->orderBy('first_name', 'ASC')->get() as $admin)
                                                                                     @php
-                                                                                        $branchname = \App\Branch::where('id', $admin->office_id)->first();
+                                                                                        $branchname = \App\Models\Branch::where('id', $admin->office_id)->first();
                                                                                     @endphp
                                                                                     <option value="{{ $admin->id }}" {{ $admin->id == $list->assigned_to ? 'selected' : '' }}>{{ $admin->first_name . ' ' . $admin->last_name . ' (' . ($branchname->office_name ?? 'N/A') . ')' }}</option>
                                                                                 @endforeach

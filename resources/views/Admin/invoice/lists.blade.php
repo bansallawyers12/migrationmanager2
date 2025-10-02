@@ -99,7 +99,7 @@
 												</td>
 												<td class="list_td" invoiceid="{{base64_encode(convert_uuencode(@$list->id))}}">
 													<div class="list_primary">
-													<?php $currncydata = \App\Currency::where('id',$list->currency_id)->first(); ?>
+													<?php $currncydata = \App\Models\Currency::where('id',$list->currency_id)->first(); ?>
 														<span class="float-right amount"> {{$currncydata->currency_symbol}}{{number_format($list->amount, $currncydata->decimal)}} </span>
 														<div class="name" title="{{$list->customer->first_name}} {{$list->customer->last_name}}">{{$list->customer->first_name}} {{$list->customer->last_name}}</div>
 													</div>
@@ -140,7 +140,7 @@
 					</div>
 					<!-- /.card -->
 				</div>
-				<?php $currencydata = \App\Currency::where('id',$invoicedetail->currency_id)->first(); ?>
+				<?php $currencydata = \App\Models\Currency::where('id',$invoicedetail->currency_id)->first(); ?>
 				<div class="col-md-8 showinvoicedata">
 					<div class="card card-primary card-outline invoice_list">
 						<div class="card-header">
@@ -203,9 +203,9 @@
 						</div>
 						<!-- /.card-body -->
 						<?php
-							$paymentdetail = \App\InvoicePayment::where('invoice_id',$invoicedetail->id)->get();
+							$paymentdetail = \App\Models\InvoicePayment::where('invoice_id',$invoicedetail->id)->get();
 
-							$paymentcount = \App\InvoicePayment::where('invoice_id',$invoicedetail->id)->count();
+							$paymentcount = \App\Models\InvoicePayment::where('invoice_id',$invoicedetail->id)->count();
 						?>
 						@if($invoicedetail->status == 1)
 						<div id="accordion" class="cus_accordian">
@@ -451,13 +451,13 @@
 										  } 
 											if(@$invoicedetail->tax != 0)
 											{
-												$cure = \App\TaxRate::where('id',@$invoicedetail->tax)->first(); 
+												$cure = \App\Models\TaxRate::where('id',@$invoicedetail->tax)->first(); 
 												$taxcal = ($finaltotal * $cure->rate) / 100;
 												$finaltotal = $finaltotal + $taxcal;
 											}
-											$amount_rec = \App\InvoicePayment::where('invoice_id',$invoicedetail->id)->get()->sum("amount_rec");
+											$amount_rec = \App\Models\InvoicePayment::where('invoice_id',$invoicedetail->id)->get()->sum("amount_rec");
 
-											$ispaymentexist = \App\InvoicePayment::where('invoice_id',$invoicedetail->id)->exists();
+											$ispaymentexist = \App\Models\InvoicePayment::where('invoice_id',$invoicedetail->id)->exists();
 											
 										  ?>
 										<div style="width: 100%;">
@@ -489,7 +489,7 @@
 														  <?php } ?>
 														  @if(@$invoicedetail->tax != 0)
 															<?php
-																$isex = \App\TaxRate::where('id',@$invoicedetail->tax)->exists(); 
+																$isex = \App\Models\TaxRate::where('id',@$invoicedetail->tax)->exists(); 
 																if($isex){
 																	
 															?>

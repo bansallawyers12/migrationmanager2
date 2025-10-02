@@ -5,7 +5,7 @@
         </div>
         <ul class="sidebar-menu">
             <?php
-            $roles = \App\UserRole::find(Auth::user()->role);
+            $roles = \App\Models\UserRole::find(Auth::user()->role);
             $newarray = json_decode($roles->module_access);
             $module_access = (array) $newarray;
             ?>
@@ -51,7 +51,7 @@
             if(Route::currentRouteName() == 'admin.officevisits.index' || Route::currentRouteName() == 'admin.officevisits.waiting' || Route::currentRouteName() == 'admin.officevisits.attending' || Route::currentRouteName() == 'admin.officevisits.completed' || Route::currentRouteName() == 'admin.officevisits.archived'){
 				$checlasstype = 'active';
 			}
-            $InPersonwaitingCount = \App\CheckinLog::where('status',0)->count();
+            $InPersonwaitingCount = \App\Models\CheckinLog::where('status',0)->count();
             ?>
 			<li class="dropdown {{@$checlasstype}}">
 				<a href="{{route('admin.officevisits.waiting')}}" class="nav-link" title="In Person" style="position: relative;">
@@ -68,9 +68,9 @@
                 $assigneetype = 'active';
             }
             if(\Auth::user()->role == 1){
-                $assigneesCount = \App\Note::where('type','client')->whereNotNull('client_id')->where('folloup',1)->where('status',0)->count();
+                $assigneesCount = \App\Models\Note::where('type','client')->whereNotNull('client_id')->where('folloup',1)->where('status',0)->count();
             }else{
-                $assigneesCount = \App\Note::where('assigned_to',Auth::user()->id)->where('type','client')->where('folloup',1)->where('status',0)->count();
+                $assigneesCount = \App\Models\Note::where('assigned_to',Auth::user()->id)->where('type','client')->where('folloup',1)->where('status',0)->count();
             }
             ?>
             <li class="dropdown {{@$assigneetype}}">

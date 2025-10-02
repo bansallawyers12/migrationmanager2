@@ -447,9 +447,9 @@
                                 <?php $i=0; ?>
                                     @foreach (@$lists as $list)
                                         <?php
-                                        $client_info = \App\Admin::select('id','first_name','last_name','client_id')->where('id', $list->client_id)->first();
+                                        $client_info = \App\Models\Admin::select('id','first_name','last_name','client_id')->where('id', $list->client_id)->first();
                                         if(isset($list->voided_or_validated_by) && $list->voided_or_validated_by != ""){
-                                            $validate_by = \App\Admin::select('id','first_name','last_name','user_id')->where('id', $list->voided_or_validated_by)->first();
+                                            $validate_by = \App\Models\Admin::select('id','first_name','last_name','user_id')->where('id', $list->voided_or_validated_by)->first();
                                             $validate_by_full_name = $validate_by->first_name.' '.$validate_by->last_name;
                                         } else {
                                             $validate_by_full_name = "-";

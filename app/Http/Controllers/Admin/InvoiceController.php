@@ -8,20 +8,19 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\File;
 
-use App\Admin;
-use App\Invoice;
-use App\Item;
-use App\InvoiceDetail;
-use App\InvoicePayment;
-use App\ScheduleItem;
-use App\InvoiceFollowup;
-use App\EmailTemplate;
-use App\ShareInvoice;
-use App\InvoiceSchedule;
-use App\TaxRate;
-use App\Currency;
-use App\Contact;
-use App\AttachFile;
+use App\Models\Admin;
+use App\Models\Invoice;
+use App\Models\InvoiceDetail;
+use App\Models\InvoicePayment;
+use App\Models\ScheduleItem;
+use App\Models\InvoiceFollowup;
+use App\Models\EmailTemplate;
+use App\Models\ShareInvoice;
+use App\Models\InvoiceSchedule;
+use App\Models\TaxRate;
+use App\Models\Currency;
+use App\Models\Contact;
+use App\Models\AttachFile;
  use PDF;
 use Auth;
 use Config;
@@ -52,16 +51,16 @@ class InvoiceController extends Controller
 	}
 	public function getInvoice(Request $request, $clientid, $applicationid, $type){
 		// dd($type);
-		$clientdata = \App\Admin::where('role', 7)->where('id', $clientid)->first();
+		$clientdata = \App\Models\Admin::where('role', 7)->where('id', $clientid)->first();
 		if($type == 3){
-            $workflowdaa = \App\Workflow::where('id', $applicationid)->first();
+            $workflowdaa = \App\Models\Workflow::where('id', $applicationid)->first();
 			return view('Admin.invoice.general-invoice',compact(['clientid','applicationid','type','clientdata','workflowdaa']));
 		} else {
-            $applicationdata = \App\Application::where('id', $applicationid)->first();
-            $partnerdata = \App\Partner::where('id', @$applicationdata->partner_id)->first();
-            $productdata = \App\Product::where('id', @$applicationdata->product_id)->first();
-            $branchdata = \App\PartnerBranch::where('id', @$applicationdata->branch)->first();
-            $workflowdaa = \App\Workflow::where('id', @$applicationdata->workflow)->first();
+            $applicationdata = \App\Models\Application::where('id', $applicationid)->first();
+            $partnerdata = \App\Models\Partner::where('id', @$applicationdata->partner_id)->first();
+            $productdata = \App\Models\Product::where('id', @$applicationdata->product_id)->first();
+            $branchdata = \App\Models\PartnerBranch::where('id', @$applicationdata->branch)->first();
+            $workflowdaa = \App\Models\Workflow::where('id', @$applicationdata->workflow)->first();
 			return view('Admin.invoice.commission-invoice',compact(['clientid','applicationid','type','applicationdata','partnerdata','workflowdaa','clientdata','productdata','branchdata']));
 		}
     }
@@ -91,21 +90,21 @@ class InvoiceController extends Controller
 		{
 			$invoicedetail = Invoice::where('id', '=', $id)->first();
 			if($invoicedetail->type == 3){
-				$workflowdaa = \App\Workflow::where('id', $invoicedetail->application_id)->first();
+				$workflowdaa = \App\Models\Workflow::where('id', $invoicedetail->application_id)->first();
 				$applicationdata = array();
 				$partnerdata = array();
 				$productdata = array();
 				$branchdata = array();
 			}else{
-				$applicationdata = \App\Application::where('id', $invoicedetail->application_id)->first();
-				$partnerdata = \App\Partner::where('id', @$applicationdata->partner_id)->first();
-				$productdata = \App\Product::where('id', @$applicationdata->product_id)->first();
-				$branchdata = \App\PartnerBranch::where('id', @$applicationdata->branch)->first();
-				$workflowdaa = \App\Workflow::where('id', @$applicationdata->workflow)->first();
+				$applicationdata = \App\Models\Application::where('id', $invoicedetail->application_id)->first();
+				$partnerdata = \App\Models\Partner::where('id', @$applicationdata->partner_id)->first();
+				$productdata = \App\Models\Product::where('id', @$applicationdata->product_id)->first();
+				$branchdata = \App\Models\PartnerBranch::where('id', @$applicationdata->branch)->first();
+				$workflowdaa = \App\Models\Workflow::where('id', @$applicationdata->workflow)->first();
 			}
 
-			$clientdata = \App\Admin::where('role', 7)->where('id', $invoicedetail->client_id)->first();
-			$admindata = \App\Admin::where('role', 1)->where('id', $invoicedetail->user_id)->first();
+			$clientdata = \App\Models\Admin::where('role', 7)->where('id', $invoicedetail->client_id)->first();
+			$admindata = \App\Models\Admin::where('role', 1)->where('id', $invoicedetail->user_id)->first();
 
 
 			return view('Admin.invoice.show',compact(['applicationdata','partnerdata','workflowdaa','clientdata','productdata','branchdata','invoicedetail','admindata']));
@@ -116,8 +115,8 @@ class InvoiceController extends Controller
 
 	public function invoicepaymentstore(Request $request){
 		$requestData 		= 	$request->all();
-		$invoicedetail = \App\Invoice::where('id', $requestData['invoice_id'])->first();
-		$invoiceitemdetails = \App\InvoiceDetail::where('invoice_id', $requestData['invoice_id'])->orderby('id','ASC')->get();
+		$invoicedetail = \App\Models\Invoice::where('id', $requestData['invoice_id'])->first();
+		$invoiceitemdetails = \App\Models\InvoiceDetail::where('invoice_id', $requestData['invoice_id'])->orderby('id','ASC')->get();
 		$coom_amt = 0;
 		$total_fee = 0;
 		$netamount = 0;
@@ -126,7 +125,7 @@ class InvoiceController extends Controller
 			$total_fee += $invoiceitemdetail->total_fee;
 			$netamount += $invoiceitemdetail->netamount;
 		}
-		$paymentdetails = \App\InvoicePayment::where('invoice_id', $requestData['invoice_id'])->orderby('created_at', 'DESC')->get();
+		$paymentdetails = \App\Models\InvoicePayment::where('invoice_id', $requestData['invoice_id'])->orderby('created_at', 'DESC')->get();
 		$amount_rec = 0;
 		foreach($paymentdetails as $paymentdetail){
 			$amount_rec += $paymentdetail->amount_rec;
@@ -164,8 +163,8 @@ class InvoiceController extends Controller
 				$followupsaved				=	$objf->save();
 			}
 
-		$invoicedetail = \App\Invoice::where('id', $requestData['invoice_id'])->first();
-		$invoiceitemdetails = \App\InvoiceDetail::where('invoice_id', $requestData['invoice_id'])->orderby('id','ASC')->get();
+		$invoicedetail = \App\Models\Invoice::where('id', $requestData['invoice_id'])->first();
+		$invoiceitemdetails = \App\Models\InvoiceDetail::where('invoice_id', $requestData['invoice_id'])->orderby('id','ASC')->get();
 		$coom_amt = 0;
 		$total_fee = 0;
 		$netamount = 0;
@@ -174,7 +173,7 @@ class InvoiceController extends Controller
 			$total_fee += $invoiceitemdetail->total_fee;
 			$netamount += $invoiceitemdetail->netamount;
 		}
-		$paymentdetails = \App\InvoicePayment::where('invoice_id', $requestData['invoice_id'])->orderby('created_at', 'DESC')->get();
+		$paymentdetails = \App\Models\InvoicePayment::where('invoice_id', $requestData['invoice_id'])->orderby('created_at', 'DESC')->get();
 		$amount_rec = 0;
 		foreach($paymentdetails as $paymentdetail){
 			$amount_rec += $paymentdetail->amount_rec;
@@ -188,7 +187,7 @@ class InvoiceController extends Controller
 			$totaldue = $feepaid - $amount_rec;
 		}
 		if($totaldue == 0){
-			$obj = \App\Invoice::find($requestData['invoice_id']);
+			$obj = \App\Models\Invoice::find($requestData['invoice_id']);
 			$obj->status = 1;
 			$obj->save();
 		}
@@ -214,17 +213,17 @@ class InvoiceController extends Controller
 	public function getinvoices(Request $request){
 		$client_id = $request->clientid;
 
-		$invoicelists = \App\Invoice::where('client_id',$client_id)->orderby('created_at','DESC')->get();
+		$invoicelists = \App\Models\Invoice::where('client_id',$client_id)->orderby('created_at','DESC')->get();
 		ob_start();
 		foreach($invoicelists as $invoicelist){
 			if($invoicelist->type == 3){
-				$workflowdaa = \App\Workflow::where('id', $invoicelist->application_id)->first();
+				$workflowdaa = \App\Models\Workflow::where('id', $invoicelist->application_id)->first();
 			}else{
-				$applicationdata = \App\Application::where('id', $invoicelist->application_id)->first();
-				$workflowdaa = \App\Workflow::where('id', $invoicelist->application_id)->first();
-				$partnerdata = \App\Partner::where('id', $applicationdata->partner_id)->first();
+				$applicationdata = \App\Models\Application::where('id', $invoicelist->application_id)->first();
+				$workflowdaa = \App\Models\Workflow::where('id', $invoicelist->application_id)->first();
+				$partnerdata = \App\Models\Partner::where('id', $applicationdata->partner_id)->first();
 			}
-			$invoiceitemdetails = \App\InvoiceDetail::where('invoice_id', $invoicelist->id)->orderby('id','ASC')->get();
+			$invoiceitemdetails = \App\Models\InvoiceDetail::where('invoice_id', $invoicelist->id)->orderby('id','ASC')->get();
 			$netamount = 0;
 			$coom_amt = 0;
 			$total_fee = 0;
@@ -234,7 +233,7 @@ class InvoiceController extends Controller
 				$total_fee += $invoiceitemdetail->total_fee;
 			}
 
-			$paymentdetails = \App\InvoicePayment::where('invoice_id', $invoicelist->id)->orderby('created_at', 'DESC')->get();
+			$paymentdetails = \App\Models\InvoicePayment::where('invoice_id', $invoicelist->id)->orderby('created_at', 'DESC')->get();
 			$amount_rec = 0;
 			foreach($paymentdetails as $paymentdetail){
 				$amount_rec += $paymentdetail->amount_rec;
@@ -308,7 +307,7 @@ class InvoiceController extends Controller
             $attachfile = array();
 		}
 		/* Profile Image Upload Function End */
-		$profiledetail = \App\Profile::where('id', @$requestData['profile'])->first();
+		$profiledetail = \App\Models\Profile::where('id', @$requestData['profile'])->first();
 		$pdetail = '';
 		if($profiledetail){
 			$ps = array(
@@ -358,7 +357,7 @@ class InvoiceController extends Controller
 
 
         /* Update Client detail start*/
-        $obj_client				=   \App\Admin::find(@$requestData['client_id']);
+        $obj_client				=   \App\Models\Admin::find(@$requestData['client_id']);
         $obj_client->first_name	=	@$requestData['first_name'];
         $obj_client->last_name	=	@$requestData['last_name'];
 
@@ -394,11 +393,11 @@ class InvoiceController extends Controller
 		{
 
 			if(isset($request->share_user) && $request->share_user != 'no' && $request->incomeshare_amount != ''){
-				if(\App\IncomeSharing::where('invoice_id',$obj->id)->exists()){
-					$IncomeSharing = \App\IncomeSharing::where('invoice_id',$obj->id)->first();
-					$oshare = \App\IncomeSharing::find($IncomeSharing->id);
+				if(\App\Models\IncomeSharing::where('invoice_id',$obj->id)->exists()){
+					$IncomeSharing = \App\Models\IncomeSharing::where('invoice_id',$obj->id)->first();
+					$oshare = \App\Models\IncomeSharing::find($IncomeSharing->id);
 				}else{
-					$oshare = new \App\IncomeSharing;
+					$oshare = new \App\Models\IncomeSharing;
 					$oshare->invoice_id = $obj->id;
 				}
 					$oshare->rec_id = $request->share_user;
@@ -426,8 +425,8 @@ class InvoiceController extends Controller
 
 
 
-			$invoicedetail = \App\Invoice::where('id',$obj->id)->first();
-		$invoiceitemdetails = \App\InvoiceDetail::where('invoice_id', $obj->id)->orderby('id','ASC')->get();
+			$invoicedetail = \App\Models\Invoice::where('id',$obj->id)->first();
+		$invoiceitemdetails = \App\Models\InvoiceDetail::where('invoice_id', $obj->id)->orderby('id','ASC')->get();
 		$coom_amt = 0;
 		$total_fee = 0;
 		$netamount = 0;
@@ -436,7 +435,7 @@ class InvoiceController extends Controller
 			$total_fee += $invoiceitemdetail->total_fee;
 			$netamount += $invoiceitemdetail->netamount;
 		}
-		$paymentdetails = \App\InvoicePayment::where('invoice_id',$obj->id)->orderby('created_at', 'DESC')->get();
+		$paymentdetails = \App\Models\InvoicePayment::where('invoice_id',$obj->id)->orderby('created_at', 'DESC')->get();
 		$amount_rec = 0;
 		foreach($paymentdetails as $paymentdetail){
 			$amount_rec += $paymentdetail->amount_rec;
@@ -450,11 +449,11 @@ class InvoiceController extends Controller
 			$totaldue = $feepaid - $amount_rec;
 		}
 
-			$objsss = \App\Invoice::find($obj->id);
+			$objsss = \App\Models\Invoice::find($obj->id);
 			$objsss->invoice_no = date('Y').'/'.date('m').'/'.$obj->id;
 			$objsss->save();
 		if($totaldue == 0){
-			$objss = \App\Invoice::find($obj->id);
+			$objss = \App\Models\Invoice::find($obj->id);
 			$objss->status = 1;
 			$objss->save();
 		}
@@ -502,7 +501,7 @@ class InvoiceController extends Controller
 				$attachfile[] = @$requestData['old_attachments'];
 			}
 
-		$profiledetail = \App\Profile::where('id', @$requestData['profile'])->first();
+		$profiledetail = \App\Models\Profile::where('id', @$requestData['profile'])->first();
 		$pdetail = '';
 		if($profiledetail){
 			$ps = array(
@@ -566,11 +565,11 @@ class InvoiceController extends Controller
 		else
 		{
 			if($request->share_user != 'no' && $request->incomeshare_amount != ''){
-				if(\App\IncomeSharing::where('invoice_id',$obj->id)->exists()){
-					$IncomeSharing = \App\IncomeSharing::where('invoice_id',$obj->id)->first();
-					$oshare = \App\IncomeSharing::find($IncomeSharing->id);
+				if(\App\Models\IncomeSharing::where('invoice_id',$obj->id)->exists()){
+					$IncomeSharing = \App\Models\IncomeSharing::where('invoice_id',$obj->id)->first();
+					$oshare = \App\Models\IncomeSharing::find($IncomeSharing->id);
 				}else{
-					$oshare = new \App\IncomeSharing;
+					$oshare = new \App\Models\IncomeSharing;
 					$oshare->invoice_id = $obj->id;
 				}
 					$oshare->rec_id = $request->share_user;
@@ -585,8 +584,8 @@ class InvoiceController extends Controller
 			}
 
 			if($request->share_user == 'no'){
-				if(\App\IncomeSharing::where('invoice_id',$obj->id)->exists()){
-					\App\IncomeSharing::where('invoice_id',$obj->id)->delete();
+				if(\App\Models\IncomeSharing::where('invoice_id',$obj->id)->exists()){
+					\App\Models\IncomeSharing::where('invoice_id',$obj->id)->delete();
 				}
 			}
 
@@ -602,8 +601,8 @@ class InvoiceController extends Controller
 				$followupsaved				=	$objf->save();
 			}
 
-			$invoicedetail = \App\Invoice::where('id',$obj->id)->first();
-		$invoiceitemdetails = \App\InvoiceDetail::where('invoice_id', $obj->id)->orderby('id','ASC')->get();
+			$invoicedetail = \App\Models\Invoice::where('id',$obj->id)->first();
+		$invoiceitemdetails = \App\Models\InvoiceDetail::where('invoice_id', $obj->id)->orderby('id','ASC')->get();
 		$coom_amt = 0;
 		$total_fee = 0;
 		$netamount = 0;
@@ -612,7 +611,7 @@ class InvoiceController extends Controller
 			$total_fee += $invoiceitemdetail->total_fee;
 			$netamount += $invoiceitemdetail->netamount;
 		}
-		$paymentdetails = \App\InvoicePayment::where('invoice_id',$obj->id)->orderby('created_at', 'DESC')->get();
+		$paymentdetails = \App\Models\InvoicePayment::where('invoice_id',$obj->id)->orderby('created_at', 'DESC')->get();
 		$amount_rec = 0;
 		foreach($paymentdetails as $paymentdetail){
 			$amount_rec += $paymentdetail->amount_rec;
@@ -627,7 +626,7 @@ class InvoiceController extends Controller
 		}
 
 		if($totaldue == 0){
-			$objss = \App\Invoice::find($obj->id);
+			$objss = \App\Models\Invoice::find($obj->id);
 			$objss->status = 1;
 			$objss->save();
 		}
@@ -663,7 +662,7 @@ class InvoiceController extends Controller
 			$attachfile = NULL;
 		}
 		/* Profile Image Upload Function End */
-		$profiledetail = \App\Profile::where('id', @$requestData['profile'])->first();
+		$profiledetail = \App\Models\Profile::where('id', @$requestData['profile'])->first();
 		$pdetail = '';
 		if($profiledetail){
 			$ps = array(
@@ -752,7 +751,7 @@ class InvoiceController extends Controller
             $attachfile = @$requestData['old_attachments'];
         }
 		/* Profile Image Upload Function End */
-		$profiledetail = \App\Profile::where('id', @$requestData['profile'])->first();
+		$profiledetail = \App\Models\Profile::where('id', @$requestData['profile'])->first();
 		$pdetail = '';
 		if($profiledetail){
 			$ps = array(
@@ -831,21 +830,21 @@ class InvoiceController extends Controller
 		{
 			$invoicedetail = Invoice::where('id', '=', $id)->first();
 			if($invoicedetail->type == 3){
-				$workflowdaa = \App\Workflow::where('id', $invoicedetail->application_id)->first();
+				$workflowdaa = \App\Models\Workflow::where('id', $invoicedetail->application_id)->first();
 				$applicationdata = array();
 				$partnerdata = array();
 				$productdata = array();
 				$branchdata = array();
 			}else{
-				$applicationdata = \App\Application::where('id', $invoicedetail->application_id)->first();
-				$partnerdata = \App\Partner::where('id', @$applicationdata->partner_id)->first();
-				$productdata = \App\Product::where('id', @$applicationdata->product_id)->first();
-				$branchdata = \App\PartnerBranch::where('id', @$applicationdata->branch)->first();
-				$workflowdaa = \App\Workflow::where('id', @$applicationdata->workflow)->first();
+				$applicationdata = \App\Models\Application::where('id', $invoicedetail->application_id)->first();
+				$partnerdata = \App\Models\Partner::where('id', @$applicationdata->partner_id)->first();
+				$productdata = \App\Models\Product::where('id', @$applicationdata->product_id)->first();
+				$branchdata = \App\Models\PartnerBranch::where('id', @$applicationdata->branch)->first();
+				$workflowdaa = \App\Models\Workflow::where('id', @$applicationdata->workflow)->first();
 			}
 
-			$clientdata = \App\Admin::where('role', 7)->where('id', $invoicedetail->client_id)->first();
-			$admindata = \App\Admin::where('role', 1)->where('id', $invoicedetail->user_id)->first();
+			$clientdata = \App\Models\Admin::where('role', 7)->where('id', $invoicedetail->client_id)->first();
+			$admindata = \App\Models\Admin::where('role', 1)->where('id', $invoicedetail->user_id)->first();
 
 			$pdf = PDF::setOptions([
 			'isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true,
@@ -865,18 +864,18 @@ class InvoiceController extends Controller
 		if(Invoice::where('id', '=', $id)->exists())
 		{
 			$invoicedetail = Invoice::where('id', '=', $id)->first();
-			$clientdata = \App\Admin::where('role', 7)->where('id', $invoicedetail->client_id)->first();
-			$admindata = \App\Admin::where('role', 1)->where('id', $invoicedetail->user_id)->first();
+			$clientdata = \App\Models\Admin::where('role', 7)->where('id', $invoicedetail->client_id)->first();
+			$admindata = \App\Models\Admin::where('role', 1)->where('id', $invoicedetail->user_id)->first();
 			if($invoicedetail->type == 3){
-				$workflowdaa = \App\Workflow::where('id', $invoicedetail->application_id)->first();
+				$workflowdaa = \App\Models\Workflow::where('id', $invoicedetail->application_id)->first();
 
 				return view('Admin.invoice.edit-gen',compact(['workflowdaa','clientdata','invoicedetail','admindata']));
 			}else{
-				$applicationdata = \App\Application::where('id', $invoicedetail->application_id)->first();
-				$partnerdata = \App\Partner::where('id', @$applicationdata->partner_id)->first();
-				$productdata = \App\Product::where('id', @$applicationdata->product_id)->first();
-				$branchdata = \App\PartnerBranch::where('id', @$applicationdata->branch)->first();
-				$workflowdaa = \App\Workflow::where('id', @$applicationdata->workflow)->first();
+				$applicationdata = \App\Models\Application::where('id', $invoicedetail->application_id)->first();
+				$partnerdata = \App\Models\Partner::where('id', @$applicationdata->partner_id)->first();
+				$productdata = \App\Models\Product::where('id', @$applicationdata->product_id)->first();
+				$branchdata = \App\Models\PartnerBranch::where('id', @$applicationdata->branch)->first();
+				$workflowdaa = \App\Models\Workflow::where('id', @$applicationdata->workflow)->first();
 				return view('Admin.invoice.edit',compact(['applicationdata','partnerdata','workflowdaa','clientdata','productdata','branchdata','invoicedetail','admindata']));
 			}
 
@@ -892,8 +891,8 @@ class InvoiceController extends Controller
 			$res = DB::table('invoice_payments')->where('id', $request->pay_id)->delete();
 			if($res){
 
-				$invoicedetail = \App\Invoice::where('id',$invocie->invoice_id)->first();
-		$invoiceitemdetails = \App\InvoiceDetail::where('invoice_id', $invocie->invoice_id)->orderby('id','ASC')->get();
+				$invoicedetail = \App\Models\Invoice::where('id',$invocie->invoice_id)->first();
+		$invoiceitemdetails = \App\Models\InvoiceDetail::where('invoice_id', $invocie->invoice_id)->orderby('id','ASC')->get();
 		$coom_amt = 0;
 		$total_fee = 0;
 		$netamount = 0;
@@ -902,7 +901,7 @@ class InvoiceController extends Controller
 			$total_fee += $invoiceitemdetail->total_fee;
 			$netamount += $invoiceitemdetail->netamount;
 		}
-		$paymentdetails = \App\InvoicePayment::where('invoice_id',$invocie->invoice_id)->orderby('created_at', 'DESC')->get();
+		$paymentdetails = \App\Models\InvoicePayment::where('invoice_id',$invocie->invoice_id)->orderby('created_at', 'DESC')->get();
 		$amount_rec = 0;
 		foreach($paymentdetails as $paymentdetail){
 			$amount_rec += $paymentdetail->amount_rec;
@@ -917,7 +916,7 @@ class InvoiceController extends Controller
 		}
 
 		if($totaldue != 0){
-			$objss = \App\Invoice::find($invocie->invoice_id);
+			$objss = \App\Models\Invoice::find($invocie->invoice_id);
 			$objss->status = 0;
 			$objss->save();
 		}
@@ -1045,11 +1044,11 @@ class InvoiceController extends Controller
 	public function setuppaymentschedule(Request $request){
 		$requestData 		= 	$request->all();
 		if(isset($requestData['is_ajax']) && $requestData['is_ajax']){
-			if(\App\Application::where('id', $request->application_id)->exists()){
-				$appid = \App\Application::where('id', $request->application_id)->first();
+			if(\App\Models\Application::where('id', $request->application_id)->exists()){
+				$appid = \App\Models\Application::where('id', $request->application_id)->first();
 				if($appid){
-					$appfeeid = \App\ApplicationFeeOption::where('app_id', $request->application_id)->first();
-					$getfeetypequery = \App\ApplicationFeeOptionType::where('fee_id', $appfeeid->id);
+					$appfeeid = \App\Models\ApplicationFeeOption::where('app_id', $request->application_id)->first();
+					$getfeetypequery = \App\Models\ApplicationFeeOptionType::where('fee_id', $appfeeid->id);
 					$totcount = $getfeetypequery->count();
 					$getfeetype = $getfeetypequery->get();
 
@@ -1181,7 +1180,7 @@ class InvoiceController extends Controller
 		$InvoiceSchedules = InvoiceSchedule::where('client_id', $request->client_id)->where('application_id', $request->appid)->get();
 		ob_start();
 		foreach($InvoiceSchedules as $invoiceschedule){
-			$scheduleitem = \App\ScheduleItem::where('schedule_id', $invoiceschedule->id)->get();
+			$scheduleitem = \App\Models\ScheduleItem::where('schedule_id', $invoiceschedule->id)->get();
 			?>
 			<tr id="<?php echo @$invoiceschedule->id; ?>">
 				<td><?php echo @$invoiceschedule->id; ?></td>
@@ -1237,8 +1236,8 @@ class InvoiceController extends Controller
 	}
 	public function addscheduleinvoicedetail(Request $request){
 		ob_start();
-		$application = \App\Application::where('id',$request->id)->first();
-		$cleintname = \App\Admin::where('role',7)->where('id',$application->client_id)->first();
+		$application = \App\Models\Application::where('id',$request->id)->first();
+		$cleintname = \App\Models\Admin::where('role',7)->where('id',$application->client_id)->first();
 		?>
 		<form method="post" action="<?php echo \URL::to('/admin/paymentschedule'); ?>" name="addinvpaymentschedule"  id="addinvpaymentschedule" autocomplete="off" enctype="multipart/form-data">
 			<input type="hidden" name="_token" value="<?php echo csrf_token(); ?>">
@@ -1255,7 +1254,7 @@ class InvoiceController extends Controller
 					<div class="form-group">
 						<label for="">Application</label>
 						<?php
-						$productdetail = \App\Product::where('id', $application->product_id)->first();
+						$productdetail = \App\Models\Product::where('id', $application->product_id)->first();
 						?>
 						<input type="text" disabled class="form-control" value="<?php echo $productdetail->name; ?>">
 						<input type="hidden" name="application" value="<?php echo $application->id; ?>">
@@ -1398,7 +1397,7 @@ class InvoiceController extends Controller
 							<div class="form-group">
 								<label for="editclientname">Client Name <span class="span_req">*</span></label>
 								<?php if(isset($request->t) && $request->t == 'application'){
-									$cleintname = \App\Admin::where('role',7)->where('id',$fetchedData->client_id)->first();
+									$cleintname = \App\Models\Admin::where('role',7)->where('id',$fetchedData->client_id)->first();
 									?>
 									<input type="text" disabled class="form-control" value="<?php echo $cleintname->first_name.' '.$cleintname->last_name; ?>">
 									<input type="hidden" name="client_id" value="<?php echo $fetchedData->client_id; ?>">
@@ -1407,7 +1406,7 @@ class InvoiceController extends Controller
 									?>
 									<select  data-valid="required" class="form-control editclientname" id="editclientname" name="client_id">
 									<option value="">Select Client Name</option>
-									<?php foreach(\App\Admin::where('role',7)->get() as $wlist){ ?>
+									<?php foreach(\App\Models\Admin::where('role',7)->get() as $wlist){ ?>
 										<option <?php if($fetchedData->client_id == $wlist->id){ echo 'selected'; } ?> value="<?php echo $wlist->id; ?>"><?php echo $wlist->first_name.' '.$wlist->last_name; ?></option>
 									<?php } ?>
 								</select>
@@ -1425,8 +1424,8 @@ class InvoiceController extends Controller
 							<div class="form-group">
 								<label for="application">Application <span class="span_req">*</span></label>
 								<?php if(isset($request->t) && $request->t == 'application'){
-									$applications = \App\Application::where('client_id', $fetchedData->client_id)->where('id', $fetchedData->id)->first();
-									$productdetail = \App\Product::where('id', $applications->product_id)->first();
+									$applications = \App\Models\Application::where('client_id', $fetchedData->client_id)->where('id', $fetchedData->id)->first();
+									$productdetail = \App\Models\Product::where('id', $applications->product_id)->first();
 									?>
 									<input type="text" disabled class="form-control" value="<?php echo $productdetail->name; ?>">
 									<input type="hidden" name="application" value="<?php echo $fetchedData->application_id; ?>">
@@ -1436,12 +1435,12 @@ class InvoiceController extends Controller
 									<select  data-valid="required" class="form-control application select2" id="editapplication" name="application">
 									<option value="">Select Application</option>
 									<?php
-									$applications = \App\Application::where('client_id', $fetchedData->client_id)->orderby('created_at', 'DESC')->get();
+									$applications = \App\Models\Application::where('client_id', $fetchedData->client_id)->orderby('created_at', 'DESC')->get();
 									foreach($applications as $application){
-									$productdetail = \App\Product::where('id', $application->product_id)->first();
-                                    $partnerdetail = \App\Partner::where('id', $application->partner_id)->first();
-                                    $clientdetail = \App\Admin::where('id', $application->client_id)->first();
-                                    $PartnerBranch = \App\PartnerBranch::where('id', $application->branch)->first();
+									$productdetail = \App\Models\Product::where('id', $application->product_id)->first();
+                                    $partnerdetail = \App\Models\Partner::where('id', $application->partner_id)->first();
+                                    $clientdetail = \App\Models\Admin::where('id', $application->client_id)->first();
+                                    $PartnerBranch = \App\Models\PartnerBranch::where('id', $application->branch)->first();
                                     ?>
                                     <option <?php if($fetchedData->application_id == $application->id){ echo 'selected'; } ?> value="<?php echo $application->id; ?>"><?php echo $productdetail->name.'('.$partnerdetail->partner_name; ?> <?php echo $PartnerBranch->name; ?>)</option>
 									<?php } ?>
@@ -1501,7 +1500,7 @@ class InvoiceController extends Controller
 						<?php
 						$amt = 0;
 						$i =0;
-						$ScheduleItems = \App\ScheduleItem::where('schedule_id',$fetchedData->id)->get();
+						$ScheduleItems = \App\Models\ScheduleItem::where('schedule_id',$fetchedData->id)->get();
 						foreach($ScheduleItems as $ScheduleItem){
 							$amt += $ScheduleItem->fee_amount;
 						?>
@@ -1601,12 +1600,12 @@ class InvoiceController extends Controller
 	}
 
 	public function apppreviewschedules(Request $request, $id){
-		$applications = \App\Application::where('id', $id)->first();
-		$invoiceschedules = \App\InvoiceSchedule::where('application_id', @$id)->get();
+		$applications = \App\Models\Application::where('id', $id)->first();
+		$invoiceschedules = \App\Models\InvoiceSchedule::where('application_id', @$id)->get();
 
-		$productdetail = \App\Product::where('id', @$applications->product_id)->first();
-		$cleintname = \App\Admin::where('role',7)->where('id',@$applications->client_id)->first();
-		$PartnerBranch = \App\PartnerBranch::where('id', @$applications->branch)->first();
+		$productdetail = \App\Models\Product::where('id', @$applications->product_id)->first();
+		$cleintname = \App\Models\Admin::where('role',7)->where('id',@$applications->client_id)->first();
+		$PartnerBranch = \App\Models\PartnerBranch::where('id', @$applications->branch)->first();
 
 		$pdf = PDF::setOptions([
 			'isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true,

@@ -1,26 +1,26 @@
 <?php
-		$roles = \App\UserRole::find(Auth::user()->role);
+		$roles = \App\Models\UserRole::find(Auth::user()->role);
 		$newarray = json_decode($roles->module_access);
 		$module_access = (array) $newarray;
 ?>
 <div class="custom_nav_setting">
     <ul>
         <?php
-			if(Route::currentRouteName() == 'admin.feature.producttype.index' || Route::currentRouteName() == 'admin.feature.producttype.create' || Route::currentRouteName() == 'admin.feature.producttype.edit' || Route::currentRouteName() == 'admin.feature.visatype.index' || Route::currentRouteName() == 'admin.feature.visatype.create' || Route::currentRouteName() == 'admin.feature.visatype.edit' || Route::currentRouteName() == 'admin.feature.mastercategory.index' || Route::currentRouteName() == 'admin.feature.mastercategory.create' || Route::currentRouteName() == 'admin.feature.mastercategory.edit' || Route::currentRouteName() == 'admin.feature.leadservice.index' || Route::currentRouteName() == 'admin.feature.leadservice.create' || Route::currentRouteName() == 'admin.feature.leadservice.edit' || Route::currentRouteName() == 'admin.feature.subjectarea.index' || Route::currentRouteName() == 'admin.feature.subjectarea.create' || Route::currentRouteName() == 'admin.feature.subjectarea.edit' || Route::currentRouteName() == 'admin.feature.subject.index' || Route::currentRouteName() == 'admin.feature.subject.create' || Route::currentRouteName() == 'admin.feature.subject.edit' || Route::currentRouteName() == 'admin.feature.tax.index' || Route::currentRouteName() == 'admin.feature.tax.create' || Route::currentRouteName() == 'admin.feature.tax.edit' || Route::currentRouteName() == 'admin.feature.source.index' || Route::currentRouteName() == 'admin.feature.source.create' || Route::currentRouteName() == 'admin.feature.source.edit' || Route::currentRouteName() == 'admin.feature.tags.index' || Route::currentRouteName() == 'admin.feature.tags.create' || Route::currentRouteName() == 'admin.feature.tags.edit' || Route::currentRouteName() == 'admin.workflow.index' || Route::currentRouteName() == 'admin.workflow.create' || Route::currentRouteName() == 'admin.workflow.edit'){
+			if(Route::currentRouteName() == 'admin.feature.producttype.index' || Route::currentRouteName() == 'admin.feature.producttype.create' || Route::currentRouteName() == 'admin.feature.producttype.edit' || Route::currentRouteName() == 'admin.feature.visatype.index' || Route::currentRouteName() == 'admin.feature.visatype.create' || Route::currentRouteName() == 'admin.feature.visatype.edit' || Route::currentRouteName() == 'admin.feature.leadservice.index' || Route::currentRouteName() == 'admin.feature.leadservice.create' || Route::currentRouteName() == 'admin.feature.leadservice.edit' || Route::currentRouteName() == 'admin.feature.subject.index' || Route::currentRouteName() == 'admin.feature.subject.create' || Route::currentRouteName() == 'admin.feature.subject.edit' || Route::currentRouteName() == 'admin.feature.source.index' || Route::currentRouteName() == 'admin.feature.source.create' || Route::currentRouteName() == 'admin.feature.source.edit' || Route::currentRouteName() == 'admin.feature.tags.index' || Route::currentRouteName() == 'admin.feature.tags.create' || Route::currentRouteName() == 'admin.feature.tags.edit' || Route::currentRouteName() == 'admin.workflow.index' || Route::currentRouteName() == 'admin.workflow.create' || Route::currentRouteName() == 'admin.workflow.edit'){
 				$addfeatureclasstype = 'active';
 		}
 		?>
-		<!--<li class="{{(Route::currentRouteName() == 'admin.feature.profiles.index' || Route::currentRouteName() == 'admin.feature.profiles.create' || Route::currentRouteName() == 'admin.feature.profiles.edit') ? 'active' : ''}}"><a class="nav-link" href="{{route('admin.feature.profiles.index')}}">Profiles</a></li>
+		{{--
+		<li class="{{(Route::currentRouteName() == 'admin.feature.profiles.index' || Route::currentRouteName() == 'admin.feature.profiles.create' || Route::currentRouteName() == 'admin.feature.profiles.edit') ? 'active' : ''}}"><a class="nav-link" href="{{route('admin.feature.profiles.index')}}">Profiles</a></li>
 		<li class="{{(Route::currentRouteName() == 'admin.feature.producttype.index' || Route::currentRouteName() == 'admin.feature.producttype.create' || Route::currentRouteName() == 'admin.feature.producttype.edit') ? 'active' : ''}}"><a class="nav-link" href="{{route('admin.feature.producttype.index')}}">Product Type</a></li>
 		<li class="{{(Route::currentRouteName() == 'admin.feature.partnertype.index' || Route::currentRouteName() == 'admin.feature.partnertype.create' || Route::currentRouteName() == 'admin.feature.partnertype.edit') ? 'active' : ''}}"><a class="nav-link" href="{{route('admin.feature.partnertype.index')}}">Partner Type</a></li>
 		<li class="{{(Route::currentRouteName() == 'admin.feature.leadservice.index' || Route::currentRouteName() == 'admin.feature.leadservice.create' || Route::currentRouteName() == 'admin.feature.leadservice.edit' ) ? 'active' : ''}}"><a class="nav-link" href="{{route('admin.feature.leadservice.index')}}">Lead Service</a></li>
 		<li class="{{(Route::currentRouteName() == 'admin.feature.mastercategory.index' || Route::currentRouteName() == 'admin.feature.mastercategory.create' || Route::currentRouteName() == 'admin.feature.mastercategory.edit' ) ? 'active' : ''}}"><a class="nav-link" href="{{route('admin.feature.mastercategory.index')}}">Master Category</a></li>
 		<li class="{{(Route::currentRouteName() == 'admin.feetype.index' || Route::currentRouteName() == 'admin.feetype.create' || Route::currentRouteName() == 'admin.feetype.edit') ? 'active' : ''}}"><a class="nav-link" href="{{route('admin.feetype.index')}}">Fee Type</a></li>
     	<li class="{{(Route::currentRouteName() == 'admin.feature.visatype.index' || Route::currentRouteName() == 'admin.feature.visatype.create' || Route::currentRouteName() == 'admin.feature.visatype.edit' ) ? 'active' : ''}}"><a class="nav-link" href="{{route('admin.feature.visatype.index')}}">Visa Type</a></li>
-		<li class="{{(Route::currentRouteName() == 'admin.feature.subjectarea.index' || Route::currentRouteName() == 'admin.feature.subjectarea.create' || Route::currentRouteName() == 'admin.feature.subjectarea.edit') ? 'active' : ''}}"><a class="nav-link" href="{{route('admin.feature.subjectarea.index')}}">Subject Area</a></li>
 		<li class="{{(Route::currentRouteName() == 'admin.feature.subject.index' || Route::currentRouteName() == 'admin.feature.subject.create' || Route::currentRouteName() == 'admin.feature.subject.edit') ? 'active' : ''}}"><a class="nav-link" href="{{route('admin.feature.subject.index')}}">Subjects</a></li>
-		<li class="{{(Route::currentRouteName() == 'admin.feature.tax.index' || Route::currentRouteName() == 'admin.feature.tax.create' || Route::currentRouteName() == 'admin.feature.tax.edit') ? 'active' : ''}}"><a class="nav-link" href="{{route('admin.feature.tax.index')}}">Manage Tax</a></li>
-		<li class="{{(Route::currentRouteName() == 'admin.feature.source.index' || Route::currentRouteName() == 'admin.feature.source.create' || Route::currentRouteName() == 'admin.feature.source.edit') ? 'active' : ''}}"><a class="nav-link" href="{{route('admin.feature.source.index')}}">Source</a></li>-->
+		<li class="{{(Route::currentRouteName() == 'admin.feature.source.index' || Route::currentRouteName() == 'admin.feature.source.create' || Route::currentRouteName() == 'admin.feature.source.edit') ? 'active' : ''}}"><a class="nav-link" href="{{route('admin.feature.source.index')}}">Source</a></li>
+		--}}
 		<li class="{{(Route::currentRouteName() == 'admin.feature.tags.index' || Route::currentRouteName() == 'admin.feature.tags.create' || Route::currentRouteName() == 'admin.feature.tags.edit') ? 'active' : ''}}"><a class="nav-link" href="{{route('admin.feature.tags.index')}}">Tags</a></li>
 		<!--<li class="{{(Route::currentRouteName() == 'admin.checklist.index' || Route::currentRouteName() == 'admin.checklist.create' || Route::currentRouteName() == 'admin.checklist.edit') ? 'active' : ''}}"><a class="nav-link" href="{{route('admin.checklist.index')}}">Checklist</a></li>
 		<li class="{{(Route::currentRouteName() == 'admin.enquirysource.index' || Route::currentRouteName() == 'admin.enquirysource.create' || Route::currentRouteName() == 'admin.enquirysource.edit') ? 'active' : ''}}"><a class="nav-link" href="{{route('admin.enquirysource.index')}}">Enquiry Source</a></li>-->
@@ -66,16 +66,6 @@
 
 			
 			<li class="{{(Route::currentRouteName() == 'admin.feature.matter.index' ) ? 'active' : ''}}"><a class="nav-link" href="{{route('admin.feature.matter.index')}}">Matter List</a></li>
-			
-			
-
-			<?php
-			if(Route::currentRouteName() == 'admin.agents.active' || Route::currentRouteName() == 'admin.agents.inactive' || Route::currentRouteName() == 'admin.agents.create' || Route::currentRouteName() == 'admin.agents.edit' || Route::currentRouteName() == 'admin.agents.detail'){
-				$agentclasstype = 'active';
-			}
-			?>
-			
-			<li class="dropdown {{@$agentclasstype}}"><a href="{{route('admin.agents.active')}}" class="nav-link">Migration Agent List</a></li>
 			
 		</ul>
 </div>

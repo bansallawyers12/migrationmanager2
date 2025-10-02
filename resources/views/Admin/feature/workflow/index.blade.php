@@ -40,7 +40,7 @@
 								<tbody class="tdata">
 								@foreach (@$lists as $list)
 									<?php
-									$countmatters = \App\ClientMatter::where('workflow_stage_id', $list->id)->count();
+									$countmatters = \App\Models\ClientMatter::where('workflow_stage_id', $list->id)->count();
 									?>
 									<tr id="id_{{@$list->id}}">
                                         <td>{{ @$list->name == "" ? config('constants.empty') : $list->name }}</td>

@@ -103,7 +103,7 @@
 			</div>
 			<div class="modal-body">
 			<?php
-				$testscores = \App\TestScore::where('client_id', $fetchedData->id)->first();
+				$testscores = \App\Models\TestScore::where('client_id', $fetchedData->id)->first();
 				?>
 				<form method="post" action="{{URL::to('/admin/edit-test-scores')}}" name="testscoreform" autocomplete="off" id="testscoreform" enctype="multipart/form-data">
 				@csrf 

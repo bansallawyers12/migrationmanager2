@@ -18,8 +18,8 @@
 		<h3 class="timeline-header"><i class="far fa-clock"></i> {{$strtime}} </h3>
 		<div class="timeline-body">
 		<?php
-		$Invoicedata = \App\Invoice::where('id',$list->invoice_id)->first();
-		$currencydata = \App\Currency::where('id',$Invoicedata->currency_id)->first();
+		$Invoicedata = \App\Models\Invoice::where('id',$list->invoice_id)->first();
+		$currencydata = \App\Models\Currency::where('id',$Invoicedata->currency_id)->first();
 		 $replacesub = array('{currency}');					
 		$replace_with_sub = array($currencydata->currency_symbol);
 		$subContent= $list->comment;

@@ -30,7 +30,7 @@
 							<div class="tab-content" id="clientContent">
 								<div class="tab-pane fade show active" id="active" role="tabpanel" aria-labelledby="active-tab">
 									<?php
-										$query =\App\Enquiry::where('status',0)->where('is_archived',0)->orderby('created_at','Desc');
+										$query =\App\Models\Enquiry::where('status',0)->where('is_archived',0)->orderby('created_at','Desc');
 										$totalcount = $query->count();
 										$enqs = $query->get();
 										if($totalcount !== 0){

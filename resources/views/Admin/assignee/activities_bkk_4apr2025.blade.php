@@ -115,51 +115,51 @@
                                     <div class="col-md-12">
                                         <?php
                                         if(\Auth::user()->role == 1){
-                                            $assigneesCount_All_type = \App\Note::where('type','client')
+                                            $assigneesCount_All_type = \App\Models\Note::where('type','client')
                                             ->whereNotNull('client_id')->where('folloup',1)->where('status',0)->orderBy('created_at', 'desc')->count();
 
-                                            $assigneesCount_call_type = \App\Note::where('task_group','like','Call')
+                                            $assigneesCount_call_type = \App\Models\Note::where('task_group','like','Call')
                                             ->where('type','client')->whereNotNull('client_id')->where('folloup',1)->where('status',0)->orderBy('created_at', 'desc')->count();
 
-                                            $assigneesCount_Checklist_type = \App\Note::where('task_group','like','Checklist')
+                                            $assigneesCount_Checklist_type = \App\Models\Note::where('task_group','like','Checklist')
                                             ->where('type','client')->whereNotNull('client_id')->where('folloup',1)->where('status',0)->orderBy('created_at', 'desc')->count();
 
-                                            $assigneesCount_Review_type = \App\Note::where('task_group','like','Review')
+                                            $assigneesCount_Review_type = \App\Models\Note::where('task_group','like','Review')
                                             ->where('type','client')->whereNotNull('client_id')->where('folloup',1)->where('status',0)->orderBy('created_at', 'desc')->count();
 
-                                            $assigneesCount_Query_type = \App\Note::where('task_group','like','Query')
+                                            $assigneesCount_Query_type = \App\Models\Note::where('task_group','like','Query')
                                             ->where('type','client')->whereNotNull('client_id')->where('folloup',1)->where('status',0)->orderBy('created_at', 'desc')->count();
 
-                                            $assigneesCount_Urgent_type = \App\Note::where('task_group','like','Urgent')
+                                            $assigneesCount_Urgent_type = \App\Models\Note::where('task_group','like','Urgent')
                                             ->where('type','client')->whereNotNull('client_id')->where('folloup',1)->where('status',0)->orderBy('created_at', 'desc')->count();
 
-                                            $assigneesCount_Personal_Task_type = \App\Note::where('task_group','like','Personal Task')
+                                            $assigneesCount_Personal_Task_type = \App\Models\Note::where('task_group','like','Personal Task')
                                             ->where('type','client')->whereNotNull('client_id')->where('folloup',1)->where('status',0)->orderBy('created_at', 'desc')->count();
 
-                                            //$assigneesCount_deadline_type = \App\Note::where('type','client')->whereNotNull('note_deadline')->where('folloup',1)->where('status',0)->orderBy('created_at', 'desc')->count();
+                                            //$assigneesCount_deadline_type = \App\Models\Note::where('type','client')->whereNotNull('note_deadline')->where('folloup',1)->where('status',0)->orderBy('created_at', 'desc')->count();
                                         } else {
-                                            $assigneesCount_All_type = \App\Note::where('assigned_to',Auth::user()->id)
+                                            $assigneesCount_All_type = \App\Models\Note::where('assigned_to',Auth::user()->id)
                                             ->where('type','client')->where('folloup',1)->where('status',0)->orderBy('created_at', 'desc')->count();
 
-                                            $assigneesCount_call_type = \App\Note::where('task_group','like','Call')
+                                            $assigneesCount_call_type = \App\Models\Note::where('task_group','like','Call')
                                             ->where('assigned_to',Auth::user()->id)->where('type','client')->where('folloup',1)->where('status',0)->orderBy('created_at', 'desc')->count();
 
-                                            $assigneesCount_Checklist_type = \App\Note::where('task_group','like','Checklist')
+                                            $assigneesCount_Checklist_type = \App\Models\Note::where('task_group','like','Checklist')
                                             ->where('assigned_to',Auth::user()->id)->where('type','client')->where('folloup',1)->where('status',0)->orderBy('created_at', 'desc')->count();
 
-                                            $assigneesCount_Review_type = \App\Note::where('task_group','like','Review')
+                                            $assigneesCount_Review_type = \App\Models\Note::where('task_group','like','Review')
                                             ->where('assigned_to',Auth::user()->id)->where('type','client')->where('folloup',1)->where('status',0)->orderBy('created_at', 'desc')->count();
 
-                                            $assigneesCount_Query_type = \App\Note::where('task_group','like','Query')
+                                            $assigneesCount_Query_type = \App\Models\Note::where('task_group','like','Query')
                                             ->where('assigned_to',Auth::user()->id)->where('type','client')->where('folloup',1)->where('status',0)->orderBy('created_at', 'desc')->count();
 
-                                            $assigneesCount_Urgent_type = \App\Note::where('task_group','like','Urgent')
+                                            $assigneesCount_Urgent_type = \App\Models\Note::where('task_group','like','Urgent')
                                             ->where('assigned_to',Auth::user()->id)->where('type','client')->where('folloup',1)->where('status',0)->orderBy('created_at', 'desc')->count();
 
-                                            $assigneesCount_Personal_Task_type = \App\Note::where('task_group','like','Personal Task')
+                                            $assigneesCount_Personal_Task_type = \App\Models\Note::where('task_group','like','Personal Task')
                                             ->where('assigned_to',Auth::user()->id)->where('type','client')->where('folloup',1)->where('status',0)->orderBy('created_at', 'desc')->count();
 
-                                            //$assigneesCount_deadline_type = \App\Note::where('assigned_to',Auth::user()->id)->whereNotNull('note_deadline')->where('type','client')->where('folloup',1)->where('status',0)->orderBy('created_at', 'desc')->count();
+                                            //$assigneesCount_deadline_type = \App\Models\Note::where('assigned_to',Auth::user()->id)->whereNotNull('note_deadline')->where('type','client')->where('folloup',1)->where('status',0)->orderBy('created_at', 'desc')->count();
 
                                         } ?>
                                         <div class="filter-wrapper">
@@ -185,8 +185,8 @@
                                                                 Assign User
                                                             </button>
                                                             <div class=&quot;dropdown-menu&quot; aria-labelledby=&quot;dropdownMenuButton&quot;&gt;
-                                                                @foreach(\App\Admin::where('role','!=',7)->where('status',1)->orderby('first_name','ASC')->get() as $admin)
-                                                                    <?php $branchname = \App\Branch::where('id',$admin->office_id)->first(); ?>
+                                                                @foreach(\App\Models\Admin::where('role','!=',7)->where('status',1)->orderby('first_name','ASC')->get() as $admin)
+                                                                    <?php $branchname = \App\Models\Branch::where('id',$admin->office_id)->first(); ?>
                                                                     <label>
                                                                         <input type=&quot;checkbox&quot; class=&quot;checkbox-item&quot; value=&quot;{{ $admin->id }}&quot;&gt;
                                                                         {{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})
@@ -198,8 +198,8 @@
 
                                                     <!-- Hidden select input to store selected values -->
                                                     <select class=&quot;d-none&quot; id=&quot;rem_cat&quot; name=&quot;rem_cat[]&quot; multiple=&quot;multiple&quot;&gt;
-                                                        @foreach(\App\Admin::where('role','!=',7)->where('status',1)->orderby('first_name','ASC')->get() as $admin)
-                                                        <?php $branchname = \App\Branch::where('id',$admin->office_id)->first(); ?>
+                                                        @foreach(\App\Models\Admin::where('role','!=',7)->where('status',1)->orderby('first_name','ASC')->get() as $admin)
+                                                        <?php $branchname = \App\Models\Branch::where('id',$admin->office_id)->first(); ?>
                                                         <option value=&quot;{{ $admin->id }}&quot;&gt;{{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})</option>
                                                         @endforeach
                                                     </select>

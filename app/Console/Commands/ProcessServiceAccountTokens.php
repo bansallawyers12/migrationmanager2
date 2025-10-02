@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Jobs\GenerateServiceAccountToken;
-use App\Admin;
+use App\Models\Admin;
 use App\Services\ServiceAccountTokenService;
 
 class ProcessServiceAccountTokens extends Command

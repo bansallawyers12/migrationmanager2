@@ -37,7 +37,7 @@
 														<?php
 														$matterName = 'NA';
 														if( isset($matterId) && $matterId != '') {
-															$matterInfo = \App\Matter::select('id','title','nick_name')->where('id', $matterId)->first();
+															$matterInfo = \App\Models\Matter::select('id','title','nick_name')->where('id', $matterId)->first();
 															if($matterInfo){
 																$matterName = $matterInfo->title.' ('.$matterInfo->nick_name.')';
 															}

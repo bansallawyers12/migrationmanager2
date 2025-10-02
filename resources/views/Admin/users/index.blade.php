@@ -30,7 +30,7 @@
 								@if(@$totalData !== 0)
 								@foreach (@$lists as $list)
 							<?php
-							$b = \App\Branch::where('id', $list->office_id)->first();
+							$b = \App\Models\Branch::where('id', $list->office_id)->first();
 							?>
 								<tbody class="tdata">	
 									<tr id="id_{{@$list->id}}"> 

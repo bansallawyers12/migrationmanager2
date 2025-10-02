@@ -19,11 +19,7 @@ return [
     ],
 	'admins' => [
         'driver' => 'eloquent',
-        'model' => App\Admin::class,
-    ],
-    'agents' => [
-        'driver' => 'eloquent',
-        'model' => App\Agent::class,
+        'model' => App\Models\Admin::class,
     ],
     'email_users' => [
         'driver' => 'eloquent',
@@ -65,10 +61,6 @@ return [
             'driver' => 'session',
             'provider' => 'providers',
         ],
-        'agents' => [
-            'driver' => 'session',
-            'provider' => 'agents',
-        ],
         'email_users' => [
             'driver' => 'session',
             'provider' => 'email_users',
@@ -95,19 +87,15 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
-            'model' => App\User::class,
+            'model' => App\Models\User::class,
         ],
 		'admins' => [
             'driver' => 'eloquent',
-            'model' => App\Admin::class,
+            'model' => App\Models\Admin::class,
         ],
 		'providers' => [
             'driver' => 'eloquent',
             'model' => App\Provider::class,
-        ],
-        'agents' => [
-            'driver' => 'eloquent',
-            'model' => App\Agent::class,
         ],
         'email_users' => [
             'driver' => 'eloquent',
@@ -145,11 +133,6 @@ return [
             'provider' => 'providers',
             'table' => 'password_resets',
             'expire' => 60,
-        ],
-        'agents' => [
-            'provider' => 'agents',
-            'table' => 'password_resets',
-            'expire' => 15,
         ],
         'email_users' => [
             'provider' => 'email_users',

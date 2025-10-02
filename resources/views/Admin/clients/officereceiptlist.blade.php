@@ -127,11 +127,11 @@
                                     <?php $i=0; ?>
                                     @foreach (@$lists as $list)
                                         <?php
-                                        $client_info = \App\Admin::select('id','first_name','last_name','client_id')->where('id', $list->client_id)->first();
+                                        $client_info = \App\Models\Admin::select('id','first_name','last_name','client_id')->where('id', $list->client_id)->first();
                                         $client_full_name = $client_info ? $client_info->first_name.' '.$client_info->last_name : '-';
                                         $client_id_display = $client_info ? $client_info->client_id : '-';
 
-                                        $client_matter_info = \App\ClientMatter::select('client_unique_matter_no')->where('id', $list->client_matter_id)->first();
+                                        $client_matter_info = \App\Models\ClientMatter::select('client_unique_matter_no')->where('id', $list->client_matter_id)->first();
                                         $client_matter_display = $client_matter_info ? $client_id_display.'-'.$client_matter_info->client_unique_matter_no : '-';
 
                                         $id = $list->id ?? '-';
@@ -144,7 +144,7 @@
 
 
                                         if(isset($list->voided_or_validated_by) && $list->voided_or_validated_by != ""){
-                                            $validate_by = \App\Admin::select('id','first_name','last_name','user_id')->where('id', $list->voided_or_validated_by)->first();
+                                            $validate_by = \App\Models\Admin::select('id','first_name','last_name','user_id')->where('id', $list->voided_or_validated_by)->first();
                                             $validate_by_full_name = $validate_by->first_name.' '.$validate_by->last_name;
                                         } else {
                                             $validate_by_full_name = "-";

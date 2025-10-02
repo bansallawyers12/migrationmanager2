@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Jobs\GenerateServiceAccountToken;
-use App\Admin;
+use App\Models\Admin;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\API\ServiceAccountController;
 use Illuminate\Http\Request;

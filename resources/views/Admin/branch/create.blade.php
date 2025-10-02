@@ -99,7 +99,7 @@
 														
 														<select class="form-control  select2" name="country" >
 														<?php
-															foreach(\App\Country::all() as $list){
+															foreach(\App\Models\Country::all() as $list){
 																?>
 																<option value="{{@$list->sortname}}" >{{@$list->name}}</option>
 																<?php

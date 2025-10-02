@@ -209,7 +209,7 @@
 													</td>
 													<td style="white-space: initial;"><a href="{{URL::to('/admin/clients/detail/'.base64_encode(convert_uuencode(@$list->id)))}}">{{ @$list->first_name == "" ? config('constants.empty') : str_limit(@$list->first_name, '50', '...') }} {{ @$list->last_name == "" ? config('constants.empty') : str_limit(@$list->last_name, '50', '...') }} </a><br/></td>
 													<?php
-													$agent = \App\Agent::where('id', $list->agent_id)->first();
+													$agent = \App\Models\AgentDetails::where('id', $list->agent_id)->first();
 													?>
 													<td style="white-space: initial;">@if($agent) <a target="_blank" href="{{URL::to('/admin/agent/detail/'.base64_encode(convert_uuencode(@$agent->id)))}}">{{@$agent->full_name}}<a/>@else - @endif</td>
 													<td style="white-space: initial;">
@@ -219,10 +219,10 @@
 													if($counttag > 1){
 														$tag = '';
 														foreach($rs as $r){
-															$stagds = \App\Tag::where('id','=',$r)->first();
+															$stagds = \App\Models\Tag::where('id','=',$r)->first();
 															$tag .= '<li>'.@$stagds->name.'</li>';
 														}
-														$stagd = \App\Tag::where('id','=',$rs[0])->first();
+														$stagd = \App\Models\Tag::where('id','=',$rs[0])->first();
 														?>
 
 														<div tabindex="0" data-html="true" data-toggle="popover" data-trigger="hover focus" title="Tags" data-content="<ul><?php echo @$tag; ?></ul>" class="ag-flex ag-align-center">
@@ -231,7 +231,7 @@
 														</div>
 														<?php
 													}else{
-														$stagd = \App\Tag::where('id','=',$rs)->first();
+														$stagd = \App\Models\Tag::where('id','=',$rs)->first();
 														?>
 														<div class="ag-flex ag-align-center">
 															<span  title="ff" class="col-hr-1 truncate">{{@$stagd->name}}</span>
@@ -249,11 +249,11 @@
 													{{--<td>{{ @$list->phone == "" ? config('constants.empty') : str_limit(@$list->phone, '50', '...') }}</td> --}}
 													<td style="white-space: initial;">{{ @$list->city == "" ? config('constants.empty') : str_limit(@$list->city, '50', '...') }}</td>
 													<?php
-													$assignee = \App\Admin::where('id',@$list->assignee)->first();
+													$assignee = \App\Models\Admin::where('id',@$list->assignee)->first();
 													$explode = explode(',', $list->followers);
 													$followerss = '';
 													foreach($explode as $exp){
-														$followers = \App\Admin::where('id',@$exp)->first();
+														$followers = \App\Models\Admin::where('id',@$exp)->first();
 														$followerss .= @$followers->first_name.', ';
 													}
 													?>
@@ -322,7 +322,7 @@
 								<label for="email_from">From <span class="span_req">*</span></label>
 								<select class="form-control" name="email_from">
 									<?php
-									$emails = \App\Email::select('email')->where('status', 1)->get();
+									$emails = \App\Models\Email::select('email')->where('status', 1)->get();
 									foreach($emails as $email){
 										?>
 											<option value="<?php echo $email->email; ?>"><?php echo $email->email; ?></option>
@@ -368,7 +368,7 @@
 								<label for="template">Templates </label>
 								<select data-valid="" class="form-control select2 selecttemplate" name="template">
 									<option value="">Select</option>
-									@foreach(\App\CrmEmailTemplate::all() as $list)
+									@foreach(\App\Models\CrmEmailTemplate::all() as $list)
 										<option value="{{$list->id}}">{{$list->name}}</option>
 									@endforeach
 								</select>

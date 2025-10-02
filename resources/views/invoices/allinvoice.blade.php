@@ -20,7 +20,7 @@
 	<div class="inv-template"> 
 	<?php 
 		for($i=0; $i<count($explode);$i++){
-		$invoicedetail = \App\Invoice::where('id', '=', $explode[$i])->where('user_id', '=', Auth::user()->id)->with(['company'])->first(); 
+		$invoicedetail = \App\Models\Invoice::where('id', '=', $explode[$i])->where('user_id', '=', Auth::user()->id)->with(['company'])->first(); 
 		?>
 		<div class="inv-template-body" style="<?php if($i==0){ }else{ ?>page-break-before: always;<?php } ?>">
 			<div class="inv-template-bodysection" style="margin-top:20px;">
@@ -107,7 +107,7 @@
 					</table>
 				</div>	
 				<div style="clear:both;"></div>
-				<?php $currencydata = \App\Currency::where('id',$invoicedetail->currency_id)->first(); ?>
+				<?php $currencydata = \App\Models\Currency::where('id',$invoicedetail->currency_id)->first(); ?>
 				<table style="width: 100%;table-layout:fixed;clear: both;" class="inv-itemtable" id="itemTable" cellspacing="0" cellpadding="0" border="1">
 					<thead>
 						  <tr>
@@ -148,12 +148,12 @@
 					} 
 					 if(@$invoicedetail->tax != 0)
 					{
-						$cure = \App\TaxRate::where('id',@$invoicedetail->tax)->first(); 
+						$cure = \App\Models\TaxRate::where('id',@$invoicedetail->tax)->first(); 
 						$taxcal = ($finaltotal * $cure->rate) / 100;
 						$finaltotal = $finaltotal + $taxcal;
 					}
-					$amount_rec = \App\InvoicePayment::where('invoice_id',$invoicedetail->id)->get()->sum("amount_rec");
-					$ispaymentexist = \App\InvoicePayment::where('invoice_id',$invoicedetail->id)->exists();
+					$amount_rec = \App\Models\InvoicePayment::where('invoice_id',$invoicedetail->id)->get()->sum("amount_rec");
+					$ispaymentexist = \App\Models\InvoicePayment::where('invoice_id',$invoicedetail->id)->exists();
 				?>
 				<div style="width: 100%;">
 					<div style="width: 50%;padding: 4px 4px 3px 7px;float: left;">
@@ -181,7 +181,7 @@
 							@if(@$invoicedetail->tax != 0)
 							<?php
 								
-								$isex = \App\TaxRate::where('id',@$invoicedetail->tax)->exists(); 
+								$isex = \App\Models\TaxRate::where('id',@$invoicedetail->tax)->exists(); 
 								if($isex){
 							?>
 								<tr>

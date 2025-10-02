@@ -4,8 +4,8 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use DB;
-use App\Admin;
-use App\CrmEmailTemplate;
+use App\Models\Admin;
+use App\Models\CrmEmailTemplate;
 use Carbon\Carbon;
 //use Mail;
 use Auth;
@@ -59,7 +59,7 @@ class VisaExpireReminderEmail extends Command
      */
     public function handle()
     {
-        $query 	= \App\Admin::select('id','visaExpiry','email','first_name','last_name')
+        $query 	= \App\Models\Admin::select('id','visaExpiry','email','first_name','last_name')
         ->where('role', 7)
         //->where('is_visa_expire_mail_sent', 2)
         ->whereNull('is_visa_expire_mail_sent')
@@ -85,7 +85,7 @@ class VisaExpireReminderEmail extends Command
                 $mail_sent = \Mail::to($to_email)->send(new \App\Mail\VisaExpireReminderMail($details));*/
 
                 //visa expiry email reminder
-                $crm_template_data 	= \App\CrmEmailTemplate::select('*')->where('id', 35)->first();
+                $crm_template_data 	= \App\Models\CrmEmailTemplate::select('*')->where('id', 35)->first();
                 //dd($crm_template_data);
                 if(!empty( $crm_template_data))
                 {
@@ -103,7 +103,7 @@ class VisaExpireReminderEmail extends Command
                     $mail_sent = $this->send_compose_template($message, '', $to_email, $subject, $from_email, $array, @$ccarray);
                     if($mail_sent){
                         $this->info('Mail is sent.');
-                        $rec = \App\Admin::find($val->id);
+                        $rec = \App\Models\Admin::find($val->id);
                         $rec->is_visa_expire_mail_sent = 1;
                         $rec->save();
                     } else {

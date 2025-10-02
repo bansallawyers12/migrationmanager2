@@ -1,29 +1,28 @@
-@extends('layouts.admin')
+@extends('layouts.admin_client_detail')
 @section('title', 'Gen Settings')
 
 @section('content')
 
-<!-- Main Content -->
-<div class="main-content">
-	<section class="section">
-		<div class="section-body">
-			{{ Form::open(array('url' => 'admin/gen-settings/update', 'name'=>"add-visatype", 'autocomplete'=>'off', "enctype"=>"multipart/form-data")) }} 
-			{{ Form::hidden('id', @$fetchedData->id) }}
-				<div class="row">   
-					<div class="col-12 col-md-12 col-lg-12">
-						<div class="card">
-							<div class="card-header">
-								<h4>Enquiry source</h4>
-								<div class="card-header-action">
-									<a href="{{route('admin.gensettings.index')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
-								</div>
+<div class="crm-container">
+	<div class="main-content">
+		<form method="POST" action="{{ url('admin/gen-settings/update') }}" name="add-visatype" autocomplete="off" enctype="multipart/form-data">
+			@csrf
+			<input type="hidden" name="id" value="{{ @$fetchedData->id }}">
+			<div class="row">   
+				<div class="col-12 col-md-12 col-lg-12">
+					<div class="card">
+						<div class="card-header">
+							<h4>Enquiry source</h4>
+							<div class="card-header-action">
+								<a href="{{route('admin.gensettings.index')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
 							</div>
 						</div>
 					</div>
-					<div class="col-3 col-md-3 col-lg-3">
-			        	@include('../Elements/Admin/setting')
-    		        </div>       
-    				<div class="col-9 col-md-9 col-lg-9">
+				</div>
+				<div class="col-3 col-md-3 col-lg-3">
+		        	@include('../Elements/Admin/setting')
+		        </div>       
+				<div class="col-9 col-md-9 col-lg-9">
 						<div class="card">
 							<div class="card-body">
 								<div id="accordion"> 
@@ -64,15 +63,14 @@
 									</div>
 								</div>
 								<div class="form-group float-right">
-									{{ Form::submit('Update', ['class'=>'btn btn-primary' ]) }}
+									<button type="submit" class="btn btn-primary">Update</button>
 								</div> 
 							</div>
 						</div>	
-					</div>
 				</div>
-			 {{ Form::close() }}	
-		</div>
-	</section>
+			</div>
+		</form>	
+	</div>
 </div>
 
 @endsection

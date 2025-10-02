@@ -33,7 +33,92 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; color: #343a40; line-height: 1.6; }
         .main-wrapper { position: relative; }
-        .main-navbar { position: fixed; top: 0; width: 100%; z-index: 1000; background-color: #fff; }
+        .main-navbar { position: fixed; top: 0; width: 100%; z-index: 1000; background-color: #fff; height: 70px; }
+        
+        /* Modern topbar layout */
+        .main-topbar { 
+            display: grid !important; 
+            grid-template-columns: 1fr minmax(400px, 640px) auto !important; 
+            align-items: center !important; 
+            gap: 16px !important; 
+            position: sticky !important; 
+            top: 0 !important; 
+            z-index: 1000 !important; 
+            height: 70px !important; 
+            padding: 10px 16px !important; 
+            background: #ffffff !important; 
+            border-bottom: 1px solid #dfe3e6 !important; 
+            box-shadow: 0 2px 8px rgba(0,0,0,.06) !important;
+            transition: transform .2s ease-in-out !important;
+        }
+        /* Hide on scroll (keep a small top gap visible) */
+        .main-topbar.is-hidden {
+            transform: translateY(calc(-100% + 6px)) !important;
+        }
+        /* Collapsed state */
+        .main-topbar.is-collapsed { 
+            grid-template-columns: auto !important; 
+            height: 48px !important; 
+            padding: 6px 12px !important; 
+        }
+        .main-topbar.is-collapsed .topbar-left,
+        .main-topbar.is-collapsed .topbar-center,
+        .main-topbar.is-collapsed .topbar-right { display: none !important; }
+        .main-topbar .topbar-toggle { 
+            display: inline-flex !important; align-items: center !important; justify-content: center !important; 
+            width: 36px !important; height: 36px !important; border-radius: 8px !important; 
+            background: #f3f5f7 !important; border: 1px solid #e9ecef !important; color: #495057 !important; 
+        }
+        .main-topbar:not(.is-collapsed) .topbar-toggle { display: none !important; }
+        .topbar-left .icon-group { display: flex !important; gap: 10px !important; align-items: center !important; }
+        .icon-btn { 
+            display: inline-flex !important; align-items: center !important; justify-content: center !important; 
+            width: 36px !important; height: 36px !important; border-radius: 8px !important; 
+            background: transparent !important; border: none !important; color: #495057 !important; 
+            transition: all .15s ease !important; text-decoration: none !important; 
+        }
+        .icon-btn:hover { background: #f3f5f7 !important; color: #0d6efd !important; }
+        .icon-btn i { font-size: 18px !important; }
+        /* Search */
+        .topbar-center .search-container { position: relative !important; width: 100% !important; max-width: 480px !important; }
+        .search-input { 
+            width: 100% !important; height: 40px !important; padding: 0 16px 0 44px !important; 
+            border: 1px solid #e9ecef !important; border-radius: 20px !important; 
+            background: #f8f9fa !important; font-size: 14px !important; 
+            transition: all .15s ease !important; 
+        }
+        .search-input:focus { 
+            outline: none !important; border-color: #0d6efd !important; 
+            background: #fff !important; box-shadow: 0 0 0 3px rgba(13,110,253,.1) !important; 
+        }
+        .search-icon { 
+            position: absolute !important; left: 14px !important; top: 50% !important; 
+            transform: translateY(-50%) !important; color: #6c757d !important; pointer-events: none !important; 
+        }
+        .topbar-right { display: flex !important; align-items: center !important; gap: 12px !important; }
+        /* Dropdown */
+        .icon-dropdown { position: relative !important; }
+        .icon-dropdown-menu { 
+            position: absolute !important; top: 48px !important; left: 0 !important; 
+            background: #fff !important; border: 1px solid #e9ecef !important; 
+            border-radius: 8px !important; min-width: 200px !important; 
+            padding: 6px 0 !important; display: none !important; 
+            box-shadow: 0 12px 24px rgba(0,0,0,.08) !important; 
+        }
+        .icon-dropdown .icon-dropdown-menu.show { display: block !important; }
+        .icon-dropdown-menu .dropdown-item { padding: 8px 12px !important; color: #343a40 !important; }
+        .icon-dropdown-menu .dropdown-item:hover { background: #f1f5ff !important; color: #0d6efd !important; }
+        /* Profile */
+        .profile-dropdown { position: relative !important; }
+        .profile-trigger img { width: 36px !important; height: 36px !important; border-radius: 50% !important; object-fit: cover !important; }
+        .profile-trigger { display: inline-flex !important; align-items: center !important; justify-content: center !important; width: 44px !important; height: 44px !important; border-radius: 50% !important; }
+        .profile-menu { position: absolute !important; right: 0 !important; top: 48px !important; background: #fff !important; border: 1px solid #e9ecef !important; border-radius: 8px !important; min-width: 200px !important; padding: 6px 0 !important; display: none !important; box-shadow: 0 12px 24px rgba(0,0,0,.08) !important; }
+        .profile-dropdown .profile-menu.show { display: block !important; }
+        .profile-menu a { display: block !important; padding: 8px 12px !important; color: #343a40 !important; text-decoration: none !important; }
+        .profile-menu a:hover { background: #f1f5ff !important; color: #0d6efd !important; }
+
+        /* When topbar is hidden, reclaim space for content (leave 6px gap) */
+        body.topbar-hidden .crm-container { margin-top: 6px !important; }
         .crm-container {
             display: flex;
             flex-wrap: wrap;
@@ -140,7 +225,7 @@
     <div id="app">
         <div class="main-wrapper main-wrapper-1">
             <div class="navbar-bg"></div>
-            @include('../Elements/Admin/header_client_detail_appointment')
+            @include('../Elements/Admin/header_client_detail')
             @include('../Elements/Admin/left-side-bar_client_detail_appointment')
             @yield('content')
             @include('../Elements/Admin/footer_client_detail')
@@ -1005,7 +1090,7 @@
 								<label for="email_from">Office <span class="span_req">*</span></label>
 								<select data-valid="required" class="form-control" name="office">
 									<option value="">Select</option>
-									@foreach(\App\Branch::all() as $of)
+									@foreach(\App\Models\Branch::all() as $of)
 										<option value="{{$of->id}}">{{$of->office_name}}</option>
 									@endforeach
 								</select>
@@ -1029,7 +1114,7 @@
 							<div class="form-group">
 								<label for="message">Select In Person Assignee <span class="span_req">*</span></label>
 								<?php
-								$assignee = \App\Admin::where('role','!=', '7')->get();
+								$assignee = \App\Models\Admin::where('role','!=', '7')->get();
 								?>
 								<select class="form-control assineeselect2" name="assignee">
 								@foreach($assignee as $assigne)

@@ -100,7 +100,7 @@ use App\Http\Controllers\Controller;
 							</p>
 							<?php
 
-							$workflows = \App\Workflow::where('id', $fetchedData->service_workflow)->first();
+							$workflows = \App\Models\Workflow::where('id', $fetchedData->service_workflow)->first();
 							?>
 
 							<p class="clearfix">
@@ -173,10 +173,10 @@ use App\Http\Controllers\Controller;
 
 
 									<?php
-									$appprogresscount = \App\Application::where('partner_id', $fetchedData->id)->where('status',0)->count();
-									$appcompletecount = \App\Application::where('partner_id', $fetchedData->id)->where('status',1)->count();
-									$appdisccount = \App\Application::where('partner_id', $fetchedData->id)->where('status',2)->count();
-									$appenrolcount = \App\Application::where('partner_id', $fetchedData->id)->where('status',3)->count();
+									$appprogresscount = \App\Models\Application::where('partner_id', $fetchedData->id)->where('status',0)->count();
+									$appcompletecount = \App\Models\Application::where('partner_id', $fetchedData->id)->where('status',1)->count();
+									$appdisccount = \App\Models\Application::where('partner_id', $fetchedData->id)->where('status',2)->count();
+									$appenrolcount = \App\Models\Application::where('partner_id', $fetchedData->id)->where('status',3)->count();
 									?>
 									<div class="row">
 										<div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 col-xs-12">
@@ -260,11 +260,11 @@ use App\Http\Controllers\Controller;
 											</thead>
 											<tbody class="applicationtdata">
 											<?php
-											 foreach(\App\Application::where('partner_id', $fetchedData->id)->orderby('created_at','Desc')->get() as $alist){
-												$productdetail = \App\Product::where('id', $alist->product_id)->first();
-				$partnerdetail = \App\Admin::where('id', $alist->client_id)->first();
-				$PartnerBranch = \App\PartnerBranch::where('id', $alist->branch)->first();
-				$workflow = \App\Workflow::where('id', $alist->workflow)->first();
+											 foreach(\App\Models\Application::where('partner_id', $fetchedData->id)->orderby('created_at','Desc')->get() as $alist){
+												$productdetail = \App\Models\Product::where('id', $alist->product_id)->first();
+				$partnerdetail = \App\Models\Admin::where('id', $alist->client_id)->first();
+				$PartnerBranch = \App\Models\PartnerBranch::where('id', $alist->branch)->first();
+				$workflow = \App\Models\Workflow::where('id', $alist->workflow)->first();
 												?>
 												<tr id="id_{{$alist->id}}">
 													<td><a href="{{URL::to('/admin/clients/detail/'.base64_encode(convert_uuencode(@$partnerdetail->id)))}}">{{$partnerdetail->first_name}} {{$partnerdetail->last_name}}</a></td>
@@ -320,7 +320,7 @@ use App\Http\Controllers\Controller;
 											</thead>
 											<tbody class="applicationtdata">
 											<?php
-											$products = \App\Product::where('partner', $fetchedData->id)->orderby('created_at', 'DESC')->get();
+											$products = \App\Models\Product::where('partner', $fetchedData->id)->orderby('created_at', 'DESC')->get();
 											foreach($products as $product){
 											?>
 												<tr id="id_{{@$product->id}}">
@@ -329,7 +329,7 @@ use App\Http\Controllers\Controller;
 													<?php
 													$bname = array();
 													if($product->branches != ''){
-														$branches = \App\PartnerBranch::whereIn('id', explode(',',$product->branches))->get();
+														$branches = \App\Models\PartnerBranch::whereIn('id', explode(',',$product->branches))->get();
 														foreach($branches as $b){
 															$bname[] = $b->name;
 														}
@@ -338,7 +338,7 @@ use App\Http\Controllers\Controller;
 													<td>{{implode(', ', $bname)}}</td>
 
 													<?php
-													$countapplication = \App\Application::where('product_id', $product->id)->where('status', 0)->count();
+													$countapplication = \App\Models\Application::where('product_id', $product->id)->where('status', 0)->count();
 													?>
 													<td>{{$countapplication}}</td>
 													<td>
@@ -364,7 +364,7 @@ use App\Http\Controllers\Controller;
 									</div>
 									<div class="branch_term_list">
 									<?php
-										$branchesquery = \App\PartnerBranch::where('partner_id', $fetchedData->id)->orderby('created_at', 'DESC');
+										$branchesquery = \App\Models\PartnerBranch::where('partner_id', $fetchedData->id)->orderby('created_at', 'DESC');
 										$branchescount = $branchesquery->count();
 										$branches = $branchesquery->get();
 										if($branchescount !== 0){
@@ -435,7 +435,7 @@ use App\Http\Controllers\Controller;
 														<option value="">Select</option>
 														<?php
 														$represent_region = explode(',',$fetchedData->represent_region);
-														foreach(\App\Country::all() as $list){
+														foreach(\App\Models\Country::all() as $list){
 															?>
 															<option <?php if(in_array($list->name, $represent_region)){ echo 'selected'; } ?> value="{{@$list->name}}">{{@$list->name}}</option>
 															<?php
@@ -514,12 +514,12 @@ use App\Http\Controllers\Controller;
 									<div class="contact_term_list">
 									<?php
 
-									$querycontactlist = \App\Contact::where('user_id', $fetchedData->id)->orderby('created_at', 'DESC');
+									$querycontactlist = \App\Models\Contact::where('user_id', $fetchedData->id)->orderby('created_at', 'DESC');
 									$contactlistcount = $querycontactlist->count();
 									$contactlist = $querycontactlist->get();
 									if($contactlistcount !== 0){
 									foreach($contactlist as $clist){
-										$branch = \App\PartnerBranch::where('id', $clist->branch)->first();
+										$branch = \App\Models\PartnerBranch::where('id', $clist->branch)->first();
 									?>
 										<div class="note_col" id="contact_{{$clist->id}}" style="width:33.33333333%">
 											<div class="note_content">
@@ -562,12 +562,12 @@ use App\Http\Controllers\Controller;
 
 									<?php
 
-									$querynotelist = \App\Note::where('client_id', $fetchedData->id)->where('type', 'partner')->orderby('pin', 'DESC');
+									$querynotelist = \App\Models\Note::where('client_id', $fetchedData->id)->where('type', 'partner')->orderby('pin', 'DESC');
 									$notelistcount = $querynotelist->count();
 									$notelist = $querynotelist->get();
 									if($notelistcount !== 0){
 									foreach($notelist as $list){
-										$admin = \App\Admin::where('id', $list->user_id)->first();
+										$admin = \App\Models\Admin::where('id', $list->user_id)->first();
 
 									?>
 										<div class="note_col" id="note_id_{{$list->id}}">
@@ -641,9 +641,9 @@ use App\Http\Controllers\Controller;
 												</thead>
 												<tbody class="tdata documnetlist">
 										<?php
-										$fetchd = \App\Document::where('client_id',$fetchedData->id)->where('type','partner')->orderby('created_at', 'DESC')->get();
+										$fetchd = \App\Models\Document::where('client_id',$fetchedData->id)->where('type','partner')->orderby('created_at', 'DESC')->get();
 										foreach($fetchd as $fetch){
-										$admin = \App\Admin::where('id', $fetch->user_id)->first();
+										$admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
 										?>
 													<tr class="drow" id="id_{{$fetch->id}}">
 													<td  >
@@ -675,7 +675,7 @@ use App\Http\Controllers\Controller;
 									<div class="grid_data griddata">
 									<?php
 									foreach($fetchd as $fetch){
-										$admin = \App\Admin::where('id', $fetch->user_id)->first();
+										$admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
 									?>
 										<div class="grid_list" id="gid_<?php echo $fetch->id; ?>">
 											<div class="grid_col">
@@ -710,10 +710,10 @@ use App\Http\Controllers\Controller;
 												<?php
 												$rr=0;
 												$appointmentdata = array();
-												$appointmentlists = \App\Appointment::where('client_id', $fetchedData->id)->where('related_to', 'partner')->orderby('created_at', 'DESC')->get();
-												$appointmentlistslast = \App\Appointment::where('client_id', $fetchedData->id)->where('related_to', 'partner')->orderby('created_at', 'DESC')->first();
+												$appointmentlists = \App\Models\Appointment::where('client_id', $fetchedData->id)->where('related_to', 'partner')->orderby('created_at', 'DESC')->get();
+												$appointmentlistslast = \App\Models\Appointment::where('client_id', $fetchedData->id)->where('related_to', 'partner')->orderby('created_at', 'DESC')->first();
 												foreach($appointmentlists as $appointmentlist){
-													$admin = \App\Admin::where('id', $appointmentlist->user_id)->first();
+													$admin = \App\Models\Admin::where('id', $appointmentlist->user_id)->first();
 													$datetime = $appointmentlist->created_at;
 													$timeago = Controller::time_elapsed_string($datetime);
 
@@ -758,7 +758,7 @@ use App\Http\Controllers\Controller;
 												@if($appointmentlistslast)
 													<a class="edit_link edit_appointment" href="javascript:;" data-id="<?php echo @$appointmentlistslast->id; ?>"><i class="fa fa-edit"></i></a>
 													<?php
-													$adminfirst = \App\Admin::where('id', @$appointmentlistslast->user_id)->first();
+													$adminfirst = \App\Models\Admin::where('id', @$appointmentlistslast->user_id)->first();
 													?>
 													<div class="content">
 														<h4 class="appointmentname"><?php echo @$appointmentlistslast->title; ?></h4>
@@ -807,20 +807,20 @@ use App\Http\Controllers\Controller;
 											</thead>
 											<tbody class="tdata invoicedatalist">
 												<?php
-												$applications = \App\Application::where('partner_id',$fetchedData->id)->get();
+												$applications = \App\Models\Application::where('partner_id',$fetchedData->id)->get();
 
 												foreach($applications as $application){
-													$invoicelists = \App\Invoice::where('application_id',$application->id)->orderby('created_at','DESC')->get();
+													$invoicelists = \App\Models\Invoice::where('application_id',$application->id)->orderby('created_at','DESC')->get();
 
 														foreach($invoicelists as $invoicelist){
 															if($invoicelist->type == 3){
-																$workflowdaa = \App\Workflow::where('id', $invoicelist->application_id)->first();
+																$workflowdaa = \App\Models\Workflow::where('id', $invoicelist->application_id)->first();
 															}else{
-																$applicationdata = \App\Application::where('id', $invoicelist->application_id)->first();
-																$workflowdaa = \App\Workflow::where('id', $invoicelist->application_id)->first();
-																$partnerdata = \App\Partner::where('id', $applicationdata->partner_id)->first();
+																$applicationdata = \App\Models\Application::where('id', $invoicelist->application_id)->first();
+																$workflowdaa = \App\Models\Workflow::where('id', $invoicelist->application_id)->first();
+																$partnerdata = \App\Models\Partner::where('id', $applicationdata->partner_id)->first();
 															}
-															$invoiceitemdetails = \App\InvoiceDetail::where('invoice_id', $invoicelist->id)->orderby('id','ASC')->get();
+															$invoiceitemdetails = \App\Models\InvoiceDetail::where('invoice_id', $invoicelist->id)->orderby('id','ASC')->get();
 															$netamount = 0;
 															$coom_amt = 0;
 															$total_fee = 0;
@@ -830,7 +830,7 @@ use App\Http\Controllers\Controller;
 																$total_fee += $invoiceitemdetail->total_fee;
 															}
 
-													$paymentdetails = \App\InvoicePayment::where('invoice_id', $invoicelist->id)->orderby('created_at', 'DESC')->get();
+													$paymentdetails = \App\Models\InvoicePayment::where('invoice_id', $invoicelist->id)->orderby('created_at', 'DESC')->get();
 													$amount_rec = 0;
 													foreach($paymentdetails as $paymentdetail){
 														$amount_rec += $paymentdetail->amount_rec;
@@ -902,12 +902,12 @@ use App\Http\Controllers\Controller;
 											<div class="tab-pane fade show active" id="email" role="tabpanel" aria-labelledby="email-tab">
 											<?php
 
-											$mailreports = \App\MailReport::whereRaw('FIND_IN_SET("'.$fetchedData->id.'", to_mail)')->where('type','partner')->orderby('created_at', 'DESC')->get();
+											$mailreports = \App\Models\MailReport::whereRaw('FIND_IN_SET("'.$fetchedData->id.'", to_mail)')->where('type','partner')->orderby('created_at', 'DESC')->get();
 
 											foreach($mailreports as $mailreport){
-												$admin = \App\Admin::where('id', $mailreport->user_id)->first();
+												$admin = \App\Models\Admin::where('id', $mailreport->user_id)->first();
 
-												$client = \App\Partner::Where('id', $fetchedData->id)->first();
+												$client = \App\Models\Partner::Where('id', $fetchedData->id)->first();
 			$subject = str_replace('{Client First Name}',$client->partner_name, $mailreport->subject);
 			$message = $mailreport->message;
 			$message = str_replace('{Client First Name}',$client->partner_name, $message);
@@ -985,8 +985,8 @@ use App\Http\Controllers\Controller;
 											</thead>
 											<tbody class="taskdata ">
 											<?php
-											foreach(\App\Task::where('client_id', $fetchedData->id)->where('type','partner')->orderby('created_at','Desc')->get() as $alist){
-												$admin = \App\Admin::where('id', $alist->user_id)->first();
+											foreach(\App\Models\Task::where('client_id', $fetchedData->id)->where('type','partner')->orderby('created_at','Desc')->get() as $alist){
+												$admin = \App\Models\Admin::where('id', $alist->user_id)->first();
 												?>
 												<tr class="opentaskview" style="cursor:pointer;" id="{{$alist->id}}">
 													<td></td>
@@ -1031,17 +1031,17 @@ use App\Http\Controllers\Controller;
 									</div>
 									<div class="promotionlists">
 									<?php
-									$promotionslist = \App\Promotion::where('partner_id',$fetchedData->id)->orderby('created_at','DESC')->get();
+									$promotionslist = \App\Models\Promotion::where('partner_id',$fetchedData->id)->orderby('created_at','DESC')->get();
 									foreach($promotionslist as $promotion){
 										$countproducts = 0;
 										$countbranches = 0;
 										if($promotion->apply_to == 'All Products'){
-											$countproducts = \App\Product::where('partner', $fetchedData->id)->count();
-											$countbranches = \App\PartnerBranch::where('partner_id', $fetchedData->id)->count();
+											$countproducts = \App\Models\Product::where('partner', $fetchedData->id)->count();
+											$countbranches = \App\Models\PartnerBranch::where('partner_id', $fetchedData->id)->count();
 										}else{
 											$selectproduct = explode(',',$promotion->selectproduct);
 											$countproducts = count($selectproduct);
-											$branch = \App\Product::select('branches')->whereIn('id', $selectproduct)->get()->toArray();
+											$branch = \App\Models\Product::select('branches')->whereIn('id', $selectproduct)->get()->toArray();
 											$output =  array_map("unserialize", array_unique(array_map("serialize", $branch)));
 											$countbranches = count($output);
 										}
@@ -1141,7 +1141,7 @@ use App\Http\Controllers\Controller;
 								<label for="email_from">From <span class="span_req">*</span></label>
 								<select class="form-control" name="email_from">
 									<?php
-									$emails = \App\Email::select('email')->where('status', 1)->get();
+									$emails = \App\Models\Email::select('email')->where('status', 1)->get();
 									foreach($emails as $nemail){
 										?>
 											<option value="<?php echo $nemail->email; ?>"><?php echo $nemail->email; ?></option>
@@ -1187,7 +1187,7 @@ use App\Http\Controllers\Controller;
 								<label for="template">Templates </label>
 								<select data-valid="" class="form-control select2 selecttemplate" name="template">
 									<option value="">Select</option>
-									@foreach(\App\CrmEmailTemplate::all() as $list)
+									@foreach(\App\Models\CrmEmailTemplate::all() as $list)
 										<option value="{{$list->id}}">{{$list->name}}</option>
 									@endforeach
 								</select>
@@ -1263,7 +1263,7 @@ use App\Http\Controllers\Controller;
 							<select class="form-control branch_country select2" name="branch_country" >
 								<option value="">Select</option>
 								<?php
-								foreach(\App\Country::all() as $list){
+								foreach(\App\Models\Country::all() as $list){
 									?>
 									<option value="{{@$list->name}}">{{@$list->name}}</option>
 									<?php

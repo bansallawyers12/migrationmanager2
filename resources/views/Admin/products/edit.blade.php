@@ -45,7 +45,7 @@
 														<label for="partner">Partner</label>
 														<select data-valid="required" class="form-control select2" id="intrested_product" name="partner">
 															<option value="">Select Partner</option>
-															@foreach(\App\Partner::all() as $plist)
+															@foreach(\App\Models\Partner::all() as $plist)
 																<option value="{{$plist->id}}" <?php if($plist->id == $fetchedData->partner){ echo 'selected'; } ?>>{{$plist->partner_name}}</option>
 															@endforeach
 														</select>
@@ -62,7 +62,7 @@
 														<select data-valid="required" class="form-control select2" id="intrested_branch" name="branches">
 															<option value="">Select</option>
 															<?php
-															$branches = \App\PartnerBranch::Where('partner_id',$fetchedData->partner)->orderby('name','ASC')->get();
+															$branches = \App\Models\PartnerBranch::Where('partner_id',$fetchedData->partner)->orderby('name','ASC')->get();
 															?>
 															@foreach($branches as $plist)
 					<option value="{{$plist->id}}" <?php if($plist->id == $fetchedData->branches){ echo 'selected'; } ?>>{{$plist->name}} ({{$plist->city}})</option>
@@ -80,7 +80,7 @@
 														<label for="product_type">Product Type</label>
 														<select class="form-control select2" name="product_type">
 														<option value=""></option>
-				@foreach(\App\ProductType::all() as $plist)
+				@foreach(\App\Models\ProductType::all() as $plist)
 					<option value="{{$plist->name}}" <?php if($plist->name == $fetchedData->product_type){ echo 'selected'; } ?>>{{$plist->name}}</option>
 				@endforeach
 														</select>

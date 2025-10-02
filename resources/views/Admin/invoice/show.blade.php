@@ -161,7 +161,7 @@
 										</thead>
 										<tbody class="productitem">
 										<?php
-										$invoiceitemdetails = \App\InvoiceDetail::where('invoice_id', $invoicedetail->id)->orderby('id','ASC')->get();
+										$invoiceitemdetails = \App\Models\InvoiceDetail::where('invoice_id', $invoicedetail->id)->orderby('id','ASC')->get();
 										//echo "<pre>";print_r($invoiceitemdetails);die;
 										$coom_amt = 0;
 										$tax_amt = 0;
@@ -285,7 +285,7 @@
 									<div class="col-md-5 cus_col_5">
 									<?php
 									$totaldue =0;
-									$paymentdetails = \App\InvoicePayment::where('invoice_id', $invoicedetail->id)->orderby('created_at', 'DESC')->get();
+									$paymentdetails = \App\Models\InvoicePayment::where('invoice_id', $invoicedetail->id)->orderby('created_at', 'DESC')->get();
 											$amount_rec = 0;
 											foreach($paymentdetails as $paymentdetail){
 												$amount_rec += $paymentdetail->amount_rec;
@@ -493,8 +493,8 @@
 														</thead>
 														<tbody>
 															<?php
-															$paymentdetails = \App\InvoicePayment::where('invoice_id', $invoicedetail->id)->orderby('created_at', 'DESC')->get();
-															$totlacount = \App\InvoicePayment::where('invoice_id', $invoicedetail->id)->orderby('created_at', 'DESC')->count();
+															$paymentdetails = \App\Models\InvoicePayment::where('invoice_id', $invoicedetail->id)->orderby('created_at', 'DESC')->get();
+															$totlacount = \App\Models\InvoicePayment::where('invoice_id', $invoicedetail->id)->orderby('created_at', 'DESC')->count();
 															if($totlacount !== 0){
 															foreach($paymentdetails as $paymentdetail){
 																?>
@@ -543,9 +543,9 @@
 									</div>
 								</div>
 								<?php
-								if(\App\IncomeSharing::where('invoice_id',$invoicedetail->id)->exists()){
-									$IncomeSharing = \App\IncomeSharing::where('invoice_id',$invoicedetail->id)->first();
-									$IncomeBranch = \App\Branch::where('id',$IncomeSharing->rec_id)->first();
+								if(\App\Models\IncomeSharing::where('invoice_id',$invoicedetail->id)->exists()){
+									$IncomeSharing = \App\Models\IncomeSharing::where('invoice_id',$invoicedetail->id)->first();
+									$IncomeBranch = \App\Models\Branch::where('id',$IncomeSharing->rec_id)->first();
 								?>
 								<div class="divider"></div>
 								<div class="income_sharing">
@@ -613,7 +613,7 @@
 								<label for="email_from">From <span class="span_req">*</span></label>
 								<select class="form-control" name="email_from">
 									<?php
-									$emails = \App\Email::select('email')->where('status', 1)->get();
+									$emails = \App\Models\Email::select('email')->where('status', 1)->get();
 									foreach($emails as $nemail){
 										?>
 											<option value="<?php echo $nemail->email; ?>"><?php echo $nemail->email; ?></option>
@@ -659,7 +659,7 @@
 								<label for="template">Templates </label>
 								<select data-valid="" class="form-control select2 selecttemplate" name="template">
 									<option value="">Select</option>
-									@foreach(\App\CrmEmailTemplate::all() as $list)
+									@foreach(\App\Models\CrmEmailTemplate::all() as $list)
 										<option value="{{$list->id}}">{{$list->name}}</option>
 									@endforeach
 								</select>

@@ -82,10 +82,10 @@ html, body {
 $sched_res = [];
 
 if( $type == "Others" ){ //Arun (Melbourne Address)
-    /*$appointments = \App\Appointment::whereIn('noe_id', [1,6,7,8])
+    /*$appointments = \App\Models\Appointment::whereIn('noe_id', [1,6,7,8])
     ->orWhere('service_id', 1)
     ->get();*/
-    $appointments = \App\Appointment::where(function ($query) {
+    $appointments = \App\Models\Appointment::where(function ($query) {
                                       $query->whereNull('inperson_address')
                                             ->orWhere('inperson_address', '')
                                             ->orWhere('inperson_address', 2); //For Melbourne
@@ -104,7 +104,7 @@ if( $type == "Others" ){ //Arun (Melbourne Address)
 if($type=="Jrp"){ //shubam/Yadwinder (Melbourne Address)
     //2- Temporary Residency Appointment and service_id = 2=>Free
     //3- JRP/Skill Assessment and service_id = 2=>Free
-    $appointments = \App\Appointment::where(function ($query) {
+    $appointments = \App\Models\Appointment::where(function ($query) {
                                       $query->whereNull('inperson_address')
                                             ->orWhere('inperson_address', '')
                                             ->orWhere('inperson_address', 2); //For Melbourne
@@ -112,7 +112,7 @@ if($type=="Jrp"){ //shubam/Yadwinder (Melbourne Address)
 }
 
 if($type == "Education"){ //(Melbourne Address) 5=>Education/Course Change/Student Visa/Student Depen and 2=>Free
-   $appointments = \App\Appointment::where(function ($query) {
+   $appointments = \App\Models\Appointment::where(function ($query) {
                                       $query->whereNull('inperson_address')
                                             ->orWhere('inperson_address', '')
                                             ->orWhere('inperson_address', 2); //For Melbourne
@@ -120,7 +120,7 @@ if($type == "Education"){ //(Melbourne Address) 5=>Education/Course Change/Stude
 }
 
 if($type == "Tourist"){ //(Melbourne Address) 4=>Tourist Visa and 2=>Free
-    $appointments = \App\Appointment::where(function ($query) {
+    $appointments = \App\Models\Appointment::where(function ($query) {
                                       $query->whereNull('inperson_address')
                                             ->orWhere('inperson_address', '')
                                             ->orWhere('inperson_address', 2); //For Melbourne
@@ -128,13 +128,13 @@ if($type == "Tourist"){ //(Melbourne Address) 4=>Tourist Visa and 2=>Free
 }
 
 if($type == "Adelaide"){ //Location - ADELAIDE (Type - Free Or Paid)
-    $appointments = \App\Appointment::where('inperson_address','=', 1)->get();
+    $appointments = \App\Models\Appointment::where('inperson_address','=', 1)->get();
 }
 //dd($appointments);
 
-//$appointments = \App\Appointment::where('invites','=', Auth::user()->id)->get();
+//$appointments = \App\Models\Appointment::where('invites','=', Auth::user()->id)->get();
 foreach($appointments as $appointment){
-    $addd = \App\Admin::where('id',$appointment->client_id)->first();
+    $addd = \App\Models\Admin::where('id',$appointment->client_id)->first();
     $datetimes = $appointment->date;
     $datetime = $appointment->date.' '.$appointment->time;
     $curtime = date('Y-m-d');
@@ -220,7 +220,7 @@ foreach($appointments as $appointment){
         $row['timeslot_full'] = $appointment->timeslot_full;
 
         if( isset($appointment->noe_id) && $appointment->noe_id != "" ) {
-            $NatureOfEnquiry = \App\NatureOfEnquiry::select('title')->where('id', $appointment->noe_id)->first();
+            $NatureOfEnquiry = \App\Models\NatureOfEnquiry::select('title')->where('id', $appointment->noe_id)->first();
             $row['noe_id'] = $appointment->noe_id;
             if( !empty($NatureOfEnquiry) ){
                 $row['nature_of_enquiry'] = $NatureOfEnquiry->title;
@@ -230,7 +230,7 @@ foreach($appointments as $appointment){
         }
 
         if( isset($appointment->service_id) && $appointment->service_id != "" ) {
-            $BookService = \App\BookService::select('title','price','duration')->where('id', $appointment->service_id)->first();
+            $BookService = \App\Models\BookService::select('title','price','duration')->where('id', $appointment->service_id)->first();
             $row['service_id'] = $appointment->service_id;
             if( !empty($BookService) ){
                 if( $BookService->price == 'Free') {

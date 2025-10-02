@@ -13,8 +13,8 @@ use App\Mail\CommonMail;
 use App\Mail\InvoiceEmailManager;
 use App\Mail\MultipleattachmentEmailManager;
 
-use App\UserRole;
-use App\WebsiteSetting;
+use App\Models\UserRole;
+use App\Models\WebsiteSetting;
 
 use Auth;
 //use Mail;

@@ -1,6 +1,7 @@
 <?php
 namespace App\Imports;
 use App\Models\User;
+use App\Models\AgentDetails;
 use Maatwebsite\Excel\Concerns\ToModel;
 class ImportUser implements ToModel
 {
@@ -37,7 +38,7 @@ class ImportUser implements ToModel
 		   $income_sharing = $row[12];
 		   $claim_revenue = $row[13];
 	   }
-       return new Agent([
+       return new AgentDetails([
            'full_name' => $full_name,
            'agent_type' => implode(',',@$request->super_agent),
            'related_office' => $request->related_office,

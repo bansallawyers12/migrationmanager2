@@ -3,8 +3,8 @@
 namespace Database\Seeds;
 
 use Illuminate\Database\Seeder;
-use App\Label;
-use App\Admin;
+use App\Models\Label;
+use App\Models\Admin;
 
 class LabelSeeder extends Seeder
 {

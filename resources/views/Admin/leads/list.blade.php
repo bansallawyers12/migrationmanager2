@@ -38,7 +38,7 @@
 											</div>
 										</div>
 									</div>
-									<?php $attmet = \App\Attachment::where('leade_id',$list->id)->get(); ?>
+									<?php $attmet = \App\Models\Attachment::where('leade_id',$list->id)->get(); ?>
 									@foreach(@$attmet as $al)
 									<div class="form-group row">
 									<div class="col-sm-12">

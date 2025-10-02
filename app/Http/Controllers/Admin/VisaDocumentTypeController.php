@@ -7,8 +7,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 
-use App\Admin;
-use App\VisaDocumentType;
+use App\Models\Admin;
+use App\Models\VisaDocumentType;
 
 use Auth;
 use Config;

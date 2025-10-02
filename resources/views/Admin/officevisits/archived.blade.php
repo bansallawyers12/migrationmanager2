@@ -204,26 +204,26 @@ body, html {
 						<div class="card-body">
                             <?php
                             if(\Auth::user()->role == 1 || \Auth::user()->role == 14){
-                                $InPersonCount_All_type = \App\CheckinLog::where('id', '!=', '')->orderBy('created_at', 'desc')->count();
+                                $InPersonCount_All_type = \App\Models\CheckinLog::where('id', '!=', '')->orderBy('created_at', 'desc')->count();
 
-                                $InPersonCount_waiting_type = \App\CheckinLog::where('status',0)->orderBy('created_at', 'desc')->count();
+                                $InPersonCount_waiting_type = \App\Models\CheckinLog::where('status',0)->orderBy('created_at', 'desc')->count();
 
-                                $InPersonCount_attending_type = \App\CheckinLog::where('status',2)->orderBy('created_at', 'desc')->count();
+                                $InPersonCount_attending_type = \App\Models\CheckinLog::where('status',2)->orderBy('created_at', 'desc')->count();
 
-                                $InPersonCount_completed_type = \App\CheckinLog::where('status',1)->orderBy('created_at', 'desc')->count();
+                                $InPersonCount_completed_type = \App\Models\CheckinLog::where('status',1)->orderBy('created_at', 'desc')->count();
 
-                                $InPersonCount_archived_type = \App\CheckinLog::where('is_archived',1)->orderBy('created_at', 'desc')->count();
+                                $InPersonCount_archived_type = \App\Models\CheckinLog::where('is_archived',1)->orderBy('created_at', 'desc')->count();
 
                             } else {
-                                $InPersonCount_All_type = \App\CheckinLog::where('user_id',Auth::user()->id)->where('id', '!=', '')->orderBy('created_at', 'desc')->count();
+                                $InPersonCount_All_type = \App\Models\CheckinLog::where('user_id',Auth::user()->id)->where('id', '!=', '')->orderBy('created_at', 'desc')->count();
 
-                                $InPersonCount_waiting_type = \App\CheckinLog::where('user_id',Auth::user()->id)->where('status',0)->orderBy('created_at', 'desc')->count();
+                                $InPersonCount_waiting_type = \App\Models\CheckinLog::where('user_id',Auth::user()->id)->where('status',0)->orderBy('created_at', 'desc')->count();
 
-                                $InPersonCount_attending_type = \App\CheckinLog::where('user_id',Auth::user()->id)->where('status',2)->orderBy('created_at', 'desc')->count();
+                                $InPersonCount_attending_type = \App\Models\CheckinLog::where('user_id',Auth::user()->id)->where('status',2)->orderBy('created_at', 'desc')->count();
 
-                                $InPersonCount_completed_type = \App\CheckinLog::where('user_id',Auth::user()->id)->where('status',1)->orderBy('created_at', 'desc')->count();
+                                $InPersonCount_completed_type = \App\Models\CheckinLog::where('user_id',Auth::user()->id)->where('status',1)->orderBy('created_at', 'desc')->count();
 
-                                $InPersonCount_archived_type = \App\CheckinLog::where('is_archived',1)->orderBy('created_at', 'desc')->count();
+                                $InPersonCount_archived_type = \App\Models\CheckinLog::where('is_archived',1)->orderBy('created_at', 'desc')->count();
 
                             }?>
 							<ul class="nav nav-pills" id="checkin_tabs" role="tablist">
@@ -252,7 +252,7 @@ body, html {
 								  <div id="myDropdown" class="dropdown-content">
 								  <a href="{{URL::to('/admin/office-visits/archived')}}">All Branches</a>
 								  <?php
-								  $branchs = \App\Branch::all();
+								  $branchs = \App\Models\Branch::all();
 								  foreach($branchs as $branch){
 									?>
 									<a href="{{URL::to('/admin/office-visits/archived')}}?office={{$branch->id}}&office_name={{$branch->office_name}}">{{$branch->office_name}}</a>
@@ -290,12 +290,12 @@ body, html {
 												<td style="white-space: initial;">
 													<?php
 													if($list->contact_type == 'Lead'){
-												$client = \App\Lead::where('id', '=', $list->client_id)->first();
+												$client = \App\Models\Lead::where('id', '=', $list->client_id)->first();
 												 ?>
 										    <a href="{{URL::to('/admin/leads/history/'.base64_encode(convert_uuencode(@$client->id)))}}">{{@$client->first_name}} {{@$client->last_name}}</a>
 										    <?php
 										}else{
-										    $client = \App\Admin::where('role', '=', '7')->where('id', '=', $list->client_id)->first();
+										    $client = \App\Models\Admin::where('role', '=', '7')->where('id', '=', $list->client_id)->first();
 										    ?>
 										    <a href="{{URL::to('/admin/clients/detail/'.base64_encode(convert_uuencode(@$client->id)))}}">{{@$client->first_name}} {{@$client->last_name}}</a>
 										    <?php
@@ -308,7 +308,7 @@ body, html {
 													<td style="white-space: initial;">{{$list->visit_purpose}}</td>
 													<td style="white-space: initial;">
 													<?php
-													$admin = \App\Admin::where('role', '!=', '7')->where('id', '=', $list->user_id)->first();
+													$admin = \App\Models\Admin::where('role', '!=', '7')->where('id', '=', $list->user_id)->first();
 													?>
 													<a href="{{URL::to('/admin/users/view/'.@$admin->id)}}">{{@$admin->first_name}} {{@$admin->last_name}}</a><br>{{@$admin->email}}
 													</td>

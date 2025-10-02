@@ -121,7 +121,7 @@
 								?>
 									<label for="invoice_due_date">Select Profile:</label>
 									<select class="form-control" name="profile">
-										@foreach(\App\Profile::all() as $profiles)
+										@foreach(\App\Models\Profile::all() as $profiles)
 											<option @if(@$profile->id == $profiles->id)  selected @endif value="{{$profiles->id}}">{{$profiles->company_name}}</option>
 										@endforeach
 									</select>
@@ -136,7 +136,7 @@
 									<table border="1" class="table text_wrap table-striped table-hover table-md vertical_align" id="productitemview">
 								
 									<?php
-										$invoiceitemdetails = \App\InvoiceDetail::where('invoice_id', $invoicedetail->id)->orderby('id','ASC')->get();
+										$invoiceitemdetails = \App\Models\InvoiceDetail::where('invoice_id', $invoicedetail->id)->orderby('id','ASC')->get();
 										$coom_amt = 0;
 										$total_fee = 0;
 										$netamount = 0;
@@ -188,7 +188,7 @@
 												<td>
 													<select name="tax[]" class="form-control">
 														<option value="">Select A Tax Code</option>
-														@foreach(\App\Tax::all() as $taxlist)
+														@foreach(\App\Models\TaxRate::all() as $taxlist)
 															<option <?php if($invoiceitemdetail->tax == $taxlist->amount){ echo 'selected'; } ?> value="{{$taxlist->amount}}">{{$taxlist->name}}</option>
 														@endforeach
 													</select>
@@ -275,7 +275,7 @@
 									<div class="col-md-5 cus_col_5">
 									<?php
 									$totaldue =0;
-									$paymentdetails = \App\InvoicePayment::where('invoice_id', $invoicedetail->id)->orderby('created_at', 'DESC')->get();
+									$paymentdetails = \App\Models\InvoicePayment::where('invoice_id', $invoicedetail->id)->orderby('created_at', 'DESC')->get();
 											$amount_rec = 0;
 											foreach($paymentdetails as $paymentdetail){
 												$amount_rec += $paymentdetail->amount_rec;
@@ -416,8 +416,8 @@
 											<div class="payment_field">
 												<div class="payment_field_row">
 												<?php
-												$paymentdetails = \App\InvoicePayment::where('invoice_id', $invoicedetail->id)->orderby('created_at', 'DESC')->get();
-												$totlacount = \App\InvoicePayment::where('invoice_id', $invoicedetail->id)->orderby('created_at', 'DESC')->count();
+												$paymentdetails = \App\Models\InvoicePayment::where('invoice_id', $invoicedetail->id)->orderby('created_at', 'DESC')->get();
+												$totlacount = \App\Models\InvoicePayment::where('invoice_id', $invoicedetail->id)->orderby('created_at', 'DESC')->count();
 												$ir = 0;
 												if($totlacount !== 0){
 													foreach($paymentdetails as $paymentdetail){
@@ -530,7 +530,7 @@
 											<h4>Income Sharing</h4>
 										</div>
 										<?php
-										$IncomeSharing = \App\IncomeSharing::where('invoice_id',$invoicedetail->id)->first();
+										$IncomeSharing = \App\Models\IncomeSharing::where('invoice_id',$invoicedetail->id)->first();
 										?>
 										<div class="col-lg-8">
 											<div class="income_field">
@@ -538,7 +538,7 @@
 													<select class="form-control" id="share_user" name="share_user">
 													<option value="no">Select a receiver</option>
 													<?php 
-													$branches = \App\Agent::where('id','!=', '')->get();
+													$branches = \App\Models\AgentDetails::where('id','!=', '')->get();
 													foreach($branches as $branch){
 													?>
 														<option data-v="{{$branch->income_sharing}}" <?php if($IncomeSharing && $IncomeSharing->rec_id == $branch->id){ echo 'selected'; } ?> value="{{$branch->id}}">{{$branch->full_name}}</option>
@@ -561,7 +561,7 @@
 													<div class="input_field ifcheckedtax" style="display:none;">
 														<select id="taxget" class="form-control">
 														    <option value="">Select Tax</option>
-														 	@foreach(\App\Tax::all() as $taxlist)
+														 	@foreach(\App\Models\TaxRate::all() as $taxlist)
 															<option value="{{$taxlist->amount}}">{{$taxlist->name}}</option>
 														@endforeach   
 														</select>

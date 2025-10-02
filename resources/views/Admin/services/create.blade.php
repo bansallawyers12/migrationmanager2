@@ -45,7 +45,7 @@
 									<select class="form-control" name="parent">
 										<option value="0">None</option>
 											<?php
-												echo \App\Service::printTree($tree);
+												echo \App\Models\Service::printTree($tree);
 											?>
 									</select>
 									@if ($errors->has('parent'))

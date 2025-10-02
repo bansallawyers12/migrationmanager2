@@ -18,11 +18,11 @@
 	</head>
 	<body>
 	<?php
-	$admin = \App\Admin::where('role',1)->where('id',$invoicedetail->user_id)->first();
+	$admin = \App\Models\Admin::where('role',1)->where('id',$invoicedetail->user_id)->first();
 	?>
 	<?php
-	$paymentdetails = \App\InvoicePayment::where('invoice_id', $invoicedetail->id)->orderby('created_at', 'DESC')->get();
-	$totlacount = \App\InvoicePayment::where('invoice_id', $invoicedetail->id)->orderby('created_at', 'DESC')->count();
+	$paymentdetails = \App\Models\InvoicePayment::where('invoice_id', $invoicedetail->id)->orderby('created_at', 'DESC')->get();
+	$totlacount = \App\Models\InvoicePayment::where('invoice_id', $invoicedetail->id)->orderby('created_at', 'DESC')->count();
 	$amount_rec = 0;
 	if($totlacount !== 0){
 		foreach($paymentdetails as $paymentdetail){
@@ -48,7 +48,7 @@
 		$website = $profile->website;
 		$logo = $profile->logo;
 		$abn = @$profile->abn;
-		$profiledetail = \App\Profile::where('id', @$profile->id)->first();
+		$profiledetail = \App\Models\Profile::where('id', @$profile->id)->first();
 		$note = $profiledetail->note;
 	}
 
@@ -131,7 +131,7 @@
 												</thead>
 												<tbody>
 												<?php
-										$invoiceitemdetails = \App\InvoiceDetail::where('invoice_id', $invoicedetail->id)->orderby('id','ASC')->get();
+										$invoiceitemdetails = \App\Models\InvoiceDetail::where('invoice_id', $invoicedetail->id)->orderby('id','ASC')->get();
 										$coom_amt = 0;
 										$total_fee = 0;
 										$netamount = 0;

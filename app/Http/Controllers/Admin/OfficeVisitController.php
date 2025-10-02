@@ -7,9 +7,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 
-use App\Admin;
-use App\CheckinLog;
-use App\CheckinHistory;
+use App\Models\Admin;
+use App\Models\CheckinLog;
+use App\Models\CheckinHistory;
 
 use Auth;
 use Config;
@@ -33,7 +33,7 @@ class OfficeVisitController extends Controller
 
 	public function checkin(Request $request){
 		$requestData 		= 	$request->all();
-		$obj = new \App\CheckinLog;
+		$obj = new \App\Models\CheckinLog;
 		$obj->client_id = $requestData['contact'];
 		$obj->user_id = $requestData['assignee'];
 		$obj->visit_purpose = $requestData['message'];
@@ -48,7 +48,7 @@ class OfficeVisitController extends Controller
 		}
 		else
 		{
-		    $o = new \App\Notification;
+		    $o = new \App\Models\Notification;
 	    	$o->sender_id = Auth::user()->id;
 	    	$o->receiver_id = $requestData['assignee'];
 	    	$o->module_id = $obj->id;
@@ -90,9 +90,9 @@ class OfficeVisitController extends Controller
 		if($CheckinLog){
 			ob_start();
 				if($CheckinLog->contact_type == 'Lead'){
-				    	$client = \App\Lead::where('id', '=', $CheckinLog->client_id)->first();
+				    	$client = \App\Models\Lead::where('id', '=', $CheckinLog->client_id)->first();
 				}else{
-				    	$client = \App\Admin::where('role', '=', '7')->where('id', '=', $CheckinLog->client_id)->first();
+				    	$client = \App\Models\Admin::where('role', '=', '7')->where('id', '=', $CheckinLog->client_id)->first();
 				}
 
 			?>
@@ -128,7 +128,7 @@ class OfficeVisitController extends Controller
 						<b><?php echo $CheckinLog->contact_type; ?></b>
 						<br>
 						<?php
-						$checkin = \App\Branch::where('id', $CheckinLog->office)->first();
+						$checkin = \App\Models\Branch::where('id', $CheckinLog->office)->first();
 						if($checkin){
 						echo '<a target="_blank" href="'.\URL::to('/admin/branch/view/'.@$checkin->id).'">'.@$checkin->office_name.'</a>';
 						}
@@ -178,7 +178,7 @@ class OfficeVisitController extends Controller
 						<b>In Person Assignee </b> <a class="openassignee" href="javascript:;"><i class="fa fa-edit"></i></a>
 						<br>
 						<?php
-						$admin = \App\Admin::where('role', '!=', '7')->where('id', '=', $CheckinLog->user_id)->first();
+						$admin = \App\Models\Admin::where('role', '!=', '7')->where('id', '=', $CheckinLog->user_id)->first();
 						?>
 						<a href=""><?php echo @$admin->first_name.' '.@$admin->last_name; ?></a>
 						<br>
@@ -189,8 +189,8 @@ class OfficeVisitController extends Controller
 						        <div class="col-md-8">
 						            <select class="form-control select2" id="changeassignee" name="changeassignee">
 						                 <?php
-											foreach(\App\Admin::where('role','!=',7)->orderby('first_name','ASC')->get() as $admin){
-												$branchname = \App\Branch::where('id',$admin->office_id)->first();
+											foreach(\App\Models\Admin::where('role','!=',7)->orderby('first_name','ASC')->get() as $admin){
+												$branchname = \App\Models\Branch::where('id',$admin->office_id)->first();
 										?>
 												<option value="<?php echo $admin->id; ?>"><?php echo $admin->first_name.' '.$admin->last_name.' ('.@$branchname->office_name.')'; ?></option>
 										<?php } ?>
@@ -232,7 +232,7 @@ class OfficeVisitController extends Controller
 						<?php
 						$logslist = CheckinHistory::where('checkin_id',$CheckinLog->id)->orderby('created_at', 'DESC')->get();
 						foreach($logslist as $llist){
-							$admin = \App\Admin::where('id', $llist->created_by)->first();
+							$admin = \App\Models\Admin::where('id', $llist->created_by)->first();
 						?>
 							<div class="logsitem">
 								<div class="row">
@@ -356,7 +356,7 @@ class OfficeVisitController extends Controller
 		    $t = 'waiting';
 		}
 		if($saved){
-		    $o = new \App\Notification;
+		    $o = new \App\Models\Notification;
 	    	$o->sender_id = Auth::user()->id;
 	    	$o->receiver_id = $request->assinee;
 	    	$o->module_id = $request->id;
@@ -391,7 +391,7 @@ class OfficeVisitController extends Controller
         $saved = $obj->save();
 
         if($saved){
-		    $o = new \App\Notification;
+		    $o = new \App\Models\Notification;
 	    	$o->sender_id = Auth::user()->id;
 	    	$o->receiver_id = 36608; // to receptionist id  //info@bansaleducation.com.au 36730 (for live)
 	    	$o->module_id = $request->id;
@@ -440,8 +440,8 @@ class OfficeVisitController extends Controller
 	public function waiting(Request $request)
 	{
 	      if(isset($request->t)){
-    	    if(\App\Notification::where('id', $request->t)->exists()){
-    	       $ovv =  \App\Notification::find($request->t);
+    	    if(\App\Models\Notification::where('id', $request->t)->exists()){
+    	       $ovv =  \App\Models\Notification::find($request->t);
     	       $ovv->receiver_status = 1;
     	       $ovv->save();
     	    }
@@ -463,8 +463,8 @@ class OfficeVisitController extends Controller
 	public function attending(Request $request)
 	{
 	      if(isset($request->t)){
-    	    if(\App\Notification::where('id', $request->t)->exists()){
-    	       $ovv =  \App\Notification::find($request->t);
+    	    if(\App\Models\Notification::where('id', $request->t)->exists()){
+    	       $ovv =  \App\Models\Notification::find($request->t);
     	       $ovv->receiver_status = 1;
     	       $ovv->save();
     	    }
@@ -486,8 +486,8 @@ class OfficeVisitController extends Controller
 	public function completed(Request $request)
 	{
 	      if(isset($request->t)){
-    	    if(\App\Notification::where('id', $request->t)->exists()){
-    	       $ovv =  \App\Notification::find($request->t);
+    	    if(\App\Models\Notification::where('id', $request->t)->exists()){
+    	       $ovv =  \App\Models\Notification::find($request->t);
     	       $ovv->receiver_status = 1;
     	       $ovv->save();
     	    }

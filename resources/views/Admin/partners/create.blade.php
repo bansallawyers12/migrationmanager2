@@ -64,7 +64,7 @@
 																<label for="master_category">Master Category <span class="span_req">*</span></label>
 																<select data-valid="required" id="getpartnertype" class="form-control addressselect2" name="master_category">
 																	<option value="">Select a Master Category</option>
-																	@foreach(\App\Category::all() as $clist)
+																	@foreach(\App\Models\Category::all() as $clist)
 																	<option value="{{$clist->id}}">{{$clist->category_name}}</option>
 																@endforeach
 																</select>
@@ -115,7 +115,7 @@
 																<label for="service_workflow">Service Workflow <span class="span_req">*</span></label>
 																<select data-valid="required" class="form-control addressselect2 " name="service_workflow">
 																	<option value="">Choose Service workflow</option>
-																	@foreach(\App\Workflow::all() as $wlist)
+																	@foreach(\App\Models\Workflow::all() as $wlist)
 																		<option value="{{$wlist->id}}">{{$wlist->name}}</option>
 																	@endforeach
 																	
@@ -207,7 +207,7 @@
 														<label for="country">Country</label>
 														<select class="form-control addressselect2" name="country" >
 														<?php
-															foreach(\App\Country::all() as $list){
+															foreach(\App\Models\Country::all() as $list){
 																?>
 																<option @if(@$list->name == 'Australia') selected @endif value="{{@$list->name}}">{{@$list->name}}</option>
 																<?php
@@ -358,7 +358,7 @@
 								<select class="form-control branch_country select2" name="branch_country" >
 									<option value="">Select</option>
 									<?php
-									foreach(\App\Country::all() as $list){
+									foreach(\App\Models\Country::all() as $list){
 										?>
 										<option @if(@$list->name == 'Australia') selected @endif value="{{@$list->name}}">{{@$list->name}}</option>
 										<?php

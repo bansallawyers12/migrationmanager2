@@ -1,8 +1,8 @@
 <?php
-$productdetail = \App\Product::where('id', $fetchData->product_id)->first();
-$partnerdetail = \App\Partner::where('id', $fetchData->partner_id)->first();
-$PartnerBranch = \App\PartnerBranch::where('id', $fetchData->branch)->first();
-$workflow = \App\Workflow::where('id', $fetchData->workflow)->first();
+$productdetail = \App\Models\Product::where('id', $fetchData->product_id)->first();
+$partnerdetail = \App\Models\Partner::where('id', $fetchData->partner_id)->first();
+$PartnerBranch = \App\Models\PartnerBranch::where('id', $fetchData->branch)->first();
+$workflow = \App\Models\Workflow::where('id', $fetchData->workflow)->first();
 ?>
 <div class="card-header-action" style="padding-bottom:15px;">
 	<div class="float-left">
@@ -160,13 +160,13 @@ $workflow = \App\Workflow::where('id', $fetchData->workflow)->first();
 								</div>
 							</div>
 							<?php
-							$applicationlists = \App\ApplicationActivitiesLog::where('app_id', $fetchData->id)->where('stage','Application')->orderby('created_at', 'DESC')->get();
+							$applicationlists = \App\Models\ApplicationActivitiesLog::where('app_id', $fetchData->id)->where('stage','Application')->orderby('created_at', 'DESC')->get();
 							
 							?>
 							<div class="accordion-body collapse" id="application_accor" data-parent="#accordion" style="">
 								<div class="activity_list">
 								<?php foreach($applicationlists as $applicationlist){ 
-								$admin = \App\Admin::where('id',$applicationlist->user_id)->first();
+								$admin = \App\Models\Admin::where('id',$applicationlist->user_id)->first();
 								?>
 									<div class="activity_col">
 										<div class="activity_txt_time">
@@ -203,10 +203,10 @@ $workflow = \App\Workflow::where('id', $fetchData->workflow)->first();
 							<div class="accordion-body collapse" id="acceptance" data-parent="#accordion">
 								<div class="activity_list">
 								<?php
-							$applicationlists = \App\ApplicationActivitiesLog::where('app_id', $fetchData->id)->where('stage','Acceptance')->orderby('created_at', 'DESC')->get();
+							$applicationlists = \App\Models\ApplicationActivitiesLog::where('app_id', $fetchData->id)->where('stage','Acceptance')->orderby('created_at', 'DESC')->get();
 							
 							 foreach($applicationlists as $applicationlist){ 
-								$admin = \App\Admin::where('id',$applicationlist->user_id)->first();
+								$admin = \App\Models\Admin::where('id',$applicationlist->user_id)->first();
 								?>
 									<div class="activity_col">
 										<div class="activity_txt_time">
@@ -243,9 +243,9 @@ $workflow = \App\Workflow::where('id', $fetchData->workflow)->first();
 							<div class="accordion-body collapse" id="payment" data-parent="#accordion">
 								<div class="activity_list">
 									<?php 
-									$applicationlists = \App\ApplicationActivitiesLog::where('app_id', $fetchData->id)->where('stage','Payment')->orderby('created_at', 'DESC')->get();
+									$applicationlists = \App\Models\ApplicationActivitiesLog::where('app_id', $fetchData->id)->where('stage','Payment')->orderby('created_at', 'DESC')->get();
 									foreach($applicationlists as $applicationlist){ 
-								$admin = \App\Admin::where('id',$applicationlist->user_id)->first();
+								$admin = \App\Models\Admin::where('id',$applicationlist->user_id)->first();
 								?>
 									<div class="activity_col">
 										<div class="activity_txt_time">
@@ -282,9 +282,9 @@ $workflow = \App\Workflow::where('id', $fetchData->workflow)->first();
 							<div class="accordion-body collapse" id="formi20" data-parent="#accordion">
 								<div class="activity_list">
 									<?php 
-									$applicationlists = \App\ApplicationActivitiesLog::where('app_id', $fetchData->id)->where('stage','Form I 20')->orderby('created_at', 'DESC')->get();
+									$applicationlists = \App\Models\ApplicationActivitiesLog::where('app_id', $fetchData->id)->where('stage','Form I 20')->orderby('created_at', 'DESC')->get();
 									foreach($applicationlists as $applicationlist){ 
-								$admin = \App\Admin::where('id',$applicationlist->user_id)->first();
+								$admin = \App\Models\Admin::where('id',$applicationlist->user_id)->first();
 								?>
 									<div class="activity_col">
 										<div class="activity_txt_time">
@@ -321,9 +321,9 @@ $workflow = \App\Workflow::where('id', $fetchData->workflow)->first();
 							<div class="accordion-body collapse" id="visa_application" data-parent="#accordion">
 								<div class="activity_list">
 									<?php 
-									$applicationlists = \App\ApplicationActivitiesLog::where('app_id', $fetchData->id)->where('stage','Visa Application')->orderby('created_at', 'DESC')->get();
+									$applicationlists = \App\Models\ApplicationActivitiesLog::where('app_id', $fetchData->id)->where('stage','Visa Application')->orderby('created_at', 'DESC')->get();
 									foreach($applicationlists as $applicationlist){ 
-									$admin = \App\Admin::where('id',$applicationlist->user_id)->first();
+									$admin = \App\Models\Admin::where('id',$applicationlist->user_id)->first();
 								?>
 									<div class="activity_col">
 										<div class="activity_txt_time">
@@ -360,9 +360,9 @@ $workflow = \App\Workflow::where('id', $fetchData->workflow)->first();
 							<div class="accordion-body collapse" id="interview" data-parent="#accordion">
 								<div class="activity_list">
 									<?php 
-									$applicationlists = \App\ApplicationActivitiesLog::where('app_id', $fetchData->id)->where('stage','Interview')->orderby('created_at', 'DESC')->get();
+									$applicationlists = \App\Models\ApplicationActivitiesLog::where('app_id', $fetchData->id)->where('stage','Interview')->orderby('created_at', 'DESC')->get();
 									foreach($applicationlists as $applicationlist){ 
-								$admin = \App\Admin::where('id',$applicationlist->user_id)->first();
+								$admin = \App\Models\Admin::where('id',$applicationlist->user_id)->first();
 								?>
 									<div class="activity_col">
 										<div class="activity_txt_time">
@@ -399,9 +399,9 @@ $workflow = \App\Workflow::where('id', $fetchData->workflow)->first();
 							<div class="accordion-body collapse" id="enrolment" data-parent="#accordion">
 								<div class="activity_list">
 									<?php 
-									$applicationlists = \App\ApplicationActivitiesLog::where('app_id', $fetchData->id)->where('stage','Enrolment')->orderby('created_at', 'DESC')->get();
+									$applicationlists = \App\Models\ApplicationActivitiesLog::where('app_id', $fetchData->id)->where('stage','Enrolment')->orderby('created_at', 'DESC')->get();
 									foreach($applicationlists as $applicationlist){ 
-								$admin = \App\Admin::where('id',$applicationlist->user_id)->first();
+								$admin = \App\Models\Admin::where('id',$applicationlist->user_id)->first();
 								?>
 									<div class="activity_col">
 										<div class="activity_txt_time">
@@ -438,9 +438,9 @@ $workflow = \App\Workflow::where('id', $fetchData->workflow)->first();
 							<div class="accordion-body collapse" id="course_ongoing" data-parent="#accordion">
 								<div class="activity_list">
 									<?php 
-									$applicationlists = \App\ApplicationActivitiesLog::where('app_id', $fetchData->id)->where('stage','Course Ongoing')->orderby('created_at', 'DESC')->get();
+									$applicationlists = \App\Models\ApplicationActivitiesLog::where('app_id', $fetchData->id)->where('stage','Course Ongoing')->orderby('created_at', 'DESC')->get();
 									foreach($applicationlists as $applicationlist){ 
-								$admin = \App\Admin::where('id',$applicationlist->user_id)->first();
+								$admin = \App\Models\Admin::where('id',$applicationlist->user_id)->first();
 								
 								?>
 									<div class="activity_col">

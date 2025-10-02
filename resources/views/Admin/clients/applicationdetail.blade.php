@@ -1,8 +1,8 @@
 <?php
-$productdetail = \App\Product::where('id', $fetchData->product_id)->first();
-$partnerdetail = \App\Partner::where('id', $fetchData->partner_id)->first();
-$PartnerBranch = \App\PartnerBranch::where('id', $fetchData->branch)->first();
-$workflow = \App\Workflow::where('id', $fetchData->workflow)->first();
+$productdetail = \App\Models\Product::where('id', $fetchData->product_id)->first();
+$partnerdetail = \App\Models\Partner::where('id', $fetchData->partner_id)->first();
+$PartnerBranch = \App\Models\PartnerBranch::where('id', $fetchData->branch)->first();
+$workflow = \App\Models\Workflow::where('id', $fetchData->workflow)->first();
 ?>
 <style>
 .checklist .round{background: #fff;border: 1px solid #000; border-radius: 50%;font-size: 10px;line-height: 14px; padding: 2px 5px;width: 16px; height: 16px; display: inline-block;}
@@ -46,7 +46,7 @@ $workflow = \App\Workflow::where('id', $fetchData->workflow)->first();
 
 			<?php
 			$displayback = false;
-			$workflowstage = \App\WorkflowStage::where('w_id', $fetchData->workflow)->orderBy('id','desc')->first();
+			$workflowstage = \App\Models\WorkflowStage::where('w_id', $fetchData->workflow)->orderBy('id','desc')->first();
 		
 			if($workflowstage->name == $fetchData->stage){
 				$displayback = true;
@@ -166,15 +166,15 @@ $workflow = \App\Workflow::where('id', $fetchData->workflow)->first();
 						if($fetchData->status == 1){
 							$stage9 = 'app_green';
 						}
-						$stagesquery = \App\WorkflowStage::where('w_id', $fetchData->workflow)->get();
+						$stagesquery = \App\Models\WorkflowStage::where('w_id', $fetchData->workflow)->get();
 						foreach($stagesquery as $stages){
 							$stage1 = '';
 						?>
 						<?php
-							$workflowstagess = \App\WorkflowStage::where('name', $fetchData->stage)->where('w_id', $fetchData->workflow)->first();
+							$workflowstagess = \App\Models\WorkflowStage::where('name', $fetchData->stage)->where('w_id', $fetchData->workflow)->first();
 							$stagearray = array();
 							if($workflowstagess){
-								$prevdata = \App\WorkflowStage::where('id', '<', @$workflowstagess->id)->where('w_id', $fetchData->workflow)->orderBy('id','Desc')->get();
+								$prevdata = \App\Models\WorkflowStage::where('id', '<', @$workflowstagess->id)->where('w_id', $fetchData->workflow)->orderBy('id','Desc')->get();
 								foreach($prevdata as $pre){
 									$stagearray[] = $pre->id;
 								}
@@ -205,13 +205,13 @@ $workflow = \App\Workflow::where('id', $fetchData->workflow)->first();
 								</div>
 							</div>
 							<?php
-							$applicationlists = \App\ApplicationActivitiesLog::where('app_id', $fetchData->id)->where('stage',$stages->name)->orderby('created_at', 'DESC')->get();
+							$applicationlists = \App\Models\ApplicationActivitiesLog::where('app_id', $fetchData->id)->where('stage',$stages->name)->orderby('created_at', 'DESC')->get();
 							
 							?>
 							<div class="accordion-body collapse" id="<?php echo $stagname; ?>_accor" data-parent="#accordion" style="">
 								<div class="activity_list">
 								<?php foreach($applicationlists as $applicationlist){ 
-								$admin = \App\Admin::where('id',$applicationlist->user_id)->first();
+								$admin = \App\Models\Admin::where('id',$applicationlist->user_id)->first();
 								?>
 									<div class="activity_col">
 										<div class="activity_txt_time">
@@ -242,10 +242,10 @@ $workflow = \App\Workflow::where('id', $fetchData->workflow)->first();
 				<div class="tab-pane fade" id="documents" role="tabpanel" aria-labelledby="documents-tab">
 					<div class="document_checklist">
 						<?php
-						$applicationdocumentco = \App\ApplicationDocumentList::where('application_id', $fetchData->id)->count();
+						$applicationdocumentco = \App\Models\ApplicationDocumentList::where('application_id', $fetchData->id)->count();
 						$application_id =  $fetchData->id;
 						$applicationuploadcount = DB::select("SELECT COUNT(DISTINCT list_id) AS cnt FROM application_documents where application_id = '$application_id'");
-						$stagesquery = \App\WorkflowStage::where('w_id', $fetchData->workflow)->get();
+						$stagesquery = \App\Models\WorkflowStage::where('w_id', $fetchData->workflow)->get();
 						?>
 						<h4>Document Checklist (<span class="checklistuploadcount">{{@$applicationuploadcount[0]->cnt}}</span>/<span class="checklistcount">{{@$applicationdocumentco}}</span>)</h4>
 						<p>The changes & addition of the checklist will only be affected to current application only.</p>
@@ -261,7 +261,7 @@ $workflow = \App\Workflow::where('id', $fetchData->workflow)->first();
 											<li><span><?php echo $stages->name; ?></span>
 											<div class="<?php echo $name; ?>_checklists">
 												<?php
-												$applicationdocumentsquery = \App\ApplicationDocumentList::where('application_id', $fetchData->id)->where('type', $name);
+												$applicationdocumentsquery = \App\Models\ApplicationDocumentList::where('application_id', $fetchData->id)->where('type', $name);
 												$applicationdocumentscount = $applicationdocumentsquery->count();
 												$applicationdocuments = $applicationdocumentsquery->get();
 												if($applicationdocumentscount !== 0){
@@ -270,7 +270,7 @@ $workflow = \App\Workflow::where('id', $fetchData->workflow)->first();
 												<table class="table">
 													<tbody>
 														<?php foreach($applicationdocuments as $applicationdocument){ 
-														$appcount = \App\ApplicationDocument::where('list_id', $applicationdocument->id)->count();
+														$appcount = \App\Models\ApplicationDocument::where('list_id', $applicationdocument->id)->count();
 														?>
 														<tr>
 															<td><?php if($appcount >0){ ?><span class="check"><i class="fa fa-check"></i></span><?php }else{ ?><span class="round"></span><?php } ?></td>
@@ -304,9 +304,9 @@ $workflow = \App\Workflow::where('id', $fetchData->workflow)->first();
 							</thead>
 							<tbody class="tdata mychecklistdocdata">	
 							<?php
-							$doclists = \App\ApplicationDocument::where('application_id',$fetchData->id)->orderby('created_at','DESC')->get();
+							$doclists = \App\Models\ApplicationDocument::where('application_id',$fetchData->id)->orderby('created_at','DESC')->get();
 							foreach($doclists as $doclist){
-								$docdata = \App\ApplicationDocumentList::where('id', $doclist->list_id)->first();
+								$docdata = \App\Models\ApplicationDocumentList::where('id', $doclist->list_id)->first();
 							?>
 								<tr id="">
 									<td><i class="fa fa-file"></i> <?php echo $doclist->file_name; ?><br><?php echo @$docdata->document_type; ?></td>
@@ -316,7 +316,7 @@ $workflow = \App\Workflow::where('id', $fetchData->workflow)->first();
 										?>
 									</td>
 									<td><?php
-									$admin = \App\Admin::where('id', $doclist->user_id)->first();
+									$admin = \App\Models\Admin::where('id', $doclist->user_id)->first();
 									?><span style="position: relative;background: rgb(3, 169, 244);font-size: .8rem;height: 24px;line-height: 24px;min-width: 24px;width: 24px;color: #fff;display: block;font-weight: 600;letter-spacing: 1px;text-align: center;border-radius: 50%;overflow: hidden;"><?php echo substr($admin->first_name, 0, 1); ?></span><?php echo $admin->first_name; ?></td>
 									<td><?php echo date('Y-m-d',strtotime($doclist->created_at)); ?></td>
 									<td>
@@ -372,7 +372,7 @@ $workflow = \App\Workflow::where('id', $fetchData->workflow)->first();
 				<div class="tab-pane fade" id="tasks" role="tabpanel" aria-labelledby="tasks-tab">
 					<div id="taskaccordion">
 					<?php
-					$stagesquery = \App\WorkflowStage::where('w_id', $fetchData->workflow)->get();
+					$stagesquery = \App\Models\WorkflowStage::where('w_id', $fetchData->workflow)->get();
 					foreach($stagesquery as $stages){
 						$stagname = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $stages->name)));
 					?>
@@ -439,9 +439,9 @@ $workflow = \App\Workflow::where('id', $fetchData->workflow)->first();
 							</thead>
 							<tbody class="tdata showpaymentscheduledata">	
 							<?php
-							$invoiceschedules = \App\InvoiceSchedule::where('application_id', $fetchData->id)->get();
+							$invoiceschedules = \App\Models\InvoiceSchedule::where('application_id', $fetchData->id)->get();
 							foreach($invoiceschedules as $invoiceschedule){
-								$scheduleitem = \App\ScheduleItem::where('schedule_id', $invoiceschedule->id)->get();
+								$scheduleitem = \App\Models\ScheduleItem::where('schedule_id', $invoiceschedule->id)->get();
 								
 								
 							?>
@@ -557,12 +557,12 @@ $workflow = \App\Workflow::where('id', $fetchData->workflow)->first();
 			<div class="divider"></div>
 			<div class="setup_payment_sche">
 				<?php
-			$appfeeoption = \App\ApplicationFeeOption::where('app_id', $fetchData->id)->first(); //dd($appfeeoption);
+			$appfeeoption = \App\Models\ApplicationFeeOption::where('app_id', $fetchData->id)->first(); //dd($appfeeoption);
 			$totl = 0.00;
             $commission_tot = 0.00;
 			$discount = 0.00;
 			if($appfeeoption){
-				$appfeeoptiontype = \App\ApplicationFeeOptionType::where('fee_id', $appfeeoption->id)->get();
+				$appfeeoptiontype = \App\Models\ApplicationFeeOptionType::where('fee_id', $appfeeoption->id)->get();
 				foreach($appfeeoptiontype as $fee){
 					$totl += $fee->total_fee;
                     $commission_tot += $fee->commission;
@@ -573,7 +573,7 @@ $workflow = \App\Workflow::where('id', $fetchData->workflow)->first();
 				$discount = @$appfeeoption->total_discount;
 			}
 			$net = $totl -  $discount;
-			$invoiceschedule = \App\InvoiceSchedule::where('application_id', $fetchData->id)->first();
+			$invoiceschedule = \App\Models\InvoiceSchedule::where('application_id', $fetchData->id)->first();
 			?>
 				<a style="<?php if($invoiceschedule){ echo 'display:none;'; } ?>" href="javascript:;" data-id="{{$fetchData->id}}"  class="btn btn-outline-primary openpaymentschedule"><i class="fa fa-plus"></i> Setup Payment Schedule</a>
 			</div>
@@ -679,7 +679,7 @@ $workflow = \App\Workflow::where('id', $fetchData->workflow)->first();
 				@endif 
 			</div>
 			<?php
-				$admin = \App\Admin::where('id', $fetchData->user_id)->first();
+				$admin = \App\Models\Admin::where('id', $fetchData->user_id)->first();
 			?>
 			<div class="divider"></div>
 			<div class="setup_payment_sche">
@@ -719,7 +719,7 @@ $workflow = \App\Workflow::where('id', $fetchData->workflow)->first();
 				<span class="float-right text-muted">
 					<a href="javascript:;" data-id="{{$fetchData->id}}" class="btn btn-primary btn-sm opensuperagent"><i class="fa fa-plus"></i> Add</a>
 					<?php
-					$agent = \App\Agent::where('id',$fetchData->super_agent)->first();
+					$agent = \App\Models\AgentDetails::where('id',$fetchData->super_agent)->first();
 					if($agent){
 					?>
 					<div class="supagent_data">
@@ -745,7 +745,7 @@ $workflow = \App\Workflow::where('id', $fetchData->workflow)->first();
 					<a href="javascript:;" data-id="{{$fetchData->id}}" class="btn btn-primary btn-sm opensubagent"><i class="fa fa-plus"></i> Add</a>
 					<div class="subagent_data">
 						<?php
-					$subagent = \App\Agent::where('id',$fetchData->sub_agent)->first();
+					$subagent = \App\Models\AgentDetails::where('id',$fetchData->sub_agent)->first();
 					if($subagent){
 					?>
 					<div class="client_info">

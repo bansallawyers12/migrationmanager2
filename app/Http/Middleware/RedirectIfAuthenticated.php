@@ -18,17 +18,12 @@ class RedirectIfAuthenticated
 	public function handle($request, Closure $next, $guard = null)
 	{
 			switch ($guard) {
-				case 'admin' :
-					if (Auth::guard($guard)->check()) {
-						return redirect()->route('admin.dashboard');
-					}
-					break;
-				case 'agents' :
-					if (Auth::guard($guard)->check()) {
-						return redirect()->route('agent.dashboard');
-					}
-					break;
-                case 'email_users' :
+			case 'admin' :
+				if (Auth::guard($guard)->check()) {
+					return redirect()->route('admin.dashboard');
+				}
+				break;
+            case 'email_users' :
                     if (Auth::guard($guard)->check()) {
                         return redirect()->route('email_users.dashboard');
                     }

@@ -7,8 +7,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 
-use App\Admin;
-use App\Promotion; 
+use App\Models\Admin;
+use App\Models\Promotion; 
   
 use Auth; 
 use Config;
@@ -70,8 +70,8 @@ class PromotionController extends Controller
 			$countproducts = 0;
 			$countbranches = 0;
 			if($promotion->apply_to == 'All Products'){
-				$countproducts = \App\Product::where('partner', $promotion->partner_id)->count();
-				$countbranches = \App\PartnerBranch::where('partner_id', $promotion->partner_id)->count();
+				$countproducts = \App\Models\Product::where('partner', $promotion->partner_id)->count();
+				$countbranches = \App\Models\PartnerBranch::where('partner_id', $promotion->partner_id)->count();
 			}else{
 				
 			}
@@ -145,7 +145,7 @@ class PromotionController extends Controller
 	}
 	public function getpromotioneditform(Request $request){
 		ob_start();
-		$obj = \App\Promotion::find($request->id);
+		$obj = \App\Models\Promotion::find($request->id);
 		if($obj){
 		?>
 		<form method="post" action="<?php echo \URL::to('/admin/promotion/edit'); ?>" id="editpromotionform" name="editpromotionform" autocomplete="off" enctype="multipart/form-data">
@@ -229,7 +229,7 @@ class PromotionController extends Controller
 							<div class="form-group">
 								<select  class="form-control productselect2"  name="selectproduct[]">
 										 <option></option>
-									<?php foreach(\App\Product::where('partner', $obj->partner_id)->orderby('created_at','DESC')->get() as $plist){ ?>
+									<?php foreach(\App\Models\Product::where('partner', $obj->partner_id)->orderby('created_at','DESC')->get() as $plist){ ?>
 										<option <?php if(in_array($plist->id, $exploder)){ echo 'selected'; } ?> value="<?php echo $plist->id; ?>"><?php echo $plist->name; ?></option>
 									<?php } ?>
 								</select>

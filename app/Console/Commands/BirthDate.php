@@ -3,9 +3,9 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use DB;
-use App\Contact;
-use App\Admin;
-use App\EmailTemplate;
+use App\Models\Contact;
+use App\Models\Admin;
+use App\Models\EmailTemplate;
 
  use PDF;
  use DateTime;

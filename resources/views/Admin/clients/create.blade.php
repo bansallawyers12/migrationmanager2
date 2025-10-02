@@ -103,7 +103,7 @@
                                     <option value="">Select Country</option>
                                     <option value="India" {{ old('visa_country.0') == 'India' ? 'selected' : '' }}>India</option>
                                     <option value="Australia" {{ old('visa_country.0') == 'Australia' ? 'selected' : '' }}>Australia</option>
-                                    @foreach (\App\Country::all() as $list)
+                                    @foreach (\App\Models\Country::all() as $list)
                                         @if ($list->name != 'India' && $list->name != 'Australia')
                                             <option value="{{ $list->name }}" {{ old('visa_country.0') == $list->name ? 'selected' : '' }}>{{ $list->name }}</option>
                                         @endif
@@ -212,7 +212,7 @@
                                         <label>Visa Type / Subclass</label>
                                         <select name="visa_type_hidden[0]">
                                             <option value="">Select Visa Type</option>
-                                            @foreach(\App\Matter::select('id','title','nick_name')->where('status',1)->orderby('id','ASC')->get() as $matterlist)
+                                            @foreach(\App\Models\Matter::select('id','title','nick_name')->where('status',1)->orderby('id','ASC')->get() as $matterlist)
                                                 <option value="{{ $matterlist->id }}" {{ old('visa_type_hidden.0') == $matterlist->id ? 'selected' : '' }}>{{ $matterlist->title }} ({{ $matterlist->nick_name ?: '' }})</option>
                                             @endforeach
                                         </select>
@@ -296,7 +296,7 @@
                                             <option value="">Select Country</option>
                                             <option value="India" {{ old('country_hidden.0') == 'India' ? 'selected' : '' }}>India</option>
                                             <option value="Australia" {{ old('country_hidden.0') == 'Australia' ? 'selected' : '' }}>Australia</option>
-                                            @foreach (\App\Country::all() as $list)
+                                            @foreach (\App\Models\Country::all() as $list)
                                                 @if ($list->name != 'India' && $list->name != 'Australia')
                                                     <option value="{{ $list->name }}" {{ old('country_hidden.0') == $list->name ? 'selected' : '' }}>{{ $list->name }}</option>
                                                 @endif
@@ -345,7 +345,7 @@
                                             <option value="">Select Country</option>
                                             <option value="India" {{ old('job_country_hidden.0') == 'India' ? 'selected' : '' }}>India</option>
                                             <option value="Australia" {{ old('job_country_hidden.0') == 'Australia' ? 'selected' : '' }}>Australia</option>
-                                            @foreach (\App\Country::all() as $list)
+                                            @foreach (\App\Models\Country::all() as $list)
                                                 @if ($list->name != 'India' && $list->name != 'Australia')
                                                     <option value="{{ $list->name }}" {{ old('job_country_hidden.0') == $list->name ? 'selected' : '' }}>{{ $list->name }}</option>
                                                 @endif

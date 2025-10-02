@@ -73,14 +73,14 @@ use App\Http\Controllers\Controller;
 							<p class="clearfix"> 
 								<span class="float-left">Partner:</span>
 								<span class="float-right text-muted"><?php
-								$partnerdetail = \App\Partner::where('id', $fetchedData->partner)->first();
+								$partnerdetail = \App\Models\Partner::where('id', $fetchedData->partner)->first();
 								echo $partnerdetail->partner_name;
 								?></span>
 							</p>
 							<p class="clearfix"> 
 								<span class="float-left">Branches:</span>
 								<span class="float-right text-muted"><?php
-								$branchesdetail = \App\PartnerBranch::where('id', $fetchedData->branches)->first();
+								$branchesdetail = \App\Models\PartnerBranch::where('id', $fetchedData->branches)->first();
 								echo @$branchesdetail->name.' ('.@$branchesdetail->city.')';
 								?></span>
 							</p>
@@ -154,13 +154,13 @@ use App\Http\Controllers\Controller;
 											</thead>
 											<tbody class="applicationtdata">
 											<?php
-											foreach(\App\Application::where('product_id', $fetchedData->id)->orderby('created_at','Desc')->get() as $alist){
-												$productdetail = \App\Product::where('id', $alist->product_id)->first();
-												$clientdetail = \App\Admin::where('id', $alist->client_id)->first();
-												$admindetail = \App\Admin::where('id', $alist->user_id)->first();
-				$partnerdetail = \App\Partner::where('id', $alist->partner_id)->first();
-				$PartnerBranch = \App\PartnerBranch::where('id', $alist->branch)->first();
-				$workflow = \App\Workflow::where('id', $alist->workflow)->first();
+											foreach(\App\Models\Application::where('product_id', $fetchedData->id)->orderby('created_at','Desc')->get() as $alist){
+												$productdetail = \App\Models\Product::where('id', $alist->product_id)->first();
+												$clientdetail = \App\Models\Admin::where('id', $alist->client_id)->first();
+												$admindetail = \App\Models\Admin::where('id', $alist->user_id)->first();
+				$partnerdetail = \App\Models\Partner::where('id', $alist->partner_id)->first();
+				$PartnerBranch = \App\Models\PartnerBranch::where('id', $alist->branch)->first();
+				$workflow = \App\Models\Workflow::where('id', $alist->workflow)->first();
 												?>
 												<tr id="id_{{$alist->id}}">
 													<td><a class="" data-id="{{$alist->id}}" href="{{URL::to('/admin/clients/detail')}}/{{base64_encode(convert_uuencode(@$alist->id))}}" style="display:block;">{{$clientdetail->first_name}} {{$clientdetail->last_name}}</a> </td> 
@@ -227,9 +227,9 @@ use App\Http\Controllers\Controller;
 												</thead>
 												<tbody class="tdata documnetlist">
 										<?php 
-										$fetchd = \App\Document::where('client_id',$fetchedData->id)->where('type','product')->orderby('created_at', 'DESC')->get();
+										$fetchd = \App\Models\Document::where('client_id',$fetchedData->id)->where('type','product')->orderby('created_at', 'DESC')->get();
 										foreach($fetchd as $fetch){ 
-										$admin = \App\Admin::where('id', $fetch->user_id)->first();
+										$admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
 										?>												
 													<tr class="drow" id="id_{{$fetch->id}}">
 													<td  >
@@ -261,7 +261,7 @@ use App\Http\Controllers\Controller;
 									<div class="grid_data griddata">
 									<?php
 									foreach($fetchd as $fetch){ 
-										$admin = \App\Admin::where('id', $fetch->user_id)->first();
+										$admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
 									?>
 										<div class="grid_list" id="gid_<?php echo $fetch->id; ?>">
 											<div class="grid_col"> 
@@ -292,7 +292,7 @@ use App\Http\Controllers\Controller;
 									</div>
 									<div class="feeslist">
 									<?php
-									$feeoptions = \App\FeeOption::where('product_id', $fetchedData->id)->orderby('created_at', 'DESC')->get();
+									$feeoptions = \App\Models\FeeOption::where('product_id', $fetchedData->id)->orderby('created_at', 'DESC')->get();
 									
 									foreach($feeoptions as $feeoption){
 									?>
@@ -316,7 +316,7 @@ use App\Http\Controllers\Controller;
 													</div>
 												</div>
 												<?php
-												$feeoptiontype = \App\FeeOptionType::where('fee_id', $feeoption->id)->get();
+												$feeoptiontype = \App\Models\FeeOptionType::where('fee_id', $feeoption->id)->get();
 												
 												?>
 												<div class="col-md-8">
@@ -355,7 +355,7 @@ use App\Http\Controllers\Controller;
 											<h5>Academic Requirements</h5> 
 										</div>
 										<?php
-										$acreq = \App\AcademicRequirement::where('product_id', $fetchedData->id)->first();
+										$acreq = \App\Models\AcademicRequirement::where('product_id', $fetchedData->id)->first();
 										?>
 										<div class="float-right">
 											<a href="javascript:;" <?php if($acreq){ ?>style="display:none;"<?php }else{ ?><?php } ?> class="btn btn-primary add_academic_requirement"><i class="fa fa-plus"></i> Add</a>
@@ -398,7 +398,7 @@ use App\Http\Controllers\Controller;
 											<div class="edu_test_col"><span>Date</span></div>
 										</div>
 										<?php
-										$testscores = \App\TestScore::where('client_id', $fetchedData->id)->where('type', 'product')->first();
+										$testscores = \App\Models\TestScore::where('client_id', $fetchedData->id)->where('type', 'product')->first();
 										?>
 										<div class="edu_test_row flex_row">
 											<div class="edu_test_col"><span>TOEFL</span></div>
@@ -459,7 +459,7 @@ use App\Http\Controllers\Controller;
 								</div>
 								<div class="tab-pane fade" id="other_info" role="tabpanel" aria-labelledby="other_info-tab">
 								<?php
-								$subjectareadata = \App\ProductAreaLevel::where('product_id', $fetchedData->id)->first();
+								$subjectareadata = \App\Models\ProductAreaLevel::where('product_id', $fetchedData->id)->first();
 								?>
 									<div class="card-header-action text-right" style="padding-bottom:15px;">
 										<a href="javascript:;" <?php if($subjectareadata){ ?>style="display:none;"<?php }else{ ?><?php } ?> class="btn btn-primary other_info_add"><i class="fa fa-plus"></i> Add</a>
@@ -469,8 +469,8 @@ use App\Http\Controllers\Controller;
 										<?php 
 										
 										if($subjectareadata){ 
-										$subjectarea = \App\SubjectArea::where('id', $subjectareadata->subject_area)->first();
-				$subject = \App\Subject::where('id', $subjectareadata->subject)->first();
+										$subjectarea = \App\Models\SubjectArea::where('id', $subjectareadata->subject_area)->first();
+				$subject = \App\Models\Subject::where('id', $subjectareadata->subject)->first();
 				echo '<div class="row"><div class="col-md-4"><strong>Subject Area</strong><p>'.$subjectarea->name.'</p></div><div class="col-md-4"><strong>Subject</strong><p>'.$subject->name.'</p></div><div class="col-md-4"><strong>Degree Level</strong><p>'.$subjectareadata->degree.'</p></div></div>';
 									} ?>
 									</div>
@@ -478,17 +478,17 @@ use App\Http\Controllers\Controller;
 								<div class="tab-pane fade" id="promotions" role="tabpanel" aria-labelledby="promotions-tab">
 									<div class="promotionlists"> 
 									<?php
-									$promotionslist = \App\Promotion::where('apply_to', 'All Products') ->orwhereRaw('FIND_IN_SET("'.$fetchedData->id.'", selectproduct)')->orderby('created_at','DESC')->get();
+									$promotionslist = \App\Models\Promotion::where('apply_to', 'All Products') ->orwhereRaw('FIND_IN_SET("'.$fetchedData->id.'", selectproduct)')->orderby('created_at','DESC')->get();
 									foreach($promotionslist as $promotion){
 										$countproducts = 0;
 										$countbranches = 0;
 										if($promotion->apply_to == 'All Products'){
-											$countproducts = \App\Product::where('partner', $fetchedData->id)->count();
-											$countbranches = \App\PartnerBranch::where('partner_id', $fetchedData->id)->count();
+											$countproducts = \App\Models\Product::where('partner', $fetchedData->id)->count();
+											$countbranches = \App\Models\PartnerBranch::where('partner_id', $fetchedData->id)->count();
 										}else{
 											$selectproduct = explode(',',$promotion->selectproduct);
 											$countproducts = count($selectproduct);
-											$branch = \App\Product::select('branches')->whereIn('id', $selectproduct)->get()->toArray();
+											$branch = \App\Models\Product::select('branches')->whereIn('id', $selectproduct)->get()->toArray();
 											$output =  array_map("unserialize", array_unique(array_map("serialize", $branch)));
 											$countbranches = count($output);
 										}
@@ -610,7 +610,7 @@ use App\Http\Controllers\Controller;
 								<label for="template">Templates </label>
 								<select data-valid="" class="form-control select2 selecttemplate" name="template">
 									<option value="">Select</option>
-									@foreach(\App\CrmEmailTemplate::all() as $list)
+									@foreach(\App\Models\CrmEmailTemplate::all() as $list)
 										<option value="{{$list->id}}">{{$list->name}}</option>
 									@endforeach
 								</select>
@@ -1896,7 +1896,7 @@ $(document).delegate('#notes-tab', 'click', function(){
 	
 	$(document).delegate('#new_fee_option .fee_option_addbtn a', 'click', function(){
 	var htmldd = '';
-	<?php foreach(\App\FeeType::all() as $feetypes){ ?>
+	<?php foreach(\App\Models\FeeType::all() as $feetypes){ ?>
 			htmldd +='<option @if($feetypes->name == 'Tution fees') selected @endif value="{{$feetypes->name}}">{{$feetypes->name}}</option>';
 	<?php } ?>
 		var html = '<tr class="add_fee_option cus_fee_option"><td><select data-valid="required" class="form-control course_fee_type" name="course_fee_type[]"><option value="">Select Type</option>'+htmldd+'</select></td><td><input type="number" value="0" class="form-control installment_amount" name="installment_amount[]"></td><td><input type="number" value="1" class="form-control installment" name="installment[]"></td><td class="total_fee"><span>0.00</span><input type="hidden"  class="form-control total_fee_am" value="0" name="total_fee[]"></td><td><input type="number" value="1" class="form-control claimable_terms" name="claimable_terms[]"></td><td><input type="number" class="form-control commission" name="commission[]"></td><td><input value="1" class="add_quotation" type="checkbox" name="add_quotation[]"> <a href="javascript:;" class="removefeetype"><i class="fa fa-trash"></i></a></td></tr>';

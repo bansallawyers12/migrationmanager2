@@ -212,7 +212,7 @@
                                 <option value="">Select Country</option>
                                 <option value="India" {{ old('visa_country.0') == 'India' ? 'selected' : '' }}>India</option>
                                 <option value="Australia" {{ old('visa_country.0') == 'Australia' ? 'selected' : '' }}>Australia</option>
-                                @foreach(\App\Country::all() as $list)
+                                @foreach(\App\Models\Country::all() as $list)
                                     @if($list->name != 'India' && $list->name != 'Australia')
                                         <option value="{{ $list->name }}" {{ old('visa_country.0') == $list->name ? 'selected' : '' }}>{{ $list->name }}</option>
                                     @endif
@@ -1310,7 +1310,7 @@
                                 <label>Visa Type / Subclass</label>
                                 <select name="visas[${index}][visa_type]" class="visa-type-field">
                                     <option value="">Select Visa Type</option>
-                                    @foreach(\App\Matter::select('id','title','nick_name')->where('status',1)->where('title', 'not like', '%skill assessment%')->orderby('title','ASC')->get() as $matterlist)
+                                    @foreach(\App\Models\Matter::select('id','title','nick_name')->where('status',1)->where('title', 'not like', '%skill assessment%')->orderby('title','ASC')->get() as $matterlist)
                                         <option value="{{ $matterlist->id }}">{{ $matterlist->title }} ({{ @$matterlist->nick_name }})</option>
                                     @endforeach
                                 </select>

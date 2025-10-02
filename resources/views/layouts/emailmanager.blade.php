@@ -777,7 +777,7 @@ function formatRepoSelectioncheck (repo) {
 								<label for="email_from">Office <span class="span_req">*</span></label>
 								<select data-valid="required" class="form-control" name="office">
 									<option value="">Select</option>
-									@foreach(\App\Branch::all() as $of)
+									@foreach(\App\Models\Branch::all() as $of)
 										<option value="{{$of->id}}">{{$of->office_name}}</option>
 									@endforeach
 								</select>
@@ -801,7 +801,7 @@ function formatRepoSelectioncheck (repo) {
 							<div class="form-group">
 								<label for="message">Select In Person Assignee <span class="span_req">*</span></label>
 								<?php
-								$assignee = \App\Admin::where('role',1)->get();
+								$assignee = \App\Models\Admin::where('role',1)->get();
 								?>
 								<select class="form-control" name="assignee">
 								@foreach($assignee as $assigne)

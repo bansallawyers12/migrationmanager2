@@ -104,16 +104,16 @@
 											<tbody class="tdata">
 												<?php
 												foreach($lists as $invoicelist){
-																				$clientdata = \App\Admin::where('id', $invoicelist->client_id)->first();
-																				$admindata = \App\Admin::where('id', $invoicelist->user_id)->first();
+																				$clientdata = \App\Models\Admin::where('id', $invoicelist->client_id)->first();
+																				$admindata = \App\Models\Admin::where('id', $invoicelist->user_id)->first();
 																											if($invoicelist->type == 3){
-																		$workflowdaa = \App\Workflow::where('id', $invoicelist->application_id)->first();
+																		$workflowdaa = \App\Models\Workflow::where('id', $invoicelist->application_id)->first();
 																	}else{
-																		$applicationdata = \App\Application::where('id', @$invoicelist->application_id)->first();
-																		$workflowdaa = \App\Workflow::where('id', @$invoicelist->application_id)->first();
-																		$partnerdata = \App\Partner::where('id', @$applicationdata->partner_id)->first();
+																		$applicationdata = \App\Models\Application::where('id', @$invoicelist->application_id)->first();
+																		$workflowdaa = \App\Models\Workflow::where('id', @$invoicelist->application_id)->first();
+																		$partnerdata = \App\Models\Partner::where('id', @$applicationdata->partner_id)->first();
 																	}
-																	$invoiceitemdetails = \App\InvoiceDetail::where('invoice_id', $invoicelist->id)->orderby('id','ASC')->get();
+																	$invoiceitemdetails = \App\Models\InvoiceDetail::where('invoice_id', $invoicelist->id)->orderby('id','ASC')->get();
 																	$netamount = 0;
 																	$coom_amt = 0;
 																	$total_fee = 0;
@@ -123,7 +123,7 @@
 																		$total_fee += $invoiceitemdetail->total_fee;
 																	}
 
-																	$paymentdetails = \App\InvoicePayment::where('invoice_id', $invoicelist->id)->orderby('created_at', 'DESC')->get();
+																	$paymentdetails = \App\Models\InvoicePayment::where('invoice_id', $invoicelist->id)->orderby('created_at', 'DESC')->get();
 																	$amount_rec = 0;
 																	foreach($paymentdetails as $paymentdetail){
 																		$amount_rec += $paymentdetail->amount_rec;
@@ -237,7 +237,7 @@
 								<label for="template">Templates </label>
 								<select data-valid="" class="form-control select2 selecttemplate" name="template">
 									<option value="">Select</option>
-									@foreach(\App\CrmEmailTemplate::all() as $list)
+									@foreach(\App\Models\CrmEmailTemplate::all() as $list)
 										<option value="{{$list->id}}">{{$list->name}}</option>
 									@endforeach
 								</select>

@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreForm956Request;
-//use App\AgentDetails;
-use App\Admin;
-use App\Form956;
+//use App\Models\AgentDetails;
+use App\Models\Admin;
+use App\Models\Form956;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;

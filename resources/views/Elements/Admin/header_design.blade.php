@@ -9,7 +9,6 @@
                 <div style="width: 50px;" class="dropdown-menu dropdown-list dropdown-menu-right pullDown">
                     <div class="">
                         <a href="{{URL::to('/admin/clients')}}" class="dropdown-item">Client</a>
-                        <a href="{{URL::to('/admin/tasks')}}" class="dropdown-item">Task</a>
                         <a href="#" class="dropdown-item">Appointment</a>
                         <a href="{{URL::to('/admin/partners')}}" class="dropdown-item">Partner</a>
                         <a href="{{URL::to('/admin/products')}}" class="dropdown-item">Product</a>
@@ -35,7 +34,7 @@
         </li>
         <li class="dropdown dropdown-list-toggle">
             @if(Auth::user())
-                <a href="#" class="nav-link notification-toggle nav-link-lg" data-toggle="tooltip" data-placement="bottom" title="Click To See Notifications"><i data-feather="bell" class="bell"></i><span class="countbell" id="countbell_notification"><?php echo \App\Notification::where('receiver_id', Auth::user()->id)->where('receiver_status', 0)->count(); ?></span></a>
+                <a href="#" class="nav-link notification-toggle nav-link-lg" data-toggle="tooltip" data-placement="bottom" title="Click To See Notifications"><i data-feather="bell" class="bell"></i><span class="countbell" id="countbell_notification"><?php echo \App\Models\Notification::where('receiver_id', Auth::user()->id)->where('receiver_status', 0)->count(); ?></span></a>
             @endif
         </li>
         <li class="dropdown">

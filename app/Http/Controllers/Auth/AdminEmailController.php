@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cookie;
 
 use App\LoginLog;
-use App\Admin;
+use App\Models\Admin;
 
 class AdminEmailController extends Controller
 {

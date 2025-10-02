@@ -86,7 +86,7 @@
 															<option value="">Select User</option>
 															<?php
 															$userids = json_decode($fetchedData->user_id);
-																$users = \App\Admin::Where('role', '!=', '7')->Where('status', '=', 1)->get();
+																$users = \App\Models\Admin::Where('role', '!=', '7')->Where('status', '=', 1)->get();
 																foreach($users as $user){
 																	?>
 																	<option <?php if(in_array($user->id, $userids)){ echo 'selected'; } ?> value="{{$user->id}}">{{$user->first_name}} {{$user->last_name}}</option>

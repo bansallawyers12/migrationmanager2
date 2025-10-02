@@ -7,8 +7,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Routing\Route;
 
-use App\Appointment;
-use App\Admin;
+use App\Models\Appointment;
+use App\Models\Admin;
 use Helper;
 use Auth;
 use Config;
@@ -44,9 +44,9 @@ class AppointmentBookController extends Controller {
 		$phone = $requestData['phone'];
 		$date = explode('/', $requestData['date']);
 		$datey = $date[2].'-'.$date[1].'-'.$date[0];
-		$service = \App\BookService::find($requestData['service_id']);
+		$service = \App\Models\BookService::find($requestData['service_id']);
 
-		$user=\App\Admin::where(function ($query) use($requestData){
+		$user=\App\Models\Admin::where(function ($query) use($requestData){
 			$query->where('email',$requestData['email'])
 				  ->orWhere('phone',$requestData['phone']);
 		})->first();
@@ -93,7 +93,7 @@ class AppointmentBookController extends Controller {
 
 		if($saved){
 
-		$note = new \App\Note;
+		$note = new \App\Models\Note;
 		$note->client_id =  $client_id;
 		$note->user_id = 1;
 		$note->title = $requestData['appointment_details'];
@@ -103,7 +103,7 @@ class AppointmentBookController extends Controller {
 		$saved = $note->save();
 
 		$subject = 'added a note';
-		$objs = new \App\ActivitiesLog;
+		$objs = new \App\Models\ActivitiesLog;
 		$objs->client_id = $client_id;
 		$objs->created_by = 1;
 		$objs->description = '<span class="text-semi-bold">You have an new appointment on '.$requestData['date'].' at '.$requestData['time'].' for '.$title.'</span>';
@@ -194,7 +194,7 @@ class AppointmentBookController extends Controller {
 		$phone = $requestData['phone'];
 		$date = explode('/', $requestData['date']);
 		$datey = $date[2].'-'.$date[1].'-'.$date[0];
-		$service = \App\BookService::find($requestData['service_id']); //dd($service);
+		$service = \App\Models\BookService::find($requestData['service_id']); //dd($service);
         if(!empty($service)){
             $amount =  str_replace("$", "", $service['price']);
         } else {
@@ -265,7 +265,7 @@ class AppointmentBookController extends Controller {
         }
 
 
-        $user=\App\Admin::where(function ($query) use($requestData){
+        $user=\App\Models\Admin::where(function ($query) use($requestData){
 			$query->where('email',$requestData['email'])
 			->orWhere('phone',$requestData['phone']);
 		})->first();
@@ -313,7 +313,7 @@ class AppointmentBookController extends Controller {
 
 		if($saved)
         {
-            $note = new \App\Note;
+            $note = new \App\Models\Note;
             $note->client_id =  $client_id;
             $note->user_id = 1;
             $note->title = $requestData['appointment_details'];
@@ -323,7 +323,7 @@ class AppointmentBookController extends Controller {
             $saved = $note->save();
 
             $subject = 'added a note';
-            $objs = new \App\ActivitiesLog;
+            $objs = new \App\Models\ActivitiesLog;
             $objs->client_id = $client_id;
             $objs->created_by = 1;
             $objs->description = '<span class="text-semi-bold">You have an new appointment on '.$requestData['date'].' at '.$requestData['time'].' for '.$title.'</span>';

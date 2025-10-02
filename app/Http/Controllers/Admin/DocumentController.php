@@ -2,8 +2,8 @@
 namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 
-use App\Document;
-use App\Signer;
+use App\Models\Document;
+use App\Models\Signer;
 use Illuminate\Http\Request;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Illuminate\Support\Str;
@@ -13,13 +13,13 @@ use Illuminate\Support\Facades\Storage;
 use Smalot\PdfParser\Parser;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
-use App\ActivitiesLog;
-use App\ClientMatter;
-use App\Admin;
+use App\Models\ActivitiesLog;
+use App\Models\ClientMatter;
+use App\Models\Admin;
 use Illuminate\Support\Facades\Auth;
-use App\UploadChecklist;
-use App\Email;
-use App\MailReport;
+use App\Models\UploadChecklist;
+use App\Models\Email;
+use App\Models\MailReport;
 
 class DocumentController extends Controller
 {
@@ -422,7 +422,7 @@ class DocumentController extends Controller
         }
 
         try {
-            $document = \App\Document::findOrFail($documentId); //dd($document);
+            $document = \App\Models\Document::findOrFail($documentId); //dd($document);
             $url = $document->myfile;
             $pdfPath = null;
             $s3Key = null;
@@ -585,7 +585,7 @@ class DocumentController extends Controller
         }
 
         //$document = auth()->user()->documents()->findOrFail($documentId);
-        $document = \App\Document::findOrFail($documentId);
+        $document = \App\Models\Document::findOrFail($documentId);
 
         // Updated validation for percentages
         $request->validate([
@@ -652,7 +652,7 @@ class DocumentController extends Controller
         if ($documentId <= 0) {
             return back()->withErrors(['error' => 'Invalid document ID.']);
         }
-        $document = \App\Document::findOrFail($documentId);
+        $document = \App\Models\Document::findOrFail($documentId);
 
         // Enhanced validation for email and name
         /*$request->validate([
@@ -793,7 +793,7 @@ class DocumentController extends Controller
 
                     if($sendMail){
                         //Save to mail reports table
-                        $obj5 = new \App\MailReport;
+                        $obj5 = new \App\Models\MailReport;
                         $obj5->user_id 		=  @Auth::guard('admin')->user()->id;
                         $obj5->from_mail 	=  $request->email_from;
                         $obj5->to_mail 		=  $document->client_id;
@@ -811,7 +811,7 @@ class DocumentController extends Controller
                                 $checklistfiles = $request->checklistfile;
                                 $attachments = array();
                                 foreach($checklistfiles as $checklistfile){
-                                    $filechecklist =  \App\UploadChecklist::where('id', $checklistfile)->first();
+                                    $filechecklist =  \App\Models\UploadChecklist::where('id', $checklistfile)->first();
                                     if($filechecklist){
                                         $attachments[] = array('file_name' => $filechecklist->name,'file_url' => $filechecklist->file);
                                     }
@@ -1281,9 +1281,9 @@ class DocumentController extends Controller
                 $docSigned = $document->save();
 
                 if( $docSigned && $document->doc_type == 'agreement'){
-                    $clientMatterInfo = \App\ClientMatter::select('client_unique_matter_no','sel_person_responsible')->where('id', $document->client_matter_id)->first();
+                    $clientMatterInfo = \App\Models\ClientMatter::select('client_unique_matter_no','sel_person_responsible')->where('id', $document->client_matter_id)->first();
                     if(isset($clientMatterInfo->sel_person_responsible) && $clientMatterInfo->sel_person_responsible != ''){
-                        $docSignerInfo = \App\Admin::select('first_name','last_name','client_id')->where('id', $document->client_id)->first();
+                        $docSignerInfo = \App\Models\Admin::select('first_name','last_name','client_id')->where('id', $document->client_id)->first();
                         if( $docSignerInfo){
                             $docSignerFullName = $docSignerInfo->first_name.' '.$docSignerInfo->last_name;
                             $docSignerClientId = $docSignerInfo->client_id;
@@ -1302,7 +1302,7 @@ class DocumentController extends Controller
                         $objsupd = $objs->save();
                         if($objsupd){
                             //update client matter table
-                            \App\ClientMatter::where('id', $document->client_matter_id)->update(['updated_at_type' => 'signed','updated_at' => now()]);
+                            \App\Models\ClientMatter::where('id', $document->client_matter_id)->update(['updated_at_type' => 'signed','updated_at' => now()]);
                         }
                     }
                 }
@@ -1371,7 +1371,7 @@ class DocumentController extends Controller
     public function downloadSignedAndThankyou($id)
     {
         try {
-            $document = \App\Document::findOrFail($id);
+            $document = \App\Models\Document::findOrFail($id);
             if ($document->signed_doc_link) {
                 $signedDocUrl = $document->signed_doc_link;
                 // Try to parse the S3 key from the URL
@@ -1422,7 +1422,7 @@ class DocumentController extends Controller
     {
         $downloadUrl = null;
         if ($id) {
-            $document = \App\Document::find($id);
+            $document = \App\Models\Document::find($id);
             if ($document && $document->signed_doc_link) {
                 $parsed = parse_url($document->signed_doc_link);
                 if (isset($parsed['path'])) {
@@ -1463,7 +1463,7 @@ class DocumentController extends Controller
         }
 
         try {
-            $document = \App\Document::findOrFail($documentId); //dd($document);
+            $document = \App\Models\Document::findOrFail($documentId); //dd($document);
             $signer = $document->signers()->findOrFail($signerId);
 
             // Verify signer belongs to this document

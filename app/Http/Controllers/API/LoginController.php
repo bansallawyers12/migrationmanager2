@@ -6,9 +6,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\API\BaseController as BaseController;
 
-use App\User;
-use App\PasswordResetLink;
-use App\Admin;
+use App\Models\User;
+use App\Models\PasswordResetLink;
+use App\Models\Admin;
 use Validator;
 
 class LoginController extends BaseController

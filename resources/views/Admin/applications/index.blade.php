@@ -43,7 +43,7 @@
 										<div class="col-md-4">
 											<div class="form-group">
 											    <?php
-											    $par = \App\Partner::where('id', Request::get('partner'))->first();
+											    $par = \App\Models\Partner::where('id', Request::get('partner'))->first();
 											    ?>
 												<label for="partner" class="col-form-label">Partner</label>
 												{{ Form::text('partner', @$par->partner_name, array('class' => 'form-control agent_company_name', 'data-valid'=>'', 'autocomplete'=>'off','placeholder'=>'Partner', 'id' => 'partner', 'onkeyup' => "suggest(this.value)" )) }}
@@ -102,11 +102,11 @@
 									@if(@$totalData !== 0)
 									@foreach (@$lists as $list)
 									<?php
-									$productdetail = \App\Product::where('id', $list->product_id)->first();
-									$partnerdetail = \App\Partner::where('id', $list->partner_id)->first();
-									$clientdetail = \App\Admin::where('id', $list->client_id)->first();
-									$PartnerBranch = \App\PartnerBranch::where('id', $list->branch)->first();
-									$workflow = \App\Workflow::where('id', $list->workflow)->first();
+									$productdetail = \App\Models\Product::where('id', $list->product_id)->first();
+									$partnerdetail = \App\Models\Partner::where('id', $list->partner_id)->first();
+									$clientdetail = \App\Models\Admin::where('id', $list->client_id)->first();
+									$PartnerBranch = \App\Models\PartnerBranch::where('id', $list->branch)->first();
+									$workflow = \App\Models\Workflow::where('id', $list->workflow)->first();
 									?>
 									<tbody class="tdata">
 										<tr id="id_{{@$list->id}}">

@@ -7,9 +7,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 
-use App\Admin;
-use App\MatterOtherEmailTemplate; 
-use App\Matter;
+use App\Models\Admin;
+use App\Models\MatterOtherEmailTemplate; 
+use App\Models\Matter;
   
 use Auth; 
 use Illuminate\Support\Facades\Config;

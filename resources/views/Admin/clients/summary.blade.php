@@ -223,7 +223,7 @@
                                 @if(isset($fetchedData->age) && $fetchedData->age != '')
                                     {{ $fetchedData->age }}
                                     @php
-                                        $verifiedDob = \App\Admin::where('id',$fetchedData->id)->whereNotNull('dob_verified_date')->first();
+                                        $verifiedDob = \App\Models\Admin::where('id',$fetchedData->id)->whereNotNull('dob_verified_date')->first();
                                     @endphp
                                     @if($verifiedDob)
                                         <i class="fas fa-check-circle"></i>
@@ -277,11 +277,11 @@
                             <div class="info-label">Email Addresses:</div>
                             <div class="info-value">
                                 @php
-                                    if( \App\ClientEmail::where('client_id', $fetchedData->id)->exists()) {
-                                        $clientEmails = \App\ClientEmail::select('email','email_type')->where('client_id', $fetchedData->id)->get();
+                                    if( \App\Models\ClientEmail::where('client_id', $fetchedData->id)->exists()) {
+                                        $clientEmails = \App\Models\ClientEmail::select('email','email_type')->where('client_id', $fetchedData->id)->get();
                                     } else {
-                                        if( \App\Admin::where('id', $fetchedData->id)->exists()){
-                                            $clientEmails = \App\Admin::select('email','email_type')->where('id', $fetchedData->id)->get();
+                                        if( \App\Models\Admin::where('id', $fetchedData->id)->exists()){
+                                            $clientEmails = \App\Models\Admin::select('email','email_type')->where('id', $fetchedData->id)->get();
                                         } else {
                                             $clientEmails = array();
                                         }
@@ -290,7 +290,7 @@
                                 @if(!empty($clientEmails) && count($clientEmails) > 0)
                                     @foreach($clientEmails as $emailVal)
                                         @php
-                                            $verifiedEmail = \App\Admin::where('id',$fetchedData->id)->whereNotNull('email_verified_date')->first();
+                                            $verifiedEmail = \App\Models\Admin::where('id',$fetchedData->id)->whereNotNull('email_verified_date')->first();
                                         @endphp
                                         <div style="margin-bottom: 5px;">
                                             {{ $emailVal->email }}
@@ -317,11 +317,11 @@
                             <div class="info-label">Phone Numbers:</div>
                             <div class="info-value">
                                 @php
-                                    if( \App\ClientContact::where('client_id', $fetchedData->id)->exists()) {
-                                        $clientContacts = \App\ClientContact::select('phone','country_code','contact_type')->where('client_id', $fetchedData->id)->where('contact_type', '!=', 'Not In Use')->get();
+                                    if( \App\Models\ClientContact::where('client_id', $fetchedData->id)->exists()) {
+                                        $clientContacts = \App\Models\ClientContact::select('phone','country_code','contact_type')->where('client_id', $fetchedData->id)->where('contact_type', '!=', 'Not In Use')->get();
                                     } else {
-                                        if( \App\Admin::where('id', $fetchedData->id)->exists()){
-                                            $clientContacts = \App\Admin::select('phone','country_code','contact_type')->where('id', $fetchedData->id)->get();
+                                        if( \App\Models\Admin::where('id', $fetchedData->id)->exists()){
+                                            $clientContacts = \App\Models\Admin::select('phone','country_code','contact_type')->where('id', $fetchedData->id)->get();
                                         } else {
                                             $clientContacts = array();
                                         }
@@ -330,7 +330,7 @@
                                 @if(!empty($clientContacts) && count($clientContacts) > 0)
                                     @foreach($clientContacts as $conVal)
                                         @php
-                                            $verifiedNumber = \App\Admin::where('id',$fetchedData->id)->whereNotNull('phone_verified_date')->first();
+                                            $verifiedNumber = \App\Models\Admin::where('id',$fetchedData->id)->whereNotNull('phone_verified_date')->first();
                                             $country_code = isset($conVal->country_code) && $conVal->country_code != "" ? $conVal->country_code : "";
                                         @endphp
                                         <div style="margin-bottom: 5px;">
@@ -358,7 +358,7 @@
                             <div class="info-label">Residential Address:</div>
                             <div class="info-value">
                                 @php
-                                    $postcode_Info = App\ClientAddress::select('zip','address')->where('client_id', $fetchedData->id)->latest('id')->first();
+                                    $postcode_Info = App\Models\ClientAddress::select('zip','address')->where('client_id', $fetchedData->id)->latest('id')->first();
                                 @endphp
                                 @if($postcode_Info && $postcode_Info->zip != "")
                                     {{ $postcode_Info->zip }}
@@ -384,7 +384,7 @@
                 <div class="section-content">
                     <div class="info-grid">
                         @php
-                            $visa_Info = App\ClientVisaCountry::select('visa_country','visa_type','visa_expiry_date','visa_grant_date','visa_description')->where('client_id', $fetchedData->id)->latest('id')->first();
+                            $visa_Info = App\Models\ClientVisaCountry::select('visa_country','visa_type','visa_expiry_date','visa_grant_date','visa_description')->where('client_id', $fetchedData->id)->latest('id')->first();
                         @endphp
                         <div class="info-item">
                             <div class="info-label">Country of Passport:</div>
@@ -395,11 +395,11 @@
                             <div class="info-value">
                                 @if($visa_Info && $visa_Info->visa_type != "")
                                     @php
-                                        $Matter_get = App\Matter::select('id','title','nick_name')->where('id',$visa_Info->visa_type)->first();
+                                        $Matter_get = App\Models\Matter::select('id','title','nick_name')->where('id',$visa_Info->visa_type)->first();
                                     @endphp
                                     @if(!empty($Matter_get))
                                         @php
-                                            $verifiedVisa = \App\Admin::where('id',$fetchedData->id)->whereNotNull('visa_expiry_verified_at')->first();
+                                            $verifiedVisa = \App\Models\Admin::where('id',$fetchedData->id)->whereNotNull('visa_expiry_verified_at')->first();
                                         @endphp
                                         {{ $Matter_get->title }} ({{ $Matter_get->nick_name }})
                                         @if($verifiedVisa)
@@ -451,7 +451,7 @@
                 <div class="section-content">
                     <div class="info-grid">
                         @php
-                            $clientOccupation_Info = App\ClientOccupation::select('skill_assessment','nomi_occupation','occupation_code','list','visa_subclass','dates')->where('client_id', $fetchedData->id)->latest('id')->first();
+                            $clientOccupation_Info = App\Models\ClientOccupation::select('skill_assessment','nomi_occupation','occupation_code','list','visa_subclass','dates')->where('client_id', $fetchedData->id)->latest('id')->first();
                         @endphp
                         <div class="info-item">
                             <div class="info-label">NOMI Occupation:</div>
@@ -485,7 +485,7 @@
                 <div class="section-content">
                     <div class="info-grid">
                         @php
-                            $clientTest_Info = App\ClientTestScore::select('test_type','listening','reading','writing','speaking','overall_score','test_date')->where('client_id', $fetchedData->id)->latest('id')->first();
+                            $clientTest_Info = App\Models\ClientTestScore::select('test_type','listening','reading','writing','speaking','overall_score','test_date')->where('client_id', $fetchedData->id)->latest('id')->first();
                         @endphp
                         @if($clientTest_Info && $clientTest_Info->test_type != "")
                             <div class="info-item">
@@ -534,7 +534,7 @@
 
             <!-- Qualifications -->
             @php
-                $clientQualification_Info = App\ClientQualification::select('level','name','qual_campus','finish_date')->where('client_id', $fetchedData->id)->orderBy('id','desc')->get();
+                $clientQualification_Info = App\Models\ClientQualification::select('level','name','qual_campus','finish_date')->where('client_id', $fetchedData->id)->orderBy('id','desc')->get();
             @endphp
             @if(!empty($clientQualification_Info) && $clientQualification_Info->count() > 0)
             <div class="section">
@@ -559,7 +559,7 @@
 
             <!-- Experience -->
             @php
-                $clientExperience_Info = App\ClientExperience::select('job_title','job_country','job_start_date','job_finish_date')->where('client_id', $fetchedData->id)->orderBy('id','desc')->get();
+                $clientExperience_Info = App\Models\ClientExperience::select('job_title','job_country','job_start_date','job_finish_date')->where('client_id', $fetchedData->id)->orderBy('id','desc')->get();
             @endphp
             @if(!empty($clientExperience_Info) && $clientExperience_Info->count() > 0)
             <div class="section">
@@ -583,7 +583,7 @@
 
             <!-- Family Details -->
             @php
-                $clientFamilyDetails_Info = App\ClientRelationship::where('client_id', $fetchedData->id)->orderBy('id','desc')->get();
+                $clientFamilyDetails_Info = App\Models\ClientRelationship::where('client_id', $fetchedData->id)->orderBy('id','desc')->get();
             @endphp
             @if(!empty($clientFamilyDetails_Info) && $clientFamilyDetails_Info->count() > 0)
             <div class="section">
@@ -598,7 +598,7 @@
                             @php
                                 if(isset($family->related_client_id) && $family->related_client_id != "") {
                                     // Existing Client - fetch from Admin table
-                                    $relatedClientInfo = App\Admin::select('client_id','first_name','last_name','dob')->where('id', $family->related_client_id)->first();
+                                    $relatedClientInfo = App\Models\Admin::select('client_id','first_name','last_name','dob')->where('id', $family->related_client_id)->first();
                                     if($relatedClientInfo) {
                                         $relatedClientName = $relatedClientInfo->first_name . ' ' . $relatedClientInfo->last_name;
                                         $relatedClientId = $relatedClientInfo->client_id;
@@ -628,7 +628,7 @@
 
             <!-- Spouse Details -->
             @php
-                $clientSpouseDetail_Info = App\ClientSpouseDetail::where('client_id', $fetchedData->id)->orderBy('id','desc')->get();
+                $clientSpouseDetail_Info = App\Models\ClientSpouseDetail::where('client_id', $fetchedData->id)->orderBy('id','desc')->get();
             @endphp
             @if(!empty($clientSpouseDetail_Info) && $clientSpouseDetail_Info->count() > 0)
             <div class="section">
@@ -676,7 +676,7 @@
 
             <!-- EOI Reference Information -->
             @php
-                $clientEoi_Info = App\ClientEoiReference::where('client_id', $fetchedData->id)->orderBy('id','desc')->get();
+                $clientEoi_Info = App\Models\ClientEoiReference::where('client_id', $fetchedData->id)->orderBy('id','desc')->get();
             @endphp
             @if(!empty($clientEoi_Info) && $clientEoi_Info->count() > 0)
             <div class="section">

@@ -746,7 +746,7 @@ if( isset($fetchedData->type) && $fetchedData->type == "lead"){?>
                                                 <option value="Australia" {{ @$fetchedData->country_passport == 'Australia' ? 'selected' : '' }}>Australia</option>
 
                                                 <?php
-                                                foreach (\App\Country::all() as $list) {
+                                                foreach (\App\Models\Country::all() as $list) {
                                                     // Skip India and Australia since they've already been added manually
                                                     if ($list->name == 'India' || $list->name == 'Australia') {
                                                         continue;
@@ -795,7 +795,7 @@ if( isset($fetchedData->type) && $fetchedData->type == "lead"){?>
                                                         <label for="visa_type_{{ $key }}">Visa Type </label>
                                                         <select name="visa_type[]" id="visa_type_{{ $key }}" class="form-control field-input visaTypeCls"  disabled>
                                                             <option value="">Select Visa Type</option>
-                                                            @foreach(\App\Matter::select('id','title','nick_name')->where('status',1)->orderby('id','ASC')->get() as $matterlist)
+                                                            @foreach(\App\Models\Matter::select('id','title','nick_name')->where('status',1)->orderby('id','ASC')->get() as $matterlist)
                                                             <option value="{{ $matterlist->id }}" {{ $visaCountry->visa_type == $matterlist->id ? 'selected' : '' }}>{{ $matterlist->title }} ({{ @$matterlist->nick_name }})</option>
                                                             @endforeach
                                                         </select>
@@ -845,7 +845,7 @@ if( isset($fetchedData->type) && $fetchedData->type == "lead"){?>
                                                     <!--<option value="Student Visa">Student Visa</option>
                                                     <option value="Work Visa">Work Visa</option>
                                                     <option value="Tourist Visa">Tourist Visa</option>-->
-                                                    @foreach(\App\Matter::select('id','title','nick_name')->where('status',1)->orderby('id','ASC')->get() as $matterlist)
+                                                    @foreach(\App\Models\Matter::select('id','title','nick_name')->where('status',1)->orderby('id','ASC')->get() as $matterlist)
                                                     <option value="{{ $matterlist->id }}">{{ $matterlist->title }} ({{ @$matterlist->nick_name }})</option>
                                                     @endforeach
                                                 </select>
@@ -919,7 +919,7 @@ if( isset($fetchedData->type) && $fetchedData->type == "lead"){?>
                                                         <!--<option value="Student Visa">Student Visa</option>
                                                         <option value="Work Visa">Work Visa</option>
                                                         <option value="Tourist Visa">Tourist Visa</option>-->
-                                                        @foreach(\App\Matter::select('id','title','nick_name')->where('status',1)->orderby('id','ASC')->get() as $matterlist)
+                                                        @foreach(\App\Models\Matter::select('id','title','nick_name')->where('status',1)->orderby('id','ASC')->get() as $matterlist)
                                                         <option value="{{ $matterlist->id }}">{{ $matterlist->title }} ({{ @$matterlist->nick_name }})</option>
                                                         @endforeach
                                                     </select>
@@ -1025,7 +1025,7 @@ if( isset($fetchedData->type) && $fetchedData->type == "lead"){?>
                                                         <label for="visa_type_${rowIndex}">Visa Type</label>
                                                         <select name="visa_type[]" id="visa_type_${rowIndex}" class="form-control field-input visaTypeCls">
                                                             <option value="">Select Visa Type</option>
-                                                            @foreach(\App\Matter::select('id','title','nick_name')->where('status',1)->orderby('id','ASC')->get() as $matterlist)
+                                                            @foreach(\App\Models\Matter::select('id','title','nick_name')->where('status',1)->orderby('id','ASC')->get() as $matterlist)
                                                             <option value="{{ $matterlist->id }}">{{ $matterlist->title }} ({{ @$matterlist->nick_name }})</option>
                                                             @endforeach
                                                         </select>
@@ -1701,7 +1701,7 @@ if( isset($fetchedData->type) && $fetchedData->type == "lead"){?>
                                                                 <option value="Australia" {{ @$qualification->country == 'Australia' ? 'selected' : '' }}>Australia </option>
                                                                 <option value="India" {{ @$qualification->country == 'India' ? 'selected' : '' }}>India</option>
                                                                 <?php
-                                                                foreach (\App\Country::all() as $list) {
+                                                                foreach (\App\Models\Country::all() as $list) {
                                                                     // Skip India and Australia since they've already been added manually
                                                                     if ($list->name == 'Australia' || $list->name == 'India') {
                                                                         continue;
@@ -1801,7 +1801,7 @@ if( isset($fetchedData->type) && $fetchedData->type == "lead"){?>
                                                                 <option value="India" {{ @$qualification->country == 'India' ? 'selected' : '' }}>India</option>
 
                                                                 <?php
-                                                                foreach (\App\Country::all() as $list) {
+                                                                foreach (\App\Models\Country::all() as $list) {
                                                                 // Skip India and Australia since they've already been added manually
                                                                 if ($list->name == 'Australia' || $list->name == 'India') {
                                                                 continue;
@@ -1973,7 +1973,7 @@ if( isset($fetchedData->type) && $fetchedData->type == "lead"){?>
                                                                 <option value="India" {{ @$qualification->country == 'India' ? 'selected' : '' }}>India</option>
 
                                                                 <?php
-                                                                foreach (\App\Country::all() as $list) {
+                                                                foreach (\App\Models\Country::all() as $list) {
                                                                 // Skip India and Australia since they've already been added manually
                                                                 if ($list->name == 'Australia' || $list->name == 'India') {
                                                                 continue;
@@ -2131,7 +2131,7 @@ if( isset($fetchedData->type) && $fetchedData->type == "lead"){?>
                                                                 <select name="job_country[]" id="job_country_{{ $index }}" class="form-control jobcountryCls" disabled>
                                                                     <option value="Australia" {{ $experience->job_country == 'Australia' ? 'selected' : '' }}>Australia</option>
                                                                     <option value="India" {{ $experience->job_country == 'India' ? 'selected' : '' }}>India</option>
-                                                                    @foreach(\App\Country::all() as $list)
+                                                                    @foreach(\App\Models\Country::all() as $list)
                                                                         @if($list->name != 'Australia' && $list->name != 'India')
                                                                             <option value="{{ $list->name }}" {{ $experience->job_country == $list->name ? 'selected' : '' }}>{{ $list->name }}</option readonly>
                                                                         @endif
@@ -2212,7 +2212,7 @@ if( isset($fetchedData->type) && $fetchedData->type == "lead"){?>
                                                                 <select name="job_country[]" id="job_country_${expIndexByDefault}" class="form-control jobcountryCls">
                                                                     <option value="Australia">Australia</option>
                                                                     <option value="India">India</option>
-                                                                    @foreach(\App\Country::all() as $list)
+                                                                    @foreach(\App\Models\Country::all() as $list)
                                                                         @if($list->name != 'Australia' && $list->name != 'India')
                                                                             <option value="{{ $list->name }}">{{ $list->name }}</option>
                                                                         @endif
@@ -2354,7 +2354,7 @@ if( isset($fetchedData->type) && $fetchedData->type == "lead"){?>
                                                             <select name="job_country[]" id="job_country_${jobIndex}" class="form-control jobcountryCls">
                                                                 <option value="Australia" >Australia</option>
                                                                 <option value="India">India</option>
-                                                                @foreach(\App\Country::all() as $list)
+                                                                @foreach(\App\Models\Country::all() as $list)
                                                                     @if($list->name != 'Australia' && $list->name != 'India')
                                                                         <option value="{{ $list->name }}">{{ $list->name }}</option>
                                                                     @endif
@@ -3942,7 +3942,7 @@ if( isset($fetchedData->type) && $fetchedData->type == "lead"){?>
 											<select style="padding: 0px 5px;" name="source" id="lead_source" class="form-control select2" data-valid="">
 												<option value="">- Source -</option>
 												<option value="Sub Agent">Sub Agent</option>
-												@foreach(\App\Source::all() as $sources)
+												@foreach(\App\Models\Source::all() as $sources)
 													<option value="{{$sources->name}}" @if(@$fetchedData->source == $sources->name) selected @endif>{{$sources->name}}</option>
 												@endforeach
 											</select>
@@ -3958,7 +3958,7 @@ if( isset($fetchedData->type) && $fetchedData->type == "lead"){?>
 											<label for="subagent">Sub Agent <span class="span_req">*</span></label>
 											<select class="form-control select2" name="subagent">
 												<option>-- Choose a sub agent --</option>
-												@foreach(\App\Agent::all() as $agentlist)
+												@foreach(\App\Models\AgentDetails::all() as $agentlist)
 													<option <?php if(@$fetchedData->agent_id == $agentlist->id){ echo 'selected'; } ?> value="{{$agentlist->id}}">{{$agentlist->full_name}}</option>
 												@endforeach
 											</select>
@@ -3981,7 +3981,7 @@ if( isset($fetchedData->type) && $fetchedData->type == "lead"){?>
 											<select multiple class="form-control select2" name="tagname[]">
 												<option value="">-- Search & Select tag --</option>
 												<?php
-												foreach(\App\Tag::all() as $tags){
+												foreach(\App\Models\Tag::all() as $tags){
 													?>
 													<option <?php if(in_array($tags->id, $explodee)){ echo 'selected'; } ?>  value="{{$tags->id}}">{{$tags->name}}</option>
 													<?php
@@ -4010,7 +4010,7 @@ if( isset($fetchedData->type) && $fetchedData->type == "lead"){?>
 <?php if($fetchedData->related_files != ''){
     $exploderel = explode(',', $fetchedData->related_files);
     foreach($exploderel AS $EXP){
-        $relatedclients = \App\Admin::where('id', $EXP)->first();
+        $relatedclients = \App\Models\Admin::where('id', $EXP)->first();
 ?>
 <input type="hidden" class="relatedfile" data-email="<?php echo $relatedclients->email; ?>" data-name="<?php echo $relatedclients->first_name.' '.$relatedclients->last_name; ?>" data-id="<?php echo $relatedclients->id; ?>">
 <?php

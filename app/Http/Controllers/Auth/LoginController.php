@@ -6,10 +6,10 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 
-use App\WebsiteSetting;
-use App\Country;
-use App\State;
-use App\SeoPage;
+use App\Models\WebsiteSetting;
+use App\Models\Country;
+use App\Models\State;
+use App\Models\SeoPage;
 
 class LoginController extends Controller
 {

@@ -355,7 +355,7 @@
 								<label for="email_from">From <span class="span_req">*</span></label>
 								<select class="form-control" name="email_from">
 									<?php
-									$emails = \App\Email::select('email')->where('status', 1)->get();
+									$emails = \App\Models\Email::select('email')->where('status', 1)->get();
 									foreach($emails as $email){
 										?>
 											<option value="<?php echo $email->email; ?>"><?php echo $email->email; ?></option>
@@ -401,7 +401,7 @@
 								<label for="template">Templates </label>
 								<select data-valid="" class="form-control select2 selecttemplate" name="template">
 									<option value="">Select</option>
-									@foreach(\App\CrmEmailTemplate::all() as $list)
+									@foreach(\App\Models\CrmEmailTemplate::all() as $list)
 										<option value="{{$list->id}}">{{$list->name}}</option>
 									@endforeach
 								</select>

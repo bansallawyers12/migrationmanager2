@@ -9,7 +9,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use App\Admin;
+use App\Models\Admin;
 use App\Http\Controllers\API\ServiceAccountController;
 use Illuminate\Http\Request;
 

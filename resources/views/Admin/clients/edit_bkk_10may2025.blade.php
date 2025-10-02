@@ -115,7 +115,7 @@
                                     <option value="India" {{ @$fetchedData->country_passport == 'India' ? 'selected' : '' }}>India</option>
                                     <option value="Australia" {{ @$fetchedData->country_passport == 'Australia' ? 'selected' : '' }}>Australia</option>
                                     <?php
-                                    foreach (\App\Country::all() as $list) {
+                                    foreach (\App\Models\Country::all() as $list) {
                                         // Skip India and Australia since they've already been added manually
                                         if ($list->name == 'India' || $list->name == 'Australia') {
                                             continue;
@@ -235,7 +235,7 @@
                                             <label>Visa Type / Subclass</label>
                                             <select name="visa_type_hidden[{{ $index }}]">
                                                 <option value="">Select Visa Type</option>
-                                                @foreach(\App\Matter::select('id','title','nick_name')->where('status',1)->orderby('id','ASC')->get() as $matterlist)
+                                                @foreach(\App\Models\Matter::select('id','title','nick_name')->where('status',1)->orderby('id','ASC')->get() as $matterlist)
                                                 <option value="{{ $matterlist->id }}" {{ $visa->visa_type == $matterlist->id ? 'selected' : '' }}>{{ $matterlist->title }} ({{ @$matterlist->nick_name }})</option>
                                                 @endforeach
                                             </select>
@@ -347,7 +347,7 @@
                                                 <option value="India" {{ @$qualification->country == 'India' ? 'selected' : '' }}>India</option>
                                                 <option value="Australia" {{ @$qualification->country == 'Australia' ? 'selected' : '' }}>Australia</option>
                                                 <?php
-                                                foreach (\App\Country::all() as $list) {
+                                                foreach (\App\Models\Country::all() as $list) {
                                                     // Skip India and Australia since they've already been added manually
                                                     if ($list->name == 'India' || $list->name == 'Australia') {
                                                         continue;
@@ -404,7 +404,7 @@
                                                 <option value="India" {{ @$experience->job_country == 'India' ? 'selected' : '' }}>India</option>
                                                 <option value="Australia" {{ @$experience->job_country == 'Australia' ? 'selected' : '' }}>Australia</option>
                                                 <?php
-                                                foreach (\App\Country::all() as $list) {
+                                                foreach (\App\Models\Country::all() as $list) {
                                                     // Skip India and Australia since they've already been added manually
                                                     if ($list->name == 'India' || $list->name == 'Australia') {
                                                         continue;

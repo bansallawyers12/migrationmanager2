@@ -1,38 +1,11 @@
-@extends('layouts.admin')
+@extends('layouts.admin_client_detail')
 @section('title', 'Invoices')
 
 @section('content')
 
-<!-- Content Wrapper. Contains page content -->
-<div class="content-wrapper">
-	<div class="content-header">
-		<div class="container-fluid">
-			<div class="row mb-2">
-				<div class="col-sm-6">
-					<h1 class="m-0 text-dark">Invoices</h1>
-				</div><!-- /.col -->
-				<div class="col-sm-6">
-					<ol class="breadcrumb float-sm-right">
-						<li class="breadcrumb-item"><a href="#">Home</a></li>
-						<li class="breadcrumb-item active">Invoices</li>
-					</ol>
-				</div><!-- /.col -->
-			</div><!-- /.row -->
-		</div><!-- /.container-fluid -->
-	</div>
-	<!-- /.content-header -->	
-	<!-- Breadcrumb start-->
-	<!--<ol class="breadcrumb">
-		<li class="breadcrumb-item active">
-			Home / <b>Dashboard</b>
-		</li>
-		@include('../Elements/Admin/breadcrumb')
-	</ol>-->
-	<!-- Breadcrumb end-->
-	
-	<!-- Main content --> 
-	<section class="content">
-		<div class="container-fluid">
+<div class="crm-container">
+	<div class="main-content">
+		<h1 class="m-0 text-dark mb-4">Invoices</h1>
 			<div class="row">
 				<div class="col-md-12">
 					<!-- Flash Message Start -->
@@ -104,7 +77,7 @@
 										}
 									?>
 								  </td>
-								  <?php $currencydata = \App\Currency::where('id',$list->currency_id)->first(); 
+								  <?php $currencydata = \App\Models\Currency::where('id',$list->currency_id)->first(); 
 								  
 								  ?>
 								  <td>{{date('d/m/Y',strtotime($list->due_date))}}</td> 
@@ -138,7 +111,6 @@
 					</div>	
 				</div>	
 			</div>
-		</div>
-	</section>
+	</div>
 </div>
 @endsection

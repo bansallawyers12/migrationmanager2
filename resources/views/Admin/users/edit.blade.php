@@ -129,7 +129,7 @@
 
 								<div class="form-group">
                                     <?php
-                                    $branchx = \App\Branch::all();
+                                    $branchx = \App\Models\Branch::all();
                                     ?>
 									<label for="office">Office</label>
 									<select class="form-control" data-valid="required" name="office">
@@ -150,7 +150,7 @@
 									<select name="team" id="team" class="form-control" data-valid="" autocomplete="new-password">
 										<option value="">Choose One...</option>
 
-											@foreach (\App\Team::all() as $tm)
+											@foreach (\App\Models\Team::all() as $tm)
 												<option @if($fetchedData->team == $tm->id) selected @endif value="{{ @$tm->id }}">{{ @$tm->name }}</option>
 											@endforeach
 

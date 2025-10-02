@@ -104,7 +104,7 @@
 								@endif
 								</div>
 								<?php
-									$assignee = \App\Admin::where('id',@$fetchedData->assign_to)->first();
+									$assignee = \App\Models\Admin::where('id',@$fetchedData->assign_to)->first();
 								?>
 								<div class="col-md-12"> 
 									<div class="client_assign client_info_tags"> 
@@ -144,7 +144,7 @@
 										</a>
 										<div class="dropdown-menu" x-placement="top-start">
 										<?php
-										$followuptypes = \App\FollowupType::where('show',1)->get();
+										$followuptypes = \App\Models\FollowupType::where('show',1)->get();
 										foreach($followuptypes as $followuptype){
 										?>
 											<a class="dropdown-item opennotepopup" data-notename="{{$followuptype->name}}" data-notetype="{{$followuptype->type}}" tabindex="-1" href="javascript:;">{{$followuptype->name}}</a>
@@ -341,7 +341,7 @@
 								<label for="template">Templates </label>
 								<select data-valid="" class="form-control select2 selecttemplate" name="template">
 									<option value="">Select</option>
-									@foreach(\App\CrmEmailTemplate::all() as $list)
+									@foreach(\App\Models\CrmEmailTemplate::all() as $list)
 										<option value="{{$list->id}}">{{$list->name}}</option>
 									@endforeach
 								</select>

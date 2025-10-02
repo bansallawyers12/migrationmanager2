@@ -7,8 +7,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 
-use App\Admin;
-use App\Contact;
+use App\Models\Admin;
+use App\Models\Contact;
  
 use Auth;  
 use Config;

@@ -15,7 +15,7 @@
 	</head>
 	<body>
 	<?php
-$admin = \App\Admin::where('role',1)->where('id',$fetchedData->user_id)->first();
+$admin = \App\Models\Admin::where('role',1)->where('id',$fetchedData->user_id)->first();
 	
 	?>
 		<div class="invoice_table" style="padding: 10px;">
@@ -80,7 +80,7 @@ $admin = \App\Admin::where('role',1)->where('id',$fetchedData->user_id)->first()
 													<?php
 								$i=1;
 								$l=0;
-								$getq = \App\QuotationInfo::where('quotation_id',$fetchedData->id)->get();
+								$getq = \App\Models\QuotationInfo::where('quotation_id',$fetchedData->id)->get();
 								$totfare = 0;
 								foreach($getq as $q){
 									$servicefee = $q->service_fee;
@@ -90,9 +90,9 @@ $admin = \App\Admin::where('role',1)->where('id',$fetchedData->user_id)->first()
 									$netfare = $servicefee - $discount;
 									$exgrw = $netfare * $exg_rate;
 									$totfare += $exgrw;
-								$workflowdata = \App\Workflow::where('id',$q->workflow)->first();	
-								$Productdata = \App\Product::where('id',$q->product)->first();	
-								$Partnerdata = \App\Partner::where('id',$q->partner)->first();	
+								$workflowdata = \App\Models\Workflow::where('id',$q->workflow)->first();	
+								$Productdata = \App\Models\Product::where('id',$q->product)->first();	
+								$Partnerdata = \App\Models\Partner::where('id',$q->partner)->first();	
 									?>
 									<tr >
 										

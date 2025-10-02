@@ -1,13 +1,11 @@
-@extends('layouts.admin')
+@extends('layouts.admin_client_detail')
 @section('title', 'Teams')
 
 @section('content')
 
-<!-- Main Content -->
-<div class="main-content">
-	<section class="section">
-		<div class="section-body">
-		    @if(@$fetchedData)
+<div class="crm-container">
+	<div class="main-content">
+	    @if(@$fetchedData)
 			{{ Form::open(array('url' => 'admin/teams/edit', 'name'=>"add-visatype", 'autocomplete'=>'off', "enctype"=>"multipart/form-data")) }} 
 		    	<input type="hidden" name="id" value="{{$fetchedData->id}}">
 			@else
@@ -122,8 +120,7 @@
 					</div>
 				</div>
 			 {{ Form::close() }}	
-		</div>
-	</section>
+	</div>
 </div>
 
 @endsection

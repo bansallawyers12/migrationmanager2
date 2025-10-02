@@ -8,12 +8,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
-use App\Admin;
-use App\Product;
-use App\AcademicRequirement;
-use App\ProductAreaLevel;
-use App\FeeOption;
-use App\FeeOptionType;
+use App\Models\Admin;
+use App\Models\Product;
+use App\Models\AcademicRequirement;
+use App\Models\ProductAreaLevel;
+use App\Models\FeeOption;
+use App\Models\FeeOptionType;
  
 use Auth;
 use Config;
@@ -230,7 +230,7 @@ class ProductsController extends Controller
 		$squery = $request->q;
 		if($squery != ''){
 			
-			 $partners = \App\Admin::where('is_archived', '=', 0)
+			 $partners = \App\Models\Admin::where('is_archived', '=', 0)
        ->where('role', '=', 7)
        ->where(
            function($query) use ($squery) {
@@ -254,7 +254,7 @@ class ProductsController extends Controller
 		$squery = $request->q;
 		if($squery != ''){
 			
-			 $partners = \App\Admin::where('is_archived', '=', 0)
+			 $partners = \App\Models\Admin::where('is_archived', '=', 0)
        ->where('role', '=', 7)
        ->where( 
            function($query) use ($squery) {
@@ -334,8 +334,8 @@ class ProductsController extends Controller
 			}
 			else
 			{
-				$subjectarea = \App\SubjectArea::where('id', $obj->subject_area)->first();
-				$subject = \App\Subject::where('id', $obj->subject)->first();
+				$subjectarea = \App\Models\SubjectArea::where('id', $obj->subject_area)->first();
+				$subject = \App\Models\Subject::where('id', $obj->subject)->first();
 				$data = '<div class="row"><div class="col-md-4"><strong>Subject Area</strong><p>'.$subjectarea->name.'</p></div><div class="col-md-4"><strong>Subject</strong><p>'.$subject->name.'</p></div><div class="col-md-4"><strong>Degree Level</strong><p>'.$obj->degree.'</p></div></div>';
 				$response['status'] 	= 	true;
 				$response['message']	=	'You’ve successfully added a Subject Area.';
@@ -355,7 +355,7 @@ class ProductsController extends Controller
 							<select data-valid="" class="form-control subject_area select2" id="subjectlist" name="subject_area">
 									<option value="">Please Select Subject Area</option>
 									<?php
-									foreach(\App\SubjectArea::all() as $sublist){
+									foreach(\App\Models\SubjectArea::all() as $sublist){
 										?>
 										<option <?php if($ac->subject_area == $sublist->id){ echo 'selected'; } ?> value="<?php echo $sublist->id; ?>"><?php echo $sublist->name; ?></option>
 										<?php
@@ -373,7 +373,7 @@ class ProductsController extends Controller
 							<select data-valid="" class="form-control subject select2" id="subject" name="subject">
 									<option value="">Please Select Subject</option>
 									<?php
-									foreach(\App\Subject::where('subject_area',$ac->subject_area) ->orderby('name','ASC')->get() as $sublist){
+									foreach(\App\Models\Subject::where('subject_area',$ac->subject_area) ->orderby('name','ASC')->get() as $sublist){
 										?>
 										<option <?php if($ac->subject == $sublist->id){ echo 'selected'; } ?> value="<?php echo $sublist->id; ?>"><?php echo $sublist->name; ?></option>
 										<?php
@@ -470,7 +470,7 @@ class ProductsController extends Controller
 					</div>
 				</div>
 				<?php
-				$feeoptiontype = \App\FeeOptionType::where('fee_id', $feeoption->id)->get();
+				$feeoptiontype = \App\Models\FeeOptionType::where('fee_id', $feeoption->id)->get();
 				
 				?>
 				<div class="col-md-8">
@@ -530,7 +530,7 @@ return ob_get_clean();
 								<select class="form-control residencyelect2" name="country_residency" data-valid="required">
 								<option value="">Select Country</option>
 								<?php
-									foreach(\App\Country::all() as $list){
+									foreach(\App\Models\Country::all() as $list){
 										?>
 										<option <?php if($fetchedData->country == $list->name){ echo 'selected'; } ?> value="<?php echo @$list->name; ?>"><?php echo @$list->name; ?></option>
 										<?php
@@ -579,7 +579,7 @@ return ob_get_clean();
 									<?php
 									$total_fee = 0;
 									$i = 0;
-											$feeoptiontypes = \App\FeeOptionType::where('fee_id', $fetchedData->id)->get();
+											$feeoptiontypes = \App\Models\FeeOptionType::where('fee_id', $fetchedData->id)->get();
 												foreach($feeoptiontypes as $feeoptiontype){
 													$total_fee += $feeoptiontype->total_fee;
 									?>
@@ -587,7 +587,7 @@ return ob_get_clean();
 											<td>
 												<select data-valid="required" class="form-control course_fee_type " name="course_fee_type[]">
 													<option value="">Select Type</option>
-													<?php foreach(\App\FeeType::all() as $feetypes){ ?>
+													<?php foreach(\App\Models\FeeType::all() as $feetypes){ ?>
 													<option <?php if($feeoptiontype->fee_type == $feetypes->name){ echo 'selected'; } ?> value="<?php echo $feetypes->name; ?>"><?php echo $feetypes->name; ?></option>
 													<?php } ?>
 												

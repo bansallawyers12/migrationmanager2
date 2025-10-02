@@ -84,7 +84,7 @@
 								<div class="col-sm-12">
 									<div class="form-group"> 
 									<?php
-									$amount_rec = \App\InvoicePayment::where('invoice_id',$invoice->id)->get()->sum("amount_rec");
+									$amount_rec = \App\Models\InvoicePayment::where('invoice_id',$invoice->id)->get()->sum("amount_rec");
 									$baldue = $invoice->amount - $amount_rec;
 									$currency_sign = '₹';
 										 $replacesub = array('{due_amount}', '{invoice_no}');					

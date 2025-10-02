@@ -122,7 +122,7 @@
 								<select class="form-control timezoneselect2" name="partner" data-valid="required">
 									<option value="">Select</option>
 									<?php
-									foreach(\App\Partner::all() as $tlist){
+									foreach(\App\Models\Partner::all() as $tlist){
 										?>
 										<option value="<?php echo $tlist->id; ?>" ><?php echo $tlist->partner_name; ?></option>
 										<?php

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Redirect;
 
 use App\Classes\FileDurationClass;
 
-use App\FreeDownload;
+use App\Models\FreeDownload;
 
 use Auth;
 use Config;

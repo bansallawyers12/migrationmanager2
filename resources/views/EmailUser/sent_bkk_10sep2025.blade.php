@@ -44,14 +44,14 @@
 													<?php $i=0; ?>
 												@foreach (@$lists as $list)
                                                 <?php
-												$assign_user_info = \App\Admin::select('first_name','last_name','client_id')->where('id', $list->assign_client_id)->first();
+												$assign_user_info = \App\Models\Admin::select('first_name','last_name','client_id')->where('id', $list->assign_client_id)->first();
 												if($assign_user_info){
                                                     $assign_full_name = '<b style="color: limegreen;">'.$assign_user_info->first_name.' '.$assign_user_info->last_name.'('.$assign_user_info->client_id.')</b>';
                                                 } else {
                                                     $assign_full_name = 'NA';
                                                 }
 
-                                                $client_matter_info = \App\ClientMatter::join('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
+                                                $client_matter_info = \App\Models\ClientMatter::join('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
                                                 ->select('client_matters.id', 'matters.title','client_matters.client_unique_matter_no')
                                                 ->where('client_matters.id', $list->assign_client_matter_id)
                                                 ->first(); //dd($client_matter_info);
@@ -125,7 +125,7 @@
 
 						<select id="assign_client_id" name="assign_client_id" class="form-control select2 " style="width: 100%;" data-select2-id="1" tabindex="-1" aria-hidden="true" data-valid="required">
 							<option value="">Select Client</option>
-							@foreach(\App\Admin::Where('role','7')->Where('type','client')->get() as $ulist)
+							@foreach(\App\Models\Admin::Where('role','7')->Where('type','client')->get() as $ulist)
 							<option value="{{@$ulist->id}}">{{@$ulist->first_name}} {{@$ulist->last_name}}({{@$ulist->client_id}})</option>
 							@endforeach
 						</select>

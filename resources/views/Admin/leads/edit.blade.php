@@ -249,11 +249,11 @@
 									<div class="col-sm-3">
 										<div class="form-group"> 
 											<label for="visa_type">Visa Type</label>
-											<select class="form-control select2" name="visa_type">
-											<option value="">- Select Visa Type -</option>
-											@foreach(\App\VisaType::orderby('name', 'ASC')->get() as $visalist)
-												<option @if($fetchedData->visa_type == $visalist->name) selected @endif value="{{$visalist->name}}">{{$visalist->name}}</option>
-											@endforeach
+										<select class="form-control select2" name="visa_type">
+										<option value="">- Select Visa Type -</option>
+										@foreach(\App\Models\Matter::select('id', 'title', 'nick_name')->where('status', 1)->orderBy('title', 'ASC')->get() as $visalist)
+											<option @if($fetchedData->visa_type == $visalist->id) selected @endif value="{{$visalist->id}}">{{$visalist->title}} ({{@$visalist->nick_name}})</option>
+										@endforeach
 											</select>
 											@if ($errors->has('visa_type'))
 												<span class="custom-error" role="alert">
@@ -310,7 +310,7 @@
 											<label for="country_passport">Country of Passport</label>
 											<select class="form-control  select2" name="country_passport" >
 											<?php
-												foreach(\App\Country::all() as $list){
+												foreach(\App\Models\Country::all() as $list){
 													?>
 													<option <?php if(@$fetchedData->country_passport == $list->sortname){ echo 'selected'; } ?> value="{{@$list->sortname}}" >{{@$list->name}}</option>
 													<?php
@@ -399,7 +399,7 @@
 											<label for="country">Country</label>
 											<select class="form-control select2" name="country" >
 											<?php
-												foreach(\App\Country::all() as $list){
+												foreach(\App\Models\Country::all() as $list){
 													?>
 													<option <?php if(@$fetchedData->country == $list->sortname){ echo 'selected'; } ?> value="{{@$list->sortname}}" >{{@$list->name}}</option>
 													<?php
@@ -566,7 +566,7 @@
 											<label for="service">Service <span style="color:#ff0000;">*</span></label>
 												<select class="form-control select2" name="service" data-valid="required">
 											<option value="">- Select Lead Service -</option>
-													@foreach(\App\LeadService::orderby('name', 'ASC')->get() as $leadservlist)
+													@foreach(\App\Models\LeadService::orderby('name', 'ASC')->get() as $leadservlist)
 												<option @if($fetchedData->service == $leadservlist->name) selected @endif value="{{$leadservlist->name}}">{{$leadservlist->name}}</option>
 											@endforeach
 											</select>
@@ -583,9 +583,9 @@
 											<select style="padding: 0px 5px;" name="assign_to" id="assign_to" class="form-control select2" data-valid="required">
 											<option value="">Select User</option>
 												<?php
-												$admins = \App\Admin::where('role','!=',7)->orderby('first_name','ASC')->get();
+												$admins = \App\Models\Admin::where('role','!=',7)->orderby('first_name','ASC')->get();
 												foreach($admins as $admin){
-													 $branchname = \App\Branch::where('id',$admin->office_id)->first();
+													 $branchname = \App\Models\Branch::where('id',$admin->office_id)->first();
 												?>
 												<option @if(@$fetchedData->assign_to == $admin->id) selected @endif value="<?php echo $admin->id; ?>"><?php echo $admin->first_name.' '.$admin->last_name.' ('.@$branchname->office_name.')'; ?></option>
 												<?php } ?>
@@ -636,7 +636,7 @@
 											<label for="lead_source">Lead Source <span style="color:#ff0000;">*</span></label>
 											<select style="padding: 0px 5px;" name="lead_source" id="lead_source" class="form-control" data-valid="required">
 												<option value="">Lead Source</option>
-													@foreach(\App\Source::all() as $sources)
+													@foreach(\App\Models\Source::all() as $sources)
 											<option value="{{$sources->name}}" @if(@$fetchedData->lead_source == $sources->name) selected @endif>{{$sources->name}}</option>
 							@endforeach
 											
@@ -691,7 +691,7 @@
 if($fetchedData->related_files != ''){
     $exploder = explode(',', $fetchedData->related_files);
        foreach($exploder AS $EXP){ 
-			$relatedclients = \App\Admin::where('id', $EXP)->first();	
+			$relatedclients = \App\Models\Admin::where('id', $EXP)->first();	
 			?>
 			<input type="hidden" class="relatedfile" data-id="{{@$relatedclients->id}}" data-email="{{@$relatedclients->email}}" data-name="{{@$relatedclients->first_name}} {{@$relatedclients->last_name}}">
 			<?php

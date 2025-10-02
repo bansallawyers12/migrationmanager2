@@ -269,11 +269,11 @@
 									<div class="col-sm-3">
 										<div class="form-group">
 											<label for="visa_type">Visa Type</label>
-											<select class="form-control select2" name="visa_type">
-											<option value="">- Select Visa Type -</option>
-											@foreach(\App\VisaType::orderby('name', 'ASC')->get() as $visalist)
-												<option value="{{$visalist->name}}">{{$visalist->name}}</option>
-											@endforeach
+										<select class="form-control select2" name="visa_type">
+										<option value="">- Select Visa Type -</option>
+										@foreach(\App\Models\Matter::select('id', 'title', 'nick_name')->where('status', 1)->orderBy('title', 'ASC')->get() as $visalist)
+											<option value="{{$visalist->id}}">{{$visalist->title}} ({{@$visalist->nick_name}})</option>
+										@endforeach
 											</select>
 											@if ($errors->has('visa_type'))
 												<span class="custom-error" role="alert">
@@ -326,7 +326,7 @@
 											<label for="country_passport">Country of Passport</label>
 											<select class="form-control  select2" name="country_passport" >
 											<?php
-												foreach(\App\Country::all() as $list){
+												foreach(\App\Models\Country::all() as $list){
 													?>
 													<option <?php if(@$list->sortname == 'IN'){ echo 'selected'; } ?> value="{{@$list->sortname}}" >{{@$list->name}}</option>
 													<?php
@@ -420,7 +420,7 @@
 										<div class="form-group">
 											<label for="country">Country</label>
 											<select class="form-control select2" id="country_select" name="country" >
-											<?php foreach(\App\Country::all() as $list){ ?>
+											<?php foreach(\App\Models\Country::all() as $list){ ?>
 												<option <?php if(@$list->sortname == 'AU'){ echo 'selected'; } ?> value="{{@$list->sortname}}" >{{@$list->name}}</option>
 											<?php } ?>
 											</select>
@@ -590,7 +590,7 @@
 											<label for="service">Service <span style="color:#ff0000;">*</span></label>
 											<select class="form-control select2" name="service" data-valid="required">
 											<option value="">- Select Lead Service -</option>
-											@foreach(\App\LeadService::orderby('name', 'ASC')->get() as $leadservlist)
+											@foreach(\App\Models\LeadService::orderby('name', 'ASC')->get() as $leadservlist)
 												<option <?php if(old('service') == $leadservlist->name){ echo 'selected'; } ?> value="{{$leadservlist->name}}">{{$leadservlist->name}}</option>
 											@endforeach
 											</select>
@@ -606,9 +606,9 @@
 											<label for="assign_to">Assign To <span style="color:#ff0000;">*</span></label>
 											<select style="padding: 0px 5px;" name="assign_to" id="assign_to" class="form-control select2" data-valid="required">
 											<?php
-												$admins = \App\Admin::where('role','!=',7)->orderby('first_name','ASC')->get();
+												$admins = \App\Models\Admin::where('role','!=',7)->orderby('first_name','ASC')->get();
 												foreach($admins as $admin){
-													$branchname = \App\Branch::where('id',$admin->office_id)->first();
+													$branchname = \App\Models\Branch::where('id',$admin->office_id)->first();
 												?>
 												<option <?php if(old('assign_to') == $admin->id){ echo 'selected'; } ?> value="<?php echo $admin->id; ?>"><?php echo $admin->first_name.' '.$admin->last_name.' ('.@$branchname->office_name.')'; ?> </option>
 												<?php } ?>
@@ -660,7 +660,7 @@
 											<select style="padding: 0px 5px;" name="source" id="lead_source" class="form-control select2" data-valid="required">
 												<option value="">Lead Source</option>
 												<option value="Sub Agent" >Sub Agent</option>
-											@foreach(\App\Source::all() as $sources)
+											@foreach(\App\Models\Source::all() as $sources)
 											<option <?php if(old('lead_source') == $sources->name){ echo 'selected'; } ?> value="{{$sources->name}}">{{$sources->name}}</option>
 							@endforeach
 											</select>
@@ -676,7 +676,7 @@
 														<label for="subagent">Sub Agent <span class="span_req">*</span></label>
 														<select class="form-control select2" name="subagent">
 															<option>-- Choose a sub agent --</option>
-															@foreach(\App\Agent::all() as $agentlist)
+															@foreach(\App\Models\AgentDetails::all() as $agentlist)
 																<option value="{{$agentlist->id}}">{{$agentlist->full_name}}</option>
 															@endforeach
 														</select>
@@ -693,7 +693,7 @@
 										<select multiple class="form-control select2" name="tagname[]">
 															<option value="">-- Search & Select tag --</option>
 														<?php
-														foreach(\App\Tag::all() as $tags){
+														foreach(\App\Models\Tag::all() as $tags){
 															?>
 															<option value="{{$tags->id}}">{{$tags->name}}</option>
 															<?php

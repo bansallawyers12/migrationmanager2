@@ -1,6 +1,6 @@
 <?php
 namespace App\Helpers; // Your helpers namespace 
-use App\User;
+use App\Models\User;
 use App\Company;
 use Auth;
 use Exception;

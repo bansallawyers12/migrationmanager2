@@ -42,7 +42,7 @@
                                         <td><?php if(isset($list->title)){ echo $list->title; }?></td>
                                         <td><?php
                                             if(isset($list->client_id) && $list->client_id != ''){
-                                                $admin = \App\Admin::select('first_name','last_name')->where('id', $list->client_id)->first();
+                                                $admin = \App\Models\Admin::select('first_name','last_name')->where('id', $list->client_id)->first();
                                                 if($admin){
                                                     echo $admin->first_name.' '.$admin->last_name;
                                                 } else {

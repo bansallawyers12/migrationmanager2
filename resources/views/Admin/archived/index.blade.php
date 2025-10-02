@@ -70,13 +70,13 @@
                                         </td>
                                         <td style="white-space: initial;"> {{ @$list->first_name == "" ? config('constants.empty') : str_limit(@$list->first_name, '50', '...') }} {{ @$list->last_name == "" ? config('constants.empty') : str_limit(@$list->last_name, '50', '...') }}</td>
                                         <?php
-                                        $agent = \App\Agent::where('id', $list->agent_id)->first();
+                                        $agent = \App\Models\AgentDetails::where('id', $list->agent_id)->first();
                                         ?>
                                         <td style="white-space: initial;">@if($agent) <a target="_blank" href="{{URL::to('/admin/agent/detail/'.base64_encode(convert_uuencode(@$agent->id)))}}">{{@$agent->full_name}}</a>@else - @endif</td>
                                         <td style="white-space: initial;">-</td>
                                         <td style="white-space: initial;">{{@$list->city}}</td>
                                         <?php
-                                        $assignee = \App\Admin::where('id',@$list->assignee)->first();
+                                        $assignee = \App\Models\Admin::where('id',@$list->assignee)->first();
                                         ?>
                                         <td style="white-space: initial;">{{ @$assignee->first_name == "" ? config('constants.empty') : str_limit(@$assignee->first_name, '50', '...') }}</td>
                                         <td style="white-space: initial;">{{date('d/m/Y', strtotime($list->archived_on))}}</td>

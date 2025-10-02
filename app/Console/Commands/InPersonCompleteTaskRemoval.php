@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use DB;
-use App\CheckinLog;
+use App\Models\CheckinLog;
 use Carbon\Carbon;
 
 class InPersonCompleteTaskRemoval extends Command

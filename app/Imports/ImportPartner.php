@@ -1,12 +1,11 @@
 <?php
 namespace App\Imports;
-use App\PartnerType;
-use App\Category;
-use App\PartnerBranch;
-use App\ProductType;
-use App\Product;
-use App\Partner;
-use App\Workflow;
+use App\Models\PartnerType;
+use App\Models\PartnerBranch;
+use App\Models\ProductType;
+use App\Models\Product;
+use App\Models\Partner;
+use App\Models\Workflow;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Maatwebsite\Excel\Concerns\ToModel;

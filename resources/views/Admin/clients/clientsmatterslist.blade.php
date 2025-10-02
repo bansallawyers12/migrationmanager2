@@ -194,7 +194,7 @@
                                         <label for="matter" class="col-form-label" style="color:#4a5568 !important;">Matter</label>
                                         <select class="form-control" name="sel_matter_id">
                                             <option value="">Select Matter</option>
-                                            @foreach(\App\Matter::orderBy('title', 'asc')->get() as $matter)
+                                            @foreach(\App\Models\Matter::orderBy('title', 'asc')->get() as $matter)
                                             <option value="{{ $matter->id }}" {{ request('sel_matter_id') == $matter->id ? 'selected' : '' }}>{{ $matter->title }}</option>
                                             @endforeach
                                         </select>
@@ -248,9 +248,9 @@
                                 <?php $i=0; ?>
                                     @foreach (@$lists as $list)
                                         <?php
-                                        $mig_agent_info = \App\Admin::select('first_name','last_name')->where('id', $list->sel_migration_agent)->first();
-                                        $person_responsible = \App\Admin::select('first_name','last_name')->where('id', $list->sel_person_responsible)->first();
-                                        $person_assisting = \App\Admin::select('first_name','last_name')->where('id', $list->sel_person_assisting)->first();
+                                        $mig_agent_info = \App\Models\Admin::select('first_name','last_name')->where('id', $list->sel_migration_agent)->first();
+                                        $person_responsible = \App\Models\Admin::select('first_name','last_name')->where('id', $list->sel_person_responsible)->first();
+                                        $person_assisting = \App\Models\Admin::select('first_name','last_name')->where('id', $list->sel_person_assisting)->first();
                                         ?>
                                         <tr id="id_{{@$list->id}}">
                                             <td class="tdCls"><a href="{{URL::to('/admin/clients/detail/'.base64_encode(convert_uuencode(@$list->client_id)).'/'.$list->client_unique_matter_no )}}">{{ @$list->title == "" ? config('constants.empty') : str_limit(@$list->title, '50', '...') }} ({{ @$list->client_unique_matter_no == "" ? config('constants.empty') : str_limit(@$list->client_unique_matter_no, '50', '...') }}) </a></td>

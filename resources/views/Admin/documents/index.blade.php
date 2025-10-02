@@ -124,7 +124,7 @@
                                     <input type="text" name="client_matter_id" id="client_matter_id" value="{{$selectedDocument->client_matter_id}}">
                                     <input type="text" name="doc_type" id="doc_type" value="{{$selectedDocument->doc_type}}">-->
                                     <?php
-                                    //$client_matter_info_arr = \App\ClientMatter::select('sel_matter_id')->where('id',$selectedDocument->client_matter_id)->first();
+                                    //$client_matter_info_arr = \App\Models\ClientMatter::select('sel_matter_id')->where('id',$selectedDocument->client_matter_id)->first();
                                     ?>
                                     <!--<input type="text" name="sel_matter_id" id="sel_matter_id" value="{{--$client_matter_info_arr->sel_matter_id--}}">-->
 
@@ -171,7 +171,7 @@
                     </button>
                 </div>
                 <?php
-                $client_matter_info_arr = \App\ClientMatter::select('sel_matter_id')->where('id',$selectedDocument->client_matter_id)->first();
+                $client_matter_info_arr = \App\Models\ClientMatter::select('sel_matter_id')->where('id',$selectedDocument->client_matter_id)->first();
                 ?>
                 <div class="modal-body">
                     <form method="POST" action="{{ route('documents.sendSigningLink', $selectedDocument->id) }}" class="w-full sm:w-auto" enctype="multipart/form-data">
@@ -181,25 +181,25 @@
                         <input type="hidden" name="sel_matter_id" id="mail_sel_matter_id" value="{{$client_matter_info_arr->sel_matter_id}}">
                         <input type="hidden" name="doc_type" id="mail_doc_type" value="{{$selectedDocument->doc_type}}">
                         <?php
-                        $cost_assignment_cnt = \App\CostAssignmentForm::where('client_id',$selectedDocument->client_id)->where('client_matter_id',$selectedDocument->client_matter_id)->count();
+                        $cost_assignment_cnt = \App\Models\CostAssignmentForm::where('client_id',$selectedDocument->client_id)->where('client_matter_id',$selectedDocument->client_matter_id)->count();
                         //dd($cost_assignment_cnt);
                         if($cost_assignment_cnt >0) {
-                            $matter_info = \App\CostAssignmentForm::where('client_id',$selectedDocument->client_id)->where('client_matter_id',$selectedDocument->client_matter_id)->first();
+                            $matter_info = \App\Models\CostAssignmentForm::where('client_id',$selectedDocument->client_id)->where('client_matter_id',$selectedDocument->client_matter_id)->first();
                             //Get matter name
-                            $matter_get = \App\Matter::select('title')->where('id',$client_matter_info_arr->sel_matter_id)->first();
+                            $matter_get = \App\Models\Matter::select('title')->where('id',$client_matter_info_arr->sel_matter_id)->first();
                             if($matter_get){
                                 $matter_info->title = $matter_get->title;
                             } else {
                                 $matter_info->title = 'NA';
                             }
                         } else {
-                            $matter_info = \App\Matter::where('id',$client_matter_info_arr->sel_matter_id)->first();
+                            $matter_info = \App\Models\Matter::where('id',$client_matter_info_arr->sel_matter_id)->first();
                         } //dd($matter_info);
                         $mattertotalpayablefeeL = floatval($matter_info->TotalBLOCKFEE) + floatval($matter_info->TotalDoHASurcharges) + floatval($matter_info->additional_fee_1);
                         $mattertotalpayablefee = number_format($mattertotalpayablefeeL, 2, '.', '');
                         ?>
                         <?php
-                        $fetchedData = \App\Admin::where('id',$selectedDocument->client_id )->first();
+                        $fetchedData = \App\Models\Admin::where('id',$selectedDocument->client_id )->first();
                         ?>
                         <div class="row">
                             <div class="col-12 col-md-6 col-lg-6">
@@ -208,7 +208,7 @@
                                     <select class="form-control" name="email_from" required>
                                         <option value="">Select From</option>
                                         <?php
-                                        $emails = \App\Email::select('email')->where('status', 1)->get();
+                                        $emails = \App\Models\Email::select('email')->where('status', 1)->get();
                                         foreach($emails as $nemail){
                                         ?>
                                             <option value="<?php echo $nemail->email; ?>"><?php echo $nemail->email; ?></option>
@@ -244,7 +244,7 @@
                                     <input type="hidden" name="pdf_sign_token" value="{{$token}}">
                                     <select class="form-control select2 selecttemplate" name="template" data-clientid="{{@$fetchedData->id}}" data-clientfirstname="{{@$fetchedData->first_name}}" data-clientvisaExpiry="{{@$fetchedData->visaExpiry}}" data-clientreference_number="{{@$fetchedData->client_id}}" data-clientassignee_name="{{@$fetchedData->first_name}}" data-mattertotalprofessionalfee="{{@$matter_info->TotalBLOCKFEE}}" data-mattertotaldepartmentfee="{{@$matter_info->additional_fee_1}}" data-mattertotalsurchargefee="{{@$matter_info->TotalDoHASurcharges}}" data-mattertotalpayablefee="{{@$mattertotalpayablefee}}" data-pdfurlforsign="{{@$pdfurlforsign}}" data-mattertitle="{{@$matter_info->title}}" required>
                                         <option value="">Select</option>
-                                        @foreach( \App\MatterEmailTemplate::where('matter_id',$client_matter_info_arr->sel_matter_id)->orderBy('id', 'asc')->get() as $list)
+                                        @foreach( \App\Models\MatterEmailTemplate::where('matter_id',$client_matter_info_arr->sel_matter_id)->orderBy('id', 'asc')->get() as $list)
                                             <option value="{{$list->id}}">{{$list->name}}</option>
                                         @endforeach
                                     </select>
@@ -293,7 +293,7 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach(\App\UploadChecklist::where('matter_id', $client_matter_info_arr->sel_matter_id)->get() as $uclist)
+                                            @foreach(\App\Models\UploadChecklist::where('matter_id', $client_matter_info_arr->sel_matter_id)->get() as $uclist)
                                             <tr>
                                                 <td><input type="checkbox" name="checklistfile[]" value="<?php echo $uclist->id; ?>"></td>
                                                 <td><?php echo $uclist->name; ?></td>

@@ -62,17 +62,8 @@
         }
         /* Override existing main-sidebar styles for fixed positioning */
         .main-sidebar {
-            position: fixed !important;
-            top: 70px !important;
-            left: 0 !important;
-            width: 60px !important;
-            height: calc(100vh - 70px) !important;
-            background-color: #fff !important;
-            transition: width 0.3s ease !important;
-            z-index: 999 !important;
-            overflow: hidden !important;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1) !important;
-            margin-top: 0 !important;
+            /* Hidden to move navigation to top menu */
+            display: none !important;
         }
         .sidebar-expanded {
             width: 220px !important;
@@ -86,7 +77,7 @@
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
             min-width: 0;
-            margin-left: 80px !important;
+            margin-left: 0 !important;
             transition: margin-left 0.3s ease;
             position: relative;
             z-index: 1;
@@ -375,20 +366,11 @@
         }
         .sidebar-mini .main-content { 
             padding-left: 25px !important; 
-            margin-left: 80px !important;
+            margin-left: 0 !important;
         }
         
         /* Override sidebar-mini styles */
-        .sidebar-mini .main-sidebar {
-            position: fixed !important;
-            top: 70px !important;
-            left: 0 !important;
-            width: 60px !important;
-            height: calc(100vh - 70px) !important;
-            overflow: initial !important;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1) !important;
-            z-index: 999 !important;
-        }
+        .sidebar-mini .main-sidebar { display: none !important; }
         
         /* Additional sidebar styles for better scrolling */
         .main-sidebar .sidebar-menu {
@@ -416,10 +398,7 @@
         }
         
         /* Force sidebar to stay fixed */
-        .main-sidebar {
-            position: fixed !important;
-            transform: none !important;
-        }
+        .main-sidebar { display: none !important; }
         
         /* Simple fix for dropdown menus - let the existing theme handle most styling */
         .sidebar-mini .main-sidebar .sidebar-menu li ul.dropdown-menu {
@@ -472,6 +451,116 @@
             text-overflow: ellipsis !important;
             flex: 1 !important;
         }
+        /* Top quick icons – improve visibility and spacing */
+        .top-quick-icons { 
+            gap: 10px !important; 
+            padding-left: 10px !important; 
+            overflow-x: auto !important; 
+            white-space: nowrap !important; 
+            scrollbar-width: thin !important; 
+        }
+        .top-quick-icons .nav-link { 
+            color: #495057 !important; 
+            opacity: 1 !important; 
+            padding: 6px 8px !important; 
+            border-radius: 6px !important; 
+            transition: background-color .15s ease, color .15s ease, transform .1s ease !important; 
+            display: inline-flex !important; 
+            align-items: center !important; 
+        }
+        .top-quick-icons .nav-link i { 
+            font-size: 18px !important; 
+            line-height: 1 !important; 
+        }
+        .top-quick-icons .nav-link:hover { 
+            background-color: rgba(0,123,255,.1) !important; 
+            color: #007bff !important; 
+        }
+        .top-quick-icons .nav-link.text-danger { 
+            color: #dc3545 !important; 
+        }
+        .top-quick-icons .nav-link.text-danger:hover { 
+            background-color: rgba(220,53,69,.1) !important; 
+            color: #c82333 !important; 
+        }
+        /* Keep icons crisp on light navbar */
+        .main-navbar .nav-link i { 
+            filter: none !important; 
+        }
+        /* Modern topbar layout */
+        .main-topbar { 
+            display: grid !important; 
+            grid-template-columns: 1fr minmax(400px, 640px) auto !important; 
+            align-items: center !important; 
+            gap: 16px !important; 
+            position: sticky !important; 
+            top: 0 !important; 
+            z-index: 1000 !important; 
+            height: 70px !important; 
+            padding: 10px 16px !important; 
+            background: #ffffff !important; 
+            border-bottom: 1px solid #dfe3e6 !important; 
+            box-shadow: 0 2px 8px rgba(0,0,0,.06) !important;
+            transition: transform .2s ease-in-out !important;
+        }
+        /* Hide on scroll (keep a small top gap visible) */
+        .main-topbar.is-hidden {
+            transform: translateY(calc(-100% + 6px)) !important;
+        }
+        /* Collapsed state */
+        .main-topbar.is-collapsed { 
+            grid-template-columns: auto !important; 
+            height: 48px !important; 
+            padding: 6px 12px !important; 
+        }
+        .main-topbar.is-collapsed .topbar-left,
+        .main-topbar.is-collapsed .topbar-center,
+        .main-topbar.is-collapsed .topbar-right { display: none !important; }
+        .main-topbar .topbar-toggle { 
+            display: inline-flex !important; align-items: center !important; justify-content: center !important; 
+            width: 36px !important; height: 36px !important; border-radius: 8px !important; 
+            background: #f3f5f7 !important; border: 1px solid #e9ecef !important; color: #495057 !important; 
+        }
+        .main-topbar:not(.is-collapsed) .topbar-toggle { display: none !important; }
+        .topbar-left .icon-group { display: flex !important; gap: 10px !important; align-items: center !important; }
+        .icon-btn { 
+            display: inline-flex !important; align-items: center !important; justify-content: center !important; 
+            width: 44px !important; height: 44px !important; border-radius: 10px !important; 
+            color: #495057 !important; text-decoration: none !important; 
+            transition: background-color .15s ease, color .15s ease !important; 
+        }
+        .icon-btn:hover { background: rgba(0,123,255,.1) !important; color: #0d6efd !important; }
+        .icon-btn .countbell { position: relative !important; top: -10px !important; left: -6px !important; background: #1f1655 !important; color:#fff !important; border-radius: 10px !important; padding: 0 5px !important; font-size: 11px !important; }
+        .topbar-center .topbar-search { 
+            display: flex !important; align-items: center !important; gap: 8px !important; 
+            padding: 8px 12px !important; border: 1px solid #e9ecef !important; border-radius: 10px !important; 
+            background: #f8f9fb !important; 
+        }
+        .topbar-center .topbar-search i { color: #868e96 !important; }
+        .topbar-center .topbar-search .form-control { border: 0 !important; background: transparent !important; width: 100% !important; }
+        .topbar-right { display: flex !important; align-items: center !important; gap: 10px !important; }
+        /* Dropdowns */
+        .icon-dropdown { position: relative !important; }
+        .icon-dropdown-menu { 
+            position: absolute !important; top: 44px !important; left: 0 !important; min-width: 240px !important; 
+            background: #fff !important; border: 1px solid #e9ecef !important; border-radius: 8px !important; 
+            padding: 6px 0 !important; display: none !important; box-shadow: 0 12px 24px rgba(0,0,0,.08) !important; 
+        }
+        /* click-driven dropdowns, JS toggles .show */
+        .icon-dropdown .icon-dropdown-menu.show { display: block !important; }
+        .icon-dropdown-menu .dropdown-item { padding: 8px 12px !important; color: #343a40 !important; }
+        .icon-dropdown-menu .dropdown-item:hover { background: #f1f5ff !important; color: #0d6efd !important; }
+        /* Profile */
+        .profile-dropdown { position: relative !important; }
+        .profile-trigger img { width: 36px !important; height: 36px !important; border-radius: 50% !important; object-fit: cover !important; }
+        .profile-trigger { display: inline-flex !important; align-items: center !important; justify-content: center !important; width: 44px !important; height: 44px !important; border-radius: 50% !important; }
+        .profile-menu { position: absolute !important; right: 0 !important; top: 48px !important; background: #fff !important; border: 1px solid #e9ecef !important; border-radius: 8px !important; min-width: 200px !important; padding: 6px 0 !important; display: none !important; box-shadow: 0 12px 24px rgba(0,0,0,.08) !important; }
+        .profile-dropdown .profile-menu.show { display: block !important; }
+        .profile-menu a { display: block !important; padding: 8px 12px !important; color: #343a40 !important; text-decoration: none !important; }
+        .profile-menu a:hover { background: #f1f5ff !important; color: #0d6efd !important; }
+
+        /* When topbar is hidden, reclaim space for content (leave 6px gap) */
+        body.topbar-hidden .crm-container { margin-top: 6px !important; }
     </style>
     @yield('styles')
 </head>
@@ -524,6 +613,52 @@
     <script src="{{asset('js/scripts.js')}}"></script>
     <script src="{{asset('js/iziToast.min.js')}}"></script>
     <script src="{{asset('js/custom.js')}}"></script>
+    <script>
+        // Hide header on scroll down; show on scroll up or at top
+        (function(){
+            var lastY = window.pageYOffset || document.documentElement.scrollTop || 0;
+            var ticking = false;
+            var $topbar = $('.main-topbar');
+
+            function update() {
+                var currentY = window.pageYOffset || document.documentElement.scrollTop || 0;
+                var atTop = currentY <= 0;
+                var scrollingDown = currentY > lastY && !atTop;
+
+                if (scrollingDown) {
+                    if (!$topbar.hasClass('is-hidden')) {
+                        $topbar.addClass('is-hidden');
+                        document.body.classList.add('topbar-hidden');
+                    }
+                } else {
+                    if ($topbar.hasClass('is-hidden') || atTop) {
+                        $topbar.removeClass('is-hidden');
+                        document.body.classList.remove('topbar-hidden');
+                    }
+                }
+
+                lastY = currentY;
+                ticking = false;
+            }
+
+            function requestTick() {
+                if (!ticking) {
+                    ticking = true;
+                    window.requestAnimationFrame(update);
+                }
+            }
+
+            // Initial state: hide if not at top
+            $(function(){
+                if ((window.pageYOffset || document.documentElement.scrollTop || 0) > 0) {
+                    $topbar.addClass('is-hidden');
+                    document.body.classList.add('topbar-hidden');
+                }
+            });
+
+            window.addEventListener('scroll', requestTick, { passive: true });
+        })();
+    </script>
     <script>
         $(document).ready(function () { 
             $(".tel_input").on("blur", function() {
@@ -1470,6 +1605,39 @@
         // Remove any conflicting JavaScript that might interfere with the existing theme
     });
     </script>
+    <script>
+        // Topbar interactions: keep expanded and click-to-open dropdowns
+    $(document).ready(function(){
+        var $topbar = $('.main-topbar');
+            // Always expanded; ignore previous collapsed state
+            $topbar.removeClass('is-collapsed');
+            localStorage.removeItem('topbarCollapsed');
+            // Disable toggle control when present
+            $(document).off('click', '.topbar-toggle');
+
+        // Click to open icon dropdowns
+        $(document).on('click', '.js-dropdown > .icon-btn', function(e){
+            e.preventDefault();
+            e.stopPropagation();
+            var $menu = $(this).siblings('.icon-dropdown-menu');
+            $('.icon-dropdown-menu').not($menu).removeClass('show');
+            $menu.toggleClass('show');
+        });
+        // Profile dropdown click
+        $(document).on('click', '.js-dropdown-right > .profile-trigger', function(e){
+            e.preventDefault();
+            e.stopPropagation();
+            var $menu = $(this).siblings('.profile-menu');
+            $('.profile-menu').not($menu).removeClass('show');
+            $menu.toggleClass('show');
+        });
+        // Close on outside click
+        $(document).on('click', function(){
+            $('.icon-dropdown-menu').removeClass('show');
+            $('.profile-menu').removeClass('show');
+        });
+    });
+    </script>
 
     <div id="checkinmodal"  data-backdrop="static" data-keyboard="false" class="modal fade custom_modal" tabindex="-1" role="dialog" aria-labelledby="clientModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
@@ -1501,7 +1669,7 @@
                                     <label for="email_from">Office <span class="span_req">*</span></label>
                                     <select data-valid="required" class="form-control" name="office">
                                         <option value="">Select</option>
-                                        @foreach(\App\Branch::all() as $of)
+                                        @foreach(\App\Models\Branch::all() as $of)
                                             <option value="{{$of->id}}">{{$of->office_name}}</option>
                                         @endforeach
                                     </select>
@@ -1525,7 +1693,7 @@
                                 <div class="form-group">
                                     <label for="message">Select In Person Assignee <span class="span_req">*</span></label>
                                     <?php
-                                    $assignee = \App\Admin::where('role','!=', '7')->get();
+                                    $assignee = \App\Models\Admin::where('role','!=', '7')->get();
                                     ?>
                                     <select class="form-control assineeselect2" name="assignee">
                                     @foreach($assignee as $assigne)

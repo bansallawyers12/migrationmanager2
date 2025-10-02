@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use DB;
-use App\Admin;
+use App\Models\Admin;
 use Carbon\Carbon;
 
 class RandomClientSelectionReward extends Command

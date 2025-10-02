@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('layouts.admin_client_detail')
 @section('title', 'Users')
 
 @section('content')
@@ -11,10 +11,8 @@
 }
 
 </style>
-<!-- Main Content -->
-<div class="main-content">
-	<section class="section">
-		<div class="section-body">
+<div class="crm-container">
+	<div class="main-content">
 			<div class="server-error">
 				@include('../Elements/flash-message')
 			</div>
@@ -38,10 +36,10 @@
 												<label>Choose Service Category</label>
 												<select data-valid="required" id="getpartnertype" class="form-control servselect2" name="cat">
 												<?php
-												$servicecat = \App\Partner::select('master_category')->distinct()->get()->toArray();
+												$servicecat = \App\Models\Partner::select('master_category')->distinct()->get()->toArray();
 												$catid = array();
 												?>
-													@foreach(\App\Category::whereIn('id', $servicecat)->get() as $clist)
+													@foreach(\App\Models\Category::whereIn('id', $servicecat)->get() as $clist)
 														<?php
 														$catid[] = $clist->id;
 														?>
@@ -61,7 +59,7 @@
 													}else{
 														$c = @$catid[0];
 													}
-												$serviceccat = \App\SubCategory::where('cat_id', $c)->get();
+												$serviceccat = \App\Models\SubCategory::where('cat_id', $c)->get();
 												?>
 													@foreach($serviceccat as $cslist)
 														<option <?php if(isset($_GET['sf']) && $_GET['sf'] == 1){ echo 'selected'; } ?> value="{{$cslist->sub_id}}">{{$cslist->name}}</option>
@@ -83,9 +81,9 @@
 								if(!empty($lists)){
 								if(isset($_GET['sf']) && $_GET['sf'] == '1'){
 									foreach ($lists as $servlist){
-										$PartnerBranch = \App\PartnerBranch::select('name')->where('partner_id', $servlist->id)->where('is_headoffice', 1)->get()->first();	
-										$workflow = \App\Workflow::where('id', $servlist->service_workflow)->first(); 
-										$PartnerType = \App\PartnerType::where('id', $servlist->partner_type)->first(); 
+										$PartnerBranch = \App\Models\PartnerBranch::select('name')->where('partner_id', $servlist->id)->where('is_headoffice', 1)->get()->first();	
+										$workflow = \App\Models\Workflow::where('id', $servlist->service_workflow)->first(); 
+										$PartnerType = \App\Models\PartnerType::where('id', $servlist->partner_type)->first(); 
 										
 										?>
 										<div class="service_column">
@@ -145,10 +143,10 @@
 													<div class="inner_serv_rgt">
 														<div class="fee_btn">
 														<?php
-														$subcat = \App\SubCategory::where('cat_id',@$_GET['cat'])->where('sub_id','=','0')->first();
+														$subcat = \App\Models\SubCategory::where('cat_id',@$_GET['cat'])->where('sub_id','=','0')->first();
 														?>
 															<h5 class="text-info">Total {{@$subcat->name}}</h5>
-															<h4><?php echo \App\Product::where('partner', $servlist->id)->count(); ?></h4>
+															<h4><?php echo \App\Models\Product::where('partner', $servlist->id)->count(); ?></h4>
 														</div>
 														<div class="">
 															<a href="{{URL::to('/admin/partners/detail/'.base64_encode(convert_uuencode(@$servlist->id)))}}?tab=product">View All {{@$subcat->name}}</a>
@@ -170,10 +168,10 @@
 									}
 								}else{
 									foreach ($lists as $servlist){
-										$partnerdetail = \App\Partner::where('id', $servlist->partner)->first();								
-										$PartnerBranch = \App\PartnerBranch::where('id', $servlist->branches)->first();	
-										$workflow = \App\Workflow::where('id', $partnerdetail->service_workflow)->first();  
-										$acreq = \App\AcademicRequirement::where('id', $servlist->id)->first();  
+										$partnerdetail = \App\Models\Partner::where('id', $servlist->partner)->first();								
+										$PartnerBranch = \App\Models\PartnerBranch::where('id', $servlist->branches)->first();	
+										$workflow = \App\Models\Workflow::where('id', $partnerdetail->service_workflow)->first();  
+										$acreq = \App\Models\AcademicRequirement::where('id', $servlist->id)->first();  
 								?>
 											<div class="service_column">
 												<div class="service_left">
@@ -225,7 +223,7 @@
 														<div class="fee_btn">
 															<select class="form-control change_fee" name="parent">
 															<?php
-															$feeoptions = \App\FeeOption::where('product_id', $servlist->id)->orderby('created_at', 'ASC')->get();
+															$feeoptions = \App\Models\FeeOption::where('product_id', $servlist->id)->orderby('created_at', 'ASC')->get();
 															foreach($feeoptions as $fee){
 															?>
 																<option value="{{$fee->id}}">{{$fee->name}}</option>
@@ -233,7 +231,7 @@
 															</select>
 														</div>
 														<?php $i=0; foreach($feeoptions as $fee){ 
-														$feeoptiontype = \App\FeeOptionType::where('fee_id', $fee->id)->get();
+														$feeoptiontype = \App\Models\FeeOptionType::where('fee_id', $fee->id)->get();
 														$totlfee = 0; 
 														foreach($feeoptiontype as $feeoptiontyp){
 															$totlfee += $feeoptiontyp->total_fee;
@@ -300,8 +298,7 @@
 					</div>
 				</div>
 			</div>
-		</div>
-	</section>
+	</div>
 </div>
 
 <div class="modal fade requiment_modal custom_modal" tabindex="-1" role="dialog" aria-labelledby="requiment_ModalLabel" aria-hidden="true">
@@ -450,7 +447,7 @@
 								<label for="contact">Select Contact <span class="span_req">*</span></label>
 								<select data-valid="required" class="form-control contact contactselect2" id="contact" name="contact">
 									<option value="">Please Select Contact</option>
-									@foreach(\App\Admin::where('role',7)->get() as $wlist)
+									@foreach(\App\Models\Admin::where('role',7)->get() as $wlist)
 										<option value="{{$wlist->id}}">{{$wlist->first_name}} {{$wlist->last_name}}
 											({{$wlist->email}} {{$wlist->phone}})</option>
 									@endforeach

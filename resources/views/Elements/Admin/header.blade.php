@@ -110,7 +110,7 @@
 		</li>--}} -->
 	<li class="dropdown dropdown-list-toggle">
 		@if(Auth::user())
-			<a href="#" class="nav-link notification-toggle nav-link-lg" data-toggle="tooltip" data-placement="bottom" title="Click To See Notifications"><i data-feather="bell" class="bell"></i><span class="countbell" id="countbell_notification"><?php  echo \App\Notification::where('receiver_id', Auth::user()->id)->where('receiver_status', 0)->count(); ?></span></a>
+			<a href="#" class="nav-link notification-toggle nav-link-lg" data-toggle="tooltip" data-placement="bottom" title="Click To See Notifications"><i data-feather="bell" class="bell"></i><span class="countbell" id="countbell_notification"><?php  echo \App\Models\Notification::where('receiver_id', Auth::user()->id)->where('receiver_status', 0)->count(); ?></span></a>
         @endif
 			<!--<div class="dropdown-menu dropdown-list dropdown-menu-right pullDown">
 				<div class="dropdown-header">Notifications
@@ -121,7 +121,7 @@
 				<div class="dropdown-list-content dropdown-list-icons showallnotifications">
 				     <?php
 					/*if(Auth::user()){
-						$notificalists = \App\Notification::where('receiver_id', Auth::user()->id)->where('receiver_status', 0)->orderby('created_at','DESC')->paginate(5);
+						$notificalists = \App\Models\Notification::where('receiver_id', Auth::user()->id)->where('receiver_status', 0)->orderby('created_at','DESC')->paginate(5);
 				    foreach($notificalists as $listnoti){*/
 				    ?>
 					<a href="{{--$listnoti->url--}}?t={{--$listnoti->id--}}" class="dropdown-item dropdown-item-unread">

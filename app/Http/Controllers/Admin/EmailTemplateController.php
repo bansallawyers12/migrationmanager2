@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Routing\Route;
 
-use App\EmailTemplate;
+use App\Models\EmailTemplate;
 
 use Auth;
 use Config;

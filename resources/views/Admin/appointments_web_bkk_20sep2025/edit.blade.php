@@ -222,7 +222,7 @@ html, body {
 											    <label for="noe_id" style="color: #000000; font-weight: bold; display: block; margin-bottom: 5px;">Nature of Enquiry<span class="span_req">*</span></label>
 											    <select class="form-control  select2" name="noe_id" disabled>
 												    <option value="" >Select Nature of Enquiry</option>
-											        <?php foreach(\App\NatureOfEnquiry::all() as $list) { ?>
+											        <?php foreach(\App\Models\NatureOfEnquiry::all() as $list) { ?>
                                                         <option <?php if(@$list->id == $appointment->noe_id){ echo 'selected'; } ?> value="{{@$list->id}}" >{{@$list->title}}</option>
                                                     <?php } ?>
 											    </select>

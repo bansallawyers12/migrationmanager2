@@ -9,17 +9,17 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Redirect;
 
-use App\Admin;
+use App\Models\Admin;
 use App\Models\EmailUser;
-use App\EmailRecord;
-use App\MailReport;
+use App\Models\EmailRecord;
+use App\Models\MailReport;
 
 use Auth;
 use Config;
 use Illuminate\Support\Facades\Storage;
 
-use App\Matter;
-use App\ClientMatter;
+use App\Models\Matter;
+use App\Models\ClientMatter;
 
 
 class EmailListController extends Controller
@@ -238,7 +238,7 @@ class EmailListController extends Controller
 
                     //Add entry in document table
                     $myfile = $ld['msgno'].'.pdf';
-                    $obj = new \App\Document;
+                    $obj = new \App\Models\Document;
                     $obj->file_name = $ld['msgno'];
                     $obj->filetype = "pdf";
                     $obj->user_id = Auth::user()->id;
@@ -253,7 +253,7 @@ class EmailListController extends Controller
                     if($saved_doc){
                         $lastInsertedDocId = $obj->id;
 
-                        $admin_info = \App\Admin::where('id', '=', $requestData['assign_client_id'])->first();
+                        $admin_info = \App\Models\Admin::where('id', '=', $requestData['assign_client_id'])->first();
                         // Define the source and destination paths
                         $sourcePath = $requestData['user_mail'].'/'.$requestData['mail_type'].'/'.$myfile; // Replace with your source file path
                         $destinationPath = $admin_info['client_id'].'/conversion_email_fetch/'.$requestData['mail_type'].'/'.$myfile; // Replace with your destination file path
@@ -272,7 +272,7 @@ class EmailListController extends Controller
                             echo "Error: " . $e->getMessage();
                         }
                         //Save in mail_reports table
-                        $obj1 = new \App\MailReport;
+                        $obj1 = new \App\Models\MailReport;
                         $obj1->user_id = Auth::user()->id;
                         $obj1->from_mail = $ld['from_email'];
                         $obj1->to_mail = $ld['to_email'];
@@ -287,9 +287,9 @@ class EmailListController extends Controller
                         $obj1->client_matter_id = $requestData['assign_client_matter_id'];
                         $saved_email = $obj1->save();
                         if($saved_email){
-                            $client_matter_info = \App\ClientMatter::select('client_unique_matter_no')->where('id', '=', $requestData['assign_client_matter_id'])->first();
+                            $client_matter_info = \App\Models\ClientMatter::select('client_unique_matter_no')->where('id', '=', $requestData['assign_client_matter_id'])->first();
                             $subject = 'Inbox Email Assign';
-                            $objs = new \App\ActivitiesLog;
+                            $objs = new \App\Models\ActivitiesLog;
                             $objs->client_id = $requestData['assign_client_id'];
                             $objs->created_by = Auth::user()->id;
                             $objs->description = $admin_info['client_id'].'-'.$client_matter_info['client_unique_matter_no'];
@@ -298,7 +298,7 @@ class EmailListController extends Controller
 
                             //Update date in client matter table
                             if( isset($requestData['assign_client_matter_id']) && $requestData['assign_client_matter_id'] != ""){
-                                $obj2 = \App\ClientMatter::find($requestData['assign_client_matter_id']);
+                                $obj2 = \App\Models\ClientMatter::find($requestData['assign_client_matter_id']);
                                 $obj2->updated_at = date('Y-m-d H:i:s');
                                 $obj2->save();
                             }
@@ -316,7 +316,7 @@ class EmailListController extends Controller
 
                 //Add entry in document table
                 $myfile = $ld['msgno'].'.pdf';
-                $obj = new \App\Document;
+                $obj = new \App\Models\Document;
                 $obj->file_name = $ld['msgno'];
                 $obj->filetype = "pdf";
                 $obj->user_id = Auth::user()->id;
@@ -330,7 +330,7 @@ class EmailListController extends Controller
                 if($saved_doc){
                     $lastInsertedDocId = $obj->id;
 
-                    $admin_info = \App\Admin::where('id', '=', $requestData['assign_client_id'])->first();
+                    $admin_info = \App\Models\Admin::where('id', '=', $requestData['assign_client_id'])->first();
                     // Define the source and destination paths
                     $sourcePath = $requestData['user_mail'].'/'.$requestData['mail_type'].'/'.$myfile; // Replace with your source file path
 	                $destinationPath = $admin_info['client_id'].'/conversion_email_fetch/'.$requestData['mail_type'].'/'.$myfile; // Replace with your destination file path
@@ -349,7 +349,7 @@ class EmailListController extends Controller
                     }
 
                     //Save in mail_reports table
-                    $obj1 = new \App\MailReport;
+                    $obj1 = new \App\Models\MailReport;
                     $obj1->user_id = Auth::user()->id;
                     $obj1->from_mail = $ld['from_email'];
                     $obj1->to_mail = $ld['to_email'];
@@ -364,9 +364,9 @@ class EmailListController extends Controller
                     $obj1->client_matter_id = $requestData['assign_client_matter_id'];
                     $saved_email = $obj1->save();
                     if($saved_email){
-                        $client_matter_info = \App\ClientMatter::select('client_unique_matter_no')->where('id', '=', $requestData['assign_client_matter_id'])->first();
+                        $client_matter_info = \App\Models\ClientMatter::select('client_unique_matter_no')->where('id', '=', $requestData['assign_client_matter_id'])->first();
                         $subject = 'Inbox Email Assign';
-                        $objs = new \App\ActivitiesLog;
+                        $objs = new \App\Models\ActivitiesLog;
                         $objs->client_id = $requestData['assign_client_id'];
                         $objs->created_by = Auth::user()->id;
                         $objs->description = $admin_info['client_id'].'-'.$client_matter_info['client_unique_matter_no'];
@@ -375,7 +375,7 @@ class EmailListController extends Controller
 
                         //Update date in client matter table
                         if( isset($requestData['assign_client_matter_id']) && $requestData['assign_client_matter_id'] != ""){
-                            $obj2 = \App\ClientMatter::find($requestData['assign_client_matter_id']);
+                            $obj2 = \App\Models\ClientMatter::find($requestData['assign_client_matter_id']);
                             $obj2->updated_at = date('Y-m-d H:i:s');
                             $obj2->save();
                         }
@@ -412,7 +412,7 @@ class EmailListController extends Controller
 
                     //Add entry in document table
                     $myfile = $ld['msgno'].'.pdf';
-                    $obj = new \App\Document;
+                    $obj = new \App\Models\Document;
                     $obj->file_name = $ld['msgno'];
                     $obj->filetype = "pdf";
                     $obj->user_id = Auth::user()->id;
@@ -427,7 +427,7 @@ class EmailListController extends Controller
                     if($saved_doc){
                         $lastInsertedDocId = $obj->id;
 
-                        $admin_info = \App\Admin::where('id', '=', $requestData['assign_client_id'])->first();
+                        $admin_info = \App\Models\Admin::where('id', '=', $requestData['assign_client_id'])->first();
                         // Define the source and destination paths
                         $sourcePath = $requestData['user_mail'].'/'.$requestData['mail_type'].'/'.$myfile; // Replace with your source file path
                         $destinationPath = $admin_info['client_id'].'/conversion_email_fetch/'.$requestData['mail_type'].'/'.$myfile; // Replace with your destination file path
@@ -446,7 +446,7 @@ class EmailListController extends Controller
                             echo "Error: " . $e->getMessage();
                         }
                         //Save in mail_reports table
-                        $obj1 = new \App\MailReport;
+                        $obj1 = new \App\Models\MailReport;
                         $obj1->user_id = Auth::user()->id;
                         $obj1->from_mail = $ld['from_email'];
                         $obj1->to_mail = $ld['to_email'];
@@ -461,9 +461,9 @@ class EmailListController extends Controller
                         $obj1->client_matter_id = $requestData['assign_client_matter_id'];
                         $saved_email = $obj1->save();
                         if($saved_email){
-                            $client_matter_info = \App\ClientMatter::select('client_unique_matter_no')->where('id', '=', $requestData['assign_client_matter_id'])->first();
+                            $client_matter_info = \App\Models\ClientMatter::select('client_unique_matter_no')->where('id', '=', $requestData['assign_client_matter_id'])->first();
                             $subject = 'Sent Email Assign';
-                            $objs = new \App\ActivitiesLog;
+                            $objs = new \App\Models\ActivitiesLog;
                             $objs->client_id = $requestData['assign_client_id'];
                             $objs->created_by = Auth::user()->id;
                             $objs->description = $admin_info['client_id'].'-'.$client_matter_info['client_unique_matter_no'];
@@ -472,7 +472,7 @@ class EmailListController extends Controller
 
                             //Update date in client matter table
                             if( isset($requestData['assign_client_matter_id']) && $requestData['assign_client_matter_id'] != ""){
-                                $obj2 = \App\ClientMatter::find($requestData['assign_client_matter_id']);
+                                $obj2 = \App\Models\ClientMatter::find($requestData['assign_client_matter_id']);
                                 $obj2->updated_at = date('Y-m-d H:i:s');
                                 $obj2->save();
                             }
@@ -490,7 +490,7 @@ class EmailListController extends Controller
 
                 //Add entry in document table
                 $myfile = $ld['msgno'].'.pdf';
-                $obj = new \App\Document;
+                $obj = new \App\Models\Document;
                 $obj->file_name = $ld['msgno'];
                 $obj->filetype = "pdf";
                 $obj->user_id = Auth::user()->id;
@@ -504,7 +504,7 @@ class EmailListController extends Controller
                 if($saved_doc){
                     $lastInsertedDocId = $obj->id;
 
-                    $admin_info = \App\Admin::where('id', '=', $requestData['assign_client_id'])->first();
+                    $admin_info = \App\Models\Admin::where('id', '=', $requestData['assign_client_id'])->first();
                     // Define the source and destination paths
                     $sourcePath = $requestData['user_mail'].'/'.$requestData['mail_type'].'/'.$myfile; // Replace with your source file path
 	                $destinationPath = $admin_info['client_id'].'/conversion_email_fetch/'.$requestData['mail_type'].'/'.$myfile; // Replace with your destination file path
@@ -523,7 +523,7 @@ class EmailListController extends Controller
                     }
 
                     //Save in mail_reports table
-                    $obj1 = new \App\MailReport;
+                    $obj1 = new \App\Models\MailReport;
                     $obj1->user_id = Auth::user()->id;
                     $obj1->from_mail = $ld['from_email'];
                     $obj1->to_mail = $ld['to_email'];
@@ -538,9 +538,9 @@ class EmailListController extends Controller
                     $obj1->client_matter_id = $requestData['assign_client_matter_id'];
                     $saved_email = $obj1->save();
                     if($saved_email){
-                        $client_matter_info = \App\ClientMatter::select('client_unique_matter_no')->where('id', '=', $requestData['assign_client_matter_id'])->first();
+                        $client_matter_info = \App\Models\ClientMatter::select('client_unique_matter_no')->where('id', '=', $requestData['assign_client_matter_id'])->first();
                         $subject = 'Sent Email Assign';
-                        $objs = new \App\ActivitiesLog;
+                        $objs = new \App\Models\ActivitiesLog;
                         $objs->client_id = $requestData['assign_client_id'];
                         $objs->created_by = Auth::user()->id;
                         $objs->description = $admin_info['client_id'].'-'.$client_matter_info['client_unique_matter_no'];
@@ -549,7 +549,7 @@ class EmailListController extends Controller
 
                         //Update date in client matter table
                         if( isset($requestData['assign_client_matter_id']) && $requestData['assign_client_matter_id'] != ""){
-                            $obj2 = \App\ClientMatter::find($requestData['assign_client_matter_id']);
+                            $obj2 = \App\Models\ClientMatter::find($requestData['assign_client_matter_id']);
                             $obj2->updated_at = date('Y-m-d H:i:s');
                             $obj2->save();
                         }

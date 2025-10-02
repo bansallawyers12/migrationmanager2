@@ -65,10 +65,10 @@
 													<tbody class="tdata">
 													@foreach($lists as $list)
 													<?php
-																$applicationdata = \App\Application::where('id', $list->invoice->application_id)->first();
-																$partnerdata = \App\Partner::where('id', @$applicationdata->partner_id)->first();
-																$productdata = \App\Product::where('id', @$applicationdata->product_id)->first();
-																$admindata = \App\Admin::where('id', @$list->user_id)->first();
+																$applicationdata = \App\Models\Application::where('id', $list->invoice->application_id)->first();
+																$partnerdata = \App\Models\Partner::where('id', @$applicationdata->partner_id)->first();
+																$productdata = \App\Models\Product::where('id', @$applicationdata->product_id)->first();
+																$admindata = \App\Models\Admin::where('id', @$list->user_id)->first();
 
 																										?>
 																										<tr id="id_{{$list->id}}">

@@ -53,15 +53,15 @@
 											<tbody class="tdata">
 											@foreach($lists as $list)
 												@php
-													$clientdetail = \App\Admin::where('id', $list->client_id)->first();
-													$application = \App\Application::where('id', @$list->application_id)->first();
-													$productdetail = \App\Product::where('id', @$application->product_id)->first();
-													$partnerdetail = \App\Partner::where('id', @$application->partner_id)->first();
+													$clientdetail = \App\Models\Admin::where('id', $list->client_id)->first();
+													$application = \App\Models\Application::where('id', @$list->application_id)->first();
+													$productdetail = \App\Models\Product::where('id', @$application->product_id)->first();
+													$partnerdetail = \App\Models\Partner::where('id', @$application->partner_id)->first();
 
-													$PartnerBranch = \App\PartnerBranch::where('id', @$application->branch)->first();
-													$Workflow = \App\Workflow::where('id', @$application->workflow)->first();
+													$PartnerBranch = \App\Models\PartnerBranch::where('id', @$application->branch)->first();
+													$Workflow = \App\Models\Workflow::where('id', @$application->workflow)->first();
 
-													$ScheduleItems = \App\ScheduleItem::where('schedule_id',$list->id)->get();
+													$ScheduleItems = \App\Models\ScheduleItem::where('schedule_id',$list->id)->get();
 													$amt = 0;
 													foreach($ScheduleItems as $ScheduleItem){
 														$amt += $ScheduleItem->fee_amount;
@@ -142,7 +142,7 @@
 								<label for="clientname">Client Name <span class="span_req">*</span></label>
 								<select data-valid="required" class="form-control clientname" id="clientname" name="client_id">
 									<option value="">Select Client Name</option>
-									@foreach(\App\Admin::where('role',7)->get() as $wlist)
+									@foreach(\App\Models\Admin::where('role',7)->get() as $wlist)
 										<option value="{{$wlist->id}}">{{$wlist->first_name}} {{$wlist->last_name}}</option>
 									@endforeach
 								</select>

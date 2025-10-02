@@ -7,7 +7,7 @@
 		<select class="form-control" name="note_type">
 		    <option value=""></option>
 		    <?php
-				$followuptypes = \App\FollowupType::where('show',1)->get();
+				$followuptypes = \App\Models\FollowupType::where('show',1)->get();
 				foreach($followuptypes as $followuptype){
 				?>
 				 <option @if($followuptype->type == $fetchedData->followup_type) selected @endif value="{{$followuptype->type}}">{{$followuptype->name}}</option>

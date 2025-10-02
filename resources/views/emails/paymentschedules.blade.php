@@ -15,7 +15,7 @@
 	</head>
 	<body>
 	<?php
-	$admin = \App\Admin::where('role',1)->first();
+	$admin = \App\Models\Admin::where('role',1)->first();
 	
 	?>
 		<div class="invoice_table" style="padding: 10px;">
@@ -75,7 +75,7 @@
 													<?php
 													$nettotal = 0;
 													foreach($invoiceschedules as $invoiceschedule){
-														$scheduleitem = \App\ScheduleItem::where('schedule_id', $invoiceschedule->id)->get();
+														$scheduleitem = \App\Models\ScheduleItem::where('schedule_id', $invoiceschedule->id)->get();
 														?>
 														<tr >
 															<td>

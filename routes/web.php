@@ -20,6 +20,10 @@ Route::post('/get_product_other_info', 'HomeController@getProductOtherInformatio
 Route::post('/delete_action', 'HomeController@deleteAction')->middleware('auth');
  */
 
+// Root route - redirect to admin login
+Route::get('/', function() {
+    return redirect()->route('admin.login');
+});
 
 Route::get('/clear-cache', function() {
 
@@ -57,8 +61,6 @@ Route::get('/refresh-captcha', 'HomeController@refresh_captcha');
 
 //Route::get('page/{slug}', 'HomeController@Page')->name('page.slug');
 Route::get('sicaptcha', 'HomeController@sicaptcha')->name('sicaptcha');
-Route::post('enquiry-contact', 'PackageController@enquiryContact')->name('query.contact');
-Route::get('thanks', 'PackageController@thanks')->name('thanks');
 Route::get('invoice/secure/{slug}', 'InvoiceController@invoice')->name('invoice');
 Route::get('/invoice/download/{id}', 'InvoiceController@customer_invoice_download')->name('invoice.customer_invoice_download');
 Route::get('/invoice/print/{id}', 'InvoiceController@customer_invoice_print')->name('invoice.customer_invoice_print');
@@ -71,9 +73,6 @@ Route::post('/getdisableddatetime', 'HomeController@getdisableddatetime');
 
 Route::get('stripe/{appointmentId}', 'HomeController@stripe');
 Route::post('stripe', 'HomeController@stripePost')->name('stripe.post1');
-
-/*---------------Agent Route-------------------*/
-include_once 'agent.php';
 
 /*---------------Email manager Route-------------------*/
 include_once 'emailUser.php';
@@ -254,12 +253,6 @@ Route::prefix('admin')->group(function() {
     // Route::get('/api-key', 'Admin\ApiController@index')->name('admin.apikey.index');
     //Manage Api key
 
-	//CMS Pages
-    Route::get('/cms_pages', 'Admin\CmsPageController@index')->name('admin.cms_pages.index');
-    Route::get('/cms_pages/create', 'Admin\CmsPageController@create')->name('admin.cms_pages.create');
-    Route::post('/cms_pages/store', 'Admin\CmsPageController@store')->name('admin.cms_pages.store');
-    Route::get('/cms_pages/edit/{id}', 'Admin\CmsPageController@editCmsPage')->name('admin.edit_cms_page');
-    Route::post('/cms_pages/edit', 'Admin\CmsPageController@editCmsPage')->name('admin.edit_cms_page');
 
 	//Email Templates Pages
     Route::get('/email_templates', 'Admin\EmailTemplateController@index')->name('admin.email.index');
@@ -275,11 +268,6 @@ Route::prefix('admin')->group(function() {
     Route::get('/api-key', 'Admin\AdminController@editapi')->name('admin.edit_api');
     Route::post('/api-key', 'Admin\AdminController@editapi')->name('admin.edit_api');
 
-    Route::get('/offer/index', 'Admin\OfferController@index')->name('admin.offer.index');
-    Route::get('/offer/create', 'Admin\OfferController@create')->name('admin.offer.create');
-    Route::post('/offer/store', 'Admin\OfferController@store')->name('admin.offer.store');
-    Route::get('/offer/edit/{id}', 'Admin\OfferController@edit')->name('admin.offer.edit');
-    Route::post('/offer/edit', 'Admin\OfferController@edit')->name('admin.offer.edit');
 
     Route::get('/photo-gallery/getlist', 'Admin\MediaController@getlist')->name('admin.photo.getlist');
     Route::post('/photo-gallery/uploadlist', 'Admin\MediaController@uploadlist')->name('admin.photo.uploadlist');
@@ -389,72 +377,9 @@ Route::prefix('admin')->group(function() {
 		Route::get('/branch/view/client/{id}', 'Admin\BranchesController@viewclient')->name('admin.branch.clientview');
 		Route::post('/branch/edit', 'Admin\BranchesController@edit')->name('admin.branch.edit');
 
-		//Quotations Start
-		Route::get('/quotations', 'Admin\QuotationsController@index')->name('admin.quotations.index');
-
-		Route::get('/quotations/client', 'Admin\QuotationsController@client')->name('admin.quotations.client');
-		Route::get('/quotations/client/create/{id}', 'Admin\QuotationsController@create')->name('admin.quotations.create');
-		Route::post('/quotations/store', 'Admin\QuotationsController@store')->name('admin.quotations.store');
-		Route::get('/quotations/edit/{id}', 'Admin\QuotationsController@edit')->name('admin.quotations.edit');
-		Route::post('/quotations/edit', 'Admin\QuotationsController@edit')->name('admin.quotations.edit');
-
-		Route::get('/quotations/template', 'Admin\QuotationsController@template')->name('admin.quotations.template.index');
-		Route::get('/quotations/template/create', 'Admin\QuotationsController@template_create')->name('admin.quotations.template.create');
-		Route::post('/quotations/template/store', 'Admin\QuotationsController@template_store')->name('admin.quotations.template.store');
-		Route::get('/quotations/template/edit/{id}', 'Admin\QuotationsController@template_edit')->name('admin.quotations.template.edit');
-		Route::post('/quotations/template/edit', 'Admin\QuotationsController@template_edit')->name('admin.quotations.template.edit');
-		Route::get('/quotation/detail/{id}', 'Admin\QuotationsController@quotationDetail');
-		Route::get('/quotation/preview/{id}', 'Admin\QuotationsController@quotationpreview');
-		//archived Start
-		Route::get('quotations/archived', 'Admin\QuotationsController@archived')->name('admin.quotations.archived');
-		Route::get('quotations/changestatus', 'Admin\QuotationsController@changestatus')->name('admin.quotations.changestatus');
-		Route::post('quotations/sendmail', 'Admin\QuotationsController@sendmail')->name('admin.quotations.sendmail');
-
-		Route::get('getpartner', 'Admin\AdminController@getpartner')->name('admin.quotations.getpartner');
-		Route::get('getpartnerbranch', 'Admin\AdminController@getpartnerbranch')->name('admin.quotations.getpartnerbranch');
-		Route::get('getsubjects', 'Admin\AdminController@getsubjects');
-		Route::get('getbranchproduct', 'Admin\AdminController@getbranchproduct')->name('admin.quotations.getbranchproduct');
-		Route::get('getproduct', 'Admin\AdminController@getproduct')->name('admin.quotations.getproduct');
-		Route::get('getbranch', 'Admin\AdminController@getbranch')->name('admin.quotations.getbranch');
-		Route::get('getnewPartnerbranch', 'Admin\AdminController@getnewPartnerbranch')->name('admin.quotations.getnewPartnerbranch');
 
 
-		//Agent Start
-	/* 	Route::get('/agents', 'Admin\AgentController@index')->name('admin.agents.index');
-		Route::get('/agents/create', 'Admin\AgentController@create')->name('admin.agents.create');
-		Route::post('/agents/store', 'Admin\AgentController@store')->name('admin.agents.store');
 
-		Route::post('/agents/edit', 'Admin\AgentController@edit')->name('admin.agents.edit'); */
-
-		Route::get('/agents/active', 'Admin\AgentController@active')->name('admin.agents.active');
-		Route::get('/agents/inactive', 'Admin\AgentController@inactive')->name('admin.agents.inactive');
-		Route::get('/agents/show/{id}', 'Admin\AgentController@show')->name('admin.agents.show');
-		Route::get('/agents/create', 'Admin\AgentController@create')->name('admin.agents.create');
-		Route::get('/agents/import', 'Admin\AgentController@import')->name('admin.agents.import');
-		Route::post('/agents/store', 'Admin\AgentController@store')->name('admin.agents.store');
-		Route::get('/agent/detail/{id}', 'Admin\AgentController@detail')->name('admin.agents.detail');
-		Route::post('/agents/savepartner', 'Admin\AgentController@savepartner');
-		 Route::get('/agents/edit/{id}', 'Admin\AgentController@edit')->name('admin.agents.edit');
-		 Route::post('/agents/edit', 'Admin\AgentController@edit');
-		 Route::get('/agents/import/business', 'Admin\AgentController@businessimport');
-		 Route::get('/agents/import/individual', 'Admin\AgentController@individualimport');
-		//Task Start
-		Route::get('/tasks', 'Admin\TasksController@index')->name('admin.tasks.index');
-		Route::get('/tasks/archive/{id}', 'Admin\TasksController@taskArchive')->name('admin.tasks.archive');
-		Route::get('/tasks/create', 'Admin\TasksController@create')->name('admin.tasks.create');
-		Route::post('/tasks/store', 'Admin\TasksController@store')->name('admin.tasks.store');
-			Route::post('/tasks/groupstore', 'Admin\TasksController@groupstore')->name('admin.tasks.groupstore');
-			Route::post('/tasks/deletegroup', 'Admin\TasksController@deletegroup')->name('admin.tasks.deletegroup');
-		Route::get('/get-tasks', 'Admin\TasksController@gettasks')->name('admin.tasks.gettasks');
-		Route::get('/get-task-detail', 'Admin\TasksController@taskdetail')->name('admin.tasks.gettaskdetail');
-		Route::post('/update_task_comment', 'Admin\TasksController@update_task_comment');
-		Route::post('/update_task_description', 'Admin\TasksController@update_task_description');
-		Route::post('/update_task_status', 'Admin\TasksController@update_task_status');
-		Route::post('/update_task_priority', 'Admin\TasksController@update_task_priority');
-		Route::post('/updateduedate', 'Admin\TasksController@updateduedate');
-		Route::get('/task/change_assignee', 'Admin\TasksController@change_assignee');
-		//Route::get('/tasks/edit/{id}', 'Admin\TasksController@edit')->name('admin.tasks.edit');
-		//Route::post('/tasks/edit', 'Admin\TasksController@edit')->name('admin.tasks.edit');
 
 		//General Invoice Start
 		Route::get('/invoice/general-invoice', 'Admin\InvoiceController@general_invoice')->name('admin.invoice.general-invoice');
@@ -484,14 +409,6 @@ Route::prefix('admin')->group(function() {
 		Route::post('/application/saleforcastservice', 'Admin\ClientsController@saleforcastservice');
 		Route::get('/getintrestedserviceedit', 'Admin\ClientsController@getintrestedserviceedit');
 		Route::get('/getAppointmentdetail', 'Admin\ClientsController@getAppointmentdetail');
-		Route::post('/saveeducation', 'Admin\EducationController@store');
-		Route::post('/editeducation', 'Admin\EducationController@edit');
-		Route::get('/get-educations', 'Admin\EducationController@geteducations');
-		Route::get('/getEducationdetail', 'Admin\EducationController@getEducationdetail');
-
-		Route::get('/delete-education', 'Admin\EducationController@deleteeducation');
-		Route::post('/edit-test-scores', 'Admin\EducationController@edittestscores');
-		Route::post('/other-test-scores', 'Admin\EducationController@othertestscores');
 		Route::post('/create-invoice', 'Admin\InvoiceController@createInvoice');
 		Route::get('/application/invoice/{client_id}/{application}/{invoice_type}', 'Admin\InvoiceController@getInvoice');
 		Route::get('/invoice/view/{id}', 'Admin\InvoiceController@show');
@@ -582,42 +499,16 @@ Route::prefix('admin')->group(function() {
 		Route::get('/partner-type/create', 'Admin\PartnerTypeController@create')->name('admin.feature.partnertype.create');
 		Route::post('/partner-type/store', 'Admin\PartnerTypeController@store')->name('admin.feature.partnertype.store');
 		Route::get('/partner-type/edit/{id}', 'Admin\PartnerTypeController@edit')->name('admin.feature.partnertype.edit');
-		Route::post('/partner-type/edit', 'Admin\PartnerTypeController@edit')->name('admin.feature.partnertype.edit');
+	Route::post('/partner-type/edit', 'Admin\PartnerTypeController@edit')->name('admin.feature.partnertype.edit');
 
-		//Visa Type Start
-		Route::get('/visa-type', 'Admin\VisaTypeController@index')->name('admin.feature.visatype.index');
-		Route::get('/visa-type/create', 'Admin\VisaTypeController@create')->name('admin.feature.visatype.create');
-		Route::post('/visa-type/store', 'Admin\VisaTypeController@store')->name('admin.feature.visatype.store');
-		Route::get('/visa-type/edit/{id}', 'Admin\VisaTypeController@edit')->name('admin.feature.visatype.edit');
-		Route::post('/visa-type/edit', 'Admin\VisaTypeController@edit')->name('admin.feature.visatype.edit');
-
-		//Master Category Start
-		Route::get('/master-category', 'Admin\MasterCategoryController@index')->name('admin.feature.mastercategory.index');
-		Route::get('/master-category/create', 'Admin\MasterCategoryController@create')->name('admin.feature.mastercategory.create');
-		Route::post('/master-category/store', 'Admin\MasterCategoryController@store')->name('admin.feature.mastercategory.store');
-		Route::get('/master-category/edit/{id}', 'Admin\MasterCategoryController@edit')->name('admin.feature.mastercategory.edit');
-		Route::post('/master-category/edit', 'Admin\MasterCategoryController@edit')->name('admin.feature.mastercategory.edit');
-
-		//Lead Service Start
+	//Lead Service Start
 		Route::get('/lead-service', 'Admin\LeadServiceController@index')->name('admin.feature.leadservice.index');
 		Route::get('/lead-service/create', 'Admin\LeadServiceController@create')->name('admin.feature.leadservice.create');
 		Route::post('/lead-service/store', 'Admin\LeadServiceController@store')->name('admin.feature.leadservice.store');
 		Route::get('/lead-service/edit/{id}', 'Admin\LeadServiceController@edit')->name('admin.feature.leadservice.edit');
 		Route::post('/lead-service/edit', 'Admin\LeadServiceController@edit')->name('admin.feature.leadservice.edit');
 
-		//Tax Start
-		Route::get('/tax', 'Admin\TaxController@index')->name('admin.feature.tax.index');
-		Route::get('/tax/create', 'Admin\TaxController@create')->name('admin.feature.tax.create');
-		Route::post('/tax/store', 'Admin\TaxController@store')->name('admin.feature.tax.store');
-		Route::get('/tax/edit/{id}', 'Admin\TaxController@edit')->name('admin.feature.tax.edit');
-		Route::post('/tax/edit', 'Admin\TaxController@edit')->name('admin.feature.tax.edit');
 
-		//Subject Area Start
-		Route::get('/subjectarea', 'Admin\SubjectAreaController@index')->name('admin.feature.subjectarea.index');
-		Route::get('/subjectarea/create', 'Admin\SubjectAreaController@create')->name('admin.feature.subjectarea.create');
-		Route::post('/subjectarea/store', 'Admin\SubjectAreaController@store')->name('admin.feature.subjectarea.store');
-		Route::get('/subjectarea/edit/{id}', 'Admin\SubjectAreaController@edit')->name('admin.feature.subjectarea.edit');
-		Route::post('/subjectarea/edit', 'Admin\SubjectAreaController@edit')->name('admin.feature.subjectarea.edit');
 
 		//Subject Start
 		Route::get('/subject', 'Admin\SubjectController@index')->name('admin.feature.subject.index');
@@ -734,8 +625,6 @@ Route::prefix('admin')->group(function() {
 		Route::post('/attend_session', 'Admin\OfficeVisitController@attend_session');
 		Route::post('/complete_session', 'Admin\OfficeVisitController@complete_session');
 		Route::get('/office-visits/change_assignee', 'Admin\OfficeVisitController@change_assignee');
-		//Route::post('/agents/store', 'Admin\AgentController@store')->name('admin.agents.store');
-		//Route::get('/agent/detail/{id}', 'Admin\AgentController@detail')->name('admin.agents.detail');
 
 		Route::get('/enquiries', 'Admin\EnquireController@index')->name('admin.enquiries.index');
 		Route::get('/enquiries/archived-enquiries', 'Admin\EnquireController@Archived')->name('admin.enquiries.archived');
@@ -745,22 +634,6 @@ Route::prefix('admin')->group(function() {
 		//Audit Logs Start
 		Route::get('/audit-logs', 'Admin\AuditLogController@index')->name('admin.auditlogs.index');
 
-		//Reports Start
-		Route::get('/report/client', 'Admin\ReportController@client')->name('admin.reports.client');
-		Route::get('/report/application', 'Admin\ReportController@application')->name('admin.reports.application');
-		Route::get('/report/invoice', 'Admin\ReportController@invoice')->name('admin.reports.invoice');
-		Route::get('/report/office-visit', 'Admin\ReportController@office_visit')->name('admin.reports.office-visit');
-		Route::get('/report/sale-forecast/application', 'Admin\ReportController@saleforecast_application')->name('admin.reports.saleforecast-application');
-		Route::get('/report/sale-forecast/interested-service', 'Admin\ReportController@interested_service')->name('admin.reports.interested-service');
-		Route::get('/report/task/personal-task-report', 'Admin\ReportController@personal_task')->name('admin.reports.personal-task-report');
-		Route::get('/report/task/office-task-report', 'Admin\ReportController@office_task')->name('admin.reports.office-task-report');
-		Route::get('/reports/visaexpires', 'Admin\ReportController@visaexpires');
-		Route::get('/followup-dates', 'Admin\ReportController@followupdates');
-		Route::get('/reports/agreementexpires', 'Admin\ReportController@agreementexpires');
-        Route::get('/report/noofpersonofficevisit', 'Admin\ReportController@noofpersonofficevisit')->name('admin.reports.noofpersonofficevisit');
-        Route::get('/report/clientrandomlyselectmonthly', 'Admin\ReportController@clientrandomlyselectmonthly')->name('admin.reports.clientrandomlyselectmonthly');
-
-        Route::post('/report/save_random_client_selection', 'Admin\ReportController@saveclientrandomlyselectmonthly');
 
 
 		Route::post('/save_tag', 'Admin\ClientsController@save_tag');
@@ -814,26 +687,8 @@ Route::prefix('admin')->group(function() {
 
 
 
-		//Blog
-		Route::get('/blog', 'Admin\BlogController@index')->name('admin.blog.index');
-		Route::get('/blog/create', 'Admin\BlogController@create')->name('admin.blog.create');
-		Route::post('/blog/store', 'Admin\BlogController@store')->name('admin.blog.store');
-		Route::get('/blog/edit/{id}', 'Admin\BlogController@edit')->name('admin.blog.edit');
-		Route::post('/blog/edit', 'Admin\BlogController@edit')->name('admin.blog.edit');
 
-	//Blog Category
-		Route::get('/blogcategories', 'Admin\BlogCategoryController@index')->name('admin.blogcategory.index');
-		Route::get('/blogcategories/create', 'Admin\BlogCategoryController@create')->name('admin.blogcategory.create');
-		Route::post('/blogcategories/store', 'Admin\BlogCategoryController@store')->name('admin.blogcategory.store');
-		Route::get('/blogcategories/edit/{id}', 'Admin\BlogCategoryController@edit')->name('admin.blogcategory.edit');
-		Route::post('/blogcategories/edit', 'Admin\BlogCategoryController@edit')->name('admin.blogcategory.edit');
 
-		//CMS Pages
-		Route::get('/cms_pages', 'Admin\CmsPageController@index')->name('admin.cms_pages.index');
-		Route::get('/cms_pages/create', 'Admin\CmsPageController@create')->name('admin.cms_pages.create');
-		Route::post('/cms_pages/store', 'Admin\CmsPageController@store')->name('admin.cms_pages.store');
-		Route::get('/cms_pages/edit/{id}', 'Admin\CmsPageController@editCmsPage')->name('admin.edit_cms_page');
-		Route::post('/cms_pages/edit', 'Admin\CmsPageController@editCmsPage')->name('admin.edit_cms_page');
 
 
 

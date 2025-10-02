@@ -51,7 +51,7 @@
 														<div class="workflow_stges">
 															<table class="table">
 															<?php
-															$stagesquery = \App\WorkflowStage::where('id', @$fetchedData->id);
+															$stagesquery = \App\Models\WorkflowStage::where('id', @$fetchedData->id);
 															$stagescount = $stagesquery->count();
 															$stages = $stagesquery->get();
 															$i = 0;

@@ -560,7 +560,7 @@
                                                         <option value="India" {{ @$fetchedData->country_passport == 'India' ? 'selected' : '' }}>India</option>
                                                         <option value="Australia" {{ @$fetchedData->country_passport == 'Australia' ? 'selected' : '' }}>Australia</option>
                                                         <?php
-                                                        foreach (\App\Country::all() as $list) {
+                                                        foreach (\App\Models\Country::all() as $list) {
                                                             // Skip India and Australia since they've already been added manually
                                                             if ($list->name == 'India' || $list->name == 'Australia') {
                                                                 continue;
@@ -608,7 +608,7 @@
                                                             <!--<option value="Student Visa">Student Visa</option>
                                                             <option value="Work Visa">Work Visa</option>
                                                             <option value="Tourist Visa">Tourist Visa</option>-->
-                                                            @foreach(\App\Matter::select('id','title','nick_name')->where('status',1)->orderby('id','ASC')->get() as $matterlist)
+                                                            @foreach(\App\Models\Matter::select('id','title','nick_name')->where('status',1)->orderby('id','ASC')->get() as $matterlist)
                                                             <option value="{{ $matterlist->id }}">{{ $matterlist->title }} ({{ @$matterlist->nick_name }})</option>
                                                             @endforeach
                                                         </select>
@@ -770,7 +770,7 @@
                                                                         <!--<option value="Student Visa">Student Visa</option>
                                                                         <option value="Work Visa">Work Visa</option>
                                                                         <option value="Tourist Visa">Tourist Visa</option>-->
-                                                                        @foreach(\App\Matter::select('id','title','nick_name')->where('status',1)->orderby('id','ASC')->get() as $matterlist)
+                                                                        @foreach(\App\Models\Matter::select('id','title','nick_name')->where('status',1)->orderby('id','ASC')->get() as $matterlist)
                                                                         <option value="{{ $matterlist->id }}">{{ $matterlist->title }} ({{ @$matterlist->nick_name }})</option>
                                                                         @endforeach
                                                                     </select>
@@ -1318,7 +1318,7 @@
                                                                 <option value="Australia">Australia</option>
                                                                 <option value="India">India</option>
                                                                 <!-- Add other countries dynamically -->
-                                                                <?php foreach (\App\Country::all() as $list) {
+                                                                <?php foreach (\App\Models\Country::all() as $list) {
                                                                     if ($list->name != 'Australia' && $list->name != 'India') {
                                                                         echo '<option value="' . $list->name . '">' . $list->name . '</option>';
                                                                     }
@@ -1466,7 +1466,7 @@
                                                                     <option value="Australia">Australia</option>
                                                                     <option value="India">India</option>
                                                                     <!-- Add other countries dynamically -->
-                                                                    <?php foreach (\App\Country::all() as $list) {
+                                                                    <?php foreach (\App\Models\Country::all() as $list) {
                                                                         if ($list->name != 'Australia' && $list->name != 'India') {
                                                                             echo '<option value="' . $list->name . '">' . $list->name . '</option>';
                                                                         }
@@ -1600,7 +1600,7 @@
                                                                 <option value="Australia">Australia</option>
                                                                 <option value="India">India</option>
                                                                 <!-- Add other countries dynamically -->
-                                                                <?php foreach (\App\Country::all() as $list) {
+                                                                <?php foreach (\App\Models\Country::all() as $list) {
                                                                     if ($list->name != 'Australia' && $list->name != 'India') {
                                                                         echo '<option value="' . $list->name . '">' . $list->name . '</option>';
                                                                     }
@@ -1724,7 +1724,7 @@
                                                                     <option value="Australia">Australia</option>
                                                                     <option value="India">India</option>
                                                                     <!-- Add other countries dynamically -->
-                                                                    <?php foreach (\App\Country::all() as $list) {
+                                                                    <?php foreach (\App\Models\Country::all() as $list) {
                                                                         if ($list->name != 'Australia' && $list->name != 'India') {
                                                                             echo '<option value="' . $list->name . '">' . $list->name . '</option>';
                                                                         }

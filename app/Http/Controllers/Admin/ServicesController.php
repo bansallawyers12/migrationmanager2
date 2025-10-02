@@ -7,9 +7,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 
-use App\Admin;
-use App\Product;
-use App\Partner;
+use App\Models\Admin;
+use App\Models\Product;
+use App\Models\Partner;
  
 use Auth;
 use Config;
@@ -233,7 +233,7 @@ class ServicesController extends Controller
 								<select data-valid="required" class="form-control contact select2" id="contact" name="client_id">
 									<option value="">Please Select Contact</option>
 									<?php 
-										foreach(\App\Admin::where('role',7)->get() as $wlist){
+										foreach(\App\Models\Admin::where('role',7)->get() as $wlist){
 									?>
 										<option value="<?php echo $wlist->id; ?>"><?php echo $wlist->first_name.' '.$wlist->last_name; ?>
 											(<?php echo $wlist->email.' '.$wlist->phone; ?>)</option>
@@ -276,7 +276,7 @@ class ServicesController extends Controller
 									<select class="form-control productselect2" data-valid="required" name="product">
 									<option value="">Select Product</option>
 									<?php
-									$partnerproduct = \App\Product::where('partner', $request->partnerid)->get();
+									$partnerproduct = \App\Models\Product::where('partner', $request->partnerid)->get();
 									foreach($partnerproduct as $partnerp){
 									?>
 										<option value="<?php echo $partnerp->id; ?>"><?php echo $partnerp->name; ?></option>

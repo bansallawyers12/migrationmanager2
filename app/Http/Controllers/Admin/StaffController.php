@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Routing\Route;
 
-use App\Admin;
+use App\Models\Admin;
 
 use Auth;
 use Config;

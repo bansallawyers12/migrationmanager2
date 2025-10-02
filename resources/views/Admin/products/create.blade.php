@@ -47,7 +47,7 @@
 				<label for="partner">Partner</label>
 				<select class="form-control select2" data-valid="required" id="intrested_product" name="partner">
 					<option value="">Select Partner</option>
-					@foreach(\App\Partner::all() as $plist)
+					@foreach(\App\Models\Partner::all() as $plist)
 						<option value="{{$plist->id}}">{{$plist->partner_name}}</option>
 					@endforeach
 				</select>
@@ -76,7 +76,7 @@
 				<label for="product_type">Product Type</label>
 				<select class="form-control select2" data-valid="required" name="product_type">
 				<option value=""></option>
-				@foreach(\App\ProductType::all() as $plist)
+				@foreach(\App\Models\ProductType::all() as $plist)
 					<option value="{{$plist->name}}">{{$plist->name}}</option>
 				@endforeach
 				</select>

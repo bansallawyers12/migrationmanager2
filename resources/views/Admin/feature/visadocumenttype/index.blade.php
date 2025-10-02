@@ -43,7 +43,7 @@
                                         <td><?php if(isset($list->title)){ echo $list->title; }?></td>
                                         <td><?php
                                             if(isset($list->client_id) && $list->client_id != ''){
-                                                $admin = \App\Admin::select('first_name','last_name')->where('id', $list->client_id)->first();
+                                                $admin = \App\Models\Admin::select('first_name','last_name')->where('id', $list->client_id)->first();
                                                 if($admin){
                                                     echo $admin->first_name.' '.$admin->last_name;
                                                 } else {
@@ -56,9 +56,9 @@
 
                                         <td><?php
                                             if(isset($list->client_matter_id) && $list->client_matter_id != ''){
-                                                $clientMatterInfo = \App\ClientMatter::select('sel_matter_id')->where('id', $list->client_matter_id)->first();
+                                                $clientMatterInfo = \App\Models\ClientMatter::select('sel_matter_id')->where('id', $list->client_matter_id)->first();
                                                 if($clientMatterInfo){
-                                                    $matterInfo = \App\Matter::select('title','nick_name')->where('id', $clientMatterInfo->sel_matter_id)->first();
+                                                    $matterInfo = \App\Models\Matter::select('title','nick_name')->where('id', $clientMatterInfo->sel_matter_id)->first();
                                                     if($matterInfo){
                                                         echo $matterInfo->title.' ('.$matterInfo->nick_name.')';
                                                     } else {

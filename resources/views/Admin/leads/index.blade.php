@@ -235,12 +235,12 @@
                                 <?php $i = 0; ?>
                                 @foreach (@$lists as $list)
                                     <?php
-                                    $followpe = \App\Followup::where('lead_id', '=', $list->id)
+                                    $followpe = \App\Models\Followup::where('lead_id', '=', $list->id)
                                     ->where('followup_type', '!=', 'assigned_to')
                                     ->orderby('id', 'DESC')
                                     ->with(['followutype'])
                                     ->first();
-                                    $followp = \App\Followup::where('lead_id', '=', $list->id)
+                                    $followp = \App\Models\Followup::where('lead_id', '=', $list->id)
                                     ->where('followup_type', '=', 'follow_up')
                                     ->orderby('id', 'DESC')
                                     ->with(['followutype'])
@@ -324,7 +324,7 @@
                 <input id="mlead_id" name="mlead_id" type="hidden" value="">
                 <select name="assignto" class="form-control select2 " style="width: 100%;" data-select2-id="1" tabindex="-1" aria-hidden="true">
                     <option value="">Select</option>
-                    @foreach(\App\Admin::Where('role', '!=', '7')->get() as $ulist)
+                    @foreach(\App\Models\Admin::Where('role', '!=', '7')->get() as $ulist)
                     <option value="{{@$ulist->id}}">{{@$ulist->first_name}} {{@$ulist->last_name}}</option>
                     @endforeach
                 </select>

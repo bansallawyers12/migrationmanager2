@@ -14,7 +14,7 @@
 	</head>
 	<body>
 	<?php
-	$admin = \App\Admin::where('role',1)->first();
+	$admin = \App\Models\Admin::where('role',1)->first();
 	?>
 		<div class="invoice_table" style="padding: 10px;">
 			<table width="100%" border="0">

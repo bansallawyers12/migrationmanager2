@@ -74,7 +74,7 @@ use App\Http\Controllers\Controller;
 								<span class="float-left text-muted">Offices:</span>
 								<span class="float-right text-muted"></span>
 								<?php
-								$branches = \App\Branch::where('id', '!=', '')->get();
+								$branches = \App\Models\Branch::where('id', '!=', '')->get();
 								?>
 								@foreach($branches as $branch)
 								{{$branch->office_name}} @if($branch->id == $fetchedData->office_id)(Primary) @endif<br>
@@ -101,7 +101,7 @@ use App\Http\Controllers\Controller;
 								<span class="float-left text-muted">Department:</span>
 								<?php
 								if($fetchedData->team != ""){
-								    $teamData = \App\Team::select('name')->where('id', '=', $fetchedData->team)->first(); //dd($teamData);
+								    $teamData = \App\Models\Team::select('name')->where('id', '=', $fetchedData->team)->first(); //dd($teamData);
 								    $teamname = $teamData->name;
 								} else {
 								    $teamname = "";
@@ -188,9 +188,9 @@ use App\Http\Controllers\Controller;
 											</thead>
 											<tbody class="applicationtdata">
 											<?php
-											foreach(\App\Admin::where('role', 7)->where('user_id',$fetchedData->id)->get() as $alist){
-												$admin = \App\Admin::where('id', $alist->user_id)->first();
-											$branchx = \App\Branch::where('id', '=', $admin->office_id)->first();
+											foreach(\App\Models\Admin::where('role', 7)->where('user_id',$fetchedData->id)->get() as $alist){
+												$admin = \App\Models\Admin::where('id', $alist->user_id)->first();
+											$branchx = \App\Models\Branch::where('id', '=', $admin->office_id)->first();
 												?>
 												<tr id="id_{{$alist->id}}">
 													<td><a class="" data-id="{{$alist->id}}" href="{{URL::to('/admin/clients/detail')}}/{{base64_encode(convert_uuencode(@$alist->id))}}" style="display:block;">{{$alist->first_name}} {{$alist->last_name}}</a> {{$alist->email}}</td>
@@ -264,7 +264,7 @@ use App\Http\Controllers\Controller;
                                     							<div class="row ">
                                     								<div class="col-lg-12 col-md-12">
                                     									<div class="card-content">
-                                    							<?php	$countclients = \App\Admin::where('assignee', $fetchedData->id)->where('role', 7)->count(); ?>
+                                    							<?php	$countclients = \App\Models\Admin::where('assignee', $fetchedData->id)->where('role', 7)->count(); ?>
                                     										<h5 class="font-14">Total Clients</h5>
                                     										<h2 class="mb-3 font-18">{{$countclients}}</h2>
 
@@ -283,7 +283,7 @@ use App\Http\Controllers\Controller;
                                     								<div class="col-lg-12 col-md-12">
                                     									<div class="card-content">
                                     									<?php
-                                    									$countleads = \App\Lead::where('assign_to', $fetchedData->id)->count();
+                                    									$countleads = \App\Models\Lead::where('assign_to', $fetchedData->id)->count();
                                     									?>
                                     										<h5 class="font-14">Total Leads</h5>
                                     										<h2 class="mb-3 font-18">{{$countleads}}</h2>
@@ -296,10 +296,10 @@ use App\Http\Controllers\Controller;
                                     				</div>
                                     			</div>
                                         <?php
-                                        $allleads = \App\Lead::where('assign_to', $fetchedData->id)->get();
+                                        $allleads = \App\Models\Lead::where('assign_to', $fetchedData->id)->get();
                                         $userarray = array();
 										foreach($allleads as $alllead){
-												$userarray[] = \App\Followup::whereDate('followup_date', date('Y-m-d'))->whereDate('id', $alllead->id)->first();
+												$userarray[] = \App\Models\Followup::whereDate('followup_date', date('Y-m-d'))->whereDate('id', $alllead->id)->first();
 										}
 										?>
                                     <div class="col-xl-4 col-lg-6 col-md-6 col-sm-6 col-xs-12 mb-4">
@@ -332,7 +332,7 @@ use App\Http\Controllers\Controller;
                                     								<div class="col-lg-12 col-md-12">
                                     									<div class="card-content">
                                     									<?php
-                                    									$countconver = \App\Lead::where('converted', 1)->where('assign_to', $fetchedData->id)->count();
+                                    									$countconver = \App\Models\Lead::where('converted', 1)->where('assign_to', $fetchedData->id)->count();
                                     									?>
                                     										<h5 class="font-14">Total Converted</h5>
                                     										<h2 class="mb-3 font-18">{{$countconver}}</h2>
@@ -345,7 +345,7 @@ use App\Http\Controllers\Controller;
                                     				</div>
                                     			</div>
                                     	<?php
-                                    									$todaycountconver = \App\Lead::where('converted', 1)->where('assign_to', $fetchedData->id)->whereDate('converted_date', date('Y-m-d'))->count();
+                                    									$todaycountconver = \App\Models\Lead::where('converted', 1)->where('assign_to', $fetchedData->id)->whereDate('converted_date', date('Y-m-d'))->count();
                                     									?>
                                     <div class="col-xl-4 col-lg-6 col-md-6 col-sm-6 col-xs-12 mb-4">
                                     				<div class="card dash_card">
@@ -452,7 +452,7 @@ use App\Http\Controllers\Controller;
 								<label for="template">Templates </label>
 								<select data-valid="" class="form-control select2 selecttemplate" name="template">
 									<option value="">Select</option>
-									@foreach(\App\CrmEmailTemplate::all() as $list)
+									@foreach(\App\Models\CrmEmailTemplate::all() as $list)
 										<option value="{{$list->id}}">{{$list->name}}</option>
 									@endforeach
 								</select>
@@ -512,7 +512,7 @@ use App\Http\Controllers\Controller;
 								<label for="primary_office">New Primary Office <span class="span_req">*</span></label>
 								<select data-valid="required" class="form-control primary_office select2" id="primary_office" name="primary_office">
 									<option value="">Search & Select new Primary Office</option>
-									@foreach(\App\Branch::all() as $wlist)
+									@foreach(\App\Models\Branch::all() as $wlist)
 										<option value="{{$wlist->id}}">{{$wlist->office_name}}</option>
 									@endforeach
 								</select>
@@ -618,7 +618,7 @@ use App\Http\Controllers\Controller;
 								<label for="primary_office">Select a new assignee <span class="span_req">*</span></label>
 								<select data-valid="required" class="form-control primary_office select2" id="primary_office" name="primary_office">
 									<option value="">Select a new assignee</option>
-									@foreach(\App\Branch::all() as $wlist)
+									@foreach(\App\Models\Branch::all() as $wlist)
 										<option value="{{$wlist->id}}">{{$wlist->name}}</option>
 									@endforeach
 								</select>
@@ -682,9 +682,9 @@ use App\Http\Controllers\Controller;
 @endsection
 @section('scripts')
 <?php
-$leadsconverted = \App\Lead::where('converted', 1)->where('assign_to', $fetchedData->id)->count();
-$totalleads = \App\Lead::where('assign_to', $fetchedData->id)->count();
-$leadsprogress = \App\Lead::where('converted', 0)->where('assign_to', $fetchedData->id)->count();
+$leadsconverted = \App\Models\Lead::where('converted', 1)->where('assign_to', $fetchedData->id)->count();
+$totalleads = \App\Models\Lead::where('assign_to', $fetchedData->id)->count();
+$leadsprogress = \App\Models\Lead::where('converted', 0)->where('assign_to', $fetchedData->id)->count();
 
 $data = array($totalleads,$leadsconverted, $leadsprogress);
 ?>

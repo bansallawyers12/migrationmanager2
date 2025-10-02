@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use DB;
-use App\Note;
+use App\Models\Note;
 use Carbon\Carbon;
 
 class CompleteTaskRemoval extends Command

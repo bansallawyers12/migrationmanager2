@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use App\Admin;
-use App\DeviceToken;
-use App\RefreshToken;
+use App\Models\Admin;
+use App\Models\DeviceToken;
+use App\Models\RefreshToken;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;

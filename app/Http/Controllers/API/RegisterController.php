@@ -6,8 +6,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\API\BaseController as BaseController;
  
-use App\User;
-use App\Admin;
+use App\Models\User;
+use App\Models\Admin;
 use Validator;
 use Config;
 

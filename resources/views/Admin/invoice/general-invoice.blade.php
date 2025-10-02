@@ -94,7 +94,7 @@
 								<div class="form-group">
 									<label for="invoice_due_date">Select Profile:</label>
 									<select class="form-control" name="profile">
-										@foreach(\App\Profile::all() as $profiles)
+										@foreach(\App\Models\Profile::all() as $profiles)
 											<option value="{{$profiles->id}}">{{$profiles->company_name}}</option>
 										@endforeach
 									</select>
@@ -135,7 +135,7 @@
 												<td>
 													<select name="tax_code[]" class="form-control tax_per">
 														<option value="0">Select A Tax Code</option>
-														@foreach(\App\Tax::all() as $taxlist)
+														@foreach(\App\Models\TaxRate::all() as $taxlist)
 															<option value="{{$taxlist->amount}}" @if($taxlist->amount=='10'){{'selected'}}@endif>{{$taxlist->name}}</option>
 														@endforeach
 													</select>
@@ -311,7 +311,7 @@
 													<select class="form-control" id="share_user" name="share_user">
 													<option value="no">Select a receiver</option>
 													<?php
-													$branches = \App\Branch::where('id','!=', '1')->get();
+													$branches = \App\Models\Branch::where('id','!=', '1')->get();
 													foreach($branches as $branch){
 													?>
 														<option value="{{$branch->id}}">{{$branch->office_name}}</option>

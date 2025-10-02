@@ -403,8 +403,8 @@
                                             Assign User
                                         </button>
                                         <div class='dropdown-menu' aria-labelledby='dropdownMenuButton'>
-                                            @foreach(\App\Admin::where('role','!=',7)->where('status',1)->orderby('first_name','ASC')->get() as $admin)
-                                                <?php $branchname = \App\Branch::where('id',$admin->office_id)->first(); ?>
+                                            @foreach(\App\Models\Admin::where('role','!=',7)->where('status',1)->orderby('first_name','ASC')->get() as $admin)
+                                                <?php $branchname = \App\Models\Branch::where('id',$admin->office_id)->first(); ?>
                                                 <label class='dropdown-item'>
                                                     <input type='checkbox' class='checkbox-item' value='{{ $admin->id }}'>
                                                     {{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})
@@ -413,8 +413,8 @@
                                         </div>
                                     </div>
                                     <select class='d-none' id='rem_cat' name='rem_cat[]' multiple='multiple'>
-                                        @foreach(\App\Admin::where('role','!=',7)->where('status',1)->orderby('first_name','ASC')->get() as $admin)
-                                            <?php $branchname = \App\Branch::where('id',$admin->office_id)->first(); ?>
+                                        @foreach(\App\Models\Admin::where('role','!=',7)->where('status',1)->orderby('first_name','ASC')->get() as $admin)
+                                            <?php $branchname = \App\Models\Branch::where('id',$admin->office_id)->first(); ?>
                                             <option value='{{ $admin->id }}'>{{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})</option>
                                         @endforeach
                                     </select>
@@ -932,8 +932,8 @@ $(function () {
                         <div class="col-sm-9">
                             <select class="assigneeselect2 form-control selec_reg" id="rem_cat" name="rem_cat">
                                 <option value="">Select</option>
-                                @foreach(\App\Admin::where('role','!=',7)->where('status',1)->orderby('first_name','ASC')->get() as $admin)
-                                    <?php $branchname = \App\Branch::where('id',$admin->office_id)->first(); ?>
+                                @foreach(\App\Models\Admin::where('role','!=',7)->where('status',1)->orderby('first_name','ASC')->get() as $admin)
+                                    <?php $branchname = \App\Models\Branch::where('id',$admin->office_id)->first(); ?>
                                     <option value="{{ $admin->id }}" ${assignedTo == {{ $admin->id }} ? 'selected' : ''}>
                                         {{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})
                                     </option>

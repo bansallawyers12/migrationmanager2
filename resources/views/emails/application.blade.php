@@ -16,7 +16,7 @@
 	</head>
 	<body>
 	<?php
-	$admin = \App\Admin::where('role',1)->first();
+	$admin = \App\Models\Admin::where('role',1)->first();
 	
 	?>
 		<div class="invoice_table" style="padding: 10px;">
@@ -55,7 +55,7 @@
 												</thead>
 												<tbody>
 												<?php
-													$admin = \App\Admin::where('id', $applications->user_id)->first();
+													$admin = \App\Models\Admin::where('id', $applications->user_id)->first();
 												?>
 													<tr>
 														<td><b>DOB:</b></td>
@@ -118,9 +118,9 @@
 				</thead>
 				<tbody>
 					<?php
-					$applicationlists = \App\ApplicationActivitiesLog::where('app_id', $applications->id)->where('stage','Application')->orderby('created_at', 'DESC')->get();
+					$applicationlists = \App\Models\ApplicationActivitiesLog::where('app_id', $applications->id)->where('stage','Application')->orderby('created_at', 'DESC')->get();
 					foreach($applicationlists as $applicationlist){ 
-					$admin = \App\Admin::where('id',$applicationlist->user_id)->first();
+					$admin = \App\Models\Admin::where('id',$applicationlist->user_id)->first();
 					?>
 						<tr style="font-size:12px;line-height:18px;margin-top:50px;">
 							<td colspan="5">
@@ -143,9 +143,9 @@
 				</thead>
 				<tbody>
 					<?php
-					$applicationlists = \App\ApplicationActivitiesLog::where('app_id', $applications->id)->where('stage','Acceptance')->orderby('created_at', 'DESC')->get();
+					$applicationlists = \App\Models\ApplicationActivitiesLog::where('app_id', $applications->id)->where('stage','Acceptance')->orderby('created_at', 'DESC')->get();
 					foreach($applicationlists as $applicationlist){ 
-					$admin = \App\Admin::where('id',$applicationlist->user_id)->first();
+					$admin = \App\Models\Admin::where('id',$applicationlist->user_id)->first();
 					?>
 						<tr style="font-size:12px;line-height:18px;margin-top:50px;">
 							<td colspan="5">
@@ -169,9 +169,9 @@
 				</thead>
 				<tbody>
 					<?php
-					$applicationlists = \App\ApplicationActivitiesLog::where('app_id', $applications->id)->where('stage','Payment')->orderby('created_at', 'DESC')->get();
+					$applicationlists = \App\Models\ApplicationActivitiesLog::where('app_id', $applications->id)->where('stage','Payment')->orderby('created_at', 'DESC')->get();
 					foreach($applicationlists as $applicationlist){ 
-					$admin = \App\Admin::where('id',$applicationlist->user_id)->first();
+					$admin = \App\Models\Admin::where('id',$applicationlist->user_id)->first();
 					?>
 						<tr style="font-size:12px;line-height:18px;margin-top:50px;">
 							<td colspan="5">
@@ -194,9 +194,9 @@
 				</thead>
 				<tbody>
 					<?php
-					$applicationlists = \App\ApplicationActivitiesLog::where('app_id', $applications->id)->where('stage','Form I 20')->orderby('created_at', 'DESC')->get();
+					$applicationlists = \App\Models\ApplicationActivitiesLog::where('app_id', $applications->id)->where('stage','Form I 20')->orderby('created_at', 'DESC')->get();
 					foreach($applicationlists as $applicationlist){ 
-					$admin = \App\Admin::where('id',$applicationlist->user_id)->first();
+					$admin = \App\Models\Admin::where('id',$applicationlist->user_id)->first();
 					?>
 						<tr style="font-size:12px;line-height:18px;margin-top:50px;">
 							<td colspan="5">
@@ -219,9 +219,9 @@
 				</thead>
 				<tbody>
 					<?php
-					$applicationlists = \App\ApplicationActivitiesLog::where('app_id', $applications->id)->where('stage','Visa Application')->orderby('created_at', 'DESC')->get();
+					$applicationlists = \App\Models\ApplicationActivitiesLog::where('app_id', $applications->id)->where('stage','Visa Application')->orderby('created_at', 'DESC')->get();
 					foreach($applicationlists as $applicationlist){ 
-					$admin = \App\Admin::where('id',$applicationlist->user_id)->first();
+					$admin = \App\Models\Admin::where('id',$applicationlist->user_id)->first();
 					?>
 						<tr style="font-size:12px;line-height:18px;margin-top:50px;">
 							<td colspan="5">
@@ -244,9 +244,9 @@
 				</thead>
 				<tbody>
 					<?php
-					$applicationlists = \App\ApplicationActivitiesLog::where('app_id', $applications->id)->where('stage','Interview')->orderby('created_at', 'DESC')->get();
+					$applicationlists = \App\Models\ApplicationActivitiesLog::where('app_id', $applications->id)->where('stage','Interview')->orderby('created_at', 'DESC')->get();
 					foreach($applicationlists as $applicationlist){ 
-					$admin = \App\Admin::where('id',$applicationlist->user_id)->first();
+					$admin = \App\Models\Admin::where('id',$applicationlist->user_id)->first();
 					?>
 						<tr style="font-size:12px;line-height:18px;margin-top:50px;">
 							<td colspan="5">
@@ -269,9 +269,9 @@
 				</thead>
 				<tbody>
 					<?php
-					$applicationlists = \App\ApplicationActivitiesLog::where('app_id', $applications->id)->where('stage','Enrolment')->orderby('created_at', 'DESC')->get();
+					$applicationlists = \App\Models\ApplicationActivitiesLog::where('app_id', $applications->id)->where('stage','Enrolment')->orderby('created_at', 'DESC')->get();
 					foreach($applicationlists as $applicationlist){ 
-					$admin = \App\Admin::where('id',$applicationlist->user_id)->first();
+					$admin = \App\Models\Admin::where('id',$applicationlist->user_id)->first();
 					?>
 						<tr style="font-size:12px;line-height:18px;margin-top:50px;">
 							<td colspan="5">
@@ -294,9 +294,9 @@
 				</thead>
 				<tbody>
 					<?php
-					$applicationlists = \App\ApplicationActivitiesLog::where('app_id', $applications->id)->where('stage','Course Ongoing')->orderby('created_at', 'DESC')->get();
+					$applicationlists = \App\Models\ApplicationActivitiesLog::where('app_id', $applications->id)->where('stage','Course Ongoing')->orderby('created_at', 'DESC')->get();
 					foreach($applicationlists as $applicationlist){ 
-					$admin = \App\Admin::where('id',$applicationlist->user_id)->first();
+					$admin = \App\Models\Admin::where('id',$applicationlist->user_id)->first();
 					?>
 						<tr style="font-size:12px;line-height:18px;margin-top:50px;">
 							<td colspan="5">

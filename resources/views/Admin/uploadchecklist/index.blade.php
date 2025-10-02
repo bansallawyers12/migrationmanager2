@@ -122,7 +122,7 @@
 																<?php
 																$matterName = 'NA';
 																if( isset($list->matter_id) && $list->matter_id != '') {
-																	$matterInfo = \App\Matter::select('id','title','nick_name')->where('id', $list->matter_id)->first();
+																	$matterInfo = \App\Models\Matter::select('id','title','nick_name')->where('id', $list->matter_id)->first();
 																	if($matterInfo){
 																		$matterName = $matterInfo->title.' ('.$matterInfo->nick_name.')';
 																	}

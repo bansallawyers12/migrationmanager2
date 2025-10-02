@@ -1346,14 +1346,14 @@ use App\Http\Controllers\Controller;
                 <h1 style="max-width:343px;">
                     <?php
                     if($id1) { //if client unique reference id is present in url
-                        $matter_info_arr = \App\ClientMatter::select('client_unique_matter_no')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
+                        $matter_info_arr = \App\Models\ClientMatter::select('client_unique_matter_no')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
                     ?>
                         {{$fetchedData->client_id}}-{{$matter_info_arr->client_unique_matter_no}}
                     <?php
                     } else {
-                        $matter_cnt = \App\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
+                        $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
                         if($matter_cnt >0){
-                            $matter_info_arr = \App\ClientMatter::select('client_unique_matter_no')->where('client_id',$fetchedData->id)->where('matter_status',1)->orderBy('id', 'desc')->first();
+                            $matter_info_arr = \App\Models\ClientMatter::select('client_unique_matter_no')->where('client_id',$fetchedData->id)->where('matter_status',1)->orderBy('id', 'desc')->first();
                         ?>
                             {{$fetchedData->client_id}}-{{$matter_info_arr->client_unique_matter_no}}
                         <?php
@@ -1418,7 +1418,7 @@ use App\Http\Controllers\Controller;
 
             <div class="client-status">
                 <span class="status-badge" style="background-color:#FFF !important;"><?php
-                    $assign_info_arr = \App\Admin::select('type')->where('id',@$fetchedData->id)->first();
+                    $assign_info_arr = \App\Models\Admin::select('type')->where('id',@$fetchedData->id)->first();
                     ?>
                     @if($assign_info_arr->type == 'client')
                         <?php
@@ -1459,7 +1459,7 @@ use App\Http\Controllers\Controller;
                                 ->where('client_matters.matter_status',1)
                                 ->where('client_matters.sel_matter_id','!=',1)
                                 ->get(); //dd($matter_list_arr);
-                                $clientmatter_info_arr = \App\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
+                                $clientmatter_info_arr = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
                                 $latestClientMatterId = $clientmatter_info_arr ? $clientmatter_info_arr->id : null;
 
                                 // Convert matter_list_arr to an array for sorting
@@ -1501,7 +1501,7 @@ use App\Http\Controllers\Controller;
                                 ->where('client_matters.sel_matter_id','!=',1)
                                 ->orderBy('client_matters.created_at', 'desc')
                                 ->get();
-                                $latestClientMatter = \App\ClientMatter::where('client_id',$fetchedData->id)->where('matter_status',1)->latest()->first();
+                                $latestClientMatter = \App\Models\ClientMatter::where('client_id',$fetchedData->id)->where('matter_status',1)->latest()->first();
                                 $latestClientMatterId = $latestClientMatter ? $latestClientMatter->id : null;
                                 ?>
                             <select name="matter_id" id="sel_matter_id_client_detail" class="form-control select2" data-valid="required" style="width: 200px;">
@@ -1563,7 +1563,7 @@ use App\Http\Controllers\Controller;
         </h5>
         <nav class="content-tabs">
             <?php
-            $matter_cnt = \App\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
+            $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
             if( isset($id1) && $id1 != "" || $matter_cnt >0 )
             {  //if client unique reference id is present in url
             ?>
@@ -1611,7 +1611,7 @@ use App\Http\Controllers\Controller;
                                 } ?>
                                 <?php
                                 if ( isset($fetchedData->age) && $fetchedData->age != '') {
-                                    $verifiedDob = \App\Admin::where('id',$fetchedData->id)->whereNotNull('dob_verified_date')->first();
+                                    $verifiedDob = \App\Models\Admin::where('id',$fetchedData->id)->whereNotNull('dob_verified_date')->first();
                                     if ( $verifiedDob) {
                                         $verifiedDobTick = '<i class="fas fa-check-circle verified-icon fa-lg"></i>';
                                     } else {
@@ -1642,7 +1642,7 @@ use App\Http\Controllers\Controller;
                             $dob_verify_by_name = '';
                             if( isset($fetchedData->dob_verified_by) && $fetchedData->dob_verified_by != "")
                             {
-                                $dob_verify_by_arr = \App\Admin::select('first_name', 'last_name')->where('id', $fetchedData->dob_verified_by)->first();
+                                $dob_verify_by_arr = \App\Models\Admin::select('first_name', 'last_name')->where('id', $fetchedData->dob_verified_by)->first();
                                 //dd($dob_verify_by_arr);
                                 if($dob_verify_by_arr){
                                     $dob_verify_by_name = $dob_verify_by_arr->first_name.' '.$dob_verify_by_arr->last_name;
@@ -1693,11 +1693,11 @@ use App\Http\Controllers\Controller;
                             <span class="field-label">Client Email</span>
                             <span class="field-value">
                                 <?php
-                                if( \App\ClientEmail::where('client_id', $fetchedData->id)->exists()) {
-                                    $clientEmails = \App\ClientEmail::select('email','email_type')->where('client_id', $fetchedData->id)->get();
+                                if( \App\Models\ClientEmail::where('client_id', $fetchedData->id)->exists()) {
+                                    $clientEmails = \App\Models\ClientEmail::select('email','email_type')->where('client_id', $fetchedData->id)->get();
                                 } else {
-                                    if( \App\Admin::where('id', $fetchedData->id)->exists()){
-                                        $clientEmails = \App\Admin::select('email','email_type')->where('id', $fetchedData->id)->get();
+                                    if( \App\Models\Admin::where('id', $fetchedData->id)->exists()){
+                                        $clientEmails = \App\Models\Admin::select('email','email_type')->where('id', $fetchedData->id)->get();
                                     } else {
                                         $clientEmails = array();
                                     }
@@ -1705,7 +1705,7 @@ use App\Http\Controllers\Controller;
                                 if( !empty($clientEmails) && count($clientEmails)>0 ){
                                     $emailStr = "";
                                     foreach($clientEmails as $emailKey=>$emailVal){
-                                        $verifiedEmail = \App\Admin::where('id',$fetchedData->id)->whereNotNull('email_verified_date')->first();
+                                        $verifiedEmail = \App\Models\Admin::where('id',$fetchedData->id)->whereNotNull('email_verified_date')->first();
 
                                         //Check email is verified or not
                                         $check_verified_email = $emailVal->email_type."".$emailVal->email;
@@ -1733,11 +1733,11 @@ use App\Http\Controllers\Controller;
                             <span class="field-label">Client Phone</span>
                             <span class="field-value">
                                 <?php
-                                if( \App\ClientContact::where('client_id', $fetchedData->id)->exists()) {
-                                    $clientContacts = \App\ClientContact::select('phone','country_code','contact_type')->where('client_id', $fetchedData->id)->where('contact_type', '!=', 'Not In Use')->get();
+                                if( \App\Models\ClientContact::where('client_id', $fetchedData->id)->exists()) {
+                                    $clientContacts = \App\Models\ClientContact::select('phone','country_code','contact_type')->where('client_id', $fetchedData->id)->where('contact_type', '!=', 'Not In Use')->get();
                                 } else {
-                                    if( \App\Admin::where('id', $fetchedData->id)->exists()){
-                                        $clientContacts = \App\Admin::select('phone','country_code','contact_type')->where('id', $fetchedData->id)->get();
+                                    if( \App\Models\Admin::where('id', $fetchedData->id)->exists()){
+                                        $clientContacts = \App\Models\Admin::select('phone','country_code','contact_type')->where('id', $fetchedData->id)->get();
                                     } else {
                                         $clientContacts = array();
                                     }
@@ -1747,7 +1747,7 @@ use App\Http\Controllers\Controller;
                                     foreach($clientContacts as $conKey=>$conVal){
                                         //Check phone is verified or not
                                         $check_verified_phoneno = $conVal->country_code."".$conVal->phone;
-                                        $verifiedNumber = \App\Admin::where('id',$fetchedData->id)->whereNotNull('phone_verified_date')->first();
+                                        $verifiedNumber = \App\Models\Admin::where('id',$fetchedData->id)->whereNotNull('phone_verified_date')->first();
                                         if( isset($conVal->country_code) && $conVal->country_code != "" ){
                                             $country_code = $conVal->country_code;
                                         } else {
@@ -1824,7 +1824,7 @@ use App\Http\Controllers\Controller;
                                 if( $visa_Info && $visa_Info->visa_type != "" ){
                                     $Matter_get = App\Matter::select('id','title','nick_name')->where('id',$visa_Info->visa_type)->first();
                                     if(!empty($Matter_get)){
-                                        $verifiedVisa = \App\Admin::where('id',$fetchedData->id)->whereNotNull('visa_expiry_verified_at')->first();
+                                        $verifiedVisa = \App\Models\Admin::where('id',$fetchedData->id)->whereNotNull('visa_expiry_verified_at')->first();
                                         if ( $verifiedVisa) {
                                             $verifiedVisaTick = '<i class="fas fa-check-circle verified-icon fa-lg"></i>';
                                         } else {
@@ -1996,7 +1996,7 @@ use App\Http\Controllers\Controller;
                                                 //dd($relationship->related_client_id);
                                                 if(isset($relationship->related_client_id) && $relationship->related_client_id != "")
                                                 { //Existing Client
-                                                    $relatedClientInfo = App\Admin::select('client_id','first_name','last_name')->where('id', $relationship->related_client_id)->first();
+                                                    $relatedClientInfo = App\\Models\\Admin::select('client_id','first_name','last_name')->where('id', $relationship->related_client_id)->first();
                                                     //dd($relatedClientInfo);
                                                     if($relatedClientInfo){
                                                         $relatedClientId = $relatedClientInfo->client_id;
@@ -2076,7 +2076,7 @@ use App\Http\Controllers\Controller;
                                     $exploder = explode(',', $fetchedData->related_files);
                                     foreach($exploder AS $EXP)
                                     {
-                                        $relatedclients = \App\Admin::where('id', $EXP)->first();
+                                        $relatedclients = \App\Models\Admin::where('id', $EXP)->first();
                                         ?>
                                         <li><a target="_blank" href="{{URL::to('/admin/clients/detail/'.base64_encode(convert_uuencode(@$relatedclients->id)))}}">{{$relatedclients->first_name}} {{$relatedclients->last_name}}</a></li>
                                     <?php
@@ -2087,7 +2087,7 @@ use App\Http\Controllers\Controller;
                     </div>
 
                     <?php
-                    $matter_cnt = \App\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
+                    $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
                     //dd($matter_cnt);
                     if($matter_cnt >0)
                     {
@@ -2099,14 +2099,14 @@ use App\Http\Controllers\Controller;
                             $matter_dis_ref_info_arr = array(); // Always a Collection
                             if($id1)
                             { //if client unique reference id is present in url
-                                $matter_dis_ref_info_arr = \App\ClientMatter::select('department_reference','other_reference')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
+                                $matter_dis_ref_info_arr = \App\Models\ClientMatter::select('department_reference','other_reference')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
                             }
                             else
                             {
-                                $matter_cnt = \App\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
+                                $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
                                 //dd($matter_cnt);
                                 if($matter_cnt >0){
-                                    $matter_dis_ref_info_arr = \App\ClientMatter::select('department_reference','other_reference')->where('client_id',$fetchedData->id)->where('matter_status',1)->orderBy('id', 'desc')->first();
+                                    $matter_dis_ref_info_arr = \App\Models\ClientMatter::select('department_reference','other_reference')->where('client_id',$fetchedData->id)->where('matter_status',1)->orderBy('id', 'desc')->first();
                                 }
                             } //dd($matter_dis_ref_info_arr);
                             ?>
@@ -2139,7 +2139,7 @@ use App\Http\Controllers\Controller;
                     } ?>
 
                     <?php
-                    $matter_cnt = \App\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
+                    $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
                     //dd($matter_cnt);
                     if($matter_cnt >0)
                     {
@@ -2152,14 +2152,14 @@ use App\Http\Controllers\Controller;
                             $matter_dis_ref_info_arr = array(); // Always a Collection
                             if($id1)
                             { //if client unique reference id is present in url
-                                $matter_dis_ref_info_arr = \App\ClientMatter::select('sel_migration_agent','sel_person_responsible','sel_person_assisting')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
+                                $matter_dis_ref_info_arr = \App\Models\ClientMatter::select('sel_migration_agent','sel_person_responsible','sel_person_assisting')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
                             }
                             else
                             {
-                                $matter_cnt = \App\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
+                                $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
                                 //dd($matter_cnt);
                                 if($matter_cnt >0){
-                                    $matter_dis_ref_info_arr = \App\ClientMatter::select('sel_migration_agent','sel_person_responsible','sel_person_assisting')->where('client_id',$fetchedData->id)->where('matter_status',1)->orderBy('id', 'desc')->first();
+                                    $matter_dis_ref_info_arr = \App\Models\ClientMatter::select('sel_migration_agent','sel_person_responsible','sel_person_assisting')->where('client_id',$fetchedData->id)->where('matter_status',1)->orderBy('id', 'desc')->first();
                                 }
                             } //dd($matter_dis_ref_info_arr);
                             ?>
@@ -2169,7 +2169,7 @@ use App\Http\Controllers\Controller;
                                 <span class="field-value">
                                     <?php
                                     if( isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->sel_migration_agent != '') {
-                                        $mig_agent_info_arr = \App\Admin::select('first_name','last_name')->where('id', $matter_dis_ref_info_arr->sel_migration_agent)->first();
+                                        $mig_agent_info_arr = \App\Models\Admin::select('first_name','last_name')->where('id', $matter_dis_ref_info_arr->sel_migration_agent)->first();
                                         if($mig_agent_info_arr){
                                             echo $mig_agent_info_arr->first_name.' '.$mig_agent_info_arr->last_name;
                                         }
@@ -2184,7 +2184,7 @@ use App\Http\Controllers\Controller;
                                 <span class="field-value">
                                     <?php
                                     if( isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->sel_person_responsible != ''){
-                                        $sel_person_responsible_info_arr = \App\Admin::select('first_name','last_name')->where('id', $matter_dis_ref_info_arr->sel_person_responsible)->first();
+                                        $sel_person_responsible_info_arr = \App\Models\Admin::select('first_name','last_name')->where('id', $matter_dis_ref_info_arr->sel_person_responsible)->first();
                                         if($sel_person_responsible_info_arr){
                                             echo $sel_person_responsible_info_arr->first_name.' '.$sel_person_responsible_info_arr->last_name;
                                         }
@@ -2199,7 +2199,7 @@ use App\Http\Controllers\Controller;
                                 <span class="field-value">
                                     <?php
                                     if( isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->sel_person_assisting != ''){
-                                        $sel_person_assisting_info_arr = \App\Admin::select('first_name','last_name')->where('id', $matter_dis_ref_info_arr->sel_person_assisting)->first();
+                                        $sel_person_assisting_info_arr = \App\Models\Admin::select('first_name','last_name')->where('id', $matter_dis_ref_info_arr->sel_person_assisting)->first();
                                         if($sel_person_assisting_info_arr){
                                             echo $sel_person_assisting_info_arr->first_name.' '.$sel_person_assisting_info_arr->last_name;
                                         }
@@ -2228,15 +2228,15 @@ use App\Http\Controllers\Controller;
                     </div>
                     <div class="note_term_list">
                         <?php
-                        $notelist = \App\Note::where('client_id', $fetchedData->id)
+                        $notelist = \App\Models\Note::where('client_id', $fetchedData->id)
                             ->whereNull('assigned_to')
                             ->where('type', 'client')
                             ->orderby('pin', 'DESC')
                             ->orderBy('created_at', 'DESC')
                             ->get();
                         foreach($notelist as $list) {
-                            $admin = \App\Admin::where('id', $list->user_id)->first();
-                            //$color = \App\Team::select('color')->where('id', $admin->team)->first();
+                            $admin = \App\Models\Admin::where('id', $list->user_id)->first();
+                            //$color = \App\Models\Team::select('color')->where('id', $admin->team)->first();
                         ?>
                             <div class="note-card <?php if($list->pin == 1) echo 'pinned'; ?>" data-matterid="{{ $list->matter_id }}" id="note_id_{{$list->id}}">
                                 <div class="note-header">
@@ -2294,7 +2294,7 @@ use App\Http\Controllers\Controller;
                     <nav class="subtabs">
                         <button class="subtab-button active" data-subtab="documents">Personal Document</button>
                         <?php
-                        $matter_cnt = \App\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
+                        $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
                         //dd($matter_cnt);
                         if($matter_cnt >0 ) { ?>
                             <button class="subtab-button" data-subtab="migrationdocuments">Visa Document</button>
@@ -2311,9 +2311,9 @@ use App\Http\Controllers\Controller;
                             <!-- Document Type Subtabs -->
                             <nav class="subtabs2" style="margin-top: 10px;margin-left: 10px;display:inline-block;">
                                 <?php
-                                //$persDocCatListF = \App\PersonalDocumentType::select('title')->where('status',1)->orderby('id', 'ASC')->get(); //dd($persDocCatListF);
+                                //$persDocCatListF = \App\Models\PersonalDocumentType::select('title')->where('status',1)->orderby('id', 'ASC')->get(); //dd($persDocCatListF);
                                 $clientId = $fetchedData->id ?? null; // replace with your actual client ID
-                                $persDocCatListF = \App\PersonalDocumentType::select('title')
+                                $persDocCatListF = \App\Models\PersonalDocumentType::select('title')
                                 ->where('status', 1)
                                 ->where(function($query) use ($clientId) {
                                     $query->whereNull('client_id')
@@ -2356,7 +2356,7 @@ use App\Http\Controllers\Controller;
                              <!-- Subtab2 Contents -->
                             <div class="subtab2-content">
                                 <?php
-                                $persDocCatList = \App\PersonalDocumentType::select('title')->where('status',1)->orderby('id', 'ASC')->get();
+                                $persDocCatList = \App\Models\PersonalDocumentType::select('title')->where('status',1)->orderby('id', 'ASC')->get();
                                 foreach($persDocCatList as $catVal)
                                 {
                                     if( $catVal->title == 'General')
@@ -2382,10 +2382,10 @@ use App\Http\Controllers\Controller;
                                                     </thead>
                                                     <tbody class="tdata documnetlist_{{$catVal->title}}">
                                                         <?php
-                                                        $fetchd = \App\Document::where('client_id',$fetchedData->id)->whereNull('not_used_doc')->where('doc_type', 'personal')->where('folder_name', $catVal->title)->where('type','client')->orderby('updated_at', 'DESC')->get();
+                                                        $fetchd = \App\Models\Document::where('client_id',$fetchedData->id)->whereNull('not_used_doc')->where('doc_type', 'personal')->where('folder_name', $catVal->title)->where('type','client')->orderby('updated_at', 'DESC')->get();
                                                         foreach($fetchd as $docKey=>$fetch)
                                                         {
-                                                            $admin = \App\Admin::where('id', $fetch->user_id)->first();
+                                                            $admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
                                                             ?>
                                                                 <tr class="drow" id="id_{{$fetch->id}}">
                                                                     <td><?php echo $docKey+1;?></td>
@@ -2479,7 +2479,7 @@ use App\Http\Controllers\Controller;
                                                 <?php
                                                 foreach($fetchd as $fetch)
                                                 {
-                                                    $admin = \App\Admin::where('id', $fetch->user_id)->first();
+                                                    $admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
                                                     ?>
                                                     <div class="grid_list" id="gid_<?php echo $fetch->id; ?>">
                                                         <div class="grid_col">
@@ -2550,10 +2550,10 @@ use App\Http\Controllers\Controller;
                                                             </thead>
                                                             <tbody class="tdata documnetlist_{{$sanitizedTitle}}">
                                                                 <?php
-                                                                $fetchd = \App\Document::where('client_id',$fetchedData->id)->whereNull('not_used_doc')->where('doc_type', 'personal')->where('folder_name', $sanitizedTitle)->where('type','client')->orderby('updated_at', 'DESC')->get();
+                                                                $fetchd = \App\Models\Document::where('client_id',$fetchedData->id)->whereNull('not_used_doc')->where('doc_type', 'personal')->where('folder_name', $sanitizedTitle)->where('type','client')->orderby('updated_at', 'DESC')->get();
                                                                 foreach($fetchd as $docKey=>$fetch)
                                                                 {
-                                                                    $admin = \App\Admin::where('id', $fetch->user_id)->first();
+                                                                    $admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
                                                                     ?>
                                                                         <tr class="drow" id="id_{{$fetch->id}}">
                                                                             <td><?php echo $docKey+1;?></td>
@@ -2644,7 +2644,7 @@ use App\Http\Controllers\Controller;
                                                             <?php
                                                             foreach($fetchd as $fetch)
                                                             {
-                                                                $admin = \App\Admin::where('id', $fetch->user_id)->first();
+                                                                $admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
                                                                 ?>
                                                                 <div class="grid_list" id="gid_<?php echo $fetch->id; ?>">
                                                                     <div class="grid_col">
@@ -2709,10 +2709,10 @@ use App\Http\Controllers\Controller;
                                                         </thead>
                                                         <tbody class="tdata documnetlist_{{$catVal->title}}">
                                                             <?php
-                                                            $fetchd = \App\Document::where('client_id',$fetchedData->id)->whereNull('not_used_doc')->where('doc_type', 'personal')->where('folder_name', $catVal->title)->where('type','client')->orderby('updated_at', 'DESC')->get();
+                                                            $fetchd = \App\Models\Document::where('client_id',$fetchedData->id)->whereNull('not_used_doc')->where('doc_type', 'personal')->where('folder_name', $catVal->title)->where('type','client')->orderby('updated_at', 'DESC')->get();
                                                             foreach($fetchd as $docKey=>$fetch)
                                                             {
-                                                                $admin = \App\Admin::where('id', $fetch->user_id)->first();
+                                                                $admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
                                                                 ?>
                                                                     <tr class="drow" id="id_{{$fetch->id}}">
                                                                         <td><?php echo $docKey+1;?></td>
@@ -2803,7 +2803,7 @@ use App\Http\Controllers\Controller;
                                                         <?php
                                                         foreach($fetchd as $fetch)
                                                         {
-                                                            $admin = \App\Admin::where('id', $fetch->user_id)->first();
+                                                            $admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
                                                             ?>
                                                             <div class="grid_list" id="gid_<?php echo $fetch->id; ?>">
                                                                 <div class="grid_col">
@@ -2873,9 +2873,9 @@ use App\Http\Controllers\Controller;
                                     </thead>
                                     <tbody class="tdata migdocumnetlist">
                                         <?php
-                                        $fetchd = \App\Document::where('client_id',$fetchedData->id)->whereNull('not_used_doc')->where('doc_type','visa')->where('type','client')->orderby('updated_at', 'DESC')->get();
+                                        $fetchd = \App\Models\Document::where('client_id',$fetchedData->id)->whereNull('not_used_doc')->where('doc_type','visa')->where('type','client')->orderby('updated_at', 'DESC')->get();
                                         foreach($fetchd as $visaKey=>$fetch){
-                                            $admin = \App\Admin::where('id', $fetch->user_id)->first();
+                                            $admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
                                         ?>
                                             <tr class="drow" data-matterid="{{$fetch->client_matter_id}}" id="id_{{$fetch->id}}">
                                                 <td><?php echo $visaKey+1;?></td>
@@ -2956,7 +2956,7 @@ use App\Http\Controllers\Controller;
                             <div class="grid_data miggriddata" style="display:none;">
                                 <?php
                                 foreach($fetchd as $fetch){
-                                    $admin = \App\Admin::where('id', $fetch->user_id)->first();
+                                    $admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
                                 ?>
                                     <div class="grid_list" id="gid_<?php echo $fetch->id; ?>">
                                         <div class="grid_col">
@@ -3018,7 +3018,7 @@ use App\Http\Controllers\Controller;
                                             </thead>
                                             <tbody class="tdata notuseddocumnetlist">
                                                 <?php
-                                                $fetchd = \App\Document::where('client_id', $fetchedData->id)
+                                                $fetchd = \App\Models\Document::where('client_id', $fetchedData->id)
                                                 ->where('not_used_doc', 1)
                                                 ->where('type','client')
                                                 ->where(function($query) {
@@ -3027,7 +3027,7 @@ use App\Http\Controllers\Controller;
                                                 })->orderBy('type', 'DESC')->get(); //dd($fetchd);
                                                 foreach($fetchd as $notuseKey=>$fetch)
                                                 {
-                                                    $admin = \App\Admin::where('id', $fetch->user_id)->first();
+                                                    $admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
                                                     ?>
                                                     <tr class="drow" id="id_{{$fetch->id}}">
                                                         <td><?php echo $notuseKey+1;?></td>
@@ -3108,14 +3108,14 @@ use App\Http\Controllers\Controller;
                         $matter__ref_info_arr = array(); // Always a Collection
                         if($id1)
                         { //if client unique reference id is present in url
-                            $matter__ref_info_arr = \App\ClientMatter::select('department_reference','other_reference')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
+                            $matter__ref_info_arr = \App\Models\ClientMatter::select('department_reference','other_reference')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
                         }
                         else
                         {
-                            $matter_cnt = \App\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
+                            $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
                             //dd($matter_cnt);
                             if($matter_cnt >0){
-                                $matter__ref_info_arr = \App\ClientMatter::select('department_reference','other_reference')->where('client_id',$fetchedData->id)->where('matter_status',1)->orderBy('id', 'desc')->first();
+                                $matter__ref_info_arr = \App\Models\ClientMatter::select('department_reference','other_reference')->where('client_id',$fetchedData->id)->where('matter_status',1)->orderBy('id', 'desc')->first();
                             }
                         } //dd($matter__ref_info_arr);
                         ?>
@@ -3135,14 +3135,14 @@ use App\Http\Controllers\Controller;
                                     <div class="balance-amount funds-held">
                                         <?php
                                         //echo $id1;
-                                        $matter_cnt = \App\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count(); //dd($matter_cnt);
+                                        $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count(); //dd($matter_cnt);
                                         if( isset($id1) && $id1 != "" || $matter_cnt >0 )
                                         {  //dd('ifff'.$fetchedData->id);
                                             //if client unique reference id is present in url
                                             if( isset($id1) && $id1 != "") {
-                                                $matter_get_id = \App\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
+                                                $matter_get_id = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
                                             } else {
-                                                $matter_get_id = \App\ClientMatter::select('id')->where('client_id', $fetchedData->id)->orderBy('id', 'desc')->first();
+                                                $matter_get_id = \App\Models\ClientMatter::select('id')->where('client_id', $fetchedData->id)->orderBy('id', 'desc')->first();
                                             }
                                             //dd($matter_get_id);
                                             if($matter_get_id )
@@ -3283,15 +3283,15 @@ use App\Http\Controllers\Controller;
                                     <div class="balance-amount outstanding outstanding-balance">
                                         <?php
                                         //echo $id1;
-                                        $matter_cnt = \App\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
+                                        $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
                                         if( isset($id1) && $id1 != "" || $matter_cnt >0 )
                                         {  //if client unique reference id is present in url
                                             //dd('ifff'.$fetchedData->id);
                                             //if client unique reference id is present in url
                                             if( isset($id1) && $id1 != "") {
-                                                $matter_get_id = \App\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
+                                                $matter_get_id = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
                                             } else {
-                                                $matter_get_id = \App\ClientMatter::select('id')->where('client_id', $fetchedData->id)->orderBy('id', 'desc')->first();
+                                                $matter_get_id = \App\Models\ClientMatter::select('id')->where('client_id', $fetchedData->id)->orderBy('id', 'desc')->first();
                                             }
                                             //dd($matter_get_id);
                                             if($matter_get_id )
@@ -3536,12 +3536,12 @@ use App\Http\Controllers\Controller;
                             <div class="email-list" id="email-list">
                                 <?php
                                 //inbox mail
-                                $mailreports = \App\MailReport::where('client_id',$fetchedData->id)->where('type','client')->where('mail_type',1)->where('conversion_type','conversion_email_fetch')->where('mail_body_type','inbox')->orderby('created_at', 'DESC')->get();
+                                $mailreports = \App\Models\MailReport::where('client_id',$fetchedData->id)->where('type','client')->where('mail_type',1)->where('conversion_type','conversion_email_fetch')->where('mail_body_type','inbox')->orderby('created_at', 'DESC')->get();
                                 //dd($mailreports);
                                 foreach($mailreports as $mailreport)
                                 {
-                                    $DocInfo = \App\Document::select('id','doc_type','myfile','myfile_key','mail_type')->where('id',$mailreport->uploaded_doc_id)->first();
-                                    $AdminInfo = \App\Admin::select('client_id')->where('id',$mailreport->client_id)->first();
+                                    $DocInfo = \App\Models\Document::select('id','doc_type','myfile','myfile_key','mail_type')->where('id',$mailreport->uploaded_doc_id)->first();
+                                    $AdminInfo = \App\Models\Admin::select('client_id')->where('id',$mailreport->client_id)->first();
                                     ?>
                                     <div class="email-card" data-matterid="{{$mailreport->client_matter_id}}">
                                         <div class="email-meta">
@@ -3611,7 +3611,7 @@ use App\Http\Controllers\Controller;
                             <div class="email-list1" id="email-list1">
                                 <?php
                                 //Sent Mail after assign user and Compose email
-                                $mailreports = \App\MailReport::where('client_id', $fetchedData->id)
+                                $mailreports = \App\Models\MailReport::where('client_id', $fetchedData->id)
                                 ->where('type', 'client')
                                 ->where('mail_type', 1)
                                 ->where(function($query) {
@@ -3625,8 +3625,8 @@ use App\Http\Controllers\Controller;
                                 ->get();
                                 foreach($mailreports as $mailreport)
                                 {
-                                    $admin = \App\Admin::where('id', $mailreport->user_id)->first();
-                                    $client = \App\Admin::Where('id', $fetchedData->id)->first();
+                                    $admin = \App\Models\Admin::where('id', $mailreport->user_id)->first();
+                                    $client = \App\Models\Admin::Where('id', $fetchedData->id)->first();
                                     $subject = str_replace('{Client First Name}',$client->first_name, $mailreport->subject);
                                     $message = $mailreport->message;
                                     $message = str_replace('{Client First Name}',$client->first_name, $message);
@@ -3684,10 +3684,10 @@ use App\Http\Controllers\Controller;
                                         <div class="email-actions">
                                             <?php
                                             $url = 'https://'.env('AWS_BUCKET').'.s3.'. env('AWS_DEFAULT_REGION') . '.amazonaws.com/';
-                                            $AdminInfo = \App\Admin::select('client_id')->where('id',$fetchedData->id)->first();
+                                            $AdminInfo = \App\Models\Admin::select('client_id')->where('id',$fetchedData->id)->first();
                                             if( isset($mailreport->uploaded_doc_id) && $mailreport->uploaded_doc_id != "")
                                             {
-                                                $DocInfo = \App\Document::select('id','doc_type','myfile','myfile_key','mail_type')->where('id',$mailreport->uploaded_doc_id)->first();
+                                                $DocInfo = \App\Models\Document::select('id','doc_type','myfile','myfile_key','mail_type')->where('id',$mailreport->uploaded_doc_id)->first();
                                                 if($DocInfo)
                                                 { ?>
                                                     <?php if( isset($DocInfo->myfile_key) && $DocInfo->myfile_key != ""){ ?>
@@ -3917,9 +3917,9 @@ use App\Http\Controllers\Controller;
                                 $formlists = collect(); // Always a Collection
                                 if($id1)
                                 { //if client unique reference id is present in url
-                                    $matter_info_arr = \App\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
+                                    $matter_info_arr = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
                                     if($matter_info_arr->id){
-                                        $formlists = \App\Form956::where('client_id', $fetchedData->id)
+                                        $formlists = \App\Models\Form956::where('client_id', $fetchedData->id)
                                         ->where('client_matter_id', $matter_info_arr->id)
                                         ->with(['client', 'agent']) // Eager load relationships
                                         ->orderBy('created_at', 'DESC')
@@ -3928,12 +3928,12 @@ use App\Http\Controllers\Controller;
                                 }
                                 else
                                 {
-                                    $matter_cnt = \App\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
+                                    $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
                                     //dd($matter_cnt);
                                     if($matter_cnt >0){
-                                        $matter_info_arr = \App\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->orderBy('id', 'desc')->first();
+                                        $matter_info_arr = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->orderBy('id', 'desc')->first();
                                         if($matter_info_arr->id){
-                                            $formlists = \App\Form956::where('client_id', $fetchedData->id)
+                                            $formlists = \App\Models\Form956::where('client_id', $fetchedData->id)
                                             ->where('client_matter_id', $matter_info_arr->id)
                                             ->with(['client', 'agent']) // Eager load relationships
                                             ->orderBy('created_at', 'DESC')
@@ -4038,9 +4038,9 @@ use App\Http\Controllers\Controller;
                                 // Fetch cost_assignment_forms for the given client
                                 if($id1)
                                 { //if client unique reference id is present in url
-                                    $matter_info_arr = \App\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
+                                    $matter_info_arr = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
                                     if($matter_info_arr->id){
-                                        $formlists1 = \App\CostAssignmentForm::where('client_id', $fetchedData->id)
+                                        $formlists1 = \App\Models\CostAssignmentForm::where('client_id', $fetchedData->id)
                                         ->where('client_matter_id', $matter_info_arr->id)
                                         ->with(['client', 'agent']) // Eager load relationships
                                         ->orderBy('created_at', 'DESC')
@@ -4049,11 +4049,11 @@ use App\Http\Controllers\Controller;
                                 }
                                 else
                                 {
-                                    $matter_cnt = \App\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
+                                    $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
                                     if($matter_cnt >0){
-                                        $matter_info_arr = \App\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->orderBy('id', 'desc')->first();
+                                        $matter_info_arr = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->orderBy('id', 'desc')->first();
                                         if($matter_info_arr->id){
-                                            $formlists1 = \App\CostAssignmentForm::where('client_id', $fetchedData->id)
+                                            $formlists1 = \App\Models\CostAssignmentForm::where('client_id', $fetchedData->id)
                                             ->where('client_matter_id', $matter_info_arr->id)
                                             ->with(['client', 'agent']) // Eager load relationships
                                             ->orderBy('created_at', 'DESC')
@@ -4127,7 +4127,7 @@ use App\Http\Controllers\Controller;
                 $keyword_search = $_REQUEST['keyword'];
 
                 if($user_search != "" && $keyword_search != "") {
-                    $activities = \App\ActivitiesLog::select('activities_logs.*')
+                    $activities = \App\Models\ActivitiesLog::select('activities_logs.*')
                     ->leftJoin('admins', 'activities_logs.created_by', '=', 'admins.id')
                     ->where('activities_logs.client_id', $fetchedData->id)
                     ->where(function($query) use ($user_search) {
@@ -4141,7 +4141,7 @@ use App\Http\Controllers\Controller;
                     ->get();
                 }
                 else if($user_search == "" && $keyword_search != "") {
-                    $activities = \App\ActivitiesLog::select('activities_logs.*')
+                    $activities = \App\Models\ActivitiesLog::select('activities_logs.*')
                     ->where('activities_logs.client_id', $fetchedData->id)
                     ->where(function($query) use ($keyword_search) {
                         $query->where('activities_logs.description', 'like', '%'.$keyword_search.'%');
@@ -4151,7 +4151,7 @@ use App\Http\Controllers\Controller;
                     ->get();
                 }
                 else if($user_search != "" && $keyword_search == "") {
-                    $activities = \App\ActivitiesLog::select('activities_logs.*','admins.first_name','admins.last_name','admins.email')
+                    $activities = \App\Models\ActivitiesLog::select('activities_logs.*','admins.first_name','admins.last_name','admins.email')
                     ->leftJoin('admins', 'activities_logs.created_by', '=', 'admins.id')
                     ->where('activities_logs.client_id', $fetchedData->id)
                     ->where(function($query) use ($user_search) {
@@ -4161,14 +4161,14 @@ use App\Http\Controllers\Controller;
                     ->get();
                 }
             } else {
-                $activities = \App\ActivitiesLog::where('client_id', $fetchedData->id)
+                $activities = \App\Models\ActivitiesLog::where('client_id', $fetchedData->id)
                 ->orderby('created_at', 'DESC')
                 ->get();
             }
             //dd($activities);
             foreach($activities as $activit)
             {
-                $admin = \App\Admin::where('id', $activit->created_by)->first();
+                $admin = \App\Models\Admin::where('id', $activit->created_by)->first();
                 ?>
                 <li class="feed-item feed-item--email activity" id="activity_{{$activit->id}}">
                     <span class="feed-icon">
@@ -4222,7 +4222,7 @@ use App\Http\Controllers\Controller;
 								<select class="form-control" name="email_from" data-valid="required">
                                     <option value="">Select From</option>
 									<?php
-									$emails = \App\Email::select('email')->where('status', 1)->get();
+									$emails = \App\Models\Email::select('email')->where('status', 1)->get();
 									foreach($emails as $nemail){
 										?>
 											<option value="<?php echo $nemail->email; ?>"><?php echo $nemail->email; ?></option>
@@ -4266,7 +4266,7 @@ use App\Http\Controllers\Controller;
 								<label for="template">Templates </label>
 								<select data-valid="" class="form-control select2 selecttemplate" name="template">
 									<option value="">Select</option>
-									{{--@foreach(\App\CrmEmailTemplate::all() as $list)--}}
+									{{--@foreach(\App\Models\CrmEmailTemplate::all() as $list)--}}
 										<option value="{{--$list->id--}}">{{--$list->name--}}</option>
 									{{--@endforeach--}}
 								</select>
@@ -4277,7 +4277,7 @@ use App\Http\Controllers\Controller;
 							<div class="form-group">
 								<label for="template">Templates </label>
                                 <?php
-                                $assignee = \App\Admin::select('first_name')->where('id',@$fetchedData->assignee)->first();
+                                $assignee = \App\Models\Admin::select('first_name')->where('id',@$fetchedData->assignee)->first();
                                 if($assignee){
                                     $clientAssigneeName = $assignee->first_name;
                                 } else {
@@ -4286,7 +4286,7 @@ use App\Http\Controllers\Controller;
                                 ?>
 								<select data-valid="" class="form-control select2 selecttemplate" name="template" data-clientid="{{@$fetchedData->id}}" data-clientfirstname="{{@$fetchedData->first_name}}" data-clientvisaExpiry="{{@$fetchedData->visaExpiry}}" data-clientreference_number="{{@$fetchedData->client_id}}" data-clientassignee_name="{{@$clientAssigneeName}}">
 									<option value="">Select</option>
-									@foreach( \App\CrmEmailTemplate::orderBy('id', 'desc')->get() as $list)
+									@foreach( \App\Models\CrmEmailTemplate::orderBy('id', 'desc')->get() as $list)
 										<option value="{{$list->id}}">{{$list->name}}</option>
 									@endforeach
 								</select>
@@ -4348,7 +4348,7 @@ use App\Http\Controllers\Controller;
 							        </tr>
 							    </thead>
 							    <tbody>
-							        @foreach(\App\UploadChecklist::all() as $uclist)
+							        @foreach(\App\Models\UploadChecklist::all() as $uclist)
 							        <tr>
 							            <td><input type="checkbox" name="checklistfile[]" value="<?php echo $uclist->id; ?>"></td>
 							            <td><?php echo $uclist->name; ?></td>
@@ -4631,7 +4631,7 @@ use App\Http\Controllers\Controller;
 								<label for="super_agent">Super Agent <span class="span_req">*</span></label>
 								<select data-valid="required" class="form-control super_agent" id="super_agent" name="super_agent">
 									<option value="">Please Select</option>
-									<?php $sagents = \App\Agent::whereRaw('FIND_IN_SET("Super Agent", agent_type)')->get(); ?>
+									<?php $sagents = \App\Models\AgentDetails::whereRaw('FIND_IN_SET("Super Agent", agent_type)')->get(); ?>
 									@foreach($sagents as $sa)
 										<option value="{{$sa->id}}">{{$sa->full_name}} {{$sa->email}}</option>
 									@endforeach
@@ -4672,7 +4672,7 @@ use App\Http\Controllers\Controller;
 								<label for="sub_agent">Sub Agent <span class="span_req">*</span></label>
 								<select data-valid="required" class="form-control sub_agent" id="sub_agent" name="sub_agent">
 									<option value="">Please Select</option>
-									<?php $sagents = \App\Agent::whereRaw('FIND_IN_SET("Sub Agent", agent_type)')->where('is_acrchived',0)->get(); ?>
+									<?php $sagents = \App\Models\AgentDetails::whereRaw('FIND_IN_SET("Sub Agent", agent_type)')->where('is_acrchived',0)->get(); ?>
 									@foreach($sagents as $sa)
 										<option value="{{$sa->id}}">{{$sa->full_name}} {{$sa->email}}</option>
 									@endforeach
@@ -4718,7 +4718,7 @@ use App\Http\Controllers\Controller;
 								}
 								?>
 									<option value="">Please Select</option>
-									<?php $stagd = \App\Tag::where('id','!=','')->get(); ?>
+									<?php $stagd = \App\Models\Tag::where('id','!=','')->get(); ?>
 									@foreach($stagd as $sa)
 										<option <?php if(in_array($sa->id, $r)){ echo 'selected'; } ?> value="{{$sa->id}}">{{$sa->name}}</option>
 									@endforeach
@@ -5070,7 +5070,7 @@ use App\Http\Controllers\Controller;
                         <input id="uploaded_doc_id" name="uploaded_doc_id" type="hidden" value="">
 						<select id="reassign_client_id" name="reassign_client_id" class="form-control select2" style="width: 100%;" data-select2-id="1" tabindex="-1" aria-hidden="true" data-valid="required">
 							<option value="">Select Client</option>
-							@foreach(\App\Admin::Where('role','7')->Where('type','client')->get() as $ulist)
+							@foreach(\App\Models\Admin::Where('role','7')->Where('type','client')->get() as $ulist)
 							<option value="{{@$ulist->id}}">{{@$ulist->first_name}} {{@$ulist->last_name}}({{@$ulist->client_id}})</option>
 							@endforeach
 						</select>
@@ -5111,7 +5111,7 @@ use App\Http\Controllers\Controller;
                         <input id="uploaded_doc_id" name="uploaded_doc_id" type="hidden" value="">
 						<select id="reassign_sent_client_id" name="reassign_sent_client_id" class="form-control select2" style="width: 100%;" data-select2-id="1" tabindex="-1" aria-hidden="true" data-valid="required">
 							<option value="">Select Client</option>
-							@foreach(\App\Admin::Where('role','7')->Where('type','client')->get() as $ulist)
+							@foreach(\App\Models\Admin::Where('role','7')->Where('type','client')->get() as $ulist)
 							<option value="{{@$ulist->id}}">{{@$ulist->first_name}} {{@$ulist->last_name}}({{@$ulist->client_id}})</option>
 							@endforeach
 						</select>

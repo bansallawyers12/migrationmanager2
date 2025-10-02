@@ -50,7 +50,7 @@
 														<label for="name">Subject Area <span class="span_req">*</span></label>
 														<select class="form-control select2" name="subjectarea">
 															<option value=""></option>
-															@foreach(\App\SubjectArea::all() as $alist)
+															@foreach(\App\Models\SubjectArea::all() as $alist)
 																<option value="{{$alist->id}}">{{$alist->name}}</option>
 															@endforeach
 														</select>
