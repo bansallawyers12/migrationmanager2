@@ -6,7 +6,66 @@
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-datepicker.css') }}">
 <style>
-    /* Page-specific styles can be added here if needed */
+    /* Reduce spacing in filter section */
+    .filter_panel {
+        padding: 10px 15px !important;
+    }
+    .filter_panel h4 {
+        margin-bottom: 8px !important;
+    }
+    .filter_panel .form-group {
+        margin-bottom: 5px !important;
+    }
+    .filter_panel .col-form-label {
+        margin-bottom: 3px !important;
+        padding-bottom: 0 !important;
+        font-size: 13px;
+    }
+    .filter_panel .form-control {
+        padding: 5px 10px !important;
+        height: auto !important;
+    }
+    .filter_panel .row {
+        margin-left: -5px !important;
+        margin-right: -5px !important;
+    }
+    .filter_panel [class*="col-"] {
+        padding-left: 5px !important;
+        padding-right: 5px !important;
+    }
+    .filter_panel .btn {
+        padding: 5px 15px !important;
+        font-size: 13px !important;
+    }
+    
+    /* Fixed header and filter panel when filters are active */
+    .listing-container.filters-active,
+    .listing-container.filters-active .listing-section,
+    .listing-container.filters-active .listing-section-body,
+    .listing-container.filters-active .card,
+    .listing-container.filters-active .card-body {
+        overflow: visible !important;
+    }
+    
+    .listing-container.filters-active .card-header {
+        position: -webkit-sticky;
+        position: sticky;
+        top: 60px; /* Below top navbar */
+        background-color: #fff;
+        z-index: 100;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin: 0;
+    }
+    
+    .listing-container.filters-active .filter_panel {
+        position: -webkit-sticky;
+        position: sticky;
+        top: 145px; /* Below top navbar + card header */
+        background-color: #f8f9fa;
+        z-index: 99;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 0 !important;
+    }
 </style>
 @endsection
 
@@ -20,39 +79,39 @@
                 <div class="custom-error-msg">
                 </div>
                 <div class="card-header">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h4>All Clients Receipt List</h4>
+                    <div class="d-flex justify-content-between align-items-center" style="width: 100%;">
+                        <h4 style="margin-bottom: 0; flex-shrink: 0;">All Clients Receipt List</h4>
                         
-                        <div class="d-flex align-items-center">
-                            <select name="per_page" id="per_page" class="form-control" style="width: auto; min-width: 80px; border-radius: 0; border: 1px solid #ddd; padding: 6px 12px;">
+                        <div class="d-flex align-items-center" style="margin-left: auto;">
+                            <select name="per_page" id="per_page" class="form-control" style="width: auto; min-width: 80px; border-radius: 0; border: 1px solid #ddd; padding: 6px 12px; margin-right: 10px;">
                                 <option value="10" {{ $perPage == 10 ? 'selected' : '' }}>10</option>
                                 <option value="20" {{ $perPage == 20 ? 'selected' : '' }}>20</option>
                                 <option value="50" {{ $perPage == 50 ? 'selected' : '' }}>50</option>
                                 <option value="100" {{ $perPage == 100 ? 'selected' : '' }}>100</option>
+                                <option value="200" {{ $perPage == 200 ? 'selected' : '' }}>200</option>
+                                <option value="500" {{ $perPage == 500 ? 'selected' : '' }}>500</option>
                             </select>
+                            
+                            <a href="javascript:;" style="background: #394eea;color: white; margin-right: 10px;"  class="btn btn-theme btn-theme-sm filter_btn"><i class="fas fa-filter"></i> Filter</a>
+                            
+                            @if (Auth::user()->role == '1' && Auth::user()->email == 'celestyparmar.62@gmail.com')
+                                <button class="btn btn-danger Delete_Receipt" style="margin-right: 10px;">
+                                    <i class="fas fa-trash-alt"></i>
+                                    Delete Receipt
+                                </button>
+                            @endif
+
+                            <button class="btn btn-primary Validate_Receipt" style="background-color: #394eea !important;">
+                                <i class="fas fa-check-circle"></i>
+                                Validate Receipt
+                            </button>
                         </div>
                     </div>
-
-                    <div class="d-flex align-items-center mt-3">
-                        <a href="javascript:;" style="background: #394eea;color: white;"  class="btn btn-theme btn-theme-sm filter_btn mr-2"><i class="fas fa-filter"></i> Filter</a>
-                    </div>
-
-                    @if (Auth::user()->role == '1' && Auth::user()->email == 'celestyparmar.62@gmail.com')
-                        <button class="btn btn-danger Delete_Receipt" style="margin-right: -270px;">
-                            <i class="fas fa-trash-alt"></i>
-                            Delete Receipt
-                        </button>
-                     @endif
-
-                    <button class="btn btn-primary Validate_Receipt" style="background-color: #394eea !important;">
-                        <i class="fas fa-check-circle"></i>
-                        Validate Receipt
-                    </button>
                 </div>
 
                 <div class="card-body">
                     <div class="filter_panel">
-                        <h4 style="margin-top: 0; margin-bottom: 15px;">Search By Details</h4>
+                        <h4 style="margin-top: 0; margin-bottom: 8px;">Search By Details</h4>
                         <form action="{{URL::to('/admin/clients/clientreceiptlist')}}" method="get">
                             <div class="row d-flex align-items-end">
                                 <div class="col-md-2">
@@ -87,16 +146,16 @@
                                         <input type="number" name="amount" value="{{ old('amount', Request::get('amount')) }}" class="form-control" step="0.01" placeholder="Enter amount" style="max-width: 120px;">
                                     </div>
                                 </div>
-                                <div class="col-md-1">
+                                <div class="col-md-2">
                                     <div class="form-group">
                                         <label for="trans_date" class="col-form-label" style="color:#000;">Date</label>
-                                        <input type="text" name="trans_date" value="{{ old('trans_date', Request::get('trans_date')) }}" class="form-control" data-valid="" autocomplete="off" placeholder="Date" id="trans_date" style="max-width: 120px;">
+                                        <input type="text" name="trans_date" value="{{ old('trans_date', Request::get('trans_date')) }}" class="form-control" data-valid="" autocomplete="off" placeholder="Date" id="trans_date" style="width: 100%;">
                                     </div>
                                 </div>
-                                <div class="col-md-1">
+                                <div class="col-md-2">
                                     <div class="form-group">
                                         <label for="client_fund_ledger_type" class="col-form-label" style="color:#000;">Type</label>
-                                        <select class="form-control" name="client_fund_ledger_type" style="max-width: 120px;">
+                                        <select class="form-control" name="client_fund_ledger_type" style="width: 100%;">
                                             <option value="">Select</option>
                                             <option value="Deposit" {{ request('client_fund_ledger_type') == 'Deposit' ? 'selected' : '' }}>Deposit</option>
                                             <option value="Fee Transfer" {{ request('client_fund_ledger_type') == 'Fee Transfer' ? 'selected' : '' }}>Fee Transfer</option>
@@ -105,10 +164,10 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-md-1">
+                                <div class="col-md-2">
                                     <div class="form-group">
                                         <label for="receipt_validate" class="col-form-label" style="color:#000;">Receipt Validate</label>
-                                        <select class="form-control" name="receipt_validate" style="max-width: 100px;">
+                                        <select class="form-control" name="receipt_validate" style="width: 100%;">
                                             <option value="">Select</option>
                                             <option value="1" {{ request('receipt_validate') == '1' ? 'selected' : '' }}>Yes</option>
                                             <option value="0" {{ request('receipt_validate') == '0' ? 'selected' : '' }}>No</option>
@@ -264,14 +323,24 @@ jQuery(document).ready(function($){
             }
         });
         
-        // If any filter has a value, show the panel
+        // If any filter has a value, show the panel and make header/filter fixed
         if (hasFilterValue) {
             $('.listing-container .filter_panel').show();
+            $('.listing-container').addClass('filters-active');
+            console.log('Filters active class added to listing-container');
+        } else {
+            $('.listing-container').removeClass('filters-active');
+            console.log('Filters active class removed from listing-container');
         }
     }
     
     // Check on page load
     checkFilterValues();
+    
+    // Re-check when any filter input changes
+    $('.filter_panel input, .filter_panel select').on('change keyup', function() {
+        checkFilterValues();
+    });
 
     // Handle records per page dropdown change
     $('#per_page').on('change', function() {

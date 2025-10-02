@@ -11523,7 +11523,7 @@ private function getUserName($userId) {
 
         // Get records per page from request, default to 20
         $perPage = $request->get('per_page', 20);
-        $perPage = in_array($perPage, [10, 20, 50, 100]) ? $perPage : 20;
+        $perPage = in_array($perPage, [10, 20, 50, 100, 200, 500]) ? $perPage : 20;
 
         // Fetch paginated list
         $lists = $query->sortable(['id' => 'desc'])->paginate($perPage);
