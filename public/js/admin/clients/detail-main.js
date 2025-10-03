@@ -1,4 +1,7 @@
 ﻿    $(document).ready(function() {
+        
+        // Flag to prevent redirects during page initialization
+        var isInitializing = true;
 
         function adjustActivityFeedHeight() {
             let mainContentHeight = $('.main-content').outerHeight();
@@ -252,6 +255,11 @@
                 }
             }
         }
+        
+        // Set flag to false after initialization is complete
+        setTimeout(function() {
+            isInitializing = false;
+        }, 100);
 
         // When Matter AI tab is clicked
         $(document).delegate('.tab-button[data-tab="artificialintelligences"], .vertical-tab-button[data-tab="artificialintelligences"], .client-nav-button[data-tab="artificialintelligences"]', 'click', function() { //alert('click');
@@ -841,8 +849,7 @@
             }
         });
     }
-</script>
-<script>
+
     function downloadFile(url, fileName) {
         // Create a temporary anchor element
         const link = document.createElement('a');
@@ -1464,10 +1471,10 @@ $(document).ready(function() {
         var search = $('#search-communication').val();
 
         $.ajax({
-            url: "{{route('admin.clients.filter.emails')}}",
+            url: window.ClientDetailConfig.urls.filterEmails,
             type: 'POST',
             data: {
-                client_id: '{{ $fetchedData->id }}',
+                client_id: window.ClientDetailConfig.clientId,
                 status: status,
                 search: search,
                 _token: $('meta[name="csrf-token"]').attr('content')
@@ -1621,8 +1628,7 @@ $(document).ready(function() {
         //$('#main-content').css('flex', '0 0 100%');
     }
 });
-</script>
-<script>
+
     function previewFile(fileType, fileUrl, containerId) {
         //console.log('fileType='+fileType);
         //console.log('fileUrl='+fileUrl);
@@ -1916,7 +1922,7 @@ $(document).ready(function() {
             const migrationRating = $("input[name='migration_rating']:checked").val();
 
             $.ajax({
-                url: "{{ route('admin.clients.saveRating') }}",
+                url: window.ClientDetailConfig.urls.saveRating,
                 method: 'POST',
                 data: {
                     _token: $('meta[name="csrf-token"]').attr('content'),
@@ -1945,11 +1951,11 @@ $(document).ready(function() {
         $(document).on('click', '#mark-star-client-modal', function () {
             var adminId = $(this).data('admin-id');
             $.ajax({
-                url: '{{ route("check.star.client") }}',
+                url: window.ClientDetailConfig.urls.checkStarClient,
                 type: 'POST',
                 data: {
                     admin_id: adminId,
-                    _token: '{{ csrf_token() }}'
+                    _token: window.ClientDetailConfig.csrfToken
                 },
                 success: function (response) {
                     if (response.status === 'exists') {
@@ -1958,12 +1964,12 @@ $(document).ready(function() {
                         if (confirm('Do you want to make this client a star client?')) {
                             // Send update request
                             $.ajax({
-                                url: '{{ route("check.star.client") }}',
+                                url: window.ClientDetailConfig.urls.checkStarClient,
                                 type: 'POST',
                                 data: {
                                     admin_id: adminId,
                                     update: true,
-                                    _token: '{{ csrf_token() }}'
+                                    _token: window.ClientDetailConfig.csrfToken
                                 },
                                 success: function (res) {
                                     if (res.status === 'updated') {
@@ -2115,16 +2121,29 @@ $(document).ready(function() {
                 var activeTab = $('.tab-button.active, .vertical-tab-button.active, .client-nav-button.active').data('tab') || 'personaldetails';
                 var activeSubTab = $('.subtab-button.active').data('subtab');
                 
+            // Skip redirect during initialization
+            if (isInitializing) {
+                return;
+            }
+                
                 // Build new URL
-                var clientId = '{{ $encodeId }}';
+                var clientId = window.ClientDetailConfig.encodeId;
                 var baseUrl = '/admin/clients/detail/' + clientId;
+                var currentUrl = window.location.href;
 
+                var newUrl;
                 if (selectedMatter != '' && uniqueMatterNo) {
                     // Append the new matter ID and active tab to the base URL
-                    window.location.href = baseUrl + '/' + uniqueMatterNo + '/' + activeTab;
+                    newUrl = baseUrl + '/' + uniqueMatterNo + '/' + activeTab;
                 } else {
                     // If no matter is selected, redirect to the base URL with just the tab
-                    window.location.href = baseUrl + '/' + activeTab;
+                    newUrl = baseUrl + '/' + activeTab;
+                }
+                
+                // Only redirect if the URL is actually changing to prevent infinite loops
+                if (currentUrl.split('?')[0] !== newUrl && !currentUrl.endsWith(newUrl)) {
+                    window.location.href = newUrl;
+                    return; // Exit early to prevent further execution
                 }
 
                 if( activeTab == 'noteterm' ) {
@@ -2205,21 +2224,32 @@ $(document).ready(function() {
              // Get the active sub tab
             var activeSubTab = $('.subtab-button.active').data('subtab');
             
+            // Skip redirect during initialization
+            if (isInitializing) {
+                return;
+            }
 
             // Split the URL into segments
             var urlSegments = currentUrl.split('/');
             var baseUrl;
-            var clientId = '{{ $encodeId }}';
+            var clientId = window.ClientDetailConfig.encodeId;
             
             // Build new URL with matter and tab
             baseUrl = '/admin/clients/detail/' + clientId;
 
+            var newUrl;
             if (selectedMatter != '' && uniqueMatterNo) {
                 // Append the new matter ID and active tab to the base URL
-                window.location.href = baseUrl + '/' + uniqueMatterNo + '/' + activeTab;
+                newUrl = baseUrl + '/' + uniqueMatterNo + '/' + activeTab;
             } else {
                 // If no matter is selected, redirect to the base URL with just the tab
-                window.location.href = baseUrl + '/' + activeTab;
+                newUrl = baseUrl + '/' + activeTab;
+            }
+            
+            // Only redirect if the URL is actually changing to prevent infinite loops
+            if (currentUrl.split('?')[0] !== newUrl && !currentUrl.endsWith(newUrl)) {
+                window.location.href = newUrl;
+                return; // Exit early to prevent further execution
             }
 
             if( activeTab == 'noteterm' ) {
@@ -2463,7 +2493,7 @@ $(document).ready(function() {
         function getInfoByReceiptId11(receiptid) {
             $.ajax({
                 type:'post',
-                url: '{{URL::to('/admin/clients/getInfoByReceiptId')}}',
+                url: window.ClientDetailConfig.urls.getInfoByReceiptId,
                 sync:true,
                 data: {receiptid:receiptid},
                 success: function(response){
@@ -2559,7 +2589,7 @@ $(document).ready(function() {
         function getInfoByReceiptId(receiptid) {
             $.ajax({
                 type: 'post',
-                url: '{{URL::to('/admin/clients/getInfoByReceiptId')}}',
+                url: window.ClientDetailConfig.urls.getInfoByReceiptId,
                 sync: true,
                 data: { receiptid: receiptid },
                 success: function (response) {
@@ -2960,7 +2990,7 @@ $(document).ready(function() {
         ////// not picked call button code start /////////
         /////////////////////////////////////////////
         $(document).delegate('.not_picked_call', 'click', function (e) {
-            var clientName = '{{$fetchedData->first_name ?? 'user'}}';
+            var clientName = window.ClientDetailConfig.clientFirstName || 'user';
             clientName = clientName.charAt(0).toUpperCase() + clientName.slice(1).toLowerCase(); //alert(clientName);
 
             var message = `Hi ${clientName},
@@ -2975,12 +3005,12 @@ Bansal Immigration`;
                 var message = $('#messageText').val();
                 var not_picked_call = 1;
                 $.ajax({
-                    url: '{{URL::to('/admin/not-picked-call')}}',
+                    url: window.ClientDetailConfig.urls.notPickedCall,
                     headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                     type: 'POST',
                     datatype: 'json',
                     data: {
-                        id: '{{$fetchedData->id}}',
+                        id: window.ClientDetailConfig.clientId,
                         not_picked_call: not_picked_call,
                         message: message
                     },
@@ -3079,7 +3109,7 @@ Bansal Immigration`;
                 var service_id = $("input[name='radioGroup']:checked").val(); //alert(service_id);
                 var inperson_address = $("input[name='inperson_address']:checked").attr('data-val'); //alert(inperson_address);
                 $.ajax({
-                    url:'{{URL::to('/getdatetimebackend')}}',
+                    url:window.ClientDetailConfig.urls.getDateTimeBackend,
                     headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
                     type:'POST',
                     data:{id:service_id, enquiry_item:enquiry_item, inperson_address:inperson_address },
@@ -3118,7 +3148,7 @@ Bansal Immigration`;
                                 var enquiry_item  = $('.enquiry_item').val(); //alert(enquiry_item);
                                 //var slot_overwrite_hidden = $('#slot_overwrite_hidden').val();
                                 $.ajax({
-                                    url:'{{URL::to('/getdisableddatetime')}}',
+                                    url:window.ClientDetailConfig.urls.getDisabledDateTime,
                                     headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
                                     type:'POST',
                                     data:{service_id:service_id,sel_date:date, enquiry_item:enquiry_item,inperson_address:inperson_address},
@@ -3218,7 +3248,7 @@ Bansal Immigration`;
             var promo_code_val = $(this).val();
             var client_id = window.ClientDetailConfig.clientId;
             $.ajax({
-                url:'{{URL::to('/admin/promo-code/checkpromocode')}}',
+                url:window.ClientDetailConfig.urls.checkPromoCode,
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
                 type:'POST',
                 data:{promo_code_val:promo_code_val, client_id:client_id },
@@ -3625,7 +3655,7 @@ Bansal Immigration`;
         function getMigrationAgentDetail(client_matter_id) {
             $.ajax({
                 type:'post',
-                url: '{{URL::to('/admin/clients/getMigrationAgentDetail')}}',
+                url: window.ClientDetailConfig.urls.getMigrationAgentDetail,
                 sync:true,
                 data: {client_matter_id:client_matter_id},
                 success: function(response){
@@ -3657,7 +3687,7 @@ Bansal Immigration`;
 
             // First check if cost assignment exists
             $.ajax({
-                url: '{{URL::to('/admin/clients/check-cost-assignment')}}',
+                url: window.ClientDetailConfig.urls.checkCostAssignment,
                 type: "POST",
                 data: {
                     client_id: client_id,
@@ -3669,7 +3699,7 @@ Bansal Immigration`;
                         // Get agent details and then submit via AJAX
                         $.ajax({
                             type: 'post',
-                            url: '{{URL::to('/admin/clients/getVisaAggreementMigrationAgentDetail')}}',
+                            url: window.ClientDetailConfig.urls.getVisaAgreementAgent,
                             data: {client_matter_id: client_matter_id},
                             success: function(agentResponse) {
                                 var obj = $.parseJSON(agentResponse);
@@ -3688,7 +3718,7 @@ Bansal Immigration`;
 
                                     // Submit via AJAX
                                     $.ajax({
-                                        url: '{{route("clients.generateagreement")}}',
+                                        url: window.ClientDetailConfig.urls.generateAgreement,
                                         method: 'POST',
                                         data: formData,
                                         success: function(response) {
@@ -3763,7 +3793,7 @@ Bansal Immigration`;
         function getVisaAggreementMigrationAgentDetail(client_matter_id) {
             $.ajax({
                 type:'post',
-                url: '{{URL::to('/admin/clients/getVisaAggreementMigrationAgentDetail')}}',
+                url: window.ClientDetailConfig.urls.getVisaAgreementAgent,
                 sync:true,
                 data: {client_matter_id:client_matter_id},
                 success: function(response){
@@ -3828,7 +3858,7 @@ Bansal Immigration`;
         function getCostAssignmentMigrationAgentDetail(client_id,client_matter_id) {
             $.ajax({
                 type:'post',
-                url: '{{URL::to('/admin/clients/getCostAssignmentMigrationAgentDetail')}}',
+                url: window.ClientDetailConfig.urls.getCostAssignmentAgent,
                 sync:true,
                 data: {client_id:client_id,client_matter_id:client_matter_id},
                 success: function(response){
@@ -4001,7 +4031,7 @@ Bansal Immigration`;
             function getCostAssignmentMigrationAgentDetailLead(client_id,client_matter_id) {
                 $.ajax({
                     type:'post',
-                    url: '{{URL::to('/admin/clients/getCostAssignmentMigrationAgentDetailLead')}}',
+                    url: window.ClientDetailConfig.urls.getCostAssignmentAgentLead,
                     sync:true,
                     data: {client_id:client_id,client_matter_id:client_matter_id},
                     success: function(response){
@@ -4081,12 +4111,12 @@ Bansal Immigration`;
             var formData = new FormData(this);
             $('.popuploader').show();
             $.ajax({
-                url: '{{ route("clients.uploadAgreement", $fetchedData->id) }}',
+                url: window.ClientDetailConfig.urls.uploadAgreement,
                 type: 'POST',
                 data: formData,
                 processData: false,
                 contentType: false,
-                headers: {'X-CSRF-TOKEN': '{{ csrf_token() }}'},
+                headers: {'X-CSRF-TOKEN': window.ClientDetailConfig.csrfToken},
                 success: function(response) {
                     $('.popuploader').hide();
                     if(response.status){
@@ -4116,12 +4146,12 @@ Bansal Immigration`;
             var formData = new FormData(form);
             $('.popuploader').show();
             $.ajax({
-                url: '{{ route("clients.uploadAgreement", $fetchedData->id) }}',
+                url: window.ClientDetailConfig.urls.uploadAgreement,
                 type: 'POST',
                 data: formData,
                 processData: false,
                 contentType: false,
-                headers: {'X-CSRF-TOKEN': '{{ csrf_token() }}'},
+                headers: {'X-CSRF-TOKEN': window.ClientDetailConfig.csrfToken},
                 success: function(response) {
                     $('.popuploader').hide();
                     if(response.status){
@@ -4190,7 +4220,7 @@ Bansal Immigration`;
                 var client_id = $('#client_id').val();
                 $('.popuploader').show();
                 $.ajax({
-                    url: "{{URL::to('/admin/clients/fetchClientContactNo')}}",
+                    url: "window.ClientDetailConfig.urls.fetchClientContactNo",
                     method: "POST",
                     data: {client_id:client_id},
                     datatype: 'json',
@@ -4300,7 +4330,7 @@ Bansal Immigration`;
             if (flag) {
                 $.ajax({
                     type: 'POST',
-                    url: "{{URL::to('/')}}/admin/clients/followup/store",
+                    url: "window.ClientDetailConfig.urls.followupStore",
                     headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                     data: {
                         note_type: 'follow_up',
@@ -4324,8 +4354,8 @@ Bansal Immigration`;
                             // Reset form fields after successful submission
                             $('#assignnote').val('');
                             $('#task_group').val('');
-                            $('#popoverdatetime').val('{{ date("Y-m-d") }}');
-                            $('#note_deadline').val('{{ date("Y-m-d") }}');
+                            $('#popoverdatetime').val((new Date().toISOString().split('T')[0]));
+                            $('#note_deadline').val((new Date().toISOString().split('T')[0]));
                             $('#note_deadline_checkbox').prop('checked', false);
                             $('#note_deadline').prop('disabled', true);
                             $('.checkbox-item').prop('checked', false);
@@ -4379,7 +4409,7 @@ Bansal Immigration`;
             $.ajax({
                 url: site_url+'/admin/get-notes',
                 type:'GET',
-                data:{clientid:'{{$fetchedData->id}}',type:'client'},
+                data:{clientid:window.ClientDetailConfig.clientId,type:'client'},
                 success: function(responses){
                     $('.popuploader').hide();
                     $('.note_term_list').html(responses);
@@ -4407,7 +4437,7 @@ Bansal Immigration`;
                 url: site_url+'/admin/get-activities',
                 type:'GET',
                 datatype:'json',
-                data:{id:'{{$fetchedData->id}}'},
+                data:{id:window.ClientDetailConfig.clientId},
                 success: function(responses){
                     var ress = JSON.parse(responses);
                     var html = '';
@@ -4484,7 +4514,7 @@ Bansal Immigration`;
         $(document).delegate('#confirmpublishdocModal .acceptpublishdoc', 'click', function(){
             $('.popuploader').show();
             $.ajax({
-                url: '{{URL::to('/admin/')}}/'+'application/publishdoc',
+                url: window.ClientDetailConfig.urls.publishDoc,
                 type:'GET',
                 datatype:'json',
                 data:{appid:appcid,status:'1'},
@@ -4515,7 +4545,7 @@ Bansal Immigration`;
         $(document).delegate('#confirmDocModal .accept', 'click', function(){
             $('.popuploader').show();
             $.ajax({
-                url: '{{URL::to('/admin/')}}/'+verify_doc_href,
+                url: window.ClientDetailConfig.urls.admin + '/' + verify_doc_href,
                 type:'POST',
                 datatype:'json',
                 data:{doc_id:verify_doc_id, doc_type:verify_doc_type},
@@ -4593,7 +4623,7 @@ Bansal Immigration`;
         $(document).delegate('#confirmNotUseDocModal .accept', 'click', function(){
             $('.popuploader').show();
             $.ajax({
-                url: '{{URL::to('/admin/')}}/'+notuse_doc_href,
+                url: window.ClientDetailConfig.urls.admin + '/' + notuse_doc_href,
                 type:'POST',
                 datatype:'json',
                 data:{doc_id:notuse_doc_id, doc_type:notuse_doc_type },
@@ -4640,7 +4670,7 @@ Bansal Immigration`;
         $(document).delegate('#confirmBackToDocModal .accept', 'click', function(){
             $('.popuploader').show();
             $.ajax({
-                url: '{{URL::to('/admin/')}}/'+backto_doc_href,
+                url: window.ClientDetailConfig.urls.admin + '/' + backto_doc_href,
                 type:'POST',
                 datatype:'json',
                 data:{doc_id:backto_doc_id, doc_type:backto_doc_type },
@@ -4707,7 +4737,7 @@ Bansal Immigration`;
         $(document).delegate('#confirmCostAgreementModal .acceptCostAgreementDelete', 'click', function(){
             $('.popuploader').show();
             $.ajax({
-                url: '{{URL::to('/admin/')}}/deletecostagreement',
+                url: window.ClientDetailConfig.urls.deleteCostagreement,
                 type:'GET',
                 datatype:'json',
                 data:{cost_agreement_id:costAgreementId},
@@ -4741,7 +4771,7 @@ Bansal Immigration`;
         $(document).delegate('#confirmModal .accept', 'click', function(){
             $('.popuploader').show();
             $.ajax({
-                url: '{{URL::to('/admin/')}}/'+delhref,
+                url: window.ClientDetailConfig.urls.admin + '/' + delhref,
                 type:'GET',
                 datatype:'json',
                 data:{note_id:notid},
@@ -4762,7 +4792,7 @@ Bansal Immigration`;
                             $.ajax({
                                 url: site_url+'/admin/get-services',
                                 type:'GET',
-                                data:{clientid:'{{$fetchedData->id}}'},
+                                data:{clientid:window.ClientDetailConfig.clientId},
                                 success: function(responses){
                                     $('.interest_serv_list').html(responses);
                                 }
@@ -4775,7 +4805,7 @@ Bansal Immigration`;
                             $.ajax({
                                 url: site_url+'/admin/get-appointments',
                                 type:'GET',
-                                data:{clientid:'{{$fetchedData->id}}'},
+                                data:{clientid:window.ClientDetailConfig.clientId},
                                 success: function(responses){
                                     $('.appointmentlist').html(responses);
                                 }
@@ -4784,7 +4814,7 @@ Bansal Immigration`;
                             $.ajax({
                                 url: site_url+'/admin/get-all-paymentschedules',
                                 type:'GET',
-                                data:{client_id:'{{$fetchedData->id}}',appid:res.application_id},
+                                data:{client_id:window.ClientDetailConfig.clientId,appid:res.application_id},
                                 success: function(responses){
                                     $('.showpaymentscheduledata').html(responses);
                                 }
@@ -4816,7 +4846,7 @@ Bansal Immigration`;
         $(document).delegate('#confirmLogModal .accept', 'click', function(){
             $('.popuploader').show();
             $.ajax({
-                url: '{{URL::to('/admin/')}}/'+delloghref,
+                url: window.ClientDetailConfig.urls.admin + '/' + delloghref,
                 type:'GET',
                 datatype:'json',
                 data:{activitylogid:activitylogid},
@@ -4840,7 +4870,7 @@ Bansal Immigration`;
         $(document).on('click', '.pinnote', function(e) {
             $('.popuploader').show();
             $.ajax({
-                url: '{{URL::to('/admin/pinnote')}}/',
+                url: window.ClientDetailConfig.urls.pinNote + '/',
                 type:'GET',
                 datatype:'json',
                 data:{note_id:$(this).attr('data-id')},
@@ -4853,7 +4883,7 @@ Bansal Immigration`;
         $('.pinnote').off('click').on('click', function(e) { 
             $('.popuploader').show();
             $.ajax({
-                url: '{{URL::to('/admin/pinnote')}}/',
+                url: window.ClientDetailConfig.urls.pinNote + '/',
                 type:'GET',
                 datatype:'json',
                 data:{note_id:$(this).attr('data-id')},
@@ -4867,7 +4897,7 @@ Bansal Immigration`;
         $(document).delegate('.pinactivitylog', 'click', function(){
             $('.popuploader').show();
             $.ajax({
-                url: '{{URL::to('/admin/pinactivitylog')}}/',
+                url: window.ClientDetailConfig.urls.pinActivityLog + '/',
                 type:'GET',
                 datatype:'json',
                 data:{activity_id:$(this).attr('data-id')},
@@ -4954,7 +4984,7 @@ Bansal Immigration`;
             closeOnSelect: false,
             dropdownParent: $('#create_note'),
             ajax: {
-                url: '{{URL::to('/admin/clients/get-recipients')}}',
+                url: window.ClientDetailConfig.urls.getRecipients,
                 dataType: 'json',
                 processResults: function (data) {
                 // Transforms the top-level key of the response object from 'items' to 'results'
@@ -4975,7 +5005,7 @@ Bansal Immigration`;
                 closeOnSelect: false,
                 dropdownParent: $('#applicationemailmodal'),
                 ajax: {
-                    url: '{{URL::to('/admin/clients/get-recipients')}}',
+                    url: window.ClientDetailConfig.urls.getRecipients,
                     dataType: 'json',
                     processResults: function (data) {
                     // Transforms the top-level key of the response object from 'items' to 'results'
@@ -4996,7 +5026,7 @@ Bansal Immigration`;
                 closeOnSelect: false,
                 dropdownParent: $('#opentaskmodal'),
                 ajax: {
-                    url: '{{URL::to('/admin/clients/get-recipients')}}',
+                    url: window.ClientDetailConfig.urls.getRecipients,
                     dataType: 'json',
                     processResults: function (data) {
                     // Transforms the top-level key of the response object from 'items' to 'results'
@@ -5047,7 +5077,7 @@ Bansal Immigration`;
             if(client_id !=""){
                 $.ajax({
                     type:'post',
-                    url:"{{URL::to('/')}}/admin/clients/update-session-completed",
+                    url:"window.ClientDetailConfig.urls.updateSessionCompleted",
                     headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
                     data: {client_id:client_id },
                     success: function(response){
@@ -5080,7 +5110,7 @@ Bansal Immigration`;
             $('.popuploader').show();
             
             $.ajax({
-                url: '{{URL::to('/admin/getnotedetail')}}',
+                url: window.ClientDetailConfig.urls.getNoteDetail,
                 type:'GET',
                 datatype:'json',
                 data:{note_id:v},
@@ -5119,7 +5149,7 @@ Bansal Immigration`;
             $('.popuploader').show();
             
             $.ajax({
-                url: '{{URL::to('/admin/getnotedetail')}}',
+                url: window.ClientDetailConfig.urls.getNoteDetail,
                 type:'GET',
                 datatype:'json',
                 data:{note_id:v},
@@ -5149,7 +5179,7 @@ Bansal Immigration`;
             $('#view_note input[name="noteid"]').val(v);
                 $('.popuploader').show();
             $.ajax({
-                url: '{{URL::to('/admin/viewnotedetail')}}',
+                url: window.ClientDetailConfig.urls.viewNoteDetail,
                 type:'GET',
                 datatype:'json',
                 data:{note_id:v},
@@ -5172,7 +5202,7 @@ Bansal Immigration`;
             $('#view_application_note input[name="noteid"]').val(v);
                 $('.popuploader').show();
             $.ajax({
-                url: '{{URL::to('/admin/viewapplicationnote')}}',
+                url: window.ClientDetailConfig.urls.viewApplicationNote,
                 type:'GET',
                 datatype:'json',
                 data:{note_id:v},
@@ -5194,7 +5224,7 @@ Bansal Immigration`;
 			if(v != ''){
 				$('.popuploader').show();
                 $.ajax({
-                    url: '{{URL::to('/admin/getpartnerbranch')}}',
+                    url: window.ClientDetailConfig.urls.getPartnerBranch,
                     type:'GET',
                     data:{cat_id:v},
                     success:function(response){
@@ -5271,10 +5301,10 @@ Bansal Immigration`;
             $(this).addClass('active');
 
             $.ajax({
-                url: '{{URL::to('/admin/change-client-status')}}',
+                url: window.ClientDetailConfig.urls.changeClientStatus,
                 type:'GET',
                 datatype:'json',
-                data:{id:'{{$fetchedData->id}}',rating:v},
+                data:{id:window.ClientDetailConfig.clientId,rating:v},
                 success: function(response){
                     var res = JSON.parse(response);
                     if(res.status){
@@ -5292,7 +5322,7 @@ Bansal Immigration`;
         /*$(document).delegate('.selecttemplate', 'change', function(){
             var v = $(this).val();
             $.ajax({
-                url: '{{URL::to('/admin/get-templates')}}',
+                url: window.ClientDetailConfig.urls.getTemplates,
                 type:'GET',
                 datatype:'json',
                 data:{id:v},
@@ -5330,7 +5360,7 @@ Bansal Immigration`;
 
             var v = $(this).val();
             $.ajax({
-                url: '{{URL::to('/admin/get-templates')}}',
+                url: window.ClientDetailConfig.urls.getTemplates,
                 type:'GET',
                 datatype:'json',
                 data:{id:v},
@@ -5377,7 +5407,7 @@ Bansal Immigration`;
         $(document).delegate('.selectapplicationtemplate', 'change', function(){
             var v = $(this).val();
             $.ajax({
-                url: '{{URL::to('/admin/get-templates')}}',
+                url: window.ClientDetailConfig.urls.getTemplates,
                 type:'GET',
                 datatype:'json',
                 data:{id:v},
@@ -5396,7 +5426,7 @@ Bansal Immigration`;
                 closeOnSelect: false,
                 dropdownParent: $('#emailmodal'),
                 ajax: {
-                    url: '{{URL::to('/admin/clients/get-recipients')}}',
+                    url: window.ClientDetailConfig.urls.getRecipients,
                     dataType: 'json',
                     processResults: function (data) {
                     // Transforms the top-level key of the response object from 'items' to 'results'
@@ -5417,7 +5447,7 @@ Bansal Immigration`;
             closeOnSelect: false,
             dropdownParent: $('#emailmodal'),
             ajax: {
-                url: '{{URL::to('/admin/clients/get-recipients')}}',
+                url: window.ClientDetailConfig.urls.getRecipients,
                 dataType: 'json',
                 processResults: function (data) {
                     // Transforms the top-level key of the response object from 'items' to 'results'
@@ -5491,7 +5521,7 @@ Bansal Immigration`;
             if(v != ''){
                 $('.popuploader').show();
                 $.ajax({
-                    url: '{{URL::to('/admin/getpartner')}}',
+                    url: window.ClientDetailConfig.urls.getPartner,
                     type:'GET',
                     data:{cat_id:v},
                     success:function(response){
@@ -5513,7 +5543,7 @@ Bansal Immigration`;
                     if(v != ''){
                             $('.popuploader').show();
             $.ajax({
-                url: '{{URL::to('/admin/getpartner')}}',
+                url: window.ClientDetailConfig.urls.getPartner,
                 type:'GET',
                 data:{cat_id:v},
                 success:function(response){
@@ -5533,7 +5563,7 @@ Bansal Immigration`;
             if(v != ''){
                 $('.popuploader').show();
                 $.ajax({
-                    url: '{{URL::to('/admin/getproduct')}}',
+                    url: window.ClientDetailConfig.urls.getProduct,
                     type:'GET',
                     data:{cat_id:v},
                     success:function(response){
@@ -5551,7 +5581,7 @@ Bansal Immigration`;
             if(v != ''){
                 $('.popuploader').show();
                 $.ajax({
-                    url: '{{URL::to('/admin/getproduct')}}',
+                    url: window.ClientDetailConfig.urls.getProduct,
                     type:'GET',
                     data:{cat_id:v},
                     success:function(response){
@@ -5569,7 +5599,7 @@ Bansal Immigration`;
             if(v != ''){
                 $('.popuploader').show();
                 $.ajax({
-                    url: '{{URL::to('/admin/getbranch')}}',
+                    url: window.ClientDetailConfig.urls.getBranch,
                     type:'GET',
                     data:{cat_id:v},
                     success:function(response){
@@ -5863,14 +5893,14 @@ Bansal Immigration`;
             if(v != ''){
                 $('.popuploader').show();
                 $.ajax({
-                    url: '{{URL::to('/admin/convertapplication')}}',
+                    url: window.ClientDetailConfig.urls.convertApplication,
                     type:'GET',
-                    data:{cat_id:v,clientid:'{{$fetchedData->id}}'},
+                    data:{cat_id:v,clientid:window.ClientDetailConfig.clientId},
                     success:function(response){
                         $.ajax({
                             url: site_url+'/admin/get-services',
                             type:'GET',
-                            data:{clientid:'{{$fetchedData->id}}'},
+                            data:{clientid:window.ClientDetailConfig.clientId},
                             success: function(responses){
 
                                 $('.interest_serv_list').html(responses);
@@ -5880,7 +5910,7 @@ Bansal Immigration`;
                             url: site_url+'/admin/get-application-lists',
                             type:'GET',
                             datatype:'json',
-                            data:{id:'{{$fetchedData->id}}'},
+                            data:{id:window.ClientDetailConfig.clientId},
                             success: function(responses){
                                 $('.applicationtdata').html(responses);
                             }
@@ -5898,7 +5928,7 @@ Bansal Immigration`;
                 url: site_url+'/admin/get-application-lists',
                 type:'GET',
                 datatype:'json',
-                data:{id:'{{$fetchedData->id}}'},
+                data:{id:window.ClientDetailConfig.clientId},
                 success: function(responses){
                     $('.popuploader').hide();
                     $('.applicationtdata').html(responses);
@@ -6001,7 +6031,7 @@ Bansal Immigration`;
             $.ajax({
                 type: "POST",
                 data: {"_token": $('meta[name="csrf-token"]').attr('content'),"filename": opentime, "id": parent.data('id')},
-                url: '{{URL::to('/admin/renamedoc')}}',
+                url: window.ClientDetailConfig.urls.renameDoc,
                 success: function(result){
                     var obj = JSON.parse(result);
                     if (obj.status) {
@@ -6167,7 +6197,7 @@ Bansal Immigration`;
             $.ajax({
                 type: "POST",
                 data: {"_token": $('meta[name="csrf-token"]').attr('content'),"checklist": opentime, "id": parent.data('id')},
-                url: '{{URL::to('/admin/renamechecklistdoc')}}',
+                url: window.ClientDetailConfig.urls.renameChecklistDoc,
                 success: function(result){
                     var obj = JSON.parse(result);
                     if (obj.status) {
@@ -6278,7 +6308,7 @@ Bansal Immigration`;
             $.ajax({
                 type: "POST",
                 data: {"_token": $('meta[name="csrf-token"]').attr('content'),"filename": opentime, "id": parent.data('id')},
-                url: '{{URL::to('/admin/renamedoc')}}',
+                url: window.ClientDetailConfig.urls.renameDoc,
                 success: function(result){
                     var obj = JSON.parse(result);
                     if (obj.status) {
@@ -6415,7 +6445,7 @@ Bansal Immigration`;
             $.ajax({
                 type: "POST",
                 data: {"_token": $('meta[name="csrf-token"]').attr('content'),"checklist": opentime, "id": parent.data('id')},
-                url: '{{URL::to('/admin/renamechecklistdoc')}}',
+                url: window.ClientDetailConfig.urls.renameChecklistDoc,
                 success: function(result){
                     var obj = JSON.parse(result);
                     if (obj.status) {
@@ -6448,44 +6478,25 @@ Bansal Immigration`;
 
 
 
-        <?php
-        // Define appointment data for JavaScript
-        $rr=0;
-        $appointmentdata = array();
-        $appointmentlists = \App\Models\Appointment::where('client_id', $fetchedData->id)->where('related_to', 'client')->orderby('created_at', 'DESC')->get();
-
-        foreach($appointmentlists as $appointmentlist){
-            $admin = \App\Models\Admin::select('id', 'first_name','email')->where('id', $appointmentlist->user_id)->first();
-            $first_name= $admin->first_name ?? 'N/A';
-            $datetime = $appointmentlist->created_at;
-            $timeago = Controller::time_elapsed_string($datetime);
-
-            $appointmentdata[$appointmentlist->id] = array(
-                'title' => $appointmentlist->title,
-                'time' => date('H:i A', strtotime($appointmentlist->time)),
-                'date' => date('d D, M Y', strtotime($appointmentlist->date)),
-                'description' => htmlspecialchars($appointmentlist->description, ENT_QUOTES, 'UTF-8'),
-                'createdby' => substr($first_name, 0, 1),
-                'createdname' => $first_name,
-                'createdemail' => $admin->email ?? 'N/A',
-            );
-        }
-        $json = json_encode ( $appointmentdata, JSON_FORCE_OBJECT );
-        ?>
+        // Appointment data will be loaded via AJAX or passed from blade template
+        // TODO: Move appointment data initialization to blade template
         $(document).delegate('.appointmentdata', 'click', function () {
             var v = $(this).attr('data-id');
             $('.appointmentdata').removeClass('active');
             $(this).addClass('active');
-            var res = $.parseJSON('<?php echo $json; ?>');
-
-            $('.appointmentname').html(res[v].title);
-            $('.appointmenttime').html(res[v].time);
-            $('.appointmentdate').html(res[v].date);
-            $('.appointmentdescription').html(res[v].description);
-            $('.appointmentcreatedby').html(res[v].createdby);
-            $('.appointmentcreatedname').html(res[v].createdname);
-            $('.appointmentcreatedemail').html(res[v].createdemail);
-            $('.editappointment .edit_link').attr('data-id', v);
+            
+            // Check if appointment data exists in window object
+            if (typeof window.appointmentData !== 'undefined' && window.appointmentData[v]) {
+                var res = window.appointmentData;
+                $('.appointmentname').html(res[v].title);
+                $('.appointmenttime').html(res[v].time);
+                $('.appointmentdate').html(res[v].date);
+                $('.appointmentdescription').html(res[v].description);
+                $('.appointmentcreatedby').html(res[v].createdby);
+                $('.appointmentcreatedname').html(res[v].createdname);
+                $('.appointmentcreatedemail').html(res[v].createdemail);
+                $('.editappointment .edit_link').attr('data-id', v);
+            }
         });
 
         $(document).delegate('.opencreate_task', 'click', function () {
@@ -6505,7 +6516,7 @@ Bansal Immigration`;
         $(document).delegate('#confirmEducationModal .accepteducation', 'click', function(){
             $('.popuploader').show();
             $.ajax({
-                url: '{{URL::to('/admin/')}}/delete-education',
+                url: window.ClientDetailConfig.urls.deleteEducation,
                 type:'GET',
                 datatype:'json',
                 data:{edu_id:eduid},
@@ -6527,7 +6538,7 @@ Bansal Immigration`;
             if(v != ''){
                 $('.popuploader').show();
                 $.ajax({
-                    url: '{{URL::to('/admin/getsubjects')}}',
+                    url: window.ClientDetailConfig.urls.getSubjects,
                     type:'GET',
                     data:{cat_id:v},
                     success:function(response){
@@ -6544,7 +6555,7 @@ Bansal Immigration`;
             $('.popuploader').show();
             $('#edit_appointment').modal('show');
             $.ajax({
-                url: '{{URL::to('/admin/getAppointmentdetail')}}',
+                url: window.ClientDetailConfig.urls.getAppointmentDetail,
                 type:'GET',
                 data:{id:v},
                 success:function(response){
@@ -6599,7 +6610,7 @@ Bansal Immigration`;
             $('.popuploader').show();
             $('#edit_education').modal('show');
             $.ajax({
-                url: '{{URL::to('/admin/getEducationdetail')}}',
+                url: window.ClientDetailConfig.urls.getEducationDetail,
                 type:'GET',
                 data:{id:v},
                 success:function(response){
@@ -6620,7 +6631,7 @@ Bansal Immigration`;
             $('.popuploader').show();
             $('#interest_service_view').modal('show');
             $.ajax({
-                url: '{{URL::to('/admin/getintrestedservice')}}',
+                url: window.ClientDetailConfig.urls.getInterestedService,
                 type:'GET',
                 data:{id:v},
                 success:function(response){
@@ -6637,7 +6648,7 @@ Bansal Immigration`;
             $('#interest_service_view').modal('hide');
             $('#eidt_interested_service').modal('show');
             $.ajax({
-                url: '{{URL::to('/admin/getintrestedserviceedit')}}',
+                url: window.ClientDetailConfig.urls.getInterestedServiceEdit,
                 type:'GET',
                 data:{id:v},
                 success:function(response){
@@ -6700,7 +6711,7 @@ Bansal Immigration`;
 
             $.ajax({
                 type:'post',
-                url: '{{URL::to('/admin/clients/fetchClientMatterAssignee')}}',
+                url: window.ClientDetailConfig.urls.fetchClientMatterAssignee,
                 sync:true,
                 data: { client_matter_id:selectedMatterLM},
                 success: function(response){
@@ -6935,14 +6946,14 @@ Bansal Immigration`;
             }
         });
 
-        <?php
-        if(isset($_GET['tab']) && $_GET['tab'] == 'application' && isset($_GET['appid']) && $_GET['appid'] != ''){
-            ?>
-            var appliid = '{{@$_GET['appid']}}';
+        // Handle application ID from query parameter
+        var urlParams = new URLSearchParams(window.location.search);
+        var appliid = urlParams.get('appid') || window.ClientDetailConfig.appId;
+        if (appliid) {
             $('.if_applicationdetail').hide();
             $('#application-tab').show();
             $.ajax({
-                url: '{{URL::to('/admin/getapplicationdetail')}}',
+                url: window.ClientDetailConfig.urls.getApplicationDetail,
                 type:'GET',
                 data:{id:appliid},
                 success:function(response){
@@ -6956,7 +6967,7 @@ Bansal Immigration`;
                     }, function(start, end, label) {
                         $('#popuploader').show();
                         $.ajax({
-                            url:"{{URL::to('/admin/application/updateintake')}}",
+                            url:"window.ClientDetailConfig.urls.updateIntake",
                             method: "GET", // or POST
                             dataType: "json",
                             data: {from: start.format('YYYY-MM-DD'), appid: appliid},
@@ -6975,7 +6986,7 @@ Bansal Immigration`;
                     }, function(start, end, label) {
                         $('#popuploader').show();
                         $.ajax({
-                            url:"{{URL::to('/admin/application/updateexpectwin')}}",
+                            url:"window.ClientDetailConfig.urls.updateExpectWin",
                             method: "GET", // or POST
                             dataType: "json",
                             data: {from: start.format('YYYY-MM-DD'), appid: appliid},
@@ -6993,7 +7004,7 @@ Bansal Immigration`;
                     }, function(start, end, label) {
                         $('#popuploader').show();
                         $.ajax({
-                            url:"{{URL::to('/admin/application/updatedates')}}",
+                            url:"window.ClientDetailConfig.urls.updateDates",
                             method: "GET", // or POST
                             dataType: "json",
                             data: {from: start.format('YYYY-MM-DD'), appid: appliid, datetype: 'start'},
@@ -7017,7 +7028,7 @@ Bansal Immigration`;
                     }, function(start, end, label) {
                         $('#popuploader').show();
                         $.ajax({
-                            url:"{{URL::to('/admin/application/updatedates')}}",
+                            url:"window.ClientDetailConfig.urls.updateDates",
                             method: "GET", // or POST
                             dataType: "json",
                             data: {from: start.format('YYYY-MM-DD'), appid: appliid, datetype: 'end'},
@@ -7035,9 +7046,7 @@ Bansal Immigration`;
 
                 }
             });
-            <?php
         }
-        ?>
 
         $(document).delegate('.discon_application', 'click', function(){
             var appliid = $(this).attr('data-id');
@@ -7063,7 +7072,7 @@ Bansal Immigration`;
             $('.if_applicationdetail').hide();
             $('#application-tab').show();
             $.ajax({
-                url: '{{URL::to('/admin/getapplicationdetail')}}',
+                url: window.ClientDetailConfig.urls.getApplicationDetail,
                 type:'GET',
                 data:{id:clientMatterId},
                 success:function(response){
@@ -7076,7 +7085,7 @@ Bansal Immigration`;
                     }, function(start, end, label) {
                         $('#popuploader').show();
                         $.ajax({
-                            url:"{{URL::to('/admin/application/updateintake')}}",
+                            url:"window.ClientDetailConfig.urls.updateIntake",
                             method: "GET", // or POST
                             dataType: "json",
                             data: {from: start.format('YYYY-MM-DD'), appid: clientMatterId},
@@ -7093,7 +7102,7 @@ Bansal Immigration`;
                     }, function(start, end, label) {
                         $('#popuploader').show();
                         $.ajax({
-                            url:"{{URL::to('/admin/application/updateexpectwin')}}",
+                            url:"window.ClientDetailConfig.urls.updateExpectWin",
                             method: "GET", // or POST
                             dataType: "json",
                             data: {from: start.format('YYYY-MM-DD'), appid: clientMatterId},
@@ -7110,7 +7119,7 @@ Bansal Immigration`;
                     }, function(start, end, label) {
                         $('#popuploader').show();
                         $.ajax({
-                            url:"{{URL::to('/admin/application/updatedates')}}",
+                            url:"window.ClientDetailConfig.urls.updateDates",
                             method: "GET", // or POST
                             dataType: "json",
                             data: {from: start.format('YYYY-MM-DD'), appid: clientMatterId, datetype: 'start'},
@@ -7133,7 +7142,7 @@ Bansal Immigration`;
                     }, function(start, end, label) {
                         $('#popuploader').show();
                         $.ajax({
-                            url:"{{URL::to('/admin/application/updatedates')}}",
+                            url:"window.ClientDetailConfig.urls.updateDates",
                             method: "GET", // or POST
                             dataType: "json",
                             data: {from: start.format('YYYY-MM-DD'), appid: clientMatterId, datetype: 'end'},
@@ -7203,7 +7212,7 @@ Bansal Immigration`;
             $('#addpaymentschedule').modal('show');
             $('.popuploader').show();
             $.ajax({
-                url: '{{URL::to('/admin/addscheduleinvoicedetail')}}',
+                url: window.ClientDetailConfig.urls.addScheduleInvoiceDetail,
                 type: 'GET',
                 data: {id: $(this).attr('data-id')},
                 success: function(res){
@@ -7295,10 +7304,10 @@ Bansal Immigration`;
             var stage = $(this).attr('data-stage');
             $('.popuploader').show();
             $.ajax({
-                url: '{{URL::to('/admin/updatestage')}}',
+                url: window.ClientDetailConfig.urls.updateStage,
                 type:'GET',
                 datatype:'json',
-                data:{id:appliid, client_id:'{{$fetchedData->id}}'},
+                data:{id:appliid, client_id:window.ClientDetailConfig.clientId},
                 success:function(response){
                     $('.popuploader').hide();
                     var obj = $.parseJSON(response);
@@ -7322,7 +7331,7 @@ Bansal Immigration`;
                         $.ajax({
                             url: site_url+'/admin/get-applications-logs',
                             type:'GET',
-                            data:{clientid:'{{$fetchedData->id}}',id: appliid},
+                            data:{clientid:window.ClientDetailConfig.clientId,id: appliid},
                             success: function(responses){
 
                                 $('#accordion').html(responses);
@@ -7340,10 +7349,10 @@ Bansal Immigration`;
 
             $('.popuploader').show();
             $.ajax({
-                url: '{{URL::to('/admin/completestage')}}',
+                url: window.ClientDetailConfig.urls.completeStage,
                 type:'GET',
                 datatype:'json',
-                data:{id:appliid, client_id:'{{$fetchedData->id}}'},
+                data:{id:appliid, client_id:window.ClientDetailConfig.clientId},
                 success:function(response){
                     $('.popuploader').hide();
                     var obj = $.parseJSON(response);
@@ -7364,7 +7373,7 @@ Bansal Immigration`;
                         $.ajax({
                                 url: site_url+'/admin/get-applications-logs',
                                 type:'GET',
-                                data:{clientid:'{{$fetchedData->id}}',id: appliid},
+                                data:{clientid:window.ClientDetailConfig.clientId,id: appliid},
                                 success: function(responses){
 
                                     $('#accordion').html(responses);
@@ -7385,10 +7394,10 @@ Bansal Immigration`;
             }else{
                 $('.popuploader').show();
                 $.ajax({
-                    url: '{{URL::to('/admin/updatebackstage')}}',
+                    url: window.ClientDetailConfig.urls.updateBackStage,
                     type:'GET',
                     datatype:'json',
-                    data:{id:appliid, client_id:'{{$fetchedData->id}}'},
+                    data:{id:appliid, client_id:window.ClientDetailConfig.clientId},
                     success:function(response){
                         var obj = $.parseJSON(response);
                         $('.popuploader').hide();
@@ -7411,7 +7420,7 @@ Bansal Immigration`;
                             $.ajax({
                                 url: site_url+'/admin/get-applications-logs',
                                 type:'GET',
-                                data:{clientid:'{{$fetchedData->id}}',id: appliid},
+                                data:{clientid:window.ClientDetailConfig.clientId,id: appliid},
                                 success: function(responses){
 
                                     $('#accordion').html(responses);
@@ -7431,7 +7440,7 @@ Bansal Immigration`;
             $('.if_applicationdetail').hide();
             $('#application-tab').show();
             $.ajax({
-                url: '{{URL::to('/admin/getapplicationnotes')}}',
+                url: window.ClientDetailConfig.urls.getApplicationNotes,
                 type:'GET',
                 data:{id:appliid},
                 success:function(response){
@@ -7691,7 +7700,7 @@ Bansal Immigration`;
             $('#editpaymentschedule').modal('show');
             $('.popuploader').show();
             $.ajax({
-                url: '{{URL::to('/admin/scheduleinvoicedetail')}}',
+                url: window.ClientDetailConfig.urls.scheduleInvoiceDetail,
                 type: 'GET',
                 data: {id: $(this).attr('data-id'),t:'application'},
                 success: function(res){
@@ -7759,7 +7768,7 @@ Bansal Immigration`;
         function uploadFormData(form_data) {
             $('.popuploader').show();
             $.ajax({
-                url: "{{URL::to('/admin/application/checklistupload')}}",
+                url: "window.ClientDetailConfig.urls.checklistUpload",
                 method: "POST",
                 data: form_data,
                 datatype: 'json',
@@ -7942,7 +7951,7 @@ Bansal Immigration`;
 				$.ajax({
 					type:'post',
 					headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
-					url:'{{URL::to('/')}}/admin/delete_action',
+					url: window.ClientDetailConfig.urls.deleteAction,
 					data:{'id': id, 'table' : table},
 					success:function(resp) {
 						$('#popuploader').hide();
@@ -8124,7 +8133,7 @@ Bansal Immigration`;
 			// Create and submit a hidden form
 			const form = $('<form>', {
 				method: 'POST',
-				action: '{{ url("/admin/download-document") }}',
+				action: window.ClientDetailConfig.urls.downloadDocument,
 				target: '_blank',
 				style: 'display: none;'
 			});
@@ -8213,10 +8222,10 @@ Bansal Immigration`;
 			
 			// Send AJAX request
 			$.ajax({
-				url: '{{ url("/admin/clients/sendToHubdoc") }}/' + invoiceId,
+				url: window.ClientDetailConfig.urls.sendToHubdoc + '/' + invoiceId,
 				type: 'POST',
 				data: {
-					_token: '{{ csrf_token() }}'
+					_token: window.ClientDetailConfig.csrfToken
 				},
 				success: function(response) {
 					if (response.status) {
@@ -8275,7 +8284,7 @@ Bansal Immigration`;
 		// Function to check Hubdoc status
 		function checkHubdocStatus(invoiceId, $btn) {
 			$.ajax({
-				url: '{{ url("/admin/clients/checkHubdocStatus") }}/' + invoiceId,
+				url: window.ClientDetailConfig.urls.checkHubdocStatus + '/' + invoiceId,
 				type: 'GET',
 				dataType: 'json',
 				success: function(response) {
@@ -8424,10 +8433,10 @@ Bansal Immigration`;
 			}
 			
 			$.ajax({
-				url: '{{URL::to("/admin/update-note-datetime")}}',
+				url: window.ClientDetailConfig.urls.updateNoteDatetime,
 				type: 'POST',
 				data: {
-					_token: '{{ csrf_token() }}',
+					_token: window.ClientDetailConfig.csrfToken,
 					note_id: noteId,
 					datetime: newDateTime
 				},
@@ -8473,12 +8482,12 @@ Bansal Immigration`;
 			toggleElement.prop('disabled', true);
 
 			$.ajax({
-				url: '{{ route("admin.clients.toggleClientPortal") }}',
+				url: window.ClientDetailConfig.urls.toggleClientPortal,
 				method: 'POST',
 				data: {
 					client_id: clientId,
 					status: isChecked,
-					_token: '{{ csrf_token() }}'
+					_token: window.ClientDetailConfig.csrfToken
 				},
 				success: function(response) {
 					if (response.success) {

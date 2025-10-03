@@ -186,58 +186,13 @@
 
     /**
      * Initialize matter switching functionality
+     * NOTE: Matter selection change handlers are in detail-main.js to avoid duplicate bindings
+     * This function is kept for potential future use but currently does nothing
      */
     function initMatterSwitching() {
-        // Handle matter dropdown change
-        $('#sel_matter_id_client_detail').on('change', function() {
-            selectedMatter = $(this).val();
-            const uniqueMatterNo = $(this).find('option:selected').data('clientuniquematterno');
-            const activeTab = $('.tab-button.active, .vertical-tab-button.active, .client-nav-button.active').data('tab') || 'personaldetails';
-            
-            // Build new URL with matter and tab
-            let baseUrl = '/admin/clients/detail/' + clientId;
-
-            if (selectedMatter !== '' && uniqueMatterNo) {
-                // Append the new matter ID and active tab to the base URL
-                window.location.href = baseUrl + '/' + uniqueMatterNo + '/' + activeTab;
-            } else {
-                // If no matter is selected, redirect to the base URL with just the tab
-                window.location.href = baseUrl + '/' + activeTab;
-            }
-        });
-
-        // Handle general matter checkbox change
-        $(document).on('change', '.general_matter_checkbox_client_detail', function() {
-            if (this.checked) {
-                $('#sel_matter_id_client_detail').prop('disabled', true).trigger('change');
-                $('#sel_matter_id_client_detail').removeAttr('data-valid').trigger('change');
-                selectedMatter = $(this).val();
-
-                const uniqueMatterNo = $(this).data('clientuniquematterno');
-                const activeTab = $('.tab-button.active, .vertical-tab-button.active, .client-nav-button.active').data('tab') || 'personaldetails';
-                
-                // Build new URL
-                const baseUrl = '/admin/clients/detail/' + clientId;
-
-                if (selectedMatter !== '' && uniqueMatterNo) {
-                    window.location.href = baseUrl + '/' + uniqueMatterNo + '/' + activeTab;
-                } else {
-                    window.location.href = baseUrl + '/' + activeTab;
-                }
-
-                // Filter content by matter
-                handleMatterSpecificTab(activeTab);
-            } else {
-                $('#sel_matter_id_client_detail').prop('disabled', false).trigger('change');
-                $('#sel_matter_id_client_detail').attr('data-valid', 'required').trigger('change');
-                selectedMatter = "";
-            }
-        });
-
-        // Prevent multiple checkboxes from being checked
-        $(document).on('click', '.general_matter_checkbox_client_detail', function() {
-            $('.general_matter_checkbox_client_detail').not(this).prop('checked', false);
-        });
+        // Matter dropdown and checkbox change handlers are handled in detail-main.js
+        // This prevents duplicate event bindings that cause infinite refresh loops
+        // Checkbox exclusivity logic is also in detail-main.js
     }
 
     /**
@@ -310,74 +265,13 @@
 
     /**
      * Initialize matter selection from URL on page load
+     * NOTE: This function is deprecated - matter initialization is now handled in detail-main.js
+     * Kept for backward compatibility but should not be called
      */
     function initMatterFromUrl(matterIdInUrl) {
-        if (matterIdInUrl === null) {
-            // Case 1: No matter ID in URL - select first available option
-            let firstNonEmptyOption = $('#sel_matter_id_client_detail option').filter(function() {
-                return $(this).val() !== '';
-            }).first();
-
-            if (firstNonEmptyOption.length) {
-                $('#sel_matter_id_client_detail').val(firstNonEmptyOption.val()).trigger('change');
-                selectedMatter = firstNonEmptyOption.val();
-            } else {
-                // If no dropdown options, check the checkbox
-                let firstCheckbox = $('.general_matter_checkbox_client_detail').first();
-                if (firstCheckbox.length) {
-                    firstCheckbox.prop('checked', true).trigger('change');
-                    selectedMatter = firstCheckbox.val();
-                } else {
-                    selectedMatter = '';
-                }
-            }
-        } else {
-            // Case 2: Matter ID exists in URL
-            let matchFound = false;
-
-            // Check dropdown for matching option
-            $('#sel_matter_id_client_detail option').each(function() {
-                const uniqueMatterNo = $(this).data('clientuniquematterno');
-                if (uniqueMatterNo === matterIdInUrl) {
-                    $('#sel_matter_id_client_detail').val($(this).val()).trigger('change');
-                    selectedMatter = $(this).val();
-                    matchFound = true;
-                }
-            });
-
-            // If not found in dropdown, check checkboxes
-            if (!matchFound) {
-                $('.general_matter_checkbox_client_detail').each(function() {
-                    const uniqueMatterNo = $(this).data('clientuniquematterno');
-                    if (uniqueMatterNo === matterIdInUrl) {
-                        $(this).prop('checked', true).trigger('change');
-                        selectedMatter = $(this).val();
-                        matchFound = true;
-                        return false;
-                    }
-                });
-
-                // If still not found, select first available option
-                if (!matchFound) {
-                    let firstNonEmptyOption = $('#sel_matter_id_client_detail option').filter(function() {
-                        return $(this).val() !== '';
-                    }).first();
-
-                    if (firstNonEmptyOption.length) {
-                        $('#sel_matter_id_client_detail').val(firstNonEmptyOption.val()).trigger('change');
-                        selectedMatter = firstNonEmptyOption.val();
-                    } else {
-                        let firstCheckbox = $('.general_matter_checkbox_client_detail').first();
-                        if (firstCheckbox.length) {
-                            firstCheckbox.prop('checked', true).trigger('change');
-                            selectedMatter = firstCheckbox.val();
-                        } else {
-                            selectedMatter = '';
-                        }
-                    }
-                }
-            }
-        }
+        // Matter initialization is now handled in detail-main.js with proper initialization guard
+        // to prevent infinite refresh loops
+        console.log('initMatterFromUrl is deprecated - handled by detail-main.js');
     }
 
     // Expose initialization function to global scope
@@ -388,6 +282,13 @@
         filterVisaDocumentsByMatter: filterVisaDocumentsByMatter,
         filterEmailsByMatter: filterEmailsByMatter
     };
+
+    // Auto-initialize when document is ready
+    $(document).ready(function() {
+        if (window.ClientDetailConfig) {
+            initClientDetailPage(window.ClientDetailConfig);
+        }
+    });
 
 })(jQuery);
 

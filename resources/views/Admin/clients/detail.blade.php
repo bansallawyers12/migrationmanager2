@@ -1243,7 +1243,10 @@ use App\Http\Controllers\Controller;
         matterId: '{{ $id1 ?? "" }}',
         activeTab: '{{ $activeTab ?? "personaldetails" }}',
         matterRefNo: '{{ $id1 ?? ($matter_info_arr->client_unique_matter_no ?? null) }}',
+        clientFirstName: '{{ $fetchedData->first_name ?? "user" }}',
         csrfToken: '{{ csrf_token() }}',
+        currentDate: '{{ date("Y-m-d") }}',
+        appId: '{{ $_GET["appid"] ?? "" }}',
         urls: {
             base: '{{ URL::to("/") }}',
             admin: '{{ URL::to("/admin") }}',
@@ -1331,6 +1334,33 @@ use App\Http\Controllers\Controller;
             listAllMatters: '{{ URL::to("/admin/clients/listAllMattersWRTSelClient") }}',
         }
     };
+    
+    // Appointment data for the appointments tab
+    @php
+    $appointmentdata = array();
+    $appointmentlists = \App\Models\Appointment::where('client_id', $fetchedData->id)
+        ->where('related_to', 'client')
+        ->orderby('created_at', 'DESC')
+        ->get();
+    
+    foreach($appointmentlists as $appointmentlist){
+        $admin = \App\Models\Admin::select('id', 'first_name','email')
+            ->where('id', $appointmentlist->user_id)
+            ->first();
+        $first_name= $admin->first_name ?? 'N/A';
+        
+        $appointmentdata[$appointmentlist->id] = array(
+            'title' => $appointmentlist->title,
+            'time' => date('H:i A', strtotime($appointmentlist->time)),
+            'date' => date('d D, M Y', strtotime($appointmentlist->date)),
+            'description' => htmlspecialchars($appointmentlist->description, ENT_QUOTES, 'UTF-8'),
+            'createdby' => substr($first_name, 0, 1),
+            'createdname' => $first_name,
+            'createdemail' => $admin->email ?? 'N/A',
+        );
+    }
+    @endphp
+    window.appointmentData = {!! json_encode($appointmentdata, JSON_FORCE_OBJECT) !!};
 </script>
 
 {{-- Newly added external JS placeholders for progressive migration --}}
@@ -1339,6 +1369,6 @@ use App\Http\Controllers\Controller;
 <script src="{{ URL::asset('js/admin/clients/tabs/application.js') }}" defer></script>
 
 {{-- Main detail page JavaScript --}}
-<script src="{{ URL::asset('js/admin/clients/detail-main.js') }}"></script>
+<script src="{{ URL::asset('js/admin/clients/detail-main.js') }}?v={{ time() }}"></script>
 
 @endsection
