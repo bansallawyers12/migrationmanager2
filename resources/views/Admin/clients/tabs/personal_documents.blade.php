@@ -16,8 +16,8 @@
                     <!-- Personal Documents Content -->
                     <div class="personal-documents-content" id="personal-documents-content">
                         <!-- Document Type Subtabs Container -->
-                        <div class="subtab-header-container">
-                            <nav class="subtabs2" style="margin: 10px 0 0 10px; display: inline-block; flex-grow: 1;">
+                        <div class="subtab-header-container" style="background-color: #4a90e2; padding: 10px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <nav class="subtabs2" style="display: flex; gap: 5px; flex-wrap: wrap; flex: 1;">
                                 <?php foreach ($persDocCatList as $catVal): ?>
                                     <?php
                                     $id = $catVal->id;
@@ -25,7 +25,7 @@
                                     $isClientGenerated = $catVal->client_id !== null;
                                     ?>
                                     <div style="display: inline-block; position: relative;" class="button-container">
-                                        <button class="subtab2-button <?= $isActive ?>" data-subtab2="<?= $id ?>" style="color: #000 !important;">
+                                        <button class="subtab2-button <?= $isActive ?>" data-subtab2="<?= $id ?>">
                                             <?= htmlspecialchars($catVal->title) ?>
                                         </button>
                                         <?php if ($isClientGenerated): ?>
@@ -36,13 +36,15 @@
                                     </div>
                                 <?php endforeach; ?>
                             </nav>
-                            <button type="button" style="margin-top: 10px;" class="btn add_personal_doc_cat-btn add_personal_doc_cat" data-type="personal" data-categoryid="">
-                                <i class="fas fa-plus"></i> Add Personal Document Category
-                            </button>
-                            <!-- Add link to Not Used Documents -->
-                            <button style="margin-top: 10px; margin-left: 10px;" class="btn btn-secondary client-nav-button" data-tab="notuseddocuments">
-                                <i class="fas fa-folder-minus"></i> Not Used Documents
-                            </button>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <button type="button" class="btn add_personal_doc_cat-btn add_personal_doc_cat" data-type="personal" data-categoryid="">
+                                    <i class="fas fa-plus"></i> Add Personal Document Category
+                                </button>
+                                <!-- Add link to Not Used Documents -->
+                                <button class="btn btn-secondary client-nav-button" data-tab="notuseddocuments">
+                                    <i class="fas fa-folder-minus"></i> Not Used Documents
+                                </button>
+                            </div>
                         </div>
 
                         <!-- Subtab2 Contents -->

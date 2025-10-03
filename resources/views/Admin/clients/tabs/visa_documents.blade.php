@@ -29,8 +29,8 @@
                     <!-- Visa Documents Content -->
                     <div class="visa-documents-content" id="visa-documents-content">
                         <!-- Visa Document Type Subtabs Container -->
-                        <div class="subtab-header-container">
-                            <nav class="subtabs6" style="margin: 10px 0 0 10px; display: inline-block; flex-grow: 1;">
+                        <div class="subtab-header-container" style="background-color: #4a90e2; padding: 10px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <nav class="subtabs6" style="display: flex; gap: 5px; flex-wrap: wrap; flex: 1;">
                                 <?php foreach ($visaDocCatList as $catVal): ?>
                                     <?php
                                     $id = $catVal->id;
@@ -39,7 +39,7 @@
                                     $isClientGenerated = $catVal->client_matter_id !== null;
                                     ?>
                                     <div style="display: inline-block; position: relative;" class="button-container">
-                                        <button class="subtab6-button <?= $isActive ?>" data-subtab6="<?= $id ?>" style="color: #000 !important;">
+                                        <button class="subtab6-button <?= $isActive ?>" data-subtab6="<?= $id ?>">
                                             <?= htmlspecialchars($catVal->title) ?>
                                         </button>
                                         <?php if ($isClientGenerated): ?>
@@ -50,14 +50,15 @@
                                     </div>
                                 <?php endforeach; ?>
                             </nav>
-
-                            <button type="button" style="margin-top: 10px;" class="btn add-visa-doc-category-btn add-visa-doc-category" data-type="visa" data-categoryid="">
-                                <i class="fas fa-plus"></i> Add Visa Document Category
-                            </button>
-                            <!-- Add link to Not Used Documents -->
-                            <button style="margin-top: 10px; margin-left: 10px;" class="btn btn-secondary client-nav-button" data-tab="notuseddocuments">
-                                <i class="fas fa-folder-minus"></i> Not Used Documents
-                            </button>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <button type="button" class="btn add-visa-doc-category-btn add-visa-doc-category" data-type="visa" data-categoryid="">
+                                    <i class="fas fa-plus"></i> Add Visa Document Category
+                                </button>
+                                <!-- Add link to Not Used Documents -->
+                                <button class="btn btn-secondary client-nav-button" data-tab="notuseddocuments">
+                                    <i class="fas fa-folder-minus"></i> Not Used Documents
+                                </button>
+                            </div>
                         </div>
 
                         <!-- Subtab6 Contents -->

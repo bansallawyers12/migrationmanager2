@@ -95,10 +95,11 @@
 }
 
 /* Documents Tab CSS */
-.documentalls-container { padding: 0; background-color: #4a90e2; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-top: 20px; }
-.subtabs { display: flex; background-color: #4a90e2; padding: 10px; border-radius: 8px 8px 0 0; gap: 10px; }
+.documentalls-container { padding: 0; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-top: 20px; }
+.subtabs, .subtabs2, .subtabs6 { display: flex; background-color: transparent; padding: 0; gap: 5px; flex-wrap: wrap; }
+.subtab-header-container { background-color: #4a90e2; padding: 10px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
 .subtab-button.ml-auto { margin-left: auto; }
-.subtab-button, .subtab2-button, .subtab6-button { padding: 10px 20px; background: none; border: none; color: white; font-size: 1rem; font-weight: 500; cursor: pointer; transition: all 0.3s ease; }
+.subtab-button, .subtab2-button, .subtab6-button { padding: 10px 20px; background: none; border: none; color: white !important; font-size: 1rem; font-weight: 500; cursor: pointer; transition: all 0.3s ease; }
 .subtab-button:hover, .subtab2-button:hover, .subtab6-button:hover { background-color: #357ab8; border-radius: 5px; }
 .subtab-button.active, .subtab2-button.active, .subtab6-button.active { background-color: #357ab8; border-radius: 5px; }
 .subtab-content, .subtab2-content, .subtab6-content { padding: 15px; background: #fff; display: flex; flex-direction: row; gap: 20px; }

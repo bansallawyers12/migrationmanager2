@@ -132,10 +132,6 @@ use App\Http\Controllers\Controller;
                     <i class="fas fa-globe"></i>
                     <span>Client Portal</span>
                 </button>
-                <button class="client-nav-button" data-tab="notuseddocuments">
-                    <i class="fas fa-folder-minus"></i>
-                    <span>Not Used Documents</span>
-                </button>
             <?php
             }
             else
@@ -160,10 +156,6 @@ use App\Http\Controllers\Controller;
                 <button class="client-nav-button" data-tab="appointments">
                     <i class="fas fa-calendar"></i>
                     <span>Appointments</span>
-                </button>
-                <button class="client-nav-button" data-tab="notuseddocuments">
-                    <i class="fas fa-folder-minus"></i>
-                    <span>Not Used Documents</span>
                 </button>
             <?php
             }
