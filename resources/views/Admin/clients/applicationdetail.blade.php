@@ -763,7 +763,6 @@ $workflow = \App\Models\Workflow::where('id', $fetchData->workflow)->first();
 				<option value="">Select Fee Type</option>
 				<option  value="Accommodation Fee">Accommodation Fee</option>
 				<option  value="Administration Fee">Administration Fee</option>
-				{{-- Removed legacy travel options: Airline Ticket, Airport Transfer Fee --}}
 				<option  value="Application Fee">Application Fee</option>
 				<option  value="Tution Fee">Tution Fee</option>
 			</select>
