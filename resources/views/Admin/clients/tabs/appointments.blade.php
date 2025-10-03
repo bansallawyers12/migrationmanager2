@@ -16,7 +16,7 @@
                                 $admin = \App\Models\Admin::select('id', 'first_name','email')->where('id', $appointmentlist->user_id)->first();
                                 $first_name= $admin->first_name ?? 'N/A';
                                 $datetime = $appointmentlist->created_at;
-                                $timeago = Controller::time_elapsed_string($datetime);
+                                $timeago = \App\Http\Controllers\Controller::time_elapsed_string($datetime);
 
                                 $appointmentdata[$appointmentlist->id] = array(
                                     'title' => $appointmentlist->title,

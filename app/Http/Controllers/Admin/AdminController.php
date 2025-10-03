@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Redirect;
 
 use App\Models\Lead;
 use App\Models\Admin;
-use App\Models\WebsiteSetting;
+// use App\Models\WebsiteSetting; // removed website settings dependency
 use App\Models\SeoPage;
 use PDF;
 use App\Models\InvoicePayment;

@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 
-use App\Models\WebsiteSetting;
+// use App\Models\WebsiteSetting; // removed website settings dependency
 use App\Models\Country;
 use App\Models\State;
 use App\Models\SeoPage;
@@ -39,8 +39,14 @@ class LoginController extends Controller
      */
     public function __construct()
     {
-		$siteData = WebsiteSetting::where('id', '!=', '')->first();
-		\View::share('siteData', $siteData);
+        // Share safe defaults instead of WebsiteSetting
+        $siteData = (object) [
+            'phone' => env('APP_PHONE', ''),
+            'ofc_timing' => env('APP_OFFICE_TIMING', ''),
+            'email' => env('APP_EMAIL', ''),
+            'logo' => env('APP_LOGO', 'logo.png'),
+        ];
+        \View::share('siteData', $siteData);
         $this->middleware('guest')->except('logout');
     }
 	

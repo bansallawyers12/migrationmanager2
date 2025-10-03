@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Redirect;
 
-use App\Models\WebsiteSetting;
+// use App\Models\WebsiteSetting; // removed website settings dependency
 use App\Models\Slider;
 use App\Models\OurService;
 use App\Models\Testimonial;
@@ -32,14 +32,16 @@ class HomeController extends Controller
 {
 	public function __construct(Request $request)
     {
-		$siteData = WebsiteSetting::where('id', '!=', '')->first();
-		\View::share('siteData', $siteData);
+        // Share safe defaults instead of WebsiteSetting
+        $siteData = (object) [
+            'phone' => env('APP_PHONE', ''),
+            'ofc_timing' => env('APP_OFFICE_TIMING', ''),
+            'email' => env('APP_EMAIL', ''),
+            'logo' => env('APP_LOGO', 'logo.png'),
+        ];
+        \View::share('siteData', $siteData);
 	}
 
-    public function coming_soon()
-    {
-        return view('coming_soon');
-    }
 
 	public function sicaptcha(Request $request)
     {
@@ -66,10 +68,6 @@ class HomeController extends Controller
 	}
 
 
-    public function myprofile(Request $request)
-    {
-		return view('profile');
-    }
 
 
 	public function refresh_captcha() {
@@ -517,89 +515,5 @@ class HomeController extends Controller
     }
 
 
-    public function stripe($appointmentId)
-    {
-        $appointmentInfo = \App\Models\Appointment::find($appointmentId);
-        if($appointmentInfo){
-            $adminInfo = \App\Models\Admin::find($appointmentInfo->client_id);
-        } else {
-            $adminInfo = array();
-        }
-        return view('stripe', compact(['appointmentId','appointmentInfo','adminInfo']));
-    }
-
-    public function stripePost(Request $request)
-    {
-        $requestData = $request->all(); //dd($requestData);
-        $appointment_id = $requestData['appointment_id'];
-        $email = $requestData['customerEmail'];
-        $cardName = $requestData['cardName'];
-        $stripeToken = $requestData['stripeToken'];
-        $currency = "aud";
-        $payment_type = "stripe";
-        $order_date = date("Y-m-d H:i:s");
-        $amount = 150;
-        
-
-        Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
-
-        $customer = Stripe\Customer::create(array("email" => $email,"name" => $cardName,"source" => $stripeToken));
-
-        $payment_result = Stripe\Charge::create ([
-            "amount" => $amount * 100,
-            "currency" => $currency,
-            "customer" => $customer->id,
-            "description" => "Paid To bansalimmigration.com.au For Migration Advice By $cardName"
-        ]);
-        //dd($payment_result);
-        //update Order status
-        if ( ! empty($payment_result) && $payment_result["status"] == "succeeded")
-        { //success
-            //Order insertion
-            $stripe_payment_intent_id = $payment_result['id'];
-            $payment_status = "Paid";
-            $order_status = "Completed";
-            $appontment_status = 10; //Pending Appointment With Payment Success
-            $ins = DB::table('tbl_paid_appointment_payment')->insert([
-                'order_hash' => $stripeToken,
-                'payer_email' => $email,
-                'amount' => $amount,
-                'currency' => $currency,
-                'payment_type' => $payment_type,
-                'order_date' => $order_date,
-                'name' => $cardName,
-                'stripe_payment_intent_id'=>$stripe_payment_intent_id,
-                'payment_status'=>$payment_status,
-                'order_status'=>$order_status
-            ]);
-            if($ins ){
-                DB::table('appointments')->where('id',$appointment_id)->update( array('status'=>$appontment_status,'order_hash'=>$stripeToken));
-            }
-            Session::flash('success', 'Payment successful!');
-        } else { //failed
-            $stripe_payment_intent_id = $payment_result['id'];
-            $payment_status = "Unpaid";
-            $order_status = "Payement Failure";
-            $appontment_status = 11; //Pending Appointment With Payment Fail
-            $ins = DB::table('tbl_paid_appointment_payment')->insert([
-                'order_hash' => $stripeToken,
-                'payer_email' => $email,
-                'amount' => $amount,
-                'currency' => $currency,
-                'payment_type' => $payment_type,
-                'order_date' => $order_date,
-                'name' => $cardName,
-                'stripe_payment_intent_id'=>$stripe_payment_intent_id,
-                'payment_status'=>$payment_status,
-                'order_status'=>$order_status
-            ]);
-            if($ins ){
-                DB::table('appointments')->where('id',$appointment_id)->update( array('status'=>$appontment_status,'order_hash'=>$stripeToken));
-            }
-            //return json_encode(array('success'=>false));
-            Session::flash('error', 'Payment failed!');
-        }
-        return back();
-    }
 }
 

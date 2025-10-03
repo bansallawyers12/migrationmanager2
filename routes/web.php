@@ -46,30 +46,7 @@ Route::post('/exception', 'ExceptionController@index')->name('exception');
 Auth::routes();
 
 
-// Frontend Route
-
-Route::get('/book-an-appointment', 'HomeController@bookappointment')->name('bookappointment');
-// Removed appointment booking submission routes
-// Route::post('/book-an-appointment/store', 'AppointmentBookController@store');
-// Route::post('/book-an-appointment/storepaid', 'AppointmentBookController@storepaid')->name('stripe.post');
-Route::post('/getdatetime', 'HomeController@getdatetime');
-
-
-Route::post('/getdisableddatetime', 'HomeController@getdisableddatetime');
-Route::get('/refresh-captcha', 'HomeController@refresh_captcha');
-
-//Route::get('page/{slug}', 'HomeController@Page')->name('page.slug');
-Route::get('sicaptcha', 'HomeController@sicaptcha')->name('sicaptcha');
-// Removed invoice frontend routes
-Route::get('/profile', 'HomeController@myprofile')->name('profile');
-
-Route::post('/getdatetime', 'HomeController@getdatetime');
-Route::post('/getdatetimebackend', 'HomeController@getdatetimebackend');
-Route::post('/getdisableddatetime', 'HomeController@getdisableddatetime');
-
-
-Route::get('stripe/{appointmentId}', 'HomeController@stripe');
-Route::post('stripe', 'HomeController@stripePost')->name('stripe.post1');
+// Frontend routes removed - no frontend website
 
 /*---------------Email manager Route-------------------*/
 include_once 'emailUser.php';
@@ -126,8 +103,7 @@ Route::prefix('admin')->group(function() {
 
     Route::post('/add_ckeditior_image', 'Admin\AdminController@addCkeditiorImage')->name('add_ckeditior_image');
     Route::post('/get_chapters', 'Admin\AdminController@getChapters')->name('admin.get_chapters');
-    Route::get('/website_setting', 'Admin\AdminController@websiteSetting')->name('admin.website_setting');
-    Route::post('/website_setting', 'Admin\AdminController@websiteSetting')->name('admin.website_setting');
+    // Removed website settings routes
     Route::post('/get_states', 'Admin\AdminController@getStates');
     Route::get('/settings/taxes/returnsetting', 'Admin\AdminController@returnsetting')->name('admin.returnsetting');
     Route::post('/settings/taxes/savereturnsetting', 'Admin\AdminController@returnsetting')->name('admin.savereturnsetting');
@@ -858,10 +834,8 @@ Route::prefix('admin')->group(function() {
 
 	});
 
-Route::get('/{slug}', 'HomeController@Page')->name('page.slug');
+// Frontend dynamic routing removed - no frontend website
 Auth::routes();
-
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
 //Frontend Document Controller
 Route::get('/sign/{id}/{token}', [App\Http\Controllers\DocumentController::class, 'sign'])->name('documents.sign');
