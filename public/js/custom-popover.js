@@ -560,70 +560,7 @@ function isNumberKey1(evt)
         send_email_to_traveler();
     });
 
-    $(".getitinerary").click(function(e){
-        e.preventDefault();
-
-        var $package_id = $.trim($('input[name=packageradio]:checked').val());
-        var $fcp_uid = '0';
-
-        $.ajax({
-            type : "GET",
-            url  :  "/ajax/insert-itinerary-ajax.php?nid="+$package_id+"&search=no&fcp_uid="+$fcp_uid,
-            success : function(data){
-                CKEDITOR.instances.editor1.insertHtml(data);
-                //return false;
-            },
-            error : function(error){
-                console.log(error);
-            }
-
-
-        });
-
-        $("#ADDitinerary").modal('hide');
-    });
-    $(".getitinerarybyid").click(function(e){
-        e.preventDefault();
-        var $package_id = $("#srh_pk_id").val();
-        var $fcp_uid = '0';
-        if($package_id === "")
-        {
-            toastr.options = {"positionClass": "toast-top-center" };
-            toastr.error('Please enter package id');
-            $("#srh_pk_id").focus();
-            return false;
-        }
-        else
-        {
-            $("#srch_res").html("");
-            $("#srch_res").append("<div style=\"padding-left:360px\"><img src=\"/gifs/255.gif\" alt=\"Searching..\" /></div>");
-            $.ajax({
-                type : "GET",
-                url  :  "/ajax/insert-itinerary-ajax.php?nid="+$package_id+"&search=yes&fcp_uid="+$fcp_uid,
-
-                success : function(data){
-                    if(data === "error")
-                    {
-                        $("#srch_res").html("");
-                        $("#srch_res").append("Package id not found !");
-                    }
-                    else
-                    {
-                        $("#srch_res").html("");
-                        CKEDITOR.instances.editor1.insertHtml(data);
-                        $("#ADDitinerary").modal('hide');
-                    }
-                    //return false;
-                },
-                error : function(error){
-                    console.log(error);
-                }
-
-
-            });
-
-        }
-    });
+    /*Itinerary handlers removed - legacy code */
     function sendmailcontent(data)
     {
         var $mail_data =  data;

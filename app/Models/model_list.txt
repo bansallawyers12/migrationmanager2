@@ -6,7 +6,6 @@ AdminMeta.php
 AgentDetails.php
 AiChat.php
 AiChatMessage.php
-Airport.php
 Application.php
 ApplicationActivitiesLog.php
 ApplicationDocument.php

@@ -722,30 +722,7 @@ class ApplicationsController extends Controller
 		echo json_encode($response);
 	}
 
-	public function saleforcast(Request $request){
-		$requestData = $request->all();
-
-			$user_id = @Auth::user()->id;
-			$obj = Application::find($request->fapp_id);
-			$obj->client_revenue = $request->client_revenue;
-			$obj->partner_revenue = $request->partner_revenue;
-			$obj->discounts = $request->discounts;
-			$saved = $obj->save();
-			if($saved){
-
-				$response['status'] 	= 	true;
-				$response['message']	=	'Application successfully updated.';
-				$response['client_revenue']	=	$obj->client_revenue;
-				$response['partner_revenue']	=	$obj->partner_revenue;
-				$response['discounts']	=	$obj->discounts;
-
-			}else{
-				$response['status'] 	= 	false;
-				$response['message']	=	'Please try again';
-			}
-
-		echo json_encode($response);
-	}
+	// Removed legacy method: saleforcast
 
 	public function getapplicationbycid(Request $request){
 		$clientid = $request->clientid;

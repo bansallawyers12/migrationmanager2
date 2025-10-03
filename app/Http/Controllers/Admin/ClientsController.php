@@ -4487,7 +4487,7 @@ class ClientsController extends Controller
 		}
     }
 
-    public function detail(Request $request, $id = NULL, $id1 = NULL)
+    public function detail(Request $request, $id = NULL, $id1 = NULL, $tab = NULL)
     {
 
         if (isset($request->t)) {
@@ -4501,6 +4501,9 @@ class ClientsController extends Controller
         if (isset($id) && !empty($id)) {
             $encodeId = $id;
             $id = $this->decodeString($id);
+            
+            // Set default tab if not provided
+            $activeTab = $tab ?? 'personaldetails';
 
             if (Admin::where('id', '=', $id)->where('role', '=', '7')->exists()) {
                 $fetchedData = Admin::find($id); //dd($fetchedData);
@@ -4567,7 +4570,7 @@ class ClientsController extends Controller
                 return view($viewName, compact(
                     'fetchedData', 'clientAddresses', 'clientContacts', 'emails', 'qualifications',
                     'experiences', 'testScores', 'visaCountries', 'clientOccupations','ClientPoints', 'clientSpouseDetail',
-                    'encodeId', 'id1','clientFamilyDetails'
+                    'encodeId', 'id1','clientFamilyDetails', 'activeTab'
                 ));
             } else {
                 return redirect('/admin/clients')->with('error', 'Clients Not Exist');

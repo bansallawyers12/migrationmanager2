@@ -1701,9 +1701,7 @@
 												<select class="form-control select2" name="fee_type" data-valid="required">
 													<option value="">Select Fee Type</option>
 													<option value="Accommodation Fee">Accommodation Fee</option>
-													<option value="Administration Fee">Administration Fee</option>
-													<option value="Airline Ticket">Airline Ticket</option>
-													<option value="Airport Transfer Fee">Airport Transfer Fee</option>
+											<option value="Administration Fee">Administration Fee</option>
 													<option value="Application Fee">Application Fee</option>
 													<option value="Bond">Bond</option>
 													<option   value="Tution Fee">Tution Fee</option>

@@ -22,13 +22,9 @@ return [
 	'test_reviewed_copies' => public_path().'/img/test_reviewed_copies',
 	'profile_imgs' => public_path().'/img/profile_imgs',
 	'invoice' => public_path().'/img/invoice', 
-	'destination_img' => public_path().'/img/destination_img',
-	'topinclusion_img' => public_path().'/img/topinclusion_img',
+	// removed legacy tour-package paths: destination_img, topinclusion_img
 	'pdfs' => public_path().'/img/pdfs',
-	'packageimage' => public_path().'/img/packageimage',
-	'gallery_img' => public_path().'/img/gallery_img',
-	'hotel_img' => public_path().'/img/hotel_img', 
-	'plans' => public_path().'/img/plans',
+	// removed legacy tour-package paths: packageimage, gallery_img, hotel_img, plans
 	'product_img' => public_path().'/img/product_img',
 	'service_imgs' => public_path().'/img/service_img',
 	'product_sample_img' => public_path().'/img/product_sample_img',

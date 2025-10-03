@@ -319,30 +319,30 @@ use App\Http\Controllers\Controller;
             <!-- Tab Contents -->
             <div class="tab-content" id="tab-content">
             @include('Admin.clients.tabs.personal_details')
-
+            
             @include('Admin.clients.tabs.notes')
-
+            
             @include('Admin.clients.tabs.documents')
-
-            @include('Admin.clients.tabs.accounts')
-
-            @include('Admin.clients.tabs.conversations')
-
-            @include('Admin.clients.tabs.email_handling')
-
-            @include('Admin.clients.tabs.artificial_intelligence')
-
-            @include('Admin.clients.tabs.form_generation_client')
-
-
-            @include('Admin.clients.tabs.form_generation_lead')
-
-
-            @include('Admin.clients.tabs.appointments')
-
-
-            @include('Admin.clients.tabs.application')
-
+            
+            <?php
+            // Mirror the same condition used to render sidebar buttons so that
+            // only panes for visible tabs are included (prevents duplicates)
+            $matter_cnt = \App\Models\ClientMatter::select('id')
+                ->where('client_id',$fetchedData->id)
+                ->where('matter_status',1)
+                ->count();
+            ?>
+            @if((isset($id1) && $id1 != "") || $matter_cnt > 0)
+                @include('Admin.clients.tabs.accounts')
+                @include('Admin.clients.tabs.conversations')
+                @include('Admin.clients.tabs.form_generation_client')
+                @include('Admin.clients.tabs.appointments')
+                @include('Admin.clients.tabs.client_portal')
+            @else
+                @include('Admin.clients.tabs.form_generation_lead')
+                @include('Admin.clients.tabs.appointments')
+            @endif
+            
             </div>
         </div>
     </main>
