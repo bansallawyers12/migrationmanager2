@@ -1231,8 +1231,8 @@ use App\Http\Controllers\Controller;
 <script src="{{URL::asset('js/bootstrap-datepicker.js')}}"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.20/jquery.datetimepicker.full.min.js"></script>
 
-{{-- Client Detail Tabs Management --}}
-<script src="{{URL::asset('js/client-detail-tabs.js')}}"></script>
+{{-- Sidebar Tabs Management - Dedicated file for sidebar navigation --}}
+<script src="{{URL::asset('js/admin/clients/sidebar-tabs.js')}}"></script>
 
 {{-- Pass Blade variables to JavaScript --}}
 <script>

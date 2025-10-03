@@ -439,32 +439,7 @@
 
     });
 
-    document.addEventListener('DOMContentLoaded', function () {
-    // Handle tab switching
-    const tabs = document.querySelectorAll('.nav-tabs .nav-link');
-    const tabContents = document.querySelectorAll('.tab-content .tab-pane');
-
-    tabs.forEach(tab => {
-        tab.addEventListener('click', function (e) {
-            e.preventDefault();
-            const target = this.getAttribute('href').substring(1);
-
-            // Remove active class from all tabs and contents
-            tabs.forEach(t => t.classList.remove('active'));
-            tabContents.forEach(tc => tc.classList.remove('show', 'active'));
-
-            // Add active class to clicked tab and corresponding content
-            this.classList.add('active');
-            document.getElementById(target).classList.add('show', 'active');
-        });
-    });
-
-    // Activate the first tab by default if not already set
-    if (tabs.length > 0 && !document.querySelector('.nav-tabs .nav-link.active')) {
-        tabs[0].classList.add('active');
-        tabContents[0].classList.add('show', 'active');
-    }
-});
+    // REMOVED: Duplicate tab switching code - now handled by sidebar-tabs.js
 
     //For download document - jQuery version for better compatibility
     $(document).ready(function() {
@@ -949,45 +924,22 @@ $(document).ready(function() {
         $('#sendmsg_client_id').val(client_id);
     });
 
-    // Initialize Client Detail Tabs Management from external JS file
+    // Initialize Sidebar Tabs Management
     $(document).ready(function() {
-        // Get matter ID from URL
-        var currentUrl = window.location.href;
-        var urlSegments = currentUrl.split('/');
-        var matterIdInUrl = urlSegments.length > 8 ? urlSegments[urlSegments.length - 2] : null;
-        
-        // Initialize the tab management system
-        if (typeof ClientDetailTabs !== 'undefined') {
-            ClientDetailTabs.init({
+        if (typeof SidebarTabs !== 'undefined' && window.ClientDetailConfig) {
+            SidebarTabs.init({
                 clientId: window.ClientDetailConfig.encodeId,
                 matterId: window.ClientDetailConfig.matterId,
                 activeTab: window.ClientDetailConfig.activeTab,
                 selectedMatter: ''
             });
-            
-            // Initialize matter selection from URL
-            ClientDetailTabs.initMatterFromUrl(matterIdInUrl);
+        } else {
+            console.error('[DetailMain] SidebarTabs or ClientDetailConfig not available');
         }
     });
     
     
-
-    
-    
-    // Handle browser back/forward buttons
-    window.addEventListener('popstate', function(event) {
-        if (event.state && event.state.tab) {
-            const tabId = event.state.tab;
-            const $targetButton = $(`.tab-button[data-tab="${tabId}"], .vertical-tab-button[data-tab="${tabId}"], .client-nav-button[data-tab="${tabId}"]`);
-            if ($targetButton.length) {
-                // Manually trigger tab change without updating URL again
-                $('.tab-button, .vertical-tab-button, .client-nav-button').removeClass('active');
-                $('.tab-pane').removeClass('active');
-                $targetButton.addClass('active');
-                $(`#${tabId}-tab`).addClass('active');
-            }
-        }
-    });
+    // REMOVED: Duplicate popstate handler - now handled by sidebar-tabs.js
 
     //Handle Client Portal tab click specifically
     function showClientMatterApplicationData(selectedMatter){
