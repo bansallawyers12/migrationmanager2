@@ -6,6 +6,7 @@ use App\Http\Controllers\API\ClientPortalController;
 use App\Http\Controllers\API\ClientPortalDashboardController;
 use App\Http\Controllers\API\ClientPortalDocumentController;
 use App\Http\Controllers\API\ClientPortalWorkflowController;
+use App\Http\Controllers\API\ClientPortalMessageController;
 
 /*
 |--------------------------------------------------------------------------
@@ -57,8 +58,26 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/workflow/allowed-checklist', [ClientPortalWorkflowController::class, 'allowedChecklistForStages']);
     Route::post('/workflow/upload-allowed-checklist', [ClientPortalWorkflowController::class, 'uploadAllowedChecklistDocument']);
     
+    // Messaging routes (specific routes first to avoid conflicts)
+    Route::post('/messages/send', [ClientPortalMessageController::class, 'sendMessage']);
+    Route::get('/messages', [ClientPortalMessageController::class, 'getMessages']);
+    Route::get('/messages/unread-count', [ClientPortalMessageController::class, 'getUnreadCount']);
+    Route::get('/messages/recipients', [ClientPortalMessageController::class, 'getRecipients']);
+    Route::get('/messages/{id}', [ClientPortalMessageController::class, 'getMessageDetails']);
+    Route::put('/messages/{id}/read', [ClientPortalMessageController::class, 'markAsRead']);
+    Route::delete('/messages/{id}', [ClientPortalMessageController::class, 'deleteMessage']);
+    
 });
 
+// Broadcasting auth route for WebSocket authentication
+Route::post('/broadcasting/auth', function (Request $request) {
+    // For testing purposes, always allow authentication
+    return response()->json([
+        'auth' => 'test-auth-string',
+        'socket_id' => $request->input('socket_id'),
+        'channel_name' => $request->input('channel_name')
+    ]);
+});
 
 // Service Account Token Generation
 Route::post('/service-account/generate-token', [ServiceAccountController::class, 'generateToken']);

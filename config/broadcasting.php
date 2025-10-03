@@ -15,7 +15,7 @@ return [
     |
     */
 
-    'default' => env('BROADCAST_DRIVER', 'null'),
+    'default' => env('BROADCAST_DRIVER', 'pusher'),
 
     /*
     |--------------------------------------------------------------------------
@@ -32,12 +32,17 @@ return [
 
         'pusher' => [
             'driver' => 'pusher',
-            'key' => env('PUSHER_APP_KEY'),
-            'secret' => env('PUSHER_APP_SECRET'),
-            'app_id' => env('PUSHER_APP_ID'),
+            'key' => env('PUSHER_APP_KEY', 'your-pusher-key'),
+            'secret' => env('PUSHER_APP_SECRET', 'your-pusher-secret'),
+            'app_id' => env('PUSHER_APP_ID', 'your-app-id'),
             'options' => [
-                'cluster' => env('PUSHER_APP_CLUSTER'),
+                'cluster' => env('PUSHER_APP_CLUSTER', 'ap2'),
                 'encrypted' => true,
+                'useTLS' => true,
+                // Remove local host settings to use Pusher cloud servers
+                // 'host' => env('PUSHER_HOST', '127.0.0.1'),
+                // 'port' => env('PUSHER_PORT', 6001),
+                // 'scheme' => env('PUSHER_SCHEME', 'http'),
             ],
         ],
 

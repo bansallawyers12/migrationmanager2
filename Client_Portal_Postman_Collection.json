@@ -594,7 +594,7 @@
 					}
 				],
 				"url": {
-					"raw": "{{base_url}}/dashboard?sel_matter_id=1",
+					"raw": "{{base_url}}/dashboard?sel_matter_id=9",
 					"host": [
 						"{{base_url}}"
 					],
@@ -604,7 +604,7 @@
 					"query": [
 						{
 							"key": "sel_matter_id",
-							"value": "1",
+							"value": "9",
 							"description": "Required: Filter dashboard data by specific matter ID from matters API (must be positive integer)"
 						}
 					]
@@ -627,7 +627,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/dashboard?sel_matter_id=1",
+							"raw": "{{base_url}}/dashboard?sel_matter_id=9",
 							"host": [
 								"{{base_url}}"
 							],
@@ -637,7 +637,7 @@
 							"query": [
 								{
 									"key": "sel_matter_id",
-									"value": "1"
+									"value": "9"
 								}
 							]
 						}
@@ -672,7 +672,7 @@
 					}
 				],
 				"url": {
-					"raw": "{{base_url}}/recent-cases?page=1&per_page=10&search=&status=&priority=&sel_matter_id=1",
+					"raw": "{{base_url}}/recent-cases?page=1&per_page=10&search=&status=&priority=&sel_matter_id=9",
 					"host": [
 						"{{base_url}}"
 					],
@@ -707,7 +707,7 @@
 						},
 						{
 							"key": "sel_matter_id",
-							"value": "1",
+							"value": "9",
 							"description": "Required: Filter by specific matter ID from matters API (must be positive integer)"
 						}
 					]
@@ -730,7 +730,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/recent-cases?page=1&per_page=10&search=&status=&priority=&sel_matter_id=1",
+							"raw": "{{base_url}}/recent-cases?page=1&per_page=10&search=&status=&priority=&sel_matter_id=9",
 							"host": [
 								"{{base_url}}"
 							],
@@ -760,7 +760,7 @@
 								},
 								{
 									"key": "sel_matter_id",
-									"value": "1"
+									"value": "9"
 								}
 							]
 						}
@@ -795,7 +795,7 @@
 					}
 				],
 				"url": {
-					"raw": "{{base_url}}/documents?page=1&per_page=10&search=&status=&doc_type=&sel_matter_id=1",
+					"raw": "{{base_url}}/documents?page=1&per_page=10&search=&status=&doc_type=&sel_matter_id=9",
 					"host": [
 						"{{base_url}}"
 					],
@@ -830,7 +830,7 @@
 						},
 						{
 							"key": "sel_matter_id",
-							"value": "1",
+							"value": "9",
 							"description": "Required: Filter by specific matter ID (must be positive integer) - applies only to visa documents, personal documents always included"
 						}
 					]
@@ -853,7 +853,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/documents?page=1&per_page=10&search=&status=&doc_type=&sel_matter_id=",
+							"raw": "{{base_url}}/documents?page=1&per_page=10&search=&status=&doc_type=&sel_matter_id=9",
 							"host": [
 								"{{base_url}}"
 							],
@@ -883,7 +883,7 @@
 								},
 								{
 									"key": "sel_matter_id",
-									"value": ""
+									"value": "9"
 								}
 							]
 						}
@@ -1175,7 +1175,7 @@
 					}
 				],
 				"url": {
-					"raw": "{{base_url}}/documents/visa/categories?client_matter_id=37",
+					"raw": "{{base_url}}/documents/visa/categories?client_matter_id=9",
 					"host": [
 						"{{base_url}}"
 					],
@@ -1187,7 +1187,7 @@
 					"query": [
 						{
 							"key": "client_matter_id",
-							"value": "37",
+							"value": "9",
 							"description": "Optional: Filter by specific client matter ID"
 						}
 					]
@@ -1501,7 +1501,7 @@
 					}
 				],
 				"url": {
-					"raw": "{{base_url}}/workflow/stages?client_matter_id=123",
+					"raw": "{{base_url}}/workflow/stages?client_matter_id=9",
 					"host": [
 						"{{base_url}}"
 					],
@@ -1512,7 +1512,7 @@
 					"query": [
 						{
 							"key": "client_matter_id",
-							"value": "123",
+							"value": "9",
 							"description": "Optional: Get active stage for specific matter"
 						}
 					]
@@ -1531,7 +1531,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/workflow/stages?client_matter_id=123",
+							"raw": "{{base_url}}/workflow/stages?client_matter_id=9",
 							"host": [
 								"{{base_url}}"
 							],
@@ -1634,7 +1634,7 @@
 					}
 				],
 				"url": {
-					"raw": "{{base_url}}/workflow/allowed-checklist?client_matter_id=123",
+					"raw": "{{base_url}}/workflow/allowed-checklist?client_matter_id=9",
 					"host": [
 						"{{base_url}}"
 					],
@@ -1645,7 +1645,7 @@
 					"query": [
 						{
 							"key": "client_matter_id",
-							"value": "123",
+							"value": "9",
 							"description": "Required: Client matter ID to get allowed checklist for"
 						}
 					]
@@ -1664,7 +1664,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/workflow/allowed-checklist?client_matter_id=123",
+							"raw": "{{base_url}}/workflow/allowed-checklist?client_matter_id=9",
 							"host": [
 								"{{base_url}}"
 							],
@@ -1675,7 +1675,7 @@
 							"query": [
 								{
 									"key": "client_matter_id",
-									"value": "123"
+									"value": "9"
 								}
 							]
 						}
@@ -1690,7 +1690,7 @@
 						}
 					],
 					"cookie": [],
-					"body": "{\n    \"success\": true,\n    \"data\": {\n        \"application_info\": {\n            \"application_id\": 20736,\n            \"client_matter_id\": 123,\n            \"client_id\": 36464,\n            \"current_stage\": \"Immi Request Received\",\n            \"status\": 1\n        },\n        \"allowed_checklists\": [\n            {\n                \"id\": 14,\n                \"checklist_name\": \"Passport\",\n                \"document_type\": \"Passport\",\n                \"description\": \"Valid passport copy\",\n                \"type\": 1,\n                \"type_name\": \"Personal Document\",\n                \"is_mandatory\": true,\n                \"due_date\": \"2024-12-31\",\n                \"due_time\": \"23:59:59\",\n                \"created_at\": \"2024-01-01T00:00:00Z\",\n                \"updated_at\": \"2024-01-01T00:00:00Z\"\n            },\n            {\n                \"id\": 15,\n                \"checklist_name\": \"Birth Certificate\",\n                \"document_type\": \"Birth Certificate\",\n                \"description\": \"Official birth certificate\",\n                \"type\": 1,\n                \"type_name\": \"Personal Document\",\n                \"is_mandatory\": false,\n                \"due_date\": \"2024-12-31\",\n                \"due_time\": \"23:59:59\",\n                \"created_at\": \"2024-01-01T00:00:00Z\",\n                \"updated_at\": \"2024-01-01T00:00:00Z\"\n            }\n        ],\n        \"total_allowed_checklists\": 2,\n        \"mandatory_checklists\": 1,\n        \"client_matter_id\": 123\n    }\n}"
+					"body": "{\n    \"success\": true,\n    \"data\": {\n        \"application_info\": {\n            \"application_id\": 20736,\n            \"client_matter_id\": 9,\n            \"client_id\": 36464,\n            \"current_stage\": \"Immi Request Received\",\n            \"status\": 1\n        },\n        \"allowed_checklists\": [\n            {\n                \"id\": 14,\n                \"checklist_name\": \"Passport\",\n                \"document_type\": \"Passport\",\n                \"description\": \"Valid passport copy\",\n                \"type\": 1,\n                \"type_name\": \"Personal Document\",\n                \"is_mandatory\": true,\n                \"due_date\": \"2024-12-31\",\n                \"due_time\": \"23:59:59\",\n                \"created_at\": \"2024-01-01T00:00:00Z\",\n                \"updated_at\": \"2024-01-01T00:00:00Z\"\n            },\n            {\n                \"id\": 15,\n                \"checklist_name\": \"Birth Certificate\",\n                \"document_type\": \"Birth Certificate\",\n                \"description\": \"Official birth certificate\",\n                \"type\": 1,\n                \"type_name\": \"Personal Document\",\n                \"is_mandatory\": false,\n                \"due_date\": \"2024-12-31\",\n                \"due_time\": \"23:59:59\",\n                \"created_at\": \"2024-01-01T00:00:00Z\",\n                \"updated_at\": \"2024-01-01T00:00:00Z\"\n            }\n        ],\n        \"total_allowed_checklists\": 2,\n        \"mandatory_checklists\": 1,\n        \"client_matter_id\": 9\n    }\n}"
 				}
 			]
 		},
@@ -1710,7 +1710,7 @@
 					"formdata": [
 						{
 							"key": "client_matter_id",
-							"value": "123",
+							"value": "9",
 							"type": "text",
 							"description": "Client matter ID"
 						},
@@ -1756,7 +1756,7 @@
 							"formdata": [
 								{
 									"key": "client_matter_id",
-									"value": "123",
+									"value": "9",
 									"type": "text"
 								},
 								{
@@ -1792,9 +1792,263 @@
 						}
 					],
 					"cookie": [],
-					"body": "{\n    \"success\": true,\n    \"message\": \"Allowed checklist document uploaded successfully\",\n    \"data\": {\n        \"document_id\": 123,\n        \"application_id\": 20736,\n        \"client_matter_id\": 123,\n        \"allowed_checklist_id\": 14,\n        \"checklist_name\": \"Passport\",\n        \"file_name\": \"John_Passport_1703123456\",\n        \"file_type\": \"pdf\",\n        \"file_size\": 2048576,\n        \"file_size_formatted\": \"2.0 MB\",\n        \"file_url\": \"https://bansalcrm.s3.ap-southeast-2.amazonaws.com/application_documents/CLI-001/John_Passport_1703123456.pdf\",\n        \"file_key\": \"John_Passport_1703123456.pdf\",\n        \"s3_path\": \"application_documents/CLI-001/John_Passport_1703123456.pdf\",\n        \"uploaded_at\": \"2024-01-01T00:00:00Z\"\n    }\n}"
+					"body": "{\n    \"success\": true,\n    \"message\": \"Allowed checklist document uploaded successfully\",\n    \"data\": {\n        \"document_id\": 123,\n        \"application_id\": 20736,\n        \"client_matter_id\": 9,\n        \"allowed_checklist_id\": 14,\n        \"checklist_name\": \"Passport\",\n        \"file_name\": \"John_Passport_1703123456\",\n        \"file_type\": \"pdf\",\n        \"file_size\": 2048576,\n        \"file_size_formatted\": \"2.0 MB\",\n        \"file_url\": \"https://bansalcrm.s3.ap-southeast-2.amazonaws.com/application_documents/CLI-001/John_Passport_1703123456.pdf\",\n        \"file_key\": \"John_Passport_1703123456.pdf\",\n        \"s3_path\": \"application_documents/CLI-001/John_Passport_1703123456.pdf\",\n        \"uploaded_at\": \"2024-01-01T00:00:00Z\"\n    }\n}"
 				}
 			]
+		},
+		{
+			"name": "25. Messaging - Send Message",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"description": "Use token from login response"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"recipient_id\": 2,\n    \"subject\": \"Test Message from Mobile App\",\n    \"message\": \"This is a test message sent via mobile app API at {{$timestamp}}\",\n    \"message_type\": \"normal\",\n    \"client_matter_id\": 9,\n    \"client_matter_stage_id\": 1\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/messages/send",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"messages",
+						"send"
+					]
+				},
+				"description": "Send a new message to a recipient. client_matter_id and client_matter_stage_id are required. Use message_type to set priority: urgent, important, normal, low_priority. This will trigger real-time broadcasting to the website."
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Auto-extract message ID from send message response",
+							"if (pm.response.code === 201 && pm.response.json().success) {",
+							"    const messageId = pm.response.json().data.message_id;",
+							"    if (messageId) {",
+							"        pm.collectionVariables.set('message_id', messageId);",
+							"        console.log('Message ID set:', messageId);",
+							"    }",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "26. Messaging - Get All Messages",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"description": "Use token from login response"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/messages?client_matter_id=9&page=1&limit=20&type=all&message_type=all&client_matter_stage_id=1",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"messages"
+					],
+					"query": [
+						{
+							"key": "client_matter_id",
+							"value": "9",
+							"description": "Client matter ID (required)"
+						},
+						{
+							"key": "page",
+							"value": "1",
+							"description": "Page number for pagination"
+						},
+						{
+							"key": "limit",
+							"value": "20",
+							"description": "Number of messages per page"
+						},
+						{
+							"key": "type",
+							"value": "all",
+							"description": "Filter by message type: all, sent, received"
+						},
+						{
+							"key": "message_type",
+							"value": "all",
+							"description": "Filter by priority: all, urgent, important, normal, low_priority"
+						},
+						{
+							"key": "client_matter_stage_id",
+							"value": "1",
+							"description": "Filter by workflow stage ID (optional)"
+						}
+					]
+				},
+				"description": "Get all messages for a specific client matter with optional workflow stage filtering. client_matter_id is required."
+			}
+		},
+		{
+			"name": "27. Messaging - Get Message Details",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"description": "Use token from login response"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/messages/{{message_id}}",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"messages",
+						"{{message_id}}"
+					]
+				},
+				"description": "Get detailed information about a specific message"
+			}
+		},
+		{
+			"name": "28. Messaging - Mark Message as Read",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"description": "Use token from login response"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/messages/{{message_id}}/read",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"messages",
+						"{{message_id}}",
+						"read"
+					]
+				},
+				"description": "Mark a message as read. This will broadcast read status to the sender."
+			}
+		},
+		{
+			"name": "29. Messaging - Delete Message",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"description": "Use token from login response"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/messages/{{message_id}}",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"messages",
+						"{{message_id}}"
+					]
+				},
+				"description": "Delete a message. Users can only delete messages sent by themselves."
+			}
+		},
+		{
+			"name": "30. Messaging - Get Unread Count",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"description": "Use token from login response"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/messages/unread-count",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"messages",
+						"unread-count"
+					]
+				},
+				"description": "Get the count of unread messages for the authenticated user"
+			}
+		},
+		{
+			"name": "31. Messaging - Get Recipients",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"description": "Use token from login response"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/messages/recipients",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"messages",
+						"recipients"
+					]
+				},
+				"description": "Get list of users that can receive messages"
+			}
 		}
 	],
 	"event": [
@@ -1861,6 +2115,12 @@
 			"value": "",
 			"type": "string",
 			"description": "Refresh token from login response"
+		},
+		{
+			"key": "message_id",
+			"value": "",
+			"type": "string",
+			"description": "Message ID (auto-populated from send message response)"
 		}
 	]
 }

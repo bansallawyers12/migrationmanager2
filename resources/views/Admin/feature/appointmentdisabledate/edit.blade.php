@@ -17,8 +17,9 @@
 <div class="main-content">
 	<section class="section">
 		<div class="section-body">
-			{{ Form::open(array('url' => 'admin/appointment-dates-disable/edit', 'name'=>"edit-partnertype", 'autocomplete'=>'off', "enctype"=>"multipart/form-data")) }}
-			{{ Form::hidden('id', @$fetchedData->id) }}
+			<form action="{{ url('admin/appointment-dates-disable/edit') }}" name="edit-partnertype" autocomplete="off" enctype="multipart/form-data" method="POST">
+				@csrf
+				<input type="hidden" name="id" value="{{ @$fetchedData->id }}">
 				<div class="row">
 					<div class="col-12 col-md-12 col-lg-12">
 						<div class="card">
@@ -71,13 +72,13 @@
 									</div>
 								</div>
 								<div class="form-group float-right">
-									{{ Form::submit('Update', ['class'=>'btn btn-primary' ]) }}
+									<button type="submit" class="btn btn-primary">Update</button>
 								</div>
 							</div>
 						</div>
 					</div>
 				</div>
-			{{ Form::close() }}
+			</form>
 		</div>
 	</section>
 </div>

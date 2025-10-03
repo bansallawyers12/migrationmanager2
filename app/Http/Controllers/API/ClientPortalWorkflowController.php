@@ -270,34 +270,50 @@ class ClientPortalWorkflowController extends Controller
             $applicationId = $application->application_id;
 
             // Step 2: Get allowed checklist names from application_document_lists table
+            // Join with workflow_stages table to get type_id based on typename
+            // Join with application_documents table to check upload status
             $allowedChecklists = DB::table('application_document_lists')
+                ->leftJoin('workflow_stages', 'application_document_lists.typename', '=', 'workflow_stages.name')
+                ->leftJoin('application_documents', function($join) use ($applicationId) {
+                    $join->on('application_document_lists.id', '=', 'application_documents.list_id')
+                         ->where('application_documents.application_id', '=', $applicationId);
+                })
                 ->select(
-                    'id',
-                    'document_type',
-                    'description',
-                    'type',
-                    'typename',
-                    'make_mandatory',
-                    'date',
-                    'time',
-                    'created_at',
-                    'updated_at'
+                    'application_document_lists.id',
+                    'application_document_lists.document_type',
+                    'application_document_lists.description',
+                    'application_document_lists.type',
+                    'application_document_lists.typename',
+                    'application_document_lists.make_mandatory',
+                    'application_document_lists.date',
+                    'application_document_lists.time',
+                    'application_document_lists.created_at',
+                    'application_document_lists.updated_at',
+                    'workflow_stages.id as type_id',
+                    'application_documents.file_name',
+                    'application_documents.myfile as file_url'
                 )
-                ->where('application_id', $applicationId)
-                ->where('allow_client', 1) // Only documents allowed for client
-                ->orderBy('id', 'asc')
+                ->where('application_document_lists.application_id', $applicationId)
+                ->where('application_document_lists.allow_client', 1) // Only documents allowed for client
+                ->orderBy('application_document_lists.id', 'asc')
                 ->get()
                 ->map(function ($item) {
+                    $isUploaded = !is_null($item->file_name) && !is_null($item->file_url);
+                    
                     return [
                         'id' => $item->id,
                         'checklist_name' => $item->document_type,
                         'document_type' => $item->document_type,
                         'description' => $item->description,
                         'type' => $item->type,
+                        'type_id' => $item->type_id,
                         'type_name' => $item->typename,
                         'is_mandatory' => $item->make_mandatory == 1,
                         'due_date' => $item->date,
                         'due_time' => $item->time,
+                        'is_upload' => $isUploaded,
+                        'file_name' => $isUploaded ? $item->file_name : null,
+                        'file_url' => $isUploaded ? $item->file_url : null,
                         'created_at' => $item->created_at,
                         'updated_at' => $item->updated_at
                     ];
@@ -316,6 +332,7 @@ class ClientPortalWorkflowController extends Controller
                     'allowed_checklists' => $allowedChecklists,
                     'total_allowed_checklists' => $allowedChecklists->count(),
                     'mandatory_checklists' => $allowedChecklists->where('is_mandatory', true)->count(),
+                    'optional_checklists' => $allowedChecklists->where('is_mandatory', false)->count(),
                     'client_matter_id' => $clientMatterId
                 ]
             ], 200);
