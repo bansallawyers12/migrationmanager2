@@ -124,7 +124,6 @@ The following models are referenced in your code but don't exist. You'll need to
 - **Package** - Referenced in `app/Http/Controllers/Admin/LeadController.php`
 - **LoginLog** - Referenced in `app/Http/Controllers/Auth/AdminEmailController.php`
 - **HolidayTheme** - Referenced in `app/Http/Controllers/Admin/ThemeController.php`
-- **MediaImage** - Referenced in `app/Http/Controllers/Admin/MediaController.php`
 - **Education** - Referenced in multiple view files
 - **Markup** - Referenced in flight management views
 

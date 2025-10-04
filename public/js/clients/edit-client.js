@@ -239,7 +239,7 @@ function generateSummaryContent() {
     
     // Personal Information
     summaryHTML += '<div class="summary-section">';
-    summaryHTML += '<h4><i class="fas fa-user"></i> Personal Information</h4>';
+    summaryHTML += '<h4><i class="fas fa-user-circle"></i> Personal Information</h4>';
     summaryHTML += '<p><strong>Name:</strong> ' + (document.getElementById('firstName')?.value || '') + ' ' + (document.getElementById('lastName')?.value || '') + '</p>';
     summaryHTML += '<p><strong>Client ID:</strong> ' + (document.getElementById('clientId')?.value || '') + '</p>';
     summaryHTML += '<p><strong>Date of Birth:</strong> ' + (document.getElementById('dob')?.value || '') + '</p>';
@@ -691,32 +691,40 @@ function removePartnerRow(button, type, relationshipId = null) {
  * Function to add a new EOI Reference row
  */
 function addEoiReference() {
+    // Check if we're in summary mode, if so switch to edit mode first
+    const summaryView = document.getElementById('eoiInfoSummary');
+    const editView = document.getElementById('eoiInfoEdit');
+    
+    if (summaryView && editView && summaryView.style.display !== 'none') {
+        toggleEditMode('eoiInfo');
+    }
+    
     const container = document.getElementById('eoiReferencesContainer');
     const index = container.children.length;
 
     container.insertAdjacentHTML('beforeend', `
         <div class="repeatable-section">
-            <button type="button" class="remove-item-btn" title="Remove EOI Reference" onclick="this.parentElement.remove();"><i class="fas fa-times-circle"></i></button>
+            <button type="button" class="remove-item-btn" title="Remove EOI Reference" onclick="removeEoiField(this)"><i class="fas fa-trash"></i></button>
             <div class="content-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
                 <div class="form-group">
                     <label>EOI Number</label>
-                    <input type="text" name="EOI_number[${index}]" placeholder="Enter EOI Number">
+                    <input type="text" name="EOI_number[${index}]" placeholder="EOI Number">
                 </div>
                 <div class="form-group">
                     <label>Subclass</label>
-                    <input type="text" name="EOI_subclass[${index}]" placeholder="Enter Subclass">
+                    <input type="text" name="EOI_subclass[${index}]" placeholder="Subclass">
                 </div>
                 <div class="form-group">
                     <label>Occupation</label>
-                    <input type="text" name="EOI_occupation[${index}]" placeholder="Enter Occupation">
+                    <input type="text" name="EOI_occupation[${index}]" placeholder="Occupation">
                 </div>
                 <div class="form-group">
                     <label>Point</label>
-                    <input type="text" name="EOI_point[${index}]" placeholder="Enter Point">
+                    <input type="text" name="EOI_point[${index}]" placeholder="Point">
                 </div>
                 <div class="form-group">
                     <label>State</label>
-                    <input type="text" name="EOI_state[${index}]" placeholder="Enter State">
+                    <input type="text" name="EOI_state[${index}]" placeholder="State">
                 </div>
                 <div class="form-group">
                     <label>Submission Date</label>
@@ -724,14 +732,14 @@ function addEoiReference() {
                 </div>
                 <div class="form-group">
                     <label>ROI</label>
-                    <input type="text" name="EOI_ROI[${index}]" placeholder="Enter ROI">
+                    <input type="text" name="EOI_ROI[${index}]" placeholder="ROI">
                 </div>
                 <div class="form-group">
                     <label>Password</label>
                     <div style="display: flex; align-items: center; gap: 10px;">
-                        <input type="password" name="EOI_password[${index}]" placeholder="Enter Password" class="eoi-password-input" data-index="${index}">
+                        <input type="password" name="EOI_password[${index}]" placeholder="Password" class="eoi-password-input" data-index="${index}">
                         <button type="button" class="btn btn-sm btn-outline-secondary toggle-password" data-index="${index}" title="Show/Hide Password">
-                            <i class="fas fa-eye"></i>
+                            <i class="fas fa-eye-slash"></i>
                         </button>
                     </div>
                 </div>
@@ -769,16 +777,24 @@ function toggleVisaDetails() {
  * Add Passport Detail
  */
 function addPassportDetail() {
+    // Check if we're in summary mode, if so switch to edit mode first
+    const summaryView = document.getElementById('passportInfoSummary');
+    const editView = document.getElementById('passportInfoEdit');
+    
+    if (summaryView && editView && summaryView.style.display !== 'none') {
+        toggleEditMode('passportInfo');
+    }
+    
     const container = document.getElementById('passportDetailsContainer');
     const index = container.children.length;
 
     container.insertAdjacentHTML('beforeend', `
         <div class="repeatable-section">
-            <button type="button" class="remove-item-btn" title="Remove Passport" onclick="this.parentElement.remove();"><i class="fas fa-times-circle"></i></button>
+            <button type="button" class="remove-item-btn" title="Remove Passport" onclick="removePassportField(this)"><i class="fas fa-trash"></i></button>
             <div class="content-grid">
                 <div class="form-group">
                     <label>Passport #</label>
-                    <input type="text" name="passports[${index}][passport_number]" placeholder="Enter Passport Number">
+                    <input type="text" name="passports[${index}][passport_number]" placeholder="Passport Number">
                 </div>
                 <div class="form-group">
                     <label>Issue Date</label>
@@ -800,20 +816,28 @@ function addPassportDetail() {
  * Add Address
  */
 function addAddress() {
+    // Check if we're in summary mode, if so switch to edit mode first
+    const summaryView = document.getElementById('addressInfoSummary');
+    const editView = document.getElementById('addressInfoEdit');
+    
+    if (summaryView && editView && summaryView.style.display !== 'none') {
+        toggleEditMode('addressInfo');
+    }
+    
     const container = document.getElementById('addressContainer');
     const index = container.children.length;
 
     container.insertAdjacentHTML('beforeend', `
         <div class="repeatable-section">
-            <button type="button" class="remove-item-btn" title="Remove Address" onclick="this.parentElement.remove();"><i class="fas fa-times-circle"></i></button>
+            <button type="button" class="remove-item-btn" title="Remove Address" onclick="removeAddressField(this)"><i class="fas fa-trash"></i></button>
             <div class="content-grid">
                 <div class="form-group">
                     <label>Address</label>
-                    <textarea name="address[${index}]" rows="2" placeholder="Enter Address"></textarea>
+                    <textarea name="address[${index}]" rows="2" placeholder="Address"></textarea>
                 </div>
                 <div class="form-group">
                     <label>Postal Code</label>
-                    <input type="text" name="zip[${index}]" placeholder="Enter Postal Code">
+                    <input type="text" name="zip[${index}]" placeholder="Postal Code">
                 </div>
                 <div class="form-group">
                     <label>Start Date</label>
@@ -835,6 +859,14 @@ function addAddress() {
  * Add Travel Detail
  */
 async function addTravelDetail() {
+    // Check if we're in summary mode, if so switch to edit mode first
+    const summaryView = document.getElementById('travelInfoSummary');
+    const editView = document.getElementById('travelInfoEdit');
+    
+    if (summaryView && editView && summaryView.style.display !== 'none') {
+        toggleEditMode('travelInfo');
+    }
+    
     const container = document.getElementById('travelDetailsContainer');
     const index = container.children.length;
 
@@ -849,7 +881,7 @@ async function addTravelDetail() {
 
     container.insertAdjacentHTML('beforeend', `
         <div class="repeatable-section">
-            <button type="button" class="remove-item-btn" title="Remove Travel" onclick="this.parentElement.remove();"><i class="fas fa-times-circle"></i></button>
+            <button type="button" class="remove-item-btn" title="Remove Travel" onclick="removeTravelField(this)"><i class="fas fa-trash"></i></button>
             <div class="content-grid">
                 <div class="form-group">
                     <label>Country Visited</label>
@@ -867,7 +899,7 @@ async function addTravelDetail() {
                 </div>
                 <div class="form-group">
                     <label>Travel Purpose</label>
-                    <input type="text" name="travel_purpose[${index}]" placeholder="Enter Travel Purpose">
+                    <input type="text" name="travel_purpose[${index}]" placeholder="Travel Purpose">
                 </div>
             </div>
         </div>
@@ -915,11 +947,19 @@ function calculateAge(dob) {
  * Add Phone Number (Updated to exclude verification slider in repeatable section)
  */
 function addPhoneNumber() {
+    // Check if we're in summary mode, if so switch to edit mode first
+    const summaryView = document.getElementById('phoneNumbersSummary');
+    const editView = document.getElementById('phoneNumbersEdit');
+    
+    if (summaryView && editView && summaryView.style.display !== 'none') {
+        toggleEditMode('phoneNumbers');
+    }
+    
     const container = document.getElementById('phoneNumbersContainer');
     const index = container.children.length;
     container.insertAdjacentHTML('beforeend', `
         <div class="repeatable-section">
-            <button type="button" class="remove-item-btn" title="Remove Phone" onclick="this.parentElement.remove(); validatePersonalPhoneNumbers();"><i class="fas fa-times-circle"></i></button>
+            <button type="button" class="remove-item-btn" title="Remove Phone" onclick="removePhoneField(this)"><i class="fas fa-trash"></i></button>
             <div class="content-grid">
                 <div class="form-group">
                     <label>Type</label>
@@ -947,7 +987,7 @@ function addPhoneNumber() {
                         <div class="country_code">
                             <input class="telephone country-code-input" id="telephone" type="tel" name="country_code[${index}]" style="width: 55px;height: 42px;" readonly >
                         </div>
-                        <input type="tel" name="phone[${index}]" placeholder="Enter Phone Number" style="width: 230px;" autocomplete="off">
+                                                    <input type="tel" name="phone[${index}]" placeholder="Phone Number" style="width: 140px;" autocomplete="off">
                     </div>
                 </div>
             </div>
@@ -1001,11 +1041,19 @@ function validatePersonalPhoneNumbers() {
  * Add Email Address (Updated to exclude verification slider in repeatable section)
  */
 function addEmailAddress() {
+    // Check if we're in summary mode, if so switch to edit mode first
+    const summaryView = document.getElementById('emailAddressesSummary');
+    const editView = document.getElementById('emailAddressesEdit');
+    
+    if (summaryView && editView && summaryView.style.display !== 'none') {
+        toggleEditMode('emailAddresses');
+    }
+    
     const container = document.getElementById('emailAddressesContainer');
     const index = container.children.length;
     container.insertAdjacentHTML('beforeend', `
         <div class="repeatable-section">
-            <button type="button" class="remove-item-btn" title="Remove Email" onclick="this.parentElement.remove(); validatePersonalEmailTypes();"><i class="fas fa-times-circle"></i></button>
+            <button type="button" class="remove-item-btn" title="Remove Email" onclick="removeEmailField(this)"><i class="fas fa-trash"></i></button>
             <div class="content-grid">
                 <div class="form-group">
                     <label>Type</label>
@@ -1013,7 +1061,6 @@ function addEmailAddress() {
                         <option value="Personal">Personal</option>
                         <option value="Work">Work</option>
                         <option value="Business">Business</option>
-
                         <option value="Mobile">Mobile</option>
                         <option value="Secondary">Secondary</option>
                         <option value="Father">Father</option>
@@ -1080,6 +1127,14 @@ function validatePersonalEmailTypes() {
  * Add Visa Detail
  */
 async function addVisaDetail() {
+    // Check if we're in summary mode, if so switch to edit mode first
+    const summaryView = document.getElementById('visaInfoSummary');
+    const editView = document.getElementById('visaInfoEdit');
+    
+    if (summaryView && editView && summaryView.style.display !== 'none') {
+        toggleEditMode('visaInfo');
+    }
+    
     const container = document.getElementById('visaDetailsContainer');
     const index = container.children.length;
 
@@ -1095,7 +1150,7 @@ async function addVisaDetail() {
 
     container.insertAdjacentHTML('beforeend', `
         <div class="repeatable-section">
-            <button type="button" class="remove-item-btn" title="Remove Visa"><i class="fas fa-times-circle"></i></button>
+            <button type="button" class="remove-item-btn" title="Remove Visa" onclick="removeVisaField(this)"><i class="fas fa-trash"></i></button>
             <div class="content-grid">
                 <div class="form-group">
                     <label>Visa Type / Subclass</label>
@@ -1113,7 +1168,7 @@ async function addVisaDetail() {
                 </div>
                 <div class="form-group">
                     <label>Visa Description</label>
-                    <input type="text" name="visas[${index}][description]" class="visa-description-field">
+                    <input type="text" name="visas[${index}][description]" class="visa-description-field" placeholder="Description">
                 </div>
             </div>
         </div>
@@ -1191,28 +1246,36 @@ function toggleSpouseDetailsSection() {
  * Add Qualification
  */
 function addQualification() {
+    // Check if we're in summary mode, if so switch to edit mode first
+    const summaryView = document.getElementById('qualificationsInfoSummary');
+    const editView = document.getElementById('qualificationsInfoEdit');
+    
+    if (summaryView && editView && summaryView.style.display !== 'none') {
+        toggleEditMode('qualificationsInfo');
+    }
+    
     const container = document.getElementById('qualificationsContainer');
     const index = container.children.length;
 
     container.insertAdjacentHTML('beforeend', `
         <div class="repeatable-section">
-            <button type="button" class="remove-item-btn" title="Remove Qualification" onclick="this.parentElement.remove();"><i class="fas fa-times-circle"></i></button>
+            <button type="button" class="remove-item-btn" title="Remove Qualification" onclick="removeQualificationField(this)"><i class="fas fa-trash"></i></button>
             <div class="content-grid">
                 <div class="form-group">
                     <label>Qualification</label>
-                    <input type="text" name="qualification[${index}]" placeholder="Enter Qualification">
+                    <input type="text" name="qualification[${index}]" placeholder="Qualification">
                 </div>
                 <div class="form-group">
                     <label>Institution</label>
-                    <input type="text" name="institution[${index}]" placeholder="Enter Institution">
+                    <input type="text" name="institution[${index}]" placeholder="Institution">
                 </div>
                 <div class="form-group">
                     <label>Country</label>
-                    <input type="text" name="qual_country[${index}]" placeholder="Enter Country">
+                    <input type="text" name="qual_country[${index}]" placeholder="Country">
                 </div>
                 <div class="form-group">
                     <label>Year</label>
-                    <input type="text" name="year[${index}]" placeholder="Enter Year">
+                    <input type="text" name="year[${index}]" placeholder="Year">
                 </div>
             </div>
         </div>
@@ -1223,20 +1286,28 @@ function addQualification() {
  * Add Experience
  */
 function addExperience() {
+    // Check if we're in summary mode, if so switch to edit mode first
+    const summaryView = document.getElementById('experienceInfoSummary');
+    const editView = document.getElementById('experienceInfoEdit');
+    
+    if (summaryView && editView && summaryView.style.display !== 'none') {
+        toggleEditMode('experienceInfo');
+    }
+    
     const container = document.getElementById('experienceContainer');
     const index = container.children.length;
 
     container.insertAdjacentHTML('beforeend', `
         <div class="repeatable-section">
-            <button type="button" class="remove-item-btn" title="Remove Experience" onclick="this.parentElement.remove();"><i class="fas fa-times-circle"></i></button>
+            <button type="button" class="remove-item-btn" title="Remove Experience" onclick="removeExperienceField(this)"><i class="fas fa-trash"></i></button>
             <div class="content-grid">
                 <div class="form-group">
                     <label>Company</label>
-                    <input type="text" name="company[${index}]" placeholder="Enter Company">
+                    <input type="text" name="company[${index}]" placeholder="Company">
                 </div>
                 <div class="form-group">
                     <label>Position</label>
-                    <input type="text" name="position[${index}]" placeholder="Enter Position">
+                    <input type="text" name="position[${index}]" placeholder="Position">
                 </div>
                 <div class="form-group">
                     <label>Start Date</label>
@@ -1258,16 +1329,24 @@ function addExperience() {
  * Function to add a new character row
  */
 function addCharacterRow(containerId, fieldName) {
+    // Check if we're in summary mode, if so switch to edit mode first
+    const summaryView = document.getElementById('characterInfoSummary');
+    const editView = document.getElementById('characterInfoEdit');
+    
+    if (summaryView && editView && summaryView.style.display !== 'none') {
+        toggleEditMode('characterInfo');
+    }
+    
     const container = document.getElementById(containerId);
     const index = container.children.length;
 
     container.insertAdjacentHTML('beforeend', `
         <div class="repeatable-section">
-            <button type="button" class="remove-item-btn" title="Remove Character" onclick="this.parentElement.remove();"><i class="fas fa-times-circle"></i></button>
+            <button type="button" class="remove-item-btn" title="Remove Character" onclick="removeCharacterField(this)"><i class="fas fa-trash"></i></button>
             <div class="content-grid">
                 <div class="form-group">
                     <label>Detail</label>
-                    <textarea name="${fieldName}[${index}]" rows="2" placeholder="Enter Detail"></textarea>
+                    <textarea name="${fieldName}[${index}]" rows="2" placeholder="Detail"></textarea>
                 </div>
             </div>
         </div>
@@ -1312,6 +1391,1201 @@ function initGoogleMaps() {
             }
         });
     });
+}
+
+// ===== NEW SUMMARY/EDIT MODE FUNCTIONALITY =====
+
+/**
+ * Toggle edit mode for sections
+ */
+window.toggleEditMode = function(sectionType) {
+    const summaryView = document.getElementById(sectionType + 'Summary');
+    const editView = document.getElementById(sectionType + 'Edit');
+    
+    if (summaryView && editView) {
+        summaryView.style.display = 'none';
+        editView.style.display = 'block';
+    }
+};
+
+/**
+ * Cancel edit mode and return to summary view
+ */
+window.cancelEdit = function(sectionType) {
+    const summaryView = document.getElementById(sectionType + 'Summary');
+    const editView = document.getElementById(sectionType + 'Edit');
+    
+    if (summaryView && editView) {
+        editView.style.display = 'none';
+        summaryView.style.display = 'block';
+    }
+};
+
+/**
+ * Save basic information and update summary
+ */
+/**
+ * Generic function to save section data via AJAX
+ */
+window.saveSectionData = function(sectionName, formData, successCallback) {
+    const form = document.getElementById('editClientForm');
+    const clientId = form.querySelector('input[name="id"]').value;
+    const type = form.querySelector('input[name="type"]').value;
+    
+    // Get CSRF token from meta tag or form
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') 
+                     || document.querySelector('input[name="_token"]')?.value 
+                     || '';
+    
+    // Add section data to form data
+    formData.append('_token', csrfToken);
+    formData.append('client_id', clientId);
+    formData.append('type', type);
+    formData.append('section', sectionName);
+    
+    fetch('/admin/clients/save-section', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => {
+        // Handle non-200 responses
+        if (!response.ok) {
+            return response.json().then(data => {
+                throw { status: response.status, data: data };
+            }).catch(error => {
+                if (error.status) throw error;
+                throw { status: response.status, data: { message: 'Server error occurred' } };
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            successCallback();
+            showNotification(data.message || `${sectionName} updated successfully!`, 'success');
+        } else {
+            showNotification(data.message || `Error updating ${sectionName}`, 'error');
+            if (data.errors) {
+                displaySectionErrors(sectionName, data.errors);
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        
+        // Handle validation errors (422 status)
+        if (error.status === 422 && error.data && error.data.errors) {
+            displaySectionErrors(sectionName, error.data.errors);
+            showNotification('Please fix the validation errors', 'error');
+        } else {
+            const message = error.data?.message || `Error updating ${sectionName}. Please try again.`;
+            showNotification(message, 'error');
+        }
+    });
+};
+
+/**
+ * Display errors for a specific section
+ */
+window.displaySectionErrors = function(sectionName, errors) {
+    const editView = document.getElementById(sectionName + 'Edit');
+    if (!editView) return;
+    
+    // Clear previous errors
+    editView.querySelectorAll('.field-error').forEach(error => error.remove());
+    
+    // Display new errors
+    Object.keys(errors).forEach(fieldName => {
+        const field = editView.querySelector(`[name*="${fieldName}"]`);
+        if (field) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'field-error text-danger';
+            errorDiv.textContent = errors[fieldName][0];
+            field.parentNode.appendChild(errorDiv);
+        }
+    });
+};
+
+window.saveBasicInfo = function() {
+    // Validate required fields
+    const firstName = document.getElementById('firstName').value.trim();
+    const lastName = document.getElementById('lastName').value.trim();
+    const clientId = document.getElementById('clientId').value.trim();
+    
+    if (!firstName || !lastName || !clientId) {
+        showNotification('Please fill in all required fields (First Name, Last Name, Client ID)', 'error');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('first_name', firstName);
+    formData.append('last_name', lastName);
+    formData.append('client_id', clientId);
+    formData.append('dob', document.getElementById('dob').value);
+    formData.append('age', document.getElementById('age').value);
+    formData.append('gender', document.getElementById('gender').value);
+    formData.append('marital_status', document.getElementById('martialStatus').value);
+    
+    saveSectionData('basicInfo', formData, function() {
+        // Update summary view on success
+        const summaryView = document.getElementById('basicInfoSummary');
+        const summaryGrid = summaryView.querySelector('.summary-grid');
+        
+        summaryGrid.innerHTML = `
+            <div class="summary-item">
+                <span class="summary-label">Name:</span>
+                <span class="summary-value">${firstName} ${lastName}</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Client ID:</span>
+                <span class="summary-value">${clientId}</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Date of Birth:</span>
+                <span class="summary-value">${document.getElementById('dob').value || 'Not set'}</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Age:</span>
+                <span class="summary-value">${document.getElementById('age').value || 'Not calculated'}</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Gender:</span>
+                <span class="summary-value">${document.getElementById('gender').value || 'Not set'}</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Marital Status:</span>
+                <span class="summary-value">${document.getElementById('martialStatus').value || 'Not set'}</span>
+            </div>
+        `;
+        
+        // Return to summary view
+        cancelEdit('basicInfo');
+    });
+};
+
+/**
+ * Save phone numbers and update summary
+ */
+window.savePhoneNumbers = function() {
+    // Get all phone number entries
+    const container = document.getElementById('phoneNumbersContainer');
+    const sections = container.querySelectorAll('.repeatable-section');
+    const phoneNumbers = [];
+    
+    sections.forEach((section, index) => {
+        const type = section.querySelector('.contact-type-selector').value;
+        const countryCode = section.querySelector('.country-code-input').value;
+        const phone = section.querySelector('.phone-number-input').value;
+        const contactId = section.querySelector('input[name*="contact_id"]')?.value;
+        
+        if (type && phone) {
+            phoneNumbers.push({
+                contact_id: contactId || '',
+                contact_type: type,
+                country_code: countryCode,
+                phone: phone
+            });
+        }
+    });
+    
+    const formData = new FormData();
+    formData.append('phone_numbers', JSON.stringify(phoneNumbers));
+    
+    saveSectionData('phoneNumbers', formData, function() {
+        // Update summary view on success
+        const summaryView = document.getElementById('phoneNumbersSummary');
+        const summaryGrid = summaryView.querySelector('.summary-grid');
+        
+        if (phoneNumbers.length > 0) {
+            summaryGrid.innerHTML = phoneNumbers.map((phone, index) => `
+                <div class="summary-item">
+                    <span class="summary-label">${phone.contact_type}:</span>
+                    <span class="summary-value">${phone.country_code}${phone.phone}</span>
+                </div>
+            `).join('');
+        } else {
+            summaryView.innerHTML = '<div class="empty-state"><p>No phone numbers added yet.</p></div>';
+        }
+        
+        // Return to summary view
+        cancelEdit('phoneNumbers');
+    });
+};
+
+/**
+ * Save email addresses and update summary
+ */
+window.saveEmailAddresses = function() {
+    // Get all email entries
+    const container = document.getElementById('emailAddressesContainer');
+    const sections = container.querySelectorAll('.repeatable-section');
+    const emails = [];
+    
+    sections.forEach(section => {
+        const type = section.querySelector('.email-type-selector').value;
+        const email = section.querySelector('input[name*="email"]').value;
+        const emailId = section.querySelector('input[name*="email_id"]')?.value;
+        
+        if (type && email) {
+            emails.push({
+                email_id: emailId || '',
+                email_type: type,
+                email: email
+            });
+        }
+    });
+    
+    const formData = new FormData();
+    formData.append('emails', JSON.stringify(emails));
+    
+    saveSectionData('emailAddresses', formData, function() {
+        // Update summary view on success
+        const summaryView = document.getElementById('emailAddressesSummary');
+        const summaryGrid = summaryView.querySelector('.summary-grid');
+        
+        if (emails.length > 0) {
+            summaryGrid.innerHTML = emails.map((email, index) => `
+                <div class="summary-item">
+                    <span class="summary-label">${email.email_type}:</span>
+                    <span class="summary-value">${email.email}</span>
+                </div>
+            `).join('');
+        } else {
+            summaryView.innerHTML = '<div class="empty-state"><p>No email addresses added yet.</p></div>';
+        }
+        
+        // Return to summary view
+        cancelEdit('emailAddresses');
+    });
+};
+
+/**
+ * Edit individual phone number
+ */
+window.editPhoneNumber = function(index) {
+    // Switch to edit mode
+    toggleEditMode('phoneNumbers');
+    
+    // Focus on the specific phone number field
+    const container = document.getElementById('phoneNumbersContainer');
+    const sections = container.querySelectorAll('.repeatable-section');
+    if (sections[index]) {
+        const phoneInput = sections[index].querySelector('.phone-number-input');
+        if (phoneInput) {
+            phoneInput.focus();
+        }
+    }
+};
+
+/**
+ * Edit individual email address
+ */
+window.editEmailAddress = function(index) {
+    // Switch to edit mode
+    toggleEditMode('emailAddresses');
+    
+    // Focus on the specific email field
+    const container = document.getElementById('emailAddressesContainer');
+    const sections = container.querySelectorAll('.repeatable-section');
+    if (sections[index]) {
+        const emailInput = sections[index].querySelector('input[name*="email"]');
+        if (emailInput) {
+            emailInput.focus();
+        }
+    }
+};
+
+/**
+ * Remove phone number
+ */
+window.removePhoneNumber = function(id, index) {
+    if (confirm('Are you sure you want to remove this phone number?')) {
+        if (id) {
+            // Mark for deletion in database
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'delete_contact_ids[]';
+            hiddenInput.value = id;
+            document.getElementById('editClientForm').appendChild(hiddenInput);
+        }
+        
+        // Remove from DOM
+        const container = document.getElementById('phoneNumbersContainer');
+        const sections = container.querySelectorAll('.repeatable-section');
+        if (sections[index]) {
+            sections[index].remove();
+        }
+        
+        // Update summary
+        savePhoneNumbers();
+    }
+};
+
+/**
+ * Remove email address
+ */
+window.removeEmailAddress = function(id, index) {
+    if (confirm('Are you sure you want to remove this email address?')) {
+        if (id) {
+            // Mark for deletion in database
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'delete_email_ids[]';
+            hiddenInput.value = id;
+            document.getElementById('editClientForm').appendChild(hiddenInput);
+        }
+        
+        // Remove from DOM
+        const container = document.getElementById('emailAddressesContainer');
+        const sections = container.querySelectorAll('.repeatable-section');
+        if (sections[index]) {
+            sections[index].remove();
+        }
+        
+        // Update summary
+        saveEmailAddresses();
+    }
+};
+
+/**
+ * Save passport information and update summary
+ */
+window.savePassportInfo = function() {
+    // Get form values
+    const passportCountry = document.getElementById('passportCountry').value;
+    
+    // Get all passport entries
+    const container = document.getElementById('passportDetailsContainer');
+    const sections = container.querySelectorAll('.repeatable-section');
+    const passports = [];
+    
+    sections.forEach(section => {
+        const passportId = section.querySelector('input[name*="passport_id"]')?.value;
+        const passportNumber = section.querySelector('input[name*="passport_number"]').value;
+        const issueDate = section.querySelector('input[name*="issue_date"]').value;
+        const expiryDate = section.querySelector('input[name*="expiry_date"]').value;
+        
+        if (passportNumber || issueDate || expiryDate) {
+            passports.push({
+                passport_id: passportId || '',
+                passport_number: passportNumber,
+                issue_date: issueDate,
+                expiry_date: expiryDate
+            });
+        }
+    });
+    
+    const formData = new FormData();
+    formData.append('passport_country', passportCountry);
+    formData.append('passports', JSON.stringify(passports));
+    
+    saveSectionData('passportInfo', formData, function() {
+        // Update summary view on success
+        const summaryView = document.getElementById('passportInfoSummary');
+        const summaryGrid = summaryView.querySelector('.summary-grid');
+        
+        let summaryHTML = `
+            <div class="summary-item">
+                <span class="summary-label">Country of Passport:</span>
+                <span class="summary-value">${passportCountry || 'Not set'}</span>
+            </div>
+        `;
+        
+        if (passports.length > 0) {
+            summaryHTML += '<div class="summary-grid" style="margin-top: 15px;">';
+            passports.forEach(passport => {
+                summaryHTML += `
+                    <div class="summary-item">
+                        <span class="summary-label">Passport #:</span>
+                        <span class="summary-value">${passport.passport_number || 'Not set'}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Issue Date:</span>
+                        <span class="summary-value">${passport.issue_date || 'Not set'}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Expiry Date:</span>
+                        <span class="summary-value">${passport.expiry_date || 'Not set'}</span>
+                    </div>
+                `;
+            });
+            summaryHTML += '</div>';
+        } else {
+            summaryHTML += '<div class="empty-state" style="margin-top: 15px;"><p>No passport details added yet.</p></div>';
+        }
+        
+        summaryGrid.innerHTML = summaryHTML;
+        
+        // Return to summary view
+        cancelEdit('passportInfo');
+    });
+};
+
+/**
+ * Save visa information and update summary
+ */
+window.saveVisaInfo = function() {
+    // Get visa expiry verified status
+    const visaExpiryVerified = document.querySelector('input[name="visa_expiry_verified"]').checked ? '1' : '0';
+    
+    // Get all visa entries
+    const container = document.getElementById('visaDetailsContainer');
+    const sections = container.querySelectorAll('.repeatable-section');
+    const visas = [];
+    
+    sections.forEach(section => {
+        const visaId = section.querySelector('input[name*="visa_id"]')?.value;
+        const visaType = section.querySelector('.visa-type-field').value;
+        const expiryDate = section.querySelector('.visa-expiry-field').value;
+        const grantDate = section.querySelector('.visa-grant-field').value;
+        const description = section.querySelector('.visa-description-field').value;
+        
+        if (visaType || expiryDate || grantDate || description) {
+            visas.push({
+                visa_id: visaId || '',
+                visa_type: visaType,
+                visa_expiry_date: expiryDate,
+                visa_grant_date: grantDate,
+                visa_description: description
+            });
+        }
+    });
+    
+    const formData = new FormData();
+    formData.append('visa_expiry_verified', visaExpiryVerified);
+    formData.append('visas', JSON.stringify(visas));
+    
+    saveSectionData('visaInfo', formData, function() {
+        // Update summary view on success
+        const summaryView = document.getElementById('visaInfoSummary');
+        const summaryGrid = summaryView.querySelector('.summary-grid');
+        
+        let summaryHTML = `
+            <div class="summary-item">
+                <span class="summary-label">Visa Expiry Verified:</span>
+                <span class="summary-value">${visaExpiryVerified === '1' ? 'Yes' : 'No'}</span>
+            </div>
+        `;
+        
+        if (visas.length > 0) {
+            summaryHTML += '<div class="summary-grid" style="margin-top: 15px;">';
+            visas.forEach(visa => {
+                summaryHTML += `
+                    <div class="summary-item">
+                        <span class="summary-label">Visa Type:</span>
+                        <span class="summary-value">${visa.visa_type || 'Not set'}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Expiry Date:</span>
+                        <span class="summary-value">${visa.visa_expiry_date || 'Not set'}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Grant Date:</span>
+                        <span class="summary-value">${visa.visa_grant_date || 'Not set'}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Description:</span>
+                        <span class="summary-value">${visa.visa_description || 'Not set'}</span>
+                    </div>
+                `;
+            });
+            summaryHTML += '</div>';
+        } else {
+            summaryHTML += '<div class="empty-state" style="margin-top: 15px;"><p>No visa details added yet.</p></div>';
+        }
+        
+        summaryGrid.innerHTML = summaryHTML;
+        
+        // Return to summary view
+        cancelEdit('visaInfo');
+    });
+};
+
+/**
+ * Save address information and update summary
+ */
+window.saveAddressInfo = function() {
+    // Get all address entries
+    const container = document.getElementById('addressContainer');
+    const sections = container.querySelectorAll('.repeatable-section');
+    const addresses = [];
+    
+    sections.forEach(section => {
+        const addressId = section.querySelector('input[name*="address_id"]')?.value;
+        const address = section.querySelector('textarea[name*="address"]').value;
+        const zip = section.querySelector('input[name*="zip"]').value;
+        const startDate = section.querySelector('input[name*="address_start_date"]').value;
+        const endDate = section.querySelector('input[name*="address_end_date"]').value;
+        
+        if (address || zip || startDate || endDate) {
+            addresses.push({
+                address_id: addressId || '',
+                address: address,
+                zip: zip,
+                start_date: startDate,
+                end_date: endDate
+            });
+        }
+    });
+    
+    const formData = new FormData();
+    formData.append('addresses', JSON.stringify(addresses));
+    
+    saveSectionData('addressInfo', formData, function() {
+        // Update summary view on success
+        const summaryView = document.getElementById('addressInfoSummary');
+        const summaryGrid = summaryView.querySelector('.summary-grid');
+        
+        if (addresses.length > 0) {
+            let summaryHTML = '';
+            addresses.forEach(address => {
+                summaryHTML += `
+                    <div class="summary-item">
+                        <span class="summary-label">Address:</span>
+                        <span class="summary-value">${address.address || 'Not set'}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Postal Code:</span>
+                        <span class="summary-value">${address.zip || 'Not set'}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Start Date:</span>
+                        <span class="summary-value">${address.start_date || 'Not set'}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">End Date:</span>
+                        <span class="summary-value">${address.end_date || 'Not set'}</span>
+                    </div>
+                `;
+            });
+            summaryGrid.innerHTML = summaryHTML;
+        } else {
+            summaryView.innerHTML = '<div class="empty-state"><p>No addresses added yet.</p></div>';
+        }
+        
+        // Return to summary view
+        cancelEdit('addressInfo');
+    });
+};
+
+/**
+ * Save travel information and update summary
+ */
+window.saveTravelInfo = function() {
+    // Get all travel entries
+    const container = document.getElementById('travelDetailsContainer');
+    const sections = container.querySelectorAll('.repeatable-section');
+    const travels = [];
+    
+    sections.forEach(section => {
+        const countryVisited = section.querySelector('input[name*="travel_country_visited"]').value;
+        const arrivalDate = section.querySelector('input[name*="travel_arrival_date"]').value;
+        const departureDate = section.querySelector('input[name*="travel_departure_date"]').value;
+        const travelPurpose = section.querySelector('input[name*="travel_purpose"]').value;
+        
+        if (countryVisited || arrivalDate || departureDate || travelPurpose) {
+            travels.push({
+                countryVisited: countryVisited,
+                arrivalDate: arrivalDate,
+                departureDate: departureDate,
+                travelPurpose: travelPurpose
+            });
+        }
+    });
+    
+    // Update summary view
+    const summaryView = document.getElementById('travelInfoSummary');
+    const summaryGrid = summaryView.querySelector('.summary-grid');
+    
+    if (travels.length > 0) {
+        let summaryHTML = '';
+        travels.forEach(travel => {
+            summaryHTML += `
+                <div class="summary-item">
+                    <span class="summary-label">Country Visited:</span>
+                    <span class="summary-value">${travel.countryVisited || 'Not set'}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Arrival Date:</span>
+                    <span class="summary-value">${travel.arrivalDate || 'Not set'}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Departure Date:</span>
+                    <span class="summary-value">${travel.departureDate || 'Not set'}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Travel Purpose:</span>
+                    <span class="summary-value">${travel.travelPurpose || 'Not set'}</span>
+                </div>
+            `;
+        });
+        summaryGrid.innerHTML = summaryHTML;
+    } else {
+        summaryView.innerHTML = '<div class="empty-state"><p>No travel details added yet.</p></div>';
+    }
+    
+    // Return to summary view
+    cancelEdit('travelInfo');
+    
+    // Show success message
+    showNotification('Travel information updated successfully!', 'success');
+};
+
+/**
+ * Save qualifications information and update summary
+ */
+window.saveQualificationsInfo = function() {
+    // Get all qualification entries
+    const container = document.getElementById('qualificationsContainer');
+    const sections = container.querySelectorAll('.repeatable-section');
+    const qualifications = [];
+    
+    sections.forEach(section => {
+        const qualification = section.querySelector('input[name*="qualification"]').value;
+        const institution = section.querySelector('input[name*="institution"]').value;
+        const country = section.querySelector('input[name*="qual_country"]').value;
+        const year = section.querySelector('input[name*="year"]').value;
+        
+        if (qualification || institution || country || year) {
+            qualifications.push({
+                qualification: qualification,
+                institution: institution,
+                country: country,
+                year: year
+            });
+        }
+    });
+    
+    // Update summary view
+    const summaryView = document.getElementById('qualificationsInfoSummary');
+    const summaryGrid = summaryView.querySelector('.summary-grid');
+    
+    if (qualifications.length > 0) {
+        let summaryHTML = '';
+        qualifications.forEach(qual => {
+            summaryHTML += `
+                <div class="summary-item">
+                    <span class="summary-label">Qualification:</span>
+                    <span class="summary-value">${qual.qualification || 'Not set'}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Institution:</span>
+                    <span class="summary-value">${qual.institution || 'Not set'}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Country:</span>
+                    <span class="summary-value">${qual.country || 'Not set'}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Year:</span>
+                    <span class="summary-value">${qual.year || 'Not set'}</span>
+                </div>
+            `;
+        });
+        summaryGrid.innerHTML = summaryHTML;
+    } else {
+        summaryView.innerHTML = '<div class="empty-state"><p>No qualifications added yet.</p></div>';
+    }
+    
+    // Return to summary view
+    cancelEdit('qualificationsInfo');
+    
+    // Show success message
+    showNotification('Qualifications updated successfully!', 'success');
+};
+
+/**
+ * Save experience information and update summary
+ */
+window.saveExperienceInfo = function() {
+    // Get all experience entries
+    const container = document.getElementById('experienceContainer');
+    const sections = container.querySelectorAll('.repeatable-section');
+    const experiences = [];
+    
+    sections.forEach(section => {
+        const company = section.querySelector('input[name*="company"]').value;
+        const position = section.querySelector('input[name*="position"]').value;
+        const startDate = section.querySelector('input[name*="exp_start_date"]').value;
+        const endDate = section.querySelector('input[name*="exp_end_date"]').value;
+        
+        if (company || position || startDate || endDate) {
+            experiences.push({
+                company: company,
+                position: position,
+                startDate: startDate,
+                endDate: endDate
+            });
+        }
+    });
+    
+    // Update summary view
+    const summaryView = document.getElementById('experienceInfoSummary');
+    const summaryGrid = summaryView.querySelector('.summary-grid');
+    
+    if (experiences.length > 0) {
+        let summaryHTML = '';
+        experiences.forEach(exp => {
+            summaryHTML += `
+                <div class="summary-item">
+                    <span class="summary-label">Company:</span>
+                    <span class="summary-value">${exp.company || 'Not set'}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Position:</span>
+                    <span class="summary-value">${exp.position || 'Not set'}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Start Date:</span>
+                    <span class="summary-value">${exp.startDate || 'Not set'}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">End Date:</span>
+                    <span class="summary-value">${exp.endDate || 'Not set'}</span>
+                </div>
+            `;
+        });
+        summaryGrid.innerHTML = summaryHTML;
+    } else {
+        summaryView.innerHTML = '<div class="empty-state"><p>No work experience added yet.</p></div>';
+    }
+    
+    // Return to summary view
+    cancelEdit('experienceInfo');
+    
+    // Show success message
+    showNotification('Work experience updated successfully!', 'success');
+};
+
+/**
+ * Save additional information and update summary
+ */
+window.saveAdditionalInfo = function() {
+    // Get form values
+    const naatiTest = document.getElementById('naatiTest').value;
+    const naatiDate = document.getElementById('naatiDate').value;
+    const pyTest = document.getElementById('pyTest').value;
+    const pyDate = document.getElementById('pyDate').value;
+    
+    // Update summary view
+    const summaryView = document.getElementById('additionalInfoSummary');
+    const summaryGrid = summaryView.querySelector('.summary-grid');
+    
+    summaryGrid.innerHTML = `
+        <div class="summary-item">
+            <span class="summary-label">NAATI Test:</span>
+            <span class="summary-value">${naatiTest == '1' ? 'Yes' : 'No'}</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">NAATI Date:</span>
+            <span class="summary-value">${naatiDate || 'Not set'}</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">PY Test:</span>
+            <span class="summary-value">${pyTest == '1' ? 'Yes' : 'No'}</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">PY Date:</span>
+            <span class="summary-value">${pyDate || 'Not set'}</span>
+        </div>
+    `;
+    
+    // Return to summary view
+    cancelEdit('additionalInfo');
+    
+    // Show success message
+    showNotification('Additional information updated successfully!', 'success');
+};
+
+/**
+ * Save character information and update summary
+ */
+window.saveCharacterInfo = function() {
+    // Get all character entries
+    const container = document.getElementById('characterContainer');
+    const sections = container.querySelectorAll('.repeatable-section');
+    const characters = [];
+    
+    sections.forEach(section => {
+        const detail = section.querySelector('textarea[name*="character_detail"]').value;
+        
+        if (detail) {
+            characters.push({
+                detail: detail
+            });
+        }
+    });
+    
+    // Update summary view
+    const summaryView = document.getElementById('characterInfoSummary');
+    const summaryGrid = summaryView.querySelector('.summary-grid');
+    
+    if (characters.length > 0) {
+        let summaryHTML = '';
+        characters.forEach(character => {
+            summaryHTML += `
+                <div class="summary-item">
+                    <span class="summary-label">Detail:</span>
+                    <span class="summary-value">${character.detail || 'Not set'}</span>
+                </div>
+            `;
+        });
+        summaryGrid.innerHTML = summaryHTML;
+    } else {
+        summaryView.innerHTML = '<div class="empty-state"><p>No character information added yet.</p></div>';
+    }
+    
+    // Return to summary view
+    cancelEdit('characterInfo');
+    
+    // Show success message
+    showNotification('Character information updated successfully!', 'success');
+};
+
+/**
+ * Save partner information and update summary
+ */
+window.savePartnerInfo = function() {
+    // Get all partner entries
+    const container = document.getElementById('partnerContainer');
+    const sections = container.querySelectorAll('.repeatable-section');
+    const partners = [];
+    
+    sections.forEach(section => {
+        const details = section.querySelector('.partner-details').value;
+        const relationshipType = section.querySelector('select[name*="partner_relationship_type"]').value;
+        const gender = section.querySelector('select[name*="partner_gender"]').value;
+        const companyType = section.querySelector('select[name*="partner_company_type"]').value;
+        
+        if (details || relationshipType || gender || companyType) {
+            partners.push({
+                details: details,
+                relationshipType: relationshipType,
+                gender: gender,
+                companyType: companyType
+            });
+        }
+    });
+    
+    // Update summary view
+    const summaryView = document.getElementById('partnerInfoSummary');
+    const summaryGrid = summaryView.querySelector('.summary-grid');
+    
+    if (partners.length > 0) {
+        let summaryHTML = '';
+        partners.forEach(partner => {
+            summaryHTML += `
+                <div class="summary-item">
+                    <span class="summary-label">Details:</span>
+                    <span class="summary-value">${partner.details || 'Not set'}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Relationship:</span>
+                    <span class="summary-value">${partner.relationshipType || 'Not set'}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Gender:</span>
+                    <span class="summary-value">${partner.gender || 'Not set'}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Company Type:</span>
+                    <span class="summary-value">${partner.companyType || 'Not set'}</span>
+                </div>
+            `;
+        });
+        summaryGrid.innerHTML = summaryHTML;
+    } else {
+        summaryView.innerHTML = '<div class="empty-state"><p>No partner information added yet.</p></div>';
+    }
+    
+    // Return to summary view
+    cancelEdit('partnerInfo');
+    
+    // Show success message
+    showNotification('Partner information updated successfully!', 'success');
+};
+
+/**
+ * Save children information and update summary
+ */
+window.saveChildrenInfo = function() {
+    // Get all children entries
+    const container = document.getElementById('childrenContainer');
+    const sections = container.querySelectorAll('.repeatable-section');
+    const children = [];
+    
+    sections.forEach(section => {
+        const details = section.querySelector('.partner-details').value;
+        const relationshipType = section.querySelector('select[name*="children_relationship_type"]').value;
+        const gender = section.querySelector('select[name*="children_gender"]').value;
+        const companyType = section.querySelector('select[name*="children_company_type"]').value;
+        
+        if (details || relationshipType || gender || companyType) {
+            children.push({
+                details: details,
+                relationshipType: relationshipType,
+                gender: gender,
+                companyType: companyType
+            });
+        }
+    });
+    
+    // Update summary view
+    const summaryView = document.getElementById('childrenInfoSummary');
+    const summaryGrid = summaryView.querySelector('.summary-grid');
+    
+    if (children.length > 0) {
+        let summaryHTML = '';
+        children.forEach(child => {
+            summaryHTML += `
+                <div class="summary-item">
+                    <span class="summary-label">Details:</span>
+                    <span class="summary-value">${child.details || 'Not set'}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Relationship:</span>
+                    <span class="summary-value">${child.relationshipType || 'Not set'}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Gender:</span>
+                    <span class="summary-value">${child.gender || 'Not set'}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Company Type:</span>
+                    <span class="summary-value">${child.companyType || 'Not set'}</span>
+                </div>
+            `;
+        });
+        summaryGrid.innerHTML = summaryHTML;
+    } else {
+        summaryView.innerHTML = '<div class="empty-state"><p>No children information added yet.</p></div>';
+    }
+    
+    // Return to summary view
+    cancelEdit('childrenInfo');
+    
+    // Show success message
+    showNotification('Children information updated successfully!', 'success');
+};
+
+/**
+ * Save EOI information and update summary
+ */
+window.saveEoiInfo = function() {
+    // Get all EOI entries
+    const container = document.getElementById('eoiReferencesContainer');
+    const sections = container.querySelectorAll('.repeatable-section');
+    const eois = [];
+    
+    sections.forEach(section => {
+        const eoiNumber = section.querySelector('input[name*="EOI_number"]').value;
+        const subclass = section.querySelector('input[name*="EOI_subclass"]').value;
+        const occupation = section.querySelector('input[name*="EOI_occupation"]').value;
+        const point = section.querySelector('input[name*="EOI_point"]').value;
+        const state = section.querySelector('input[name*="EOI_state"]').value;
+        const submissionDate = section.querySelector('input[name*="EOI_submission_date"]').value;
+        const roi = section.querySelector('input[name*="EOI_ROI"]').value;
+        const password = section.querySelector('input[name*="EOI_password"]').value;
+        
+        if (eoiNumber || subclass || occupation || point || state || submissionDate || roi || password) {
+            eois.push({
+                eoiNumber: eoiNumber,
+                subclass: subclass,
+                occupation: occupation,
+                point: point,
+                state: state,
+                submissionDate: submissionDate,
+                roi: roi,
+                password: password
+            });
+        }
+    });
+    
+    // Update summary view
+    const summaryView = document.getElementById('eoiInfoSummary');
+    const summaryGrid = summaryView.querySelector('.summary-grid');
+    
+    if (eois.length > 0) {
+        let summaryHTML = '';
+        eois.forEach(eoi => {
+            summaryHTML += `
+                <div class="summary-item">
+                    <span class="summary-label">EOI Number:</span>
+                    <span class="summary-value">${eoi.eoiNumber || 'Not set'}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Subclass:</span>
+                    <span class="summary-value">${eoi.subclass || 'Not set'}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Occupation:</span>
+                    <span class="summary-value">${eoi.occupation || 'Not set'}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Point:</span>
+                    <span class="summary-value">${eoi.point || 'Not set'}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">State:</span>
+                    <span class="summary-value">${eoi.state || 'Not set'}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Submission Date:</span>
+                    <span class="summary-value">${eoi.submissionDate || 'Not set'}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">ROI:</span>
+                    <span class="summary-value">${eoi.roi || 'Not set'}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Password:</span>
+                    <span class="summary-value">${eoi.password ? '••••••••' : 'Not set'}</span>
+                </div>
+            `;
+        });
+        summaryGrid.innerHTML = summaryHTML;
+    } else {
+        summaryView.innerHTML = '<div class="empty-state"><p>No EOI references added yet.</p></div>';
+    }
+    
+    // Return to summary view
+    cancelEdit('eoiInfo');
+    
+    // Show success message
+    showNotification('EOI references updated successfully!', 'success');
+};
+
+/**
+ * Remove phone field with confirmation
+ */
+window.removePhoneField = function(button) {
+    if (confirm('Are you sure you want to remove this phone number?')) {
+        button.closest('.repeatable-section').remove();
+        validatePersonalPhoneNumbers();
+    }
+};
+
+/**
+ * Remove email field with confirmation
+ */
+window.removeEmailField = function(button) {
+    if (confirm('Are you sure you want to remove this email address?')) {
+        button.closest('.repeatable-section').remove();
+        validatePersonalEmailTypes();
+    }
+};
+
+/**
+ * Remove passport field with confirmation
+ */
+window.removePassportField = function(button) {
+    if (confirm('Are you sure you want to remove this passport detail?')) {
+        button.closest('.repeatable-section').remove();
+    }
+};
+
+/**
+ * Remove visa field with confirmation
+ */
+window.removeVisaField = function(button) {
+    if (confirm('Are you sure you want to remove this visa detail?')) {
+        button.closest('.repeatable-section').remove();
+    }
+};
+
+/**
+ * Remove address field with confirmation
+ */
+window.removeAddressField = function(button) {
+    if (confirm('Are you sure you want to remove this address?')) {
+        button.closest('.repeatable-section').remove();
+    }
+};
+
+/**
+ * Remove travel field with confirmation
+ */
+window.removeTravelField = function(button) {
+    if (confirm('Are you sure you want to remove this travel detail?')) {
+        button.closest('.repeatable-section').remove();
+    }
+};
+
+/**
+ * Remove qualification field with confirmation
+ */
+window.removeQualificationField = function(button) {
+    if (confirm('Are you sure you want to remove this qualification?')) {
+        button.closest('.repeatable-section').remove();
+    }
+};
+
+/**
+ * Remove experience field with confirmation
+ */
+window.removeExperienceField = function(button) {
+    if (confirm('Are you sure you want to remove this work experience?')) {
+        button.closest('.repeatable-section').remove();
+    }
+};
+
+/**
+ * Remove character field with confirmation
+ */
+window.removeCharacterField = function(button) {
+    if (confirm('Are you sure you want to remove this character information?')) {
+        button.closest('.repeatable-section').remove();
+    }
+};
+
+/**
+ * Remove EOI field with confirmation
+ */
+window.removeEoiField = function(button) {
+    if (confirm('Are you sure you want to remove this EOI reference?')) {
+        button.closest('.repeatable-section').remove();
+    }
+};
+
+/**
+ * Show notification message
+ */
+function showNotification(message, type = 'info') {
+    // Determine icon based on notification type
+    let icon = 'info-circle';
+    if (type === 'success') {
+        icon = 'check-circle';
+    } else if (type === 'error') {
+        icon = 'exclamation-circle';
+    }
+    
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <div class="notification-content">
+            <i class="fas fa-${icon}"></i>
+            <span>${message}</span>
+        </div>
+        <button class="notification-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    // Add to page
+    document.body.appendChild(notification);
+    
+    // Auto remove after 5 seconds for errors, 3 seconds for others
+    const duration = type === 'error' ? 5000 : 3000;
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, duration);
 }
 
 // Make functions globally available
