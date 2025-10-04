@@ -71,53 +71,84 @@
         }
         /* Client Navigation Sidebar */
         .client-navigation-sidebar {
-            flex: 0 0 280px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            flex: 0 0 260px;
+            background: #fafbfc;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
             max-height: calc(100vh - 100px);
             overflow: visible;
             position: sticky;
             top: 20px;
+            border: 1px solid #e8eaed;
         }
         
         
         .sidebar-header {
-            padding: 20px 16px 16px;
-            border-bottom: 1px solid #e9ecef;
+            padding: 16px 14px 12px;
+            border-bottom: 1px solid #e8eaed;
             background: #ffffff;
-            border-radius: 8px 8px 0 0;
+            border-radius: 10px 10px 0 0;
         }
         
         .client-info {
-            margin-bottom: 15px;
+            margin-bottom: 0;
+            text-align: left;
         }
         
         .client-id {
             margin: 0 0 8px 0;
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             font-weight: 600;
-            color: #343a40;
-            line-height: 1.2;
+            color: #4a5568;
+            line-height: 1.3;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            letter-spacing: 0.5px;
         }
         
         .client-matter {
-            margin: 0 0 4px 0;
-            font-size: 0.9rem;
-            color: #6c757d;
+            margin: 0 0 3px 0;
+            font-size: 0.85rem;
+            color: #718096;
             font-weight: 500;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
         
         .client-name {
-            margin: 0 0 0 0;
-            font-size: 1rem;
-            color: #212529;
-            font-weight: 500;
+            margin: 0 0 10px 0;
+            font-size: 1.15rem;
+            color: #1a202c;
+            font-weight: 600;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .client-name-edit {
+            color: #10b981 !important;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+        
+        .client-name-edit:hover {
+            color: #059669 !important;
+            transform: scale(1.1);
+        }
+        
+        /* Sidebar Actions Row - Icons left, Toggle right */
+        .sidebar-actions-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+            padding: 8px 0 12px;
+            border-bottom: 1px solid #e8eaed;
         }
         
         .client-actions {
             display: flex;
-            gap: 12px;
+            gap: 14px;
             align-items: center;
             justify-content: flex-start;
         }
@@ -126,78 +157,248 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 32px;
-            height: 32px;
-            border-radius: 6px;
-            background: #f8f9fa;
+            width: auto;
+            height: auto;
             transition: all 0.2s ease;
             text-decoration: none;
+            background: transparent;
+            border: none;
         }
         
         .client-actions a:hover {
-            background: #e9ecef;
-            transform: translateY(-1px);
+            transform: scale(1.15);
         }
         
         .client-actions a i {
-            font-size: 14px;
+            font-size: 18px;
+            color: #64748b;
+        }
+        
+        .client-actions a:hover i {
+            color: #6366f1;
+        }
+        
+        .client-actions a.archived-active i {
+            color: #6366f1;
+        }
+        
+        /* Sidebar Portal Toggle */
+        .sidebar-portal-toggle {
+            display: flex;
+            align-items: center;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        /* Tooltip on hover */
+        .sidebar-portal-toggle::before {
+            content: 'Client Portal';
+            position: absolute;
+            right: 0;
+            top: -30px;
+            background-color: #1a202c;
+            color: #ffffff;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+            pointer-events: none;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            z-index: 10;
+        }
+        
+        .sidebar-portal-toggle::after {
+            content: '';
+            position: absolute;
+            right: 15px;
+            top: -8px;
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 5px solid #1a202c;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .sidebar-portal-toggle:hover::before,
+        .sidebar-portal-toggle:hover::after {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .sidebar-portal-toggle .portal-label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #4a5568;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            display: none;
+        }
+        
+        /* Sidebar Client/Lead Buttons */
+        .sidebar-client-lead-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 14px;
+            margin-bottom: 12px;
+        }
+        
+        .status-btn {
+            padding: 7px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-align: center;
+            text-decoration: none;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        .status-btn-client {
+            background-color: #e2e8f0;
+            color: #475569;
+        }
+        
+        .status-btn-client.active {
+            background-color: #10b981;
+            color: #ffffff;
+        }
+        
+        .status-btn-lead {
+            background-color: #e2e8f0;
+            color: #475569;
+        }
+        
+        .status-btn-lead.active {
+            background-color: #64748b;
+            color: #ffffff;
+        }
+        
+        .status-btn:hover {
+            transform: translateY(-1px);
+            opacity: 0.9;
+        }
+        
+        /* Sidebar Matter Selection */
+        .sidebar-matter-selection {
+            margin: 0 0 10px 0;
+        }
+        
+        .visa-dropdown {
+            width: 100%;
+            padding: 8px 10px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #1a202c;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            background-color: #ffffff;
+            cursor: pointer;
+            transition: border-color 0.2s ease;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        .visa-dropdown:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+        
+        /* Application Status Badge */
+        .application-status-badge {
+            display: inline-block;
+            background-color: #f3f4f6;
+            padding: 7px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #4b5563;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: center;
+            margin: 10px 0;
+            width: 100%;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        /* Divider before navigation */
+        .sidebar-header {
+            border-bottom: 1px solid #e8eaed;
         }
         
         .initial-consultation-heading {
-            margin: 15px 0 0 0;
-            font-size: 1rem;
+            margin: 12px 0 0 0;
+            font-size: 0.9rem;
             font-weight: 600;
-            color: #495057;
+            color: #4a5568;
             text-align: center;
-            padding: 8px 0;
-            border-top: 1px solid #e9ecef;
+            padding: 6px 0;
+            border-top: 1px solid #e8eaed;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
         
         .client-sidebar-nav {
-            padding: 8px;
+            padding: 6px;
         }
         
         .client-nav-button {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             width: 100%;
-            padding: 12px 16px;
-            margin-bottom: 4px;
+            padding: 8px 12px;
+            margin-bottom: 2px;
             border: none;
             background: transparent;
-            color: #6c757d;
+            color: #64748b;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.2s ease;
-            border-radius: 6px;
+            border-radius: 8px;
             text-align: left;
             position: relative;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
         
         .client-nav-button:hover {
-            background: rgba(0, 123, 255, 0.1);
-            color: #007bff;
-            transform: translateX(2px);
+            background: rgba(99, 102, 241, 0.08);
+            color: #6366f1;
+            transform: translateX(1px);
         }
         
         .client-nav-button.active {
-            background: white;
-            color: #007bff;
+            background: #ffffff;
+            color: #6366f1;
             font-weight: 600;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            border-left: 3px solid #007bff;
+            box-shadow: 0 1px 3px rgba(99, 102, 241, 0.12);
+            border-left: 3px solid #6366f1;
         }
         
         .client-nav-button i {
-            font-size: 16px;
-            width: 20px;
+            font-size: 14px;
+            width: 18px;
             text-align: center;
+            opacity: 0.8;
+        }
+        
+        .client-nav-button.active i {
+            opacity: 1;
         }
         
         .client-nav-button span {
-            font-size: 0.9em;
-            line-height: 1.2;
+            font-size: 0.85rem;
+            line-height: 1.3;
+            font-weight: inherit;
         }
 
         .main-content {

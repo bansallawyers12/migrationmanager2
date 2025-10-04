@@ -36,48 +36,55 @@ use App\Http\Controllers\Controller;
                         }
                     } ?>
                 </h3>
-                <p class="client-name">{{$fetchedData->first_name}} {{$fetchedData->last_name}} <a style="color: #0d6efd !important;" href="{{URL::to('/admin/clients/edit/'.base64_encode(convert_uuencode(@$fetchedData->id)))}}" title="Edit"><i class="fa fa-edit"></i></a></p>
+                <p class="client-name">
+                    {{$fetchedData->first_name}} {{$fetchedData->last_name}} 
+                    <a href="{{URL::to('/admin/clients/edit/'.base64_encode(convert_uuencode(@$fetchedData->id)))}}" title="Edit" class="client-name-edit">
+                        <i class="fa fa-edit"></i>
+                    </a>
+                </p>
                 
-                <!-- Client Portal Toggle in Sidebar -->
-                <?php
-                // Check if client has any records in client_matters table
-                $client_matters_exist = DB::table('client_matters')
-                    ->where('client_id', $fetchedData->id)
-                    ->exists();
-                ?>
-                @if($client_matters_exist)
-                <div class="client-portal-section" style="margin-top: 10px; padding: 8px; background-color: #f8f9fa; border-radius: 4px;">
-                    <span class="portal-label" style="font-size: 12px; color: #666;">Client Portal:</span>
-                    <label class="toggle-switch" style="float: right;">
-                        <input type="checkbox" id="client-portal-toggle" 
-                               data-client-id="{{ $fetchedData->id}}" 
-                               {{ isset($fetchedData->cp_status) && $fetchedData->cp_status == 1 ? 'checked' : '' }}>
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-                @endif
-                
-                <!-- Client/Lead Toggle in Sidebar -->
-                <div class="sidebar-client-lead-toggle" style="margin-top: 10px; padding: 8px; background-color: #f8f9fa; border-radius: 4px;">
-                    <div class="client-lead-toggle" style="display: flex; gap: 5px; justify-content: center;">
-                        <a class="badge-outline col-greenf convertLeadToClient <?php if($fetchedData->type == 'client'){ echo 'active'; }?>" href="javascript:;" role="button" style="padding: 4px 8px; font-size: 11px;">Client</a>
-                        <a href="javascript:;" class="badge-outline col-greenf <?php if($fetchedData->type == 'lead'){ echo 'active'; } ?>" style="padding: 4px 8px; font-size: 11px;">Lead</a>
+                <!-- Action Icons (left) and Client Portal Toggle (right) -->
+                <div class="sidebar-actions-row">
+                    <!-- Action Icons -->
+                    <div class="client-actions">
+                        <a href="javascript:;" class="create_note_d" datatype="note" title="Add Notes"><i class="fas fa-plus"></i></a>
+                        <a href="javascript:;" data-id="{{@$fetchedData->id}}" data-email="{{@$fetchedData->email}}" data-name="{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}" class="clientemail" title="Compose Mail"><i class="fa fa-envelope"></i></a>
+                        <a href="javascript:;" datatype="not_picked_call" class="not_picked_call" title="Not Picked Call"><i class="fas fa-mobile-alt"></i></a>
+                        @if($fetchedData->is_archived == 0)
+                            <a class="arcivedval" href="javascript:;" onclick="arcivedAction({{$fetchedData->id}}, 'admins')" title="Archive"><i class="fas fa-archive"></i></a>
+                        @else
+                            <a class="arcivedval archived-active" href="javascript:;" onclick="arcivedAction({{$fetchedData->id}}, 'admins')" title="UnArchive"><i class="fas fa-archive"></i></a>
+                        @endif
                     </div>
+                    
+                    <!-- Client Portal Toggle -->
+                    <?php
+                    // Check if client has any records in client_matters table
+                    $client_matters_exist = DB::table('client_matters')
+                        ->where('client_id', $fetchedData->id)
+                        ->exists();
+                    ?>
+                    @if($client_matters_exist)
+                    <div class="sidebar-portal-toggle" title="Client Portal">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="client-portal-toggle" 
+                                   data-client-id="{{ $fetchedData->id}}" 
+                                   {{ isset($fetchedData->cp_status) && $fetchedData->cp_status == 1 ? 'checked' : '' }}>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    @endif
                 </div>
             </div>
-            <div class="client-actions">
-                <a style="color: #0d6efd !important;" href="javascript:;" class="create_note_d" datatype="note" title="Add Notes"><i class="fas fa-plus"></i></a>
-                <a style="color: #0d6efd !important;" href="javascript:;" data-id="{{@$fetchedData->id}}" data-email="{{@$fetchedData->email}}" data-name="{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}" class="clientemail" title="Compose Mail"><i class="fa fa-envelope"></i></a>
-                <a style="color: #0d6efd !important;" href="javascript:;" datatype="not_picked_call" class="not_picked_call" title="Not Picked Call"><i class="fas fa-mobile-alt"></i></a>
-                @if($fetchedData->is_archived == 0)
-                    <a style="color: #0d6efd !important;"  class="arcivedval" href="javascript:;" onclick="arcivedAction({{$fetchedData->id}}, 'admins')" title="Archive"><i class="fas fa-archive"></i></a>
-                @else
-                    <a style="color: #0d6efd !important;"  class="arcivedval" style="background-color:#007bff;" href="javascript:;" onclick="arcivedAction({{$fetchedData->id}}, 'admins')" title="UnArchive"><i style="color: #fff;" class="fas fa-archive"></i></a>
-                @endif
+            
+            <!-- Client/Lead Toggle Buttons -->
+            <div class="sidebar-client-lead-buttons">
+                <a class="status-btn status-btn-client convertLeadToClient <?php if($fetchedData->type == 'client'){ echo 'active'; }?>" href="javascript:;" role="button">Client</a>
+                <a href="javascript:;" class="status-btn status-btn-lead <?php if($fetchedData->type == 'lead'){ echo 'active'; } ?>">Lead</a>
             </div>
             
             <!-- Matter Selection Dropdown in Sidebar -->
-            <div class="sidebar-matter-selection" style="margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 4px;">
+            <div class="sidebar-matter-selection">
                 <?php
                 $assign_info_arr = \App\Models\Admin::select('type')->where('id',@$fetchedData->id)->first();
                 ?>
@@ -118,7 +125,7 @@ use App\Http\Controllers\Controller;
                                 return 0; // Maintain original order for other matters
                             });
                             ?>
-                        <select name="matter_id" id="sel_matter_id_client_detail" class="form-control select2 compact-select" data-valid="required" style="font-size: 12px;">
+                        <select name="matter_id" id="sel_matter_id_client_detail" class="form-control select2 visa-dropdown" data-valid="required">
                             <option value="">Select Matters</option>
                             @foreach($matter_list_arr as $matterlist)
                                 <option value="{{$matterlist->id}}" {{ $matterlist->id == $latestClientMatterId ? 'selected' : '' }} data-clientuniquematterno="{{@$matterlist->client_unique_matter_no}}">{{@$matterlist->title}}({{@$matterlist->client_unique_matter_no}})</option>
@@ -148,7 +155,7 @@ use App\Http\Controllers\Controller;
                             $latestClientMatter = \App\Models\ClientMatter::where('client_id',$fetchedData->id)->where('matter_status',1)->latest()->first();
                             $latestClientMatterId = $latestClientMatter ? $latestClientMatter->id : null;
                             ?>
-                        <select name="matter_id" id="sel_matter_id_client_detail" class="form-control select2 compact-select" data-valid="required" style="font-size: 12px;">
+                        <select name="matter_id" id="sel_matter_id_client_detail" class="form-control select2 visa-dropdown" data-valid="required">
                             <option value="">Select Matters</option>
                             @foreach($matter_list_arr as $matterlist)
                                 <option value="{{$matterlist->id}}" {{ $matterlist->id == $latestClientMatterId ? 'selected' : '' }} data-clientuniquematterno="{{@$matterlist->client_unique_matter_no}}">{{@$matterlist->title}}({{@$matterlist->client_unique_matter_no}})</option>
@@ -161,7 +168,7 @@ use App\Http\Controllers\Controller;
                 @endif
             </div>
             
-            <h3 class="initial-consultation-heading">
+            <div class="application-status-badge">
                 <?php
                 // Get the current workflow stage for this client matter
                 $workflow_stage_arr = null;
@@ -200,7 +207,7 @@ use App\Http\Controllers\Controller;
                     echo "Initial Consultation";
                 }
                 ?>
-            </h3>
+            </div>
         </div>
         <nav class="client-sidebar-nav">
             <?php
