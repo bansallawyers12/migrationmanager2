@@ -22,7 +22,7 @@ class Admin extends Authenticatable
       * @var array
 	*/
 	protected $fillable = [
-        'id', 'role', 'first_name', 'last_name', 'email', 'password', 'decrypt_password', 'country', 'state', 'city', 'address', 'zip', 'profile_img', 'status', 'service_token', 'token_generated_at', 'cp_status','cp_random_code','cp_code_verify','cp_token_generated_at','created_at', 'updated_at'
+        'id', 'role', 'first_name', 'last_name', 'email', 'password', 'decrypt_password', 'country', 'state', 'city', 'address', 'zip', 'profile_img', 'status', 'service_token', 'token_generated_at', 'cp_status','cp_random_code','cp_code_verify','cp_token_generated_at', 'visa_expiry_verified_at', 'visa_expiry_verified_by', 'created_at', 'updated_at'
     ];
 
 	/**

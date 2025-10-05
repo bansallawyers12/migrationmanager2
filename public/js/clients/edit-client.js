@@ -760,6 +760,11 @@ function toggleVisaDetails() {
     const addVisaButton = document.querySelector('button[onclick="addVisaDetail()"]');
     const visaExpiryVerifiedContainer = document.getElementById('visaExpiryVerifiedContainer');
 
+    // Check if passportCountry element exists before accessing its value
+    if (!passportCountrySelector) {
+        return;
+    }
+
     const isAustralia = passportCountrySelector.value === 'Australia';
 
     if (isAustralia) {
@@ -1195,21 +1200,21 @@ async function addVisaDetail() {
             <div class="content-grid">
                 <div class="form-group">
                     <label>Visa Type / Subclass</label>
-                    <select name="visas[${index}][visa_type]" class="visa-type-field">
+                    <select name="visa_type_hidden[${index}]" class="visa-type-field">
                         ${optionsHtml}
                     </select>
                 </div>
                 <div class="form-group">
                     <label>Visa Expiry Date</label>
-                    <input type="text" name="visas[${index}][expiry_date]" placeholder="dd/mm/yyyy" class="visa-expiry-field date-picker">
+                    <input type="text" name="visa_expiry_date[${index}]" placeholder="dd/mm/yyyy" class="visa-expiry-field date-picker">
                 </div>
                 <div class="form-group">
                     <label>Visa Grant Date</label>
-                    <input type="text" name="visas[${index}][grant_date]" placeholder="dd/mm/yyyy" class="visa-grant-field date-picker">
+                    <input type="text" name="visa_grant_date[${index}]" placeholder="dd/mm/yyyy" class="visa-grant-field date-picker">
                 </div>
                 <div class="form-group">
                     <label>Visa Description</label>
-                    <input type="text" name="visas[${index}][description]" class="visa-description-field" placeholder="Description">
+                    <input type="text" name="visa_description[${index}]" class="visa-description-field" placeholder="Description">
                 </div>
             </div>
         </div>
@@ -1929,7 +1934,7 @@ window.saveVisaInfo = function() {
         if (visaType || expiryDate || grantDate || description) {
             visas.push({
                 visa_id: visaId || '',
-                visa_type: visaType,
+                visa_type_hidden: visaType,
                 visa_expiry_date: expiryDate,
                 visa_grant_date: grantDate,
                 visa_description: description
@@ -1954,24 +1959,47 @@ window.saveVisaInfo = function() {
         `;
         
         if (visas.length > 0) {
-            summaryHTML += '<div class="summary-grid" style="margin-top: 15px;">';
+            // Sort visas by expiry date (longest expiry date first)
+            visas.sort((a, b) => {
+                // Handle cases where expiry date might be null or empty
+                if (!a.visa_expiry_date && !b.visa_expiry_date) return 0;
+                if (!a.visa_expiry_date) return 1; // Put null dates at the end
+                if (!b.visa_expiry_date) return -1; // Put null dates at the end
+                
+                // Convert dd/mm/yyyy to Date object for comparison
+                const dateA = new Date(a.visa_expiry_date.split('/').reverse().join('-'));
+                const dateB = new Date(b.visa_expiry_date.split('/').reverse().join('-'));
+                
+                // Sort in descending order (longest expiry date first)
+                return dateB - dateA;
+            });
+            
+            summaryHTML += '<div style="margin-top: 15px;">';
             visas.forEach(visa => {
+                // Get visa type name from the selected option
+                const visaTypeSelect = document.querySelector(`select[name*="visa_type_hidden"][value="${visa.visa_type_hidden}"]`);
+                const visaTypeName = visaTypeSelect ? visaTypeSelect.textContent : (visa.visa_type_hidden || 'Not set');
+                
                 summaryHTML += `
-                    <div class="summary-item">
-                        <span class="summary-label">Visa Type:</span>
-                        <span class="summary-value">${visa.visa_type || 'Not set'}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Expiry Date:</span>
-                        <span class="summary-value">${visa.visa_expiry_date || 'Not set'}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Grant Date:</span>
-                        <span class="summary-value">${visa.visa_grant_date || 'Not set'}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Description:</span>
-                        <span class="summary-value">${visa.visa_description || 'Not set'}</span>
+                    <div class="visa-entry-compact" style="margin-bottom: 12px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #28a745;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; align-items: center;">
+                            <div class="summary-item-inline">
+                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">VISA TYPE:</span>
+                                <span class="summary-value" style="color: #212529; font-weight: 500;">${visaTypeName}</span>
+                            </div>
+                            <div class="summary-item-inline">
+                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">EXPIRY DATE:</span>
+                                <span class="summary-value" style="color: #212529;">${visa.visa_expiry_date || 'Not set'}</span>
+                            </div>
+                            <div class="summary-item-inline">
+                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">GRANT DATE:</span>
+                                <span class="summary-value" style="color: #212529;">${visa.visa_grant_date || 'Not set'}</span>
+                            </div>
+                            <div class="summary-item-inline">
+                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">DESCRIPTION:</span>
+                                <span class="summary-value" style="color: #212529;">${visa.visa_description || 'Not set'}</span>
+                            </div>
+                        </div>
                     </div>
                 `;
             });

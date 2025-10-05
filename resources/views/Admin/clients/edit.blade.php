@@ -527,28 +527,35 @@
                             <div class="summary-grid">
                                 <div class="summary-item">
                                     <span class="summary-label">Visa Expiry Verified:</span>
-                                    <span class="summary-value">{{ $fetchedData->visa_expiry_verified ? 'Yes' : 'No' }}</span>
+                                    <span class="summary-value">{{ $fetchedData->visa_expiry_verified_at ? 'Yes' : 'No' }}</span>
                                 </div>
                             </div>
                             @if($visaCountries->count() > 0)
                                 <div style="margin-top: 15px;">
                                     @foreach($visaCountries as $index => $visa)
-                                        <div class="visa-entry">
-                                            <div class="summary-item">
-                                                <span class="summary-label">Visa Type:</span>
-                                                <span class="summary-value">{{ $visa->visa_type ?: 'Not set' }}</span>
-                                            </div>
-                                            <div class="summary-item">
-                                                <span class="summary-label">Expiry Date:</span>
-                                                <span class="summary-value">{{ $visa->visa_expiry_date ? date('d/m/Y', strtotime($visa->visa_expiry_date)) : 'Not set' }}</span>
-                                            </div>
-                                            <div class="summary-item">
-                                                <span class="summary-label">Grant Date:</span>
-                                                <span class="summary-value">{{ $visa->visa_grant_date ? date('d/m/Y', strtotime($visa->visa_grant_date)) : 'Not set' }}</span>
-                                            </div>
-                                            <div class="summary-item">
-                                                <span class="summary-label">Description:</span>
-                                                <span class="summary-value">{{ $visa->visa_description ?: 'Not set' }}</span>
+                                        <div class="visa-entry-compact" style="margin-bottom: 12px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #28a745;">
+                                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; align-items: center;">
+                                                <div class="summary-item-inline">
+                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">VISA TYPE:</span>
+                                                    <span class="summary-value" style="color: #212529; font-weight: 500;">
+                                                        @php
+                                                            $Matter_get = App\Models\Matter::select('id','title','nick_name')->where('id',$visa->visa_type)->first();
+                                                        @endphp
+                                                        {{ $Matter_get ? $Matter_get->title . ' (' . $Matter_get->nick_name . ')' : 'Not set' }}
+                                                    </span>
+                                                </div>
+                                                <div class="summary-item-inline">
+                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">EXPIRY DATE:</span>
+                                                    <span class="summary-value" style="color: #212529;">{{ $visa->visa_expiry_date ? date('d/m/Y', strtotime($visa->visa_expiry_date)) : 'Not set' }}</span>
+                                                </div>
+                                                <div class="summary-item-inline">
+                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">GRANT DATE:</span>
+                                                    <span class="summary-value" style="color: #212529;">{{ $visa->visa_grant_date ? date('d/m/Y', strtotime($visa->visa_grant_date)) : 'Not set' }}</span>
+                                                </div>
+                                                <div class="summary-item-inline">
+                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">DESCRIPTION:</span>
+                                                    <span class="summary-value" style="color: #212529;">{{ $visa->visa_description ?: 'Not set' }}</span>
+                                                </div>
                                             </div>
                                         </div>
                                     @endforeach
@@ -572,19 +579,26 @@
                                             <div class="content-grid">
                                                 <div class="form-group">
                                                     <label>Visa Type / Subclass</label>
-                                                    <input type="text" name="visas[{{ $index }}][visa_type]" value="{{ $visa->visa_type }}" class="visa-type-field" placeholder="Visa Type">
+                                                    <select name="visa_type_hidden[{{ $index }}]" class="visa-type-field">
+                                                        <option value="">Select Visa Type</option>
+                                                        @foreach($visaTypes as $visaType)
+                                                            <option value="{{ $visaType->id }}" {{ $visa->visa_type == $visaType->id ? 'selected' : '' }}>
+                                                                {{ $visaType->title }}{{ $visaType->nick_name ? ' (' . $visaType->nick_name . ')' : '' }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Visa Expiry Date</label>
-                                                    <input type="text" name="visas[{{ $index }}][expiry_date]" value="{{ $visa->visa_expiry_date ? date('d/m/Y', strtotime($visa->visa_expiry_date)) : '' }}" placeholder="dd/mm/yyyy" class="visa-expiry-field date-picker">
+                                                    <input type="text" name="visa_expiry_date[{{ $index }}]" value="{{ $visa->visa_expiry_date ? date('d/m/Y', strtotime($visa->visa_expiry_date)) : '' }}" placeholder="dd/mm/yyyy" class="visa-expiry-field date-picker">
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Visa Grant Date</label>
-                                                    <input type="text" name="visas[{{ $index }}][grant_date]" value="{{ $visa->visa_grant_date ? date('d/m/Y', strtotime($visa->visa_grant_date)) : '' }}" placeholder="dd/mm/yyyy" class="visa-grant-field date-picker">
+                                                    <input type="text" name="visa_grant_date[{{ $index }}]" value="{{ $visa->visa_grant_date ? date('d/m/Y', strtotime($visa->visa_grant_date)) : '' }}" placeholder="dd/mm/yyyy" class="visa-grant-field date-picker">
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Visa Description</label>
-                                                    <input type="text" name="visas[{{ $index }}][description]" value="{{ $visa->visa_description }}" class="visa-description-field" placeholder="Description">
+                                                    <input type="text" name="visa_description[{{ $index }}]" value="{{ $visa->visa_description }}" class="visa-description-field" placeholder="Description">
                                                 </div>
                                             </div>
                                         </div>
@@ -598,7 +612,7 @@
                             <div id="visaExpiryVerifiedContainer" class="form-group" style="display: flex; align-items: center; gap: 10px; margin-top: 15px;">
                                 <label>Visa Expiry Verified?</label>
                                 <label class="switch" style="margin: 0;">
-                                    <input type="checkbox" name="visa_expiry_verified" value="1" {{ $fetchedData->visa_expiry_verified ? 'checked' : '' }}>
+                                    <input type="checkbox" name="visa_expiry_verified" value="1" {{ $fetchedData->visa_expiry_verified_at ? 'checked' : '' }}>
                                     <span class="slider"></span>
                                 </label>
                             </div>

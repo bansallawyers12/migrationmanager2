@@ -3575,7 +3575,7 @@ class ClientsController extends Controller
                     $fetchedData = Admin::find($id);
                     $clientContacts = ClientContact::where('client_id', $id)->get() ?? [];
                     $emails = ClientEmail::where('client_id', $id)->get() ?? [];
-                    $visaCountries = ClientVisaCountry::where('client_id', $id)->get() ?? [];
+                    $visaCountries = ClientVisaCountry::where('client_id', $id)->orderBy('visa_expiry_date', 'desc')->get() ?? [];
                     $clientAddresses = ClientAddress::where('client_id', $id)->get() ?? [];
                     $qualifications = ClientQualification::where('client_id', $id)->get() ?? [];
                     $experiences = ClientExperience::where('client_id', $id)->get() ?? [];
@@ -3590,7 +3590,14 @@ class ClientsController extends Controller
                     //dd($clientPartners);
 					$clientEoiReferences = ClientEoiReference::where('client_id', $id)->get() ?? [];
 
-                    return view('Admin.clients.edit', compact('fetchedData', 'clientContacts', 'emails', 'visaCountries', 'clientAddresses', 'qualifications', 'experiences', 'clientOccupations', 'testScores', 'ClientSpouseDetail', 'clientPassports', 'clientTravels','clientCharacters','clientPartners','clientEoiReferences'));
+                    // Get visa types for dropdown
+                    $visaTypes = \App\Models\Matter::select('id', 'title', 'nick_name')
+                        ->where('title', 'not like', '%skill assessment%')
+                        ->where('status', 1)
+                        ->orderBy('title', 'ASC')
+                        ->get();
+
+                    return view('Admin.clients.edit', compact('fetchedData', 'clientContacts', 'emails', 'visaCountries', 'clientAddresses', 'qualifications', 'experiences', 'clientOccupations', 'testScores', 'ClientSpouseDetail', 'clientPassports', 'clientTravels','clientCharacters','clientPartners','clientEoiReferences', 'visaTypes'));
                 } else {
                     return Redirect::to('/admin/clients')->with('error', 'Client does not exist.');
                 }
@@ -3869,8 +3876,14 @@ class ClientsController extends Controller
                 ], 400);
             }
 
-            // Update client's visa expiry verified status
-            $client->visa_expiry_verified = $visaExpiryVerified;
+            // Update client's visa expiry verified status using existing system
+            if ($visaExpiryVerified === '1') {
+                $client->visa_expiry_verified_at = now();
+                $client->visa_expiry_verified_by = \Auth::user()->id;
+            } else {
+                $client->visa_expiry_verified_at = null;
+                $client->visa_expiry_verified_by = null;
+            }
             $client->save();
 
             // Delete existing visa records for this client
@@ -3878,7 +3891,7 @@ class ClientsController extends Controller
 
             // Insert new visa records
             foreach ($visas as $visaData) {
-                if (!empty($visaData['visa_type'])) {
+                if (!empty($visaData['visa_type_hidden'])) {
                     // Convert date format from d/m/Y to Y-m-d if needed
                     $expiryDate = null;
                     $grantDate = null;
@@ -3897,7 +3910,7 @@ class ClientsController extends Controller
                         'client_id' => $client->id,
                         'admin_id' => \Auth::user()->id,
                         'visa_country' => $client->country_passport ?? '',
-                        'visa_type' => $visaData['visa_type'],
+                        'visa_type' => $visaData['visa_type_hidden'],
                         'visa_expiry_date' => $expiryDate,
                         'visa_grant_date' => $grantDate,
                         'visa_description' => $visaData['visa_description'] ?? null
@@ -4036,14 +4049,7 @@ class ClientsController extends Controller
                 $clientFamilyDetails = ClientRelationship::Where('client_id', $id)->get()?? [];
                 //dd($clientFamilyDetails);
                 //Return the view with all data
-                $viewName = 'Admin.clients.detail';
-                
-                // Check if this is the test route
-                if (request()->route()->getName() === 'admin.clients.detail-test') {
-                    $viewName = 'Admin.clients.detail_test';
-                }
-                
-                return view($viewName, compact(
+                return view('Admin.clients.detail', compact(
                     'fetchedData', 'clientAddresses', 'clientContacts', 'emails', 'qualifications',
                     'experiences', 'testScores', 'visaCountries', 'clientOccupations','ClientPoints', 'clientSpouseDetail',
                     'encodeId', 'id1','clientFamilyDetails', 'activeTab'
@@ -13978,44 +13984,6 @@ private function getUserName($userId) {
         }
     }
 
-    /**
-     * Display client summary page
-     */
-    public function summary(Request $request, $client_id)
-    {
-        if (isset($client_id) && !empty($client_id)) {
-            $encodeId = $client_id;
-            $id = $this->decodeString($client_id);
-
-            if (Admin::where('id', '=', $id)->where('role', '=', '7')->exists()) {
-                $fetchedData = Admin::find($id);
-
-                // Fetch all client-related data for summary
-                $clientAddresses = ClientAddress::where('client_id', $id)->get();
-                $clientContacts = ClientContact::where('client_id', $id)->get();
-                $emails = ClientEmail::where('client_id', $id)->get() ?? [];
-                $qualifications = ClientQualification::where('client_id', $id)->get() ?? [];
-                $experiences = ClientExperience::where('client_id', $id)->get() ?? [];
-                $testScores = ClientTestScore::where('client_id', $id)->get() ?? [];
-                $visaCountries = ClientVisaCountry::where('client_id', $id)->get() ?? [];
-                $clientSpouseDetail = ClientSpouseDetail::where('client_id', $id)->get();
-                $clientOccupations = ClientOccupation::where('client_id', $id)->get();
-                $ClientPoints = ClientPoint::where('client_id', $id)->get();
-                $clientFamilyDetails = ClientRelationship::where('client_id', $id)->get() ?? [];
-
-                // Return the summary view with all data
-                return view('Admin.clients.summary', compact(
-                    'fetchedData', 'clientAddresses', 'clientContacts', 'emails', 'qualifications',
-                    'experiences', 'testScores', 'visaCountries', 'clientOccupations', 'ClientPoints', 
-                    'clientSpouseDetail', 'encodeId', 'clientFamilyDetails'
-                ));
-            } else {
-                return redirect('/admin/clients')->with('error', 'Client does not exist');
-            }
-        } else {
-            return redirect('/admin/clients')->with('error', 'Invalid client ID');
-        }
-    }
 
     //Convert activity to note
 	public function convertActivityToNote(Request $request){

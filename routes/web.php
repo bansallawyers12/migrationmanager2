@@ -224,8 +224,6 @@ Route::prefix('admin')->group(function() {
 
         //Route::get('/clients/detail/{id}', 'Admin\ClientsController@detail')->name('admin.clients.detail');
 		Route::get('/clients/detail/{client_id}/{client_unique_matter_ref_no?}/{tab?}', 'Admin\ClientsController@detail')->name('admin.clients.detail');
-		Route::get('/clients/detail-test/{client_id}/{client_unique_matter_ref_no?}', 'Admin\ClientsController@detail')->name('admin.clients.detail-test');
-		Route::get('/clients/summary/{client_id}', 'Admin\ClientsController@summary')->name('admin.clients.summary');
 		
         Route::get('/clients/get-recipients', 'Admin\ClientsController@getrecipients')->name('admin.clients.getrecipients');
 		Route::get('/clients/get-onlyclientrecipients', 'Admin\ClientsController@getonlyclientrecipients')->name('admin.clients.getonlyclientrecipients');

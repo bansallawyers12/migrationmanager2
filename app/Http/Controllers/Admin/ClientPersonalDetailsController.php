@@ -1470,8 +1470,14 @@ class ClientPersonalDetailsController extends Controller
                 ], 400);
             }
 
-            // Update client's visa expiry verified status
-            $client->visa_expiry_verified = $visaExpiryVerified;
+            // Update client's visa expiry verified status using existing system
+            if ($visaExpiryVerified === '1') {
+                $client->visa_expiry_verified_at = now();
+                $client->visa_expiry_verified_by = \Auth::user()->id;
+            } else {
+                $client->visa_expiry_verified_at = null;
+                $client->visa_expiry_verified_by = null;
+            }
             $client->save();
 
             // Delete existing visa records for this client
@@ -1479,7 +1485,7 @@ class ClientPersonalDetailsController extends Controller
 
             // Insert new visa records
             foreach ($visas as $visaData) {
-                if (!empty($visaData['visa_type'])) {
+                if (!empty($visaData['visa_type_hidden'])) {
                     // Convert date format from d/m/Y to Y-m-d if needed
                     $expiryDate = null;
                     $grantDate = null;
@@ -1498,7 +1504,7 @@ class ClientPersonalDetailsController extends Controller
                         'client_id' => $client->id,
                         'admin_id' => \Auth::user()->id,
                         'visa_country' => $client->country_passport ?? '',
-                        'visa_type' => $visaData['visa_type'],
+                        'visa_type' => $visaData['visa_type_hidden'],
                         'visa_expiry_date' => $expiryDate,
                         'visa_grant_date' => $grantDate,
                         'visa_description' => $visaData['visa_description'] ?? null

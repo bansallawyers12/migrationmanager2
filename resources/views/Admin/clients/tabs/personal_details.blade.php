@@ -3,9 +3,6 @@
                     <div class="card">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <h3><i class="fas fa-user"></i> Personal Information</h3>
-                            <a href="{{ route('admin.clients.summary', ['client_id' => $encodeId]) }}" target="_blank" class="btn btn-primary btn-sm">
-                                <i class="fas fa-file-alt"></i> Summary
-                            </a>
                         </div>
                         <div class="field-group">
                             <span class="field-label">Age / Date of Birth</span>
