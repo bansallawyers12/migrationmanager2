@@ -3794,6 +3794,14 @@ function addOccupationRow() {
             <button type="button" class="remove-item-btn" title="Remove Occupation" onclick="removeOccupationField(this)"><i class="fas fa-trash"></i></button>
             <div class="content-grid">
                 <div class="form-group">
+                    <label>Skill Assessment</label>
+                    <select name="skill_assessment_hidden[${index}]" class="skill-assessment-select">
+                        <option value="">Select</option>
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label>Nominated Occupation</label>
                     <input type="text" name="nomi_occupation[${index}]" class="nomi_occupation" placeholder="Enter Occupation">
                     <div class="autocomplete-items"></div>
@@ -3946,7 +3954,7 @@ function addTestScoreRow() {
                     <input type="text" name="speaking[${index}]" class="speaking" placeholder="Score" maxlength="5">
                 </div>
                 <div class="form-group">
-                    <label>Overall Score</label>
+                    <label>Overall</label>
                     <input type="text" name="overall_score[${index}]" class="overall_score" placeholder="Overall" maxlength="5">
                 </div>
                 <div class="form-group">

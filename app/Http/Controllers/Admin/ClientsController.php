@@ -4033,8 +4033,9 @@ class ClientsController extends Controller
             // Handle occupation data
             if (isset($requestData['nomi_occupation']) && is_array($requestData['nomi_occupation'])) {
                 foreach ($requestData['nomi_occupation'] as $key => $nomiOccupation) {
-                    if (!empty($nomiOccupation)) {
+                    if (!empty($nomiOccupation) || isset($requestData['skill_assessment_hidden'][$key])) {
                         $occupationId = $requestData['occupation_id'][$key] ?? null;
+                        $skillAssessment = $requestData['skill_assessment_hidden'][$key] ?? null;
                         $occupationCode = $requestData['occupation_code'][$key] ?? null;
                         $list = $requestData['list'][$key] ?? null;
                         $visaSubclass = $requestData['visa_subclass'][$key] ?? null;
@@ -4076,6 +4077,7 @@ class ClientsController extends Controller
                             if ($existingOccupation && $existingOccupation->client_id == $client->id) {
                                 $existingOccupation->update([
                                     'admin_id' => Auth::user()->id,
+                                    'skill_assessment' => $skillAssessment,
                                     'nomi_occupation' => $nomiOccupation,
                                     'occupation_code' => $occupationCode,
                                     'list' => $list,
@@ -4091,6 +4093,7 @@ class ClientsController extends Controller
                             \App\Models\ClientOccupation::create([
                                 'admin_id' => Auth::user()->id,
                                 'client_id' => $client->id,
+                                'skill_assessment' => $skillAssessment,
                                 'nomi_occupation' => $nomiOccupation,
                                 'occupation_code' => $occupationCode,
                                 'list' => $list,

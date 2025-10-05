@@ -975,6 +975,10 @@
                                 <div class="summary-grid">
                                     @foreach($clientOccupations as $index => $occupation)
                                         <div class="summary-item">
+                                            <span class="summary-label">Skill Assessment:</span>
+                                            <span class="summary-value">{{ $occupation->skill_assessment ?: 'Not set' }}</span>
+                                        </div>
+                                        <div class="summary-item">
                                             <span class="summary-label">Nominated Occupation:</span>
                                             <span class="summary-value">{{ $occupation->nomi_occupation ?: 'Not set' }}</span>
                                         </div>
@@ -1022,6 +1026,14 @@
                                         <button type="button" class="remove-item-btn" title="Remove Occupation" onclick="removeOccupationField(this)"><i class="fas fa-trash"></i></button>
                                         <input type="hidden" name="occupation_id[{{ $index }}]" value="{{ $occupation->id }}">
                                         <div class="content-grid">
+                                            <div class="form-group">
+                                                <label>Skill Assessment</label>
+                                                <select name="skill_assessment_hidden[{{ $index }}]" class="skill-assessment-select">
+                                                    <option value="">Select</option>
+                                                    <option value="Yes" {{ $occupation->skill_assessment == 'Yes' ? 'selected' : '' }}>Yes</option>
+                                                    <option value="No" {{ $occupation->skill_assessment == 'No' ? 'selected' : '' }}>No</option>
+                                                </select>
+                                            </div>
                                             <div class="form-group">
                                                 <label>Nominated Occupation</label>
                                                 <input type="text" name="nomi_occupation[{{ $index }}]" class="nomi_occupation" value="{{ $occupation->nomi_occupation }}" placeholder="Enter Occupation">
@@ -1108,7 +1120,7 @@
                                             <span class="summary-value">{{ $testScore->speaking ?: 'Not set' }}</span>
                                         </div>
                                         <div class="summary-item">
-                                            <span class="summary-label">Overall Score:</span>
+                                            <span class="summary-label">Overall:</span>
                                             <span class="summary-value">{{ $testScore->overall_score ?: 'Not set' }}</span>
                                         </div>
                                         <div class="summary-item">
@@ -1168,7 +1180,7 @@
                                                 <input type="text" name="speaking[{{ $index }}]" class="speaking" value="{{ $testScore->speaking }}" placeholder="Score" maxlength="5">
                                             </div>
                                             <div class="form-group">
-                                                <label>Overall Score</label>
+                                                <label>Overall</label>
                                                 <input type="text" name="overall_score[{{ $index }}]" class="overall_score" value="{{ $testScore->overall_score }}" placeholder="Overall" maxlength="5">
                                             </div>
                                             <div class="form-group">

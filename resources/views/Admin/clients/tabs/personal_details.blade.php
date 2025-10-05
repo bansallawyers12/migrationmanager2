@@ -204,7 +204,20 @@
                                         } else {
                                             $verifiedVisaTick = '<i class="far fa-circle unverified-icon fa-lg"></i>';
                                         }
-                                        echo \Carbon\Carbon::parse($visa_Info->visa_expiry_date)->format('d/m/Y').' '.$verifiedVisaTick;
+                                        
+                                        // Check if visa is expiring within 7 days
+                                        $expiryDate = \Carbon\Carbon::parse($visa_Info->visa_expiry_date);
+                                        $today = \Carbon\Carbon::now();
+                                        $daysUntilExpiry = $today->diffInDays($expiryDate, false);
+                                        
+                                        $expiryClass = '';
+                                        $expiryWarning = '';
+                                        if ($daysUntilExpiry <= 7 && $daysUntilExpiry >= 0) {
+                                            $expiryClass = ' style="color: #dc3545; font-weight: bold;"';
+                                            $expiryWarning = ' data-expiry-warning="true" data-days-left="' . $daysUntilExpiry . '"';
+                                        }
+                                        
+                                        echo '<span' . $expiryClass . $expiryWarning . '>' . $expiryDate->format('d/m/Y') . '</span> ' . $verifiedVisaTick;
                                     }
                                 } else { echo 'N/A'; }
                                 ?>
@@ -769,6 +782,25 @@
                             }
                         }
                     });
+                }
+                
+                // Visa Expiry Warning Check
+                const visaExpiryElement = document.querySelector('[data-expiry-warning="true"]');
+                if (visaExpiryElement) {
+                    const daysLeft = visaExpiryElement.getAttribute('data-days-left');
+                    const expiryDate = visaExpiryElement.textContent;
+                    
+                    let message = '⚠️ VISA EXPIRY WARNING ⚠️\n\n';
+                    if (daysLeft == 0) {
+                        message += 'This visa expires TODAY (' + expiryDate + ')!\n\n';
+                    } else if (daysLeft == 1) {
+                        message += 'This visa expires TOMORROW (' + expiryDate + ')!\n\n';
+                    } else {
+                        message += 'This visa expires in ' + daysLeft + ' days (' + expiryDate + ')!\n\n';
+                    }
+                    message += 'Please take immediate action to renew or extend this visa.\n\nClick OK to continue viewing the client details.';
+                    
+                    alert(message);
                 }
             });
             </script>
