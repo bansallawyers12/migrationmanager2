@@ -1238,7 +1238,7 @@ class ClientsController extends Controller
         return $pdf->stream('codeplaners.pdf');
     }
 
-    public function edit(Request $request, $id = NULL)
+    public function update(Request $request)
     {
         // Check authorization (assumed to be handled elsewhere)
 
