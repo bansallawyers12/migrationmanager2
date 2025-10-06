@@ -364,14 +364,14 @@
 											<label for="state">State</label>
 											<select class="form-control" name="state">
 												<option value="">- Select State -</option>
-												<option value="Australian Capital Territory" @if(@$fetchedData->state == "Australian Capital Territory") selected @endif>Australian Capital Territory</option>
-												<option value="New South Wales" @if(@$fetchedData->state == "New South Wales") selected @endif>New South Wales</option>
-												<option value="Northern Territory" @if(@$fetchedData->state == "Northern Territory") selected @endif>Northern Territory</option>
-												<option value="Queensland" @if(@$fetchedData->state == "Queensland") selected @endif>Queensland</option>
-												<option value="South Australia" @if(@$fetchedData->state == "South Australia") selected @endif>South Australia</option>
-												<option value="Tasmania" @if(@$fetchedData->state == "Tasmania") selected @endif>Tasmania</option>
-												<option value="Victoria" @if(@$fetchedData->state == "Victoria") selected @endif>Victoria</option>
-												<option value="Western Australia" @if(@$fetchedData->state == "Western Australia") selected @endif>Western Australia</option>
+												<option value="ACT" @if(@$fetchedData->state == "ACT") selected @endif>ACT</option>
+												<option value="NSW" @if(@$fetchedData->state == "NSW") selected @endif>NSW</option>
+												<option value="NT" @if(@$fetchedData->state == "NT") selected @endif>NT</option>
+												<option value="QLD" @if(@$fetchedData->state == "QLD") selected @endif>QLD</option>
+												<option value="SA" @if(@$fetchedData->state == "SA") selected @endif>SA</option>
+												<option value="TAS" @if(@$fetchedData->state == "TAS") selected @endif>TAS</option>
+												<option value="VIC" @if(@$fetchedData->state == "VIC") selected @endif>VIC</option>
+												<option value="WA" @if(@$fetchedData->state == "WA") selected @endif>WA</option>
 											</select>
 											@if ($errors->has('state'))
 												<span class="custom-error" role="alert">

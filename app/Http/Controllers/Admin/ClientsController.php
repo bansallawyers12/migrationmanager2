@@ -1238,6 +1238,46 @@ class ClientsController extends Controller
         return $pdf->stream('codeplaners.pdf');
     }
 
+    public function edit($id)
+    {
+        // Check authorization (assumed to be handled elsewhere)
+        if (isset($id) && !empty($id)) {
+            $id = $this->decodeString($id);
+            if (Admin::where('id', '=', $id)->where('role', '=', '7')->exists()) {
+                $fetchedData = Admin::find($id);
+                $clientContacts = ClientContact::where('client_id', $id)->get() ?? [];
+                $emails = ClientEmail::where('client_id', $id)->get() ?? [];
+                $visaCountries = ClientVisaCountry::where('client_id', $id)->orderBy('visa_expiry_date', 'desc')->get() ?? [];
+                $clientAddresses = ClientAddress::where('client_id', $id)->orderBy('created_at', 'desc')->get() ?? [];
+                $qualifications = ClientQualification::where('client_id', $id)->get() ?? [];
+                $experiences = ClientExperience::where('client_id', $id)->get() ?? [];
+                $clientOccupations = ClientOccupation::where('client_id', $id)->get() ?? [];
+                $testScores = ClientTestScore::where('client_id', $id)->get() ?? [];
+                $ClientSpouseDetail = ClientSpouseDetail::where('client_id', $id)->first() ?? [];
+                $clientPassports = ClientPassportInformation::where('client_id', $id)->get() ?? [];
+                $clientTravels = ClientTravelInformation::where('client_id', $id)->get() ?? [];
+                $clientCharacters = ClientCharacter::where('client_id', $id)->get() ?? [];
+
+                $clientPartners = ClientRelationship::where('client_id', $id)->get() ?? [];
+                //dd($clientPartners);
+				$clientEoiReferences = ClientEoiReference::where('client_id', $id)->get() ?? [];
+
+                // Get visa types for dropdown
+                $visaTypes = \App\Models\Matter::select('id', 'title', 'nick_name')
+                    ->where('title', 'not like', '%skill assessment%')
+                    ->where('status', 1)
+                    ->orderBy('title', 'ASC')
+                    ->get();
+
+                return view('Admin.clients.edit', compact('fetchedData', 'clientContacts', 'emails', 'visaCountries', 'clientAddresses', 'qualifications', 'experiences', 'clientOccupations', 'testScores', 'ClientSpouseDetail', 'clientPassports', 'clientTravels','clientCharacters','clientPartners','clientEoiReferences', 'visaTypes'));
+            } else {
+                return Redirect::to('/admin/clients')->with('error', 'Client does not exist.');
+            }
+        } else {
+            return Redirect::to('/admin/clients')->with('error', Config::get('constants.unauthorized'));
+        }
+    }
+
     public function update(Request $request)
     {
         // Check authorization (assumed to be handled elsewhere)
@@ -3567,43 +3607,6 @@ class ClientsController extends Controller
 
             return Redirect::to($redirectUrl)->with('success',  ($requestData['type'] ?? 'Client') . ' edited successfully');
             //return Redirect::to('/admin/clients/detail/' . base64_encode(convert_uuencode($requestData['id'])))->with('success', ($requestData['type'] ?? 'Client') . ' edited successfully');
-        }
-        else {
-            if (isset($id) && !empty($id)) {
-                $id = $this->decodeString($id);
-                if (Admin::where('id', '=', $id)->where('role', '=', '7')->exists()) {
-                    $fetchedData = Admin::find($id);
-                    $clientContacts = ClientContact::where('client_id', $id)->get() ?? [];
-                    $emails = ClientEmail::where('client_id', $id)->get() ?? [];
-                    $visaCountries = ClientVisaCountry::where('client_id', $id)->orderBy('visa_expiry_date', 'desc')->get() ?? [];
-                    $clientAddresses = ClientAddress::where('client_id', $id)->orderBy('created_at', 'desc')->get() ?? [];
-                    $qualifications = ClientQualification::where('client_id', $id)->get() ?? [];
-                    $experiences = ClientExperience::where('client_id', $id)->get() ?? [];
-                    $clientOccupations = ClientOccupation::where('client_id', $id)->get() ?? [];
-                    $testScores = ClientTestScore::where('client_id', $id)->get() ?? [];
-                    $ClientSpouseDetail = ClientSpouseDetail::where('client_id', $id)->first() ?? [];
-                    $clientPassports = ClientPassportInformation::where('client_id', $id)->get() ?? [];
-                    $clientTravels = ClientTravelInformation::where('client_id', $id)->get() ?? [];
-                    $clientCharacters = ClientCharacter::where('client_id', $id)->get() ?? [];
-
-                    $clientPartners = ClientRelationship::where('client_id', $id)->get() ?? [];
-                    //dd($clientPartners);
-					$clientEoiReferences = ClientEoiReference::where('client_id', $id)->get() ?? [];
-
-                    // Get visa types for dropdown
-                    $visaTypes = \App\Models\Matter::select('id', 'title', 'nick_name')
-                        ->where('title', 'not like', '%skill assessment%')
-                        ->where('status', 1)
-                        ->orderBy('title', 'ASC')
-                        ->get();
-
-                    return view('Admin.clients.edit', compact('fetchedData', 'clientContacts', 'emails', 'visaCountries', 'clientAddresses', 'qualifications', 'experiences', 'clientOccupations', 'testScores', 'ClientSpouseDetail', 'clientPassports', 'clientTravels','clientCharacters','clientPartners','clientEoiReferences', 'visaTypes'));
-                } else {
-                    return Redirect::to('/admin/clients')->with('error', 'Client does not exist.');
-                }
-            } else {
-                return Redirect::to('/admin/clients')->with('error', Config::get('constants.unauthorized'));
-            }
         }
     }
 

@@ -102,7 +102,7 @@
 							</p>
 							<p class="clearfix"> 
 								<span class="float-left">Address:</span>
-								<span class="float-right text-muted">37 Mossigle, Pakenham, Victoria, 3810, Australia</span>
+								<span class="float-right text-muted">37 Mossigle, Pakenham, VIC, 3810, Australia</span>
 							</p>
 							<p class="clearfix"> 
 								<span class="float-left">Country of Passport:</span>

@@ -23,7 +23,7 @@
             ||
             ( postCode == 2574)
         ){
-            var postCodeInfo = "Cities and major regional centres of New South Wales";
+            var postCodeInfo = "Cities and major regional centres of NSW";
         }
 
         //2250 to 2258, 2260 to 2263, 2311 to 2490, 2527, 2536 to 2551, 2575 to 2739, 2753 to 2754, 2756 to 2758 and 2773 to 2898
@@ -46,7 +46,14 @@
             ||
             ( postCode >=2773 && postCode <= 2898 )
         ){
-            var postCodeInfo = "Regional Centre New South Wales";
+            var postCodeInfo = "Regional Centre NSW";
+        }
+
+        // NSW Metro Area - All other NSW postcodes (2000-2999)
+        else if(
+            ( postCode >= 2000 && postCode <= 2999 )
+        ){
+            var postCodeInfo = "Metro Area NSW";
         }
 
         //3211 to 3232, 3235, 3240, 3328, 3330 to 3333, 3340 and 3342
@@ -65,7 +72,7 @@
             ||
             ( postCode == 3342)
         ){
-            var postCodeInfo = "Cities and major regional centres of Victoria";
+            var postCodeInfo = "Cities and major regional centres of VIC";
         }
 
         //3097 to 3099, 3139, 3233 to 3234, 3236 to 3239, 3241 to 3325, 3329, 3334, 3341,
@@ -97,7 +104,14 @@
             ||
             ( postCode >= 3978 && postCode <= 3996 )
         ){
-            var postCodeInfo = "Regional Centre Victoria";
+            var postCodeInfo = "Regional Centre VIC";
+        }
+
+        // VIC Metro Area - All other VIC postcodes (3000-3999)
+        else if(
+            ( postCode >= 3000 && postCode <= 3999 )
+        ){
+            var postCodeInfo = "Metro Area VIC";
         }
 
         //4019 to 4022*, 4025*, 4037*, 4074*, 4076 to 4078*, 4207 to 4275, 4300 to 4301*,
@@ -138,7 +152,7 @@
             ||
             ( postCode >= 4571 && postCode <= 4575 )
         ){
-            var postCodeInfo = "Cities and major regional centres of Queensland";
+            var postCodeInfo = "Cities and major regional centres of QLD";
         }
 
         //4124, 4125, 4133, 4183 to 4184, 4280 to 4287, 4306 to 4498, 4507, 4552, 4563,
@@ -166,7 +180,7 @@
             ||
             ( postCode >= 4580 && postCode <= 4895 )
         ){
-            var postCodeInfo = "Regional Centre Queensland";
+            var postCodeInfo = "Regional Centre QLD";
         }
 
         //6000 to 6038, 6050 to 6083, 6090 to 6182, 6208 to 6211, 6214 and 6556 to 6558
@@ -183,7 +197,7 @@
             ||
             ( postCode >= 6556 && postCode <= 6558 )
         ){
-            var postCodeInfo = "Cities and major regional centres of Western Australia";
+            var postCodeInfo = "Cities and major regional centres of WA";
         }
 
         //5000 to 5171, 5173 to 5174, 5231 to 5235, 5240 to 5252, 5351 and 5950 to 5960
@@ -200,7 +214,7 @@
             ||
             ( postCode >= 5950 && postCode <= 5960 )
         ){
-            var postCodeInfo = "Cities and major regional centres of South Australia";
+            var postCodeInfo = "Cities and major regional centres of SA";
         }
         //7000, 7004 to 7026, 7030 to 7109, 7140 to 7151 and 7170 to 7177
         else if(
@@ -214,7 +228,7 @@
             ||
             ( postCode >= 7170 && postCode <= 7177 )
         ){
-            var postCodeInfo = "Cities and major regional centres of Tasmania";
+            var postCodeInfo = "Cities and major regional centres of TAS";
         }
         else {
             var postCodeInfo = '';
