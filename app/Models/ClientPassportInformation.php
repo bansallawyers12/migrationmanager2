@@ -11,6 +11,7 @@ class ClientPassportInformation extends Model
         'client_id',
         'admin_id',
         'passport',
+        'passport_country',
         'passport_issue_date',
         'passport_expiry_date'
     ];

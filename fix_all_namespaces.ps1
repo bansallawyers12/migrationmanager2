@@ -276,7 +276,7 @@ if ($stats.FilesModified -gt 0) {
 Write-Host ""
 Write-Host "[NOTE] Some models may not exist and need manual review:" -ForegroundColor Yellow
 Write-Host "  - Company, Provider, Package, LoginLog, HolidayTheme" -ForegroundColor Gray
-Write-Host "  - MediaImage, Education, Markup" -ForegroundColor Gray
+Write-Host "  - Education, Markup" -ForegroundColor Gray
 Write-Host "  - TestSeriesTransactionHistory, PurchasedSubject, etc." -ForegroundColor Gray
 Write-Host ""
 Write-Host "Use grep to find these: " -ForegroundColor White -NoNewline

@@ -3,12 +3,9 @@
                     <div class="card">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <h3><i class="fas fa-user"></i> Personal Information</h3>
-                            <a href="{{ route('admin.clients.summary', ['client_id' => $encodeId]) }}" target="_blank" class="btn btn-primary btn-sm">
-                                <i class="fas fa-file-alt"></i> Summary
-                            </a>
                         </div>
                         <div class="field-group">
-                            <span class="field-label">Age</span>
+                            <span class="field-label">Age / Date of Birth</span>
                             <span class="field-value">
                                 <?php
                                 if ( isset($fetchedData->age) && $fetchedData->age != '') {
@@ -18,7 +15,26 @@
                                     } else {
                                         $verifiedDobTick = '<i class="far fa-circle unverified-icon fa-lg"></i>';
                                     }
-                                    echo $fetchedData->age.' '.$verifiedDobTick;
+                                    
+                                    // Format DOB for display
+                                    $formattedDob = 'N/A';
+                                    if (isset($fetchedData->dob) && $fetchedData->dob != '') {
+                                        try {
+                                            $dobDate = \Carbon\Carbon::parse($fetchedData->dob);
+                                            $formattedDob = $dobDate->format('d M Y'); // e.g., "15 Jan 2001"
+                                        } catch (\Exception $e) {
+                                            $formattedDob = 'N/A';
+                                        }
+                                    }
+                                    ?>
+                                    <span id="ageDobToggle" style="cursor: pointer;" 
+                                          data-age="<?php echo htmlspecialchars($fetchedData->age); ?>" 
+                                          data-dob="<?php echo htmlspecialchars($formattedDob); ?>">
+                                        <span class="display-age"><?php echo $fetchedData->age; ?></span>
+                                        <span class="display-dob" style="display: none;"><?php echo $formattedDob; ?></span>
+                                        <?php echo $verifiedDobTick; ?>
+                                    </span>
+                                <?php
                                 } else {
                                     echo 'N/A';
                                 } ?>
@@ -54,7 +70,7 @@
                             <span class="field-value">
                                 <?php
                                 if( \App\Models\ClientEmail::where('client_id', $fetchedData->id)->exists()) {
-                                    $clientEmails = \App\Models\ClientEmail::select('email','email_type')->where('client_id', $fetchedData->id)->get();
+                                    $clientEmails = \App\Models\ClientEmail::select('email','email_type','is_verified','verified_at')->where('client_id', $fetchedData->id)->get();
                                 } else {
                                     if( \App\Models\Admin::where('id', $fetchedData->id)->exists()){
                                         $clientEmails = \App\Models\Admin::select('email','email_type')->where('id', $fetchedData->id)->get();
@@ -65,25 +81,23 @@
                                 if( !empty($clientEmails) && count($clientEmails)>0 ){
                                     $emailStr = "";
                                     foreach($clientEmails as $emailKey=>$emailVal){
-                                        $verifiedEmail = \App\Models\Admin::where('id',$fetchedData->id)->whereNotNull('email_verified_date')->first();
 
                                         //Check email is verified or not
                                         $check_verified_email = $emailVal->email_type."".$emailVal->email;
                                         if( isset($emailVal->email_type) && $emailVal->email_type != "" ){
-                                            if( $emailVal->email_type == "Personal" ){
-                                                if ( $verifiedEmail) {
-                                                    //$emailStr .= $emailVal->email.'('.$emailVal->email_type .') <i class="fas fa-check-circle verified-icon fa-lg"></i> <br/>';
-                                                    $emailStr .= $emailVal->email.' <i class="fas fa-check-circle verified-icon fa-lg"></i> <br/>';
-                                                } else {
-                                                    //$emailStr .= $emailVal->email.'('.$emailVal->email_type .') <i class="far fa-circle unverified-icon fa-lg"></i> <br/>';
-                                                    $emailStr .= $emailVal->email.' <i class="far fa-circle unverified-icon fa-lg"></i> <br/>';
-                                                }
+                                            // Show verification status for ALL email types
+                                            if ( $emailVal->is_verified ) {
+                                                $emailStr .= $emailVal->email.' <i class="fas fa-check-circle verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
                                             } else {
-                                                //$emailStr .= $emailVal->email.'('.$emailVal->email_type .') <br/>';
-                                                $emailStr .= $emailVal->email.' <br/>';
+                                                $emailStr .= $emailVal->email.' <i class="far fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
                                             }
                                         } else {
-                                            $emailStr .= $emailVal->email.' <br/>';
+                                            // For emails without type, still show verification status if available
+                                            if ( isset($emailVal->is_verified) && $emailVal->is_verified ) {
+                                                $emailStr .= $emailVal->email.' <i class="fas fa-check-circle verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
+                                            } else {
+                                                $emailStr .= $emailVal->email.' <i class="far fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
+                                            }
                                         }
                                     }
                                     echo $emailStr;
@@ -98,7 +112,7 @@
                             <span class="field-value">
                                 <?php
                                 if( \App\Models\ClientContact::where('client_id', $fetchedData->id)->exists()) {
-                                    $clientContacts = \App\Models\ClientContact::select('phone','country_code','contact_type')->where('client_id', $fetchedData->id)->where('contact_type', '!=', 'Not In Use')->get();
+                                    $clientContacts = \App\Models\ClientContact::select('phone','country_code','contact_type','is_verified','verified_at')->where('client_id', $fetchedData->id)->where('contact_type', '!=', 'Not In Use')->get();
                                 } else {
                                     if( \App\Models\Admin::where('id', $fetchedData->id)->exists()){
                                         $clientContacts = \App\Models\Admin::select('phone','country_code','contact_type')->where('id', $fetchedData->id)->get();
@@ -111,7 +125,6 @@
                                     foreach($clientContacts as $conKey=>$conVal){
                                         //Check phone is verified or not
                                         $check_verified_phoneno = $conVal->country_code."".$conVal->phone;
-                                        $verifiedNumber = \App\Models\Admin::where('id',$fetchedData->id)->whereNotNull('phone_verified_date')->first();
                                         if( isset($conVal->country_code) && $conVal->country_code != "" ){
                                             $country_code = $conVal->country_code;
                                         } else {
@@ -119,20 +132,19 @@
                                         }
 
                                         if( isset($conVal->contact_type) && $conVal->contact_type != "" ){
-                                            if( $conVal->contact_type == "Personal" ){
-                                                if ( $verifiedNumber) {
-                                                    //$phonenoStr .= $country_code."".$conVal->phone.'('.$conVal->contact_type .') <i class="fas fa-check-circle verified-icon fa-lg"></i> <br/>';
-                                                    $phonenoStr .= $country_code."".$conVal->phone.' <i class="fas fa-check-circle verified-icon fa-lg"></i> <br/>';
-                                                } else {
-                                                    //$phonenoStr .= $country_code."".$conVal->phone.'('.$conVal->contact_type .') <i class="far fa-circle unverified-icon fa-lg"></i> <br/>';
-                                                    $phonenoStr .= $country_code."".$conVal->phone.' <i class="far fa-circle unverified-icon fa-lg"></i> <br/>';
-                                                }
+                                            // Show verification status for ALL contact types
+                                            if ( $conVal->is_verified ) {
+                                                $phonenoStr .= $country_code."".$conVal->phone.' <i class="fas fa-check-circle verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
                                             } else {
-                                                //$phonenoStr .= $country_code."".$conVal->phone.'('.$conVal->contact_type .') <br/>';
-                                                $phonenoStr .= $country_code."".$conVal->phone.' <br/>';
+                                                $phonenoStr .= $country_code."".$conVal->phone.' <i class="far fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
                                             }
                                         } else {
-                                            $phonenoStr .= $country_code."".$conVal->phone.' <br/>';
+                                            // For phones without type, still show verification status if available
+                                            if ( isset($conVal->is_verified) && $conVal->is_verified ) {
+                                                $phonenoStr .= $country_code."".$conVal->phone.' <i class="fas fa-check-circle verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
+                                            } else {
+                                                $phonenoStr .= $country_code."".$conVal->phone.' <i class="far fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
+                                            }
                                         }
                                     }
                                     echo $phonenoStr;
@@ -160,29 +172,17 @@
 
                     <div class="card">
                         <h3><i class="fas fa-passport"></i>Visa</h3>
+                        <?php
+                        $visa_Info = App\Models\ClientVisaCountry::select('visa_country','visa_type','visa_expiry_date','visa_grant_date','visa_description')->where('client_id', $fetchedData->id)->orderBy('visa_expiry_date', 'desc')->first();
+                        ?>
                         <div class="field-group">
-                            <span class="field-label">Country Of Passport</span>
-                            <span class="field-value">
-                                <?php
-                                $visa_Info = App\Models\ClientVisaCountry::select('visa_country','visa_type','visa_expiry_date','visa_grant_date','visa_description')->where('client_id', $fetchedData->id)->latest('id')->first();
-                                if( $visa_Info && $visa_Info->visa_country != "" ){ echo $visa_Info->visa_country; } else { echo 'N/A'; }
-                                ?>
-                            </span>
-                        </div>
-                        <div class="field-group">
-                            <span class="field-label">Visa Type / Stream</span>
+                            <span class="field-label">Visa Type</span>
                             <span class="field-value">
                                 <?php
                                 if( $visa_Info && $visa_Info->visa_type != "" ){
                                     $Matter_get = App\Models\Matter::select('id','title','nick_name')->where('id',$visa_Info->visa_type)->first();
                                     if(!empty($Matter_get)){
-                                        $verifiedVisa = \App\Models\Admin::where('id',$fetchedData->id)->whereNotNull('visa_expiry_verified_at')->first();
-                                        if ( $verifiedVisa) {
-                                            $verifiedVisaTick = '<i class="fas fa-check-circle verified-icon fa-lg"></i>';
-                                        } else {
-                                            $verifiedVisaTick = '<i class="far fa-circle unverified-icon fa-lg"></i>';
-                                        }
-                                        echo $Matter_get->title.'('.$Matter_get->nick_name.') '.$verifiedVisaTick;
+                                        echo $Matter_get->title.'('.$Matter_get->nick_name.')';
                                     } else {
                                         echo 'N/A';
                                     }
@@ -198,35 +198,44 @@
                                     if( $visa_Info->visa_expiry_date == '0000-00-00'){
                                         echo 'N/A';
                                     } else {
-                                        echo \Carbon\Carbon::parse($visa_Info->visa_expiry_date)->format('d/m/Y');
+                                        $verifiedVisa = \App\Models\Admin::where('id',$fetchedData->id)->whereNotNull('visa_expiry_verified_at')->first();
+                                        if ( $verifiedVisa) {
+                                            $verifiedVisaTick = '<i class="fas fa-check-circle verified-icon fa-lg"></i>';
+                                        } else {
+                                            $verifiedVisaTick = '<i class="far fa-circle unverified-icon fa-lg"></i>';
+                                        }
+                                        
+                                        // Check if visa is expiring within 7 days
+                                        $expiryDate = \Carbon\Carbon::parse($visa_Info->visa_expiry_date);
+                                        $today = \Carbon\Carbon::now();
+                                        $daysUntilExpiry = $today->diffInDays($expiryDate, false);
+                                        
+                                        $expiryClass = '';
+                                        $expiryWarning = '';
+                                        if ($daysUntilExpiry <= 7 && $daysUntilExpiry >= 0) {
+                                            $expiryClass = ' style="color: #dc3545; font-weight: bold;"';
+                                            $expiryWarning = ' data-expiry-warning="true" data-days-left="' . $daysUntilExpiry . '"';
+                                        }
+                                        
+                                        echo '<span' . $expiryClass . $expiryWarning . '>' . $expiryDate->format('d/m/Y') . '</span> ' . $verifiedVisaTick;
                                     }
                                 } else { echo 'N/A'; }
                                 ?>
                             </span>
                         </div>
-
-                        <div class="field-group">
-                            <span class="field-label">Visa Grant Date</span>
-                            <span class="field-value">
-                                <?php
-                                if( $visa_Info && $visa_Info->visa_grant_date != "" ){
-                                    if( $visa_Info->visa_grant_date == '0000-00-00'){
-                                        echo 'N/A';
-                                    } else {
-                                        echo \Carbon\Carbon::parse($visa_Info->visa_grant_date)->format('d/m/Y');
-                                    }
-                                } else { echo 'N/A'; }
-                                ?>
-                            </span>
-                        </div>
-
+                        @if($visa_Info && $visa_Info->visa_description != "")
                         <div class="field-group">
                             <span class="field-label">Visa Description</span>
                             <span class="field-value">
+                                <?php echo $visa_Info->visa_description; ?>
+                            </span>
+                        </div>
+                        @endif
+                        <div class="field-group">
+                            <span class="field-label">Country Of Passport</span>
+                            <span class="field-value">
                                 <?php
-                                if( $visa_Info && $visa_Info->visa_description != "" ){
-                                    echo $visa_Info->visa_description;
-                                } else { echo 'N/A'; }
+                                if( $visa_Info && $visa_Info->visa_country != "" ){ echo $visa_Info->visa_country; } else { echo 'N/A'; }
                                 ?>
                             </span>
                         </div>
@@ -751,3 +760,47 @@
 
                 </div>
             </div>
+
+            <!-- Age/DOB Toggle JavaScript -->
+            <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const ageDobToggle = document.getElementById('ageDobToggle');
+                if (ageDobToggle) {
+                    ageDobToggle.addEventListener('click', function() {
+                        const ageSpan = this.querySelector('.display-age');
+                        const dobSpan = this.querySelector('.display-dob');
+                        
+                        if (ageSpan && dobSpan) {
+                            if (ageSpan.style.display === 'none') {
+                                // Currently showing DOB, switch to Age
+                                ageSpan.style.display = 'inline';
+                                dobSpan.style.display = 'none';
+                            } else {
+                                // Currently showing Age, switch to DOB
+                                ageSpan.style.display = 'none';
+                                dobSpan.style.display = 'inline';
+                            }
+                        }
+                    });
+                }
+                
+                // Visa Expiry Warning Check
+                const visaExpiryElement = document.querySelector('[data-expiry-warning="true"]');
+                if (visaExpiryElement) {
+                    const daysLeft = visaExpiryElement.getAttribute('data-days-left');
+                    const expiryDate = visaExpiryElement.textContent;
+                    
+                    let message = '⚠️ VISA EXPIRY WARNING ⚠️\n\n';
+                    if (daysLeft == 0) {
+                        message += 'This visa expires TODAY (' + expiryDate + ')!\n\n';
+                    } else if (daysLeft == 1) {
+                        message += 'This visa expires TOMORROW (' + expiryDate + ')!\n\n';
+                    } else {
+                        message += 'This visa expires in ' + daysLeft + ' days (' + expiryDate + ')!\n\n';
+                    }
+                    message += 'Please take immediate action to renew or extend this visa.\n\nClick OK to continue viewing the client details.';
+                    
+                    alert(message);
+                }
+            });
+            </script>

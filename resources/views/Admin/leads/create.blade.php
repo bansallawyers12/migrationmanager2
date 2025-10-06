@@ -190,13 +190,6 @@
                             @enderror
                             <div style="display: flex; align-items: center; gap: 20px; margin-top: 10px;">
                                 <button type="button" class="add-item-btn" onclick="addEmailAddress()"><i class="fas fa-plus"></i> Add Email Address</button>
-                                <div class="form-group" style="align-items: center;">
-                                    <label>Recent Email Verified?</label>
-                                    <label class="switch">
-                                        <input type="checkbox" name="email_verified" value="1" {{ old('email_verified') ? 'checked' : '' }}>
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
                             </div>
                         </div>
                     </section>

@@ -53,7 +53,6 @@ class ControllerImportMapper
         'Admin\DocumentChecklistController' => 'App\Http\Controllers\Admin\DocumentChecklistController',
         'Admin\MatterController' => 'App\Http\Controllers\Admin\MatterController',
         'Admin\TeamController' => 'App\Http\Controllers\Admin\TeamController',
-        'Admin\MediaController' => 'App\Http\Controllers\Admin\MediaController',
         'ExceptionController' => 'App\Http\Controllers\ExceptionController',
         'AppointmentBookController' => 'App\Http\Controllers\AppointmentBookController',
         'Admin\ApiController' => 'App\Http\Controllers\Admin\ApiController',
@@ -130,7 +129,7 @@ class ControllerImportMapper
             'Admin\MatterEmailTemplateController', 'Admin\CrmEmailTemplateController',
             'Admin\EmailTemplateController', 'Admin\EmailController', 'Admin\AppointmentDisableDateController',
             'Admin\DocumentChecklistController', 'Admin\MatterController', 'Admin\TeamController',
-            'Admin\MediaController', 'ExceptionController', 'AppointmentBookController',
+            'ExceptionController', 'AppointmentBookController',
             'Admin\ApiController', 'Admin\InvoiceController', 'Admin\AuditLogController'
         ];
         foreach ($lowPriority as $controller) {

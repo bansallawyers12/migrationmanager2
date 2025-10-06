@@ -680,84 +680,8 @@
 $(document).ready(function() {
     
     
-    //Get Client Australian PR Points Details
-     $(document).delegate('.get_client_details', 'click', function(){
-        $('.popuploader').show();
-        $.ajax({
-            type:'post',
-            url: window.ClientDetailConfig.urls.getClientAuPrPoints,
-            data: {client_id: window.ClientDetailConfig.clientId},
-            success: function(response){
-                var obj = $.parseJSON(response);
-                var details = obj.final_arr;
 
-                var formatted =
-                    '*Age:* ' + details.clientAge + ' \n' +
-                    '*Test:* ' + details.test_info + ' \n' +
-                    '*Experience :* ' + details.exp_info + ' \n' +
-                    '*Qualification:* ' + details.qualification_info + ' \n';
-                $('#pr_details_info').val(formatted);
-                $('.popuploader').hide();
-            }
-        });
-    });
 
-     //CalculatePoints PR Points Details
-     $(document).delegate('.CalculatePoints', 'click', function(){
-        var pr_details_info =  $('#pr_details_info').val();
-        $('.popuploader').show();
-        $.ajax({
-            type:'post',
-            url: window.ClientDetailConfig.urls.calculatePoints,
-            data: {pr_details_info: pr_details_info},
-            success: function(response){
-                var obj = $.parseJSON(response); //alert(obj.result_arr);
-                if (obj.status && obj.result_arr && obj.result_arr.result) {
-                    $('.pr_details_result_div').show();
-                    $('.pr_details_result_whole').html(obj.result_arr.result.replace(/\n/g, '<br>'));
-                } else {
-                    $('.pr_details_result_div').show();
-                    $('.pr_details_result_whole').html('<p>Unable to calculate points. Please check your input.</p>');
-                }
-                $('.popuploader').hide();
-            },
-            error: function(xhr) {
-                $('.pr_details_result_div').show();
-                $('.pr_details_result_whole').html('<p>An error occurred while processing your request.</p>');
-                $('.popuploader').hide();
-            }
-        });
-    });
-
-     //PR points add to notes
-     $(document).delegate('.prpoints_add_to_notes', 'click', function(){
-        $('.popuploader').show();
-        var pr_details_info =  $('.pr_details_result_whole').html();  //alert(pr_details_info);
-        $.ajax({
-            type:'post',
-            url: window.ClientDetailConfig.urls.prPointsAddToNotes,
-            data: {client_id: window.ClientDetailConfig.clientId, pr_details_info:pr_details_info},
-            success: function(response){
-                var obj = $.parseJSON(response); //alert(obj.status);
-                if (obj.status) {
-                    $('.prpoints_add_to_notes_msg').show();
-                    $('.prpoints_add_to_notes_msg').html(obj.message);
-                } else {
-                    $('.prpoints_add_to_notes_msg').show();
-                    $('.prpoints_add_to_notes_msg').html(obj.message);
-                }
-                //getallactivities();
-                //getallnotes();
-                location.reload();
-                $('.popuploader').hide();
-            },
-            error: function(xhr) {
-                $('.prpoints_add_to_notes_msg').show();
-                $('.prpoints_add_to_notes_msg').html('<p>An error occurred.</p>');
-                $('.popuploader').hide();
-            }
-        });
-    });
 
 
     //Send message

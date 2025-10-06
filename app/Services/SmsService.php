@@ -2,20 +2,21 @@
 
 namespace App\Services;
 
-use GuzzleHttp\Client;
+use Twilio\Rest\Client as TwilioClient;
 use Illuminate\Support\Facades\Log;
 
 class SmsService
 {
-    protected $client;
-    protected $apiKey;
-    protected $apiUrl;
+    protected $twilioClient;
+    protected $fromNumber;
 
     public function __construct()
     {
-        $this->apiKey = config('services.cellcast.api_key');
-        $this->apiUrl = 'https://cellcast.com.au/api/v3';
-        $this->client = new Client();
+        $accountSid = config('services.twilio.account_sid');
+        $authToken = config('services.twilio.auth_token');
+        $this->fromNumber = config('services.twilio.from');
+        
+        $this->twilioClient = new TwilioClient($accountSid, $authToken);
     }
 
     public function sendSms($to, $message)
@@ -23,134 +24,119 @@ class SmsService
         try {
             // Convert single number to array if needed
             $numbers = is_array($to) ? $to : [$to];
+            $results = [];
 
-            $payload = [
-                'sms_text' => $message,
-                'numbers' => $numbers,
-                'from' => 'BANSALIMMI'
-            ];
-
-            Log::info('Sending SMS', [
-                'url' => $this->apiUrl . '/send-sms',
-                'payload' => $payload
+            Log::info('Sending SMS via Twilio', [
+                'to' => $numbers,
+                'from' => $this->fromNumber,
+                'message' => $message
             ]);
 
-            $response = $this->client->post($this->apiUrl . '/send-sms', [
-                'headers' => [
-                    'APPKEY' => $this->apiKey,
-                    'Accept' => 'application/json',
-                    'Content-Type' => 'application/json',
-                ],
-                'json' => $payload
-            ]);
+            foreach ($numbers as $number) {
+                $messageResult = $this->twilioClient->messages->create(
+                    $number,
+                    [
+                        'from' => $this->fromNumber,
+                        'body' => $message
+                    ]
+                );
 
-            $result = json_decode($response->getBody(), true);
-            Log::info('SMS API Response', ['response' => $result]);
+                $results[] = [
+                    'to' => $number,
+                    'sid' => $messageResult->sid,
+                    'status' => $messageResult->status
+                ];
+            }
 
-            //return $result;
-            return ['success' => true, 'message' => 'SMS sent successfully!'];
-        } catch (\GuzzleHttp\Exception\ClientException $e) {
-            $errorResponse = json_decode($e->getResponse()->getBody()->getContents(), true);
-            //Log::error('SMS API Error', ['error' => $errorResponse]);
-            //throw new \Exception($errorResponse['msg'] ?? 'Failed to send SMS');
-            return ['success' => false, 'message' => 'Failed to send SMS'];
+            Log::info('Twilio SMS Response', ['results' => $results]);
+
+            return ['success' => true, 'message' => 'SMS sent successfully!', 'results' => $results];
+        } catch (\Twilio\Exceptions\TwilioException $e) {
+            Log::error('Twilio SMS Error', ['error' => $e->getMessage()]);
+            return ['success' => false, 'message' => 'Failed to send SMS: ' . $e->getMessage()];
         } catch (\Exception $e) {
-            //Log::error('SMS Service Error', ['error' => $e->getMessage()]);
-            //throw $e;
+            Log::error('SMS Service Error', ['error' => $e->getMessage()]);
             return ['success' => false, 'message' => $e->getMessage()];
         }
     }
 
-
-    public function getSmsStatus($messageId)
+    /**
+     * Get SMS status from Twilio
+     */
+    public function getSmsStatus($messageSid)
     {
         try {
-            $response = $this->client->get($this->apiUrl . '/get-sms', [
-                'headers' => [
-                    'APPKEY' => $this->apiKey,
-                    'Accept' => 'application/json',
-                    'Content-Type' => 'application/json',
-                ],
-                'query' => ['message_id' => $messageId]
-            ]);
-
-            return json_decode($response->getBody(), true);
+            $message = $this->twilioClient->messages($messageSid)->fetch();
+            
+            return [
+                'sid' => $message->sid,
+                'status' => $message->status,
+                'direction' => $message->direction,
+                'from' => $message->from,
+                'to' => $message->to,
+                'body' => $message->body,
+                'dateCreated' => $message->dateCreated,
+                'dateUpdated' => $message->dateUpdated,
+                'errorCode' => $message->errorCode,
+                'errorMessage' => $message->errorMessage
+            ];
+        } catch (\Twilio\Exceptions\TwilioException $e) {
+            Log::error('Twilio Status Check Error', ['error' => $e->getMessage()]);
+            throw $e;
         } catch (\Exception $e) {
             Log::error('SMS Status Check Error', ['error' => $e->getMessage()]);
             throw $e;
         }
     }
 
-
-    public function getResponses($page = 1)
+    /**
+     * Get incoming SMS responses from Twilio
+     */
+    public function getResponses($pageSize = 50)
     {
         try {
-            $response = $this->client->get($this->apiUrl . '/get-responses', [
-                'headers' => [
-                    'APPKEY' => $this->apiKey,
-                    'Accept' => 'application/json',
-                    'Content-Type' => 'application/json',
-                ],
-                'query' => [
-                    'page' => $page,
-                    'type' => 'sms'
-                ]
+            $messages = $this->twilioClient->messages->read([
+                'direction' => 'inbound',
+                'limit' => $pageSize
             ]);
 
-            return json_decode($response->getBody(), true);
+            $results = [];
+            foreach ($messages as $message) {
+                $results[] = [
+                    'sid' => $message->sid,
+                    'from' => $message->from,
+                    'to' => $message->to,
+                    'body' => $message->body,
+                    'status' => $message->status,
+                    'dateCreated' => $message->dateCreated,
+                    'dateUpdated' => $message->dateUpdated
+                ];
+            }
+
+            return $results;
+        } catch (\Twilio\Exceptions\TwilioException $e) {
+            Log::error('Twilio Responses Error', ['error' => $e->getMessage()]);
+            throw $e;
         } catch (\Exception $e) {
             Log::error('SMS Responses Error', ['error' => $e->getMessage()]);
             throw $e;
         }
     }
 
-    //Send verification code sms
+    /**
+     * Send verification code SMS
+     */
     public function sendVerificationCodeSMS($to, $message)
     {
-        try {
-            // Convert single number to array if needed
-            $numbers = is_array($to) ? $to : [$to];
-            $payload = [
-                'sms_text' => $message,
-                'numbers' => $numbers
-            ];
-
-            Log::info('Sending SMS', [
-                'url' => $this->apiUrl . '/send-sms',
-                'payload' => $payload
-            ]);
-
-            $response = $this->client->post($this->apiUrl . '/send-sms', [
-                'headers' => [
-                    'APPKEY' => $this->apiKey,
-                    'Accept' => 'application/json',
-                    'Content-Type' => 'application/json',
-                ],
-                'json' => $payload
-            ]);
-
-            $result = json_decode($response->getBody(), true);
-            Log::info('SMS API Response', ['response' => $result]);
-
-            //return $result;
-            return ['success' => true, 'message' => 'SMS sent successfully!'];
-        } catch (\GuzzleHttp\Exception\ClientException $e) {
-            $errorResponse = json_decode($e->getResponse()->getBody()->getContents(), true);
-            //Log::error('SMS API Error', ['error' => $errorResponse]);
-            //throw new \Exception($errorResponse['msg'] ?? 'Failed to send SMS');
-
-            return ['success' => false, 'message' => 'Failed to send SMS' ];
-        } catch (\Exception $e) {
-            //Log::error('SMS Service Error', ['error' => $e->getMessage()]);
-            //throw $e;
-
-            return ['success' => false, 'message' => $e->getMessage()];
-        }
+        return $this->sendSms($to, $message);
     }
 
-    //Send verification code
+    /**
+     * Send verification code with default message
+     */
     public function sendVerificationCode($to, $code)
     {
-        return $this->sendVerificationCodeSMS($to, "Your verification code is: $code");
+        $message = "Your verification code is: $code";
+        return $this->sendVerificationCodeSMS($to, $message);
     }
 }

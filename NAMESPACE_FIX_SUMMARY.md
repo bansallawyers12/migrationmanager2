@@ -114,7 +114,6 @@ These may be referenced elsewhere in the codebase:
 |-------|-------------------|
 | `LoginLog` | `app/Http/Controllers/Auth/AdminEmailController.php` |
 | `HolidayTheme` | `app/Http/Controllers/Admin/ThemeController.php` |
-| `MediaImage` | `app/Http/Controllers/Admin/MediaController.php` |
 | `Education` | Various view files |
 | `Markup` | Flight management views |
 | `TestSeriesTransactionHistory` | `app/Http/Controllers/API/WebHookController.php` |
