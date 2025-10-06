@@ -1313,7 +1313,7 @@
                                     ||
                                     ( postCode == 2574)
                                 ){
-                                    var postCodeInfo = "Cities and major regional centres of NSW";
+                                    var postCodeInfo = "Regional City of NSW";
                                 }
 
                                 //2250 to 2258, 2260 to 2263, 2311 to 2490, 2527, 2536 to 2551, 2575 to 2739, 2753 to 2754, 2756 to 2758 and 2773 to 2898
@@ -1355,7 +1355,7 @@
                                     ||
                                     ( postCode == 3342)
                                 ){
-                                    var postCodeInfo = "Cities and major regional centres of VIC";
+                                    var postCodeInfo = "Regional City of VIC";
                                 }
 
                                 //3097 to 3099, 3139, 3233 to 3234, 3236 to 3239, 3241 to 3325, 3329, 3334, 3341,
@@ -1428,7 +1428,7 @@
                                     ||
                                     ( postCode >= 4571 && postCode <= 4575 )
                                 ){
-                                    var postCodeInfo = "Cities and major regional centres of QLD";
+                                    var postCodeInfo = "Regional City of QLD";
                                 }
 
                                 //4124, 4125, 4133, 4183 to 4184, 4280 to 4287, 4306 to 4498, 4507, 4552, 4563,
@@ -1473,7 +1473,7 @@
                                     ||
                                     ( postCode >= 6556 && postCode <= 6558 )
                                 ){
-                                    var postCodeInfo = "Cities and major regional centres of WA";
+                                    var postCodeInfo = "Regional City of WA";
                                 }
 
                                 //5000 to 5171, 5173 to 5174, 5231 to 5235, 5240 to 5252, 5351 and 5950 to 5960
@@ -1490,7 +1490,7 @@
                                     ||
                                     ( postCode >= 5950 && postCode <= 5960 )
                                 ){
-                                    var postCodeInfo = "Cities and major regional centres of SA";
+                                    var postCodeInfo = "Regional City of SA";
                                 }
                                 //7000, 7004 to 7026, 7030 to 7109, 7140 to 7151 and 7170 to 7177
                                 else if(
@@ -1504,7 +1504,7 @@
                                     ||
                                     ( postCode >= 7170 && postCode <= 7177 )
                                 ){
-                                    var postCodeInfo = "Cities and major regional centres of TAS";
+                                    var postCodeInfo = "Regional City of TAS";
                                 }
                                 else {
                                     var postCodeInfo = '';

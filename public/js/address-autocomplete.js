@@ -11,8 +11,24 @@
     
     // Regional Code Classification Function for Australian Migration
     window.getRegionalCodeInfo = function(postCode) {
-        //2259, 2264 to 2308, 2500 to 2526, 2528 to 2535 and 2574
+        // NT - Northern Territory: 0800 to 0999 (All are Regional centres)
         if(
+            ( postCode >= 800 && postCode <= 999 )
+        ){
+            var postCodeInfo = "Regional Centre NT";
+        }
+
+        // ACT - Australian Capital Territory: 0200 to 0299 and 2600 to 2639
+        else if(
+            ( postCode >= 200 && postCode <= 299 )
+            ||
+            ( postCode >= 2600 && postCode <= 2639 )
+        ){
+            var postCodeInfo = "Regional City ACT";
+        }
+
+        //2259, 2264 to 2308, 2500 to 2526, 2528 to 2535 and 2574
+        else if(
             ( postCode ==2259)
             ||
             ( postCode >=2264 && postCode <= 2308 )
@@ -23,10 +39,10 @@
             ||
             ( postCode == 2574)
         ){
-            var postCodeInfo = "Cities and major regional centres of NSW";
+            var postCodeInfo = "Regional City NSW";
         }
 
-        //2250 to 2258, 2260 to 2263, 2311 to 2490, 2527, 2536 to 2551, 2575 to 2739, 2753 to 2754, 2756 to 2758 and 2773 to 2898
+        //2250 to 2258, 2260 to 2263, 2311 to 2490, 2527, 2536 to 2551, 2575 to 2599, 2640 to 2739, 2753 to 2754, 2756 to 2758 and 2773 to 2898
         else if(
             ( postCode >=2250 && postCode <= 2258 )
             ||
@@ -38,7 +54,9 @@
             ||
             ( postCode >=2536 && postCode <= 2551 )
             ||
-            ( postCode >=2575 && postCode <= 2739 )
+            ( postCode >=2575 && postCode <= 2599 )
+            ||
+            ( postCode >=2640 && postCode <= 2739 )
             ||
             ( postCode >=2753 && postCode <= 2754 )
             ||
@@ -72,7 +90,7 @@
             ||
             ( postCode == 3342)
         ){
-            var postCodeInfo = "Cities and major regional centres of VIC";
+            var postCodeInfo = "Regional City VIC";
         }
 
         //3097 to 3099, 3139, 3233 to 3234, 3236 to 3239, 3241 to 3325, 3329, 3334, 3341,
@@ -152,7 +170,7 @@
             ||
             ( postCode >= 4571 && postCode <= 4575 )
         ){
-            var postCodeInfo = "Cities and major regional centres of QLD";
+            var postCodeInfo = "Regional City QLD";
         }
 
         //4124, 4125, 4133, 4183 to 4184, 4280 to 4287, 4306 to 4498, 4507, 4552, 4563,
@@ -183,6 +201,13 @@
             var postCodeInfo = "Regional Centre QLD";
         }
 
+        // QLD Metro Area - All other QLD postcodes (4000-4999)
+        else if(
+            ( postCode >= 4000 && postCode <= 4999 )
+        ){
+            var postCodeInfo = "Metro Area QLD";
+        }
+
         //6000 to 6038, 6050 to 6083, 6090 to 6182, 6208 to 6211, 6214 and 6556 to 6558
         else if(
             ( postCode >= 6000 && postCode <= 6038 )
@@ -197,7 +222,14 @@
             ||
             ( postCode >= 6556 && postCode <= 6558 )
         ){
-            var postCodeInfo = "Cities and major regional centres of WA";
+            var postCodeInfo = "Regional City WA";
+        }
+
+        // WA Regional centres - All other WA postcodes (6000-6999)
+        else if(
+            ( postCode >= 6000 && postCode <= 6999 )
+        ){
+            var postCodeInfo = "Regional Centre WA";
         }
 
         //5000 to 5171, 5173 to 5174, 5231 to 5235, 5240 to 5252, 5351 and 5950 to 5960
@@ -214,8 +246,16 @@
             ||
             ( postCode >= 5950 && postCode <= 5960 )
         ){
-            var postCodeInfo = "Cities and major regional centres of SA";
+            var postCodeInfo = "Regional City SA";
         }
+
+        // SA Regional centres - All other SA postcodes (5000-5999)
+        else if(
+            ( postCode >= 5000 && postCode <= 5999 )
+        ){
+            var postCodeInfo = "Regional Centre SA";
+        }
+
         //7000, 7004 to 7026, 7030 to 7109, 7140 to 7151 and 7170 to 7177
         else if(
             ( postCode == 7000 )
@@ -228,8 +268,25 @@
             ||
             ( postCode >= 7170 && postCode <= 7177 )
         ){
-            var postCodeInfo = "Cities and major regional centres of TAS";
+            var postCodeInfo = "Regional City TAS";
         }
+
+        // TAS Regional centres - All other TAS postcodes (7000-7999)
+        else if(
+            ( postCode >= 7000 && postCode <= 7999 )
+        ){
+            var postCodeInfo = "Regional Centre TAS";
+        }
+
+        // Other Australian Territories (Christmas Island, Cocos Islands)
+        else if(
+            ( postCode == 6798 )  // Christmas Island
+            ||
+            ( postCode == 6799 )  // Cocos (Keeling) Islands
+        ){
+            var postCodeInfo = "Regional Centre - Other Territories";
+        }
+
         else {
             var postCodeInfo = '';
         }
@@ -513,17 +570,41 @@
         // Insert before the add button
         $template.insertBefore($('.add-another-address'));
         
-        // Initialize date picker for new fields (with error handling)
+        // Initialize date picker for new fields using daterangepicker
         try {
-            if (typeof $.fn.datepicker !== 'undefined') {
-                $template.find('.date-picker').datepicker({
-                    format: 'dd/mm/yyyy',
-                    autoclose: true,
-                    todayHighlight: true
+            if (typeof $.fn.daterangepicker !== 'undefined') {
+                $template.find('.date-picker').each(function() {
+                    const $this = $(this);
+                    
+                    $this.daterangepicker({
+                        singleDatePicker: true,
+                        showDropdowns: true,
+                        autoUpdateInput: false,
+                        locale: {
+                            format: 'DD/MM/YYYY',
+                            applyLabel: 'Apply',
+                            cancelLabel: 'Cancel',
+                            daysOfWeek: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+                            monthNames: [
+                                'January', 'February', 'March', 'April', 'May', 'June',
+                                'July', 'August', 'September', 'October', 'November', 'December'
+                            ],
+                            firstDay: 1
+                        },
+                        minDate: '01/01/1000',
+                        minYear: 1000,
+                        maxYear: parseInt(moment().format('YYYY')) + 50
+                    }).on('apply.daterangepicker', function(ev, picker) {
+                        $this.val(picker.startDate.format('DD/MM/YYYY'));
+                    }).on('cancel.daterangepicker', function(ev, picker) {
+                        $this.val('');
+                    });
                 });
+                
+                console.log('✅ Date pickers initialized for new address');
             }
         } catch(e) {
-            console.warn('⚠️ Datepicker failed for new address field');
+            console.warn('⚠️ Datepicker failed for new address field:', e);
         }
     };
     

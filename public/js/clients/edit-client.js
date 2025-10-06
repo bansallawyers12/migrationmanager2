@@ -1472,6 +1472,14 @@ window.toggleEditMode = function(sectionType) {
     if (summaryView && editView) {
         summaryView.style.display = 'none';
         editView.style.display = 'block';
+        
+        // Re-initialize datepickers when entering edit mode for address section
+        if (sectionType === 'addressInfo') {
+            setTimeout(function() {
+                initializeDatepickers();
+                console.log('✅ Date pickers initialized for address edit mode');
+            }, 100);
+        }
     }
 };
 
@@ -2038,6 +2046,19 @@ window.saveVisaInfo = function() {
  */
 window.saveAddressInfo = function() {
     const $addressesContainer = $('#addresses-container');
+    const $allWrappers = $addressesContainer.find('.address-entry-wrapper');
+    console.log('🔍 Total address wrappers found:', $allWrappers.length);
+    
+    // Log each wrapper's details
+    $allWrappers.each(function(i) {
+        const $wrapper = $(this);
+        console.log(`  Wrapper ${i}:`, {
+            index: $wrapper.data('address-index'),
+            hasTemplateClass: $wrapper.hasClass('address-template'),
+            addressLine1: $wrapper.find('input[name="address_line_1[]"]').val()
+        });
+    });
+    
     // Get all address entries, but exclude only the template ones
     // Note: We need to include the default empty entry (index 0) even if it has address-template class
     const $addressEntries = $addressesContainer.find('.address-entry-wrapper').filter(function() {
