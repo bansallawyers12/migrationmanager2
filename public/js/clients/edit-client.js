@@ -183,79 +183,9 @@ function initGoToTopButton() {
     toggleGoToTopButton();
 }
 
-// ===== SUMMARY MODAL FUNCTIONALITY =====
 
-// Open summary modal
-window.openSummaryModal = function() {
-    try {
-        const modal = document.getElementById('summaryModal');
-        if (modal) {
-            modal.style.display = 'flex';
-            generateSummaryContent();
-        } else {
-            console.error('Summary modal not found');
-        }
-    } catch (error) {
-        console.error('Error opening summary modal:', error);
-    }
-};
 
-// Close summary modal
-window.closeSummaryModal = function() {
-    try {
-        const modal = document.getElementById('summaryModal');
-        if (modal) {
-            modal.style.display = 'none';
-        }
-    } catch (error) {
-        console.error('Error closing summary modal:', error);
-    }
-};
 
-// Close modal when clicking outside of it
-document.addEventListener('click', function(event) {
-    const modal = document.getElementById('summaryModal');
-    if (modal && event.target === modal) {
-        closeSummaryModal();
-    }
-});
-
-// Close modal with Escape key
-document.addEventListener('keydown', function(event) {
-    if (event.key === 'Escape') {
-        const modal = document.getElementById('summaryModal');
-        if (modal && modal.style.display === 'flex') {
-            closeSummaryModal();
-        }
-    }
-});
-
-// Generate summary content
-function generateSummaryContent() {
-    const summaryContent = document.getElementById('summaryContent');
-    if (!summaryContent) return;
-    
-    let summaryHTML = '<div class="summary-sections">';
-    
-    // Personal Information
-    summaryHTML += '<div class="summary-section">';
-    summaryHTML += '<h4><i class="fas fa-user-circle"></i> Personal Information</h4>';
-    summaryHTML += '<p><strong>Name:</strong> ' + (document.getElementById('firstName')?.value || '') + ' ' + (document.getElementById('lastName')?.value || '') + '</p>';
-    summaryHTML += '<p><strong>Client ID:</strong> ' + (document.getElementById('clientId')?.value || '') + '</p>';
-    summaryHTML += '<p><strong>Date of Birth:</strong> ' + (document.getElementById('dob')?.value || '') + '</p>';
-    summaryHTML += '<p><strong>Gender:</strong> ' + (document.getElementById('gender')?.value || '') + '</p>';
-    summaryHTML += '<p><strong>Marital Status:</strong> ' + (document.getElementById('martialStatus')?.value || '') + '</p>';
-    summaryHTML += '</div>';
-    
-    // Add more sections as needed...
-    summaryHTML += '<div class="summary-section">';
-    summaryHTML += '<h4><i class="fas fa-info-circle"></i> Additional Information</h4>';
-    summaryHTML += '<p>Review all sections above to ensure all information is correct before submitting.</p>';
-    summaryHTML += '</div>';
-    
-    summaryHTML += '</div>';
-    summaryContent.innerHTML = summaryHTML;
-}
 
 // ===== LEGACY TAB FUNCTIONALITY (KEPT FOR COMPATIBILITY) =====
 
@@ -2846,8 +2776,6 @@ window.addCharacterRow = addCharacterRow;
 
 // New scroll and modal functions
 window.scrollToSection = scrollToSection;
-window.openSummaryModal = openSummaryModal;
-window.closeSummaryModal = closeSummaryModal;
 window.toggleSidebar = toggleSidebar;
 window.scrollToTop = scrollToTop;
 

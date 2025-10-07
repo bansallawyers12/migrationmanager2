@@ -154,32 +154,31 @@
                             </span>
                         </div>
 
-                        <div class="field-group">
-                            <span class="field-label">Residential Address</span>
-                            <span class="field-value">
-                                <?php
-                                $address_Info = App\Models\ClientAddress::select('address_line_1','address_line_2','suburb','state','zip','regional_code')->where('client_id', $fetchedData->id)->latest('id')->first();
-                                if( $address_Info && $address_Info->address_line_1 != "" ){ 
-                                    echo $address_Info->address_line_1; 
-                                } else { 
-                                    echo 'N/A'; 
-                                }
-                                ?>
-                            </span>
-                        </div>
+                        <?php
+                        $address_Info = App\Models\ClientAddress::select('address','suburb','country','zip','regional_code')->where('client_id', $fetchedData->id)->latest('id')->first();
+                        ?>
 
                         <div class="field-group">
                             <span class="field-label">Address</span>
                             <span class="field-value">
                                 <?php
-                                $addressParts = array_filter([
-                                    $address_Info->suburb ?? '',
-                                    $address_Info->state ?? '',
-                                    $address_Info->zip ?? ''
-                                ]);
-                                
-                                if (!empty($addressParts)) {
-                                    echo implode(', ', $addressParts);
+                                if($address_Info) {
+                                    // Check if we have new structured address fields
+                                    $addressParts = array_filter([
+                                        $address_Info->suburb ?? '',
+                                        $address_Info->country ?? '',
+                                        $address_Info->zip ?? ''
+                                    ]);
+                                    
+                                    if (!empty($addressParts)) {
+                                        // Use new structured format: "Sydney, Australia, 2000"
+                                        echo implode(', ', $addressParts);
+                                    } elseif (!empty($address_Info->address)) {
+                                        // Fallback to old address field format
+                                        echo $address_Info->address;
+                                    } else {
+                                        echo 'N/A';
+                                    }
                                 } else {
                                     echo 'N/A';
                                 }
@@ -189,7 +188,7 @@
 
                         <?php if($address_Info && $address_Info->regional_code): ?>
                         <div class="field-group">
-                            <span class="field-label">Regional Area</span>
+                            <span class="field-label">Regional Classification</span>
                             <span class="field-value">
                                 <?php echo $address_Info->regional_code; ?>
                             </span>

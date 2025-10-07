@@ -17,7 +17,7 @@
                         : {{ $fetchedData->client_id }}</div>
                 </div>
                 <div class="client-status">
-                    <button class="btn btn-secondary" onclick="goBackWithRefresh()"><i class="fas fa-arrow-left"></i> Back</button>
+                    <!-- Back button moved to sidebar -->
                 </div>
             </div>
 
@@ -71,11 +71,15 @@
                         <i class="fas fa-file-alt"></i>
                         <span>EOI Reference</span>
                     </button>
-                    <button class="nav-item summary-nav" onclick="openSummaryModal()">
-                        <i class="fas fa-list"></i>
-                        <span>Summary</span>
-                    </button>
                 </nav>
+                
+                <!-- Back Button in Sidebar -->
+                <div class="sidebar-actions">
+                    <button class="nav-item summary-nav back-btn" onclick="goBackWithRefresh()">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>Back</span>
+                    </button>
+                </div>
             </div>
             
             <!-- Configuration for external JavaScript -->
@@ -1637,25 +1641,6 @@
         <i class="fas fa-chevron-up"></i>
     </button>
 
-    <!-- Summary Modal -->
-    <div id="summaryModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-list"></i> Summary</h2>
-                <span class="close" onclick="closeSummaryModal()">&times;</span>
-            </div>
-            <div class="modal-body">
-                <p>Review all entered information before submitting.</p>
-                <!-- Summary content will be populated here -->
-                <div id="summaryContent">
-                    <!-- Summary will be generated dynamically -->
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeSummaryModal()">Close</button>
-            </div>
-        </div>
-    </div>
 
     <!-- OTP Verification Modal -->
     <div id="otpVerificationModal" class="modal" style="display: none;">
