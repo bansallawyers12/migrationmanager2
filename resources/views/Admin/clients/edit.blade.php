@@ -601,23 +601,67 @@
                         <!-- Summary View -->
                         <div id="qualificationsInfoSummary" class="summary-view">
                             @if($qualifications->count() > 0)
-                                <div class="summary-grid">
+                                <div style="margin-top: 15px;">
                                     @foreach($qualifications as $index => $qualification)
-                                        <div class="summary-item">
-                                            <span class="summary-label">Qualification:</span>
-                                            <span class="summary-value">{{ $qualification->qualification ?: 'Not set' }}</span>
-                                        </div>
-                                        <div class="summary-item">
-                                            <span class="summary-label">Institution:</span>
-                                            <span class="summary-value">{{ $qualification->institution ?: 'Not set' }}</span>
-                                        </div>
-                                        <div class="summary-item">
-                                            <span class="summary-label">Country:</span>
-                                            <span class="summary-value">{{ $qualification->country ?: 'Not set' }}</span>
-                                        </div>
-                                        <div class="summary-item">
-                                            <span class="summary-label">Year:</span>
-                                            <span class="summary-value">{{ $qualification->year ?: 'Not set' }}</span>
+                                        <div class="passport-entry-compact" style="margin-bottom: 12px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #6f42c1;">
+                                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: start;">
+                                                @if($qualification->level)
+                                                <div class="summary-item-inline">
+                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">LEVEL:</span>
+                                                    <span class="summary-value" style="color: #212529; font-weight: 500;">{{ $qualification->level }}</span>
+                                                </div>
+                                                @endif
+                                                @if($qualification->name)
+                                                <div class="summary-item-inline">
+                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">NAME:</span>
+                                                    <span class="summary-value" style="color: #212529; font-weight: 500;">{{ $qualification->name }}</span>
+                                                </div>
+                                                @endif
+                                                @if($qualification->qual_college_name)
+                                                <div class="summary-item-inline">
+                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">INSTITUTION:</span>
+                                                    <span class="summary-value" style="color: #212529;">{{ $qualification->qual_college_name }}</span>
+                                                </div>
+                                                @endif
+                                                @if($qualification->qual_campus)
+                                                <div class="summary-item-inline">
+                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">CAMPUS/ADDRESS:</span>
+                                                    <span class="summary-value" style="color: #212529;">{{ $qualification->qual_campus }}</span>
+                                                </div>
+                                                @endif
+                                                @if($qualification->country)
+                                                <div class="summary-item-inline">
+                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">COUNTRY:</span>
+                                                    <span class="summary-value" style="color: #212529;">{{ $qualification->country }}</span>
+                                                </div>
+                                                @endif
+                                                @if($qualification->qual_state)
+                                                <div class="summary-item-inline">
+                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">STATUS:</span>
+                                                    <span class="summary-value" style="color: #212529;">{{ $qualification->qual_state }}</span>
+                                                </div>
+                                                @endif
+                                                @if($qualification->start_date)
+                                                <div class="summary-item-inline">
+                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">START DATE:</span>
+                                                    <span class="summary-value" style="color: #212529;">{{ date('d/m/Y', strtotime($qualification->start_date)) }}</span>
+                                                </div>
+                                                @endif
+                                                @if($qualification->finish_date)
+                                                <div class="summary-item-inline">
+                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">FINISH DATE:</span>
+                                                    <span class="summary-value" style="color: #212529;">{{ date('d/m/Y', strtotime($qualification->finish_date)) }}</span>
+                                                </div>
+                                                @endif
+                                                @if($qualification->relevant_qualification)
+                                                <div class="summary-item-inline">
+                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">RELEVANT:</span>
+                                                    <span class="summary-value" style="color: #28a745; font-weight: 500;">
+                                                        <i class="fas fa-check-circle"></i> Yes
+                                                    </span>
+                                                </div>
+                                                @endif
+                                            </div>
                                         </div>
                                     @endforeach
                                 </div>

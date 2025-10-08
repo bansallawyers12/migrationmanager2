@@ -1734,39 +1734,124 @@ class ClientPersonalDetailsController extends Controller
     private function saveQualificationsInfoSection($request, $client)
     {
         try {
-            $qualifications = json_decode($request->input('qualifications'), true);
+            $requestData = $request->all();
             
-            if (!is_array($qualifications)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid qualifications data'
-                ], 400);
+            // Handle qualification deletion
+            if (isset($requestData['delete_qualification_ids']) && is_array($requestData['delete_qualification_ids'])) {
+                foreach ($requestData['delete_qualification_ids'] as $qualificationId) {
+                    $qualification = ClientQualification::find($qualificationId);
+                    if ($qualification && $qualification->client_id == $client->id) {
+                        $qualification->delete();
+                    }
+                }
             }
 
-            // Delete existing qualifications for this client
-            ClientQualification::where('client_id', $client->id)->delete();
+            // Handle qualification data
+            if (isset($requestData['level']) && is_array($requestData['level'])) {
+                foreach ($requestData['level'] as $key => $level) {
+                    $name = $requestData['name'][$key] ?? null;
+                    $qual_college_name = $requestData['qual_college_name'][$key] ?? null;
+                    $qual_campus = $requestData['qual_campus'][$key] ?? null;
+                    $country = $requestData['qual_country'][$key] ?? null;
+                    $qual_state = $requestData['qual_state'][$key] ?? null;
+                    $start = $requestData['start_date'][$key] ?? null;
+                    $finish = $requestData['finish_date'][$key] ?? null;
+                    $relevant_qualification = isset($requestData['relevant_qualification'][$key]) && $requestData['relevant_qualification'][$key] == 1 ? 1 : 0;
+                    $qualificationId = $requestData['qualification_id'][$key] ?? null;
 
-            // Insert new qualifications
-            foreach ($qualifications as $qualData) {
-                if (!empty($qualData['qualification'])) {
-                    ClientQualification::create([
-                        'client_id' => $client->id,
-                        'qualification' => $qualData['qualification'],
-                        'institution' => $qualData['institution'] ?? null,
-                        'qual_country' => $qualData['country'] ?? null,
-                        'year' => $qualData['year'] ?? null
-                    ]);
+                    // Convert start_date from dd/mm/yyyy to Y-m-d for database storage
+                    $formatted_start_date = null;
+                    if (!empty($start)) {
+                        try {
+                            $startDate = \Carbon\Carbon::createFromFormat('d/m/Y', $start);
+                            $formatted_start_date = $startDate->format('Y-m-d');
+                        } catch (\Exception $e) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'Invalid Start Date format: ' . $start . '. Must be dd/mm/yyyy.'
+                            ], 422);
+                        }
+                    }
+
+                    // Convert finish_date from dd/mm/yyyy to Y-m-d for database storage
+                    $formatted_finish_date = null;
+                    if (!empty($finish)) {
+                        try {
+                            $finishDate = \Carbon\Carbon::createFromFormat('d/m/Y', $finish);
+                            $formatted_finish_date = $finishDate->format('Y-m-d');
+                        } catch (\Exception $e) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'Invalid Finish Date format: ' . $finish . '. Must be dd/mm/yyyy.'
+                            ], 422);
+                        }
+                    }
+
+                    // Only save if there's at least level or name
+                    if (!empty($level) || !empty($name)) {
+                        if ($qualificationId) {
+                            // Update existing qualification
+                            $existingQualification = ClientQualification::find($qualificationId);
+                            if ($existingQualification && $existingQualification->client_id == $client->id) {
+                                $existingQualification->update([
+                                    'admin_id' => Auth::user()->id,
+                                    'level' => $level,
+                                    'name' => $name,
+                                    'qual_college_name' => $qual_college_name,
+                                    'qual_campus' => $qual_campus,
+                                    'country' => $country,
+                                    'qual_state' => $qual_state,
+                                    'start_date' => $formatted_start_date,
+                                    'finish_date' => $formatted_finish_date,
+                                    'relevant_qualification' => $relevant_qualification
+                                ]);
+                            }
+                        } else {
+                            // Create new qualification
+                            ClientQualification::create([
+                                'admin_id' => Auth::user()->id,
+                                'client_id' => $client->id,
+                                'level' => $level,
+                                'name' => $name,
+                                'qual_college_name' => $qual_college_name,
+                                'qual_campus' => $qual_campus,
+                                'country' => $country,
+                                'qual_state' => $qual_state,
+                                'start_date' => $formatted_start_date,
+                                'finish_date' => $formatted_finish_date,
+                                'relevant_qualification' => $relevant_qualification
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            // Update client's qualification_level and qualification_name with the most recent qualification
+            if (isset($requestData['level']) && is_array($requestData['level'])) {
+                $qualificationCount = count($requestData['level']);
+                if ($qualificationCount > 0) {
+                    $levelArray = array_values($requestData['level']);
+                    $nameArray = array_values($requestData['name']);
+                    
+                    $lastLevel = $levelArray[$qualificationCount - 1] ?? null;
+                    $lastName = $nameArray[$qualificationCount - 1] ?? null;
+
+                    if (!empty($lastLevel) || !empty($lastName)) {
+                        $client->qualification_level = $lastLevel;
+                        $client->qualification_name = $lastName;
+                        $client->save();
+                    }
                 }
             }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Qualifications updated successfully'
+                'message' => 'Qualifications information updated successfully'
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error saving qualifications: ' . $e->getMessage()
+                'message' => 'Failed to save qualifications: ' . $e->getMessage()
             ], 500);
         }
     }

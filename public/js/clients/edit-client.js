@@ -1422,24 +1422,64 @@ function addQualification() {
             <button type="button" class="remove-item-btn" title="Remove Qualification" onclick="removeQualificationField(this)"><i class="fas fa-trash"></i></button>
             <div class="content-grid">
                 <div class="form-group">
-                    <label>Qualification</label>
-                    <input type="text" name="qualification[${index}]" placeholder="Qualification">
+                    <label>Qualification Level</label>
+                    <select name="level[${index}]">
+                        <option value="">Select Level</option>
+                        <option value="Certificate I">Certificate I</option>
+                        <option value="Certificate II">Certificate II</option>
+                        <option value="Certificate III">Certificate III</option>
+                        <option value="Certificate IV">Certificate IV</option>
+                        <option value="Diploma">Diploma</option>
+                        <option value="Advanced Diploma">Advanced Diploma</option>
+                        <option value="Bachelor Degree">Bachelor Degree</option>
+                        <option value="Bachelor Honours Degree">Bachelor Honours Degree</option>
+                        <option value="Graduate Certificate">Graduate Certificate</option>
+                        <option value="Graduate Diploma">Graduate Diploma</option>
+                        <option value="Masters Degree">Masters Degree</option>
+                        <option value="Doctoral Degree">Doctoral Degree</option>
+                        <option value="Other">Other</option>
+                    </select>
                 </div>
                 <div class="form-group">
-                    <label>Institution</label>
-                    <input type="text" name="institution[${index}]" placeholder="Institution">
+                    <label>Qualification Name</label>
+                    <input type="text" name="name[${index}]" placeholder="e.g., Bachelor of Engineering">
+                </div>
+                <div class="form-group">
+                    <label>Institution/College Name</label>
+                    <input type="text" name="qual_college_name[${index}]" placeholder="Institution Name">
+                </div>
+                <div class="form-group">
+                    <label>Campus/Address</label>
+                    <input type="text" name="qual_campus[${index}]" placeholder="Campus/Address">
                 </div>
                 <div class="form-group">
                     <label>Country</label>
                     <input type="text" name="qual_country[${index}]" placeholder="Country">
                 </div>
+                   <div class="form-group">
+                       <label>Status</label>
+                       <input type="text" name="qual_state[${index}]" placeholder="enrolled, completed, or withdrew">
+                   </div>
                 <div class="form-group">
-                    <label>Year</label>
-                    <input type="text" name="year[${index}]" placeholder="Year">
+                    <label>Start Date</label>
+                    <input type="text" name="start_date[${index}]" placeholder="dd/mm/yyyy" class="date-picker">
+                </div>
+                <div class="form-group">
+                    <label>Finish Date</label>
+                    <input type="text" name="finish_date[${index}]" placeholder="dd/mm/yyyy" class="date-picker">
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                        <input type="checkbox" name="relevant_qualification[${index}]" value="1" style="width: auto; margin: 0;">
+                        <span>Relevant Qualification for Migration</span>
+                    </label>
                 </div>
             </div>
         </div>
     `);
+    
+    // Initialize datepickers for the newly added fields
+    initializeDatepickers();
 }
 
 /**
@@ -2478,66 +2518,47 @@ window.saveTravelInfo = function() {
  * Save qualifications information and update summary
  */
 window.saveQualificationsInfo = function() {
-    // Get all qualification entries
     const container = document.getElementById('qualificationsContainer');
     const sections = container.querySelectorAll('.repeatable-section');
-    const qualifications = [];
     
-    sections.forEach(section => {
+    const formData = new FormData();
+    
+    // Add delete IDs if any
+    const deleteInputs = container.querySelectorAll('input[name="delete_qualification_ids[]"]');
+    deleteInputs.forEach(input => {
+        formData.append('delete_qualification_ids[]', input.value);
+    });
+    
+    sections.forEach((section, index) => {
         const qualId = section.querySelector('input[name*="qualification_id"]')?.value;
-        const qualification = section.querySelector('input[name*="qualification"]').value;
-        const institution = section.querySelector('input[name*="institution"]').value;
-        const country = section.querySelector('input[name*="qual_country"]').value;
-        const year = section.querySelector('input[name*="year"]').value;
+        const level = section.querySelector('select[name*="level"]')?.value;
+        const name = section.querySelector('input[name*="name"]')?.value;
+        const qualCollegeName = section.querySelector('input[name*="qual_college_name"]')?.value;
+        const qualCampus = section.querySelector('input[name*="qual_campus"]')?.value;
+        const country = section.querySelector('input[name*="qual_country"]')?.value;
+        const qualState = section.querySelector('input[name*="qual_state"]')?.value;
+        const startDate = section.querySelector('input[name*="start_date"]')?.value;
+        const finishDate = section.querySelector('input[name*="finish_date"]')?.value;
+        const relevantQual = section.querySelector('input[name*="relevant_qualification"]')?.checked;
         
-        if (qualification || institution || country || year) {
-            qualifications.push({
-                qualification_id: qualId || '',
-                qualification: qualification,
-                institution: institution,
-                country: country,
-                year: year
-            });
+        // Append data in array format that controller expects
+        if (qualId) formData.append(`qualification_id[${index}]`, qualId);
+        formData.append(`level[${index}]`, level || '');
+        formData.append(`name[${index}]`, name || '');
+        formData.append(`qual_college_name[${index}]`, qualCollegeName || '');
+        formData.append(`qual_campus[${index}]`, qualCampus || '');
+        formData.append(`qual_country[${index}]`, country || '');
+        formData.append(`qual_state[${index}]`, qualState || '');
+        formData.append(`start_date[${index}]`, startDate || '');
+        formData.append(`finish_date[${index}]`, finishDate || '');
+        if (relevantQual) {
+            formData.append(`relevant_qualification[${index}]`, '1');
         }
     });
     
-    const formData = new FormData();
-    formData.append('qualifications', JSON.stringify(qualifications));
-    
     saveSectionData('qualificationsInfo', formData, function() {
-        // Update summary view on success
-        const summaryView = document.getElementById('qualificationsInfoSummary');
-        const summaryGrid = summaryView.querySelector('.summary-grid');
-        
-        if (qualifications.length > 0) {
-            let summaryHTML = '';
-            qualifications.forEach(qual => {
-                summaryHTML += `
-                    <div class="summary-item">
-                        <span class="summary-label">Qualification:</span>
-                        <span class="summary-value">${qual.qualification || 'Not set'}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Institution:</span>
-                        <span class="summary-value">${qual.institution || 'Not set'}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Country:</span>
-                        <span class="summary-value">${qual.country || 'Not set'}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Year:</span>
-                        <span class="summary-value">${qual.year || 'Not set'}</span>
-                    </div>
-                `;
-            });
-            summaryGrid.innerHTML = summaryHTML;
-        } else {
-            summaryView.innerHTML = '<div class="empty-state"><p>No qualifications added yet.</p></div>';
-        }
-        
-        // Return to summary view
-        cancelEdit('qualificationsInfo');
+        // Reload page to show updated data
+        location.reload();
     });
 };
 
@@ -3010,7 +3031,22 @@ window.removeTravelField = function(button) {
  */
 window.removeQualificationField = function(button) {
     if (confirm('Are you sure you want to remove this qualification?')) {
-        button.closest('.repeatable-section').remove();
+        const section = button.closest('.repeatable-section');
+        const qualificationId = section.querySelector('input[name*="qualification_id"]')?.value;
+        
+        // If this is an existing qualification (has an ID), track it for deletion
+        if (qualificationId) {
+            // Create a hidden input to track the deletion
+            const container = document.getElementById('qualificationsContainer');
+            const deleteInput = document.createElement('input');
+            deleteInput.type = 'hidden';
+            deleteInput.name = 'delete_qualification_ids[]';
+            deleteInput.value = qualificationId;
+            container.appendChild(deleteInput);
+        }
+        
+        // Remove the section from the DOM
+        section.remove();
     }
 };
 
