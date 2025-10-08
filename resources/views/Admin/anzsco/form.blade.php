@@ -133,7 +133,7 @@
                                                        {{ old('is_on_csol', $occupation->is_on_csol ?? false) ? 'checked' : '' }}>
                                                 <label class="custom-control-label" for="is_on_csol">
                                                     <span class="badge badge-secondary">CSOL</span>
-                                                    <small class="d-block text-muted">Consolidated List (Legacy)</small>
+                                                    <small class="d-block text-muted">Core Skills Occupation List</small>
                                                 </label>
                                             </div>
                                         </div>

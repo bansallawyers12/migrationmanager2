@@ -84,6 +84,10 @@ class AnzscoOccupation extends Model
 
     /**
      * Get occupation lists as an array
+     * MLTSSL = Medium and Long-term Strategic Skills List
+     * STSOL = Short-term Skilled Occupation List
+     * ROL = Regional Occupation List
+     * CSOL = Core Skills Occupation List
      */
     public function getOccupationListsAttribute()
     {

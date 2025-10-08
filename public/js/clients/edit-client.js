@@ -1587,8 +1587,8 @@ function addCharacterRow(containerId, fieldName) {
             <button type="button" class="remove-item-btn" title="Remove Character" onclick="removeCharacterField(this)"><i class="fas fa-trash"></i></button>
             <div class="content-grid">
                 <div class="form-group">
-                    <label>Detail</label>
-                    <textarea name="${fieldName}[${index}]" rows="2" placeholder="Detail"></textarea>
+                    <label>Character Detail</label>
+                    <textarea name="${fieldName}[${index}]" rows="3" placeholder="Enter character detail"></textarea>
                 </div>
             </div>
         </div>
@@ -1719,7 +1719,7 @@ window.saveSectionData = function(sectionName, formData, successCallback) {
     
     // Add section data to form data
     formData.append('_token', csrfToken);
-    formData.append('client_id', clientId);
+    formData.append('id', clientId);
     formData.append('type', type);
     formData.append('section', sectionName);
     
@@ -2829,33 +2829,37 @@ window.savePartnerInfo = function() {
     saveSectionData('partnerInfo', formData, function() {
         // Update summary view on success
         const summaryView = document.getElementById('partnerInfoSummary');
-        const summaryGrid = summaryView.querySelector('.summary-grid');
         
         if (partners.length > 0) {
-            let summaryHTML = '';
+            let summaryHTML = '<div style="margin-top: 15px;">';
             partners.forEach(partner => {
                 summaryHTML += `
-                    <div class="summary-item">
-                        <span class="summary-label">Details:</span>
-                        <span class="summary-value">${partner.details || 'Not set'}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Relationship:</span>
-                        <span class="summary-value">${partner.relationship_type || 'Not set'}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Gender:</span>
-                        <span class="summary-value">${partner.gender || 'Not set'}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Company Type:</span>
-                        <span class="summary-value">${partner.company_type || 'Not set'}</span>
+                    <div class="partner-entry-compact" style="margin-bottom: 12px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #007bff;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; align-items: center;">
+                            <div class="summary-item-inline">
+                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">DETAILS:</span>
+                                <span class="summary-value" style="color: #212529; font-weight: 500;">${partner.details || 'Not set'}</span>
+                            </div>
+                            <div class="summary-item-inline">
+                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">RELATIONSHIP:</span>
+                                <span class="summary-value" style="color: #212529; font-weight: 500;">${partner.relationship_type || 'Not set'}</span>
+                            </div>
+                            <div class="summary-item-inline">
+                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">GENDER:</span>
+                                <span class="summary-value" style="color: #212529; font-weight: 500;">${partner.gender || 'Not set'}</span>
+                            </div>
+                            <div class="summary-item-inline">
+                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">COMPANY TYPE:</span>
+                                <span class="summary-value" style="color: #212529; font-weight: 500;">${partner.company_type || 'Not set'}</span>
+                            </div>
+                        </div>
                     </div>
                 `;
             });
-            summaryGrid.innerHTML = summaryHTML;
+            summaryHTML += '</div>';
+            summaryView.innerHTML = summaryHTML;
         } else {
-            summaryView.innerHTML = '<div class="empty-state"><p>No partner information added yet.</p></div>';
+            summaryView.innerHTML = '<div class="empty-state" style="margin-top: 15px;"><p>No partner information added yet.</p></div>';
         }
         
         // Return to summary view
@@ -2896,33 +2900,37 @@ window.saveChildrenInfo = function() {
     saveSectionData('childrenInfo', formData, function() {
         // Update summary view on success
         const summaryView = document.getElementById('childrenInfoSummary');
-        const summaryGrid = summaryView.querySelector('.summary-grid');
         
         if (children.length > 0) {
-            let summaryHTML = '';
+            let summaryHTML = '<div style="margin-top: 15px;">';
             children.forEach(child => {
                 summaryHTML += `
-                    <div class="summary-item">
-                        <span class="summary-label">Details:</span>
-                        <span class="summary-value">${child.details || 'Not set'}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Relationship:</span>
-                        <span class="summary-value">${child.relationship_type || 'Not set'}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Gender:</span>
-                        <span class="summary-value">${child.gender || 'Not set'}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Company Type:</span>
-                        <span class="summary-value">${child.company_type || 'Not set'}</span>
+                    <div class="children-entry-compact" style="margin-bottom: 12px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #007bff;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; align-items: center;">
+                            <div class="summary-item-inline">
+                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">DETAILS:</span>
+                                <span class="summary-value" style="color: #212529; font-weight: 500;">${child.details || 'Not set'}</span>
+                            </div>
+                            <div class="summary-item-inline">
+                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">RELATIONSHIP:</span>
+                                <span class="summary-value" style="color: #212529; font-weight: 500;">${child.relationship_type || 'Not set'}</span>
+                            </div>
+                            <div class="summary-item-inline">
+                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">GENDER:</span>
+                                <span class="summary-value" style="color: #212529; font-weight: 500;">${child.gender || 'Not set'}</span>
+                            </div>
+                            <div class="summary-item-inline">
+                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">COMPANY TYPE:</span>
+                                <span class="summary-value" style="color: #212529; font-weight: 500;">${child.company_type || 'Not set'}</span>
+                            </div>
+                        </div>
                     </div>
                 `;
             });
-            summaryGrid.innerHTML = summaryHTML;
+            summaryHTML += '</div>';
+            summaryView.innerHTML = summaryHTML;
         } else {
-            summaryView.innerHTML = '<div class="empty-state"><p>No children information added yet.</p></div>';
+            summaryView.innerHTML = '<div class="empty-state" style="margin-top: 15px;"><p>No children information added yet.</p></div>';
         }
         
         // Return to summary view
@@ -2971,49 +2979,53 @@ window.saveEoiInfo = function() {
     saveSectionData('eoiInfo', formData, function() {
         // Update summary view on success
         const summaryView = document.getElementById('eoiInfoSummary');
-        const summaryGrid = summaryView.querySelector('.summary-grid');
         
         if (eois.length > 0) {
-            let summaryHTML = '';
+            let summaryHTML = '<div style="margin-top: 15px;">';
             eois.forEach(eoi => {
                 summaryHTML += `
-                    <div class="summary-item">
-                        <span class="summary-label">EOI Number:</span>
-                        <span class="summary-value">${eoi.eoi_number || 'Not set'}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Subclass:</span>
-                        <span class="summary-value">${eoi.subclass || 'Not set'}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Occupation:</span>
-                        <span class="summary-value">${eoi.occupation || 'Not set'}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Point:</span>
-                        <span class="summary-value">${eoi.point || 'Not set'}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">State:</span>
-                        <span class="summary-value">${eoi.state || 'Not set'}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Submission Date:</span>
-                        <span class="summary-value">${eoi.submission_date || 'Not set'}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">ROI:</span>
-                        <span class="summary-value">${eoi.roi || 'Not set'}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Password:</span>
-                        <span class="summary-value">${eoi.password ? '••••••••' : 'Not set'}</span>
+                    <div class="eoi-entry-compact" style="margin-bottom: 12px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #007bff;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; align-items: center;">
+                            <div class="summary-item-inline">
+                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">EOI NUMBER:</span>
+                                <span class="summary-value" style="color: #212529; font-weight: 500;">${eoi.eoi_number || 'Not set'}</span>
+                            </div>
+                            <div class="summary-item-inline">
+                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">SUBCLASS:</span>
+                                <span class="summary-value" style="color: #212529; font-weight: 500;">${eoi.subclass || 'Not set'}</span>
+                            </div>
+                            <div class="summary-item-inline">
+                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">OCCUPATION:</span>
+                                <span class="summary-value" style="color: #212529; font-weight: 500;">${eoi.occupation || 'Not set'}</span>
+                            </div>
+                            <div class="summary-item-inline">
+                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">POINT:</span>
+                                <span class="summary-value" style="color: #212529; font-weight: 500;">${eoi.point || 'Not set'}</span>
+                            </div>
+                            <div class="summary-item-inline">
+                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">STATE:</span>
+                                <span class="summary-value" style="color: #212529; font-weight: 500;">${eoi.state || 'Not set'}</span>
+                            </div>
+                            <div class="summary-item-inline">
+                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">SUBMISSION DATE:</span>
+                                <span class="summary-value" style="color: #212529; font-weight: 500;">${eoi.submission_date || 'Not set'}</span>
+                            </div>
+                            <div class="summary-item-inline">
+                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">ROI:</span>
+                                <span class="summary-value" style="color: #212529; font-weight: 500;">${eoi.roi || 'Not set'}</span>
+                            </div>
+                            <div class="summary-item-inline">
+                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">PASSWORD:</span>
+                                <span class="summary-value" style="color: #212529; font-weight: 500;">${eoi.password ? '••••••••' : 'Not set'}</span>
+                            </div>
+                        </div>
                     </div>
                 `;
             });
-            summaryGrid.innerHTML = summaryHTML;
+            summaryHTML += '</div>';
+            summaryView.innerHTML = summaryHTML;
         } else {
-            summaryView.innerHTML = '<div class="empty-state"><p>No EOI references added yet.</p></div>';
+            summaryView.innerHTML = '<div class="empty-state" style="margin-top: 15px;"><p>No EOI references added yet.</p></div>';
         }
         
         // Return to summary view

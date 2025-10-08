@@ -133,7 +133,15 @@ class AnzscoImportService
                 
                 if ($existing) {
                     if ($updateExisting) {
-                        $existing->update($mappedData);
+                        // MERGE list flags instead of replacing them
+                        // If a flag is already TRUE, keep it TRUE (don't overwrite with FALSE)
+                        $mergedData = $mappedData;
+                        $mergedData['is_on_mltssl'] = $existing->is_on_mltssl || $mappedData['is_on_mltssl'];
+                        $mergedData['is_on_stsol'] = $existing->is_on_stsol || $mappedData['is_on_stsol'];
+                        $mergedData['is_on_rol'] = $existing->is_on_rol || $mappedData['is_on_rol'];
+                        $mergedData['is_on_csol'] = $existing->is_on_csol || $mappedData['is_on_csol'];
+                        
+                        $existing->update($mergedData);
                         $this->stats['updated']++;
                     } else {
                         $this->warnings[] = "Row {$rowNumber}: ANZSCO code {$mappedData['anzsco_code']} already exists. Skipped.";
@@ -179,8 +187,12 @@ class AnzscoImportService
                     $mapped[$dbColumn] = $this->parseBoolean($value);
                 }
                 // Handle integer fields
-                elseif (in_array($dbColumn, ['skill_level', 'assessment_validity_years'])) {
+                elseif (in_array($dbColumn, ['skill_level'])) {
                     $mapped[$dbColumn] = !empty($value) ? (int)$value : null;
+                }
+                // Handle assessment_validity_years with default
+                elseif ($dbColumn === 'assessment_validity_years') {
+                    $mapped[$dbColumn] = !empty($value) ? (int)$value : 3; // Default to 3 years
                 }
                 // Handle string fields
                 else {

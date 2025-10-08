@@ -199,7 +199,7 @@
                             </tr>
                             <tr>
                                 <td><code>csol</code></td>
-                                <td>On CSOL list? (legacy)</td>
+                                <td>On CSOL list? (Core Skills)</td>
                                 <td><span class="badge badge-secondary">Optional</span></td>
                                 <td>Yes / No / 1 / 0</td>
                             </tr>

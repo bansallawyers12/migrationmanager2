@@ -24,6 +24,7 @@ use App\Models\ClientPassportInformation;
 use App\Models\ClientTravelInformation;
 use App\Models\ClientCharacter;
 use App\Models\ClientRelationship;
+use App\Models\ClientEoiReference;
 use App\Models\ClientMatter;
 use App\Models\ActivitiesLog;
 use App\Models\ClientPartner;
@@ -1941,9 +1942,9 @@ class ClientPersonalDetailsController extends Controller
                 $pyDateFormatted = $pyDateObj ? $pyDateObj->format('Y-m-d') : null;
             }
             
-            $client->naati = $naatiTest;
+            $client->naati_test = $naatiTest;
             $client->naati_date = $naatiDateFormatted;
-            $client->py = $pyTest;
+            $client->py_test = $pyTest;
             $client->py_date = $pyDateFormatted;
             $client->save();
 
@@ -2008,15 +2009,18 @@ class ClientPersonalDetailsController extends Controller
                 ], 400);
             }
 
-            // Delete existing partner records for this client (type = partner)
-            ClientRelationship::where('client_id', $client->id)->where('type', 'partner')->delete();
+            // Delete existing partner records for this client (filter by partner relationship types)
+            ClientRelationship::where('client_id', $client->id)
+                ->whereIn('relationship_type', ['Husband', 'Wife', 'Ex-Wife', 'Defacto'])
+                ->delete();
 
             // Insert new partner records
             foreach ($partners as $partnerData) {
-                if (!empty($partnerData['details'])) {
+                if (!empty($partnerData['details']) || !empty($partnerData['relationship_type'])) {
                     ClientRelationship::create([
+                        'admin_id' => auth()->id(),
                         'client_id' => $client->id,
-                        'type' => 'partner',
+                        'related_client_id' => $partnerData['partner_id'] ?? null,
                         'details' => $partnerData['details'],
                         'relationship_type' => $partnerData['relationship_type'] ?? null,
                         'gender' => $partnerData['gender'] ?? null,
@@ -2049,15 +2053,18 @@ class ClientPersonalDetailsController extends Controller
                 ], 400);
             }
 
-            // Delete existing children records for this client (type = children)
-            ClientRelationship::where('client_id', $client->id)->where('type', 'children')->delete();
+            // Delete existing children records for this client (filter by children relationship types)
+            ClientRelationship::where('client_id', $client->id)
+                ->whereIn('relationship_type', ['Son', 'Daughter', 'Step Son', 'Step Daughter'])
+                ->delete();
 
             // Insert new children records
             foreach ($children as $childData) {
-                if (!empty($childData['details'])) {
+                if (!empty($childData['details']) || !empty($childData['relationship_type'])) {
                     ClientRelationship::create([
+                        'admin_id' => auth()->id(),
                         'client_id' => $client->id,
-                        'type' => 'children',
+                        'related_client_id' => $childData['child_id'] ?? null,
                         'details' => $childData['details'],
                         'relationship_type' => $childData['relationship_type'] ?? null,
                         'gender' => $childData['gender'] ?? null,
@@ -2090,8 +2097,39 @@ class ClientPersonalDetailsController extends Controller
                 ], 400);
             }
 
-            // For now, just return success as ClientEoiReference model might need to be checked
-            // This would need the ClientEoiReference model imported at the top
+            // Delete existing EOI references for this client
+            ClientEoiReference::where('client_id', $client->id)->delete();
+
+            // Save new EOI references
+            foreach ($eois as $eoiData) {
+                if (!empty($eoiData['eoi_number']) || !empty($eoiData['subclass']) || !empty($eoiData['occupation'])) {
+                    // Format submission date from d/m/Y to Y-m-d
+                    $formatted_submission_date = null;
+                    if (!empty($eoiData['submission_date'])) {
+                        try {
+                            $date = \Carbon\Carbon::createFromFormat('d/m/Y', $eoiData['submission_date']);
+                            $formatted_submission_date = $date->format('Y-m-d');
+                        } catch (\Exception $e) {
+                            // If format conversion fails, try to use the date as-is
+                            $formatted_submission_date = $eoiData['submission_date'];
+                        }
+                    }
+                    
+                    ClientEoiReference::create([
+                        'client_id' => $client->id,
+                        'admin_id' => Auth::id(),
+                        'EOI_number' => $eoiData['eoi_number'] ?? null,
+                        'EOI_subclass' => $eoiData['subclass'] ?? null,
+                        'EOI_occupation' => $eoiData['occupation'] ?? null,
+                        'EOI_point' => $eoiData['point'] ?? null,
+                        'EOI_state' => $eoiData['state'] ?? null,
+                        'EOI_submission_date' => $formatted_submission_date,
+                        'EOI_ROI' => $eoiData['roi'] ?? null,
+                        'EOI_password' => $eoiData['password'] ?? null,
+                    ]);
+                }
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'EOI reference information updated successfully'
