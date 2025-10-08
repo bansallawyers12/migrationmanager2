@@ -21,6 +21,23 @@ class ClientRelationship extends Model
         'gender',
         'dob',
     ];
+
+    /**
+     * Get the related client (partner/child/etc)
+     * Enables eager loading to prevent N+1 queries
+     */
+    public function relatedClient()
+    {
+        return $this->belongsTo(Admin::class, 'related_client_id', 'id');
+    }
+
+    /**
+     * Get the main client
+     */
+    public function client()
+    {
+        return $this->belongsTo(Admin::class, 'client_id', 'id');
+    }
 }
 
 

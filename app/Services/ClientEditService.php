@@ -1,0 +1,220 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Admin;
+use App\Models\ClientContact;
+use App\Models\ClientEmail;
+use App\Models\ClientVisaCountry;
+use App\Models\ClientAddress;
+use App\Models\ClientQualification;
+use App\Models\ClientExperience;
+use App\Models\ClientOccupation;
+use App\Models\ClientTestScore;
+use App\Models\ClientSpouseDetail;
+use App\Models\ClientPassportInformation;
+use App\Models\ClientTravelInformation;
+use App\Models\ClientCharacter;
+use App\Models\ClientRelationship;
+use App\Models\ClientEoiReference;
+use App\Models\Matter;
+use App\Models\Country;
+
+/**
+ * ClientEditService
+ * 
+ * Handles data preparation for client edit page with optimized queries.
+ * Eliminates N+1 query problems by eager loading relationships and
+ * loading dropdown data once.
+ * 
+ * Used by:
+ * - ClientsController@edit
+ * - ClientPersonalDetailsController@clientdetailsinfo
+ */
+class ClientEditService
+{
+    /**
+     * Get all data needed for client edit page with optimized queries
+     * 
+     * @param int $clientId
+     * @return array
+     */
+    public function getClientEditData(int $clientId): array
+    {
+        return [
+            'fetchedData' => $this->getClientData($clientId),
+            'clientContacts' => $this->getClientContacts($clientId),
+            'emails' => $this->getClientEmails($clientId),
+            'visaCountries' => $this->getVisaCountries($clientId),
+            'clientAddresses' => $this->getClientAddresses($clientId),
+            'qualifications' => $this->getQualifications($clientId),
+            'experiences' => $this->getExperiences($clientId),
+            'clientOccupations' => $this->getOccupations($clientId),
+            'testScores' => $this->getTestScores($clientId),
+            'ClientSpouseDetail' => $this->getSpouseDetail($clientId),
+            'clientPassports' => $this->getPassports($clientId),
+            'clientTravels' => $this->getTravels($clientId),
+            'clientCharacters' => $this->getCharacters($clientId),
+            'clientPartners' => $this->getRelationships($clientId),
+            'clientEoiReferences' => $this->getEoiReferences($clientId),
+            
+            // Dropdown data - loaded ONCE to prevent N+1 queries
+            'visaTypes' => $this->getVisaTypes(),
+            'countries' => $this->getCountries(),
+        ];
+    }
+
+    /**
+     * Get client basic data
+     */
+    protected function getClientData(int $clientId)
+    {
+        return Admin::find($clientId);
+    }
+
+    /**
+     * Get client contact numbers
+     */
+    protected function getClientContacts(int $clientId)
+    {
+        return ClientContact::where('client_id', $clientId)->get() ?? [];
+    }
+
+    /**
+     * Get client email addresses
+     */
+    protected function getClientEmails(int $clientId)
+    {
+        return ClientEmail::where('client_id', $clientId)->get() ?? [];
+    }
+
+    /**
+     * Get visa countries with eager loaded matter relationship
+     * Prevents N+1 query when accessing visa->matter in blade
+     */
+    protected function getVisaCountries(int $clientId)
+    {
+        return ClientVisaCountry::where('client_id', $clientId)
+            ->with(['matter:id,title,nick_name'])  // Eager load to prevent N+1
+            ->orderBy('visa_expiry_date', 'desc')
+            ->get() ?? [];
+    }
+
+    /**
+     * Get client addresses
+     */
+    protected function getClientAddresses(int $clientId)
+    {
+        return ClientAddress::where('client_id', $clientId)
+            ->orderBy('created_at', 'desc')
+            ->get() ?? [];
+    }
+
+    /**
+     * Get educational qualifications
+     */
+    protected function getQualifications(int $clientId)
+    {
+        return ClientQualification::where('client_id', $clientId)->get() ?? [];
+    }
+
+    /**
+     * Get work experiences
+     */
+    protected function getExperiences(int $clientId)
+    {
+        return ClientExperience::where('client_id', $clientId)->get() ?? [];
+    }
+
+    /**
+     * Get occupations
+     */
+    protected function getOccupations(int $clientId)
+    {
+        return ClientOccupation::where('client_id', $clientId)->get() ?? [];
+    }
+
+    /**
+     * Get test scores
+     */
+    protected function getTestScores(int $clientId)
+    {
+        return ClientTestScore::where('client_id', $clientId)->get() ?? [];
+    }
+
+    /**
+     * Get spouse details
+     */
+    protected function getSpouseDetail(int $clientId)
+    {
+        return ClientSpouseDetail::where('client_id', $clientId)->first() ?? [];
+    }
+
+    /**
+     * Get passport information
+     */
+    protected function getPassports(int $clientId)
+    {
+        return ClientPassportInformation::where('client_id', $clientId)->get() ?? [];
+    }
+
+    /**
+     * Get travel information
+     */
+    protected function getTravels(int $clientId)
+    {
+        return ClientTravelInformation::where('client_id', $clientId)->get() ?? [];
+    }
+
+    /**
+     * Get character information
+     */
+    protected function getCharacters(int $clientId)
+    {
+        return ClientCharacter::where('client_id', $clientId)->get() ?? [];
+    }
+
+    /**
+     * Get family relationships with eager loaded related client
+     * Prevents N+1 query when accessing partner->relatedClient in blade
+     */
+    protected function getRelationships(int $clientId)
+    {
+        return ClientRelationship::where('client_id', $clientId)
+            ->with(['relatedClient:id,first_name,last_name,email,phone,client_id'])  // Eager load to prevent N+1
+            ->get() ?? [];
+    }
+
+    /**
+     * Get EOI references
+     */
+    protected function getEoiReferences(int $clientId)
+    {
+        return ClientEoiReference::where('client_id', $clientId)->get() ?? [];
+    }
+
+    /**
+     * Get visa types for dropdown
+     * Loaded once and passed to view to prevent multiple queries
+     */
+    protected function getVisaTypes()
+    {
+        return Matter::select('id', 'title', 'nick_name')
+            ->where('title', 'not like', '%skill assessment%')
+            ->where('status', 1)
+            ->orderBy('title', 'ASC')
+            ->get();
+    }
+
+    /**
+     * Get countries for dropdown
+     * Loaded once and passed to view to prevent N+1 query in passport loop
+     */
+    protected function getCountries()
+    {
+        return Country::select('id', 'name', 'sortname', 'phonecode')
+            ->orderBy('name', 'ASC')
+            ->get();
+    }
+}
+

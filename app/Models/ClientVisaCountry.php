@@ -16,4 +16,13 @@ class ClientVisaCountry extends Model
         'visa_expiry_date',  // Expiry date of the visa
         'visa_grant_date',
     ];
+
+    /**
+     * Get the matter (visa type) for this visa
+     * Enables eager loading to prevent N+1 queries
+     */
+    public function matter()
+    {
+        return $this->belongsTo(Matter::class, 'visa_type', 'id');
+    }
 }

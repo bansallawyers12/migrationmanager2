@@ -1139,19 +1139,11 @@ class ClientPersonalDetailsController extends Controller
             $id = $this->decodeString($id); //dd($id);
             if(Admin::where('id', '=', $id)->where('role', '=', '7')->exists())
             {
-                $fetchedData = Admin::find($id); //dd($fetchedData);
-
-                $clientContacts = ClientContact::where('client_id', $id)->get() ?? [];
-                $emails = ClientEmail::where('client_id', $id)->get() ?? [];
-                $visaCountries = ClientVisaCountry::where('client_id', $id)->get() ?? [];
-                $clientAddresses = ClientAddress::where('client_id', $id)->orderBy('created_at', 'desc')->get() ?? [];
-                $qualifications = ClientQualification::where('client_id', $id)->get() ?? [];
-                $experiences = ClientExperience::where('client_id', $id)->get() ?? [];
-                $clientOccupations = ClientOccupation::where('client_id', $id)->get();
-                $testScores = ClientTestScore::where('client_id', $id)->get() ?? [];
-                $ClientSpouseDetail = ClientSpouseDetail::where('client_id', $id)->first() ?? [];
-                //dd($ClientSpouseDetail->spouse_english_score);
-                return view('Admin.clients.edit', compact('fetchedData', 'clientContacts', 'emails', 'visaCountries','clientAddresses', 'qualifications', 'experiences','clientOccupations','testScores','ClientSpouseDetail'));
+                // Use service to get all data with optimized queries (prevents N+1)
+                // Now returns complete data set including passports, travels, etc.
+                $data = app(\App\Services\ClientEditService::class)->getClientEditData($id);
+                
+                return view('Admin.clients.edit', $data);
             } else {
                 return Redirect::to('/admin/clients')->with('error', 'Clients Not Exist');
             }

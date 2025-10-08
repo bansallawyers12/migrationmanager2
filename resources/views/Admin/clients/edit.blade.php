@@ -2,13 +2,14 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/address-autocomplete.css') }}">
-<link rel="stylesheet" href="{{asset('css/client-forms.css')}}">
+    <link rel="stylesheet" href="{{asset('css/client-forms.css')}}">
+    <link rel="stylesheet" href="{{asset('css/clients/edit-client-components.css')}}">
 @endpush
 
 @section('content')
     <div class="crm-container">
         <div class="main-content">
-            <div class="client-header" style="padding-top: 35px;">
+            <div class="client-header">
                 <div>
                     <h1>{{ $fetchedData->type == 'lead' ? 'Edit Lead' : ($fetchedData->type == 'client' ? 'Edit Client' : '') }}
                         : {{ $fetchedData->first_name }} {{ $fetchedData->last_name }}</h1>
@@ -143,7 +144,7 @@
                         </div>
 
                         <!-- Edit View -->
-                        <div id="basicInfoEdit" class="edit-view" style="display: none;">
+                        <div id="basicInfoEdit" class="edit-view hidden">
                             <div class="content-grid">
                                 <div class="form-group">
                                     <label for="firstName">First Name</label>
@@ -264,60 +265,10 @@
                         </div>
 
                         <!-- Edit View -->
-                        <div id="phoneNumbersEdit" class="edit-view" style="display: none;">
+                        <div id="phoneNumbersEdit" class="edit-view hidden">
                             <div id="phoneNumbersContainer">
                                 @foreach($clientContacts as $index => $contact)
-                                    <div class="repeatable-section">
-                                        <button type="button" class="remove-item-btn" title="Remove Phone" onclick="removePhoneField(this)"><i class="fas fa-trash"></i></button>
-                                        <input type="hidden" name="contact_id[{{ $index }}]" value="{{ $contact->id }}">
-                                        <div class="content-grid">
-                                            <div class="form-group">
-                                                <label>Type</label>
-                                                <select name="contact_type_hidden[{{ $index }}]" class="contact-type-selector">
-                                                    <option value="Personal" {{ $contact->contact_type == 'Personal' ? 'selected' : '' }}>Personal</option>
-                                                    <option value="Work" {{ $contact->contact_type == 'Work' ? 'selected' : '' }}>Work</option>
-                                                    <option value="Mobile" {{ $contact->contact_type == 'Mobile' ? 'selected' : '' }}>Mobile</option>
-                                                    <option value="Business" {{ $contact->contact_type == 'Business' ? 'selected' : '' }}>Business</option>
-                                                    <option value="Secondary" {{ $contact->contact_type == 'Secondary' ? 'selected' : '' }}>Secondary</option>
-                                                    <option value="Father" {{ $contact->contact_type == 'Father' ? 'selected' : '' }}>Father</option>
-                                                    <option value="Mother" {{ $contact->contact_type == 'Mother' ? 'selected' : '' }}>Mother</option>
-                                                    <option value="Brother" {{ $contact->contact_type == 'Brother' ? 'selected' : '' }}>Brother</option>
-                                                    <option value="Sister" {{ $contact->contact_type == 'Sister' ? 'selected' : '' }}>Sister</option>
-                                                    <option value="Uncle" {{ $contact->contact_type == 'Uncle' ? 'selected' : '' }}>Uncle</option>
-                                                    <option value="Aunt" {{ $contact->contact_type == 'Aunt' ? 'selected' : '' }}>Aunt</option>
-                                                    <option value="Cousin" {{ $contact->contact_type == 'Cousin' ? 'selected' : '' }}>Cousin</option>
-                                                    <option value="Others" {{ $contact->contact_type == 'Others' ? 'selected' : '' }}>Others</option>
-                                                    <option value="Partner" {{ $contact->contact_type == 'Partner' ? 'selected' : '' }}>Partner</option>
-                                                    <option value="Not In Use" {{ $contact->contact_type == 'Not In Use' ? 'selected' : '' }}>Not In Use</option>
-                                                </select>
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Number</label>
-                                                <div class="cus_field_input" style="display:flex;">
-                                                    <div class="country_code">
-                                                        <select name="country_code[{{ $index }}]" class="country-code-input">
-                                                            <option value="+61" {{ $contact->country_code == '+61' ? 'selected' : '' }}>🇦🇺 +61</option>
-                                                            <option value="+91" {{ $contact->country_code == '+91' ? 'selected' : '' }}>🇮🇳 +91</option>
-                                                            <option value="+1" {{ $contact->country_code == '+1' ? 'selected' : '' }}>🇺🇸 +1</option>
-                                                            <option value="+44" {{ $contact->country_code == '+44' ? 'selected' : '' }}>🇬🇧 +44</option>
-                                                            <option value="+49" {{ $contact->country_code == '+49' ? 'selected' : '' }}>🇩🇪 +49</option>
-                                                            <option value="+33" {{ $contact->country_code == '+33' ? 'selected' : '' }}>🇫🇷 +33</option>
-                                                            <option value="+86" {{ $contact->country_code == '+86' ? 'selected' : '' }}>🇨🇳 +86</option>
-                                                            <option value="+81" {{ $contact->country_code == '+81' ? 'selected' : '' }}>🇯🇵 +81</option>
-                                                            <option value="+82" {{ $contact->country_code == '+82' ? 'selected' : '' }}>🇰🇷 +82</option>
-                                                            <option value="+65" {{ $contact->country_code == '+65' ? 'selected' : '' }}>🇸🇬 +65</option>
-                                                            <option value="+60" {{ $contact->country_code == '+60' ? 'selected' : '' }}>🇲🇾 +60</option>
-                                                            <option value="+66" {{ $contact->country_code == '+66' ? 'selected' : '' }}>🇹🇭 +66</option>
-                                                            <option value="+63" {{ $contact->country_code == '+63' ? 'selected' : '' }}>🇵🇭 +63</option>
-                                                            <option value="+84" {{ $contact->country_code == '+84' ? 'selected' : '' }}>🇻🇳 +84</option>
-                                                            <option value="+62" {{ $contact->country_code == '+62' ? 'selected' : '' }}>🇮🇩 +62</option>
-                                                        </select>
-                                                    </div>
-                                                    <input type="tel" name="phone[{{ $index }}]" value="{{ $contact->phone }}" placeholder="Phone Number" class="phone-number-input" style="width: 140px;" autocomplete="off">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <x-client-edit.phone-number-field :index="$index" :contact="$contact" />
                                 @endforeach
                             </div>
 
@@ -372,39 +323,10 @@
                         </div>
 
                         <!-- Edit View -->
-                        <div id="emailAddressesEdit" class="edit-view" style="display: none;">
+                        <div id="emailAddressesEdit" class="edit-view hidden">
                             <div id="emailAddressesContainer">
                                 @foreach($emails as $index => $email)
-                                    <div class="repeatable-section">
-                                        <button type="button" class="remove-item-btn" title="Remove Email" onclick="removeEmailField(this)"><i class="fas fa-trash"></i></button>
-                                        <input type="hidden" name="email_id[{{ $index }}]" value="{{ $email->id }}">
-                                        <div class="content-grid">
-                                            <div class="form-group">
-                                                <label>Type</label>
-                                                <select name="email_type_hidden[{{ $index }}]" class="email-type-selector">
-                                                    <option value="Personal" {{ $email->email_type == 'Personal' ? 'selected' : '' }}>Personal</option>
-                                                    <option value="Work" {{ $email->email_type == 'Work' ? 'selected' : '' }}>Work</option>
-                                                    <option value="Business" {{ $email->email_type == 'Business' ? 'selected' : '' }}>Business</option>
-                                                    <option value="Mobile" {{ $email->email_type == 'Mobile' ? 'selected' : '' }}>Mobile</option>
-                                                    <option value="Secondary" {{ $email->email_type == 'Secondary' ? 'selected' : '' }}>Secondary</option>
-                                                    <option value="Father" {{ $email->email_type == 'Father' ? 'selected' : '' }}>Father</option>
-                                                    <option value="Mother" {{ $email->email_type == 'Mother' ? 'selected' : '' }}>Mother</option>
-                                                    <option value="Brother" {{ $email->email_type == 'Brother' ? 'selected' : '' }}>Brother</option>
-                                                    <option value="Sister" {{ $email->email_type == 'Sister' ? 'selected' : '' }}>Sister</option>
-                                                    <option value="Uncle" {{ $email->email_type == 'Uncle' ? 'selected' : '' }}>Uncle</option>
-                                                    <option value="Aunt" {{ $email->email_type == 'Aunt' ? 'selected' : '' }}>Aunt</option>
-                                                    <option value="Cousin" {{ $email->email_type == 'Cousin' ? 'selected' : '' }}>Cousin</option>
-                                                    <option value="Others" {{ $email->email_type == 'Others' ? 'selected' : '' }}>Others</option>
-                                                    <option value="Partner" {{ $email->email_type == 'Partner' ? 'selected' : '' }}>Partner</option>
-                                                    <option value="Not In Use" {{ $email->email_type == 'Not In Use' ? 'selected' : '' }}>Not In Use</option>
-                                                </select>
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Email Address</label>
-                                                <input type="email" name="email[{{ $index }}]" value="{{ $email->email }}" placeholder="Email Address">
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <x-client-edit.email-field :index="$index" :email="$email" />
                                 @endforeach
                             </div>
 
@@ -471,37 +393,11 @@
                             <!-- Passport Details -->
                             <div id="passportDetailsContainer">
                                 @foreach($clientPassports as $index => $passport)
-                                    <div class="repeatable-section">
-                                        <button type="button" class="remove-item-btn" title="Remove Passport" onclick="removePassportField(this)"><i class="fas fa-trash"></i></button>
-                                        <input type="hidden" name="passport_id[{{ $index }}]" value="{{ $passport->id }}">
-                                        <div class="content-grid">
-                                            <div class="form-group">
-                                                <label>Country</label>
-                                                <select name="passports[{{ $index }}][passport_country]" class="passport-country-field">
-                                                    <option value="">Select Country</option>
-                                                    <option value="India" {{ $passport->passport_country == 'India' ? 'selected' : '' }}>India</option>
-                                                    <option value="Australia" {{ $passport->passport_country == 'Australia' ? 'selected' : '' }}>Australia</option>
-                                                    @foreach(\App\Models\Country::all() as $country)
-                                                        @if($country->name != 'India' && $country->name != 'Australia')
-                                                            <option value="{{ $country->name }}" {{ $passport->passport_country == $country->name ? 'selected' : '' }}>{{ $country->name }}</option>
-                                                        @endif
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Passport #</label>
-                                                <input type="text" name="passports[{{ $index }}][passport_number]" value="{{ $passport->passport }}" placeholder="Passport Number">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Issue Date</label>
-                                                <input type="text" name="passports[{{ $index }}][issue_date]" value="{{ $passport->passport_issue_date ? date('d/m/Y', strtotime($passport->passport_issue_date)) : '' }}" placeholder="dd/mm/yyyy" class="date-picker">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Expiry Date</label>
-                                                <input type="text" name="passports[{{ $index }}][expiry_date]" value="{{ $passport->passport_expiry_date ? date('d/m/Y', strtotime($passport->passport_expiry_date)) : '' }}" placeholder="dd/mm/yyyy" class="date-picker">
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <x-client-edit.passport-field 
+                                        :index="$index" 
+                                        :passport="$passport" 
+                                        :countries="$countries" 
+                                    />
                                 @endforeach
                             </div>
 
@@ -543,10 +439,7 @@
                                                 <div class="summary-item-inline">
                                                     <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">VISA TYPE:</span>
                                                     <span class="summary-value" style="color: #212529; font-weight: 500;">
-                                                        @php
-                                                            $Matter_get = App\Models\Matter::select('id','title','nick_name')->where('id',$visa->visa_type)->first();
-                                                        @endphp
-                                                        {{ $Matter_get ? $Matter_get->title . ' (' . $Matter_get->nick_name . ')' : 'Not set' }}
+                                                        {{ $visa->matter ? $visa->matter->title . ' (' . $visa->matter->nick_name . ')' : 'Not set' }}
                                                     </span>
                                                 </div>
                                                 <div class="summary-item-inline">
@@ -578,35 +471,11 @@
                             <div id="visaDetailsSection">
                                 <div id="visaDetailsContainer">
                                     @foreach($visaCountries as $index => $visa)
-                                        <div class="repeatable-section">
-                                            <button type="button" class="remove-item-btn" title="Remove Visa" onclick="removeVisaField(this)"><i class="fas fa-trash"></i></button>
-                                            <input type="hidden" name="visa_id[{{ $index }}]" value="{{ $visa->id }}">
-                                            <div class="content-grid">
-                                                <div class="form-group">
-                                                    <label>Visa Type / Subclass</label>
-                                                    <select name="visa_type_hidden[{{ $index }}]" class="visa-type-field">
-                                                        <option value="">Select Visa Type</option>
-                                                        @foreach($visaTypes as $visaType)
-                                                            <option value="{{ $visaType->id }}" {{ $visa->visa_type == $visaType->id ? 'selected' : '' }}>
-                                                                {{ $visaType->title }}{{ $visaType->nick_name ? ' (' . $visaType->nick_name . ')' : '' }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                                <div class="form-group">
-                                                    <label>Visa Expiry Date</label>
-                                                    <input type="text" name="visa_expiry_date[{{ $index }}]" value="{{ $visa->visa_expiry_date ? date('d/m/Y', strtotime($visa->visa_expiry_date)) : '' }}" placeholder="dd/mm/yyyy" class="visa-expiry-field date-picker">
-                                                </div>
-                                                <div class="form-group">
-                                                    <label>Visa Grant Date</label>
-                                                    <input type="text" name="visa_grant_date[{{ $index }}]" value="{{ $visa->visa_grant_date ? date('d/m/Y', strtotime($visa->visa_grant_date)) : '' }}" placeholder="dd/mm/yyyy" class="visa-grant-field date-picker">
-                                                </div>
-                                                <div class="form-group">
-                                                    <label>Visa Description</label>
-                                                    <input type="text" name="visa_description[{{ $index }}]" value="{{ $visa->visa_description }}" class="visa-description-field" placeholder="Description">
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <x-client-edit.visa-field 
+                                            :index="$index" 
+                                            :visa="$visa" 
+                                            :visaTypes="$visaTypes" 
+                                        />
                                     @endforeach
                                 </div>
 
@@ -632,7 +501,12 @@
 
                 <!-- Address & Travel Section -->
                 <section id="addressTravelSection" class="content-section">
-                    @include('Admin.clients.partials._address_information')
+                    <x-client-edit.address-section 
+                        :clientAddresses="$clientAddresses"
+                        :searchRoute="route('admin.clients.searchAddressFull')"
+                        :detailsRoute="route('admin.clients.getPlaceDetails')"
+                        :csrfToken="csrf_token()"
+                    />
                     
                     <!-- Travel Information Section -->
                     <section class="form-section">
@@ -682,28 +556,10 @@
                         <div id="travelInfoEdit" class="edit-view" style="display: none;">
                             <div id="travelDetailsContainer">
                                 @foreach($clientTravels as $index => $travel)
-                                    <div class="repeatable-section">
-                                        <button type="button" class="remove-item-btn" title="Remove Travel" onclick="removeTravelField(this)"><i class="fas fa-trash"></i></button>
-                                        <input type="hidden" name="travel_id[{{ $index }}]" value="{{ $travel->id }}">
-                                        <div class="content-grid">
-                                            <div class="form-group">
-                                                <label>Country Visited</label>
-                                                <input type="text" name="travel_country_visited[{{ $index }}]" value="{{ $travel->country_visited }}" placeholder="Country Visited">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Arrival Date</label>
-                                                <input type="text" name="travel_arrival_date[{{ $index }}]" value="{{ $travel->arrival_date ? date('d/m/Y', strtotime($travel->arrival_date)) : '' }}" placeholder="dd/mm/yyyy" class="date-picker">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Departure Date</label>
-                                                <input type="text" name="travel_departure_date[{{ $index }}]" value="{{ $travel->departure_date ? date('d/m/Y', strtotime($travel->departure_date)) : '' }}" placeholder="dd/mm/yyyy" class="date-picker">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Travel Purpose</label>
-                                                <input type="text" name="travel_purpose[{{ $index }}]" value="{{ $travel->travel_purpose }}" placeholder="Travel Purpose">
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <x-client-edit.travel-field 
+                                        :index="$index" 
+                                        :travel="$travel" 
+                                    />
                                 @endforeach
                             </div>
 
@@ -765,28 +621,10 @@
                         <div id="qualificationsInfoEdit" class="edit-view" style="display: none;">
                             <div id="qualificationsContainer">
                                 @foreach($qualifications as $index => $qualification)
-                                    <div class="repeatable-section">
-                                        <button type="button" class="remove-item-btn" title="Remove Qualification" onclick="removeQualificationField(this)"><i class="fas fa-trash"></i></button>
-                                        <input type="hidden" name="qualification_id[{{ $index }}]" value="{{ $qualification->id }}">
-                                        <div class="content-grid">
-                                            <div class="form-group">
-                                                <label>Qualification</label>
-                                                <input type="text" name="qualification[{{ $index }}]" value="{{ $qualification->qualification }}" placeholder="Qualification">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Institution</label>
-                                                <input type="text" name="institution[{{ $index }}]" value="{{ $qualification->institution }}" placeholder="Institution">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Country</label>
-                                                <input type="text" name="qual_country[{{ $index }}]" value="{{ $qualification->country }}" placeholder="Country">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Year</label>
-                                                <input type="text" name="year[{{ $index }}]" value="{{ $qualification->year }}" placeholder="Year">
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <x-client-edit.qualification-field 
+                                        :index="$index" 
+                                        :qualification="$qualification" 
+                                    />
                                 @endforeach
                             </div>
 
@@ -846,28 +684,10 @@
                         <div id="experienceInfoEdit" class="edit-view" style="display: none;">
                             <div id="experienceContainer">
                                 @foreach($experiences as $index => $experience)
-                                    <div class="repeatable-section">
-                                        <button type="button" class="remove-item-btn" title="Remove Experience" onclick="removeExperienceField(this)"><i class="fas fa-trash"></i></button>
-                                        <input type="hidden" name="experience_id[{{ $index }}]" value="{{ $experience->id }}">
-                                        <div class="content-grid">
-                                            <div class="form-group">
-                                                <label>Company</label>
-                                                <input type="text" name="company[{{ $index }}]" value="{{ $experience->company }}" placeholder="Company">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Position</label>
-                                                <input type="text" name="position[{{ $index }}]" value="{{ $experience->position }}" placeholder="Position">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Start Date</label>
-                                                <input type="text" name="exp_start_date[{{ $index }}]" value="{{ $experience->start_date ? date('d/m/Y', strtotime($experience->start_date)) : '' }}" placeholder="dd/mm/yyyy" class="date-picker">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>End Date</label>
-                                                <input type="text" name="exp_end_date[{{ $index }}]" value="{{ $experience->end_date ? date('d/m/Y', strtotime($experience->end_date)) : '' }}" placeholder="dd/mm/yyyy" class="date-picker">
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <x-client-edit.work-experience-field 
+                                        :index="$index" 
+                                        :experience="$experience" 
+                                    />
                                 @endforeach
                             </div>
 
@@ -946,53 +766,10 @@
                         <div id="occupationInfoEdit" class="edit-view" style="display: none;">
                             <div id="occupationContainer">
                                 @foreach($clientOccupations as $index => $occupation)
-                                    <div class="repeatable-section">
-                                        <button type="button" class="remove-item-btn" title="Remove Occupation" onclick="removeOccupationField(this)"><i class="fas fa-trash"></i></button>
-                                        <input type="hidden" name="occupation_id[{{ $index }}]" value="{{ $occupation->id }}">
-                                        <div class="content-grid">
-                                            <div class="form-group">
-                                                <label>Skill Assessment</label>
-                                                <select name="skill_assessment_hidden[{{ $index }}]" class="skill-assessment-select">
-                                                    <option value="">Select</option>
-                                                    <option value="Yes" {{ $occupation->skill_assessment == 'Yes' ? 'selected' : '' }}>Yes</option>
-                                                    <option value="No" {{ $occupation->skill_assessment == 'No' ? 'selected' : '' }}>No</option>
-                                                </select>
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Nominated Occupation</label>
-                                                <input type="text" name="nomi_occupation[{{ $index }}]" class="nomi_occupation" value="{{ $occupation->nomi_occupation }}" placeholder="Enter Occupation">
-                                                <div class="autocomplete-items"></div>
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Occupation Code (ANZSCO)</label>
-                                                <input type="text" name="occupation_code[{{ $index }}]" class="occupation_code" value="{{ $occupation->occupation_code }}" placeholder="Enter Code">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Assessing Authority</label>
-                                                <input type="text" name="list[{{ $index }}]" class="list" value="{{ $occupation->list }}" placeholder="e.g., ACS, VETASSESS">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Target Visa Subclass</label>
-                                                <input type="text" name="visa_subclass[{{ $index }}]" class="visa_subclass" value="{{ $occupation->visa_subclass }}" placeholder="e.g., 189, 190">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Assessment Date</label>
-                                                <input type="text" name="dates[{{ $index }}]" class="dates date-picker" value="{{ $occupation->dates ? date('d/m/Y', strtotime($occupation->dates)) : '' }}" placeholder="dd/mm/yyyy">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Expiry Date</label>
-                                                <input type="text" name="expiry_dates[{{ $index }}]" class="expiry_dates date-picker" value="{{ $occupation->expiry_dates ? date('d/m/Y', strtotime($occupation->expiry_dates)) : '' }}" placeholder="dd/mm/yyyy">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Reference No</label>
-                                                <input type="text" name="occ_reference_no[{{ $index }}]" value="{{ $occupation->occ_reference_no }}" placeholder="Enter Reference No.">
-                                            </div>
-                                            <div class="form-group" style="align-items: center;">
-                                                <label style="margin-bottom: 0;">Relevant Occupation</label>
-                                                <input type="checkbox" name="relevant_occupation_hidden[{{ $index }}]" value="1" {{ $occupation->relevant_occupation ? 'checked' : '' }} style="margin-left: 10px;">
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <x-client-edit.occupation-field 
+                                        :index="$index" 
+                                        :occupation="$occupation" 
+                                    />
                                 @endforeach
                             </div>
 
@@ -1071,56 +848,10 @@
                         <div id="testScoreInfoEdit" class="edit-view" style="display: none;">
                             <div id="testScoresContainer">
                                 @foreach($testScores as $index => $testScore)
-                                    <div class="repeatable-section">
-                                        <button type="button" class="remove-item-btn" title="Remove Test" onclick="removeTestScoreField(this)"><i class="fas fa-trash"></i></button>
-                                        <input type="hidden" name="test_score_id[{{ $index }}]" value="{{ $testScore->id }}">
-                                        <div class="content-grid" style="grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px;">
-                                            <div class="form-group">
-                                                <label>Test Type</label>
-                                                <select name="test_type_hidden[{{ $index }}]" class="test-type-selector" onchange="updateTestScoreValidation(this, {{ $index }})">
-                                                    <option value="">Select Test Type</option>
-                                                    <option value="IELTS" {{ $testScore->test_type == 'IELTS' ? 'selected' : '' }}>IELTS</option>
-                                                    <option value="IELTS_A" {{ $testScore->test_type == 'IELTS_A' ? 'selected' : '' }}>IELTS Academic</option>
-                                                    <option value="PTE" {{ $testScore->test_type == 'PTE' ? 'selected' : '' }}>PTE</option>
-                                                    <option value="TOEFL" {{ $testScore->test_type == 'TOEFL' ? 'selected' : '' }}>TOEFL</option>
-                                                    <option value="CAE" {{ $testScore->test_type == 'CAE' ? 'selected' : '' }}>CAE</option>
-                                                    <option value="OET" {{ $testScore->test_type == 'OET' ? 'selected' : '' }}>OET</option>
-                                                </select>
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Listening</label>
-                                                <input type="text" name="listening[{{ $index }}]" class="listening" value="{{ $testScore->listening }}" placeholder="Score" maxlength="5">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Reading</label>
-                                                <input type="text" name="reading[{{ $index }}]" class="reading" value="{{ $testScore->reading }}" placeholder="Score" maxlength="5">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Writing</label>
-                                                <input type="text" name="writing[{{ $index }}]" class="writing" value="{{ $testScore->writing }}" placeholder="Score" maxlength="5">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Speaking</label>
-                                                <input type="text" name="speaking[{{ $index }}]" class="speaking" value="{{ $testScore->speaking }}" placeholder="Score" maxlength="5">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Overall</label>
-                                                <input type="text" name="overall_score[{{ $index }}]" class="overall_score" value="{{ $testScore->overall_score }}" placeholder="Overall" maxlength="5">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Test Date</label>
-                                                <input type="text" name="test_date[{{ $index }}]" class="test_date date-picker" value="{{ $testScore->test_date ? date('d/m/Y', strtotime($testScore->test_date)) : '' }}" placeholder="dd/mm/yyyy">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Reference No</label>
-                                                <input type="text" name="test_reference_no[{{ $index }}]" value="{{ $testScore->test_reference_no }}" placeholder="Reference No.">
-                                            </div>
-                                            <div class="form-group" style="align-items: center;">
-                                                <label style="margin-bottom: 0;">Relevant Test</label>
-                                                <input type="checkbox" name="relevant_test_hidden[{{ $index }}]" value="1" {{ $testScore->relevant_test ? 'checked' : '' }} style="margin-left: 10px;">
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <x-client-edit.test-score-field 
+                                        :index="$index" 
+                                        :testScore="$testScore" 
+                                    />
                                 @endforeach
                             </div>
 
@@ -1312,69 +1043,12 @@
                         <div id="partnerInfoEdit" class="edit-view" style="display: none;">
                             <div id="partnerContainer">
                                 @foreach($partners as $index => $partner)
-                                    <div class="repeatable-section">
-                                        <button type="button" class="remove-item-btn" title="Remove Partner" onclick="removePartnerRow(this, 'partner', {{ $partner->id }})"><i class="fas fa-times-circle"></i></button>
-                                        <input type="hidden" name="partner_id[{{ $index }}]" class="partner-id" value="{{ $partner->related_client_id }}">
-                                        <input type="hidden" name="relationship_id[{{ $index }}]" value="{{ $partner->id }}">
-                                        <div class="content-grid">
-                                            <div class="form-group">
-                                                <label>Details</label>
-                                                <input type="text" name="partner_details[{{ $index }}]" class="partner-details" value="{{ $partner->relatedClient ? $partner->relatedClient->first_name . ' ' . $partner->relatedClient->last_name . ' (' . $partner->relatedClient->email . ', ' . $partner->relatedClient->phone . ', ' . $partner->relatedClient->client_id . ')' : $partner->details }}" placeholder="Search by Name, Email, Client ID, or Phone" readonly>
-                                                <div class="autocomplete-items"></div>
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Relationship Type</label>
-                                                <select name="partner_relationship_type[{{ $index }}]" required>
-                                                    <option value="">Select Relationship</option>
-                                                    <option value="Husband" {{ $partner->relationship_type == 'Husband' ? 'selected' : '' }}>Husband</option>
-                                                    <option value="Wife" {{ $partner->relationship_type == 'Wife' ? 'selected' : '' }}>Wife</option>
-                                                    <option value="Ex-Wife" {{ $partner->relationship_type == 'Ex-Wife' ? 'selected' : '' }}>Ex-Wife</option>
-                                                    <option value="Defacto" {{ $partner->relationship_type == 'Defacto' ? 'selected' : '' }}>Defacto</option>
-                                                </select>
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Gender <span class="text-danger">*</span></label>
-                                                <select name="partner_gender[{{ $index }}]" required>
-                                                    <option value="">Select Gender</option>
-                                                    <option value="Male" {{ $partner->gender == 'Male' ? 'selected' : '' }}>Male</option>
-                                                    <option value="Female" {{ $partner->gender == 'Female' ? 'selected' : '' }}>Female</option>
-                                                    <option value="Other" {{ $partner->gender == 'Other' ? 'selected' : '' }}>Other</option>
-                                                </select>
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Company Type</label>
-                                                <select name="partner_company_type[{{ $index }}]">
-                                                    <option value="">Select Company Type</option>
-                                                    <option value="Accompany Member" {{ $partner->company_type == 'Accompany Member' ? 'selected' : '' }}>Accompany Member</option>
-                                                    <option value="Non-Accompany Member" {{ $partner->company_type == 'Non-Accompany Member' ? 'selected' : '' }}>Non-Accompany Member</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="partner-extra-fields" style="display: none;">
-                                            <div class="content-grid single-row">
-                                                <div class="form-group">
-                                                    <label>Email</label>
-                                                    <input type="email" name="partner_email[{{ $index }}]" placeholder="Email">
-                                                </div>
-                                                <div class="form-group">
-                                                    <label>First Name</label>
-                                                    <input type="text" name="partner_first_name[{{ $index }}]" placeholder="First Name">
-                                                </div>
-                                                <div class="form-group">
-                                                    <label>Last Name</label>
-                                                    <input type="text" name="partner_last_name[{{ $index }}]" placeholder="Last Name">
-                                                </div>
-                                                <div class="form-group">
-                                                    <label>Phone</label>
-                                                    <input type="text" name="partner_phone[{{ $index }}]" placeholder="Phone">
-                                                </div>
-                                                <div class="form-group">
-                                                    <label>DOB</label>
-                                                    <input type="text" name="partner_dob[{{ $index }}]" placeholder="dd/mm/yyyy" class="date-picker">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <x-client-edit.family-member-field 
+                                        :index="$index"
+                                        :member="$partner"
+                                        type="partner"
+                                        :relationshipOptions="['Husband', 'Wife', 'Ex-Wife', 'Defacto']"
+                                    />
                                 @endforeach
                             </div>
 
@@ -1437,69 +1111,12 @@
                         <div id="childrenInfoEdit" class="edit-view" style="display: none;">
                             <div id="childrenContainer">
                                 @foreach($children as $index => $child)
-                                    <div class="repeatable-section">
-                                        <button type="button" class="remove-item-btn" title="Remove Child" onclick="removePartnerRow(this, 'children', {{ $child->id }})"><i class="fas fa-times-circle"></i></button>
-                                        <input type="hidden" name="children_id[{{ $index }}]" class="partner-id" value="{{ $child->related_client_id }}">
-                                        <input type="hidden" name="children_relationship_id[{{ $index }}]" value="{{ $child->id }}">
-                                        <div class="content-grid">
-                                            <div class="form-group">
-                                                <label>Details</label>
-                                                <input type="text" name="children_details[{{ $index }}]" class="partner-details" value="{{ $child->relatedClient ? $child->relatedClient->first_name . ' ' . $child->relatedClient->last_name . ' (' . $child->relatedClient->email . ', ' . $child->relatedClient->phone . ', ' . $child->relatedClient->client_id . ')' : $child->details }}" placeholder="Search by Name, Email, Client ID, or Phone" readonly>
-                                                <div class="autocomplete-items"></div>
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Relationship Type</label>
-                                                <select name="children_relationship_type[{{ $index }}]" required>
-                                                    <option value="">Select Relationship</option>
-                                                    <option value="Son" {{ $child->relationship_type == 'Son' ? 'selected' : '' }}>Son</option>
-                                                    <option value="Daughter" {{ $child->relationship_type == 'Daughter' ? 'selected' : '' }}>Daughter</option>
-                                                    <option value="Step Son" {{ $child->relationship_type == 'Step Son' ? 'selected' : '' }}>Step Son</option>
-                                                    <option value="Step Daughter" {{ $child->relationship_type == 'Step Daughter' ? 'selected' : '' }}>Step Daughter</option>
-                                                </select>
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Gender <span class="text-danger">*</span></label>
-                                                <select name="children_gender[{{ $index }}]" required>
-                                                    <option value="">Select Gender</option>
-                                                    <option value="Male" {{ $child->gender == 'Male' ? 'selected' : '' }}>Male</option>
-                                                    <option value="Female" {{ $child->gender == 'Female' ? 'selected' : '' }}>Female</option>
-                                                    <option value="Other" {{ $child->gender == 'Other' ? 'selected' : '' }}>Other</option>
-                                                </select>
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Company Type</label>
-                                                <select name="children_company_type[{{ $index }}]">
-                                                    <option value="">Select Company Type</option>
-                                                    <option value="Accompany Member" {{ $child->company_type == 'Accompany Member' ? 'selected' : '' }}>Accompany Member</option>
-                                                    <option value="Non-Accompany Member" {{ $child->company_type == 'Non-Accompany Member' ? 'selected' : '' }}>Non-Accompany Member</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="partner-extra-fields" style="display: none;">
-                                            <div class="content-grid single-row">
-                                                <div class="form-group">
-                                                    <label>Email</label>
-                                                    <input type="email" name="children_email[{{ $index }}]" placeholder="Email">
-                                                </div>
-                                                <div class="form-group">
-                                                    <label>First Name</label>
-                                                    <input type="text" name="children_first_name[{{ $index }}]" placeholder="First Name">
-                                                </div>
-                                                <div class="form-group">
-                                                    <label>Last Name</label>
-                                                    <input type="text" name="children_last_name[{{ $index }}]" placeholder="Last Name">
-                                                </div>
-                                                <div class="form-group">
-                                                    <label>Phone</label>
-                                                    <input type="text" name="children_phone[{{ $index }}]" placeholder="Phone">
-                                                </div>
-                                                <div class="form-group">
-                                                    <label>DOB</label>
-                                                    <input type="text" name="children_dob[{{ $index }}]" placeholder="dd/mm/yyyy" class="date-picker">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <x-client-edit.family-member-field 
+                                        :index="$index"
+                                        :member="$child"
+                                        type="children"
+                                        :relationshipOptions="['Son', 'Daughter', 'Step Son', 'Step Daughter']"
+                                    />
                                 @endforeach
                             </div>
 
@@ -1577,49 +1194,10 @@
                         <div id="eoiInfoEdit" class="edit-view" style="display: none;">
                             <div id="eoiReferencesContainer">
                                 @foreach($clientEoiReferences as $index => $eoi)
-                                    <div class="repeatable-section">
-                                        <button type="button" class="remove-item-btn" title="Remove EOI Reference" onclick="removeEoiField(this)"><i class="fas fa-trash"></i></button>
-                                        <input type="hidden" name="eoi_id[{{ $index }}]" value="{{ $eoi->id }}">
-                                        <div class="content-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
-                                            <div class="form-group">
-                                                <label>EOI Number</label>
-                                                <input type="text" name="EOI_number[{{ $index }}]" value="{{ $eoi->EOI_number }}" placeholder="EOI Number">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Subclass</label>
-                                                <input type="text" name="EOI_subclass[{{ $index }}]" value="{{ $eoi->EOI_subclass }}" placeholder="Subclass">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Occupation</label>
-                                                <input type="text" name="EOI_occupation[{{ $index }}]" value="{{ $eoi->EOI_occupation }}" placeholder="Occupation">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Point</label>
-                                                <input type="text" name="EOI_point[{{ $index }}]" value="{{ $eoi->EOI_point }}" placeholder="Point">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>State</label>
-                                                <input type="text" name="EOI_state[{{ $index }}]" value="{{ $eoi->EOI_state }}" placeholder="State">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Submission Date</label>
-                                                <input type="text" name="EOI_submission_date[{{ $index }}]" value="{{ $eoi->EOI_submission_date ? date('d/m/Y', strtotime($eoi->EOI_submission_date)) : '' }}" placeholder="dd/mm/yyyy" class="date-picker">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>ROI</label>
-                                                <input type="text" name="EOI_ROI[{{ $index }}]" value="{{ $eoi->EOI_ROI }}" placeholder="ROI">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Password</label>
-                                                <div style="display: flex; align-items: center; gap: 10px;">
-                                                    <input type="password" name="EOI_password[{{ $index }}]" value="{{ $eoi->EOI_password }}" placeholder="Password" class="eoi-password-input" data-index="{{ $index }}">
-                                                    <button type="button" class="btn btn-sm btn-outline-secondary toggle-password" data-index="{{ $index }}" title="Show/Hide Password">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <x-client-edit.eoi-reference-field 
+                                        :index="$index" 
+                                        :eoi="$eoi" 
+                                    />
                                 @endforeach
                             </div>
 
@@ -1690,6 +1268,7 @@
     @push('scripts')
     <script src="{{asset('js/clients/edit-client.js')}}"></script>
     <script src="{{asset('js/address-autocomplete.js')}}"></script>
+    <script src="{{asset('js/clients/address-regional-codes.js')}}"></script>
     {{-- Google Maps library removed - using backend proxy for address autocomplete --}}
     @endpush
 @endsection

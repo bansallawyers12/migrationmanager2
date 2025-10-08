@@ -1,4 +1,6 @@
-{{-- Address Information Section --}}
+{{-- Address Information Section Component --}}
+@props(['clientAddresses', 'searchRoute', 'detailsRoute', 'csrfToken'])
+
 <section class="form-section">
     <div class="section-header">
         <h3><i class="fas fa-home"></i> Address Information</h3>
@@ -17,11 +19,11 @@
         @if($clientAddresses->count() > 0)
             <div>
                 @foreach($clientAddresses as $index => $address)
-                    <div class="address-entry-compact" style="margin-bottom: 12px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #007bff;">
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: center;">
+                    <div class="address-entry-compact">
+                        <div class="address-compact-grid">
                             <div class="summary-item-inline">
-                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">ADDRESS:</span>
-                                <span class="summary-value" style="color: #212529; font-weight: 500;">
+                                <span class="summary-label">ADDRESS:</span>
+                                <span class="summary-value">
                                     @php
                                         $addressParts = array_filter([
                                             $address->address_line_1,
@@ -44,20 +46,20 @@
                             </div>
                             @if($address->start_date)
                             <div class="summary-item-inline">
-                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">START DATE:</span>
-                                <span class="summary-value" style="color: #212529;">{{ date('d/m/Y', strtotime($address->start_date)) }}</span>
+                                <span class="summary-label">START DATE:</span>
+                                <span class="summary-value">{{ date('d/m/Y', strtotime($address->start_date)) }}</span>
                             </div>
                             @endif
                             @if($address->end_date)
                             <div class="summary-item-inline">
-                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">END DATE:</span>
-                                <span class="summary-value" style="color: #212529;">{{ date('d/m/Y', strtotime($address->end_date)) }}</span>
+                                <span class="summary-label">END DATE:</span>
+                                <span class="summary-value">{{ date('d/m/Y', strtotime($address->end_date)) }}</span>
                             </div>
                             @endif
                             @if($address->regional_code)
                             <div class="summary-item-inline">
-                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">REGIONAL CODE:</span>
-                                <span class="summary-value" style="color: #212529; font-weight: 500;">{{ $address->regional_code }}</span>
+                                <span class="summary-label">REGIONAL CODE:</span>
+                                <span class="summary-value strong">{{ $address->regional_code }}</span>
                             </div>
                             @endif
                         </div>
@@ -73,29 +75,28 @@
 
     {{-- Edit View --}}
     <div id="addressInfoEdit" 
-         class="edit-view" 
-         style="display: none;"
-         data-search-route="{{ route('admin.clients.searchAddressFull') }}"
-         data-details-route="{{ route('admin.clients.getPlaceDetails') }}"
-         data-csrf-token="{{ csrf_token() }}"
+         class="edit-view hidden" 
+         data-search-route="{{ $searchRoute }}"
+         data-details-route="{{ $detailsRoute }}"
+         data-csrf-token="{{ $csrfToken }}"
          data-address-count="{{ count($clientAddresses) }}">
         
         <div id="addresses-container">
             @if(count($clientAddresses) > 0)
                 @foreach($clientAddresses as $index => $address)
-                @include('Admin.clients.partials._address_entry', [
-                    'index' => $index,
-                    'address' => $address,
-                    'showRemoveButton' => $index > 0
-                ])
+                    <x-client-edit.address-field 
+                        :index="$index" 
+                        :address="$address" 
+                        :showRemoveButton="$index > 0" 
+                    />
                 @endforeach
             @else
                 {{-- Default empty address entry --}}
-                @include('Admin.clients.partials._address_entry', [
-                    'index' => 0,
-                    'address' => null,
-                    'showRemoveButton' => false
-                ])
+                <x-client-edit.address-field 
+                    :index="0" 
+                    :address="null" 
+                    :showRemoveButton="false" 
+                />
             @endif
         </div>
         
@@ -104,7 +105,7 @@
         </button>
 
         <div class="edit-actions">
-            <button type="button" class="btn btn-primary" onclick="console.log('Save button clicked!'); saveAddressInfo();">Save</button>
+            <button type="button" class="btn btn-primary" onclick="saveAddressInfo()">Save</button>
             <button type="button" class="btn btn-secondary" onclick="cancelEdit('addressInfo')">Cancel</button>
         </div>
     </div>
