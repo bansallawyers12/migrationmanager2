@@ -4,13 +4,12 @@ namespace App\Events;
 
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class MessageReceived implements ShouldBroadcast
+class MessageReceived implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -20,7 +19,8 @@ class MessageReceived implements ShouldBroadcast
     /**
      * Create a new event instance.
      *
-     * @return void
+     * @param int $messageId
+     * @param int $senderId
      */
     public function __construct($messageId, $senderId)
     {
@@ -35,7 +35,7 @@ class MessageReceived implements ShouldBroadcast
      */
     public function broadcastOn()
     {
-        return new Channel('public-messages');
+        return new PrivateChannel('user.' . $this->senderId);
     }
 
     /**
@@ -46,9 +46,10 @@ class MessageReceived implements ShouldBroadcast
     public function broadcastWith()
     {
         return [
-            'type' => 'message_received',
             'message_id' => $this->messageId,
-            'timestamp' => now()->toISOString()
+            'sender_id' => $this->senderId,
+            'timestamp' => now()->toISOString(),
+            'type' => 'message_received'
         ];
     }
 

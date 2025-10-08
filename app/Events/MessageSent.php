@@ -6,26 +6,27 @@ use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class MessageSent implements ShouldBroadcast
+class MessageSent implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $message;
-    public $recipientId;
+    public $targetUserId;
 
     /**
      * Create a new event instance.
      *
-     * @return void
+     * @param array $message
+     * @param int|null $targetUserId
      */
-    public function __construct($message, $recipientId)
+    public function __construct($message, $targetUserId = null)
     {
         $this->message = $message;
-        $this->recipientId = $recipientId;
+        $this->targetUserId = $targetUserId;
     }
 
     /**
@@ -35,7 +36,18 @@ class MessageSent implements ShouldBroadcast
      */
     public function broadcastOn()
     {
-        return new Channel('public-messages');
+        if ($this->targetUserId) {
+            // Broadcast to specific user channel (matching WebSocket client subscription)
+            return new PrivateChannel('user.' . $this->targetUserId);
+        }
+        
+        // Broadcast to matter-specific channel
+        if (isset($this->message['client_matter_id'])) {
+            return new PrivateChannel('matter.' . $this->message['client_matter_id']);
+        }
+        
+        // Fallback to general channel
+        return new Channel('messages');
     }
 
     /**
@@ -46,10 +58,9 @@ class MessageSent implements ShouldBroadcast
     public function broadcastWith()
     {
         return [
-            'type' => 'new_message',
             'message' => $this->message,
             'timestamp' => now()->toISOString(),
-            'action' => 'message_created'
+            'type' => 'message_sent'
         ];
     }
 

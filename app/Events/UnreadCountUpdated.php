@@ -4,13 +4,12 @@ namespace App\Events;
 
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class UnreadCountUpdated implements ShouldBroadcast
+class UnreadCountUpdated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -20,7 +19,8 @@ class UnreadCountUpdated implements ShouldBroadcast
     /**
      * Create a new event instance.
      *
-     * @return void
+     * @param int $userId
+     * @param int $unreadCount
      */
     public function __construct($userId, $unreadCount)
     {
@@ -35,7 +35,7 @@ class UnreadCountUpdated implements ShouldBroadcast
      */
     public function broadcastOn()
     {
-        return new Channel('public-messages');
+        return new PrivateChannel('user.' . $this->userId);
     }
 
     /**
@@ -46,11 +46,10 @@ class UnreadCountUpdated implements ShouldBroadcast
     public function broadcastWith()
     {
         return [
-            'type' => 'unread_count_updated',
             'user_id' => $this->userId,
             'unread_count' => $this->unreadCount,
             'timestamp' => now()->toISOString(),
-            'action' => 'unread_count_updated'
+            'type' => 'unread_count_updated'
         ];
     }
 

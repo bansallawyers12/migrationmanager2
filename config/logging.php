@@ -36,7 +36,7 @@ return [
     'channels' => [
         'stack' => [
             'driver' => 'stack',
-            'channels' => ['single'],
+            'channels' => ['daily'],
         ],
 
         'single' => [
@@ -44,6 +44,7 @@ return [
             'path' => storage_path('logs/laravel.log'),
             'level' => 'debug',
             'permission' => 0644,
+            'tap' => [App\Logging\Utf8LogFormatter::class],
         ],
 
         'daily' => [
@@ -51,6 +52,8 @@ return [
             'path' => storage_path('logs/laravel.log'),
             'level' => 'debug',
             'days' => 7,
+            'permission' => 0644,
+            'tap' => [App\Logging\Utf8LogFormatter::class],
         ],
 
         'slack' => [

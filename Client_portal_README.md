@@ -1318,6 +1318,150 @@ The Client Portal includes four new document management endpoints:
 }
 ```
 
+#### 19. Messaging - Send Message
+- **Send Message**: `POST /api/messages/send`
+- **Headers**: `Authorization: Bearer {token}`
+- **Content-Type**: `application/json`
+- **Description**: Send a new text message for a specific client matter. Message will be broadcasted in real-time. Notifications will be sent to the migration agent, person responsible, person assisting for the matter, and all superadmin users (role=1). Notification messages will include 'Client Portal Mobile App' identifier to distinguish from web-based messages. No attachments or recipients - message is associated with the matter only.
+- **Request Body**:
+```json
+{
+  "message": "This is a test message sent via mobile app API",
+  "client_matter_id": 9
+}
+```
+- **Response**:
+```json
+{
+  "success": true,
+  "message": "Message sent successfully",
+  "data": {
+    "message_id": 123,
+    "message": {
+      "id": 123,
+      "message": "This is a test message sent via mobile app API",
+      "sender": "John Doe",
+      "sender_id": 1,
+      "recipient_id": null,
+      "sent_at": "2024-01-01T00:00:00Z",
+      "is_read": false
+    },
+    "sent_at": "2024-01-01T00:00:00Z"
+  }
+}
+```
+
+**Notification Message Format:**
+When a message is sent via the mobile app, notifications are created with the following format:
+```
+"New message received by Client Portal Mobile App from [Sender Name] for matter [Matter Number]"
+```
+
+Example notification message:
+```
+"New message received by Client Portal Mobile App from Vipul Kumar for matter BA_1"
+```
+
+#### 20. Messaging - Get All Messages
+- **Get All Messages**: `GET /api/messages`
+- **Headers**: `Authorization: Bearer {token}`
+- **Description**: Get all messages for a specific client matter. Returns both sent and received messages sorted by creation date (oldest first, newest at bottom). client_matter_id is required. Optional pagination with page and limit parameters.
+- **Query Parameters**:
+  - `client_matter_id` (required): Client matter ID to get messages for
+  - `page` (optional): Page number for pagination (default: 1)
+  - `limit` (optional): Number of messages per page (default: 20, max: 100)
+- **Response**:
+```json
+{
+  "success": true,
+  "data": {
+    "messages": [
+      {
+        "id": 1,
+        "message": "Message content",
+        "sender": "John Doe",
+        "recipient": "Jane Smith",
+        "sender_id": 1,
+        "recipient_id": 2,
+        "is_sender": true,
+        "is_recipient": false,
+        "sent_at": "2024-01-01T00:00:00Z",
+        "read_at": null,
+        "is_read": false,
+        "client_matter_id": 9,
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z"
+      }
+    ],
+    "pagination": {
+      "current_page": 1,
+      "per_page": 20,
+      "total": 1,
+      "last_page": 1
+    },
+    "filters": {
+      "client_matter_id": 9
+    }
+  }
+}
+```
+
+#### 21. Messaging - Get Message Details
+- **Get Message Details**: `GET /api/messages/{id}`
+- **Headers**: `Authorization: Bearer {token}`
+- **Description**: Get detailed information about a specific message
+- **Response**:
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "message": "Message content",
+    "sender": "John Doe",
+    "recipient": "Jane Smith",
+    "sender_id": 1,
+    "recipient_id": 2,
+    "is_sender": true,
+    "is_recipient": false,
+    "sent_at": "2024-01-01T00:00:00Z",
+    "read_at": null,
+    "is_read": false,
+    "client_matter_id": 9,
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  }
+}
+```
+
+#### 22. Messaging - Mark Message as Read
+- **Mark Message as Read**: `PUT /api/messages/{id}/read`
+- **Headers**: `Authorization: Bearer {token}`
+- **Description**: Mark a message as read. Only the recipient of the message can mark it as read. This will broadcast read status to the sender.
+- **Response**:
+```json
+{
+  "success": true,
+  "message": "Message marked as read"
+}
+```
+- **Error Responses**:
+  - **404 Not Found**: `{"success": false, "message": "Message not found"}`
+  - **403 Forbidden**: `{"success": false, "message": "You are not authorized for mark as read"}`
+
+#### 23. Messaging - Get Unread Count
+- **Get Unread Count**: `GET /api/messages/unread-count`
+- **Headers**: `Authorization: Bearer {token}`
+- **Description**: Get the count of unread messages for the authenticated user
+- **Response**:
+```json
+{
+  "success": true,
+  "data": {
+    "unread_count": 5
+  }
+}
+```
+
 ## Data Models
 
 ### Client Model (Admin)
@@ -1501,7 +1645,6 @@ class Task {
 ```dart
 class Message {
   final int id;
-  final String? subject;
   final String? message;
   final String? sender;
   final String? recipient;
@@ -1510,13 +1653,14 @@ class Message {
   final DateTime? sentAt;
   final DateTime? readAt;
   final bool isRead;
-  final String? messageType;
-  final int? matterId; // Changed from caseId to matterId
-  final int? taskId;
-  final List<String>? attachments;
-  final Map<String, dynamic>? metadata;
+  final int? matterId; // Client matter ID
   final DateTime createdAt;
   final DateTime updatedAt;
+  
+  // Computed properties
+  bool get isSender => senderId != null;
+  bool get isRecipient => recipientId != null;
+  bool get hasBeenRead => isRead && readAt != null;
 }
 ```
 
@@ -1771,7 +1915,6 @@ CREATE TABLE tasks (
 ```sql
 CREATE TABLE messages (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    subject VARCHAR(255),
     message TEXT,
     sender VARCHAR(255),
     recipient VARCHAR(255),
@@ -1779,18 +1922,13 @@ CREATE TABLE messages (
     recipient_id BIGINT UNSIGNED,
     sent_at TIMESTAMP NULL,
     read_at TIMESTAMP NULL,
-    read BOOLEAN DEFAULT FALSE,
-    message_type ENUM('urgent', 'important', 'normal', 'low_priority') DEFAULT 'normal',
-    matter_id BIGINT UNSIGNED,
-    task_id BIGINT UNSIGNED,
-    attachments JSON,
-    metadata JSON,
+    is_read BOOLEAN DEFAULT FALSE,
+    client_matter_id BIGINT UNSIGNED,
     created_at TIMESTAMP NULL,
     updated_at TIMESTAMP NULL,
     FOREIGN KEY (sender_id) REFERENCES admins(id),
     FOREIGN KEY (recipient_id) REFERENCES admins(id),
-    FOREIGN KEY (matter_id) REFERENCES matters(id),
-    FOREIGN KEY (task_id) REFERENCES tasks(id)
+    FOREIGN KEY (client_matter_id) REFERENCES client_matters(id)
 );
 ```
 
@@ -1827,6 +1965,13 @@ CREATE TABLE messages (
    - `getWorkflowStageDetails()` - Get details of a specific workflow stage
    - `allowedChecklistForStages()` - Get allowed checklist documents for a specific client matter
    - `uploadAllowedChecklistDocument()` - Upload a document for an allowed checklist item
+
+5. **ClientPortalMessageController** (Existing)
+   - `sendMessage()` - Send a new text message for a specific client matter
+   - `getMessages()` - Get all messages for a specific client matter with pagination
+   - `getMessageDetails()` - Get detailed information about a specific message
+   - `markAsRead()` - Mark a message as read and broadcast read status
+   - `getUnreadCount()` - Get the count of unread messages for the authenticated user
 
 ### Middleware Required
 

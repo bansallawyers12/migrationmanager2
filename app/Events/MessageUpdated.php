@@ -4,28 +4,28 @@ namespace App\Events;
 
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class MessageUpdated implements ShouldBroadcast
+class MessageUpdated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $message;
-    public $recipientId;
+    public $targetUserId;
 
     /**
      * Create a new event instance.
      *
-     * @return void
+     * @param array $message
+     * @param int|null $targetUserId
      */
-    public function __construct($message, $recipientId)
+    public function __construct($message, $targetUserId = null)
     {
         $this->message = $message;
-        $this->recipientId = $recipientId;
+        $this->targetUserId = $targetUserId;
     }
 
     /**
@@ -35,7 +35,15 @@ class MessageUpdated implements ShouldBroadcast
      */
     public function broadcastOn()
     {
-        return new Channel('public-messages');
+        if ($this->targetUserId) {
+            return new PrivateChannel('user.' . $this->targetUserId);
+        }
+        
+        if (isset($this->message['client_matter_id'])) {
+            return new PrivateChannel('matter.' . $this->message['client_matter_id']);
+        }
+        
+        return new Channel('messages');
     }
 
     /**
@@ -46,10 +54,9 @@ class MessageUpdated implements ShouldBroadcast
     public function broadcastWith()
     {
         return [
-            'type' => 'message_updated',
             'message' => $this->message,
             'timestamp' => now()->toISOString(),
-            'action' => 'message_updated'
+            'type' => 'message_updated'
         ];
     }
 

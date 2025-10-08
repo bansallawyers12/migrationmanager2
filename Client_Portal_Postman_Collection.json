@@ -1,8 +1,8 @@
 {
 	"info": {
-		"_postman_id": "client-portal-api-collection",
+		"_postman_id": "12345678-1234-1234-1234-123456789012",
 		"name": "Client Portal Mobile App API",
-		"description": "Complete API collection for Client Portal Mobile App authentication and profile management",
+		"description": "Complete API collection for Client Portal Mobile App authentication and profile management. Includes both Client Portal login (role=7) and Admin Portal login (roles=1,12,13,16) for WebSocket messaging support.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -85,6 +85,128 @@
 					],
 					"cookie": [],
 					"body": "{\n    \"success\": true,\n    \"data\": {\n        \"token\": \"jwt_token\",\n        \"refresh_token\": \"refresh_token\",\n        \"user\": {\n            \"id\": 1,\n            \"name\": \"Vipul Kumar\",\n            \"email\": \"viplucmca@yahoo.co.in\",\n            \"client_id\": \"CLI-001\"\n        }\n    }\n}"
+				}
+			]
+		},
+		{
+			"name": "2. Admin Login",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"admin1@gmail.com\",\n    \"password\": \"password123\",\n    \"device_name\": \"websocket-admin-portal\",\n    \"device_token\": \"device_token_here\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/admin-login",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"admin-login"
+					]
+				},
+				"description": "Login for admin users with roles 1, 12, 13, 16 to get authentication token for WebSocket access"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200) {",
+							"    const responseJson = pm.response.json();",
+							"    if (responseJson.success && responseJson.data) {",
+							"        pm.collectionVariables.set('admin_auth_token', responseJson.data.token);",
+							"        pm.collectionVariables.set('admin_refresh_token', responseJson.data.refresh_token);",
+							"        pm.collectionVariables.set('admin_user_id', responseJson.data.user.id);",
+							"        pm.collectionVariables.set('admin_user_role', responseJson.data.user.role);",
+							"        console.log('Admin tokens saved to collection variables');",
+							"        console.log('Admin User ID: ' + responseJson.data.user.id);",
+							"        console.log('Admin User Role: ' + responseJson.data.user.role);",
+							"    }",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"response": [
+				{
+					"name": "Success Response",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin1@gmail.com\",\n    \"password\": \"password123\",\n    \"device_name\": \"websocket-admin-portal\",\n    \"device_token\": \"device_token_here\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin-login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin-login"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": true,\n    \"data\": {\n        \"token\": \"admin_jwt_token\",\n        \"refresh_token\": \"admin_refresh_token\",\n        \"user\": {\n            \"id\": 1,\n            \"name\": \"Super1 Admin1\",\n            \"email\": \"admin1@gmail.com\",\n            \"role\": 1\n        }\n    }\n}"
+				},
+				{
+					"name": "Invalid Credentials",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin1@gmail.com\",\n    \"password\": \"wrongpassword\",\n    \"device_name\": \"websocket-admin-portal\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin-login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin-login"
+							]
+						}
+					},
+					"status": "Unauthorized",
+					"code": 401,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": false,\n    \"message\": \"Invalid credentials\"\n}"
 				}
 			]
 		},
@@ -987,9 +1109,9 @@
 									"key": "per_page",
 									"value": "10"
 								},
-						{
-							"key": "search",
-							"value": ""
+								{
+									"key": "search",
+									"value": ""
 								},
 								{
 									"key": "status",
@@ -998,7 +1120,7 @@
 								{
 									"key": "priority",
 									"value": "all"
-						}
+								}
 							]
 						}
 					},
@@ -1817,7 +1939,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"recipient_id\": 2,\n    \"subject\": \"Test Message from Mobile App\",\n    \"message\": \"This is a test message sent via mobile app API at {{$timestamp}}\",\n    \"message_type\": \"normal\",\n    \"client_matter_id\": 9,\n    \"client_matter_stage_id\": 1\n}"
+					"raw": "{\n    \"message\": \"This is a message sent via mobile app API at {{$timestamp}}\",\n    \"client_matter_id\": 9\n}"
 				},
 				"url": {
 					"raw": "{{base_url}}/messages/send",
@@ -1829,7 +1951,63 @@
 						"send"
 					]
 				},
-				"description": "Send a new message to a recipient. client_matter_id and client_matter_stage_id are required. Use message_type to set priority: urgent, important, normal, low_priority. This will trigger real-time broadcasting to the website."
+				"description": "Send a message for a specific client matter. Always broadcasts to all matter users (migration agent, person responsible, person assisting) and superadmin users (role=1). client_matter_id is required. Message will be broadcasted in real-time. Notifications will be sent to all recipients. Each recipient has individual read status tracking. Recipient information is stored in database and returned in response."
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Auto-extract message ID and recipient count from send message response",
+							"if (pm.response.code === 201 && pm.response.json().success) {",
+							"    const messageId = pm.response.json().data.message_id;",
+							"    const recipientCount = pm.response.json().data.recipient_count;",
+							"    if (messageId) {",
+							"        pm.collectionVariables.set('message_id', messageId);",
+							"        console.log('Message ID set:', messageId);",
+							"        console.log('Recipient count:', recipientCount);",
+							"    }",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "25b. Admin Messaging - Send Direct Message",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{admin_auth_token}}",
+						"description": "Use admin token from admin login response"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"message\": \"This is a direct message sent by admin at {{$timestamp}}\",\n    \"client_matter_id\": 9\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/messages/send",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"messages",
+						"send"
+					]
+				},
+				"description": "Send a message from admin. Use admin_auth_token from admin login. Message will be broadcasted to all matter users and superadmins. Message will be broadcasted in real-time. Recipient information is stored in database and returned in response."
 			},
 			"event": [
 				{
@@ -1839,14 +2017,64 @@
 							"// Auto-extract message ID from send message response",
 							"if (pm.response.code === 201 && pm.response.json().success) {",
 							"    const messageId = pm.response.json().data.message_id;",
+							"    const recipientId = pm.response.json().data.message.recipient_id;",
 							"    if (messageId) {",
-							"        pm.collectionVariables.set('message_id', messageId);",
-							"        console.log('Message ID set:', messageId);",
+							"        pm.collectionVariables.set('admin_message_id', messageId);",
+							"        pm.collectionVariables.set('admin_recipient_id', recipientId);",
+							"        console.log('Admin Message ID set:', messageId);",
+							"        console.log('Recipient ID:', recipientId);",
 							"    }",
 							"}"
 						],
 						"type": "text/javascript"
 					}
+				}
+			],
+			"response": [
+				{
+					"name": "Success Response",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"message\": \"This is a direct message sent by admin at {{$timestamp}}\",\n    \"client_matter_id\": 9,\n    \"recipient_id\": 40445\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/messages/send",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"messages",
+								"send"
+							]
+						}
+					},
+					"status": "Created",
+					"code": 201,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": true,\n    \"message\": \"Message sent successfully\",\n    \"data\": {\n        \"message_id\": 30,\n        \"message\": {\n            \"id\": 30,\n            \"message\": \"This is a direct message sent by admin at 1759845000\",\n            \"sender\": \"Super1 Admin1\",\n            \"sender_id\": 1,\n            \"recipient_ids\": [40445],\n            \"sent_at\": \"2025-01-07T13:30:00.000000Z\",\n            \"client_matter_id\": 9,\n            \"recipient_count\": 1\n        },\n        \"sent_at\": \"2025-01-07T13:30:00.000000Z\",\n        \"recipient_count\": 1\n    }\n}"
 				}
 			]
 		},
@@ -1866,7 +2094,7 @@
 					}
 				],
 				"url": {
-					"raw": "{{base_url}}/messages?client_matter_id=9&page=1&limit=20&type=all&message_type=all&client_matter_stage_id=1",
+					"raw": "{{base_url}}/messages?client_matter_id=9&page=1&limit=20",
 					"host": [
 						"{{base_url}}"
 					],
@@ -1888,25 +2116,10 @@
 							"key": "limit",
 							"value": "20",
 							"description": "Number of messages per page"
-						},
-						{
-							"key": "type",
-							"value": "all",
-							"description": "Filter by message type: all, sent, received"
-						},
-						{
-							"key": "message_type",
-							"value": "all",
-							"description": "Filter by priority: all, urgent, important, normal, low_priority"
-						},
-						{
-							"key": "client_matter_stage_id",
-							"value": "1",
-							"description": "Filter by workflow stage ID (optional)"
 						}
 					]
 				},
-				"description": "Get all messages for a specific client matter with optional workflow stage filtering. client_matter_id is required."
+				"description": "Get all messages for a specific client matter. Returns both sent and received messages with recipient information. Shows recipient_ids, recipients (with names), and recipient_count for each message. Individual read status is shown for current user. client_matter_id is required. Optional pagination with page and limit parameters."
 			}
 		},
 		{
@@ -1934,13 +2147,13 @@
 						"{{message_id}}"
 					]
 				},
-				"description": "Get detailed information about a specific message"
+				"description": "Get detailed information about a specific message including all recipients with their read status. Shows recipient information for all users who received the message, useful for senders to see who has read their message."
 			}
 		},
 		{
 			"name": "28. Messaging - Mark Message as Read",
 			"request": {
-				"method": "PUT",
+				"method": "POST",
 				"header": [
 					{
 						"key": "Authorization",
@@ -1963,39 +2176,11 @@
 						"read"
 					]
 				},
-				"description": "Mark a message as read. This will broadcast read status to the sender."
+				"description": "Mark a message as read. Only recipients of the message can mark it as read. Updates individual read status for the current user in the pivot table. This will broadcast read status to the sender. Returns 403 if user is not a recipient of the message."
 			}
 		},
 		{
-			"name": "29. Messaging - Delete Message",
-			"request": {
-				"method": "DELETE",
-				"header": [
-					{
-						"key": "Authorization",
-						"value": "Bearer {{auth_token}}",
-						"description": "Use token from login response"
-					},
-					{
-						"key": "Accept",
-						"value": "application/json"
-					}
-				],
-				"url": {
-					"raw": "{{base_url}}/messages/{{message_id}}",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"messages",
-						"{{message_id}}"
-					]
-				},
-				"description": "Delete a message. Users can only delete messages sent by themselves."
-			}
-		},
-		{
-			"name": "30. Messaging - Get Unread Count",
+			"name": "29. Messaging - Get Unread Count",
 			"request": {
 				"method": "GET",
 				"header": [
@@ -2019,35 +2204,7 @@
 						"unread-count"
 					]
 				},
-				"description": "Get the count of unread messages for the authenticated user"
-			}
-		},
-		{
-			"name": "31. Messaging - Get Recipients",
-			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "Authorization",
-						"value": "Bearer {{auth_token}}",
-						"description": "Use token from login response"
-					},
-					{
-						"key": "Accept",
-						"value": "application/json"
-					}
-				],
-				"url": {
-					"raw": "{{base_url}}/messages/recipients",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"messages",
-						"recipients"
-					]
-				},
-				"description": "Get list of users that can receive messages"
+				"description": "Get the count of unread messages for the authenticated user. Counts messages from the pivot table where the current user is a recipient and the message is unread."
 			}
 		}
 	],

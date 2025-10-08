@@ -82,6 +82,71 @@ class ClientPortalController extends Controller
     }
 
     /**
+     * Admin Login
+     * POST /api/admin-login
+     * 
+     * Login for admin users with roles 1, 12, 13, 16
+     */
+    public function adminLogin(Request $request)
+    {   
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|max:255',
+            'password' => 'required|string',
+            'device_name' => 'nullable|string|max:255',
+            'device_token' => 'nullable|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $admin = Admin::where('email', $request->email)
+                     ->whereIn('role', [1, 12, 13, 16]) // Admin roles
+                     ->where('status', 1) // Active status
+                     ->first(); 
+
+        if (!$admin || !Hash::check($request->password, $admin->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid credentials'
+            ], 401);
+        }
+
+        // Create Sanctum token with device information
+        $deviceName = $request->device_name ?? 'admin-portal-app';
+        $token = $admin->createToken($deviceName)->plainTextToken;
+
+        // Handle device token for push notifications
+        if ($request->device_token) {
+            $this->handleDeviceToken($admin->id, $request->device_token, $deviceName);
+        }
+
+        // Generate refresh token
+        $refreshToken = RefreshToken::generateToken($admin->id, $deviceName);
+
+        // Update last login timestamp
+        $admin->touch();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'token' => $token,
+                'refresh_token' => $refreshToken->token,
+                'user' => [
+                    'id' => $admin->id,
+                    'name' => $admin->first_name . ' ' . $admin->last_name,
+                    'email' => $admin->email,
+                    'role' => $admin->role
+                ]
+            ]
+        ], 200);
+    }
+
+    /**
      * Logout
      * POST /api/logout
      */
