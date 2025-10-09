@@ -41,7 +41,7 @@
 
                     <div class="">
                         <a href="{{URL::to('/admin/leads/create')}}" class="dropdown-item">Add Lead</a>
-                        <a href="{{URL::to('/admin/users/active')}}" class="dropdown-item">User</a>
+                        <a href="{{route('adminconsole.system.users.active')}}" class="dropdown-item">User</a>
                     </div>
 			    </div>
 		    </li>
@@ -156,7 +156,7 @@
                 <?php
                 if( Auth::check() && Auth::user()->role == 1 ){ //super admin or admin
                 ?>
-			    <a href="{{route('admin.feature.matter.index')}}" class="dropdown-item has-icon">
+			    <a href="{{route('adminconsole.features.matter.index')}}" class="dropdown-item has-icon">
 					<i class="fas fa-cogs"></i> Admin Console
 				</a>
                 <?php } ?>

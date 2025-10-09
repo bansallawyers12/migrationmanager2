@@ -13,7 +13,7 @@
                         <a href="{{URL::to('/admin/partners')}}" class="dropdown-item">Partner</a>
                         <a href="{{URL::to('/admin/products')}}" class="dropdown-item">Product</a>
                         <a href="#" class="dropdown-item">Workflow</a>
-                        <a href="{{URL::to('/admin/users/active')}}" class="dropdown-item">User</a>
+                        <a href="{{route('adminconsole.system.users.active')}}" class="dropdown-item">User</a>
                     </div>
                 </div>
             </li>
@@ -50,7 +50,7 @@
                 <div class="dropdown-title">{{str_limit(Auth::user()->first_name.' '.Auth::user()->last_name, 150, '...')}}</div>
                 <a href="{{route('admin.my_profile')}}" class="dropdown-item has-icon"><i class="far fa-user"></i> Profile</a>
                 @if(Auth::user()->role == 1)
-                <a href="{{route('admin.feature.matter.index')}}" class="dropdown-item has-icon"><i class="fas fa-cogs"></i> Admin Console</a>
+                <a href="{{route('adminconsole.features.matter.index')}}" class="dropdown-item has-icon"><i class="fas fa-cogs"></i> Admin Console</a>
                 @endif
                 <div class="dropdown-divider"></div>
                 <a href="{{route('admin.logout')}}" class="dropdown-item has-icon text-danger" onclick="event.preventDefault(); document.getElementById('logout-form').submit();"><i class="fas fa-sign-out-alt"></i> Logout</a>

@@ -69,7 +69,7 @@
                     <span>Profile</span>
                 </a>
                 @if(Auth::user() && Auth::user()->role == 1)
-                <a href="{{route('admin.feature.matter.index')}}">
+                <a href="{{route('adminconsole.features.matter.index')}}">
                     <i class="fas fa-cogs"></i> 
                     <span>Admin Console</span>
                 </a>

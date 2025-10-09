@@ -51,6 +51,9 @@ Auth::routes();
 /*---------------Email manager Route-------------------*/
 include_once 'emailUser.php';
 
+/*---------------AdminConsole Routes-------------------*/
+require __DIR__ . '/adminconsole.php';
+
 /*********************Admin Panel Start ***********************/
 Route::prefix('admin')->group(function() {
 
@@ -113,17 +116,17 @@ Route::prefix('admin')->group(function() {
     Route::get('/checkclientexist', 'Admin\AdminController@checkclientexist');
 /*CRM route start*/
 
-    Route::get('/users', 'Admin\UserController@index')->name('admin.users.index');
-    Route::get('/users/create', 'Admin\UserController@create')->name('admin.users.create');
-    Route::post('/users/store', 'Admin\UserController@store')->name('admin.users.store');
-    Route::get('/users/edit/{id}', 'Admin\UserController@edit')->name('admin.users.edit');
-    Route::get('/users/view/{id}', 'Admin\UserController@view')->name('admin.users.view');
-    Route::post('/users/edit', 'Admin\UserController@edit')->name('admin.users.edit');
-    Route::post('/users/savezone', 'Admin\UserController@savezone');
+    Route::get('/users', 'AdminConsole\UserController@index')->name('admin.users.index');
+    Route::get('/users/create', 'AdminConsole\UserController@create')->name('admin.users.create');
+    Route::post('/users/store', 'AdminConsole\UserController@store')->name('admin.users.store');
+    Route::get('/users/edit/{id}', 'AdminConsole\UserController@edit')->name('admin.users.edit');
+    Route::get('/users/view/{id}', 'AdminConsole\UserController@view')->name('admin.users.view');
+    Route::post('/users/edit', 'AdminConsole\UserController@edit')->name('admin.users.edit');
+    Route::post('/users/savezone', 'AdminConsole\UserController@savezone');
 
-    Route::get('/users/active', 'Admin\UserController@active')->name('admin.users.active');
-    Route::get('/users/inactive', 'Admin\UserController@inactive')->name('admin.users.inactive');
-    Route::get('/users/invited', 'Admin\UserController@invited')->name('admin.users.invited');
+    Route::get('/users/active', 'AdminConsole\UserController@active')->name('admin.users.active');
+    Route::get('/users/inactive', 'AdminConsole\UserController@inactive')->name('admin.users.inactive');
+    Route::get('/users/invited', 'AdminConsole\UserController@invited')->name('admin.users.invited');
 
     Route::get('/staff', 'Admin\StaffController@index')->name('admin.staff.index');
     Route::get('/staff/create', 'Admin\StaffController@create')->name('admin.staff.create');
@@ -132,11 +135,11 @@ Route::prefix('admin')->group(function() {
     Route::post('/staff/edit', 'Admin\StaffController@edit')->name('admin.staff.edit');
 
 
-    Route::get('/users/clientlist', 'Admin\UserController@clientlist')->name('admin.users.clientlist');
-    Route::get('/users/createclient', 'Admin\UserController@createclient')->name('admin.users.createclient');
-    Route::post('/users/storeclient', 'Admin\UserController@storeclient')->name('admin.users.storeclient');
-    Route::get('/users/editclient/{id}', 'Admin\UserController@editclient')->name('admin.users.editclient');
-    Route::post('/users/editclient', 'Admin\UserController@editclient')->name('admin.users.editclient');
+    Route::get('/users/clientlist', 'AdminConsole\UserController@clientlist')->name('admin.users.clientlist');
+    Route::get('/users/createclient', 'AdminConsole\UserController@createclient')->name('admin.users.createclient');
+    Route::post('/users/storeclient', 'AdminConsole\UserController@storeclient')->name('admin.users.storeclient');
+    Route::get('/users/editclient/{id}', 'AdminConsole\UserController@editclient')->name('admin.users.editclient');
+    Route::post('/users/editclient', 'AdminConsole\UserController@editclient')->name('admin.users.editclient');
 
 
     Route::get('/usertype', 'Admin\UsertypeController@index')->name('admin.usertype.index');
@@ -145,11 +148,11 @@ Route::prefix('admin')->group(function() {
     Route::get('/usertype/edit/{id}', 'Admin\UsertypeController@edit')->name('admin.usertype.edit');
     Route::post('/usertype/edit', 'Admin\UsertypeController@edit')->name('admin.usertype.edit');
 
-    Route::get('/userrole', 'Admin\UserroleController@index')->name('admin.userrole.index');
-    Route::get('/userrole/create', 'Admin\UserroleController@create')->name('admin.userrole.create');
-    Route::post('/userrole/store', 'Admin\UserroleController@store')->name('admin.userrole.store');
-    Route::get('/userrole/edit/{id}', 'Admin\UserroleController@edit')->name('admin.userrole.edit');
-    Route::post('/userrole/edit', 'Admin\UserroleController@edit')->name('admin.userrole.edit');
+    Route::get('/userrole', 'AdminConsole\UserroleController@index')->name('admin.userrole.index');
+    Route::get('/userrole/create', 'AdminConsole\UserroleController@create')->name('admin.userrole.create');
+    Route::post('/userrole/store', 'AdminConsole\UserroleController@store')->name('admin.userrole.store');
+    Route::get('/userrole/edit/{id}', 'AdminConsole\UserroleController@edit')->name('admin.userrole.edit');
+    Route::post('/userrole/edit', 'AdminConsole\UserroleController@edit')->name('admin.userrole.edit');
 
 
 
@@ -276,13 +279,13 @@ Route::prefix('admin')->group(function() {
 
 
 		//Branch Start
-		Route::get('/branch', 'Admin\BranchesController@index')->name('admin.branch.index');
-		Route::get('/branch/create', 'Admin\BranchesController@create')->name('admin.branch.create');
-		Route::post('/branch/store', 'Admin\BranchesController@store')->name('admin.branch.store');
-		Route::get('/branch/edit/{id}', 'Admin\BranchesController@edit')->name('admin.branch.edit');
-		Route::get('/branch/view/{id}', 'Admin\BranchesController@view')->name('admin.branch.userview');
-		Route::get('/branch/view/client/{id}', 'Admin\BranchesController@viewclient')->name('admin.branch.clientview');
-		Route::post('/branch/edit', 'Admin\BranchesController@edit')->name('admin.branch.edit');
+		Route::get('/branch', 'AdminConsole\BranchesController@index')->name('admin.branch.index');
+		Route::get('/branch/create', 'AdminConsole\BranchesController@create')->name('admin.branch.create');
+		Route::post('/branch/store', 'AdminConsole\BranchesController@store')->name('admin.branch.store');
+		Route::get('/branch/edit/{id}', 'AdminConsole\BranchesController@edit')->name('admin.branch.edit');
+		Route::get('/branch/view/{id}', 'AdminConsole\BranchesController@view')->name('admin.branch.userview');
+		Route::get('/branch/view/client/{id}', 'AdminConsole\BranchesController@viewclient')->name('admin.branch.clientview');
+		Route::post('/branch/edit', 'AdminConsole\BranchesController@edit')->name('admin.branch.edit');
 
 
 
@@ -354,20 +357,20 @@ Route::prefix('admin')->group(function() {
 
 		//Product Type Start
 
-		Route::get('/profiles', 'Admin\ProfileController@index')->name('admin.feature.profiles.index');
-		Route::get('/profiles/create', 'Admin\ProfileController@create')->name('admin.feature.profiles.create');
-		Route::post('/profiles/store', 'Admin\ProfileController@store')->name('admin.feature.profiles.store');
-		Route::get('/profiles/edit/{id}', 'Admin\ProfileController@edit')->name('admin.feature.profiles.edit');
-		Route::post('/profiles/edit', 'Admin\ProfileController@edit')->name('admin.feature.profiles.edit');
+		Route::get('/profiles', 'AdminConsole\ProfileController@index')->name('admin.feature.profiles.index');
+		Route::get('/profiles/create', 'AdminConsole\ProfileController@create')->name('admin.feature.profiles.create');
+		Route::post('/profiles/store', 'AdminConsole\ProfileController@store')->name('admin.feature.profiles.store');
+		Route::get('/profiles/edit/{id}', 'AdminConsole\ProfileController@edit')->name('admin.feature.profiles.edit');
+		Route::post('/profiles/edit', 'AdminConsole\ProfileController@edit')->name('admin.feature.profiles.edit');
 
 
 
 		//Tags Start
-		Route::get('/tags', 'Admin\TagController@index')->name('admin.feature.tags.index');
-		Route::get('/tags/create', 'Admin\TagController@create')->name('admin.feature.tags.create');
-		Route::post('tags/store', 'Admin\TagController@store')->name('admin.feature.tags.store');
-		Route::get('/tags/edit/{id}', 'Admin\TagController@edit')->name('admin.feature.tags.edit');
-		Route::post('/tags/edit', 'Admin\TagController@edit')->name('admin.feature.tags.edit');
+		Route::get('/tags', 'AdminConsole\TagController@index')->name('admin.feature.tags.index');
+		Route::get('/tags/create', 'AdminConsole\TagController@create')->name('admin.feature.tags.create');
+		Route::post('tags/store', 'AdminConsole\TagController@store')->name('admin.feature.tags.store');
+		Route::get('/tags/edit/{id}', 'AdminConsole\TagController@edit')->name('admin.feature.tags.edit');
+		Route::post('/tags/edit', 'AdminConsole\TagController@edit')->name('admin.feature.tags.edit');
 
 		//Checklist Start
 		Route::get('/checklist', 'Admin\ChecklistController@index')->name('admin.checklist.index');
@@ -380,13 +383,13 @@ Route::prefix('admin')->group(function() {
 
 
 		//workflow Start
-		Route::get('/workflow', 'Admin\WorkflowController@index')->name('admin.workflow.index');
-		Route::get('/workflow/create', 'Admin\WorkflowController@create')->name('admin.workflow.create');
-		Route::post('workflow/store', 'Admin\WorkflowController@store')->name('admin.workflow.store');
-		Route::get('/workflow/edit/{id}', 'Admin\WorkflowController@edit')->name('admin.workflow.edit');
-		Route::get('/workflow/deactivate-workflow/{id}', 'Admin\WorkflowController@deactivateWorkflow')->name('admin.workflow.deactivate');
-		Route::get('/workflow/activate-workflow/{id}', 'Admin\WorkflowController@activateWorkflow')->name('admin.workflow.activate');
-		Route::post('/workflow/edit', 'Admin\WorkflowController@edit')->name('admin.workflow.edit');
+		Route::get('/workflow', 'AdminConsole\WorkflowController@index')->name('admin.workflow.index');
+		Route::get('/workflow/create', 'AdminConsole\WorkflowController@create')->name('admin.workflow.create');
+		Route::post('workflow/store', 'AdminConsole\WorkflowController@store')->name('admin.workflow.store');
+		Route::get('/workflow/edit/{id}', 'AdminConsole\WorkflowController@edit')->name('admin.workflow.edit');
+		Route::get('/workflow/deactivate-workflow/{id}', 'AdminConsole\WorkflowController@deactivateWorkflow')->name('admin.workflow.deactivate');
+		Route::get('/workflow/activate-workflow/{id}', 'AdminConsole\WorkflowController@activateWorkflow')->name('admin.workflow.activate');
+		Route::post('/workflow/edit', 'AdminConsole\WorkflowController@edit')->name('admin.workflow.edit');
 
 
 
@@ -421,21 +424,21 @@ Route::prefix('admin')->group(function() {
 		Route::post('/save_tag', 'Admin\ClientsController@save_tag');
 
 
-		Route::get('/emails', 'Admin\EmailController@index')->name('admin.emails.index');
-		Route::get('/emails/create', 'Admin\EmailController@create')->name('admin.emails.create');
-		Route::post('emails/store', 'Admin\EmailController@store')->name('admin.emails.store');
-		Route::get('/emails/edit/{id}', 'Admin\EmailController@edit')->name('admin.emails.edit');
-		Route::post('/emails/edit', 'Admin\EmailController@edit')->name('admin.emails.edit');
+		Route::get('/emails', 'AdminConsole\EmailController@index')->name('admin.emails.index');
+		Route::get('/emails/create', 'AdminConsole\EmailController@create')->name('admin.emails.create');
+		Route::post('emails/store', 'AdminConsole\EmailController@store')->name('admin.emails.store');
+		Route::get('/emails/edit/{id}', 'AdminConsole\EmailController@edit')->name('admin.emails.edit');
+		Route::post('/emails/edit', 'AdminConsole\EmailController@edit')->name('admin.emails.edit');
 		
 
 
 
 		//Crm Email Template Start
-		Route::get('/crm_email_template', 'Admin\CrmEmailTemplateController@index')->name('admin.crmemailtemplate.index');
-		Route::get('/crm_email_template/create', 'Admin\CrmEmailTemplateController@create')->name('admin.crmemailtemplate.create');
-		Route::post('crm_email_template/store', 'Admin\CrmEmailTemplateController@store')->name('admin.crmemailtemplate.store');
-		Route::get('/crm_email_template/edit/{id}', 'Admin\CrmEmailTemplateController@edit')->name('admin.crmemailtemplate.edit');
-		Route::post('/crm_email_template/edit', 'Admin\CrmEmailTemplateController@edit')->name('admin.crmemailtemplate.edit');
+		Route::get('/crm_email_template', 'AdminConsole\CrmEmailTemplateController@index')->name('admin.crmemailtemplate.index');
+		Route::get('/crm_email_template/create', 'AdminConsole\CrmEmailTemplateController@create')->name('admin.crmemailtemplate.create');
+		Route::post('crm_email_template/store', 'AdminConsole\CrmEmailTemplateController@store')->name('admin.crmemailtemplate.store');
+		Route::get('/crm_email_template/edit/{id}', 'AdminConsole\CrmEmailTemplateController@edit')->name('admin.crmemailtemplate.edit');
+		Route::post('/crm_email_template/edit', 'AdminConsole\CrmEmailTemplateController@edit')->name('admin.crmemailtemplate.edit');
 
 		Route::get('/gen-settings', 'Admin\AdminController@gensettings')->name('admin.gensettings.index');
 		Route::post('/gen-settings/update', 'Admin\AdminController@gensettingsupdate')->name('admin.gensettings.update');
@@ -452,10 +455,10 @@ Route::prefix('admin')->group(function() {
 
 	    //Route::get('/upload-checklists', 'Admin\UploadChecklistController@index')->name('admin.upload_checklists.index');
 		//Route::post('/upload-checklists/store', 'Admin\UploadChecklistController@store')->name('admin.upload_checklistsupload');
-		Route::get('/teams', 'Admin\TeamController@index')->name('admin.teams.index');
-		Route::get('/teams/edit/{id}', 'Admin\TeamController@edit')->name('admin.teams.edit');
-		Route::post('/teams/edit', 'Admin\TeamController@edit');
-		Route::post('/teams/store', 'Admin\TeamController@store')->name('admin.teamsupload');
+		Route::get('/teams', 'AdminConsole\TeamController@index')->name('admin.teams.index');
+		Route::get('/teams/edit/{id}', 'AdminConsole\TeamController@edit')->name('admin.teams.edit');
+		Route::post('/teams/edit', 'AdminConsole\TeamController@edit');
+		Route::post('/teams/store', 'AdminConsole\TeamController@store')->name('admin.teamsupload');
 		Route::get('/all-notifications', 'Admin\AdminController@allnotification');
 
 		// Appointment modulle
@@ -526,46 +529,46 @@ Route::prefix('admin')->group(function() {
 
 
         //Appointment Dates Not Available
-		Route::get('/appointment-dates-disable', 'Admin\AppointmentDisableDateController@index')->name('admin.feature.appointmentdisabledate.index');
-		Route::get('/appointment-dates-disable/create', 'Admin\AppointmentDisableDateController@create')->name('admin.feature.appointmentdisabledate.create');
-		Route::post('/appointment-dates-disable/store', 'Admin\AppointmentDisableDateController@store')->name('admin.feature.appointmentdisabledate.store');
-		Route::get('/appointment-dates-disable/edit/{id}', 'Admin\AppointmentDisableDateController@edit')->name('admin.feature.appointmentdisabledate.edit');
-		Route::post('/appointment-dates-disable/edit', 'Admin\AppointmentDisableDateController@edit')->name('admin.feature.appointmentdisabledate.edit');
+		Route::get('/appointment-dates-disable', 'AdminConsole\AppointmentDisableDateController@index')->name('admin.feature.appointmentdisabledate.index');
+		Route::get('/appointment-dates-disable/create', 'AdminConsole\AppointmentDisableDateController@create')->name('admin.feature.appointmentdisabledate.create');
+		Route::post('/appointment-dates-disable/store', 'AdminConsole\AppointmentDisableDateController@store')->name('admin.feature.appointmentdisabledate.store');
+		Route::get('/appointment-dates-disable/edit/{id}', 'AdminConsole\AppointmentDisableDateController@edit')->name('admin.feature.appointmentdisabledate.edit');
+		Route::post('/appointment-dates-disable/edit', 'AdminConsole\AppointmentDisableDateController@edit')->name('admin.feature.appointmentdisabledate.edit');
 
         //Promo code
-		Route::get('/promo-code', 'Admin\PromoCodeController@index')->name('admin.feature.promocode.index');
-		Route::get('/promo-code/create', 'Admin\PromoCodeController@create')->name('admin.feature.promocode.create');
-		Route::post('/promo-code/store', 'Admin\PromoCodeController@store')->name('admin.feature.promocode.store');
-		Route::get('/promo-code/edit/{id}', 'Admin\PromoCodeController@edit')->name('admin.feature.promocode.edit');
-		Route::post('/promo-code/edit', 'Admin\PromoCodeController@edit')->name('admin.feature.promocode.edit');
-        Route::post('/promo-code/checkpromocode', 'Admin\PromoCodeController@checkpromocode');
+		Route::get('/promo-code', 'AdminConsole\PromoCodeController@index')->name('admin.feature.promocode.index');
+		Route::get('/promo-code/create', 'AdminConsole\PromoCodeController@create')->name('admin.feature.promocode.create');
+		Route::post('/promo-code/store', 'AdminConsole\PromoCodeController@store')->name('admin.feature.promocode.store');
+		Route::get('/promo-code/edit/{id}', 'AdminConsole\PromoCodeController@edit')->name('admin.feature.promocode.edit');
+		Route::post('/promo-code/edit', 'AdminConsole\PromoCodeController@edit')->name('admin.feature.promocode.edit');
+        Route::post('/promo-code/checkpromocode', 'AdminConsole\PromoCodeController@checkpromocode');
 
 
         //Personal Document Category
-		Route::get('/personal-document-type', 'Admin\PersonalDocumentTypeController@index')->name('admin.feature.personaldocumenttype.index');
-		Route::get('/personal-document-type/create', 'Admin\PersonalDocumentTypeController@create')->name('admin.feature.personaldocumenttype.create');
-		Route::post('/personal-document-type/store', 'Admin\PersonalDocumentTypeController@store')->name('admin.feature.personaldocumenttype.store');
-		Route::get('/personal-document-type/edit/{id}', 'Admin\PersonalDocumentTypeController@edit')->name('admin.feature.personaldocumenttype.edit');
-		Route::post('/personal-document-type/edit', 'Admin\PersonalDocumentTypeController@edit')->name('admin.feature.personaldocumenttype.edit');
-        Route::post('/personal-document-type/checkcreatefolder', 'Admin\PersonalDocumentTypeController@checkcreatefolder');
+		Route::get('/personal-document-type', 'AdminConsole\PersonalDocumentTypeController@index')->name('admin.feature.personaldocumenttype.index');
+		Route::get('/personal-document-type/create', 'AdminConsole\PersonalDocumentTypeController@create')->name('admin.feature.personaldocumenttype.create');
+		Route::post('/personal-document-type/store', 'AdminConsole\PersonalDocumentTypeController@store')->name('admin.feature.personaldocumenttype.store');
+		Route::get('/personal-document-type/edit/{id}', 'AdminConsole\PersonalDocumentTypeController@edit')->name('admin.feature.personaldocumenttype.edit');
+		Route::post('/personal-document-type/edit', 'AdminConsole\PersonalDocumentTypeController@edit')->name('admin.feature.personaldocumenttype.edit');
+        Route::post('/personal-document-type/checkcreatefolder', 'AdminConsole\PersonalDocumentTypeController@checkcreatefolder');
 
 
         //Visa Document Category
-		Route::get('/visa-document-type', 'Admin\VisaDocumentTypeController@index')->name('admin.feature.visadocumenttype.index');
-		Route::get('/visa-document-type/create', 'Admin\VisaDocumentTypeController@create')->name('admin.feature.visadocumenttype.create');
-		Route::post('/visa-document-type/store', 'Admin\VisaDocumentTypeController@store')->name('admin.feature.visadocumenttype.store');
-		Route::get('/visa-document-type/edit/{id}', 'Admin\VisaDocumentTypeController@edit')->name('admin.feature.visadocumenttype.edit');
-		Route::post('/visa-document-type/edit', 'Admin\VisaDocumentTypeController@edit')->name('admin.feature.visadocumenttype.edit');
-        Route::post('/visa-document-type/checkcreatefolder', 'Admin\VisaDocumentTypeController@checkcreatefolder');
+		Route::get('/visa-document-type', 'AdminConsole\VisaDocumentTypeController@index')->name('admin.feature.visadocumenttype.index');
+		Route::get('/visa-document-type/create', 'AdminConsole\VisaDocumentTypeController@create')->name('admin.feature.visadocumenttype.create');
+		Route::post('/visa-document-type/store', 'AdminConsole\VisaDocumentTypeController@store')->name('admin.feature.visadocumenttype.store');
+		Route::get('/visa-document-type/edit/{id}', 'AdminConsole\VisaDocumentTypeController@edit')->name('admin.feature.visadocumenttype.edit');
+		Route::post('/visa-document-type/edit', 'AdminConsole\VisaDocumentTypeController@edit')->name('admin.feature.visadocumenttype.edit');
+        Route::post('/visa-document-type/checkcreatefolder', 'AdminConsole\VisaDocumentTypeController@checkcreatefolder');
 
 
 
         //Matter Start
-		Route::get('/matter', 'Admin\MatterController@index')->name('admin.feature.matter.index');
-		Route::get('/matter/create', 'Admin\MatterController@create')->name('admin.feature.matter.create');
-		Route::post('/matter/store', 'Admin\MatterController@store')->name('admin.feature.matter.store');
-		Route::get('/matter/edit/{id}', 'Admin\MatterController@edit')->name('admin.feature.matter.edit');
-		Route::post('/matter/edit', 'Admin\MatterController@edit')->name('admin.feature.matter.edit');
+		Route::get('/matter', 'AdminConsole\MatterController@index')->name('admin.feature.matter.index');
+		Route::get('/matter/create', 'AdminConsole\MatterController@create')->name('admin.feature.matter.create');
+		Route::post('/matter/store', 'AdminConsole\MatterController@store')->name('admin.feature.matter.store');
+		Route::get('/matter/edit/{id}', 'AdminConsole\MatterController@edit')->name('admin.feature.matter.edit');
+		Route::post('/matter/edit', 'AdminConsole\MatterController@edit')->name('admin.feature.matter.edit');
 
         Route::post('/address_auto_populate', 'Admin\ClientsController@address_auto_populate');
 
@@ -641,28 +644,28 @@ Route::prefix('admin')->group(function() {
         Route::post('/leads/updateOccupation', 'Admin\ClientPersonalDetailsController@updateOccupation')->name('admin.leads.updateOccupation');
 
         // ANZSCO Occupation Database Routes
-        Route::get('/anzsco', 'Admin\AnzscoOccupationController@index')->name('admin.anzsco.index');
-        Route::get('/anzsco/data', 'Admin\AnzscoOccupationController@getData')->name('admin.anzsco.data');
-        Route::get('/anzsco/create', 'Admin\AnzscoOccupationController@create')->name('admin.anzsco.create');
-        Route::post('/anzsco', 'Admin\AnzscoOccupationController@store')->name('admin.anzsco.store');
-        Route::get('/anzsco/{id}/edit', 'Admin\AnzscoOccupationController@edit')->name('admin.anzsco.edit');
-        Route::put('/anzsco/{id}', 'Admin\AnzscoOccupationController@update')->name('admin.anzsco.update');
-        Route::delete('/anzsco/{id}', 'Admin\AnzscoOccupationController@destroy')->name('admin.anzsco.destroy');
-        Route::post('/anzsco/{id}/toggle-status', 'Admin\AnzscoOccupationController@toggleStatus')->name('admin.anzsco.toggleStatus');
-        Route::get('/anzsco/import', 'Admin\AnzscoOccupationController@importPage')->name('admin.anzsco.import');
-        Route::post('/anzsco/import', 'Admin\AnzscoOccupationController@import')->name('admin.anzsco.import.process');
-        Route::get('/anzsco/download-template', 'Admin\AnzscoOccupationController@downloadTemplate')->name('admin.anzsco.download-template');
+        Route::get('/anzsco', 'AdminConsole\AnzscoOccupationController@index')->name('admin.anzsco.index');
+        Route::get('/anzsco/data', 'AdminConsole\AnzscoOccupationController@getData')->name('admin.anzsco.data');
+        Route::get('/anzsco/create', 'AdminConsole\AnzscoOccupationController@create')->name('admin.anzsco.create');
+        Route::post('/anzsco', 'AdminConsole\AnzscoOccupationController@store')->name('admin.anzsco.store');
+        Route::get('/anzsco/{id}/edit', 'AdminConsole\AnzscoOccupationController@edit')->name('admin.anzsco.edit');
+        Route::put('/anzsco/{id}', 'AdminConsole\AnzscoOccupationController@update')->name('admin.anzsco.update');
+        Route::delete('/anzsco/{id}', 'AdminConsole\AnzscoOccupationController@destroy')->name('admin.anzsco.destroy');
+        Route::post('/anzsco/{id}/toggle-status', 'AdminConsole\AnzscoOccupationController@toggleStatus')->name('admin.anzsco.toggleStatus');
+        Route::get('/anzsco/import', 'AdminConsole\AnzscoOccupationController@importPage')->name('admin.anzsco.import');
+        Route::post('/anzsco/import', 'AdminConsole\AnzscoOccupationController@import')->name('admin.anzsco.import.process');
+        Route::get('/anzsco/download-template', 'AdminConsole\AnzscoOccupationController@downloadTemplate')->name('admin.anzsco.download-template');
         
         // ANZSCO API routes for autocomplete (moved from api.php for proper authentication)
-        Route::get('/anzsco/search', 'Admin\AnzscoOccupationController@search')->name('admin.anzsco.search');
-        Route::get('/anzsco/code/{code}', 'Admin\AnzscoOccupationController@getByCode')->name('admin.anzsco.getByCode');
+        Route::get('/anzsco/search', 'AdminConsole\AnzscoOccupationController@search')->name('admin.anzsco.search');
+        Route::get('/anzsco/code/{code}', 'AdminConsole\AnzscoOccupationController@getByCode')->name('admin.anzsco.getByCode');
 
         //Document Checklist Start
-		Route::get('/documentchecklist', 'Admin\DocumentChecklistController@index')->name('admin.feature.documentchecklist.index');
-		Route::get('/documentchecklist/create', 'Admin\DocumentChecklistController@create')->name('admin.feature.documentchecklist.create');
-		Route::post('/documentchecklist/store', 'Admin\DocumentChecklistController@store')->name('admin.feature.documentchecklist.store');
-		Route::get('/documentchecklist/edit/{id}', 'Admin\DocumentChecklistController@edit')->name('admin.feature.documentchecklist.edit');
-		Route::post('/documentchecklist/edit', 'Admin\DocumentChecklistController@edit')->name('admin.feature.documentchecklist.edit');
+		Route::get('/documentchecklist', 'AdminConsole\DocumentChecklistController@index')->name('admin.feature.documentchecklist.index');
+		Route::get('/documentchecklist/create', 'AdminConsole\DocumentChecklistController@create')->name('admin.feature.documentchecklist.create');
+		Route::post('/documentchecklist/store', 'AdminConsole\DocumentChecklistController@store')->name('admin.feature.documentchecklist.store');
+		Route::get('/documentchecklist/edit/{id}', 'AdminConsole\DocumentChecklistController@edit')->name('admin.feature.documentchecklist.edit');
+		Route::post('/documentchecklist/edit', 'AdminConsole\DocumentChecklistController@edit')->name('admin.feature.documentchecklist.edit');
 
         //Personal and Visa Document
         Route::post('/add-edudocchecklist', 'Admin\ClientsController@addedudocchecklist')->name('admin.clients.addedudocchecklist');
@@ -780,19 +783,19 @@ Route::prefix('admin')->group(function() {
 		Route::get('/get-matter-templates', 'Admin\AdminController@getmattertemplates')->name('admin.clients.getmattertemplates');
     
 		//Matter First Email
-		Route::get('/matter_email_template', 'Admin\MatterEmailTemplateController@index')->name('admin.matteremailtemplate.index');
-		Route::get('/matter_email_template/create/{matterId}', 'Admin\MatterEmailTemplateController@create')->name('admin.matteremailtemplate.create');
-		Route::post('matter_email_template/store', 'Admin\MatterEmailTemplateController@store')->name('admin.matteremailtemplate.store');
-		Route::get('/matter_email_template/edit/{templateId}/{matterId}', 'Admin\MatterEmailTemplateController@edit')->name('admin.matteremailtemplate.edit');
-		Route::post('/matter_email_template/edit', 'Admin\MatterEmailTemplateController@edit')->name('admin.matteremailtemplate.edit');
+		Route::get('/matter_email_template', 'AdminConsole\MatterEmailTemplateController@index')->name('admin.matteremailtemplate.index');
+		Route::get('/matter_email_template/create/{matterId}', 'AdminConsole\MatterEmailTemplateController@create')->name('admin.matteremailtemplate.create');
+		Route::post('matter_email_template/store', 'AdminConsole\MatterEmailTemplateController@store')->name('admin.matteremailtemplate.store');
+		Route::get('/matter_email_template/edit/{templateId}/{matterId}', 'AdminConsole\MatterEmailTemplateController@edit')->name('admin.matteremailtemplate.edit');
+		Route::post('/matter_email_template/edit', 'AdminConsole\MatterEmailTemplateController@edit')->name('admin.matteremailtemplate.edit');
   
 		//Matter Other Email Template Start
-		Route::get('/matter_other_email_template/edit/{templateId}/{matterId}', 'Admin\MatterOtherEmailTemplateController@edit')->name('admin.matterotheremailtemplate.edit');
-		Route::post('/matter_other_email_template/edit', 'Admin\MatterOtherEmailTemplateController@edit')->name('admin.matterotheremailtemplate.update');
-		Route::get('/matter_other_email_template/create/{matterId}', 'Admin\MatterOtherEmailTemplateController@create')->name('admin.matterotheremailtemplate.create');
-		Route::post('/matter_other_email_template/store', 'Admin\MatterOtherEmailTemplateController@store')->name('admin.matterotheremailtemplate.store');
-		Route::delete('/matter_other_email_template/{id}', 'Admin\MatterOtherEmailTemplateController@destroy')->name('admin.matterotheremailtemplate.destroy');
-		Route::get('/matter_other_email_template/{matterId}', 'Admin\MatterOtherEmailTemplateController@index')->name('admin.matterotheremailtemplate.index');
+		Route::get('/matter_other_email_template/edit/{templateId}/{matterId}', 'AdminConsole\MatterOtherEmailTemplateController@edit')->name('admin.matterotheremailtemplate.edit');
+		Route::post('/matter_other_email_template/edit', 'AdminConsole\MatterOtherEmailTemplateController@edit')->name('admin.matterotheremailtemplate.update');
+		Route::get('/matter_other_email_template/create/{matterId}', 'AdminConsole\MatterOtherEmailTemplateController@create')->name('admin.matterotheremailtemplate.create');
+		Route::post('/matter_other_email_template/store', 'AdminConsole\MatterOtherEmailTemplateController@store')->name('admin.matterotheremailtemplate.store');
+		Route::delete('/matter_other_email_template/{id}', 'AdminConsole\MatterOtherEmailTemplateController@destroy')->name('admin.matterotheremailtemplate.destroy');
+		Route::get('/matter_other_email_template/{matterId}', 'AdminConsole\MatterOtherEmailTemplateController@index')->name('admin.matterotheremailtemplate.index');
   
 		//matter checklist
 		Route::get('/upload-checklists', 'Admin\UploadChecklistController@index')->name('admin.upload_checklists.index');
