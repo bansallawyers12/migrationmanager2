@@ -7,6 +7,7 @@
     </button>
     
     <input type="hidden" name="occupation_id[{{ $index }}]" value="{{ $occupation->id ?? '' }}">
+    <input type="hidden" name="anzsco_occupation_id[{{ $index }}]" class="anzsco_occupation_id" value="{{ $occupation->anzsco_occupation_id ?? '' }}">
     
     <div class="content-grid">
         <div class="form-group">
@@ -47,30 +48,48 @@
         </div>
         
         <div class="form-group">
-            <label>Target Visa Subclass</label>
-            <input type="text" 
-                   name="visa_subclass[{{ $index }}]" 
-                   class="visa_subclass" 
-                   value="{{ $occupation->visa_subclass ?? '' }}" 
-                   placeholder="e.g., 189, 190">
+            <label>Occupation Lists</label>
+            <div class="occupation-lists-display" id="occupation-lists-{{ $index }}">
+                @if(isset($occupation->anzsco_occupation_id) && $occupation->anzsco_occupation_id)
+                    @php
+                        $anzscoOccupation = \App\Models\AnzscoOccupation::find($occupation->anzsco_occupation_id);
+                    @endphp
+                    @if($anzscoOccupation)
+                        @if($anzscoOccupation->is_on_mltssl)
+                            <span class="badge badge-success mr-1">MLTSSL</span>
+                        @endif
+                        @if($anzscoOccupation->is_on_stsol)
+                            <span class="badge badge-info mr-1">STSOL</span>
+                        @endif
+                        @if($anzscoOccupation->is_on_rol)
+                            <span class="badge badge-warning mr-1">ROL</span>
+                        @endif
+                        @if($anzscoOccupation->is_on_csol)
+                            <span class="badge badge-secondary mr-1">CSOL</span>
+                        @endif
+                    @else
+                        <span class="text-muted">Select an occupation to see lists</span>
+                    @endif
+                @else
+                    <span class="text-muted">Select an occupation to see lists</span>
+                @endif
+            </div>
         </div>
         
         <div class="form-group">
             <label>Assessment Date</label>
-            <input type="text" 
+            <input type="date" 
                    name="dates[{{ $index }}]" 
-                   class="dates date-picker" 
-                   value="{{ $occupation && $occupation->dates ? date('d/m/Y', strtotime($occupation->dates)) : '' }}" 
-                   placeholder="dd/mm/yyyy">
+                   class="dates" 
+                   value="{{ $occupation && $occupation->dates ? date('Y-m-d', strtotime($occupation->dates)) : '' }}">
         </div>
         
         <div class="form-group">
             <label>Expiry Date</label>
-            <input type="text" 
+            <input type="date" 
                    name="expiry_dates[{{ $index }}]" 
-                   class="expiry_dates date-picker" 
-                   value="{{ $occupation && $occupation->expiry_dates ? date('d/m/Y', strtotime($occupation->expiry_dates)) : '' }}" 
-                   placeholder="dd/mm/yyyy">
+                   class="expiry_dates" 
+                   value="{{ $occupation && $occupation->expiry_dates ? date('Y-m-d', strtotime($occupation->expiry_dates)) : '' }}">
         </div>
         
         <div class="form-group">

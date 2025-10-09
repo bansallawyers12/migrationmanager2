@@ -15,6 +15,33 @@ class ClientTravelInformation extends Model
         'travel_departure_date',
         'travel_purpose'
     ];
+
+    /**
+     * Accessor to bridge the field name mismatch
+     * Views expect 'country_visited' but database has 'travel_country_visited'
+     */
+    public function getCountryVisitedAttribute($value)
+    {
+        return $this->travel_country_visited;
+    }
+
+    /**
+     * Accessor to bridge the field name mismatch
+     * Views expect 'arrival_date' but database has 'travel_arrival_date'
+     */
+    public function getArrivalDateAttribute($value)
+    {
+        return $this->travel_arrival_date;
+    }
+
+    /**
+     * Accessor to bridge the field name mismatch
+     * Views expect 'departure_date' but database has 'travel_departure_date'
+     */
+    public function getDepartureDateAttribute($value)
+    {
+        return $this->travel_departure_date;
+    }
 }
 
 

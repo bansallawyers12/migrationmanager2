@@ -19,6 +19,9 @@
                 <option value="TOEFL" {{ ($testScore->test_type ?? '') == 'TOEFL' ? 'selected' : '' }}>TOEFL</option>
                 <option value="CAE" {{ ($testScore->test_type ?? '') == 'CAE' ? 'selected' : '' }}>CAE</option>
                 <option value="OET" {{ ($testScore->test_type ?? '') == 'OET' ? 'selected' : '' }}>OET</option>
+                <option value="CELPIP" {{ ($testScore->test_type ?? '') == 'CELPIP' ? 'selected' : '' }}>CELPIP General</option>
+                <option value="MET" {{ ($testScore->test_type ?? '') == 'MET' ? 'selected' : '' }}>Michigan English Test (MET)</option>
+                <option value="LANGUAGECERT" {{ ($testScore->test_type ?? '') == 'LANGUAGECERT' ? 'selected' : '' }}>LANGUAGECERT Academic</option>
             </select>
         </div>
         

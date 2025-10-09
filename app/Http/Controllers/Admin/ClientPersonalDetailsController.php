@@ -24,6 +24,7 @@ use App\Models\ClientPassportInformation;
 use App\Models\ClientTravelInformation;
 use App\Models\ClientCharacter;
 use App\Models\ClientRelationship;
+use App\Models\ClientEoiReference;
 use App\Models\ClientMatter;
 use App\Models\ActivitiesLog;
 use App\Models\ClientPartner;
@@ -128,7 +129,6 @@ class ClientPersonalDetailsController extends Controller
         
         $params = http_build_query([
             'input' => $query,
-            'components' => 'country:au',
             'key' => $apiKey
         ]);
         
@@ -1160,7 +1160,7 @@ class ClientPersonalDetailsController extends Controller
     {
         try {
             $section = $request->input('section');
-            $clientId = $request->input('client_id');
+            $clientId = $request->input('id'); // Use 'id' instead of 'client_id' - 'id' is the database ID
             
             // Validate client exists
             $client = Admin::where('id', $clientId)->where('role', '7')->first();
@@ -1200,6 +1200,10 @@ class ClientPersonalDetailsController extends Controller
                     return $this->saveChildrenInfoSection($request, $client);
                 case 'eoiInfo':
                     return $this->saveEoiInfoSection($request, $client);
+                case 'occupation':
+                    return $this->saveOccupationInfoSection($request, $client);
+                case 'test_scores':
+                    return $this->saveTestScoreInfoSection($request, $client);
                 default:
                     return response()->json([
                         'success' => false,
@@ -1734,39 +1738,124 @@ class ClientPersonalDetailsController extends Controller
     private function saveQualificationsInfoSection($request, $client)
     {
         try {
-            $qualifications = json_decode($request->input('qualifications'), true);
+            $requestData = $request->all();
             
-            if (!is_array($qualifications)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid qualifications data'
-                ], 400);
+            // Handle qualification deletion
+            if (isset($requestData['delete_qualification_ids']) && is_array($requestData['delete_qualification_ids'])) {
+                foreach ($requestData['delete_qualification_ids'] as $qualificationId) {
+                    $qualification = ClientQualification::find($qualificationId);
+                    if ($qualification && $qualification->client_id == $client->id) {
+                        $qualification->delete();
+                    }
+                }
             }
 
-            // Delete existing qualifications for this client
-            ClientQualification::where('client_id', $client->id)->delete();
+            // Handle qualification data
+            if (isset($requestData['level']) && is_array($requestData['level'])) {
+                foreach ($requestData['level'] as $key => $level) {
+                    $name = $requestData['name'][$key] ?? null;
+                    $qual_college_name = $requestData['qual_college_name'][$key] ?? null;
+                    $qual_campus = $requestData['qual_campus'][$key] ?? null;
+                    $country = $requestData['qual_country'][$key] ?? null;
+                    $qual_state = $requestData['qual_state'][$key] ?? null;
+                    $start = $requestData['start_date'][$key] ?? null;
+                    $finish = $requestData['finish_date'][$key] ?? null;
+                    $relevant_qualification = isset($requestData['relevant_qualification'][$key]) && $requestData['relevant_qualification'][$key] == 1 ? 1 : 0;
+                    $qualificationId = $requestData['qualification_id'][$key] ?? null;
 
-            // Insert new qualifications
-            foreach ($qualifications as $qualData) {
-                if (!empty($qualData['qualification'])) {
-                    ClientQualification::create([
-                        'client_id' => $client->id,
-                        'qualification' => $qualData['qualification'],
-                        'institution' => $qualData['institution'] ?? null,
-                        'qual_country' => $qualData['country'] ?? null,
-                        'year' => $qualData['year'] ?? null
-                    ]);
+                    // Convert start_date from dd/mm/yyyy to Y-m-d for database storage
+                    $formatted_start_date = null;
+                    if (!empty($start)) {
+                        try {
+                            $startDate = \Carbon\Carbon::createFromFormat('d/m/Y', $start);
+                            $formatted_start_date = $startDate->format('Y-m-d');
+                        } catch (\Exception $e) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'Invalid Start Date format: ' . $start . '. Must be dd/mm/yyyy.'
+                            ], 422);
+                        }
+                    }
+
+                    // Convert finish_date from dd/mm/yyyy to Y-m-d for database storage
+                    $formatted_finish_date = null;
+                    if (!empty($finish)) {
+                        try {
+                            $finishDate = \Carbon\Carbon::createFromFormat('d/m/Y', $finish);
+                            $formatted_finish_date = $finishDate->format('Y-m-d');
+                        } catch (\Exception $e) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'Invalid Finish Date format: ' . $finish . '. Must be dd/mm/yyyy.'
+                            ], 422);
+                        }
+                    }
+
+                    // Only save if there's at least level or name
+                    if (!empty($level) || !empty($name)) {
+                        if ($qualificationId) {
+                            // Update existing qualification
+                            $existingQualification = ClientQualification::find($qualificationId);
+                            if ($existingQualification && $existingQualification->client_id == $client->id) {
+                                $existingQualification->update([
+                                    'admin_id' => Auth::user()->id,
+                                    'level' => $level,
+                                    'name' => $name,
+                                    'qual_college_name' => $qual_college_name,
+                                    'qual_campus' => $qual_campus,
+                                    'country' => $country,
+                                    'qual_state' => $qual_state,
+                                    'start_date' => $formatted_start_date,
+                                    'finish_date' => $formatted_finish_date,
+                                    'relevant_qualification' => $relevant_qualification
+                                ]);
+                            }
+                        } else {
+                            // Create new qualification
+                            ClientQualification::create([
+                                'admin_id' => Auth::user()->id,
+                                'client_id' => $client->id,
+                                'level' => $level,
+                                'name' => $name,
+                                'qual_college_name' => $qual_college_name,
+                                'qual_campus' => $qual_campus,
+                                'country' => $country,
+                                'qual_state' => $qual_state,
+                                'start_date' => $formatted_start_date,
+                                'finish_date' => $formatted_finish_date,
+                                'relevant_qualification' => $relevant_qualification
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            // Update client's qualification_level and qualification_name with the most recent qualification
+            if (isset($requestData['level']) && is_array($requestData['level'])) {
+                $qualificationCount = count($requestData['level']);
+                if ($qualificationCount > 0) {
+                    $levelArray = array_values($requestData['level']);
+                    $nameArray = array_values($requestData['name']);
+                    
+                    $lastLevel = $levelArray[$qualificationCount - 1] ?? null;
+                    $lastName = $nameArray[$qualificationCount - 1] ?? null;
+
+                    if (!empty($lastLevel) || !empty($lastName)) {
+                        $client->qualification_level = $lastLevel;
+                        $client->qualification_name = $lastName;
+                        $client->save();
+                    }
                 }
             }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Qualifications updated successfully'
+                'message' => 'Qualifications information updated successfully'
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error saving qualifications: ' . $e->getMessage()
+                'message' => 'Failed to save qualifications: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -1788,27 +1877,33 @@ class ClientPersonalDetailsController extends Controller
 
             // Insert new experiences
             foreach ($experiences as $expData) {
-                if (!empty($expData['company'])) {
+                if (!empty($expData['job_title']) || !empty($expData['job_code']) || !empty($expData['job_emp_name'])) {
                     // Convert date format from d/m/Y to Y-m-d if needed
                     $startDate = null;
                     $endDate = null;
                     
-                    if (!empty($expData['start_date'])) {
-                        $startDate = \DateTime::createFromFormat('d/m/Y', $expData['start_date']);
+                    if (!empty($expData['job_start_date'])) {
+                        $startDate = \DateTime::createFromFormat('d/m/Y', $expData['job_start_date']);
                         $startDate = $startDate ? $startDate->format('Y-m-d') : null;
                     }
                     
-                    if (!empty($expData['end_date'])) {
-                        $endDate = \DateTime::createFromFormat('d/m/Y', $expData['end_date']);
+                    if (!empty($expData['job_finish_date'])) {
+                        $endDate = \DateTime::createFromFormat('d/m/Y', $expData['job_finish_date']);
                         $endDate = $endDate ? $endDate->format('Y-m-d') : null;
                     }
                     
                     ClientExperience::create([
                         'client_id' => $client->id,
-                        'company' => $expData['company'],
-                        'position' => $expData['position'] ?? null,
-                        'exp_start_date' => $startDate,
-                        'exp_end_date' => $endDate
+                        'admin_id' => Auth::user()->id,
+                        'job_title' => $expData['job_title'] ?? null,
+                        'job_code' => $expData['job_code'] ?? null,
+                        'job_country' => $expData['job_country'] ?? null,
+                        'job_start_date' => $startDate,
+                        'job_finish_date' => $endDate,
+                        'relevant_experience' => $expData['relevant_experience'] ?? 0,
+                        'job_emp_name' => $expData['job_emp_name'] ?? null,
+                        'job_state' => $expData['job_state'] ?? null,
+                        'job_type' => $expData['job_type'] ?? null
                     ]);
                 }
             }
@@ -1847,9 +1942,9 @@ class ClientPersonalDetailsController extends Controller
                 $pyDateFormatted = $pyDateObj ? $pyDateObj->format('Y-m-d') : null;
             }
             
-            $client->naati = $naatiTest;
+            $client->naati_test = $naatiTest;
             $client->naati_date = $naatiDateFormatted;
-            $client->py = $pyTest;
+            $client->py_test = $pyTest;
             $client->py_date = $pyDateFormatted;
             $client->save();
 
@@ -1914,15 +2009,18 @@ class ClientPersonalDetailsController extends Controller
                 ], 400);
             }
 
-            // Delete existing partner records for this client (type = partner)
-            ClientRelationship::where('client_id', $client->id)->where('type', 'partner')->delete();
+            // Delete existing partner records for this client (filter by partner relationship types)
+            ClientRelationship::where('client_id', $client->id)
+                ->whereIn('relationship_type', ['Husband', 'Wife', 'Ex-Wife', 'Defacto'])
+                ->delete();
 
             // Insert new partner records
             foreach ($partners as $partnerData) {
-                if (!empty($partnerData['details'])) {
+                if (!empty($partnerData['details']) || !empty($partnerData['relationship_type'])) {
                     ClientRelationship::create([
+                        'admin_id' => auth()->id(),
                         'client_id' => $client->id,
-                        'type' => 'partner',
+                        'related_client_id' => $partnerData['partner_id'] ?? null,
                         'details' => $partnerData['details'],
                         'relationship_type' => $partnerData['relationship_type'] ?? null,
                         'gender' => $partnerData['gender'] ?? null,
@@ -1955,15 +2053,18 @@ class ClientPersonalDetailsController extends Controller
                 ], 400);
             }
 
-            // Delete existing children records for this client (type = children)
-            ClientRelationship::where('client_id', $client->id)->where('type', 'children')->delete();
+            // Delete existing children records for this client (filter by children relationship types)
+            ClientRelationship::where('client_id', $client->id)
+                ->whereIn('relationship_type', ['Son', 'Daughter', 'Step Son', 'Step Daughter'])
+                ->delete();
 
             // Insert new children records
             foreach ($children as $childData) {
-                if (!empty($childData['details'])) {
+                if (!empty($childData['details']) || !empty($childData['relationship_type'])) {
                     ClientRelationship::create([
+                        'admin_id' => auth()->id(),
                         'client_id' => $client->id,
-                        'type' => 'children',
+                        'related_client_id' => $childData['child_id'] ?? null,
                         'details' => $childData['details'],
                         'relationship_type' => $childData['relationship_type'] ?? null,
                         'gender' => $childData['gender'] ?? null,
@@ -1996,8 +2097,39 @@ class ClientPersonalDetailsController extends Controller
                 ], 400);
             }
 
-            // For now, just return success as ClientEoiReference model might need to be checked
-            // This would need the ClientEoiReference model imported at the top
+            // Delete existing EOI references for this client
+            ClientEoiReference::where('client_id', $client->id)->delete();
+
+            // Save new EOI references
+            foreach ($eois as $eoiData) {
+                if (!empty($eoiData['eoi_number']) || !empty($eoiData['subclass']) || !empty($eoiData['occupation'])) {
+                    // Format submission date from d/m/Y to Y-m-d
+                    $formatted_submission_date = null;
+                    if (!empty($eoiData['submission_date'])) {
+                        try {
+                            $date = \Carbon\Carbon::createFromFormat('d/m/Y', $eoiData['submission_date']);
+                            $formatted_submission_date = $date->format('Y-m-d');
+                        } catch (\Exception $e) {
+                            // If format conversion fails, try to use the date as-is
+                            $formatted_submission_date = $eoiData['submission_date'];
+                        }
+                    }
+                    
+                    ClientEoiReference::create([
+                        'client_id' => $client->id,
+                        'admin_id' => Auth::id(),
+                        'EOI_number' => $eoiData['eoi_number'] ?? null,
+                        'EOI_subclass' => $eoiData['subclass'] ?? null,
+                        'EOI_occupation' => $eoiData['occupation'] ?? null,
+                        'EOI_point' => $eoiData['point'] ?? null,
+                        'EOI_state' => $eoiData['state'] ?? null,
+                        'EOI_submission_date' => $formatted_submission_date,
+                        'EOI_ROI' => $eoiData['roi'] ?? null,
+                        'EOI_password' => $eoiData['password'] ?? null,
+                    ]);
+                }
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'EOI reference information updated successfully'
@@ -2006,6 +2138,211 @@ class ClientPersonalDetailsController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error saving EOI information: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Save occupation information section
+     */
+    private function saveOccupationInfoSection($request, $client)
+    {
+        try {
+            $requestData = $request->all();
+            
+            // Handle occupation deletion
+            if (isset($requestData['delete_occupation_ids']) && is_array($requestData['delete_occupation_ids'])) {
+                foreach ($requestData['delete_occupation_ids'] as $occupationId) {
+                    $occupation = \App\Models\ClientOccupation::find($occupationId);
+                    if ($occupation && $occupation->client_id == $client->id) {
+                        $occupation->delete();
+                    }
+                }
+            }
+
+            // Handle occupation data
+            if (isset($requestData['nomi_occupation']) && is_array($requestData['nomi_occupation'])) {
+                foreach ($requestData['nomi_occupation'] as $key => $nomiOccupation) {
+                    if (!empty($nomiOccupation) || isset($requestData['skill_assessment_hidden'][$key])) {
+                        $occupationId = $requestData['occupation_id'][$key] ?? null;
+                        $anzscoOccupationId = $requestData['anzsco_occupation_id'][$key] ?? null;
+                        $skillAssessment = $requestData['skill_assessment_hidden'][$key] ?? null;
+                        $occupationCode = $requestData['occupation_code'][$key] ?? null;
+                        $list = $requestData['list'][$key] ?? null;
+                        $visaSubclass = $requestData['visa_subclass'][$key] ?? null;
+                        $date = $requestData['dates'][$key] ?? null;
+                        $expiryDate = $requestData['expiry_dates'][$key] ?? null;
+                        $occReferenceNo = $requestData['occ_reference_no'][$key] ?? null;
+                        $relevantOccupation = isset($requestData['relevant_occupation_hidden'][$key]) && $requestData['relevant_occupation_hidden'][$key] === '1' ? 1 : 0;
+
+                        // Convert dates from dd/mm/yyyy to Y-m-d for database storage
+                        $formattedDate = null;
+                        if (!empty($date)) {
+                            try {
+                                $dateObj = \Carbon\Carbon::createFromFormat('d/m/Y', $date);
+                                $formattedDate = $dateObj->format('Y-m-d');
+                            } catch (\Exception $e) {
+                                return response()->json([
+                                    'success' => false,
+                                    'message' => 'Invalid Assessment Date format: ' . $date
+                                ], 422);
+                            }
+                        }
+
+                        $formattedExpiryDate = null;
+                        if (!empty($expiryDate)) {
+                            try {
+                                $dateObj = \Carbon\Carbon::createFromFormat('d/m/Y', $expiryDate);
+                                $formattedExpiryDate = $dateObj->format('Y-m-d');
+                            } catch (\Exception $e) {
+                                return response()->json([
+                                    'success' => false,
+                                    'message' => 'Invalid Expiry Date format: ' . $expiryDate
+                                ], 422);
+                            }
+                        }
+
+                        if ($occupationId) {
+                            // Update existing record
+                            $existingOccupation = \App\Models\ClientOccupation::find($occupationId);
+                            if ($existingOccupation && $existingOccupation->client_id == $client->id) {
+                                $existingOccupation->update([
+                                    'admin_id' => Auth::user()->id,
+                                    'skill_assessment' => $skillAssessment,
+                                    'nomi_occupation' => $nomiOccupation,
+                                    'occupation_code' => $occupationCode,
+                                    'list' => $list,
+                                    'visa_subclass' => $visaSubclass,
+                                    'dates' => $formattedDate,
+                                    'expiry_dates' => $formattedExpiryDate,
+                                    'occ_reference_no' => $occReferenceNo,
+                                    'relevant_occupation' => $relevantOccupation,
+                                    'anzsco_occupation_id' => $anzscoOccupationId
+                                ]);
+                            }
+                        } else {
+                            // Create new record
+                            \App\Models\ClientOccupation::create([
+                                'admin_id' => Auth::user()->id,
+                                'client_id' => $client->id,
+                                'skill_assessment' => $skillAssessment,
+                                'nomi_occupation' => $nomiOccupation,
+                                'occupation_code' => $occupationCode,
+                                'list' => $list,
+                                'visa_subclass' => $visaSubclass,
+                                'dates' => $formattedDate,
+                                'expiry_dates' => $formattedExpiryDate,
+                                'occ_reference_no' => $occReferenceNo,
+                                'relevant_occupation' => $relevantOccupation,
+                                'anzsco_occupation_id' => $anzscoOccupationId
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Occupation information saved successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error saving occupation information: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    private function saveTestScoreInfoSection($request, $client)
+    {
+        try {
+            $requestData = $request->all();
+            
+            // Handle test score deletion
+            if (isset($requestData['delete_test_score_ids']) && is_array($requestData['delete_test_score_ids'])) {
+                foreach ($requestData['delete_test_score_ids'] as $testScoreId) {
+                    $testScore = \App\Models\ClientTestScore::find($testScoreId);
+                    if ($testScore && $testScore->client_id == $client->id) {
+                        $testScore->delete();
+                    }
+                }
+            }
+
+            // Handle test score data
+            if (isset($requestData['test_type_hidden']) && is_array($requestData['test_type_hidden'])) {
+                foreach ($requestData['test_type_hidden'] as $key => $testType) {
+                    if (!empty($testType)) {
+                        $testScoreId = $requestData['test_score_id'][$key] ?? null;
+                        $listening = $requestData['listening'][$key] ?? null;
+                        $reading = $requestData['reading'][$key] ?? null;
+                        $writing = $requestData['writing'][$key] ?? null;
+                        $speaking = $requestData['speaking'][$key] ?? null;
+                        $overallScore = $requestData['overall_score'][$key] ?? null;
+                        $testDate = $requestData['test_date'][$key] ?? null;
+                        $testReferenceNo = $requestData['test_reference_no'][$key] ?? null;
+                        $relevantTest = isset($requestData['relevant_test_hidden'][$key]) && $requestData['relevant_test_hidden'][$key] === '1' ? 1 : 0;
+
+                        // Convert test_date from dd/mm/yyyy to Y-m-d for database storage
+                        $formattedTestDate = null;
+                        if (!empty($testDate)) {
+                            try {
+                                $dateObj = \Carbon\Carbon::createFromFormat('d/m/Y', $testDate);
+                                $formattedTestDate = $dateObj->format('Y-m-d');
+                            } catch (\Exception $e) {
+                                return response()->json([
+                                    'success' => false,
+                                    'message' => 'Invalid Test Date format: ' . $testDate
+                                ], 422);
+                            }
+                        }
+
+                        if ($testScoreId) {
+                            // Update existing record
+                            $existingTestScore = \App\Models\ClientTestScore::find($testScoreId);
+                            if ($existingTestScore && $existingTestScore->client_id == $client->id) {
+                                $existingTestScore->update([
+                                    'admin_id' => Auth::user()->id,
+                                    'test_type' => $testType,
+                                    'listening' => $listening,
+                                    'reading' => $reading,
+                                    'writing' => $writing,
+                                    'speaking' => $speaking,
+                                    'overall_score' => $overallScore,
+                                    'test_date' => $formattedTestDate,
+                                    'test_reference_no' => $testReferenceNo,
+                                    'relevant_test' => $relevantTest
+                                ]);
+                            }
+                        } else {
+                            // Create new record
+                            \App\Models\ClientTestScore::create([
+                                'admin_id' => Auth::user()->id,
+                                'client_id' => $client->id,
+                                'test_type' => $testType,
+                                'listening' => $listening,
+                                'reading' => $reading,
+                                'writing' => $writing,
+                                'speaking' => $speaking,
+                                'overall_score' => $overallScore,
+                                'test_date' => $formattedTestDate,
+                                'test_reference_no' => $testReferenceNo,
+                                'relevant_test' => $relevantTest
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Test score information saved successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error saving test score information: ' . $e->getMessage()
             ], 500);
         }
     }

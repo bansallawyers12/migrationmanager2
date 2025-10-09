@@ -159,11 +159,14 @@ class ClientEditService
     }
 
     /**
-     * Get travel information
+     * Get travel information ordered by arrival date (oldest first)
+     * NULL dates are placed at the end
      */
     protected function getTravels(int $clientId)
     {
-        return ClientTravelInformation::where('client_id', $clientId)->get() ?? [];
+        return ClientTravelInformation::where('client_id', $clientId)
+            ->orderByRaw('travel_arrival_date IS NULL, STR_TO_DATE(travel_arrival_date, "%Y-%m-%d") ASC')
+            ->get() ?? [];
     }
 
     /**

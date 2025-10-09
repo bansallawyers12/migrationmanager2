@@ -640,6 +640,23 @@ Route::prefix('admin')->group(function() {
 
         Route::post('/leads/updateOccupation', 'Admin\ClientPersonalDetailsController@updateOccupation')->name('admin.leads.updateOccupation');
 
+        // ANZSCO Occupation Database Routes
+        Route::get('/anzsco', 'Admin\AnzscoOccupationController@index')->name('admin.anzsco.index');
+        Route::get('/anzsco/data', 'Admin\AnzscoOccupationController@getData')->name('admin.anzsco.data');
+        Route::get('/anzsco/create', 'Admin\AnzscoOccupationController@create')->name('admin.anzsco.create');
+        Route::post('/anzsco', 'Admin\AnzscoOccupationController@store')->name('admin.anzsco.store');
+        Route::get('/anzsco/{id}/edit', 'Admin\AnzscoOccupationController@edit')->name('admin.anzsco.edit');
+        Route::put('/anzsco/{id}', 'Admin\AnzscoOccupationController@update')->name('admin.anzsco.update');
+        Route::delete('/anzsco/{id}', 'Admin\AnzscoOccupationController@destroy')->name('admin.anzsco.destroy');
+        Route::post('/anzsco/{id}/toggle-status', 'Admin\AnzscoOccupationController@toggleStatus')->name('admin.anzsco.toggleStatus');
+        Route::get('/anzsco/import', 'Admin\AnzscoOccupationController@importPage')->name('admin.anzsco.import');
+        Route::post('/anzsco/import', 'Admin\AnzscoOccupationController@import')->name('admin.anzsco.import.process');
+        Route::get('/anzsco/download-template', 'Admin\AnzscoOccupationController@downloadTemplate')->name('admin.anzsco.download-template');
+        
+        // ANZSCO API routes for autocomplete (moved from api.php for proper authentication)
+        Route::get('/anzsco/search', 'Admin\AnzscoOccupationController@search')->name('admin.anzsco.search');
+        Route::get('/anzsco/code/{code}', 'Admin\AnzscoOccupationController@getByCode')->name('admin.anzsco.getByCode');
+
         //Document Checklist Start
 		Route::get('/documentchecklist', 'Admin\DocumentChecklistController@index')->name('admin.feature.documentchecklist.index');
 		Route::get('/documentchecklist/create', 'Admin\DocumentChecklistController@create')->name('admin.feature.documentchecklist.create');

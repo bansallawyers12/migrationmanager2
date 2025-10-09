@@ -18,8 +18,15 @@ class ClientOccupation extends Model
         'dates',
         'expiry_dates',
         'relevant_occupation',
-        'occ_reference_no'
+        'occ_reference_no',
+        'anzsco_occupation_id'
     ];
 
-    // If needed, add relationships
+    /**
+     * Get the ANZSCO occupation associated with this client occupation
+     */
+    public function anzscoOccupation()
+    {
+        return $this->belongsTo(\App\Models\AnzscoOccupation::class, 'anzsco_occupation_id');
+    }
 }

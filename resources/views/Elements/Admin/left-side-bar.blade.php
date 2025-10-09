@@ -8,9 +8,13 @@
 		</div>
 		<ul class="sidebar-menu">
             <?php
-            $roles = \App\Models\UserRole::find(Auth::user()->role);
-            $newarray = json_decode($roles->module_access);
-            $module_access = (array) $newarray;
+            if(Auth::check()) {
+                $roles = \App\Models\UserRole::find(Auth::user()->role);
+                $newarray = json_decode($roles->module_access);
+                $module_access = (array) $newarray;
+            } else {
+                $module_access = [];
+            }
             ?>
 			<li class="menu-header">Main</li>
 			<?php
@@ -137,6 +141,27 @@
                         
                     </ul>
                 </li>
+
+            <?php
+            // ANZSCO Occupations menu - Available to all admin users
+            if(Route::currentRouteName() == 'admin.anzsco.index' || Route::currentRouteName() == 'admin.anzsco.create' || Route::currentRouteName() == 'admin.anzsco.edit' || Route::currentRouteName() == 'admin.anzsco.import'){
+                $anzscoclassstype = 'active';
+            }
+            ?>
+            <li class="dropdown {{@$anzscoclassstype}}">
+                <a href="#" class="menu-toggle nav-link has-dropdown" title="ANZSCO Database"><i class="fas fa-briefcase"></i><span>ANZSCO Database</span></a>
+                <ul class="dropdown-menu">
+                    <li class="{{(Route::currentRouteName() == 'admin.anzsco.index') ? 'active' : ''}}">
+                        <a href="{{route('admin.anzsco.index')}}" class="nav-link"><i class="fas fa-list"></i><span>All Occupations</span></a>
+                    </li>
+                    <li class="{{(Route::currentRouteName() == 'admin.anzsco.create') ? 'active' : ''}}">
+                        <a href="{{route('admin.anzsco.create')}}" class="nav-link"><i class="fas fa-plus"></i><span>Add Occupation</span></a>
+                    </li>
+                    <li class="{{(Route::currentRouteName() == 'admin.anzsco.import') ? 'active' : ''}}">
+                        <a href="{{route('admin.anzsco.import')}}" class="nav-link"><i class="fas fa-file-import"></i><span>Import Data</span></a>
+                    </li>
+                </ul>
+            </li>
             <?php
             }
             ?>

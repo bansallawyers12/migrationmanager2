@@ -1,5 +1,5 @@
 {{-- Travel Field Component --}}
-@props(['index', 'travel'])
+@props(['index', 'travel', 'countries' => []])
 
 <div class="repeatable-section">
     <button type="button" class="remove-item-btn" title="Remove Travel" onclick="removeTravelField(this)">
@@ -11,10 +11,14 @@
     <div class="content-grid">
         <div class="form-group">
             <label>Country Visited</label>
-            <input type="text" 
-                   name="travel_country_visited[{{ $index }}]" 
-                   value="{{ $travel->country_visited ?? '' }}" 
-                   placeholder="Country Visited">
+            <select name="travel_country_visited[{{ $index }}]" class="travel-country-field">
+                <option value="">Select Country</option>
+                @foreach($countries as $country)
+                    <option value="{{ $country }}" {{ ($travel->country_visited ?? '') == $country ? 'selected' : '' }}>
+                        {{ $country }}
+                    </option>
+                @endforeach
+            </select>
         </div>
         
         <div class="form-group">

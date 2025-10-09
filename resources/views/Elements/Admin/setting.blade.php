@@ -1,7 +1,11 @@
 <?php
-		$roles = \App\Models\UserRole::find(Auth::user()->role);
-		$newarray = json_decode($roles->module_access);
-		$module_access = (array) $newarray;
+		if(Auth::check()) {
+			$roles = \App\Models\UserRole::find(Auth::user()->role);
+			$newarray = json_decode($roles->module_access);
+			$module_access = (array) $newarray;
+		} else {
+			$module_access = [];
+		}
 ?>
 <div class="custom_nav_setting">
     <ul>
@@ -61,6 +65,7 @@
 
 			<li class="{{(Route::currentRouteName() == 'admin.feature.documentchecklist.index' ) ? 'active' : ''}}"><a class="nav-link" href="{{route('admin.feature.documentchecklist.index')}}">Document Checklist</a></li>
 
+			<li class="{{(Route::currentRouteName() == 'admin.anzsco.index' || Route::currentRouteName() == 'admin.anzsco.create' || Route::currentRouteName() == 'admin.anzsco.edit' || Route::currentRouteName() == 'admin.anzsco.import') ? 'active' : ''}}"><a class="nav-link" href="{{route('admin.anzsco.index')}}">ANZSCO Database</a></li>
 
 			
 			<li class="{{(Route::currentRouteName() == 'admin.feature.matter.index' ) ? 'active' : ''}}"><a class="nav-link" href="{{route('admin.feature.matter.index')}}">Matter List</a></li>
