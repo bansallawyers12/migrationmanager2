@@ -1405,7 +1405,7 @@ function toggleSpouseDetailsSection() {
 /**
  * Add Qualification
  */
-function addQualification() {
+async function addQualification() {
     // Check if we're in summary mode, if so switch to edit mode first
     const summaryView = document.getElementById('qualificationsInfoSummary');
     const editView = document.getElementById('qualificationsInfoEdit');
@@ -1416,6 +1416,23 @@ function addQualification() {
     
     const container = document.getElementById('qualificationsContainer');
     const index = container.children.length;
+
+    // Get country options from existing select if available, otherwise fetch countries
+    let countryOptionsHtml = '<option value="">Select Country</option>';
+    const existingSelect = document.querySelector('.qualification-country-field');
+    if (existingSelect) {
+        Array.from(existingSelect.options).forEach(option => {
+            if (option.value !== '') { // Skip the empty option
+                countryOptionsHtml += `<option value="${option.value}">${option.text}</option>`;
+            }
+        });
+    } else {
+        // Fallback if no existing select found - fetch countries
+        const countries = await fetchCountries();
+        countries.forEach(country => {
+            countryOptionsHtml += `<option value="${country}">${country}</option>`;
+        });
+    }
 
     container.insertAdjacentHTML('beforeend', `
         <div class="repeatable-section">
@@ -1454,7 +1471,9 @@ function addQualification() {
                 </div>
                 <div class="form-group">
                     <label>Country</label>
-                    <input type="text" name="qual_country[${index}]" placeholder="Country">
+                    <select name="qual_country[${index}]">
+                        ${countryOptionsHtml}
+                    </select>
                 </div>
                    <div class="form-group">
                        <label>Status</label>
@@ -2578,7 +2597,7 @@ window.saveQualificationsInfo = function() {
         const name = section.querySelector('input[name*="name"]')?.value;
         const qualCollegeName = section.querySelector('input[name*="qual_college_name"]')?.value;
         const qualCampus = section.querySelector('input[name*="qual_campus"]')?.value;
-        const country = section.querySelector('input[name*="qual_country"]')?.value;
+        const country = section.querySelector('select[name*="qual_country"]')?.value;
         const qualState = section.querySelector('input[name*="qual_state"]')?.value;
         const startDate = section.querySelector('input[name*="start_date"]')?.value;
         const finishDate = section.querySelector('input[name*="finish_date"]')?.value;
@@ -2648,51 +2667,55 @@ window.saveExperienceInfo = function() {
     saveSectionData('experienceInfo', formData, function() {
         // Update summary view on success
         const summaryView = document.getElementById('experienceInfoSummary');
-        const summaryGrid = summaryView.querySelector('.summary-grid');
         
         if (experiences.length > 0) {
-            let summaryHTML = '';
+            let summaryHTML = '<div style="margin-top: 15px;">';
             experiences.forEach(exp => {
                 summaryHTML += `
-                    <div class="summary-item">
-                        <span class="summary-label">Job Title:</span>
-                        <span class="summary-value">${exp.job_title || 'Not set'}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">ANZSCO Code:</span>
-                        <span class="summary-value">${exp.job_code || 'Not set'}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Employer Name:</span>
-                        <span class="summary-value">${exp.job_emp_name || 'Not set'}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Country:</span>
-                        <span class="summary-value">${exp.job_country || 'Not set'}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Address:</span>
-                        <span class="summary-value">${exp.job_state || 'Not set'}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Job Type:</span>
-                        <span class="summary-value">${exp.job_type || 'Not set'}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Start Date:</span>
-                        <span class="summary-value">${exp.job_start_date || 'Not set'}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Finish Date:</span>
-                        <span class="summary-value">${exp.job_finish_date || 'Not set'}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Relevant:</span>
-                        <span class="summary-value">${exp.relevant_experience ? 'Yes' : 'No'}</span>
+                    <div class="experience-entry-compact" style="margin-bottom: 12px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #007bff;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; align-items: center;">
+                            <div class="summary-item-inline">
+                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">JOB TITLE:</span>
+                                <span class="summary-value" style="color: #212529; font-weight: 500;">${exp.job_title || 'Not set'}</span>
+                            </div>
+                            <div class="summary-item-inline">
+                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">ANZSCO CODE:</span>
+                                <span class="summary-value" style="color: #212529; font-weight: 500;">${exp.job_code || 'Not set'}</span>
+                            </div>
+                            <div class="summary-item-inline">
+                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">EMPLOYER NAME:</span>
+                                <span class="summary-value" style="color: #212529; font-weight: 500;">${exp.job_emp_name || 'Not set'}</span>
+                            </div>
+                            <div class="summary-item-inline">
+                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">COUNTRY:</span>
+                                <span class="summary-value" style="color: #212529;">${exp.job_country || 'Not set'}</span>
+                            </div>
+                            <div class="summary-item-inline">
+                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">ADDRESS:</span>
+                                <span class="summary-value" style="color: #212529;">${exp.job_state || 'Not set'}</span>
+                            </div>
+                            <div class="summary-item-inline">
+                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">JOB TYPE:</span>
+                                <span class="summary-value" style="color: #212529;">${exp.job_type || 'Not set'}</span>
+                            </div>
+                            <div class="summary-item-inline">
+                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">START DATE:</span>
+                                <span class="summary-value" style="color: #212529;">${exp.job_start_date || 'Not set'}</span>
+                            </div>
+                            <div class="summary-item-inline">
+                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">FINISH DATE:</span>
+                                <span class="summary-value" style="color: #212529;">${exp.job_finish_date || 'Not set'}</span>
+                            </div>
+                            <div class="summary-item-inline">
+                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">RELEVANT:</span>
+                                <span class="summary-value" style="color: #212529;">${exp.relevant_experience ? 'Yes' : 'No'}</span>
+                            </div>
+                        </div>
                     </div>
                 `;
             });
-            summaryGrid.innerHTML = summaryHTML;
+            summaryHTML += '</div>';
+            summaryView.innerHTML = summaryHTML;
         } else {
             summaryView.innerHTML = '<div class="empty-state"><p>No work experience added yet.</p></div>';
         }
@@ -5080,12 +5103,12 @@ function convertDateForBackend(dateValue) {
 
 // Assessment authority validity periods (in years)
 const ASSESSMENT_AUTHORITY_VALIDITY = {
-    'ACS': 3,           // Australian Computer Society
+    'ACS': 2,           // Australian Computer Society
     'TRA': 3,           // Trades Recognition Australia
     'VETASSESS': 3,     // Vocational Education and Training Assessment Services
-    'AITSL': 3,         // Australian Institute for Teaching and School Leadership
+    'AITSL': 2,         // Australian Institute for Teaching and School Leadership
     'AACA': 3,          // Architects Accreditation Council of Australia
-    'ANMAC': 3,         // Australian Nursing and Midwifery Accreditation Council
+    'ANMAC': 2,         // Australian Nursing and Midwifery Accreditation Council
     'APC': 3,           // Australian Pharmacy Council
     'CCEA': 3,          // Council on Chiropractic Education Australasia
     'CPAA': 3,          // CPA Australia

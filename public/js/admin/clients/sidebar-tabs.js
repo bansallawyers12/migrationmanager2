@@ -122,11 +122,7 @@
      */
     function handleMatterSpecificTab(tabId) {
         // Get selected matter
-        if ($('.general_matter_checkbox_client_detail').is(':checked')) {
-            SidebarTabs.selectedMatter = $('.general_matter_checkbox_client_detail').val();
-        } else {
-            SidebarTabs.selectedMatter = $('#sel_matter_id_client_detail').val();
-        }
+        SidebarTabs.selectedMatter = $('#sel_matter_id_client_detail').val();
 
         const activeSubTab = $('.subtab-button.active').data('subtab');
 

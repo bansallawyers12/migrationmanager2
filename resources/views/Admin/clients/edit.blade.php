@@ -671,14 +671,19 @@
                                     <x-client-edit.qualification-field 
                                         :index="$index" 
                                         :qualification="$qualification" 
+                                        :countries="$countries"
                                     />
                                 @endforeach
                             </div>
 
                             <button type="button" class="add-item-btn" onclick="addQualification()"><i class="fas fa-plus-circle"></i> Add Qualification</button>
                             <div class="edit-actions">
-                                <button type="button" class="btn btn-primary" onclick="saveQualificationsInfo()">Save</button>
-                                <button type="button" class="btn btn-secondary" onclick="cancelEdit('qualificationsInfo')">Cancel</button>
+                                <button type="button" class="btn btn-primary" onclick="saveQualificationsInfo()">
+                                    <i class="fas fa-save"></i> Save
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="cancelEdit('qualificationsInfo')">
+                                    <i class="fas fa-times"></i> Cancel
+                                </button>
                             </div>
                         </div>
                     </section>
@@ -1027,12 +1032,12 @@
                     <!-- Character Section -->
                     <section class="form-section">
                         <div class="section-header">
-                            <h3><i class="fas fa-shield-alt"></i> Character Information</h3>
+                            <h3><i class="fas fa-shield-alt"></i> Character/Health Declaration</h3>
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('characterInfo')">
                                     <i class="fas fa-pen"></i>
                                 </button>
-                                <button type="button" class="add-section-btn" onclick="addCharacterRow('characterContainer', 'character_detail')" title="Add Character">
+                                <button type="button" class="add-section-btn" onclick="addCharacterRow('characterContainer', 'character_detail')" title="Add Character/Health Declaration">
                                     <i class="fas fa-plus"></i>
                                 </button>
                             </div>
@@ -1055,7 +1060,7 @@
                                 </div>
                             @else
                                 <div class="empty-state" style="margin-top: 15px;">
-                                    <p>No character information added yet.</p>
+                                    <p>No character/health declaration added yet.</p>
                                 </div>
                             @endif
                         </div>
@@ -1069,15 +1074,15 @@
                                         <input type="hidden" name="character_id[{{ $index }}]" value="{{ $character->id }}">
                                         <div class="content-grid">
                                             <div class="form-group">
-                                                <label>Character Detail</label>
-                                                <textarea name="character_detail[{{ $index }}]" rows="3" placeholder="Enter character detail">{{ $character->character_detail }}</textarea>
+                                                <label>Character/Health Declaration Detail</label>
+                                                <textarea name="character_detail[{{ $index }}]" rows="3" placeholder="Enter character/health declaration details">{{ $character->character_detail }}</textarea>
                                             </div>
                                         </div>
                                     </div>
                                 @endforeach
                             </div>
 
-                            <button type="button" class="add-item-btn" onclick="addCharacterRow('characterContainer', 'character_detail')"><i class="fas fa-plus-circle"></i> Add Character</button>
+                            <button type="button" class="add-item-btn" onclick="addCharacterRow('characterContainer', 'character_detail')"><i class="fas fa-plus-circle"></i> Add Character/Health Declaration</button>
                             <div class="edit-actions">
                                 <button type="button" class="btn btn-primary" onclick="saveCharacterInfo()">Save</button>
                                 <button type="button" class="btn btn-secondary" onclick="cancelEdit('characterInfo')">Cancel</button>

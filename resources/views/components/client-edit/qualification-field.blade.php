@@ -1,5 +1,5 @@
 {{-- Qualification Field Component --}}
-@props(['index', 'qualification'])
+@props(['index', 'qualification', 'countries' => []])
 
 <div class="repeatable-section">
     <button type="button" class="remove-item-btn" title="Remove Qualification" onclick="removeQualificationField(this)">
@@ -55,10 +55,16 @@
         
         <div class="form-group">
             <label>Country</label>
-            <input type="text" 
-                   name="qual_country[{{ $index }}]" 
-                   value="{{ $qualification->country ?? '' }}" 
-                   placeholder="Country">
+            <select name="qual_country[{{ $index }}]" class="qualification-country-field">
+                <option value="">Select Country</option>
+                <option value="India" {{ ($qualification->country ?? '') == 'India' ? 'selected' : '' }}>India</option>
+                <option value="Australia" {{ ($qualification->country ?? '') == 'Australia' ? 'selected' : '' }}>Australia</option>
+                @foreach($countries as $country)
+                    @if($country->name != 'India' && $country->name != 'Australia')
+                        <option value="{{ $country->name }}" {{ ($qualification->country ?? '') == $country->name ? 'selected' : '' }}>{{ $country->name }}</option>
+                    @endif
+                @endforeach
+            </select>
         </div>
         
                     <div class="form-group">

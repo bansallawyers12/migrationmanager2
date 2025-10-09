@@ -79,19 +79,15 @@ function detectEnglishProficiencyLevel(testType, scores) {
         case 'TOEFL':
             return detectTOEFLLevel(listening, reading, writing, speaking, overall, isAfterAug2025);
         case 'CAE':
-            // CAE is only valid for Functional English before August 7, 2025
-            if (isAfterAug2025) {
-                return { level: 'CAE Not Accepted After Aug 7, 2025', color: '#dc3545', points: 0 };
-            }
-            return detectCAELevel(listening, reading, writing, speaking, overall);
+            return detectCAELevel(listening, reading, writing, speaking, overall, isAfterAug2025);
         case 'OET':
             return detectOETLevel(listening, reading, writing, speaking, overall, isAfterAug2025);
         case 'CELPIP':
-            return detectCELPIPLevel(listening, reading, writing, speaking, overall);
+            return detectCELPIPLevel(listening, reading, writing, speaking, overall, isAfterAug2025);
         case 'MET':
-            return detectMETLevel(listening, reading, writing, speaking, overall);
+            return detectMETLevel(listening, reading, writing, speaking, overall, isAfterAug2025);
         case 'LANGUAGECERT':
-            return detectLANGUAGECERTLevel(listening, reading, writing, speaking, overall);
+            return detectLANGUAGECERTLevel(listening, reading, writing, speaking, overall, isAfterAug2025);
         default:
             return null;
     }
@@ -145,20 +141,48 @@ function detectIELTSLevel(listening, reading, writing, speaking, overall) {
 function detectPTELevel(listening, reading, writing, speaking, overall, isAfterAug2025) {
     const scores = [parseFloat(listening), parseFloat(reading), parseFloat(writing), parseFloat(speaking)];
     const overallScore = parseFloat(overall);
+    const listeningScore = parseFloat(listening);
+    const readingScore = parseFloat(reading);
+    const writingScore = parseFloat(writing);
+    const speakingScore = parseFloat(speaking);
     
-    // Superior English: 79 in each component
-    if (scores.every(score => score >= 79)) {
-        return { level: 'Superior English', color: '#28a745', points: 20 };
+    // Superior English: Different requirements based on test date
+    if (isAfterAug2025) {
+        // After Aug 2025: 69 Listening, 70 Reading, 85 Writing, 88 Speaking
+        if (listeningScore >= 69 && readingScore >= 70 && writingScore >= 85 && speakingScore >= 88) {
+            return { level: 'Superior English', color: '#28a745', points: 20 };
+        }
+    } else {
+        // Before Aug 2025: 79 in each component
+        if (scores.every(score => score >= 79)) {
+            return { level: 'Superior English', color: '#28a745', points: 20 };
+        }
     }
     
-    // Proficient English: 65 in each component
-    if (scores.every(score => score >= 65)) {
-        return { level: 'Proficient English', color: '#007bff', points: 10 };
+    // Proficient English: Different requirements based on test date
+    if (isAfterAug2025) {
+        // After Aug 2025: 58 Listening, 59 Reading, 69 Writing, 76 Speaking
+        if (listeningScore >= 58 && readingScore >= 59 && writingScore >= 69 && speakingScore >= 76) {
+            return { level: 'Proficient English', color: '#007bff', points: 10 };
+        }
+    } else {
+        // Before Aug 2025: 65 in each component
+        if (scores.every(score => score >= 65)) {
+            return { level: 'Proficient English', color: '#007bff', points: 10 };
+        }
     }
     
-    // Competent English: 50 in each component
-    if (scores.every(score => score >= 50)) {
-        return { level: 'Competent English', color: '#17a2b8', points: 0 };
+    // Competent English: Different requirements based on test date
+    if (isAfterAug2025) {
+        // After Aug 2025: 47 Listening, 48 Reading, 51 Writing, 54 Speaking
+        if (listeningScore >= 47 && readingScore >= 48 && writingScore >= 51 && speakingScore >= 54) {
+            return { level: 'Competent English', color: '#17a2b8', points: 0 };
+        }
+    } else {
+        // Before Aug 2025: 50 in each component
+        if (scores.every(score => score >= 50)) {
+            return { level: 'Competent English', color: '#17a2b8', points: 0 };
+        }
     }
     
     // Vocational English: Different requirements based on test date
@@ -193,20 +217,48 @@ function detectPTELevel(listening, reading, writing, speaking, overall, isAfterA
 function detectTOEFLLevel(listening, reading, writing, speaking, overall, isAfterAug2025) {
     const scores = [parseFloat(listening), parseFloat(reading), parseFloat(writing), parseFloat(speaking)];
     const overallScore = parseFloat(overall);
+    const listeningScore = parseFloat(listening);
+    const readingScore = parseFloat(reading);
+    const writingScore = parseFloat(writing);
+    const speakingScore = parseFloat(speaking);
     
-    // Superior English: 110 total, 28 Listening, 29 Reading, 30 Writing, 26 Speaking
-    if (overallScore >= 110 && listening >= 28 && reading >= 29 && writing >= 30 && speaking >= 26) {
-        return { level: 'Superior English', color: '#28a745', points: 20 };
+    // Superior English: Different requirements based on test date
+    if (isAfterAug2025) {
+        // After Aug 2025: 26 Listening, 27 Reading, 30 Writing, 28 Speaking
+        if (listeningScore >= 26 && readingScore >= 27 && writingScore >= 30 && speakingScore >= 28) {
+            return { level: 'Superior English', color: '#28a745', points: 20 };
+        }
+    } else {
+        // Before Aug 2025: 28 Listening, 29 Reading, 30 Writing, 26 Speaking
+        if (listeningScore >= 28 && readingScore >= 29 && writingScore >= 30 && speakingScore >= 26) {
+            return { level: 'Superior English', color: '#28a745', points: 20 };
+        }
     }
     
-    // Proficient English: 94 total, 24 Listening, 24 Reading, 27 Writing, 23 Speaking
-    if (overallScore >= 94 && listening >= 24 && reading >= 24 && writing >= 27 && speaking >= 23) {
-        return { level: 'Proficient English', color: '#007bff', points: 10 };
+    // Proficient English: Different requirements based on test date
+    if (isAfterAug2025) {
+        // After Aug 2025: 22 Listening, 22 Reading, 26 Writing, 24 Speaking
+        if (listeningScore >= 22 && readingScore >= 22 && writingScore >= 26 && speakingScore >= 24) {
+            return { level: 'Proficient English', color: '#007bff', points: 10 };
+        }
+    } else {
+        // Before Aug 2025: 24 Listening, 24 Reading, 27 Writing, 23 Speaking
+        if (listeningScore >= 24 && readingScore >= 24 && writingScore >= 27 && speakingScore >= 23) {
+            return { level: 'Proficient English', color: '#007bff', points: 10 };
+        }
     }
     
-    // Competent English: 64 total, 4 Reading/Listening, 14 Writing/Speaking
-    if (overallScore >= 64 && reading >= 4 && listening >= 4 && writing >= 14 && speaking >= 14) {
-        return { level: 'Competent English', color: '#17a2b8', points: 0 };
+    // Competent English: Different requirements based on test date
+    if (isAfterAug2025) {
+        // After Aug 2025: 16 Listening, 16 Reading, 19 Writing, 19 Speaking
+        if (listeningScore >= 16 && readingScore >= 16 && writingScore >= 19 && speakingScore >= 19) {
+            return { level: 'Competent English', color: '#17a2b8', points: 0 };
+        }
+    } else {
+        // Before Aug 2025: 12 Listening, 13 Reading, 21 Writing, 21 Speaking
+        if (listeningScore >= 12 && readingScore >= 13 && writingScore >= 21 && speakingScore >= 21) {
+            return { level: 'Competent English', color: '#17a2b8', points: 0 };
+        }
     }
     
     // Vocational English: Different requirements based on test date
@@ -235,39 +287,67 @@ function detectTOEFLLevel(listening, reading, writing, speaking, overall, isAfte
 // ===== CAE PROFICIENCY DETECTION =====
 
 /**
- * Detect CAE (Cambridge Advanced) proficiency level
- * CAE grades: A, B, C, D, E, F
+ * Detect CAE (Cambridge C1 Advanced) proficiency level
+ * CAE uses numeric scores on Cambridge scale (100-210+)
+ * Before 7 Aug 2025: Uniform scores across components
+ * On/after 7 Aug 2025: Different scores per component, Vocational & Functional not accepted
  */
-function detectCAELevel(listening, reading, writing, speaking, overall) {
-    // CAE uses letter grades A-F, with A being highest
-    const gradeOrder = { 'A': 6, 'B': 5, 'C': 4, 'D': 3, 'E': 2, 'F': 1 };
-    const scores = [gradeOrder[listening], gradeOrder[reading], gradeOrder[writing], gradeOrder[speaking]];
-    const overallGrade = gradeOrder[overall];
+function detectCAELevel(listening, reading, writing, speaking, overall, isAfterAug2025) {
+    const listeningScore = parseFloat(listening);
+    const readingScore = parseFloat(reading);
+    const writingScore = parseFloat(writing);
+    const speakingScore = parseFloat(speaking);
+    const overallScore = parseFloat(overall);
     
-    // Superior English: 200 in each component (Grade A)
-    if (scores.every(score => score >= 6)) {
-        return { level: 'Superior English', color: '#28a745', points: 20 };
-    }
-    
-    // Proficient English: 185 in each component (Grade A)
-    if (scores.every(score => score >= 5)) {
-        return { level: 'Proficient English', color: '#007bff', points: 10 };
-    }
-    
-    // Competent English: 169 in each component (Grade B)
-    if (scores.every(score => score >= 5)) {
-        return { level: 'Competent English', color: '#17a2b8', points: 0 };
-    }
-    
-    // Vocational English: 154 in each component (Grade C) - for tests before Aug 2025
-    if (scores.every(score => score >= 4)) { // Grade C = 4
-        return { level: 'Vocational English', color: '#ffc107', points: 0 };
-    }
-    
-    // Functional English: 147 overall (Grade C) - ONLY for tests before Aug 7, 2025
-    // CAE is not accepted for Functional English after Aug 7, 2025
-    if (overallGrade >= 4) {
-        return { level: 'Functional English', color: '#fd7e14', points: 0 };
+    if (isAfterAug2025) {
+        // After Aug 2025: Different scores per component
+        
+        // Superior English: 186 Listening, 190 Reading, 210 Writing, 208 Speaking
+        if (listeningScore >= 186 && readingScore >= 190 && writingScore >= 210 && speakingScore >= 208) {
+            return { level: 'Superior English', color: '#28a745', points: 20 };
+        }
+        
+        // Proficient English: 175 Listening, 179 Reading, 193 Writing, 194 Speaking
+        if (listeningScore >= 175 && readingScore >= 179 && writingScore >= 193 && speakingScore >= 194) {
+            return { level: 'Proficient English', color: '#007bff', points: 10 };
+        }
+        
+        // Competent English: 163 Listening, 163 Reading, 170 Writing, 179 Speaking
+        if (listeningScore >= 163 && readingScore >= 163 && writingScore >= 170 && speakingScore >= 179) {
+            return { level: 'Competent English', color: '#17a2b8', points: 0 };
+        }
+        
+        // Vocational English: Not accepted after Aug 7, 2025
+        // Functional English: Not accepted after Aug 7, 2025
+        
+    } else {
+        // Before Aug 2025: Uniform scores across all components
+        const scores = [listeningScore, readingScore, writingScore, speakingScore];
+        
+        // Superior English: 200 in each component
+        if (scores.every(score => score >= 200)) {
+            return { level: 'Superior English', color: '#28a745', points: 20 };
+        }
+        
+        // Proficient English: 185 in each component
+        if (scores.every(score => score >= 185)) {
+            return { level: 'Proficient English', color: '#007bff', points: 10 };
+        }
+        
+        // Competent English: 169 in each component
+        if (scores.every(score => score >= 169)) {
+            return { level: 'Competent English', color: '#17a2b8', points: 0 };
+        }
+        
+        // Vocational English: 154 in each component
+        if (scores.every(score => score >= 154)) {
+            return { level: 'Vocational English', color: '#ffc107', points: 0 };
+        }
+        
+        // Functional English: Total band >= 147
+        if (overallScore >= 147) {
+            return { level: 'Functional English', color: '#fd7e14', points: 0 };
+        }
     }
     
     return { level: 'Below Functional English', color: '#dc3545', points: 0 };
@@ -277,51 +357,73 @@ function detectCAELevel(listening, reading, writing, speaking, overall) {
 
 /**
  * Detect OET (Occupational English Test) proficiency level
- * OET grades: A, B, C, D, E (alphabetical) or numerical scores (after Aug 2025)
+ * Before 7 Aug 2025: Letter grades A, B, C, D, E
+ * On/after 7 Aug 2025: Numerical scores (0-500 scale)
  */
 function detectOETLevel(listening, reading, writing, speaking, overall, isAfterAug2025) {
-    // OET uses letter grades A-E, with A being highest
-    const gradeOrder = { 'A': 5, 'B': 4, 'C': 3, 'D': 2, 'E': 1 };
-    const scores = [gradeOrder[listening], gradeOrder[reading], gradeOrder[writing], gradeOrder[speaking]];
-    
-    // Superior English: Grade A in each component
-    if (scores.every(score => score >= 5)) {
-        return { level: 'Superior English', color: '#28a745', points: 20 };
-    }
-    
-    // Proficient English: Grade B in each component
-    if (scores.every(score => score >= 4)) {
-        return { level: 'Proficient English', color: '#007bff', points: 10 };
-    }
-    
-    // Competent English: Grade B in each component
-    if (scores.every(score => score >= 4)) {
-        return { level: 'Competent English', color: '#17a2b8', points: 0 };
-    }
-    
-    // Vocational English: Different requirements based on test date
     if (isAfterAug2025) {
-        // After Aug 2025: 220 Listening, 240 Reading, 200 Writing, 270 Speaking (numerical scores)
-        const listeningNum = parseFloat(listening);
-        const readingNum = parseFloat(reading);
-        const writingNum = parseFloat(writing);
-        const speakingNum = parseFloat(speaking);
+        // After Aug 2025: OET uses numerical scores (0-500 scale)
+        const listeningScore = parseFloat(listening);
+        const readingScore = parseFloat(reading);
+        const writingScore = parseFloat(writing);
+        const speakingScore = parseFloat(speaking);
+        const overallScore = parseFloat(overall);
         
-        if (listeningNum >= 220 && readingNum >= 240 && writingNum >= 200 && speakingNum >= 270) {
+        // Superior English: 390 Listening, 400 Reading, 420 Writing, 400 Speaking
+        if (listeningScore >= 390 && readingScore >= 400 && writingScore >= 420 && speakingScore >= 400) {
+            return { level: 'Superior English', color: '#28a745', points: 20 };
+        }
+        
+        // Proficient English: 350 Listening, 360 Reading, 380 Writing, 360 Speaking
+        if (listeningScore >= 350 && readingScore >= 360 && writingScore >= 380 && speakingScore >= 360) {
+            return { level: 'Proficient English', color: '#007bff', points: 10 };
+        }
+        
+        // Competent English: 290 Listening, 310 Reading, 290 Writing, 330 Speaking
+        if (listeningScore >= 290 && readingScore >= 310 && writingScore >= 290 && speakingScore >= 330) {
+            return { level: 'Competent English', color: '#17a2b8', points: 0 };
+        }
+        
+        // Vocational English: 220 Listening, 240 Reading, 200 Writing, 270 Speaking
+        if (listeningScore >= 220 && readingScore >= 240 && writingScore >= 200 && speakingScore >= 270) {
             return { level: 'Vocational English', color: '#ffc107', points: 0 };
+        }
+        
+        // Functional English: Overall band score >= 1020
+        if (overallScore >= 1020) {
+            return { level: 'Functional English', color: '#fd7e14', points: 0 };
         }
     } else {
-        // Before Aug 2025: Grade B in each component (alphabetical scores)
-        if (scores.every(score => score >= 4)) { // Grade B = 4
+        // Before Aug 2025: OET uses letter grades A-E
+        const gradeOrder = { 'A': 5, 'B': 4, 'C': 3, 'D': 2, 'E': 1 };
+        const scores = [gradeOrder[listening], gradeOrder[reading], gradeOrder[writing], gradeOrder[speaking]];
+        
+        // Superior English: A in each component
+        if (scores.every(score => score >= 5)) {
+            return { level: 'Superior English', color: '#28a745', points: 20 };
+        }
+        
+        // Proficient English: B in each component
+        // Note: Before Aug 2025, Proficient, Competent, and Vocational all require Grade B
+        // The first matching level (Proficient) will be returned
+        if (scores.every(score => score >= 4)) {
+            return { level: 'Proficient English', color: '#007bff', points: 10 };
+        }
+        
+        // Competent English: B in each component
+        // Note: This will only be reached if Proficient check fails
+        if (scores.every(score => score >= 4)) {
+            return { level: 'Competent English', color: '#17a2b8', points: 0 };
+        }
+        
+        // Vocational English: B in each component
+        // Note: This will only be reached if Proficient and Competent checks fail
+        if (scores.every(score => score >= 4)) {
             return { level: 'Vocational English', color: '#ffc107', points: 0 };
         }
-    }
-    
-    // Functional English: 1020 overall (for tests after Aug 7, 2025)
-    // OET scoring format changed from alphabetical to numerical on 7 August 2025
-    const overallScore = parseFloat(overall);
-    if (overallScore >= 1020) {
-        return { level: 'Functional English', color: '#fd7e14', points: 0 };
+        
+        // Functional English: Not listed as an option before Aug 7, 2025
+        // No threshold to check for Functional English before this date
     }
     
     return { level: 'Below Functional English', color: '#dc3545', points: 0 };
@@ -331,33 +433,42 @@ function detectOETLevel(listening, reading, writing, speaking, overall, isAfterA
 
 /**
  * Detect CELPIP General proficiency level
+ * CELPIP is ONLY accepted for tests taken on or after 7 August 2025
  * CELPIP scores: 1-12 for each component, 1-12 overall
  */
-function detectCELPIPLevel(listening, reading, writing, speaking, overall) {
-    const scores = [parseFloat(listening), parseFloat(reading), parseFloat(writing), parseFloat(speaking)];
+function detectCELPIPLevel(listening, reading, writing, speaking, overall, isAfterAug2025) {
+    // CELPIP is only accepted for tests on or after 7 August 2025
+    if (!isAfterAug2025) {
+        return { level: 'CELPIP Not Accepted Before Aug 7, 2025', color: '#dc3545', points: 0 };
+    }
     
-    // Superior English: 12 in each component (estimated - not in DHA tables)
-    if (scores.every(score => score >= 12)) {
+    const listeningScore = parseFloat(listening);
+    const readingScore = parseFloat(reading);
+    const writingScore = parseFloat(writing);
+    const speakingScore = parseFloat(speaking);
+    const overallScore = parseFloat(overall);
+    
+    // Superior English: 10 Listening, 10 Reading, 12 Writing, 10 Speaking
+    if (listeningScore >= 10 && readingScore >= 10 && writingScore >= 12 && speakingScore >= 10) {
         return { level: 'Superior English', color: '#28a745', points: 20 };
     }
     
-    // Proficient English: 10 in each component (estimated - not in DHA tables)
-    if (scores.every(score => score >= 10)) {
+    // Proficient English: 9 Listening, 8 Reading, 10 Writing, 8 Speaking
+    if (listeningScore >= 9 && readingScore >= 8 && writingScore >= 10 && speakingScore >= 8) {
         return { level: 'Proficient English', color: '#007bff', points: 10 };
     }
     
-    // Competent English: 7 in each component (estimated - not in DHA tables)
-    if (scores.every(score => score >= 7)) {
+    // Competent English: 7 in each component
+    if (listeningScore >= 7 && readingScore >= 7 && writingScore >= 7 && speakingScore >= 7) {
         return { level: 'Competent English', color: '#17a2b8', points: 0 };
     }
     
-    // Vocational English: 5 in each component (from DHA table)
-    if (scores.every(score => score >= 5)) {
+    // Vocational English: 5 in each component
+    if (listeningScore >= 5 && readingScore >= 5 && writingScore >= 5 && speakingScore >= 5) {
         return { level: 'Vocational English', color: '#ffc107', points: 0 };
     }
     
-    // Functional English: 5 overall (from DHA Table 2 - tests after Aug 7, 2025)
-    const overallScore = parseFloat(overall);
+    // Functional English: Overall band score >= 5
     if (overallScore >= 5) {
         return { level: 'Functional English', color: '#fd7e14', points: 0 };
     }
@@ -369,33 +480,40 @@ function detectCELPIPLevel(listening, reading, writing, speaking, overall) {
 
 /**
  * Detect MET (Michigan English Test) proficiency level
+ * MET is ONLY accepted for tests taken on or after 7 August 2025
  * MET scores: 0-100 for each component, 0-100 overall
+ * Superior English is NOT available for MET
  */
-function detectMETLevel(listening, reading, writing, speaking, overall) {
-    const scores = [parseFloat(listening), parseFloat(reading), parseFloat(writing), parseFloat(speaking)];
-    
-    // Superior English: 80 in each component (estimated - not in DHA tables)
-    if (scores.every(score => score >= 80)) {
-        return { level: 'Superior English', color: '#28a745', points: 20 };
+function detectMETLevel(listening, reading, writing, speaking, overall, isAfterAug2025) {
+    // MET is only accepted for tests on or after 7 August 2025
+    if (!isAfterAug2025) {
+        return { level: 'MET Not Accepted Before Aug 7, 2025', color: '#dc3545', points: 0 };
     }
     
-    // Proficient English: 65 in each component (estimated - not in DHA tables)
-    if (scores.every(score => score >= 65)) {
+    const listeningScore = parseFloat(listening);
+    const readingScore = parseFloat(reading);
+    const writingScore = parseFloat(writing);
+    const speakingScore = parseFloat(speaking);
+    const overallScore = parseFloat(overall);
+    
+    // Superior English: Not available for MET
+    
+    // Proficient English: 61 Listening, 63 Reading, 74 Writing, 59 Speaking
+    if (listeningScore >= 61 && readingScore >= 63 && writingScore >= 74 && speakingScore >= 59) {
         return { level: 'Proficient English', color: '#007bff', points: 10 };
     }
     
-    // Competent English: 50 in each component (estimated - not in DHA tables)
-    if (scores.every(score => score >= 50)) {
+    // Competent English: 56 Listening, 55 Reading, 57 Writing, 48 Speaking
+    if (listeningScore >= 56 && readingScore >= 55 && writingScore >= 57 && speakingScore >= 48) {
         return { level: 'Competent English', color: '#17a2b8', points: 0 };
     }
     
-    // Vocational English: 49 Listening, 47 Reading, 45 Writing, 38 Speaking (from DHA table)
-    if (listening >= 49 && reading >= 47 && writing >= 45 && speaking >= 38) {
+    // Vocational English: 49 Listening, 47 Reading, 45 Writing, 38 Speaking
+    if (listeningScore >= 49 && readingScore >= 47 && writingScore >= 45 && speakingScore >= 38) {
         return { level: 'Vocational English', color: '#ffc107', points: 0 };
     }
     
-    // Functional English: 38 overall (from DHA Table 2 - tests after Aug 7, 2025)
-    const overallScore = parseFloat(overall);
+    // Functional English: Overall band score >= 38
     if (overallScore >= 38) {
         return { level: 'Functional English', color: '#fd7e14', points: 0 };
     }
@@ -407,33 +525,42 @@ function detectMETLevel(listening, reading, writing, speaking, overall) {
 
 /**
  * Detect LANGUAGECERT Academic proficiency level
+ * LANGUAGECERT is ONLY accepted for tests taken on or after 7 August 2025
  * LANGUAGECERT scores: 0-100 for each component, 0-100 overall
  */
-function detectLANGUAGECERTLevel(listening, reading, writing, speaking, overall) {
-    const scores = [parseFloat(listening), parseFloat(reading), parseFloat(writing), parseFloat(speaking)];
+function detectLANGUAGECERTLevel(listening, reading, writing, speaking, overall, isAfterAug2025) {
+    // LANGUAGECERT is only accepted for tests on or after 7 August 2025
+    if (!isAfterAug2025) {
+        return { level: 'LANGUAGECERT Not Accepted Before Aug 7, 2025', color: '#dc3545', points: 0 };
+    }
     
-    // Superior English: 80 in each component (estimated - not in DHA tables)
-    if (scores.every(score => score >= 80)) {
+    const listeningScore = parseFloat(listening);
+    const readingScore = parseFloat(reading);
+    const writingScore = parseFloat(writing);
+    const speakingScore = parseFloat(speaking);
+    const overallScore = parseFloat(overall);
+    
+    // Superior English: 80 Listening, 83 Reading, 89 Writing, 89 Speaking
+    if (listeningScore >= 80 && readingScore >= 83 && writingScore >= 89 && speakingScore >= 89) {
         return { level: 'Superior English', color: '#28a745', points: 20 };
     }
     
-    // Proficient English: 65 in each component (estimated - not in DHA tables)
-    if (scores.every(score => score >= 65)) {
+    // Proficient English: 67 Listening, 71 Reading, 78 Writing, 82 Speaking
+    if (listeningScore >= 67 && readingScore >= 71 && writingScore >= 78 && speakingScore >= 82) {
         return { level: 'Proficient English', color: '#007bff', points: 10 };
     }
     
-    // Competent English: 50 in each component (estimated - not in DHA tables)
-    if (scores.every(score => score >= 50)) {
+    // Competent English: 57 Listening, 60 Reading, 64 Writing, 70 Speaking
+    if (listeningScore >= 57 && readingScore >= 60 && writingScore >= 64 && speakingScore >= 70) {
         return { level: 'Competent English', color: '#17a2b8', points: 0 };
     }
     
-    // Vocational English: 41 Listening, 44 Reading, 45 Writing, 54 Speaking (from DHA table)
-    if (listening >= 41 && reading >= 44 && writing >= 45 && speaking >= 54) {
+    // Vocational English: 41 Listening, 44 Reading, 45 Writing, 54 Speaking
+    if (listeningScore >= 41 && readingScore >= 44 && writingScore >= 45 && speakingScore >= 54) {
         return { level: 'Vocational English', color: '#ffc107', points: 0 };
     }
     
-    // Functional English: 38 overall (from DHA Table 2 - tests after Aug 7, 2025)
-    const overallScore = parseFloat(overall);
+    // Functional English: Overall band score >= 38
     if (overallScore >= 38) {
         return { level: 'Functional English', color: '#fd7e14', points: 0 };
     }
