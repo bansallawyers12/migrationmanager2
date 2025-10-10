@@ -1,7 +1,7 @@
            <!-- Appointment Tab -->
            <div class="tab-pane" id="appointments-tab">
                 <div class="card-header-action text-right" style="padding-bottom:15px;">
-                    <a href="javascript:;" data-toggle="modal" class="btn btn-primary createaddapointment"><i class="fa fa-plus"></i> Add</a>
+                    <a href="javascript:;" data-toggle="modal" data-target="#create_appoint" class="btn btn-primary createaddapointment"><i class="fa fa-plus"></i> Add Appointment</a>
                 </div>
                 <div class="appointmentlist">
                     <div class="row">

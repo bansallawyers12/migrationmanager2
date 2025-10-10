@@ -95,7 +95,6 @@
                             <th class="col-person_responsible">Person Responsible</th>
                             <th class="col-person_assisting">Person Assisting</th>
                             <th class="col-stage">Stage</th>
-                            <th class="col-action">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -103,7 +102,7 @@
                             <x-dashboard.client-matter-row :matter="$matter" :workflowStages="$workflowStages" />
                         @empty
                             <tr>
-                                <td colspan="9" class="empty-state">
+                                <td colspan="8" class="empty-state">
                                     <div>
                                         <i class="fas fa-inbox fa-3x mb-3" style="color: #cbd5e0;"></i>
                                         <p>No records found</p>

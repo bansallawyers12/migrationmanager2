@@ -65,10 +65,4 @@
             @endforeach
         </select>
     </td>
-    <td class="col-action">
-        <button class="action-button" 
-                data-href="{{ route('admin.clients.detail', [base64_encode(convert_uuencode($matter->client_id)), $matter->client_unique_matter_no]) }}">
-            View Case
-        </button>
-    </td>
 </tr>

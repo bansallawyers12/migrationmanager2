@@ -111,14 +111,45 @@
 /* Documents Tab CSS */
 .documentalls-container { padding: 0; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-top: 20px; }
 .subtabs, .subtabs2, .subtabs6 { display: flex; background-color: transparent; padding: 0; gap: 5px; flex-wrap: wrap; }
+.subtabs3 { display: flex; background-color: #4a90e2; padding: 10px; border-radius: 8px 8px 0 0; gap: 5px; flex-wrap: wrap; }
 .subtab-header-container { background-color: #4a90e2; padding: 10px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
 .subtab-button.ml-auto { margin-left: auto; }
-.subtab-button, .subtab2-button, .subtab6-button { padding: 10px 20px; background: none; border: none; color: white !important; font-size: 1rem; font-weight: 500; cursor: pointer; transition: all 0.3s ease; }
-.subtab-button:hover, .subtab2-button:hover, .subtab6-button:hover { background-color: #357ab8; border-radius: 5px; }
-.subtab-button.active, .subtab2-button.active, .subtab6-button.active { background-color: #357ab8; border-radius: 5px; }
-.subtab-content, .subtab2-content, .subtab6-content { padding: 15px; background: #fff; display: flex; flex-direction: row; gap: 20px; }
-.subtab-pane, .subtab2-pane, .subtab6-pane { display: none; width: 100%; }
+.subtab-button, .subtab2-button, .subtab6-button, .subtab3-button { padding: 10px 20px; background: none; border: none; color: white !important; font-size: 1rem; font-weight: 500; cursor: pointer; transition: all 0.3s ease; }
+.subtab-button:hover, .subtab2-button:hover, .subtab6-button:hover, .subtab3-button:hover { background-color: #357ab8; border-radius: 5px; }
+.subtab-button.active, .subtab2-button.active, .subtab6-button.active, .subtab3-button.active { background-color: #357ab8; border-radius: 5px; }
+.subtab-content, .subtab2-content, .subtab6-content, .subtab3-content { padding: 15px; background: #fff; display: flex; flex-direction: row; gap: 20px; }
+.subtab-pane, .subtab2-pane, .subtab6-pane, .subtab3-pane { display: none; width: 100%; }
 .subtab-pane.active, .subtab2-pane.active, .subtab6-pane.active { display: flex; flex-direction: row; gap: 20px; }
+.subtab3-pane.active { display: block; }
+
+/* Form Header Styling for subtab3 */
+.subtab3-pane .form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.subtab3-pane .form-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.subtab3-pane .form-actions {
+    margin-left: auto;
+}
+
+/* Ensure table content spans full width */
+.subtab3-pane .form-list,
+.subtab3-pane .form-list1,
+.subtab3-pane .form-list2 {
+    width: 100%;
+    margin-top: 20px;
+}
 .subtab-header, .subtab2-header, .subtab6-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
 .subtab-header h3, .subtab2-header h3, .subtab6-header h3 { font-size: 1.5rem; color: #333; margin: 0; display: flex; align-items: center; }
 .subtab-header h3 i, .subtab2-header h3 i, .subtab6-header h3 i { margin-right: 8px; color: #4a90e2; }
@@ -136,11 +167,29 @@
 .preview-pane { flex: 1; background: #ffffff; border-radius: 5px; padding: 15px; color: #333; box-shadow: 0 2px 5px rgba(0,0,0,0.1); min-height: 200px; display: flex; align-items: center; justify-content: center; }
 @media (max-width: 768px) {
   .subtabs { flex-direction: column; padding: 10px; }
-  .subtab-button { padding: 8px 10px; font-size: 0.9rem; }
+  .subtabs3 { flex-direction: column; padding: 10px; background-color: #4a90e2; }
+  .subtab-button, .subtab3-button { padding: 8px 10px; font-size: 0.9rem; }
   .subtab-pane.active { flex-direction: column; }
   .subtab-header { flex-direction: column; gap: 10px; align-items: flex-start; }
   .checklist-table th, .checklist-table td { padding: 8px; font-size: 0.9rem; }
   .preview-pane { min-height: 150px; margin-top: 20px; }
+  
+  /* Mobile responsive for subtab3 form headers */
+  .subtab3-pane .form-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  
+  .subtab3-pane .form-actions {
+    margin-left: 0;
+    width: 100%;
+  }
+  
+  .subtab3-pane .form-actions .btn {
+    width: 100%;
+    text-align: center;
+  }
 }
 
 /* Accounts Tab CSS */
@@ -575,6 +624,27 @@
 }
 .full-width { 
     width: 100%; 
+}
+
+/* Card Header Action Styles */
+.card-header-action {
+    display: block !important;
+    margin-bottom: 20px;
+}
+.card-header-action .btn {
+    display: inline-block !important;
+    visibility: visible !important;
+}
+/* Override white-on-white styling for appointments tab buttons */
+#appointments-tab .card-header-action .btn-primary {
+    background-color: #007bff !important;
+    border: 1px solid #007bff !important;
+    color: #ffffff !important;
+    opacity: 1 !important;
+}
+#appointments-tab .card-header-action .btn-primary:hover {
+    background-color: #0056b3 !important;
+    border: 1px solid #0056b3 !important;
 }
 
 .relationship-item {

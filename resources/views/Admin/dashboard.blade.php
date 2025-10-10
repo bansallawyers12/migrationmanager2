@@ -61,13 +61,6 @@
                                     $daysLeftClass = $daysLeft <= 3 ? 'text-danger' : ($daysLeft <= 7 ? 'text-warning' : 'text-success');
                                 ?>
                                 <span class="days-left {{ $daysLeftClass }}">({{ $daysLeftText }})</span>
-                                <div class="dropdown">
-                                    <button class="btn btn-primary dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
-                                    <div class="dropdown-menu">
-                                        <a class="dropdown-item has-icon" href="javascript:;" onclick="closeNotesDeadlineAction({{$note->id}},{{$note->unique_group_id}})">Close</a>
-                                        <a class="dropdown-item has-icon btn-extend_note_deadline"  data-noteid="{{$note->id}}" data-uniquegroupid="{{$note->unique_group_id}}" data-assignnote="{{$note->description}}" data-deadlinedate="{{$note->note_deadline}}" href="javascript:;">Extend</a>
-                                    </div>
-                                </div>
                             </div>
                         </li>
                         @endforeach
@@ -145,7 +138,7 @@
                         <div class="column-dropdown" id="columnDropdown">
                             <div class="column-dropdown-header">
                                 <label class="column-toggle-all">
-                                    <input type="checkbox" id="toggleAllColumns" {{ count($visibleColumns) == 9 ? 'checked' : '' }}>
+                                    <input type="checkbox" id="toggleAllColumns" {{ count($visibleColumns) == 8 ? 'checked' : '' }}>
                                     <span>Display All</span>
                                 </label>
                             </div>
@@ -181,10 +174,6 @@
                                 <label class="column-option">
                                     <input type="checkbox" name="column" value="stage" {{ in_array('stage', $visibleColumns) ? 'checked' : '' }}>
                                     <span>Stage</span>
-                                </label>
-                                <label class="column-option">
-                                    <input type="checkbox" name="column" value="action" {{ in_array('action', $visibleColumns) ? 'checked' : '' }}>
-                                    <span>Action</span>
                                 </label>
                             </div>
                         </div>
@@ -231,7 +220,6 @@
                             <th class="col-person_responsible" style="min-width: 100px;">Person Responsible</th>
                             <th class="col-person_assisting" style="min-width: 100px;">Person Assisting</th>
                             <th class="col-stage" style="min-width: 80px;">Stage</th>
-                            <th class="col-action" style="min-width: 80px;">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -287,13 +275,12 @@
                                 @endforeach
                             </select>
                         </td>
-                        <td class="col-action"><button class="action-button" data-href="{{ URL::to('/admin/clients/detail/' . base64_encode(convert_uuencode(@$item->client_id)) . '/' . $item->client_unique_matter_no) }}">View Case</button></td>
 
                     </tr>
                     @endforeach
                     @else
                         <tr>
-                            <td colspan="9" class="empty-state">
+                            <td colspan="8" class="empty-state">
                                 <div>
                                     <i class="fas fa-inbox fa-3x mb-3" style="color: #cbd5e0;"></i>
                                     <p>No records found</p>
@@ -1150,15 +1137,14 @@
         }
 
         /* Make table columns more compact */
-        .data-table th:nth-child(1) { width: 15%; } /* Matter */
-        .data-table th:nth-child(2) { width: 10%; } /* Client ID */
-        .data-table th:nth-child(3) { width: 12%; } /* Client Name */
-        .data-table th:nth-child(4) { width: 10%; } /* DOB */
-        .data-table th:nth-child(5) { width: 12%; } /* Migration Agent */
-        .data-table th:nth-child(6) { width: 12%; } /* Person Responsible */
-        .data-table th:nth-child(7) { width: 12%; } /* Person Assisting */
+        .data-table th:nth-child(1) { width: 16%; } /* Matter */
+        .data-table th:nth-child(2) { width: 11%; } /* Client ID */
+        .data-table th:nth-child(3) { width: 13%; } /* Client Name */
+        .data-table th:nth-child(4) { width: 11%; } /* DOB */
+        .data-table th:nth-child(5) { width: 13%; } /* Migration Agent */
+        .data-table th:nth-child(6) { width: 13%; } /* Person Responsible */
+        .data-table th:nth-child(7) { width: 13%; } /* Person Assisting */
         .data-table th:nth-child(8) { width: 10%; } /* Stage */
-        .data-table th:nth-child(9) { width: 7%; } /* Action */
         @media (max-width: 768px) {
             .main-content {
                 margin-left: 60px;
@@ -1546,60 +1532,7 @@ $(document).ready(function() {
         }
     });
 
-    $(document).on('click', '#extend_deadline', function() {
-        $(".popuploader").show();
-        let flag = true;
-        let error = "";
-        $(".custom-error").remove();
 
-        if ($('#assignnote').val() === '') {
-            $('.popuploader').hide();
-            error = "Note field is required.";
-            $('#assignnote').after("<span class='custom-error' role='alert'>" + error + "</span>");
-            flag = false;
-        }
-        if ($('#note_deadline').val() === '') {
-            $('.popuploader').hide();
-            error = "Note Deadline is required.";
-            $('#task_group').after("<span class='custom-error' role='alert'>" + error + "</span>");
-            flag = false;
-        }
-
-        if (flag) {
-            $.ajax({
-                type: 'POST',
-                url: "{{URL::to('/')}}/admin/extenddeadlinedate",
-                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-                data: {
-                    note_id: $('#note_id').val(),
-                    unique_group_id: $('#unique_group_id').val(),
-                    description: $('#assignnote').val(),
-                    note_deadline: $('#note_deadline').val()
-                },
-                success: function(response) {
-                    $('.popuploader').hide();
-                    $('#extend_note_popup').modal('hide');
-                    location.reload();
-                    //var obj = $.parseJSON(response);
-                }
-            });
-        } else {
-            $('.popuploader').hide();
-        }
-    });
-
-    // Handle click event on the action button
-    $(document).delegate('.btn-extend_note_deadline', 'click', function(){
-        var noteid = $(this).attr("data-noteid");
-        var uniquegroupid = $(this).attr("data-uniquegroupid");
-        var assignnote = $(this).attr("data-assignnote");
-        var deadlinedate = $(this).attr("data-deadlinedate");
-        $('#note_id').val(noteid);
-        $('#unique_group_id').val(uniquegroupid);
-        $('#assignnote').val(assignnote);
-        $('#note_deadline').val(deadlinedate);
-        $('#extend_note_popup').modal('show');
-    });
 
     // Listen for changes on the status dropdown
     $('.status-dropdown').change(function() {
@@ -1745,7 +1678,7 @@ $(document).ready(function() {
         // Apply initial column visibility based on server preferences
         function applyInitialColumnVisibility() {
             const visibleColumns = @json($visibleColumns);
-            const allColumns = ['matter', 'client_id', 'client_name', 'dob', 'migration_agent', 'person_responsible', 'person_assisting', 'stage', 'action'];
+            const allColumns = ['matter', 'client_id', 'client_name', 'dob', 'migration_agent', 'person_responsible', 'person_assisting', 'stage'];
             
             // Hide columns that are not in visibleColumns
             allColumns.forEach(function(column) {
@@ -1790,30 +1723,6 @@ $(document).ready(function() {
 
 });
 
-//close Notes Deadline Action
-function closeNotesDeadlineAction( noteid, noteuniqueid) {
-    var conf = confirm('Are you sure, you want to close this note deadline.');
-    if(conf){
-        if(noteid == '' && noteuniqueid == '') {
-            alert('Please select note to close the deadline.');
-            return false;
-        } else {
-            $('.popuploader').show();
-            $.ajax({
-                type:'post',
-                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
-                url:"{{ route('admin.dashboard.update-task-completed') }}",
-                data:{'id': noteid,'unique_group_id':noteuniqueid},
-                success:function(resp) {
-                    $('.popuploader').hide();
-                    location.reload();
-                }
-            });
-        }
-    } else{
-        $('.popuploader').hide();
-    }
-}
 </script>
 
 <style>
@@ -1852,9 +1761,6 @@ jQuery(document).ready(function($){
 		});
 	});
 
-    $(document).on('click', '.action-button', function () {
-        window.location.href = $(this).data('href');
-    });
 });
 </script>
 @endonce

@@ -604,7 +604,7 @@
                                     ->select('client_matters.id','client_matters.client_unique_matter_no','matters.title')
                                     ->where('client_matters.matter_status',1)
                                     ->where('client_matters.client_id',@$fetchedData->id)
-                                    ->where('matters.status',1)
+                                    //->where('matters.status',1)
                                     ->where('client_matters.sel_matter_id','!=',1)
                                     ->get();
                                     ?>
