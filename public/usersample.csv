@@ -1,8 +1,0 @@
-name,email,city,address,dob,wedding_anniversary,password,phone
-Test 1,test1@gmail.com,jgn,123,11/9/1989,11/9/1989,123456,9999999999
-Test 2,test2@gmail.com,ldh,544,12/9/1989,12/9/1989,123456,9999999999
-Test 3,test3@gmail.com,jgn,123,11/9/1989,11/9/1989,123456,9999999999
-Test 4,test4@gmail.com,ldh,544,12/9/1989,12/9/1989,123456,9999999999
-Test 5,test5@gmail.com,jgn,123,11/9/1989,11/9/1989,123456,9999999999
-Test 6,test6@gmail.com,ldh,544,12/9/1989,12/9/1989,123456,9999999999
-Test 8,test8@gmail.com,ldh,544,12/9/1989,12/9/1989,123456,9999999999

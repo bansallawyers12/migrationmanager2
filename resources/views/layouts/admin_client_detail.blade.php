@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="{{asset('css/summernote-bs4.css')}}">
     <link rel="stylesheet" href="{{asset('css/daterangepicker.css')}}">
     <link rel="stylesheet" href="{{asset('css/bootstrap-timepicker.min.css')}}">
+    <link rel="stylesheet" href="{{asset('css/bootstrap-datepicker.min.css')}}">
     <link rel="stylesheet" href="{{asset('css/select2.min.css')}}">
     <link rel="stylesheet" href="{{asset('css/bootstrap-formhelpers.min.css')}}">
     <link rel="stylesheet" href="{{asset('css/intlTelInput.css')}}">
@@ -1298,6 +1299,63 @@
 
         /* When topbar is hidden, reclaim space for content (leave 6px gap) */
         body.topbar-hidden .crm-container { margin-top: 6px !important; }
+        
+        /* Datepicker styling improvements */
+        .datepicker {
+            border-radius: 8px !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+            border: 1px solid #e9ecef !important;
+            font-family: 'Inter', sans-serif !important;
+        }
+        
+        .datepicker table tr td.active,
+        .datepicker table tr td.active:hover,
+        .datepicker table tr td.active.disabled,
+        .datepicker table tr td.active.disabled:hover {
+            background-color: #3498db !important;
+            background-image: none !important;
+            color: #ffffff !important;
+        }
+        
+        .datepicker table tr td.today {
+            background-color: #e3f2fd !important;
+            color: #1976d2 !important;
+            font-weight: 600 !important;
+        }
+        
+        .datepicker table tr td:hover {
+            background-color: #f8f9fa !important;
+        }
+        
+        .datepicker table tr td.old,
+        .datepicker table tr td.new {
+            color: #adb5bd !important;
+        }
+        
+        .datepicker table tr td.day {
+            border-radius: 4px !important;
+            margin: 1px !important;
+        }
+        
+        .datepicker table tr th {
+            background-color: #f8f9fa !important;
+            color: #495057 !important;
+            font-weight: 600 !important;
+            border-bottom: 1px solid #dee2e6 !important;
+        }
+        
+        .datepicker-switch,
+        .datepicker .datepicker-switch:hover,
+        .datepicker .prev:hover,
+        .datepicker .next:hover {
+            background-color: #3498db !important;
+            color: #ffffff !important;
+            border-radius: 6px !important;
+        }
+        
+        .datepicker .datepicker-switch {
+            font-weight: 600 !important;
+        }
     </style>
     @yield('styles')
 </head>
@@ -1343,6 +1401,7 @@
     <script src="{{asset('js/summernote-bs4.js')}}"></script>
     <script src="{{asset('js/daterangepicker.js')}}"></script>
     <script src="{{asset('js/bootstrap-timepicker.min.js')}}"></script>
+    <script src="{{asset('js/bootstrap-datepicker.min.js')}}"></script>
     <script src="{{asset('js/select2.full.min.js')}}"></script>
     <script src="{{asset('js/bootstrap-formhelpers.min.js')}}"></script>
     <script src="{{asset('js/intlTelInput.js')}}"></script>

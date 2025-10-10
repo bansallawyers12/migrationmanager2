@@ -28,7 +28,7 @@
 
             <?php
             //echo Route::currentRouteName();
-            if( Route::currentRouteName() == 'appointments.index' || Route::currentRouteName() == 'appointments-education'  || Route::currentRouteName() == 'appointments-jrp' || Route::currentRouteName() == 'appointments-tourist' || Route::currentRouteName() == 'appointments-others' || Route::currentRouteName() == 'adminconsole.features.appointmentdisabledate.index' ){
+            if( Route::currentRouteName() == 'appointments.index' || Route::currentRouteName() == 'appointments-education'  || Route::currentRouteName() == 'appointments-jrp' || Route::currentRouteName() == 'appointments-tourist' || Route::currentRouteName() == 'appointments-others' ){
 				$appointmentsclasstype = '';
 			}
 			?>
@@ -46,7 +46,6 @@
                     <?php
                     if( Auth::user()->role == 1 || Auth::user()->role == 12 ){ //super admin or admin
                     ?>
-                    <li class="{{(Route::currentRouteName() == 'adminconsole.features.appointmentdisabledate.index' ) ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.features.appointmentdisabledate.index')}}">Block Slot</a></li>
                     <?php } ?>
 
 				</ul>

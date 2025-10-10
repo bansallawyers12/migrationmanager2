@@ -63,7 +63,10 @@ class Controller extends BaseController
 	{
 		if ( base64_encode(base64_decode($string, true)) === $string)
 		{
-			return convert_uudecode(base64_decode($string));
+			// First decode base64, then decode uuencode
+			$base64Decoded = base64_decode($string);
+			$uuDecoded = convert_uudecode($base64Decoded);
+			return $uuDecoded;
 		}
 		else
 		{

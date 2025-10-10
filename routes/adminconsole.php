@@ -10,7 +10,6 @@ use App\Http\Controllers\AdminConsole\MatterOtherEmailTemplateController;
 use App\Http\Controllers\AdminConsole\PersonalDocumentTypeController;
 use App\Http\Controllers\AdminConsole\VisaDocumentTypeController;
 use App\Http\Controllers\AdminConsole\DocumentChecklistController;
-use App\Http\Controllers\AdminConsole\AppointmentDisableDateController;
 use App\Http\Controllers\AdminConsole\PromoCodeController;
 use App\Http\Controllers\AdminConsole\UserController;
 use App\Http\Controllers\AdminConsole\UserroleController;
@@ -108,13 +107,6 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin'])
         Route::get('/document-checklist/edit/{id}', [DocumentChecklistController::class, 'edit'])->name('documentchecklist.edit');
         Route::post('/document-checklist/update', [DocumentChecklistController::class, 'edit'])->name('documentchecklist.update');
         
-        // Appointment Disable Date routes
-        Route::get('/appointment-dates-disable', [AppointmentDisableDateController::class, 'index'])->name('appointmentdisabledate.index');
-        Route::get('/appointment-dates-disable/create', [AppointmentDisableDateController::class, 'create'])->name('appointmentdisabledate.create');
-        Route::post('/appointment-dates-disable/store', [AppointmentDisableDateController::class, 'store'])->name('appointmentdisabledate.store');
-        Route::get('/appointment-dates-disable/edit/{id}', [AppointmentDisableDateController::class, 'edit'])->name('appointmentdisabledate.edit');
-        Route::post('/appointment-dates-disable/update', [AppointmentDisableDateController::class, 'edit'])->name('appointmentdisabledate.update');
-        Route::delete('/appointment-dates-disable/delete/{id}', [AppointmentDisableDateController::class, 'destroy'])->name('appointmentdisabledate.destroy');
         
         // Promo Code routes
         Route::get('/promo-code', [PromoCodeController::class, 'index'])->name('promocode.index');

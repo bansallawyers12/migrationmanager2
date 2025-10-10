@@ -16,7 +16,6 @@
                     <a class="dropdown-item" href="{{URL::to('/admin/appointments-tourist')}}"><i class="fas fa-plane mr-2"></i> Tourist Visa</a>
                     <a class="dropdown-item" href="{{URL::to('/admin/appointments-adelaide')}}"><i class="fas fa-city mr-2"></i> Adelaide</a>
                     @if(Auth::user() && (Auth::user()->role == 1 || Auth::user()->role == 12))
-                    <a class="dropdown-item" href="{{route('adminconsole.features.appointmentdisabledate.index')}}"><i class="fas fa-ban mr-2"></i> Block Slot</a>
                     @endif
                 </div>
             </div>

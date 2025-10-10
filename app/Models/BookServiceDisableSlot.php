@@ -48,6 +48,24 @@ class BookServiceDisableSlot extends Model {
         return $query->where('block_all', 0);
     }
 
+    // Scope for current and future dates only
+    public function scopeCurrentAndFuture($query)
+    {
+        return $query->where('disabledates', '>=', date('Y-m-d'));
+    }
+
+    // Scope for past dates only
+    public function scopePastDates($query)
+    {
+        return $query->where('disabledates', '<', date('Y-m-d'));
+    }
+
+    // Scope for today's dates
+    public function scopeToday($query)
+    {
+        return $query->where('disabledates', date('Y-m-d'));
+    }
+
     // Get person name from related slot
     public function getPersonNameAttribute()
     {
@@ -69,5 +87,36 @@ class BookServiceDisableSlot extends Model {
         ];
         
         return $personNames[$personId] ?? "User{$personId}";
+    }
+
+    /**
+     * Clean up past dates - static method for easy access
+     * Returns the count of deleted records
+     */
+    public static function cleanupPastDates()
+    {
+        try {
+            $today = date('Y-m-d');
+            
+            // Count how many records will be deleted
+            $pastSlotsCount = self::pastDates()->count();
+            
+            if ($pastSlotsCount > 0) {
+                // Delete past disabled slots
+                $deletedCount = self::pastDates()->delete();
+                
+                // Log the cleanup activity
+                \Log::info("BookServiceDisableSlot Cleanup: Removed {$deletedCount} past date records on " . date('Y-m-d H:i:s'));
+                
+                return $deletedCount;
+            }
+            
+            return 0;
+            
+        } catch (\Exception $e) {
+            // Log any errors during cleanup
+            \Log::error("Error during BookServiceDisableSlot cleanup: " . $e->getMessage());
+            return false;
+        }
     }
 }

@@ -54,7 +54,6 @@
 			<?php } ?>
 			
 
-            <li class="{{(Route::currentRouteName() == 'adminconsole.features.appointmentdisabledate.index' ) ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.features.appointmentdisabledate.index')}}">Appointment Dates Not Available</a></li>
             <li class="{{(Route::currentRouteName() == 'adminconsole.features.promocode.index' ) ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.features.promocode.index')}}">Promo Code</a></li>
 
 			<li class="{{(Route::currentRouteName() == 'adminconsole.features.personaldocumenttype.index' ) ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.features.personaldocumenttype.index')}}">Personal Document Category</a></li>
