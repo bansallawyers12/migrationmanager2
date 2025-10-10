@@ -1,5 +1,5 @@
 @extends('layouts.admin_client_detail')
-@section('title', 'Not Available Appointment Dates')
+@section('title', 'Block Slot')
 
 @section('content')
 
@@ -19,62 +19,52 @@
 				<div class="col-9 col-md-9 col-lg-9">
 					<div class="card">
 						<div class="card-header">
-							<h4>Not Available Appointment Dates</h4>
-							<!--<div class="card-header-action">
-								<a href="{{route('adminconsole.features.appointmentdisabledate.create')}}" class="btn btn-primary">Create Not Available Appointment Dates</a>
-							</div>-->
+							<h4>Block Slot</h4>
+							<div class="card-header-action">
+								<a href="{{route('adminconsole.features.appointmentdisabledate.create')}}" class="btn btn-primary">Add Block Slot</a>
+							</div>
 						</div>
 						<div class="card-body">
 							<div class="table-responsive common_table">
 								<table class="table text_wrap">
 								<thead>
 									<tr>
-                                        <th>Service Title</th>
-										<th>Not Available Dates</th>
-										<th></th>
+                                        <th>Person</th>
+										<th>Block Slot</th>
+										<th>Action</th>
 									</tr>
 								</thead>
 								@if(@$totalData !== 0)
-								<?php $i=0; ?>
 								<tbody class="tdata">
-								@foreach (@$lists as $list)
-									<tr id="id_{{@$list->id}}">
-                                        <td><?php
-                                        if(isset($list->title)){
-                                            $title = "<b>".$list->title."</b>";
-                                            if($list->id == 1){
-                                                $title .= " (".'User1'.")";
-                                            } else if($list->id == 2 || $list->id == 6){
-                                                $title .= " (".'User2'.")";
-                                            }
-                                            $title .=  "<br/>Daily Timings- ".date('H:i',strtotime($list->start_time))."-".date('H:i',strtotime($list->end_time));
-                                            $title .=  "<br/>Weekend- ".$list->weekend;
-                                            echo  $title;
-                                        }?></td>
+								@foreach (@$groupedSlots as $personName => $personSlots)
+									@foreach ($personSlots as $index => $slot)
+									<tr id="id_{{@$slot['id']}}">
+                                        <td>
+											@if($index === 0)
+												<strong>{{ $personName }}</strong>
+											@endif
+										</td>
 										<td>
-                                            <?php
-                                            if(isset($list->disabledates) && $list->disabledates !=""){
-                                               $disabled_dates = $list->disabledates;
-                                            } else {
-                                                $disabled_dates = "";
-                                            } echo $disabled_dates ;?>
+                                            {{ $slot['date'] }} - {{ $slot['slots'] }}
                                         </td>
 
                                         <td>
 											<div class="dropdown d-inline">
 												<button class="btn btn-primary dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
 												<div class="dropdown-menu">
-													<a class="dropdown-item has-icon" href="{{route('adminconsole.features.appointmentdisabledate.edit', base64_encode(convert_uuencode(@$list->id)))}}"><i class="far fa-edit"></i> Edit</a>
+													<a class="dropdown-item has-icon" href="{{route('adminconsole.features.appointmentdisabledate.edit', base64_encode(convert_uuencode($slot['id'])))}}"><i class="far fa-edit"></i> Edit</a>
+													<a class="dropdown-item has-icon text-danger" href="#" onclick="deleteSlot({{ $slot['id'] }})"><i class="far fa-trash-alt"></i> Delete</a>
 												</div>
 											</div>
 										</td>
 									</tr>
+									@endforeach
 								@endforeach
 								</tbody>
 								@else
 								<tbody>
 									<tr>
-										<td style="text-align:center;" colspan="7">
+										<td style="text-align:center;" colspan="3">
 											No Record found
 										</td>
 									</tr>
@@ -89,9 +79,63 @@
 	</section>
 </div>
 
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				Are you sure you want to delete this block slot? This action cannot be undone.
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-danger" id="confirmDelete">Delete</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 @endsection
 @section('scripts')
 <script>
+let slotToDelete = null;
+
+function deleteSlot(slotId) {
+	slotToDelete = slotId;
+	$('#deleteModal').modal('show');
+}
+
+$('#confirmDelete').click(function() {
+	if (slotToDelete) {
+		// Create a form to submit DELETE request
+		const form = document.createElement('form');
+		form.method = 'POST';
+		form.action = '{{ route("adminconsole.features.appointmentdisabledate.destroy", ":id") }}'.replace(':id', btoa(encodeURIComponent(slotToDelete)));
+		
+		// Add CSRF token
+		const csrfToken = document.createElement('input');
+		csrfToken.type = 'hidden';
+		csrfToken.name = '_token';
+		csrfToken.value = '{{ csrf_token() }}';
+		form.appendChild(csrfToken);
+		
+		// Add method override for DELETE
+		const methodField = document.createElement('input');
+		methodField.type = 'hidden';
+		methodField.name = '_method';
+		methodField.value = 'DELETE';
+		form.appendChild(methodField);
+		
+		document.body.appendChild(form);
+		form.submit();
+	}
+});
+
 jQuery(document).ready(function($){
 	$('.cb-element').change(function () {
 	if ($('.cb-element:checked').length == $('.cb-element').length){

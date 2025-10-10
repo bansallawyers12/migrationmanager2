@@ -114,6 +114,7 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin'])
         Route::post('/appointment-dates-disable/store', [AppointmentDisableDateController::class, 'store'])->name('appointmentdisabledate.store');
         Route::get('/appointment-dates-disable/edit/{id}', [AppointmentDisableDateController::class, 'edit'])->name('appointmentdisabledate.edit');
         Route::post('/appointment-dates-disable/update', [AppointmentDisableDateController::class, 'edit'])->name('appointmentdisabledate.update');
+        Route::delete('/appointment-dates-disable/delete/{id}', [AppointmentDisableDateController::class, 'destroy'])->name('appointmentdisabledate.destroy');
         
         // Promo Code routes
         Route::get('/promo-code', [PromoCodeController::class, 'index'])->name('promocode.index');
