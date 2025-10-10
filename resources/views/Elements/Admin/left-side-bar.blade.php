@@ -28,7 +28,7 @@
 
             <?php
             //echo Route::currentRouteName();
-            if( Route::currentRouteName() == 'appointments.index' || Route::currentRouteName() == 'appointments-education'  || Route::currentRouteName() == 'appointments-jrp' || Route::currentRouteName() == 'appointments-tourist' || Route::currentRouteName() == 'appointments-others' || Route::currentRouteName() == 'admin.feature.appointmentdisabledate.index' ){
+            if( Route::currentRouteName() == 'appointments.index' || Route::currentRouteName() == 'appointments-education'  || Route::currentRouteName() == 'appointments-jrp' || Route::currentRouteName() == 'appointments-tourist' || Route::currentRouteName() == 'appointments-others' || Route::currentRouteName() == 'adminconsole.features.appointmentdisabledate.index' ){
 				$appointmentsclasstype = '';
 			}
 			?>

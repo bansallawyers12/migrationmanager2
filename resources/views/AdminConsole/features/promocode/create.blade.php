@@ -15,7 +15,7 @@
 							<div class="card-header">
 								<h4>Add Promo Code</h4>
 								<div class="card-header-action">
-									<a href="{{route('admin.feature.promocode.index')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
+									<a href="{{route('adminconsole.features.promocode.index')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
 								</div>
 							</div>
 						</div>

@@ -46,7 +46,7 @@
 						<div class="card-header">
 							<h4>Office Information</h4>
 							<div class="card-header-action">
-								<a href="{{URL::to('/admin/branch/edit/'.base64_encode(convert_uuencode(@$fetchedData->id)))}}" class="btn btn-primary">Edit</a>
+								<a href="{{route('adminconsole.system.offices.edit', base64_encode(convert_uuencode(@$fetchedData->id)))}}" class="btn btn-primary">Edit</a>
 							</div>
 						</div>
 						<div class="card-body">
@@ -108,10 +108,10 @@
 						<div class="card-body">
 							<ul class="nav nav-pills" id="client_tabs" role="tablist">
 								<li class="nav-item">
-									<a class="nav-link active" id="clients-tab" href="{{URL::to('/admin/branch/view/')}}/{{$fetchedData->id}}" role="tab" >User List</a>
+									<a class="nav-link active" id="clients-tab" href="{{route('adminconsole.system.offices.view', $fetchedData->id)}}" role="tab" >User List</a>
 								</li>
 								<li class="nav-item">
-									<a class="nav-link"  id="date-tab" href="{{URL::to('/admin/branch/view/client/')}}/{{$fetchedData->id}}" role="tab" >Client List</a>
+									<a class="nav-link"  id="date-tab" href="{{route('adminconsole.system.offices.viewclient', $fetchedData->id)}}" role="tab" >Client List</a>
 								</li>
 								
 							</ul> 
@@ -135,7 +135,7 @@
 												
 												?>
 												<tr id="id_{{$alist->id}}">
-													<td><a class="" data-id="{{$alist->id}}" href="{{URL::to('/admin/clients/detail')}}/{{base64_encode(convert_uuencode(@$alist->id))}}" style="display:block;">{{$alist->first_name}}</a> </td> 
+													<td><a class="" data-id="{{$alist->id}}" href="{{route('adminconsole.system.users.view', base64_encode(convert_uuencode(@$alist->id)))}}" style="display:block;">{{$alist->first_name}}</a> </td> 
 													<td>{{$alist->email}}</td>
 													
 													<td>{{ @$alist->usertype->name == "" ? config('constants.empty') : str_limit(@$alist->usertype->name, '50', '...') }}</td>

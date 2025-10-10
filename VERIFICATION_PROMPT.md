@@ -63,7 +63,7 @@ Check these critical files exist and have correct content:
 - DocumentChecklistController.php
 - AppointmentDisableDateController.php
 - PromoCodeController.php
-- ProfileController.php
+- ProfileController.php (REMOVED - Not in use)
 
 **Views (in `resources/views/AdminConsole/`):**
 - features/ subdirectory

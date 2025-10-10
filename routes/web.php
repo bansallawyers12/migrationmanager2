@@ -356,21 +356,7 @@ Route::prefix('admin')->group(function() {
 
 
 		//Product Type Start
-
-		Route::get('/profiles', 'AdminConsole\ProfileController@index')->name('admin.feature.profiles.index');
-		Route::get('/profiles/create', 'AdminConsole\ProfileController@create')->name('admin.feature.profiles.create');
-		Route::post('/profiles/store', 'AdminConsole\ProfileController@store')->name('admin.feature.profiles.store');
-		Route::get('/profiles/edit/{id}', 'AdminConsole\ProfileController@edit')->name('admin.feature.profiles.edit');
-		Route::post('/profiles/edit', 'AdminConsole\ProfileController@edit')->name('admin.feature.profiles.edit');
-
-
-
-		//Tags Start
-		Route::get('/tags', 'AdminConsole\TagController@index')->name('admin.feature.tags.index');
-		Route::get('/tags/create', 'AdminConsole\TagController@create')->name('admin.feature.tags.create');
-		Route::post('tags/store', 'AdminConsole\TagController@store')->name('admin.feature.tags.store');
-		Route::get('/tags/edit/{id}', 'AdminConsole\TagController@edit')->name('admin.feature.tags.edit');
-		Route::post('/tags/edit', 'AdminConsole\TagController@edit')->name('admin.feature.tags.edit');
+		// Profile and Tags routes moved to routes/adminconsole.php
 
 		//Checklist Start
 		Route::get('/checklist', 'Admin\ChecklistController@index')->name('admin.checklist.index');
@@ -382,14 +368,7 @@ Route::prefix('admin')->group(function() {
 
 
 
-		//workflow Start
-		Route::get('/workflow', 'AdminConsole\WorkflowController@index')->name('admin.workflow.index');
-		Route::get('/workflow/create', 'AdminConsole\WorkflowController@create')->name('admin.workflow.create');
-		Route::post('workflow/store', 'AdminConsole\WorkflowController@store')->name('admin.workflow.store');
-		Route::get('/workflow/edit/{id}', 'AdminConsole\WorkflowController@edit')->name('admin.workflow.edit');
-		Route::get('/workflow/deactivate-workflow/{id}', 'AdminConsole\WorkflowController@deactivateWorkflow')->name('admin.workflow.deactivate');
-		Route::get('/workflow/activate-workflow/{id}', 'AdminConsole\WorkflowController@activateWorkflow')->name('admin.workflow.activate');
-		Route::post('/workflow/edit', 'AdminConsole\WorkflowController@edit')->name('admin.workflow.edit');
+		// Workflow routes moved to routes/adminconsole.php
 
 
 
@@ -424,21 +403,12 @@ Route::prefix('admin')->group(function() {
 		Route::post('/save_tag', 'Admin\ClientsController@save_tag');
 
 
-		Route::get('/emails', 'AdminConsole\EmailController@index')->name('admin.emails.index');
-		Route::get('/emails/create', 'AdminConsole\EmailController@create')->name('admin.emails.create');
-		Route::post('emails/store', 'AdminConsole\EmailController@store')->name('admin.emails.store');
-		Route::get('/emails/edit/{id}', 'AdminConsole\EmailController@edit')->name('admin.emails.edit');
-		Route::post('/emails/edit', 'AdminConsole\EmailController@edit')->name('admin.emails.edit');
+		// Email routes moved to routes/adminconsole.php
 		
 
 
 
-		//Crm Email Template Start
-		Route::get('/crm_email_template', 'AdminConsole\CrmEmailTemplateController@index')->name('admin.crmemailtemplate.index');
-		Route::get('/crm_email_template/create', 'AdminConsole\CrmEmailTemplateController@create')->name('admin.crmemailtemplate.create');
-		Route::post('crm_email_template/store', 'AdminConsole\CrmEmailTemplateController@store')->name('admin.crmemailtemplate.store');
-		Route::get('/crm_email_template/edit/{id}', 'AdminConsole\CrmEmailTemplateController@edit')->name('admin.crmemailtemplate.edit');
-		Route::post('/crm_email_template/edit', 'AdminConsole\CrmEmailTemplateController@edit')->name('admin.crmemailtemplate.edit');
+		// Crm Email Template routes moved to routes/adminconsole.php
 
 
 		Route::get('/fetch-notification', 'Admin\AdminController@fetchnotification');
@@ -526,47 +496,19 @@ Route::prefix('admin')->group(function() {
 
 
 
-        //Appointment Dates Not Available
-		Route::get('/appointment-dates-disable', 'AdminConsole\AppointmentDisableDateController@index')->name('admin.feature.appointmentdisabledate.index');
-		Route::get('/appointment-dates-disable/create', 'AdminConsole\AppointmentDisableDateController@create')->name('admin.feature.appointmentdisabledate.create');
-		Route::post('/appointment-dates-disable/store', 'AdminConsole\AppointmentDisableDateController@store')->name('admin.feature.appointmentdisabledate.store');
-		Route::get('/appointment-dates-disable/edit/{id}', 'AdminConsole\AppointmentDisableDateController@edit')->name('admin.feature.appointmentdisabledate.edit');
-		Route::post('/appointment-dates-disable/edit', 'AdminConsole\AppointmentDisableDateController@edit')->name('admin.feature.appointmentdisabledate.edit');
+        // Appointment Dates Not Available routes moved to routes/adminconsole.php
 
-        //Promo code
-		Route::get('/promo-code', 'AdminConsole\PromoCodeController@index')->name('admin.feature.promocode.index');
-		Route::get('/promo-code/create', 'AdminConsole\PromoCodeController@create')->name('admin.feature.promocode.create');
-		Route::post('/promo-code/store', 'AdminConsole\PromoCodeController@store')->name('admin.feature.promocode.store');
-		Route::get('/promo-code/edit/{id}', 'AdminConsole\PromoCodeController@edit')->name('admin.feature.promocode.edit');
-		Route::post('/promo-code/edit', 'AdminConsole\PromoCodeController@edit')->name('admin.feature.promocode.edit');
-        Route::post('/promo-code/checkpromocode', 'AdminConsole\PromoCodeController@checkpromocode');
+        // Promo code routes moved to routes/adminconsole.php
 
 
-        //Personal Document Category
-		Route::get('/personal-document-type', 'AdminConsole\PersonalDocumentTypeController@index')->name('admin.feature.personaldocumenttype.index');
-		Route::get('/personal-document-type/create', 'AdminConsole\PersonalDocumentTypeController@create')->name('admin.feature.personaldocumenttype.create');
-		Route::post('/personal-document-type/store', 'AdminConsole\PersonalDocumentTypeController@store')->name('admin.feature.personaldocumenttype.store');
-		Route::get('/personal-document-type/edit/{id}', 'AdminConsole\PersonalDocumentTypeController@edit')->name('admin.feature.personaldocumenttype.edit');
-		Route::post('/personal-document-type/edit', 'AdminConsole\PersonalDocumentTypeController@edit')->name('admin.feature.personaldocumenttype.edit');
-        Route::post('/personal-document-type/checkcreatefolder', 'AdminConsole\PersonalDocumentTypeController@checkcreatefolder');
+        // Personal Document Category routes moved to routes/adminconsole.php
 
 
-        //Visa Document Category
-		Route::get('/visa-document-type', 'AdminConsole\VisaDocumentTypeController@index')->name('admin.feature.visadocumenttype.index');
-		Route::get('/visa-document-type/create', 'AdminConsole\VisaDocumentTypeController@create')->name('admin.feature.visadocumenttype.create');
-		Route::post('/visa-document-type/store', 'AdminConsole\VisaDocumentTypeController@store')->name('admin.feature.visadocumenttype.store');
-		Route::get('/visa-document-type/edit/{id}', 'AdminConsole\VisaDocumentTypeController@edit')->name('admin.feature.visadocumenttype.edit');
-		Route::post('/visa-document-type/edit', 'AdminConsole\VisaDocumentTypeController@edit')->name('admin.feature.visadocumenttype.edit');
-        Route::post('/visa-document-type/checkcreatefolder', 'AdminConsole\VisaDocumentTypeController@checkcreatefolder');
+        // Visa Document Category routes moved to routes/adminconsole.php
 
 
 
-        //Matter Start
-		Route::get('/matter', 'AdminConsole\MatterController@index')->name('admin.feature.matter.index');
-		Route::get('/matter/create', 'AdminConsole\MatterController@create')->name('admin.feature.matter.create');
-		Route::post('/matter/store', 'AdminConsole\MatterController@store')->name('admin.feature.matter.store');
-		Route::get('/matter/edit/{id}', 'AdminConsole\MatterController@edit')->name('admin.feature.matter.edit');
-		Route::post('/matter/edit', 'AdminConsole\MatterController@edit')->name('admin.feature.matter.edit');
+        // Matter routes moved to routes/adminconsole.php
 
         Route::post('/address_auto_populate', 'Admin\ClientsController@address_auto_populate');
 

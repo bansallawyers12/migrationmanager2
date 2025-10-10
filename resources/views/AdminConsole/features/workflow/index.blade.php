@@ -50,7 +50,7 @@
 											<div class="dropdown d-inline">
 												<button class="btn btn-primary dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
 												<div class="dropdown-menu">
-													<a class="dropdown-item has-icon" href="{{URL::to('/admin/workflow/edit/'.base64_encode(convert_uuencode(@$list->id)))}}"><i class="far fa-edit"></i> Edit</a>
+													<a class="dropdown-item has-icon" href="{{route('adminconsole.features.workflow.edit', base64_encode(convert_uuencode(@$list->id)))}}"><i class="far fa-edit"></i> Edit</a>
 													{{--@if($list->status == 1)--}}
 														<!--<a class="dropdown-item has-icon " href="{{--URL::to('/admin/workflow/deactivate-workflow/'.base64_encode(convert_uuencode(@$list->id)))--}}" onClick=""><i class="fas fa-trash"></i> Deactivate</a>-->
                                                     {{--@else--}}

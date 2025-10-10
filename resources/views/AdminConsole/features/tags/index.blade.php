@@ -21,7 +21,7 @@
 						<div class="card-header">
 							<h4>Tags</h4>
 							<div class="card-header-action">
-								<a href="{{route('admin.feature.tags.create')}}" class="btn btn-primary">Create Tag</a>
+								<a href="{{route('adminconsole.features.tags.create')}}" class="btn btn-primary">Create Tag</a>
 							</div>
 						</div>
 						<div class="card-body">
@@ -52,7 +52,7 @@
 											<div class="dropdown d-inline">
 												<button class="btn btn-primary dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
 												<div class="dropdown-menu">
-													<a class="dropdown-item has-icon" href="{{URL::to('/admin/tags/edit/'.base64_encode(convert_uuencode(@$list->id)))}}"><i class="far fa-edit"></i> Edit</a>
+													<a class="dropdown-item has-icon" href="{{route('adminconsole.features.tags.edit', base64_encode(convert_uuencode(@$list->id)))}}"><i class="far fa-edit"></i> Edit</a>
 													<a class="dropdown-item has-icon" href="javascript:;" onClick="deleteAction({{@$list->id}}, 'tags')"><i class="fas fa-trash"></i> Delete</a>
 													
 												</div>

@@ -98,7 +98,7 @@
 											<span style="background-color:{{$list->color}};width: 40px;display: inline-block;">&nbsp;</span>						  
 										</td>
 										<td>
-										<a class="dropdown-item has-icon" href="{{URL::to('/admin/teams/edit/'.$list->id)}}" ><i class="fas fa-edit"></i> Edit</a>							  
+										<a class="dropdown-item has-icon" href="{{route('adminconsole.system.teams.edit', $list->id)}}" ><i class="fas fa-edit"></i> Edit</a>							  
 										</td>
 									</tr>	
 								@endforeach	 

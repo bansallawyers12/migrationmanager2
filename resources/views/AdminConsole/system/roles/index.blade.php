@@ -43,7 +43,7 @@
 											<div class="dropdown d-inline">
 												<button class="btn btn-primary dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
 												<div class="dropdown-menu">
-													<a class="dropdown-item has-icon" href="{{URL::to('/admin/userrole/edit/'.base64_encode(convert_uuencode(@$list->id)))}}"><i class="far fa-edit"></i> Edit</a>
+													<a class="dropdown-item has-icon" href="{{route('adminconsole.system.roles.edit', base64_encode(convert_uuencode(@$list->id)))}}"><i class="far fa-edit"></i> Edit</a>
 												</div>
 											</div>
 										</td>

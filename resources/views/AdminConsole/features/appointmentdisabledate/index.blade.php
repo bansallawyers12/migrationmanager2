@@ -21,7 +21,7 @@
 						<div class="card-header">
 							<h4>Not Available Appointment Dates</h4>
 							<!--<div class="card-header-action">
-								<a href="{{--route('admin.feature.appointmentdisabledate.create')--}}" class="btn btn-primary">Create Not Available Appointment Dates</a>
+								<a href="{{route('adminconsole.features.appointmentdisabledate.create')}}" class="btn btn-primary">Create Not Available Appointment Dates</a>
 							</div>-->
 						</div>
 						<div class="card-body">
@@ -64,7 +64,7 @@
 											<div class="dropdown d-inline">
 												<button class="btn btn-primary dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
 												<div class="dropdown-menu">
-													<a class="dropdown-item has-icon" href="{{URL::to('/admin/appointment-dates-disable/edit/'.base64_encode(convert_uuencode(@$list->id)))}}"><i class="far fa-edit"></i> Edit</a>
+													<a class="dropdown-item has-icon" href="{{route('adminconsole.features.appointmentdisabledate.edit', base64_encode(convert_uuencode(@$list->id)))}}"><i class="far fa-edit"></i> Edit</a>
 												</div>
 											</div>
 										</td>

@@ -7,7 +7,8 @@
 <div class="main-content">
 	<section class="section">
 		<div class="section-body">
-			{{ Form::open(array('url' => 'admin/users/storeclient', 'name'=>"add-client", 'autocomplete'=>'off', "enctype"=>"multipart/form-data")) }}
+			<form action="{{ url('adminconsole/system/users/storeclient') }}" name="add-client" autocomplete="off" enctype="multipart/form-data" method="POST">
+			@csrf
 				<div class="row">
 					<div class="col-12 col-md-12 col-lg-12">
 						<div class="card">
@@ -22,51 +23,51 @@
 					<div class="col-12 col-md-6 col-lg-6">
 						<div class="card">
 							<div class="card-body">
-								<div class="form-group">
-									<label for="first_name">First Name</label>
-									{{ Form::text('first_name', '', array('class' => 'form-control', 'data-valid'=>'required', 'autocomplete'=>'off','placeholder'=>'First Name' )) }}
-									@if ($errors->has('first_name'))
-										<span class="custom-error" role="alert">
-											<strong>{{ @$errors->first('first_name') }}</strong>
-										</span> 
-									@endif
-								</div>
-								<div class="form-group">
-									<label for="last_name">Last Name</label>
-									{{ Form::text('last_name', '', array('class' => 'form-control', 'data-valid'=>'required', 'autocomplete'=>'off','placeholder'=>'Last Name' )) }}
-									@if ($errors->has('last_name'))
-										<span class="custom-error" role="alert">
-											<strong>{{ @$errors->first('last_name') }}</strong>
-										</span> 
-									@endif
-								</div>
-								<div class="form-group"> 
-									<label for="company_name">Company Name</label>
-									{{ Form::text('company_name', '', array('class' => 'form-control', 'data-valid'=>'required', 'autocomplete'=>'off','placeholder'=>'Enter Company Name' )) }}
-									@if ($errors->has('company_name'))
-										<span class="custom-error" role="alert">
-											<strong>{{ @$errors->first('company_name') }}</strong>
-										</span> 
-									@endif
-								</div>
-								<div class="form-group">
-									<label for="company_website">Company Website</label>
-									{{ Form::text('company_website', '', array('class' => 'form-control', 'data-valid'=>'required', 'autocomplete'=>'off','placeholder'=>'Enter Company Website' )) }}
-									@if ($errors->has('company_website'))
-										<span class="custom-error" role="alert">
-											<strong>{{ @$errors->first('company_website') }}</strong>
-										</span> 
-									@endif
-								</div>
-								<div class="form-group">
-									<label for="email">Email</label>
-									{{ Form::text('email', '', array('class' => 'form-control', 'data-valid'=>'required', 'autocomplete'=>'off','placeholder'=>'Enter Email' )) }}
-									@if ($errors->has('email'))
-										<span class="custom-error" role="alert">
-											<strong>{{ @$errors->first('email') }}</strong>
-										</span> 
-									@endif
-								</div>
+							<div class="form-group">
+								<label for="first_name">First Name</label>
+								<input type="text" name="first_name" class="form-control" data-valid="required" autocomplete="off" placeholder="First Name" value="{{ old('first_name') }}">
+								@if ($errors->has('first_name'))
+									<span class="custom-error" role="alert">
+										<strong>{{ @$errors->first('first_name') }}</strong>
+									</span> 
+								@endif
+							</div>
+							<div class="form-group">
+								<label for="last_name">Last Name</label>
+								<input type="text" name="last_name" class="form-control" data-valid="required" autocomplete="off" placeholder="Last Name" value="{{ old('last_name') }}">
+								@if ($errors->has('last_name'))
+									<span class="custom-error" role="alert">
+										<strong>{{ @$errors->first('last_name') }}</strong>
+									</span> 
+								@endif
+							</div>
+							<div class="form-group"> 
+								<label for="company_name">Company Name</label>
+								<input type="text" name="company_name" class="form-control" data-valid="required" autocomplete="off" placeholder="Enter Company Name" value="{{ old('company_name') }}">
+								@if ($errors->has('company_name'))
+									<span class="custom-error" role="alert">
+										<strong>{{ @$errors->first('company_name') }}</strong>
+									</span> 
+								@endif
+							</div>
+							<div class="form-group">
+								<label for="company_website">Company Website</label>
+								<input type="text" name="company_website" class="form-control" data-valid="required" autocomplete="off" placeholder="Enter Company Website" value="{{ old('company_website') }}">
+								@if ($errors->has('company_website'))
+									<span class="custom-error" role="alert">
+										<strong>{{ @$errors->first('company_website') }}</strong>
+									</span> 
+								@endif
+							</div>
+							<div class="form-group">
+								<label for="email">Email</label>
+								<input type="text" name="email" class="form-control" data-valid="required" autocomplete="off" placeholder="Enter Email" value="{{ old('email') }}">
+								@if ($errors->has('email'))
+									<span class="custom-error" role="alert">
+										<strong>{{ @$errors->first('email') }}</strong>
+									</span> 
+								@endif
+							</div>
 								<div class="form-group">
 									<label for="password">Password</label>
 									<input type="password" name="password" class="form-control" autocomplete="off" placeholder="Enter Password" data-valid="required" />							
@@ -82,15 +83,15 @@
 					<div class="col-12 col-md-6 col-lg-6">
 						<div class="card">
 							<div class="card-body">
-								<div class="form-group">
-									<label for="phone">Phone No.</label>
-									{{ Form::text('phone', '', array('class' => 'form-control', 'data-valid'=>'required', 'autocomplete'=>'off','placeholder'=>'Enter Phone Number' )) }}
-									@if ($errors->has('phone'))
-										<span class="custom-error" role="alert">
-											<strong>{{ @$errors->first('phone') }}</strong>
-										</span> 
-									@endif
-								</div>	
+							<div class="form-group">
+								<label for="phone">Phone No.</label>
+								<input type="text" name="phone" class="form-control" data-valid="required" autocomplete="off" placeholder="Enter Phone Number" value="{{ old('phone') }}">
+								@if ($errors->has('phone'))
+									<span class="custom-error" role="alert">
+										<strong>{{ @$errors->first('phone') }}</strong>
+									</span> 
+								@endif
+							</div>
 								<div class="form-group">
 									<label for="profile_img">Company Logo</label>
 									<div class="custom-file">
@@ -112,32 +113,32 @@
 										</span> 
 									@endif 
 								</div>
-								<div class="form-group">
-									<label for="city">City</label>
-									{{ Form::text('city', '', array('class' => 'form-control', 'data-valid'=>'required', 'autocomplete'=>'off','placeholder'=>'City' )) }}
-									@if ($errors->has('city'))
-										<span class="custom-error" role="alert">
-											<strong>{{ @$errors->first('city') }}</strong>
-										</span> 
-									@endif 
-								</div> 
-								<div class="form-group">
-									<label for="gst_no">GST No.</label>
-									{{ Form::text('gst_no', '', array('class' => 'form-control', 'data-valid'=>'required', 'autocomplete'=>'off','placeholder'=>'e.g. 22AAAAA00000AZ5' )) }}
-									@if ($errors->has('gst_no'))
-										<span class="custom-error" role="alert">
-											<strong>{{ @$errors->first('gst_no') }}</strong>
-										</span> 
-									@endif
-								</div>
-								<div class="form-group float-right">
-									{{ Form::submit('Save', ['class'=>'btn btn-primary' ]) }}
-								</div>
+							<div class="form-group">
+								<label for="city">City</label>
+								<input type="text" name="city" class="form-control" data-valid="required" autocomplete="off" placeholder="City" value="{{ old('city') }}">
+								@if ($errors->has('city'))
+									<span class="custom-error" role="alert">
+										<strong>{{ @$errors->first('city') }}</strong>
+									</span> 
+								@endif 
+							</div>
+							<div class="form-group">
+								<label for="gst_no">GST No.</label>
+								<input type="text" name="gst_no" class="form-control" data-valid="required" autocomplete="off" placeholder="e.g. 22AAAAA00000AZ5" value="{{ old('gst_no') }}">
+								@if ($errors->has('gst_no'))
+									<span class="custom-error" role="alert">
+										<strong>{{ @$errors->first('gst_no') }}</strong>
+									</span> 
+								@endif
+							</div>
+							<div class="form-group float-right">
+								<button type="submit" class="btn btn-primary">Save</button>
+							</div>
 							</div>
 						</div>
 					</div>
 				</div>
-			{{ Form::close() }}
+			</form>
 		</div>
 	</section>
 </div>

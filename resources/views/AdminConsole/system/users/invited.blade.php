@@ -19,13 +19,13 @@
 						<div class="card-body">
 							<ul class="nav nav-pills" id="user_tabs" role="tablist">
 								<li class="nav-item">
-									<a class="nav-link" id="active-tab"  href="{{URL::to('/admin/users/active')}}" >Active</a>
+									<a class="nav-link" id="active-tab"  href="{{route('adminconsole.system.users.active')}}" >Active</a>
 								</li>
 								<li class="nav-item">
-									<a class="nav-link" id="inactive-tab"  href="{{URL::to('/admin/users/inactive')}}" >Inactive</a>
+									<a class="nav-link" id="inactive-tab"  href="{{route('adminconsole.system.users.inactive')}}" >Inactive</a>
 								</li>
 								<li class="nav-item">
-									<a class="nav-link active" id="invited-tab"  href="{{URL::to('/admin/users/invited')}}" >Invited</a>
+									<a class="nav-link active" id="invited-tab"  href="{{route('adminconsole.system.users.invited')}}" >Invited</a>
 								</li>								
 							</ul>
 							<div class="tab-content" id="checkinContent">
@@ -47,9 +47,9 @@
 										?>
 											<tbody class="tdata">	
 												<tr id="id_{{@$list->id}}"> 
-													<td><a href="{{URL::to('/admin/users/view')}}/{{$b->id ?? '#'}}">{{@$list->first_name}}</a><br>{{@$list->email}}</td> 
+													<td><a href="{{route('adminconsole.system.users.view', $b->id ?? '#')}}">{{@$list->first_name}}</a><br>{{@$list->email}}</td> 
 													<td></td> 
-													<td><a href="{{URL::to('/admin/branch/view/')}}/{{$b->id ?? '#'}}">{{$b->office_name ?? ''}}</a></td> 
+													<td><a href="{{route('adminconsole.system.offices.view', $b->id ?? '#')}}">{{$b->office_name ?? ''}}</a></td> 
 													
 													
 													<td>{{ @$list->usertype->name == "" ? config('constants.empty') : str_limit(@$list->usertype->name, '50', '...') }}</td>  

@@ -17,7 +17,7 @@
 <div class="main-content">
 	<section class="section">
 		<div class="section-body">
-			<form action="{{ url('admin/appointment-dates-disable/edit') }}" name="edit-partnertype" autocomplete="off" enctype="multipart/form-data" method="POST">
+			<form action="{{ route('adminconsole.features.appointmentdisabledate.update') }}" name="edit-partnertype" autocomplete="off" enctype="multipart/form-data" method="POST">
 				@csrf
 				<input type="hidden" name="id" value="{{ @$fetchedData->id }}">
 				<div class="row">
@@ -26,7 +26,7 @@
 							<div class="card-header">
 								<h4>Edit Not Available Appointment Dates</h4>
 								<div class="card-header-action">
-									<a href="{{route('admin.feature.appointmentdisabledate.index')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
+									<a href="{{route('adminconsole.features.appointmentdisabledate.index')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
 								</div>
 							</div>
 						</div>

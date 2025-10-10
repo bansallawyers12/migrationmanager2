@@ -23,7 +23,7 @@
 								</h4>
 								<div class="card-header-action">
 									@if(isset($matter))
-										<a href="{{route('admin.feature.matter.index')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back to Matters</a>
+										<a href="{{route('adminconsole.features.matter.index')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back to Matters</a>
 									@else
 										<a href="{{route('admin.checklist.index')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
 									@endif

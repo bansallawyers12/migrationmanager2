@@ -21,7 +21,7 @@
 						<div class="card-header">
 							<h4>Document Checklists</h4>
 							<div class="card-header-action">
-								<a href="{{route('admin.feature.documentchecklist.create')}}" class="btn btn-primary">Create Checklist</a>
+								<a href="{{route('adminconsole.features.documentchecklist.create')}}" class="btn btn-primary">Create Checklist</a>
 							</div>
 						</div>
 						<div class="card-body">

@@ -193,7 +193,7 @@ use App\Http\Controllers\Controller;
 											$branchx = \App\Models\Branch::where('id', '=', $admin->office_id)->first();
 												?>
 												<tr id="id_{{$alist->id}}">
-													<td><a class="" data-id="{{$alist->id}}" href="{{URL::to('/admin/clients/detail')}}/{{base64_encode(convert_uuencode(@$alist->id))}}" style="display:block;">{{$alist->first_name}} {{$alist->last_name}}</a> {{$alist->email}}</td>
+													<td><a class="" data-id="{{$alist->id}}" href="{{route('adminconsole.system.users.view', base64_encode(convert_uuencode(@$alist->id)))}}" style="display:block;">{{$alist->first_name}} {{$alist->last_name}}</a> {{$alist->email}}</td>
 													<td>{{$alist->rating}}</td>
 													<td>{{$alist->dob}}</td>
 													<td>
@@ -312,7 +312,7 @@ use App\Http\Controllers\Controller;
 
                                     										<h5 class="font-14">Today Followups</h5>
                                     										<h2 class="mb-3 font-18">{{count($userarray)}}</h2>
-                                    											<p class="mb-0"><span class="col-green">{{count($userarray)}}</span> <a href="{{URL::to('/admin/leads/?followupdate='.date('Y-m-d'))}}">click here</a></p>
+                                    											<p class="mb-0"><span class="col-green">{{count($userarray)}}</span> <a href="{{url('adminconsole/leads/?followupdate='.date('Y-m-d'))}}">click here</a></p>
 
                                     									</div>
                                     								</div>

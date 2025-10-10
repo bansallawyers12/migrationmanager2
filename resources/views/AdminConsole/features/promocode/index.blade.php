@@ -19,7 +19,7 @@
 						<div class="card-header">
 							<h4>Promo Code</h4>
 							<div class="card-header-action">
-								<a href="{{route('admin.feature.promocode.create')}}" class="btn btn-primary">Create Promo Code</a>
+								<a href="{{route('adminconsole.features.promocode.create')}}" class="btn btn-primary">Create Promo Code</a>
 							</div>
 						</div>
 						<div class="card-body">
@@ -45,7 +45,7 @@
 											<div class="dropdown d-inline">
 												<button class="btn btn-primary dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
 												<div class="dropdown-menu">
-													<a class="dropdown-item has-icon" href="{{URL::to('/admin/promo-code/edit/'.base64_encode(convert_uuencode(@$list->id)))}}"><i class="far fa-edit"></i> Edit</a>
+													<a class="dropdown-item has-icon" href="{{route('adminconsole.features.promocode.edit', base64_encode(convert_uuencode(@$list->id)))}}"><i class="far fa-edit"></i> Edit</a>
 												</div>
 											</div>
 										</td>

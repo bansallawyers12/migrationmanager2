@@ -7,14 +7,15 @@
 <div class="main-content">
 	<section class="section">
 		<div class="section-body">
-			{{ Form::open(array('url' => 'admin/personal-document-type/store', 'name'=>"add-create-folder", 'autocomplete'=>'off', "enctype"=>"multipart/form-data")) }}
+			<form action="{{ url('adminconsole/features/personal-document-type/store') }}" name="add-create-folder" autocomplete="off" enctype="multipart/form-data" method="POST">
+			@csrf
 				<div class="row">
 					<div class="col-12 col-md-12 col-lg-12">
 						<div class="card">
 							<div class="card-header">
 								<h4>Add Personal Document Category</h4>
 								<div class="card-header-action">
-									<a href="{{route('admin.feature.personaldocumenttype.index')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
+									<a href="{{route('adminconsole.features.personaldocumenttype.index')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
 								</div>
 							</div>
 						</div>
@@ -34,29 +35,29 @@
 
                                             <div class="row">
 												<div class="col-12 col-md-4 col-lg-4">
-													<div class="form-group">
-														<label for="title">Title <span class="span_req">*</span></label>
-														{{ Form::text('title', '', array('class' => 'form-control', 'data-valid'=>'required', 'autocomplete'=>'off','placeholder'=>'Enter Title' )) }}
-														@if ($errors->has('title'))
-															<span class="custom-error" role="alert">
-																<strong>{{ @$errors->first('title') }}</strong>
-															</span>
-														@endif
-													</div>
+												<div class="form-group">
+													<label for="title">Title <span class="span_req">*</span></label>
+													<input type="text" name="title" class="form-control" data-valid="required" autocomplete="off" placeholder="Enter Title" value="{{ old('title') }}">
+													@if ($errors->has('title'))
+														<span class="custom-error" role="alert">
+															<strong>{{ @$errors->first('title') }}</strong>
+														</span>
+													@endif
+												</div>
 												</div>
                                             </div>
 
                                         </div>
 									</div>
 								</div>
-								<div class="form-group float-right">
-									{{ Form::submit('Save', ['class'=>'btn btn-primary' ]) }}
-								</div>
+							<div class="form-group float-right">
+								<button type="submit" class="btn btn-primary">Save</button>
+							</div>
 							</div>
 						</div>
 					</div>
 				</div>
-			 {{ Form::close() }}
+			</form>
 		</div>
 	</section>
 </div>

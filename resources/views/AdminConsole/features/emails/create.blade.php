@@ -7,7 +7,7 @@
 <div class="main-content">
 	<section class="section">
 		<div class="section-body">
-			<form action="{{URL::to('/admin/emails/store')}}" name="add-emails" autocomplete="off" enctype="multipart/form-data" method="POST">
+			<form action="{{url('adminconsole/features/emails/store')}}" name="add-emails" autocomplete="off" enctype="multipart/form-data" method="POST">
     			<input type="hidden" name="_token" value="{{ csrf_token() }}">
 
 			

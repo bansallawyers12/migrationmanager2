@@ -7,7 +7,7 @@
 <div class="main-content">
 	<section class="section">
 		<div class="section-body">
-			<form action="{{URL::to('/admin/emails/edit')}}" name="add-emails" autocomplete="off" enctype="multipart/form-data" method="POST">
+			<form action="{{route('adminconsole.features.emails.update')}}" name="add-emails" autocomplete="off" enctype="multipart/form-data" method="POST">
     			<input type="hidden" name="_token" value="{{ csrf_token() }}">
     			<input type="hidden" name="id" value="{{ @$fetchedData->id }}">
 
