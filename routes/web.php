@@ -440,8 +440,6 @@ Route::prefix('admin')->group(function() {
 		Route::get('/crm_email_template/edit/{id}', 'AdminConsole\CrmEmailTemplateController@edit')->name('admin.crmemailtemplate.edit');
 		Route::post('/crm_email_template/edit', 'AdminConsole\CrmEmailTemplateController@edit')->name('admin.crmemailtemplate.edit');
 
-		Route::get('/gen-settings', 'Admin\AdminController@gensettings')->name('admin.gensettings.index');
-		Route::post('/gen-settings/update', 'Admin\AdminController@gensettingsupdate')->name('admin.gensettings.update');
 
 		Route::get('/fetch-notification', 'Admin\AdminController@fetchnotification');
 		Route::get('/fetch-messages', 'Admin\AdminController@fetchmessages');

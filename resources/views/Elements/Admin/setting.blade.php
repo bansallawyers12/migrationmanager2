@@ -53,7 +53,6 @@
 			?>
 			<li class="{{(Route::currentRouteName() == 'adminconsole.system.roles.index' || Route::currentRouteName() == 'adminconsole.system.roles.create' || Route::currentRouteName() == 'adminconsole.system.roles.edit') ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.system.roles.index')}}">Roles</a></li>
 			<?php } ?>
-			<li class="{{(Route::currentRouteName() == 'adminconsole.system.settings.index' ) ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.system.settings.index')}}">Gen Settings</a></li>
 			
 
             <li class="{{(Route::currentRouteName() == 'adminconsole.features.appointmentdisabledate.index' ) ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.features.appointmentdisabledate.index')}}">Appointment Dates Not Available</a></li>

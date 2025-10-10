@@ -173,9 +173,6 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin'])
         Route::get('/offices/view/client/{id}', [BranchesController::class, 'viewclient'])->name('offices.viewclient');
         Route::post('/offices/edit', [BranchesController::class, 'edit'])->name('offices.edit');
         
-        // Settings routes
-        Route::get('/settings', [\App\Http\Controllers\Admin\AdminController::class, 'gensettings'])->name('settings.index');
-        Route::post('/settings/update', [\App\Http\Controllers\Admin\AdminController::class, 'gensettingsupdate'])->name('settings.update');
     });
     
     // Database routes - Database management
@@ -183,6 +180,7 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin'])
         
         // ANZSCO routes
         Route::get('/anzsco', [AnzscoOccupationController::class, 'index'])->name('anzsco.index');
+        Route::get('/anzsco/data', [AnzscoOccupationController::class, 'getData'])->name('anzsco.data');
         Route::get('/anzsco/create', [AnzscoOccupationController::class, 'create'])->name('anzsco.create');
         Route::post('/anzsco/store', [AnzscoOccupationController::class, 'store'])->name('anzsco.store');
         Route::get('/anzsco/edit/{id}', [AnzscoOccupationController::class, 'edit'])->name('anzsco.edit');
