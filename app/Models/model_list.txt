@@ -88,7 +88,6 @@ RefreshToken.php
 Relationship.php
 Report.php
 RepresentingPartner.php
-SeoPage.php
 Service.php
 ServiceFeeOption.php
 ServiceFeeOptionType.php

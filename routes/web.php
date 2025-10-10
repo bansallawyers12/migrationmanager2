@@ -112,17 +112,7 @@ Route::prefix('admin')->group(function() {
     Route::get('/checkclientexist', 'Admin\AdminController@checkclientexist');
 
 	/*---------- CRM & User Management Routes ----------*/
-    Route::get('/users', 'AdminConsole\UserController@index')->name('admin.users.index');
-    Route::get('/users/create', 'AdminConsole\UserController@create')->name('admin.users.create');
-    Route::post('/users/store', 'AdminConsole\UserController@store')->name('admin.users.store');
-    Route::get('/users/edit/{id}', 'AdminConsole\UserController@edit')->name('admin.users.edit');
-    Route::get('/users/view/{id}', 'AdminConsole\UserController@view')->name('admin.users.view');
-    Route::post('/users/edit', 'AdminConsole\UserController@edit')->name('admin.users.edit');
-    Route::post('/users/savezone', 'AdminConsole\UserController@savezone');
-
-    Route::get('/users/active', 'AdminConsole\UserController@active')->name('admin.users.active');
-    Route::get('/users/inactive', 'AdminConsole\UserController@inactive')->name('admin.users.inactive');
-    Route::get('/users/invited', 'AdminConsole\UserController@invited')->name('admin.users.invited');
+    // User management routes moved to routes/adminconsole.php
 
     Route::get('/staff', 'Admin\StaffController@index')->name('admin.staff.index');
     Route::get('/staff/create', 'Admin\StaffController@create')->name('admin.staff.create');
@@ -130,25 +120,13 @@ Route::prefix('admin')->group(function() {
     Route::get('/staff/edit/{id}', 'Admin\StaffController@edit')->name('admin.staff.edit');
     Route::post('/staff/edit', 'Admin\StaffController@edit')->name('admin.staff.edit');
 
-
-    Route::get('/users/clientlist', 'AdminConsole\UserController@clientlist')->name('admin.users.clientlist');
-    Route::get('/users/createclient', 'AdminConsole\UserController@createclient')->name('admin.users.createclient');
-    Route::post('/users/storeclient', 'AdminConsole\UserController@storeclient')->name('admin.users.storeclient');
-    Route::get('/users/editclient/{id}', 'AdminConsole\UserController@editclient')->name('admin.users.editclient');
-    Route::post('/users/editclient', 'AdminConsole\UserController@editclient')->name('admin.users.editclient');
-
-
     Route::get('/usertype', 'Admin\UsertypeController@index')->name('admin.usertype.index');
     Route::get('/usertype/create', 'Admin\UsertypeController@create')->name('admin.usertype.create');
     Route::post('/usertype/store', 'Admin\UsertypeController@store')->name('admin.usertype.store');
     Route::get('/usertype/edit/{id}', 'Admin\UsertypeController@edit')->name('admin.usertype.edit');
     Route::post('/usertype/edit', 'Admin\UsertypeController@edit')->name('admin.usertype.edit');
 
-    Route::get('/userrole', 'AdminConsole\UserroleController@index')->name('admin.userrole.index');
-    Route::get('/userrole/create', 'AdminConsole\UserroleController@create')->name('admin.userrole.create');
-    Route::post('/userrole/store', 'AdminConsole\UserroleController@store')->name('admin.userrole.store');
-    Route::get('/userrole/edit/{id}', 'AdminConsole\UserroleController@edit')->name('admin.userrole.edit');
-    Route::post('/userrole/edit', 'AdminConsole\UserroleController@edit')->name('admin.userrole.edit');
+    // User role routes moved to routes/adminconsole.php
 
     /*---------- Leads Management ----------*/
     Route::get('/leads', 'Admin\LeadController@index')->name('admin.leads.index');
@@ -171,16 +149,14 @@ Route::prefix('admin')->group(function() {
     Route::get('/edit_email_template/{id}', 'Admin\EmailTemplateController@editEmailTemplate')->name('admin.edit_email_template');
     Route::post('/edit_email_template', 'Admin\EmailTemplateController@editEmailTemplate')->name('admin.edit_email_template');
 
-	/*---------- SEO & API Settings ----------*/
-    Route::get('/edit_seo/{id}', 'Admin\AdminController@editSeo')->name('admin.edit_seo');
-    Route::post('/edit_seo', 'Admin\AdminController@editSeo')->name('admin.edit_seo');
+	/*---------- API Settings ----------*/
     Route::get('/api-key', 'Admin\AdminController@editapi')->name('admin.edit_api');
     Route::post('/api-key', 'Admin\AdminController@editapi')->name('admin.edit_api');
 
 		/*---------- Clients Management ----------*/
 		Route::get('/clients', 'Admin\ClientsController@index')->name('admin.clients.index');
         Route::get('/clientsmatterslist', 'Admin\ClientsController@clientsmatterslist')->name('admin.clients.clientsmatterslist');
-        Route::get('/clientsemaillist', 'Admin\ClientsController@clientsemaillist')->name('admin.clients.clientsemaillist');
+        Route::get('/clientsemaillist', 'updated ')->name('admin.clients.clientsemaillist');
 		Route::post('/clients/store', 'Admin\ClientsController@store')->name('admin.clients.store');
 		Route::get('/clients/edit/{id}', 'Admin\ClientsController@edit')->name('admin.clients.edit');
 		Route::post('/clients/edit', 'Admin\ClientsController@edit')->name('admin.clients.edit');
@@ -243,13 +219,7 @@ Route::prefix('admin')->group(function() {
 		Route::post('/savetoapplication', 'Admin\ClientsController@savetoapplication');
 
 		/*---------- Branch Management ----------*/
-		Route::get('/branch', 'AdminConsole\BranchesController@index')->name('admin.branch.index');
-		Route::get('/branch/create', 'AdminConsole\BranchesController@create')->name('admin.branch.create');
-		Route::post('/branch/store', 'AdminConsole\BranchesController@store')->name('admin.branch.store');
-		Route::get('/branch/edit/{id}', 'AdminConsole\BranchesController@edit')->name('admin.branch.edit');
-		Route::get('/branch/view/{id}', 'AdminConsole\BranchesController@view')->name('admin.branch.userview');
-		Route::get('/branch/view/client/{id}', 'AdminConsole\BranchesController@viewclient')->name('admin.branch.clientview');
-		Route::post('/branch/edit', 'AdminConsole\BranchesController@edit')->name('admin.branch.edit');
+		// Branch routes moved to routes/adminconsole.php
 
 		/*---------- Applications Management ----------*/
 		Route::get('/applications/detail/{id}', 'Admin\ApplicationsController@detail')->name('admin.applications.detail');
@@ -357,10 +327,8 @@ Route::prefix('admin')->group(function() {
 		Route::post('/update-checkin-status', 'Admin\AdminController@updateCheckinStatus');
 		//In-Person Notification related routes end
 
-		Route::get('/teams', 'AdminConsole\TeamController@index')->name('admin.teams.index');
-		Route::get('/teams/edit/{id}', 'AdminConsole\TeamController@edit')->name('admin.teams.edit');
-		Route::post('/teams/edit', 'AdminConsole\TeamController@edit');
-		Route::post('/teams/store', 'AdminConsole\TeamController@store')->name('admin.teamsupload');
+		// Teams routes moved to routes/adminconsole.php
+		
 		Route::get('/all-notifications', 'Admin\AdminController@allnotification');
 
 		// Appointment modulle
@@ -505,28 +473,10 @@ Route::prefix('admin')->group(function() {
         Route::post('/leads/updateOccupation', 'Admin\ClientPersonalDetailsController@updateOccupation')->name('admin.leads.updateOccupation');
 
         /*---------- ANZSCO Occupation Database ----------*/
-        Route::get('/anzsco', 'AdminConsole\AnzscoOccupationController@index')->name('admin.anzsco.index');
-        Route::get('/anzsco/data', 'AdminConsole\AnzscoOccupationController@getData')->name('admin.anzsco.data');
-        Route::get('/anzsco/create', 'AdminConsole\AnzscoOccupationController@create')->name('admin.anzsco.create');
-        Route::post('/anzsco', 'AdminConsole\AnzscoOccupationController@store')->name('admin.anzsco.store');
-        Route::get('/anzsco/{id}/edit', 'AdminConsole\AnzscoOccupationController@edit')->name('admin.anzsco.edit');
-        Route::put('/anzsco/{id}', 'AdminConsole\AnzscoOccupationController@update')->name('admin.anzsco.update');
-        Route::delete('/anzsco/{id}', 'AdminConsole\AnzscoOccupationController@destroy')->name('admin.anzsco.destroy');
-        Route::post('/anzsco/{id}/toggle-status', 'AdminConsole\AnzscoOccupationController@toggleStatus')->name('admin.anzsco.toggleStatus');
-        Route::get('/anzsco/import', 'AdminConsole\AnzscoOccupationController@importPage')->name('admin.anzsco.import');
-        Route::post('/anzsco/import', 'AdminConsole\AnzscoOccupationController@import')->name('admin.anzsco.import.process');
-        Route::get('/anzsco/download-template', 'AdminConsole\AnzscoOccupationController@downloadTemplate')->name('admin.anzsco.download-template');
-        
-        // ANZSCO API routes for autocomplete (moved from api.php for proper authentication)
-        Route::get('/anzsco/search', 'AdminConsole\AnzscoOccupationController@search')->name('admin.anzsco.search');
-        Route::get('/anzsco/code/{code}', 'AdminConsole\AnzscoOccupationController@getByCode')->name('admin.anzsco.getByCode');
+        // ANZSCO routes moved to routes/adminconsole.php
 
         //Document Checklist Start
-		Route::get('/documentchecklist', 'AdminConsole\DocumentChecklistController@index')->name('admin.feature.documentchecklist.index');
-		Route::get('/documentchecklist/create', 'AdminConsole\DocumentChecklistController@create')->name('admin.feature.documentchecklist.create');
-		Route::post('/documentchecklist/store', 'AdminConsole\DocumentChecklistController@store')->name('admin.feature.documentchecklist.store');
-		Route::get('/documentchecklist/edit/{id}', 'AdminConsole\DocumentChecklistController@edit')->name('admin.feature.documentchecklist.edit');
-		Route::post('/documentchecklist/edit', 'AdminConsole\DocumentChecklistController@edit')->name('admin.feature.documentchecklist.edit');
+		// Document checklist routes moved to routes/adminconsole.php
 
         //Personal and Visa Document
         Route::post('/add-edudocchecklist', 'Admin\ClientsController@addedudocchecklist')->name('admin.clients.addedudocchecklist');
@@ -639,20 +589,7 @@ Route::prefix('admin')->group(function() {
 		//Get matter template
 		Route::get('/get-matter-templates', 'Admin\AdminController@getmattertemplates')->name('admin.clients.getmattertemplates');
     
-		//Matter First Email
-		Route::get('/matter_email_template', 'AdminConsole\MatterEmailTemplateController@index')->name('admin.matteremailtemplate.index');
-		Route::get('/matter_email_template/create/{matterId}', 'AdminConsole\MatterEmailTemplateController@create')->name('admin.matteremailtemplate.create');
-		Route::post('matter_email_template/store', 'AdminConsole\MatterEmailTemplateController@store')->name('admin.matteremailtemplate.store');
-		Route::get('/matter_email_template/edit/{templateId}/{matterId}', 'AdminConsole\MatterEmailTemplateController@edit')->name('admin.matteremailtemplate.edit');
-		Route::post('/matter_email_template/edit', 'AdminConsole\MatterEmailTemplateController@edit')->name('admin.matteremailtemplate.edit');
-  
-		//Matter Other Email Template Start
-		Route::get('/matter_other_email_template/edit/{templateId}/{matterId}', 'AdminConsole\MatterOtherEmailTemplateController@edit')->name('admin.matterotheremailtemplate.edit');
-		Route::post('/matter_other_email_template/edit', 'AdminConsole\MatterOtherEmailTemplateController@edit')->name('admin.matterotheremailtemplate.update');
-		Route::get('/matter_other_email_template/create/{matterId}', 'AdminConsole\MatterOtherEmailTemplateController@create')->name('admin.matterotheremailtemplate.create');
-		Route::post('/matter_other_email_template/store', 'AdminConsole\MatterOtherEmailTemplateController@store')->name('admin.matterotheremailtemplate.store');
-		Route::delete('/matter_other_email_template/{id}', 'AdminConsole\MatterOtherEmailTemplateController@destroy')->name('admin.matterotheremailtemplate.destroy');
-		Route::get('/matter_other_email_template/{matterId}', 'AdminConsole\MatterOtherEmailTemplateController@index')->name('admin.matterotheremailtemplate.index');
+		// Matter email template routes moved to routes/adminconsole.php
   
 		//matter checklist
 		Route::get('/upload-checklists', 'Admin\UploadChecklistController@index')->name('admin.upload_checklists.index');

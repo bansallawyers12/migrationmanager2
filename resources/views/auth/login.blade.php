@@ -1,8 +1,8 @@
 @extends('layouts.dashboard_frontend')
-@section('title', @$seoDetails->meta_title)
-@section('meta_title', @$seoDetails->meta_title)
-@section('meta_keyword', @$seoDetails->meta_keyword)
-@section('meta_description', @$seoDetails->meta_desc)
+@section('title', 'Login')
+@section('meta_title', 'Login - Migration Manager')
+@section('meta_keyword', 'login, migration manager, sign in')
+@section('meta_description', 'Login to Migration Manager')
 @section('content')
 <div class="row">
 	<!-- {{dd('jijiijij')}} -->

@@ -9,7 +9,6 @@ use Illuminate\Foundation\Auth\AuthenticatesUsers;
 // use App\Models\WebsiteSetting; // removed website settings dependency
 use App\Models\Country;
 use App\Models\State;
-use App\Models\SeoPage;
 
 class LoginController extends Controller
 {
@@ -73,13 +72,12 @@ class LoginController extends Controller
 	
 	public function showLoginForm()
 	{
-		/* Get all Select Data */	
-			$country	= 	Country::select('id', 'name')->where('status', '=', 1)->first();
-			$states	 	= 	State::select('id', 'country_id', 'name')->where('country_id', '=', @$country->id)->get();
-			$seoDetails = SeoPage::where('page_slug', '=', 'login')->first();
-		/* Get all Select Data */
-		
-		return view('auth.login', compact(['country', 'states', 'seoDetails']));
+	/* Get all Select Data */	
+		$country	= 	Country::select('id', 'name')->where('status', '=', 1)->first();
+		$states	 	= 	State::select('id', 'country_id', 'name')->where('country_id', '=', @$country->id)->get();
+	/* Get all Select Data */
+	
+	return view('auth.login', compact(['country', 'states']));
 	}
 	
 	public function logout(Request $request)
