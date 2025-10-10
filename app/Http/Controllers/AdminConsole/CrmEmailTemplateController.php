@@ -45,7 +45,7 @@ class CrmEmailTemplateController extends Controller
 		
 		$lists		= $query->sortable(['id' => 'desc'])->paginate(config('constants.limit'));
 		
-		return view('AdminConsole\.features\.crmemailtemplate.index',compact(['lists', 'totalData'])); 	
+		return view('AdminConsole.features.crmemailtemplate.index',compact(['lists', 'totalData'])); 	
 		
 	}
 	
@@ -54,7 +54,7 @@ class CrmEmailTemplateController extends Controller
 		//check authorization end
 		//return view('AdminConsole\.system\.users\.create',compact(['usertype']));	
 		
-		return view('AdminConsole\.features\.crmemailtemplate.create');	
+		return view('AdminConsole.features.crmemailtemplate.create');	
 	}
 	
 	public function store(Request $request)
@@ -82,7 +82,7 @@ class CrmEmailTemplateController extends Controller
 			}				
 		}	
 
-		return view('AdminConsole\.features\.crmemailtemplate.create');	
+		return view('AdminConsole.features.crmemailtemplate.create');	
 	}
 	
 	public function edit(Request $request, $id = NULL)
@@ -121,7 +121,7 @@ class CrmEmailTemplateController extends Controller
 				if(CrmEmailTemplate::where('id', '=', $id)->exists()) 
 				{
 					$fetchedData = CrmEmailTemplate::find($id);
-					return view('AdminConsole\.features\.crmemailtemplate.edit', compact(['fetchedData']));
+					return view('AdminConsole.features.crmemailtemplate.edit', compact(['fetchedData']));
 				}
 				else 
 				{

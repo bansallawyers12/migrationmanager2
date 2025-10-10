@@ -45,13 +45,13 @@ class MatterEmailTemplateController extends Controller
 		
 		$lists		= $query->sortable(['id' => 'desc'])->paginate(config('constants.limit'));
 		
-		return view('AdminConsole\.features\.matteremailtemplate.index',compact(['lists', 'totalData'])); 	
+		return view('AdminConsole.features.matteremailtemplate.index',compact(['lists', 'totalData'])); 	
 		
 	}
 	
 	public function create(Request $request, $matterId = NULL)
 	{	//dd($matterId);
-		return view('AdminConsole\.features\.matteremailtemplate.create', compact(['matterId']));	
+		return view('AdminConsole.features.matteremailtemplate.create', compact(['matterId']));	
 	}
 	
 	public function store(Request $request)
@@ -76,7 +76,7 @@ class MatterEmailTemplateController extends Controller
 				return Redirect::to('/admin/matter')->with('success', 'Matter Email Template Added Successfully');
 			}				
 		}	
-		return view('AdminConsole\.features\.matteremailtemplate.create');	
+		return view('AdminConsole.features.matteremailtemplate.create');	
 	}
 	
 	public function edit(Request $request, $templateId = NULL, $matterId = NULL)
@@ -107,7 +107,7 @@ class MatterEmailTemplateController extends Controller
 				if(MatterEmailTemplate::where('id', '=', $templateId)->exists()) 
 				{
 					$fetchedData = MatterEmailTemplate::find($templateId);
-					return view('AdminConsole\.features\.matteremailtemplate.edit', compact(['fetchedData','matterId']));
+					return view('AdminConsole.features.matteremailtemplate.edit', compact(['fetchedData','matterId']));
 				}
 				else 
 				{

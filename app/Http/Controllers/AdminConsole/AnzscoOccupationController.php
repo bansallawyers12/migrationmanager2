@@ -25,7 +25,7 @@ class AnzscoOccupationController extends Controller
      */
     public function index()
     {
-        return view('AdminConsole\.database\.anzsco\.index');
+        return view('AdminConsole.database.anzsco.index');
     }
 
     /**
@@ -79,7 +79,7 @@ class AnzscoOccupationController extends Controller
             })
             ->addColumn('actions', function ($occupation) {
                 if (!$occupation) return '';
-                return view('AdminConsole\.database\.anzsco\.partials.actions', compact('occupation'))->render();
+                return view('AdminConsole.database.anzsco.partials.actions', compact('occupation'))->render();
             })
             ->editColumn('anzsco_code', function ($occupation) {
                 return $occupation ? $occupation->anzsco_code : '';
@@ -105,7 +105,7 @@ class AnzscoOccupationController extends Controller
      */
     public function create()
     {
-        return view('AdminConsole\.database\.anzsco\.form');
+        return view('AdminConsole.database.anzsco.form');
     }
 
     /**
@@ -174,7 +174,7 @@ class AnzscoOccupationController extends Controller
     public function edit($id)
     {
         $occupation = AnzscoOccupation::findOrFail($id);
-        return view('AdminConsole\.database\.anzsco\.form', compact('occupation'));
+        return view('AdminConsole.database.anzsco.form', compact('occupation'));
     }
 
     /**
@@ -286,7 +286,7 @@ class AnzscoOccupationController extends Controller
      */
     public function importPage()
     {
-        return view('AdminConsole\.database\.anzsco\.import');
+        return view('AdminConsole.database.anzsco.import');
     }
 
     /**

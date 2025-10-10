@@ -31,12 +31,12 @@ class DocumentChecklistController extends Controller
         $query = DocumentChecklist::where('id', '!=', '')->where('status',1);
         $totalData = $query->count(); // for all data
         $lists = $query->sortable(['id' => 'desc'])->paginate(100);
-        return view('AdminConsole\.features\.documentchecklist.index', compact(['lists', 'totalData']));
+        return view('AdminConsole.features.documentchecklist.index', compact(['lists', 'totalData']));
     }
 
     public function create(Request $request)
     {
-        return view('AdminConsole\.features\.documentchecklist.create');
+        return view('AdminConsole.features.documentchecklist.create');
     }
 
     public function store(Request $request)
@@ -64,7 +64,7 @@ class DocumentChecklistController extends Controller
                 return Redirect::to('/admin/documentchecklist')->with('success', 'Checklist Added Successfully');
             }
         }
-        return view('AdminConsole\.features\.documentchecklist.create');
+        return view('AdminConsole.features.documentchecklist.create');
     }
 
     public function edit(Request $request, $id = NULL)
@@ -101,7 +101,7 @@ class DocumentChecklistController extends Controller
                 $id = $this->decodeString($id);
                 if (DocumentChecklist::where('id', '=', $id)->exists()) {
                     $fetchedData = DocumentChecklist::find($id);
-                    return view('AdminConsole\.features\.documentchecklist.edit', compact(['fetchedData']));
+                    return view('AdminConsole.features.documentchecklist.edit', compact(['fetchedData']));
                 } else {
                     return Redirect::to('/admin/documentchecklist')->with('error', 'Checklist Not Exist');
                 }

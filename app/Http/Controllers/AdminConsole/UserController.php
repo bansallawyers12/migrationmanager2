@@ -35,7 +35,7 @@ class UserController extends Controller
 		$query 		= Admin::Where('role', '!=', '7')->Where('status', '=', 1)->with(['usertype']);
 		$totalData 	= $query->count();	//for all data
 		$lists		= $query->orderby('id','DESC')->paginate(config('constants.limit'));
-		return view('AdminConsole\.system\.users\.active',compact(['lists', 'totalData']));
+		return view('AdminConsole.system.users.active',compact(['lists', 'totalData']));
 	}
 
 	public function create(Request $request)
@@ -48,7 +48,7 @@ class UserController extends Controller
         }
 		//check authorization end
 		$usertype 		= UserRole::all();
-		return view('AdminConsole\.system\.users\.create',compact(['usertype']));
+		return view('AdminConsole.system.users.create',compact(['usertype']));
 	}
 
 	public function store(Request $request)
@@ -135,7 +135,7 @@ class UserController extends Controller
 				return Redirect::to('/admin/users/active')->with('success', 'User added Successfully');
 			}
 		}
-        return view('AdminConsole\.system\.users\.create');
+        return view('AdminConsole.system.users.create');
 	}
 
     public function getNextCounter($currentCounter) {
@@ -227,7 +227,7 @@ class UserController extends Controller
 				if(Admin::where('id', '=', $id)->exists())
 				{
 					$fetchedData = Admin::find($id); //dd($fetchedData);
-					return view('AdminConsole\.system\.users\.edit', compact(['fetchedData', 'usertype']));
+					return view('AdminConsole.system.users.edit', compact(['fetchedData', 'usertype']));
 				}
 				else
 				{
@@ -277,7 +277,7 @@ class UserController extends Controller
             if(Admin::where('id', '=', $id)->exists())
             {
                 $fetchedData = Admin::find($id);
-                return view('AdminConsole\.system\.users\.view', compact(['fetchedData']));
+                return view('AdminConsole.system.users.view', compact(['fetchedData']));
             }
             else
             {
@@ -301,9 +301,9 @@ class UserController extends Controller
 
 		$lists		= $query->sortable(['id' => 'desc'])->paginate(config('constants.limit'));
 
-		return view('AdminConsole\.system\.users\.clientlist',compact(['lists', 'totalData']));
+		return view('AdminConsole.system.users.clientlist',compact(['lists', 'totalData']));
 
-		//return view('AdminConsole\.system\.users\.index');
+		//return view('AdminConsole.system.users.index');
 	}
 	public function createclient(Request $request)
 	{
@@ -314,7 +314,7 @@ class UserController extends Controller
 				return Redirect::to('/admin/dashboard')->with('error',config('constants.unauthorized'));
 			}
 		//check authorization end
-		return view('AdminConsole\.system\.users\.createclient');
+		return view('AdminConsole.system.users.createclient');
 	}
 
 	public function storeclient(Request $request)
@@ -377,7 +377,7 @@ class UserController extends Controller
 			}
 		}
 
-		return view('AdminConsole\.system\.users\.createclient');
+		return view('AdminConsole.system.users.createclient');
 	}
 
 	public function editclient(Request $request, $id = NULL)
@@ -464,7 +464,7 @@ class UserController extends Controller
 				if(Admin::where('id', '=', $id)->exists())
 				{
 					$fetchedData = Admin::find($id);
-					return view('AdminConsole\.system\.users\.editclient', compact(['fetchedData', 'usertype']));
+					return view('AdminConsole.system.users.editclient', compact(['fetchedData', 'usertype']));
 				}
 				else
 				{
@@ -503,7 +503,7 @@ class UserController extends Controller
 		//$query 		= Admin::Where('role', '!=', '7')->Where('status', '=', 1)->with(['usertype']);
 		$totalData 	= $query->count();	//for all data
 		$lists		= $query->orderby('id','DESC')->paginate(config('constants.limit')); //dd($lists);
-		return view('AdminConsole\.system\.users\.active',compact(['lists', 'totalData']));
+		return view('AdminConsole.system.users.active',compact(['lists', 'totalData']));
 	}
 
 	public function inactive(Request $request)
@@ -511,7 +511,7 @@ class UserController extends Controller
 		$query 		= Admin::Where('role', '!=', '7')->Where('status', '=', 0)->with(['usertype']);
 		$totalData 	= $query->count();	//for all data
 		$lists		= $query->orderby('id','DESC')->paginate(config('constants.limit'));
-		return view('AdminConsole\.system\.users\.inactive',compact(['lists', 'totalData']));
+		return view('AdminConsole.system.users.inactive',compact(['lists', 'totalData']));
 	}
 
 	public function invited(Request $request)
@@ -519,7 +519,7 @@ class UserController extends Controller
 		$query 		= Admin::Where('role', '!=', '7')->with(['usertype']);
 		$totalData 	= $query->count();	//for all data
 		$lists		= $query->orderby('id','DESC')->paginate(config('constants.limit'));
-		return view('AdminConsole\.system\.users\.invited',compact(['lists', 'totalData']));
+		return view('AdminConsole.system.users.invited',compact(['lists', 'totalData']));
 	}
 }
 

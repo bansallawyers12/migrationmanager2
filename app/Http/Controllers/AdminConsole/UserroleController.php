@@ -45,7 +45,7 @@ class UserroleController extends Controller
 
 		$lists		= $query->sortable(['id' => 'desc'])->paginate(config('constants.limit'));
 		
-		return view('AdminConsole\.system\.roles\.index',compact(['lists', 'totalData']));	
+		return view('AdminConsole.system.roles.index',compact(['lists', 'totalData']));	
 
 		//return view('Admin.usertype.index');	
 	}
@@ -60,7 +60,7 @@ class UserroleController extends Controller
 			}	
 		//check authorization end
 		$usertype 		= UserType::all();
-		return view('AdminConsole\.system\.roles\.create',compact(['usertype']));	
+		return view('AdminConsole.system.roles.create',compact(['usertype']));	
 	} 
 	
 	public function store(Request $request)
@@ -98,7 +98,7 @@ class UserroleController extends Controller
 			}				
 		}	
 
-		return view('AdminConsole\.system\.roles\.create');	
+		return view('AdminConsole.system.roles.create');	
 	}
 	
 	public function edit(Request $request, $id = NULL)
@@ -144,7 +144,7 @@ class UserroleController extends Controller
 				if(UserRole::where('id', '=', $id)->exists()) 
 				{
 					$fetchedData = UserRole::find($id);
-					return view('AdminConsole\.system\.roles\.edit', compact(['fetchedData', 'usertype']));
+					return view('AdminConsole.system.roles.edit', compact(['fetchedData', 'usertype']));
 				}
 				else
 				{

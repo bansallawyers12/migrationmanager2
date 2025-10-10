@@ -35,12 +35,12 @@ class PersonalDocumentTypeController extends Controller
         $query 		= PersonalDocumentType::where('status', 1);
         $totalData 	= $query->count();	//for all data
         $lists		= $query->sortable(['id' => 'desc'])->paginate(config('constants.limit'));
-        return view('AdminConsole\.features\.personaldocumenttype.index',compact(['lists', 'totalData']));
+        return view('AdminConsole.features.personaldocumenttype.index',compact(['lists', 'totalData']));
     }
 
 	public function create(Request $request)
 	{
-		return view('AdminConsole\.features\.personaldocumenttype.create');
+		return view('AdminConsole.features.personaldocumenttype.create');
 	}
 
 	public function store(Request $request)
@@ -66,7 +66,7 @@ class PersonalDocumentTypeController extends Controller
 				return Redirect::to('/admin/personal-document-type')->with('success', 'Personal Document Type Created Successfully');
 			}
 		}
-        return view('AdminConsole\.features\.personaldocumenttype.create');
+        return view('AdminConsole.features.personaldocumenttype.create');
 	}
 
 	public function edit(Request $request, $id = NULL)
@@ -91,7 +91,7 @@ class PersonalDocumentTypeController extends Controller
                 $id = $this->decodeString($id);
 				if(PersonalDocumentType::where('id', '=', $id)->exists()) {
 					$fetchedData = PersonalDocumentType::find($id);
-                    return view('AdminConsole\.features\.personaldocumenttype.edit', compact(['fetchedData']));
+                    return view('AdminConsole.features.personaldocumenttype.edit', compact(['fetchedData']));
 				} else {
 					return Redirect::to('/admin/personal-document-type')->with('error', 'Personal Document Type Not Exist');
 				}

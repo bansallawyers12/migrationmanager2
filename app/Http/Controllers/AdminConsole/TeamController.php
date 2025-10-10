@@ -46,7 +46,7 @@ class TeamController extends Controller
 		
 		$lists		= $query->sortable(['id' => 'desc'])->paginate(config('constants.limit'));
 		
-		return view('AdminConsole\.system\.teams\.index',compact(['lists', 'totalData'])); 	
+		return view('AdminConsole.system.teams.index',compact(['lists', 'totalData'])); 	
 		
 		//return view('AdminConsole\.features\.producttype.index');	 
 	}
@@ -82,7 +82,7 @@ class TeamController extends Controller
 						$query 		= Team::where('id', '!=', ''); 
 		                $totalData 	= $query->count();	//for all data
 		                $lists		= $query->sortable(['id' => 'desc'])->paginate(config('constants.limit'));
-				    	return view('AdminConsole\.system\.teams\.index', compact(['fetchedData','lists','totalData']));
+				    	return view('AdminConsole.system.teams.index', compact(['fetchedData','lists','totalData']));
 				    }
 				else 
 				{

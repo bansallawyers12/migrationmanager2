@@ -35,12 +35,12 @@ class VisaDocumentTypeController extends Controller
         $query 		= VisaDocumentType::where('status', 1);
         $totalData 	= $query->count();	//for all data
         $lists		= $query->sortable(['id' => 'desc'])->paginate(config('constants.limit'));
-        return view('AdminConsole\.features\.visadocumenttype.index',compact(['lists', 'totalData']));
+        return view('AdminConsole.features.visadocumenttype.index',compact(['lists', 'totalData']));
     }
 
 	public function create(Request $request)
 	{
-		return view('AdminConsole\.features\.visadocumenttype.create');
+		return view('AdminConsole.features.visadocumenttype.create');
 	}
 
 	public function store(Request $request)
@@ -66,7 +66,7 @@ class VisaDocumentTypeController extends Controller
 				return Redirect::to('/admin/visa-document-type')->with('success', 'Visa Document Type Created Successfully');
 			}
 		}
-        return view('AdminConsole\.features\.visadocumenttype.create');
+        return view('AdminConsole.features.visadocumenttype.create');
 	}
 
 	public function edit(Request $request, $id = NULL)
@@ -91,7 +91,7 @@ class VisaDocumentTypeController extends Controller
                 $id = $this->decodeString($id);
 				if(VisaDocumentType::where('id', '=', $id)->exists()) {
 					$fetchedData = VisaDocumentType::find($id);
-                    return view('AdminConsole\.features\.visadocumenttype.edit', compact(['fetchedData']));
+                    return view('AdminConsole.features.visadocumenttype.edit', compact(['fetchedData']));
 				} else {
 					return Redirect::to('/admin/visa-document-type')->with('error', 'Visa Document Type Not Exist');
 				}

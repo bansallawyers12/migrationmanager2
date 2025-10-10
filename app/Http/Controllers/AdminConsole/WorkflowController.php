@@ -44,13 +44,13 @@ class WorkflowController extends Controller
         $query 		= WorkflowStage::where('id', '!=', '');
         $totalData 	= $query->count();	//for all data
         $lists		= $query->sortable(['id' => 'asc'])->paginate(config('constants.limit')); //dd($lists);
-        return view('AdminConsole\.features\.workflow.index',compact(['lists', 'totalData']));
+        return view('AdminConsole.features.workflow.index',compact(['lists', 'totalData']));
     }
 
 	public function create(Request $request)
 	{
 		//check authorization end
-		return view('AdminConsole\.features\.workflow.create');
+		return view('AdminConsole.features.workflow.create');
 	}
 
 	public function store(Request $request)
@@ -117,7 +117,7 @@ class WorkflowController extends Controller
 				$id = $this->decodeString($id);
 				if(WorkflowStage::where('id', '=', $id)->exists()) {
 					$fetchedData = WorkflowStage::find($id); //dd($fetchedData);
-					return view('AdminConsole\.features\.workflow.edit', compact(['fetchedData']));
+					return view('AdminConsole.features.workflow.edit', compact(['fetchedData']));
 				} else {
 					return Redirect::to('/admin/workflow')->with('error', 'Workflow Stages Not Exist');
 				}

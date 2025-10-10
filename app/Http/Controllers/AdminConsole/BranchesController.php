@@ -45,9 +45,9 @@ class BranchesController extends Controller
 		
 		$lists		= $query->sortable(['id' => 'desc'])->paginate(config('constants.limit'));
 		
-		return view('AdminConsole\.system\.offices\.index',compact(['lists', 'totalData'])); 	
+		return view('AdminConsole.system.offices.index',compact(['lists', 'totalData'])); 	
 		
-		//return view('AdminConsole\.system\.offices\.index');	 
+		//return view('AdminConsole.system.offices.index');	 
 	}
 	
 	public function create(Request $request)
@@ -55,7 +55,7 @@ class BranchesController extends Controller
 		//check authorization end
 		//return view('AdminConsole\.system\.users\.create',compact(['usertype']));	
 		
-		return view('AdminConsole\.system\.offices\.create');	
+		return view('AdminConsole.system.offices.create');	
 	}
 	
 	public function store(Request $request)
@@ -96,7 +96,7 @@ class BranchesController extends Controller
 			}				
 		}	
 
-		return view('AdminConsole\.system\.offices\.create');	
+		return view('AdminConsole.system.offices.create');	
 	}
 	
 	public function edit(Request $request, $id = NULL)
@@ -150,7 +150,7 @@ class BranchesController extends Controller
 				if(Branch::where('id', '=', $id)->exists()) 
 				{
 					$fetchedData = Branch::find($id);
-					return view('AdminConsole\.system\.offices\.edit', compact(['fetchedData']));
+					return view('AdminConsole.system.offices.edit', compact(['fetchedData']));
 				}
 				else 
 				{
@@ -175,7 +175,7 @@ class BranchesController extends Controller
 				if(Branch::where('id', '=', $id)->exists()) 
 				{
 					$fetchedData = Branch::find($id);
-					return view('AdminConsole\.system\.offices\.view', compact(['fetchedData']));
+					return view('AdminConsole.system.offices.view', compact(['fetchedData']));
 				}
 				else 
 				{
@@ -200,7 +200,7 @@ class BranchesController extends Controller
 				if(Branch::where('id', '=', $id)->exists()) 
 				{
 					$fetchedData = Branch::find($id);
-					return view('AdminConsole\.system\.offices\.viewclient', compact(['fetchedData']));
+					return view('AdminConsole.system.offices.viewclient', compact(['fetchedData']));
 				}
 				else 
 				{

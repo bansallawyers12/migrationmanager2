@@ -95,7 +95,7 @@ class EmailController extends Controller
 
 		$lists		= $query->sortable(['id' => 'desc'])->paginate(config('constants.limit'));
 
-		return view('AdminConsole\.features\.emails.index',compact(['lists', 'totalData']));
+		return view('AdminConsole.features.emails.index',compact(['lists', 'totalData']));
 
 		//return view('AdminConsole\.features\.producttype.index');
 	}
@@ -105,7 +105,7 @@ class EmailController extends Controller
 		//check authorization end
 		//return view('AdminConsole\.system\.users\.create',compact(['usertype']));
 
-		return view('AdminConsole\.features\.emails.create');
+		return view('AdminConsole.features.emails.create');
 	}
 
 	public function store(Request $request)
@@ -135,7 +135,7 @@ class EmailController extends Controller
 			}
 		}
 
-		return view('AdminConsole\.features\.emails.create');
+		return view('AdminConsole.features.emails.create');
 	}
 
 	public function edit(Request $request, $id = NULL)
@@ -176,7 +176,7 @@ class EmailController extends Controller
 				if(Email::where('id', '=', $id)->exists())
 				{
 					$fetchedData = Email::find($id);
-					return view('AdminConsole\.features\.emails.edit', compact(['fetchedData']));
+					return view('AdminConsole.features.emails.edit', compact(['fetchedData']));
 				}
 				else
 				{
