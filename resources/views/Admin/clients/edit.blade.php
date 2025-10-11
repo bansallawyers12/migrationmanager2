@@ -197,6 +197,7 @@
                                         <option value="Single" {{ $fetchedData->martial_status == 'Single' ? 'selected' : '' }}>Single</option>
                                         <option value="Married" {{ $fetchedData->martial_status == 'Married' ? 'selected' : '' }}>Married</option>
                                         <option value="Defacto" {{ ($fetchedData->martial_status == 'Defacto' || $fetchedData->martial_status == 'De Facto') ? 'selected' : '' }}>De Facto</option>
+                                        <option value="Separated" {{ $fetchedData->martial_status == 'Separated' ? 'selected' : '' }}>Separated</option>
                                         <option value="Divorced" {{ $fetchedData->martial_status == 'Divorced' ? 'selected' : '' }}>Divorced</option>
                                         <option value="Widowed" {{ $fetchedData->martial_status == 'Widowed' ? 'selected' : '' }}>Widowed</option>
                                     </select>
@@ -596,7 +597,7 @@
                                 <div style="margin-top: 15px;">
                                     @foreach($qualifications as $index => $qualification)
                                         <div class="passport-entry-compact" style="margin-bottom: 12px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #6f42c1;">
-                                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: start;">
+                                            <div style="display: grid; grid-template-columns: 180px 1fr auto auto auto auto auto auto; gap: 15px; align-items: start;">
                                                 @if($qualification->level)
                                                 <div class="summary-item-inline">
                                                     <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">LEVEL:</span>
@@ -1379,6 +1380,10 @@
     </div>
 
     @push('scripts')
+    <script>
+        // Pass countries data to JavaScript
+        window.countriesData = @json($countries);
+    </script>
     <script src="{{asset('js/clients/edit-client.js')}}"></script>
     <script src="{{asset('js/clients/english-proficiency.js')}}"></script>
     <script src="{{asset('js/address-autocomplete.js')}}"></script>

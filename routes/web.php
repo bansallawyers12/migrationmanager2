@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\ClientsController;
+use App\Http\Controllers\AdminConsole\AnzscoOccupationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -472,6 +473,8 @@ Route::prefix('admin')->group(function() {
 
         /*---------- ANZSCO Occupation Database ----------*/
         // ANZSCO routes moved to routes/adminconsole.php
+        // Search route for client forms
+        Route::get('/anzsco/search', [AnzscoOccupationController::class, 'search'])->name('admin.anzsco.search');
 
         //Document Checklist Start
 		// Document checklist routes moved to routes/adminconsole.php

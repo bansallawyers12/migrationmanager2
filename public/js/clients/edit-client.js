@@ -723,16 +723,21 @@ function addPassportDetail() {
     const container = document.getElementById('passportDetailsContainer');
     const index = container.children.length;
 
-    // Get country options from existing select if available, otherwise use default
+    // Build country options from the countries data passed from PHP
     let countryOptions = '<option value="">Select Country</option>';
-    const existingSelect = document.querySelector('.passport-country-field');
-    if (existingSelect) {
-        Array.from(existingSelect.options).forEach(option => {
-            countryOptions += `<option value="${option.value}">${option.text}</option>`;
+    
+    // Add India and Australia first (priority countries)
+    countryOptions += '<option value="India">India</option>';
+    countryOptions += '<option value="Australia">Australia</option>';
+    
+    // Add all other countries from the database
+    if (window.countriesData && Array.isArray(window.countriesData)) {
+        window.countriesData.forEach(country => {
+            // Skip India and Australia as they're already added above
+            if (country.name !== 'India' && country.name !== 'Australia') {
+                countryOptions += `<option value="${country.name}">${country.name}</option>`;
+            }
         });
-    } else {
-        // Fallback if no existing select found
-        countryOptions += '<option value="India">India</option><option value="Australia">Australia</option>';
     }
 
     container.insertAdjacentHTML('beforeend', `
@@ -5005,7 +5010,11 @@ function fillOccupationData(row, occupationData) {
         const validityYears = occupationData.assessment_validity_years || 3;
         const expiryDate = calculateExpiryDate(assessmentDateInput.value, validityYears);
         if (expiryDate) {
-            expiryDateInput.value = expiryDate;
+            // Convert dd/mm/yyyy to YYYY-MM-DD for HTML date input
+            const [day, month, year] = expiryDate.split('/');
+            const htmlDateFormat = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+            
+            expiryDateInput.value = htmlDateFormat;
             expiryDateInput.classList.add('from-database');
         }
     }
@@ -5050,7 +5059,7 @@ function calculateExpiryDate(assessmentDateValue, validityYears) {
     try {
         if (!assessmentDateValue) return null;
         
-        // assessmentDateValue is in YYYY-MM-DD format from native date input
+        // assessmentDateValue is in YYYY-MM-DD format from HTML date input
         const assessmentDate = new Date(assessmentDateValue);
         if (isNaN(assessmentDate.getTime())) return null;
         
@@ -5058,12 +5067,12 @@ function calculateExpiryDate(assessmentDateValue, validityYears) {
         const expiryDate = new Date(assessmentDate);
         expiryDate.setFullYear(expiryDate.getFullYear() + validityYears);
         
-        // Return in YYYY-MM-DD format for native date input
-        const year = expiryDate.getFullYear();
-        const month = String(expiryDate.getMonth() + 1).padStart(2, '0');
+        // Return in dd/mm/yyyy format as expected by PHP backend
         const day = String(expiryDate.getDate()).padStart(2, '0');
+        const month = String(expiryDate.getMonth() + 1).padStart(2, '0');
+        const year = expiryDate.getFullYear();
         
-        return `${year}-${month}-${day}`;
+        return `${day}/${month}/${year}`;
     } catch (error) {
         console.error('Error calculating expiry date:', error);
         return null;
@@ -5179,9 +5188,13 @@ function handleExpiryDateCalculation(assessmentDateInput) {
         console.log('Calculated expiry date:', expiryDate);
         
         if (expiryDate) {
-            expiryDateInput.value = expiryDate;
+            // Convert dd/mm/yyyy to YYYY-MM-DD for HTML date input
+            const [day, month, year] = expiryDate.split('/');
+            const htmlDateFormat = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+            
+            expiryDateInput.value = htmlDateFormat;
             expiryDateInput.classList.add('from-database');
-            console.log('Expiry date set successfully');
+            console.log('Expiry date set successfully:', htmlDateFormat);
         }
     }
 }

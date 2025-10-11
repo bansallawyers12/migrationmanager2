@@ -710,7 +710,7 @@
                             border-bottom: 1px solid #dee2e6;
                             text-align: left;
                             word-break: normal;
-                            white-space: nowrap;
+                            white-space: normal;
                         }
                         .eoi-table th {
                             background-color: #f8f9fa;
@@ -725,11 +725,11 @@
                         /* Qualification table column widths */
                         .qualification-section .eoi-table th:nth-child(1),
                         .qualification-section .eoi-table td:nth-child(1) { 
-                            width: 12%; 
+                            width: 20%; 
                         } /* Level */
                         .qualification-section .eoi-table th:nth-child(2),
                         .qualification-section .eoi-table td:nth-child(2) { 
-                            width: 43%; 
+                            width: 40%; 
                         } /* Name */
                         .qualification-section .eoi-table th:nth-child(3),
                         .qualification-section .eoi-table td:nth-child(3) { 
@@ -737,7 +737,7 @@
                         } /* Campus */
                         .qualification-section .eoi-table th:nth-child(4),
                         .qualification-section .eoi-table td:nth-child(4) { 
-                            width: 27%; 
+                            width: 22%; 
                         } /* End Date */
                         
                         /* Work Experience table column widths */
@@ -820,6 +820,27 @@
                             word-break: normal;
                             overflow-wrap: normal;
                         }
+                        
+                        /* Tag spacing and layout */
+                        .ui.label {
+                            margin: 5px 5px 5px 0 !important;
+                            display: inline-flex !important;
+                            vertical-align: top;
+                            max-width: 100%;
+                            word-wrap: break-word;
+                            overflow-wrap: break-word;
+                        }
+                        
+                        .ui.label .col-hr-1 {
+                            white-space: normal;
+                            word-wrap: break-word;
+                            overflow-wrap: break-word;
+                            padding: 2px 8px;
+                            border-radius: 4px;
+                            font-size: 12px;
+                            max-width: 100%;
+                            box-sizing: border-box;
+                        }
                     </style>
 
 
@@ -832,7 +853,7 @@
                         </h3>
                        
 
-                        <div class="">
+                        <div class="" style="overflow-wrap: break-word; word-wrap: break-word; max-width: 100%;">
                             <?php 
                             $tags = '';
                             if($fetchedData->tagname != ''){
@@ -841,7 +862,7 @@
                                     $stagd = \App\Models\Tag::where('id','=',$r)->first();
                                     if($stagd)
                                     { ?>
-                                        <span class="ui label ag-flex ag-align-center ag-space-between" style="display: inline-flex;">
+                                        <span class="ui label ag-flex ag-align-center ag-space-between" style="display: inline-flex; margin: 5px 5px 5px 0;">
                                             <span class="col-hr-1" style="font-size: 12px;">{{@$stagd->name}} <!--<a href="{{--URL::to('/admin/clients/removetag?rem_id='.$key.'&c='.$fetchedData->id)--}}" class="removetag" ><i class="fa fa-times"></i></a>--></span>
                                         </span>
                                     <?php
