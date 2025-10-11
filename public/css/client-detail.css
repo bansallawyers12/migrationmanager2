@@ -164,7 +164,8 @@
 .checklist-table td a.file-link { color: #4a90e2; text-decoration: none; }
 .checklist-table td a.file-link:hover { text-decoration: underline; }
 .checklist-table td small { color: #666; }
-.preview-pane { flex: 1; background: #ffffff; border-radius: 5px; padding: 15px; color: #333; box-shadow: 0 2px 5px rgba(0,0,0,0.1); min-height: 200px; display: flex; align-items: center; justify-content: center; }
+.preview-pane { flex: 1; background: #ffffff; border-radius: 5px; padding: 0; color: #333; box-shadow: 0 2px 5px rgba(0,0,0,0.1); min-height: 200px; display: flex; align-items: flex-start; justify-content: center; }
+.preview-content { width: 100%; height: 100%; }
 @media (max-width: 768px) {
   .subtabs { flex-direction: column; padding: 10px; }
   .subtabs3 { flex-direction: column; padding: 10px; background-color: #4a90e2; }
@@ -703,3 +704,108 @@ input:checked + .toggle-slider { background-color: #2196F3; }
 input:focus + .toggle-slider { box-shadow: 0 0 1px #2196F3; }
 input:checked + .toggle-slider:before { transform: translateX(18px); }
 .toggle-container { display: flex; align-items: center; }
+
+/* Sidebar Toggle Button Styles */
+.sidebar-toggle-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    padding: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.sidebar-toggle-btn:hover {
+    background: #495057;
+    transform: scale(1.1);
+}
+
+.sidebar-toggle-btn i {
+    transition: transform 0.3s ease;
+}
+
+/* Sidebar Collapse/Expand Styles */
+.client-navigation-sidebar {
+    transition: all 0.3s ease;
+    transform: translateX(0);
+    flex: 0 0 260px;
+}
+
+.client-navigation-sidebar.collapsed {
+    transform: translateX(-100%);
+    opacity: 0;
+    pointer-events: none;
+    flex: 0 0 0;
+    width: 0;
+}
+
+/* Main content expansion when sidebar is collapsed */
+.crm-container {
+    display: flex;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.crm-container.sidebar-collapsed {
+    gap: 0;
+}
+
+.crm-container.sidebar-collapsed .main-content {
+    flex: 1;
+    width: 100%;
+    margin-left: 0;
+}
+
+/* Show toggle button when collapsed - using a real element */
+.collapsed-toggle-btn {
+    display: none;
+    position: fixed;
+    top: 85px;
+    left: 15px;
+    z-index: 1001;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+    transition: all 0.3s ease;
+    width: 48px;
+    height: 48px;
+    align-items: center;
+    justify-content: center;
+}
+
+.crm-container.sidebar-collapsed .collapsed-toggle-btn {
+    display: flex;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .client-navigation-sidebar.collapsed {
+        display: none;
+    }
+    
+    .collapsed-toggle-btn {
+        top: 80px;
+        left: 10px;
+        padding: 10px;
+        width: 44px;
+        height: 44px;
+        font-size: 16px;
+    }
+}

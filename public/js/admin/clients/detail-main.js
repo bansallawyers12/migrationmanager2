@@ -1387,7 +1387,6 @@ $(document).ready(function() {
 
         // Show loading state
         container.html(`
-            <h3 style="margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 1px solid #dee2e6; font-size: 18px; color: #333;">File Preview</h3>
             <div class="preview-content" style="flex: 1; display: flex; align-items: center; justify-content: center;">
                 <div style="text-align: center;">
                     <i class="fas fa-spinner fa-spin fa-2x" style="color: #4a90e2;"></i>
@@ -1403,7 +1402,6 @@ $(document).ready(function() {
             const img = new Image();
             img.onload = function() {
                 container.html(`
-                    <h3 style="margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 1px solid #dee2e6; font-size: 18px; color: #333;">File Preview</h3>
                     <div class="preview-content" style="flex: 1; overflow: auto; text-align: center;">
                         <img src="${fileUrl}" alt="Document Preview" style="max-width: 100%; max-height: calc(100vh - 300px); margin: auto; display: block;" />
                     </div>
@@ -1412,7 +1410,6 @@ $(document).ready(function() {
             img.src = fileUrl;
         } else if (fileType.toLowerCase() === 'pdf') {
             container.html(`
-                <h3 style="margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 1px solid #dee2e6; font-size: 18px; color: #333;">File Preview</h3>
                 <div class="preview-content" style="flex: 1; overflow: hidden;width: 475px !important;">
                     <iframe src="${fileUrl}" type="application/pdf" style="width: 100%; height: calc(100vh - 100px); border: none;"></iframe>
                 </div>
@@ -1421,7 +1418,6 @@ $(document).ready(function() {
         else if (fileType.toLowerCase().match(/^(docx?|xlsx?|pptx?)$/)) {
             const officeViewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fileUrl)}`;
             container.html(`
-                <h3 style="margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 1px solid #dee2e6; font-size: 18px; color: #333;">File Preview</h3>
                 <div class="preview-content" style="flex: 1; overflow: hidden; width: 100%;">
                     <iframe src="${officeViewerUrl}" class="doc-viewer" style="width: 100%; height: calc(100vh - 100px); border: none;"></iframe>
                 </div>
@@ -1429,7 +1425,6 @@ $(document).ready(function() {
         }
         else {
             container.html(`
-                <h3 style="margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 1px solid #dee2e6; font-size: 18px; color: #333;">File Preview</h3>
                 <div class="preview-content" style="flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column;">
                     <i class="fas fa-file fa-3x" style="color: #6c757d; margin-bottom: 15px;"></i>
                     <p style="margin-bottom: 15px;">Preview not available for this file type.</p>

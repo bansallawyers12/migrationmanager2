@@ -11,9 +11,18 @@
 use App\Http\Controllers\Controller;
 ?>
 <div class="crm-container">
+    <!-- Collapsed Toggle Button (shown when sidebar is collapsed) -->
+    <button id="collapsed-toggle" class="collapsed-toggle-btn" title="Show Sidebar">
+        ☰
+    </button>
+    
     <!-- Client Navigation Sidebar -->
-    <aside class="client-navigation-sidebar">
+    <aside class="client-navigation-sidebar" id="client-sidebar">
         <div class="sidebar-header">
+            <!-- Sidebar Toggle Button -->
+            <button id="sidebar-toggle" class="sidebar-toggle-btn" title="Hide Sidebar">
+                <i class="fas fa-chevron-left"></i>
+            </button>
             <div class="client-info">
                 <h3 class="client-id">
                     <?php
@@ -1259,5 +1268,38 @@ use App\Http\Controllers\Controller;
 
 {{-- Main detail page JavaScript --}}
 <script src="{{ URL::asset('js/admin/clients/detail-main.js') }}?v={{ time() }}"></script>
+
+{{-- Sidebar Toggle JavaScript --}}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const collapsedToggle = document.getElementById('collapsed-toggle');
+    const sidebar = document.getElementById('client-sidebar');
+    const container = document.querySelector('.crm-container');
+    
+    // Check if sidebar state is saved in localStorage
+    const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+    
+    // Apply initial state
+    if (isCollapsed) {
+        sidebar.classList.add('collapsed');
+        container.classList.add('sidebar-collapsed');
+    }
+    
+    // Hide sidebar functionality
+    sidebarToggle.addEventListener('click', function() {
+        sidebar.classList.add('collapsed');
+        container.classList.add('sidebar-collapsed');
+        localStorage.setItem('sidebarCollapsed', 'true');
+    });
+    
+    // Show sidebar functionality
+    collapsedToggle.addEventListener('click', function() {
+        sidebar.classList.remove('collapsed');
+        container.classList.remove('sidebar-collapsed');
+        localStorage.setItem('sidebarCollapsed', 'false');
+    });
+});
+</script>
 
 @endsection

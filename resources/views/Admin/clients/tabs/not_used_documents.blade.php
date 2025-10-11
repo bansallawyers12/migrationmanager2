@@ -80,7 +80,6 @@
 
                         <!-- Preview Container -->
                         <div class="preview-pane file-preview-container preview-container-notuseddocumnetlist" style="display: inline;margin-top: 15px !important;width: 499px;">
-                            <h3>File Preview</h3>
                             <p>Click on a file to preview it here.</p>
                         </div>
                     </div>
