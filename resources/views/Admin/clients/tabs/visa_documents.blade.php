@@ -86,20 +86,25 @@
                                             </thead>
                                             <tbody class="tdata migdocumnetlist1 migdocumnetlist_<?= $id ?>">
                                                 <?php
-                                                 $documents = \App\Models\Document::where('client_id', $fetchedData->id)
+                                                 $query = \App\Models\Document::where('client_id', $fetchedData->id)
                                                     ->whereNull('not_used_doc')
                                                     ->where('doc_type', 'visa')
                                                     ->where('folder_name', $folderName)
-                                                    ->where('type', 'client')
-                                                    ->orderBy('created_at', 'DESC')
-                                                    ->get();
+                                                    ->where('type', 'client');
+                                                 
+                                                 // Only filter by client_matter_id if it's set
+                                                 if ($client_selected_matter_id1 !== null) {
+                                                     $query->where('client_matter_id', $client_selected_matter_id1);
+                                                 }
+                                                 
+                                                 $documents = $query->orderBy('created_at', 'DESC')->get();
                                                 ?>
                                                 <?php foreach ($documents as $visaKey => $fetch): ?>
                                                     <?php
                                                     $admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
                                                     $fileUrl = $fetch->myfile_key ? $fetch->myfile : 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/' . $fetchedData->id . '/visa/' . $fetch->myfile;
                                                     ?>
-                                                    <tr class="drow" data-matterid="<?= $fetch->client_matter_id ?>" id="id_<?= $fetch->id ?>">
+                                                    <tr class="drow" data-matterid="<?= $fetch->client_matter_id ?>" data-catid="<?= $fetch->folder_name ?>" id="id_<?= $fetch->id ?>">
                                                         <td style="white-space: initial;">
                                                             <div data-id="<?= $fetch->id ?>" data-visachecklistname="<?= htmlspecialchars($fetch->checklist) ?>" class="visachecklist-row" title="Uploaded by: <?= htmlspecialchars($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>">
                                                                 <span><?= htmlspecialchars($fetch->checklist) ?></span>

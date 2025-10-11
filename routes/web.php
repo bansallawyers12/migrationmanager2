@@ -215,23 +215,23 @@ Route::prefix('admin')->group(function() {
 		Route::get('/convertapplication', 'Admin\ClientsController@convertapplication')->name('admin.clients.convertapplication');
 		Route::get('/deleteservices', 'Admin\ClientsController@deleteservices')->name('admin.clients.deleteservices');
         
-        /*---------- Client Documents Management (NEW CONTROLLER) ----------*/
-        Route::post('/documents/add-edu-checklist', 'Admin\Clients\ClientDocumentsController@addedudocchecklist')->name('admin.clients.documents.addedudocchecklist');
-        Route::post('/documents/upload-edu-document', 'Admin\Clients\ClientDocumentsController@uploadedudocument')->name('admin.clients.documents.uploadedudocument');
-        Route::post('/documents/add-visa-checklist', 'Admin\Clients\ClientDocumentsController@addvisadocchecklist')->name('admin.clients.documents.addvisadocchecklist');
-        Route::post('/documents/upload-visa-document', 'Admin\Clients\ClientDocumentsController@uploadvisadocument')->name('admin.clients.documents.uploadvisadocument');
-        Route::post('/documents/rename', 'Admin\Clients\ClientDocumentsController@renamedoc')->name('admin.clients.documents.renamedoc');
-        Route::get('/documents/delete', 'Admin\Clients\ClientDocumentsController@deletedocs')->name('admin.clients.documents.deletedocs');
-        Route::post('/documents/verify', 'Admin\Clients\ClientDocumentsController@verifydoc')->name('admin.clients.documents.verifydoc');
-        Route::get('/documents/get-visa-checklist', 'Admin\Clients\ClientDocumentsController@getvisachecklist')->name('admin.clients.documents.getvisachecklist');
-        Route::post('/documents/not-used', 'Admin\Clients\ClientDocumentsController@notuseddoc')->name('admin.clients.documents.notuseddoc');
-        Route::post('/documents/rename-checklist', 'Admin\Clients\ClientDocumentsController@renamechecklistdoc')->name('admin.clients.documents.renamechecklistdoc');
-        Route::post('/documents/back-to-doc', 'Admin\Clients\ClientDocumentsController@backtodoc')->name('admin.clients.documents.backtodoc');
-        Route::post('/documents/download', 'Admin\Clients\ClientDocumentsController@download_document')->name('admin.clients.documents.download');
-        Route::post('/documents/add-personal-category', 'Admin\Clients\ClientDocumentsController@addPersonalDocCategory')->name('admin.clients.documents.addPersonalDocCategory');
-        Route::post('/documents/update-personal-category', 'Admin\Clients\ClientDocumentsController@updatePersonalDocCategory')->name('admin.clients.documents.updatePersonalDocCategory');
-        Route::post('/documents/add-visa-category', 'Admin\Clients\ClientDocumentsController@addVisaDocCategory')->name('admin.clients.documents.addVisaDocCategory');
-        Route::post('/documents/update-visa-category', 'Admin\Clients\ClientDocumentsController@updateVisaDocCategory')->name('admin.clients.documents.updateVisaDocCategory');
+        /*---------- Client Documents Management (NEW CONTROLLER - Laravel 12 Syntax) ----------*/
+        Route::post('/documents/add-edu-checklist', [\App\Http\Controllers\Admin\Clients\ClientDocumentsController::class, 'addedudocchecklist'])->name('admin.clients.documents.addedudocchecklist');
+        Route::post('/documents/upload-edu-document', [\App\Http\Controllers\Admin\Clients\ClientDocumentsController::class, 'uploadedudocument'])->name('admin.clients.documents.uploadedudocument');
+        Route::post('/documents/add-visa-checklist', [\App\Http\Controllers\Admin\Clients\ClientDocumentsController::class, 'addvisadocchecklist'])->name('admin.clients.documents.addvisadocchecklist');
+        Route::post('/documents/upload-visa-document', [\App\Http\Controllers\Admin\Clients\ClientDocumentsController::class, 'uploadvisadocument'])->name('admin.clients.documents.uploadvisadocument');
+        Route::post('/documents/rename', [\App\Http\Controllers\Admin\Clients\ClientDocumentsController::class, 'renamedoc'])->name('admin.clients.documents.renamedoc');
+        Route::get('/documents/delete', [\App\Http\Controllers\Admin\Clients\ClientDocumentsController::class, 'deletedocs'])->name('admin.clients.documents.deletedocs');
+        Route::post('/documents/verify', [\App\Http\Controllers\Admin\Clients\ClientDocumentsController::class, 'verifydoc'])->name('admin.clients.documents.verifydoc');
+        Route::get('/documents/get-visa-checklist', [\App\Http\Controllers\Admin\Clients\ClientDocumentsController::class, 'getvisachecklist'])->name('admin.clients.documents.getvisachecklist');
+        Route::post('/documents/not-used', [\App\Http\Controllers\Admin\Clients\ClientDocumentsController::class, 'notuseddoc'])->name('admin.clients.documents.notuseddoc');
+        Route::post('/documents/rename-checklist', [\App\Http\Controllers\Admin\Clients\ClientDocumentsController::class, 'renamechecklistdoc'])->name('admin.clients.documents.renamechecklistdoc');
+        Route::post('/documents/back-to-doc', [\App\Http\Controllers\Admin\Clients\ClientDocumentsController::class, 'backtodoc'])->name('admin.clients.documents.backtodoc');
+        Route::post('/documents/download', [\App\Http\Controllers\Admin\Clients\ClientDocumentsController::class, 'download_document'])->name('admin.clients.documents.download');
+        Route::post('/documents/add-personal-category', [\App\Http\Controllers\Admin\Clients\ClientDocumentsController::class, 'addPersonalDocCategory'])->name('admin.clients.documents.addPersonalDocCategory');
+        Route::post('/documents/update-personal-category', [\App\Http\Controllers\Admin\Clients\ClientDocumentsController::class, 'updatePersonalDocCategory'])->name('admin.clients.documents.updatePersonalDocCategory');
+        Route::post('/documents/add-visa-category', [\App\Http\Controllers\Admin\Clients\ClientDocumentsController::class, 'addVisaDocCategory'])->name('admin.clients.documents.addVisaDocCategory');
+        Route::post('/documents/update-visa-category', [\App\Http\Controllers\Admin\Clients\ClientDocumentsController::class, 'updateVisaDocCategory'])->name('admin.clients.documents.updateVisaDocCategory');
         
 		Route::post('/savetoapplication', 'Admin\ClientsController@savetoapplication');
 

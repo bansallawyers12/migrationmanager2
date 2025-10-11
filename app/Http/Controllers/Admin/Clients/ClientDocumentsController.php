@@ -346,19 +346,291 @@ class ClientDocumentsController extends Controller
      * Add Visa Document Checklist
      */
     public function addvisadocchecklist(Request $request) {
-        // Note: This is a VERY large method copied from original controller
-        // Method body will be added - placeholder for now to keep file manageable
-        // TODO: Copy full method from ClientsController lines 5481-5725
-        echo json_encode(['status' => false, 'message' => 'Method under construction']);
+        $clientid = $request->clientid;
+        $admin_info1 = Admin::select('client_id')->where('id', $clientid)->first();
+        if(!empty($admin_info1)){
+            $client_unique_id = $admin_info1->client_id;
+        } else {
+            $client_unique_id = "";
+        }
+
+        $doctype = isset($request->doctype)? $request->doctype : '';
+        if ($request->has('visa_checklist'))
+        {
+            $checklistArray = $request->input('visa_checklist');
+            if (is_array($checklistArray))
+            {
+                foreach ($checklistArray as $item)
+                {
+                    $obj = new Document;
+                    $obj->user_id = Auth::user()->id;
+                    $obj->client_id = $clientid;
+                    $obj->type = $request->type;
+                    $obj->doc_type = $doctype;
+                    $obj->client_matter_id = $request->client_matter_id;
+                    $obj->checklist = $item;
+                    $obj->folder_name = $request->folder_name;
+                    $saved = $obj->save();
+                }  //end foreach
+
+                if($saved)
+                {
+                    if($request->type == 'client'){
+                        $subject = 'added visa checklist';
+                        $objs = new ActivitiesLog;
+                        $objs->client_id = $clientid;
+                        $objs->created_by = Auth::user()->id;
+                        $objs->description = '';
+                        $objs->subject = $subject;
+                        $objs->save();
+                    }
+
+                    //Update date in client matter table
+                    if( isset($request->client_matter_id) && $request->client_matter_id != ""){
+                        $obj1 = ClientMatter::find($request->client_matter_id);
+                        $obj1->updated_at = date('Y-m-d H:i:s');
+                        $obj1->save();
+                    }
+                    $response['status'] 	= 	true;
+                    $response['message']	=	'You have added uploaded your visa checklist';
+
+                    // Filter documents by folder_name and client_matter_id at query level
+                    $query = Document::where('client_id',$clientid)
+                        ->whereNull('not_used_doc')
+                        ->where('doc_type',$doctype)
+                        ->where('type',$request->type)
+                        ->where('folder_name', $request->folder_name);
+                    
+                    // Only filter by client_matter_id if it's provided
+                    if ($request->client_matter_id !== null && $request->client_matter_id !== '') {
+                        $query->where('client_matter_id', $request->client_matter_id);
+                    }
+                    
+                    $fetchd = $query->orderby('created_at', 'DESC')->get();
+                    
+                    ob_start();
+                    foreach($fetchd as $visaKey=>$fetch)
+                    {
+                        $admin = Admin::where('id', $fetch->user_id)->first();
+                        $VisaDocumentType = VisaDocumentType::where('id', $fetch->folder_name)->first();
+                        $fileUrl = $fetch->myfile_key ? $fetch->myfile : 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/' . $fetch->client_id . '/visa/' . $fetch->myfile;
+                        ?>
+                        <tr class="drow" data-matterid="<?php echo $fetch->client_matter_id;?>" data-catid="<?php echo $fetch->folder_name;?>" id="id_<?php echo $fetch->id; ?>">
+                            <td style="white-space: initial;">
+                                <div data-id="<?php echo $fetch->id;?>" data-visachecklistname="<?php echo htmlspecialchars($fetch->checklist); ?>" class="visachecklist-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>">
+                                    <span><?php echo htmlspecialchars($fetch->checklist); ?></span>
+                                </div>
+                            </td>
+                            <td style="white-space: initial;">
+                                <?php
+                                if( isset($fetch->file_name) && $fetch->file_name !=""){ ?>
+                                    <div data-id="<?php echo $fetch->id; ?>" data-name="<?php echo htmlspecialchars($fetch->file_name); ?>" class="doc-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" oncontextmenu="showVisaFileContextMenu(event, <?php echo $fetch->id; ?>, '<?php echo htmlspecialchars($fetch->filetype); ?>', '<?php echo $fileUrl; ?>', '<?php echo $fetch->folder_name; ?>', '<?php echo $fetch->status ?? 'draft'; ?>'); return false;">
+                                        <a href="javascript:void(0);" onclick="previewFile('<?php echo $fetch->filetype;?>','<?php echo $fetch->myfile; ?>','preview-container-migdocumnetlist')">
+                                            <i class="fas fa-file-image"></i> <span><?php echo htmlspecialchars($fetch->file_name . '.' . $fetch->filetype); ?></span>
+                                        </a>
+                                    </div>
+                                <?php
+                                }
+                                else
+                                {?>
+                                    <div class="migration_upload_document" style="display: inline-block;">
+                                        <form method="POST" enctype="multipart/form-data" id="mig_upload_form_<?php echo $fetch->id;?>">
+                                            <input type="hidden" name="_token" value="<?php echo csrf_token();?>" />
+                                            <input type="hidden" name="clientid" value="<?php echo $fetch->client_id;?>">
+                                            <input type="hidden" name="client_matter_id" value="<?php echo $fetch->client_matter_id;?>">
+                                            <input type="hidden" name="fileid" value="<?php echo $fetch->id;?>">
+                                            <input type="hidden" name="type" value="client">
+                                            <input type="hidden" name="doctype" value="visa">
+                                            <input type="hidden" name="doccategory" value="<?php echo $VisaDocumentType->title; ?>">
+                                            <a href="javascript:;" class="btn btn-primary"><i class="fa fa-plus"></i> Add Document</a>
+                                            <input class="migdocupload" data-fileid="<?php echo $fetch->id;?>" data-doccategory="<?php echo $fetch->folder_name;?>" type="file" name="document_upload"/>
+                                        </form>
+                                    </div>
+                                <?php
+                                }?>
+                            </td>
+                            <td>
+                                <!-- Hidden elements for context menu actions -->
+                                <?php if ($fetch->myfile): ?>
+                                    <a class="renamechecklist" data-id="<?php echo $fetch->id; ?>" href="javascript:;" style="display: none;"></a>
+                                    <a class="renamedoc" data-id="<?php echo $fetch->id; ?>" href="javascript:;" style="display: none;"></a>
+                                    <a class="download-file" data-filelink="<?php echo $fetch->myfile; ?>" data-filename="<?php echo $fetch->myfile_key; ?>" href="#" style="display: none;"></a>
+                                    <a class="notuseddoc" data-id="<?php echo $fetch->id; ?>" data-doctype="visa" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php
+                    } //end foreach
+
+                    $data = ob_get_clean();
+                    ob_start();
+                    foreach($fetchd as $fetch)
+                    {
+                        $admin = Admin::where('id', $fetch->user_id)->first();
+                        ?>
+                        <div class="grid_list">
+                            <div class="grid_col">
+                                <div class="grid_icon">
+                                    <i class="fas fa-file-image"></i>
+                                </div>
+                                <div class="grid_content">
+                                    <span id="grid_<?php echo $fetch->id; ?>" class="gridfilename"><?php echo $fetch->file_name; ?></span>
+                                    <div class="dropdown d-inline dropdown_ellipsis_icon">
+                                        <a class="dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
+                                        <div class="dropdown-menu">
+                                            <?php
+                                            $url = 'https://'.env('AWS_BUCKET').'.s3.'. env('AWS_DEFAULT_REGION') . '.amazonaws.com/';
+                                            ?>
+                                            <a target="_blank" class="dropdown-item" href="<?php echo $fetch->myfile; ?>">Preview</a>
+                                            <a href="#" class="dropdown-item download-file" data-filelink="<?php echo $fetch->myfile; ?>" data-filename="<?php echo $fetch->myfile_key; ?>">Download</a>
+
+                                            <a data-id="<?php echo $fetch->id; ?>" class="dropdown-item notuseddoc" data-doctype="visa" data-href="notuseddoc" href="javascript:;">Not Used</a>
+                                            <?php
+                                            if (strtolower($fetch->filetype) === 'pdf')
+                                            {
+                                                if ($fetch->status === 'draft'){
+                                                    $url1 = route('documents.edit', $fetch->id);
+                                                ?>
+                                                    <a target="_blank" href="<?php echo $url1;?>" class="dropdown-item">Send To Signature</a>
+                                                <?php
+                                                }
+
+                                                if($fetch->status === 'sent') {
+
+                                                    $url2 = route('documents.index', $fetch->id);
+                                                ?>
+                                                    <a target="_blank" href="<?php echo $url2;?>" class="dropdown-item">Check To Signature</a>
+                                                <?php
+                                                }
+
+                                                if($fetch->status === 'signed') {
+                                                    $url3 = route('download.signed', $fetch->id);
+                                                ?>
+                                                    <a target="_blank" href="<?php echo $url3;?>" class="dropdown-item">Download Signed</a>
+                                                <?php
+                                                }
+                                            }?>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <?php
+                    } //end foreach
+                    $griddata = ob_get_clean();
+                    $response['data']	= $data;
+                    $response['griddata'] = $griddata;
+                } //end if
+                else
+                {
+                    $response['status'] = false;
+                    $response['message'] = 'Please try again';
+                } //end else
+            } //end if
+            else
+            {
+                $response['status'] = false;
+                $response['message'] = 'Please try again';
+            } //end else
+        }
+        else
+        {
+            $response['status'] = false;
+            $response['message'] = 'Please try again';
+        } //end else
+        echo json_encode($response);
     }
 
     /**
      * Upload Visa Document
      */
     public function uploadvisadocument(Request $request) {
-        // Note: This is a VERY large method copied from original controller  
-        // TODO: Copy full method from ClientsController lines 5973-6060
-        echo json_encode(['status' => false, 'message' => 'Method under construction']);
+        ob_start();
+        
+        $response = ['status' => false, 'message' => 'Please try again', 'data' => '', 'griddata' => ''];
+        $clientid = $request->clientid;
+        $admin_info1 = Admin::select('client_id', 'first_name')->where('id', $clientid)->first();
+        $client_unique_id = !empty($admin_info1) ? $admin_info1->client_id : "";
+        $client_first_name = !empty($admin_info1) ? preg_replace('/[^a-zA-Z0-9_\-]/', '_', $admin_info1->first_name) : "client";
+    
+        $doctype = isset($request->doctype)? $request->doctype : '';
+        
+        try {
+            if ($request->hasfile('document_upload')) {
+                $file = $request->file('document_upload');
+                $size = $file->getSize();
+                $fileName = $file->getClientOriginalName();
+                
+                // Allow only letters, numbers, underscores, dashes, spaces, dots, and dollar signs
+                if (!preg_match('/^[a-zA-Z0-9_\-\.\s\$]+$/', $fileName)) {
+                    $response['message'] = 'File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), and dollar signs ($). Please rename the file and try again.';
+                } else {
+                    $originalName = $file->getClientOriginalName();
+                    $extension = $file->getClientOriginalExtension();
+
+                    // Get checklist (doc category)
+                    $req_file_id = $request->fileid;
+                    $obj = Document::find($req_file_id);
+                    $checklistName = $obj->checklist;
+                    // Build new file name: firstname_checklist_timestamp.ext
+                    $name = $client_first_name . "_" . $checklistName . "_" . time() . "." . $extension;
+
+                    $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
+                    Storage::disk('s3')->put($filePath, file_get_contents($file));
+
+                    $obj->file_name = $client_first_name . "_" . $checklistName . "_" . time();
+                    $obj->filetype = $extension;
+                    $obj->user_id = Auth::user()->id;
+                    $fileUrl = Storage::disk('s3')->url($filePath);
+                    $obj->myfile = $fileUrl;
+                    $obj->myfile_key = $name;
+                    $obj->type = $request->type;
+                    $obj->file_size = $size;
+                    $obj->doc_type = $doctype;
+                    $saved = $obj->save();
+                    
+                    if($saved){
+                        if($request->type == 'client'){
+                            $subject = 'updated visa document';
+                            $objs = new ActivitiesLog;
+                            $objs->client_id = $clientid;
+                            $objs->created_by = Auth::user()->id;
+                            $objs->description = '';
+                            $objs->subject = $subject;
+                            $objs->save();
+                        }
+
+                        //Update date in client matter table
+                        if( isset($request->client_matter_id) && $request->client_matter_id != ""){
+                            $obj1 = ClientMatter::find($request->client_matter_id);
+                            $obj1->updated_at = date('Y-m-d H:i:s');
+                            $obj1->save();
+                        }
+                        
+                        $response['status'] = true;
+                        $response['message'] = 'You have successfully uploaded your visa document';
+                        $response['filename'] = $name;
+                        $response['filetype'] = $extension;
+                        $response['fileurl'] = $fileUrl;
+                        $response['filekey'] = $name;
+                        $response['doccategory'] = $checklistName;
+                        $response['doctype'] = $doctype;
+                        $response['visa_doc_cat'] = $request->visa_doc_cat;
+                        $response['status_value'] = $obj->status ?? 'draft'; // Add status for JavaScript
+                    } else {
+                        $response['message'] = 'Failed to save document record.';
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            $response['message'] = 'An error occurred: ' . $e->getMessage();
+        }
+        
+        ob_end_clean();
+        header('Content-Type: application/json');
+        echo json_encode($response);
+        exit;
     }
 
     /**
@@ -627,15 +899,129 @@ class ClientDocumentsController extends Controller
      * Add Visa Document Category
      */
     public function addVisaDocCategory(Request $request) {
-        // TODO: Copy full method from ClientsController lines 13358+
-        return response()->json(['status' => false, 'message' => 'Method under construction']);
+        $categoryTitle = trim($request->input('visa_doc_category'));
+        $clientId = $request->input('clientid');
+        $clientMatterId = $request->input('clientmatterid');
+
+        $request->merge(['visa_doc_category' => $categoryTitle]);
+
+        // Basic validation
+        $validator = \Validator::make($request->all(), [
+            'visa_doc_category' => 'required|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => $validator->errors()->first('visa_doc_category')
+            ]);
+        }
+
+        // RULE 1: If status=1 and client_id is NULL, title must be unique globally (only one)
+        $existsForNullClient = VisaDocumentType::where('title', $categoryTitle)
+            ->where('status', 1)
+            ->whereNull('client_matter_id')
+            ->exists();
+
+        if ($existsForNullClient) {
+            return response()->json([
+                'status' => false,
+                'message' => 'This category already exists globally.'
+            ]);
+        }
+
+        // RULE 2: Same title with status=1 for same client_id is not allowed
+        $existsForSameClient = VisaDocumentType::where('title', $categoryTitle)
+            ->where('status', 1)
+            ->where('client_matter_id', $clientMatterId)
+            ->exists();
+
+        if ($existsForSameClient) {
+            return response()->json([
+                'status' => false,
+                'message' => 'This category already exists for this client matter.'
+            ]);
+        }
+
+        try {
+            $category = new VisaDocumentType();
+            $category->title = $categoryTitle;
+            $category->status = 1;
+            $category->client_id = $clientId ?? null;
+            $category->client_matter_id = $clientMatterId ?? null;
+            $category->save();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Visa Document Category added successfully.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error adding category: ' . $e->getMessage()
+            ]);
+        }
     }
 
     /**
      * Update Visa Document Category  
      */
     public function updateVisaDocCategory(Request $request) {
-        // TODO: Copy full method from ClientsController lines 13425+
-        return response()->json(['status' => false, 'message' => 'Method under construction']);
+        $request->validate([
+            'id' => 'required|exists:visa_document_types,id',
+            'title' => 'required|string|max:255',
+        ]);
+
+        $category = VisaDocumentType::findOrFail($request->id);
+        $clientMatterId = $category->client_matter_id; // Get the client_id of the category being updated
+
+        // Check if the category is client-generated
+        if ($category->client_matter_id === null) {
+            return response()->json(['success' => false, 'message' => 'Only client-matter-generated categories can be updated.']);
+        }
+
+        $categoryTitle = trim($request->input('title'));
+
+        // RULE 1: If status=1 and client_id is NULL, title must be unique globally (only one)
+        $existsForNullClient = VisaDocumentType::where('title', $categoryTitle)
+            ->where('status', 1)
+            ->whereNull('client_matter_id')
+            ->exists();
+
+        if ($existsForNullClient) {
+            return response()->json([
+                'status' => false,
+                'message' => 'This category already exists globally for all client matters.Pls try other.'
+            ]);
+        }
+
+        // RULE 2: Same title with status=1 for same client_id is not allowed (excluding the current category)
+        $existsForSameClient = VisaDocumentType::where('title', $categoryTitle)
+            ->where('status', 1)
+            ->where('client_matter_id', $clientMatterId)
+            ->where('id', '!=', $request->id)
+            ->exists();
+
+        if ($existsForSameClient) {
+            return response()->json([
+                'status' => false,
+                'message' => 'This category already exists for this client matter.'
+            ]);
+        }
+
+        try {
+            $category->title = $categoryTitle;
+            $category->save();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Visa Document Category updated successfully.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error updating category: ' . $e->getMessage()
+            ]);
+        }
     }
 }
