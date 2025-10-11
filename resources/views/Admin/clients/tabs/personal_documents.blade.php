@@ -86,7 +86,7 @@
                                                     <?php
                                                     $admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
                                                     $fileUrl = $fetch->myfile_key
-                                                        ? asset($fetch->myfile)
+                                                        ? $fetch->myfile
                                                         : 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/' . $clientId . '/personal/' . $fetch->myfile;
                                                     ?>
                                                     <tr class="drow" id="id_<?= $fetch->id ?>">

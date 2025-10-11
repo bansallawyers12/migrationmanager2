@@ -12,10 +12,8 @@
                                 <table class="checklist-table" style="width: 100%;">
                                     <thead>
                                         <tr>
-                                            <th>SNo.</th>
                                             <th>Checklist</th>
                                             <th>Document Type</th>
-                                            <th>Added By</th>
                                             <th>File Name</th>
                                             <th></th>
                                         </tr>
@@ -34,8 +32,9 @@
                                             $admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
                                             ?>
                                             <tr class="drow" id="id_{{$fetch->id}}">
-                                                <td><?php echo $notuseKey+1;?></td>
-                                                <td style="white-space: initial;"><?php echo $fetch->checklist; ?></td>
+                                                <td style="white-space: initial;">
+                                                    <span title="Uploaded by: <?php echo ($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>"><?php echo $fetch->checklist; ?></span>
+                                                </td>
                                                 <td style="white-space: initial;">
                                                     <span class="badge badge-<?php echo $fetch->doc_type === 'personal' ? 'primary' : 'success'; ?>">
                                                         <?php echo ucfirst($fetch->doc_type); ?>
@@ -43,22 +42,18 @@
                                                 </td>
                                                 <td style="white-space: initial;">
                                                     <?php
-                                                    echo ($admin->first_name ?? 'NA') . "<br>";
-                                                    echo date('d/m/Y', strtotime($fetch->created_at));
+                                                    if( isset($fetch->file_name) && $fetch->file_name !=""){ 
+                                                        $fileUrl = isset($fetch->myfile_key) && $fetch->myfile_key != "" ? $fetch->myfile : 'https://'.env('AWS_BUCKET').'.s3.'. env('AWS_DEFAULT_REGION') . '.amazonaws.com/'.$fetchedData->client_id.'/'.$fetch->doc_type.'/'.$fetch->myfile;
                                                     ?>
-                                                </td>
-                                                <td style="white-space: initial;">
-                                                    <?php
-                                                    if( isset($fetch->file_name) && $fetch->file_name !=""){ ?>
-                                                        <div data-id="{{$fetch->id}}" data-name="<?php echo $fetch->file_name; ?>" class="doc-row">
+                                                        <div data-id="{{$fetch->id}}" data-name="<?php echo $fetch->file_name; ?>" class="doc-row" title="Uploaded by: <?php echo ($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" oncontextmenu="showNotUsedFileContextMenu(event, <?= $fetch->id ?>, '<?= htmlspecialchars($fetch->filetype) ?>', '<?= $fileUrl ?>', '<?= $fetch->doc_type ?>', '<?= $fetch->status ?? 'draft' ?>'); return false;">
                                                             <?php if( isset($fetch->myfile_key) && $fetch->myfile_key != ""){ //For new file upload ?>
-                                                                <a href="javascript:void(0);" onclick="previewFile('<?php echo $fetch->filetype;?>','<?php echo asset($fetch->myfile); ?>','preview-container-notuseddocumnetlist')">
+                                                                <a href="javascript:void(0);" onclick="previewFile('<?php echo $fetch->filetype;?>','<?php echo $fetch->myfile; ?>','preview-container-notuseddocumnetlist')">
                                                                     <i class="fas fa-file-image"></i> <span><?php echo $fetch->file_name . '.' . $fetch->filetype; ?></span>
                                                                 </a>
                                                             <?php } else {  //For old file upload
                                                                 $url = 'https://'.env('AWS_BUCKET').'.s3.'. env('AWS_DEFAULT_REGION') . '.amazonaws.com/';
                                                                 ?>
-                                                                <a href="javascript:void(0);" onclick="previewFile('<?php echo $fetch->filetype;?>','<?php echo asset($myawsfile); ?>','preview-container-notuseddocumnetlist')">
+                                                                <a href="javascript:void(0);" onclick="previewFile('<?php echo $fetch->filetype;?>','<?php echo $myawsfile; ?>','preview-container-notuseddocumnetlist')">
                                                                     <i class="fas fa-file-image"></i> <span><?php echo $fetch->file_name . '.' . $fetch->filetype; ?></span>
                                                                 </a>
                                                             <?php } ?>
@@ -71,22 +66,9 @@
                                                     }?>
                                                 </td>
                                                 <td>
-                                                    <div class="dropdown d-inline">
-                                                        <button class="btn btn-primary dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="white-space: nowrap;overflow: hidden;text-overflow: ellipsis;">Action</button>
-                                                        <div class="dropdown-menu">
-                                                            <?php
-                                                            $url = 'https://'.env('AWS_BUCKET').'.s3.'. env('AWS_DEFAULT_REGION') . '.amazonaws.com/';
-                                                            ?>
-                                                            <?php if( isset($fetch->myfile_key) && $fetch->myfile_key != ""){ //For new file upload ?>
-                                                                <a target="_blank" class="dropdown-item" href="<?php echo $fetch->myfile; ?>">Preview</a>
-                                                            <?php } else {  //For old file upload ?>
-                                                                <a target="_blank" class="dropdown-item" href="<?php echo $url.$fetchedData->client_id.'/'.$fetch->doc_type.'/'.$fetch->myfile; ?>">Preview</a>
-                                                            <?php } ?>
-
-                                                            <a data-id="<?= $fetch->id ?>" class="dropdown-item deletenote" data-doccategory="<?= $fetch->doc_type ?>" data-href="deletedocs" href="javascript:;">Delete</a>
-                                                            <a data-id="{{$fetch->id}}" class="dropdown-item backtodoc" data-doctype="{{$fetch->doc_type}}" data-href="backtodoc" href="javascript:;">Back To Document</a>
-                                                        </div>
-                                                    </div>
+                                                    <!-- Hidden elements for context menu actions -->
+                                                    <a data-id="<?= $fetch->id ?>" class="deletenote" data-doccategory="<?= $fetch->doc_type ?>" data-href="deletedocs" href="javascript:;" style="display: none;"></a>
+                                                    <a data-id="{{$fetch->id}}" class="backtodoc" data-doctype="{{$fetch->doc_type}}" data-href="backtodoc" href="javascript:;" style="display: none;"></a>
                                                 </td>
                                             </tr>
                                         <?php
@@ -104,4 +86,112 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Custom Context Menu for Not Used Documents -->
+            <div id="notUsedFileContextMenu" class="context-menu" style="display: none; position: absolute; background: white; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 1000; min-width: 180px;">
+                <div class="context-menu-item" onclick="handleNotUsedContextAction('preview')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">
+                    <i class="fa fa-eye" style="margin-right: 8px;"></i> Preview
+                </div>
+                <div class="context-menu-item" onclick="handleNotUsedContextAction('delete')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">
+                    <i class="fa fa-trash" style="margin-right: 8px;"></i> Delete
+                </div>
+                <div class="context-menu-item" onclick="handleNotUsedContextAction('back-to-doc')" style="padding: 8px 12px; cursor: pointer;">
+                    <i class="fa fa-undo" style="margin-right: 8px;"></i> Back To Document
+                </div>
+            </div>
+
+            <script>
+                let currentNotUsedContextFile = null;
+                let currentNotUsedContextData = {};
+
+                function showNotUsedFileContextMenu(event, fileId, fileType, fileUrl, docType, fileStatus) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    
+                    currentNotUsedContextFile = fileId;
+                    currentNotUsedContextData = {
+                        fileId: fileId,
+                        fileType: fileType,
+                        fileUrl: fileUrl,
+                        docType: docType,
+                        fileStatus: fileStatus
+                    };
+
+                    const menu = document.getElementById('notUsedFileContextMenu');
+                    
+                    // Position menu at cursor with edge detection
+                    const MENU_WIDTH = 180;
+                    const MENU_HEIGHT = 120;
+                    
+                    // Get scroll position
+                    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                    
+                    // Get viewport dimensions
+                    const viewportWidth = window.innerWidth;
+                    const viewportHeight = window.innerHeight;
+                    
+                    // Use clientX/Y for viewport-relative position, then add scroll for document position
+                    let menuLeft = event.clientX + scrollLeft + 5;
+                    let menuTop = event.clientY + scrollTop + 5;
+                    
+                    // Check right edge - if menu would go beyond viewport, show on left
+                    if (event.clientX + MENU_WIDTH + 5 > viewportWidth) {
+                        menuLeft = event.clientX + scrollLeft - MENU_WIDTH - 5;
+                    }
+                    
+                    // Check bottom edge - if menu would go beyond viewport, show above
+                    if (event.clientY + MENU_HEIGHT + 5 > viewportHeight) {
+                        menuTop = event.clientY + scrollTop - MENU_HEIGHT - 5;
+                    }
+                    
+                    // Apply position
+                    menu.style.left = menuLeft + 'px';
+                    menu.style.top = menuTop + 'px';
+
+                    menu.style.display = 'block';
+
+                    // Hide menu when clicking elsewhere
+                    setTimeout(() => {
+                        document.addEventListener('click', hideNotUsedContextMenu);
+                    }, 100);
+                }
+
+                function hideNotUsedContextMenu() {
+                    const menu = document.getElementById('notUsedFileContextMenu');
+                    menu.style.display = 'none';
+                    document.removeEventListener('click', hideNotUsedContextMenu);
+                }
+
+                function handleNotUsedContextAction(action) {
+                    if (!currentNotUsedContextFile) return;
+
+                    hideNotUsedContextMenu();
+
+                    switch(action) {
+                        case 'preview':
+                            window.open(currentNotUsedContextData.fileUrl, '_blank');
+                            break;
+                        case 'delete':
+                            $('.deletenote[data-id="' + currentNotUsedContextFile + '"]').click();
+                            break;
+                        case 'back-to-doc':
+                            $('.backtodoc[data-id="' + currentNotUsedContextFile + '"]').click();
+                            break;
+                    }
+                }
+
+                // Hide context menu on escape key
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        hideNotUsedContextMenu();
+                    }
+                });
+            </script>
+
+            <style>
+                .context-menu-item:hover {
+                    background-color: #f8f9fa;
+                }
+            </style>
 

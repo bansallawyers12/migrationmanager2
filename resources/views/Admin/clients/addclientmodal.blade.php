@@ -304,8 +304,8 @@
                                     <div class="services_item_header" id="serviceval_{{$bookservices->id}}">
                                         <div class="services_item_title">
                                             <input type="radio" class="services_item" name="radioGroup"  value="{{$bookservices->id}}">
-                                            <div class="services_item_img" style="display:inline-block;margin-left: 10px;">
-                                                <img class="" style="width: 80px;height:80px;" src="{{asset('img/service_img')}}/{{$bookservices->image}}">
+                                            <div class="services_item_img" style="display:inline-block;margin-left: 10px;width: 80px;height:80px;background: #f8f9fa;border: 2px solid #dee2e6;border-radius: 8px;display: flex;align-items: center;justify-content: center;">
+                                                <i class="fas fa-user-tie" style="font-size: 32px;color: #6c757d;"></i>
                                             </div>
                                             <span class="services_item_title_span">{{$bookservices->title}} <br/>{{$bookservices->duration}} minutes</span>
                                             <span class="services_item_price"> {{$bookservices->price}}</span>

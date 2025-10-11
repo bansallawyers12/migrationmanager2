@@ -79,9 +79,7 @@
                                         <table class="checklist-table">
                                             <thead>
                                                 <tr>
-                                                    <th>SNo.</th>
                                                     <th>Checklist</th>
-                                                    <th>Added By</th>
                                                     <th>File Name</th>
                                                     <th></th>
                                                 </tr>
@@ -99,23 +97,18 @@
                                                 <?php foreach ($documents as $visaKey => $fetch): ?>
                                                     <?php
                                                     $admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
-                                                    $fileUrl = $fetch->myfile_key ? asset($fetch->myfile) : 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/' . $fetchedData->id . '/visa/' . $fetch->myfile;
+                                                    $fileUrl = $fetch->myfile_key ? $fetch->myfile : 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/' . $fetchedData->id . '/visa/' . $fetch->myfile;
                                                     ?>
                                                     <tr class="drow" data-matterid="<?= $fetch->client_matter_id ?>" id="id_<?= $fetch->id ?>">
-                                                        <td><?= $visaKey + 1 ?></td>
                                                         <td style="white-space: initial;">
-                                                            <div data-id="<?= $fetch->id ?>" data-visachecklistname="<?= htmlspecialchars($fetch->checklist) ?>" class="visachecklist-row">
+                                                            <div data-id="<?= $fetch->id ?>" data-visachecklistname="<?= htmlspecialchars($fetch->checklist) ?>" class="visachecklist-row" title="Uploaded by: <?= htmlspecialchars($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>">
                                                                 <span><?= htmlspecialchars($fetch->checklist) ?></span>
                                                             </div>
                                                         </td>
                                                         <td style="white-space: initial;">
-                                                            <?= htmlspecialchars($admin->first_name ?? 'NA') ?><br>
-                                                            <?= date('d/m/Y', strtotime($fetch->created_at)) ?>
-                                                        </td>
-                                                        <td style="white-space: initial;">
                                                             <?php if ($fetch->file_name): ?>
-                                                                <div data-id="<?= $fetch->id ?>" data-name="<?= htmlspecialchars($fetch->file_name) ?>" class="doc-row">
-                                                                    <a href="javascript:void(0);" onclick="previewFile('<?= $fetch->filetype ?>','<?= asset($fetch->myfile) ?>','preview-container-migdocumnetlist')">
+                                                                <div data-id="<?= $fetch->id ?>" data-name="<?= htmlspecialchars($fetch->file_name) ?>" class="doc-row" title="Uploaded by: <?= htmlspecialchars($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" oncontextmenu="showVisaFileContextMenu(event, <?= $fetch->id ?>, '<?= htmlspecialchars($fetch->filetype) ?>', '<?= $fileUrl ?>', '<?= $id ?>', '<?= $fetch->status ?? 'draft' ?>'); return false;">
+                                                                    <a href="javascript:void(0);" onclick="previewFile('<?= $fetch->filetype ?>','<?= $fetch->myfile ?>','preview-container-migdocumnetlist')">
                                                                         <i class="fas fa-file-image"></i> <span><?= htmlspecialchars($fetch->file_name . '.' . $fetch->filetype) ?></span>
                                                                     </a>
                                                                 </div>
@@ -136,36 +129,12 @@
                                                             <?php endif; ?>
                                                         </td>
                                                         <td>
+                                                            <!-- Hidden elements for context menu actions -->
                                                             <?php if ($fetch->myfile): ?>
-                                                                <div class="dropdown d-inline">
-                                                                    <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Action</button>
-                                                                    <div class="dropdown-menu">
-                                                                        <a class="dropdown-item renamechecklist" href="javascript:;">Rename Checklist</a>
-                                                                        <a class="dropdown-item renamedoc" href="javascript:;">Rename File Name</a>
-                                                                        <a target="_blank" class="dropdown-item" href="<?= $fetch->myfile ?>">Preview</a>
-                                                                        <?php $fileExt = pathinfo($fetch->myfile, PATHINFO_EXTENSION); if (in_array($fileExt, ['jpg', 'png', 'jpeg'])): ?>
-                                                                            <a target="_blank" class="dropdown-item" href="<?= URL::to('/admin/document/download/pdf') ?>/<?= $fetch->id ?>">PDF</a>
-                                                                        <?php endif; ?>
-                                                                        <a href="#" class="dropdown-item download-file" data-filelink="<?= $fetch->myfile ?>" data-filename="<?= $fetch->myfile_key ?>">Download</a>
-                                                                        <a data-id="<?= $fetch->id ?>" class="dropdown-item notuseddoc" data-doctype="visa" data-href="notuseddoc" href="javascript:;">Not Used</a>
-
-                                                                        @if (strtolower($fetch->filetype) === 'pdf')
-
-                                                                            @if ($fetch->status === 'draft')
-                                                                                <a target="_blank" href="{{ route('documents.edit', $fetch->id) }}" class="dropdown-item">Send To Signature</a>
-                                                                            @endif
-
-                                                                            @if($fetch->status === 'sent')
-                                                                                <a target="_blank" href="{{ route('documents.index', $fetch->id) }}" class="dropdown-item">Check To Signature</a>
-                                                                            @endif
-
-                                                                            @if($fetch->status === 'signed')
-                                                                                <a target="_blank" href="{{ route('download.signed', $fetch->id) }}" class="dropdown-item">Download Signed</a>
-                                                                            @endif
-
-                                                                        @endif
-                                                                    </div>
-                                                                </div>
+                                                                <a class="renamechecklist" data-id="<?= $fetch->id ?>" href="javascript:;" style="display: none;"></a>
+                                                                <a class="renamedoc" data-id="<?= $fetch->id ?>" href="javascript:;" style="display: none;"></a>
+                                                                <a class="download-file" data-filelink="<?= $fetch->myfile ?>" data-filename="<?= $fetch->myfile_key ?>" href="#" style="display: none;"></a>
+                                                                <a class="notuseddoc" data-id="<?= $fetch->id ?>" data-doctype="visa" data-href="notuseddoc" href="javascript:;" style="display: none;"></a>
                                                             <?php endif; ?>
                                                         </td>
                                                     </tr>
@@ -242,4 +211,190 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Custom Context Menu for Visa Documents -->
+            <div id="visaFileContextMenu" class="context-menu" style="display: none; position: absolute; background: white; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 1000; min-width: 180px;">
+                <div class="context-menu-item" onclick="handleVisaContextAction('rename-checklist')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">
+                    <i class="fa fa-edit" style="margin-right: 8px;"></i> Rename Checklist
+                </div>
+                <div class="context-menu-item" onclick="handleVisaContextAction('rename-doc')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">
+                    <i class="fa fa-file-text" style="margin-right: 8px;"></i> Rename File Name
+                </div>
+                <div class="context-menu-item" onclick="handleVisaContextAction('preview')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">
+                    <i class="fa fa-eye" style="margin-right: 8px;"></i> Preview
+                </div>
+                <div id="visa-context-pdf-option" class="context-menu-item" onclick="handleVisaContextAction('pdf')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee; display: none;">
+                    <i class="fa fa-file-pdf" style="margin-right: 8px;"></i> PDF
+                </div>
+                <div class="context-menu-item" onclick="handleVisaContextAction('download')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">
+                    <i class="fa fa-download" style="margin-right: 8px;"></i> Download
+                </div>
+                <div class="context-menu-item" onclick="handleVisaContextAction('not-used')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">
+                    <i class="fa fa-trash" style="margin-right: 8px;"></i> Not Used
+                </div>
+                <div id="visa-context-send-signature" class="context-menu-item" onclick="handleVisaContextAction('send-signature')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee; display: none;">
+                    <i class="fa fa-signature" style="margin-right: 8px;"></i> Send To Signature
+                </div>
+                <div id="visa-context-check-signature" class="context-menu-item" onclick="handleVisaContextAction('check-signature')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee; display: none;">
+                    <i class="fa fa-check-circle" style="margin-right: 8px;"></i> Check To Signature
+                </div>
+                <div id="visa-context-download-signed" class="context-menu-item" onclick="handleVisaContextAction('download-signed')" style="padding: 8px 12px; cursor: pointer; display: none;">
+                    <i class="fa fa-file-signature" style="margin-right: 8px;"></i> Download Signed
+                </div>
+            </div>
+
+            <script>
+                let currentVisaContextFile = null;
+                let currentVisaContextData = {};
+
+                function showVisaFileContextMenu(event, fileId, fileType, fileUrl, categoryId, fileStatus) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    
+                    currentVisaContextFile = fileId;
+                    currentVisaContextData = {
+                        fileId: fileId,
+                        fileType: fileType,
+                        fileUrl: fileUrl,
+                        categoryId: categoryId,
+                        fileStatus: fileStatus
+                    };
+
+                    const menu = document.getElementById('visaFileContextMenu');
+                    
+                    // Show/hide PDF option based on file type
+                    const pdfOption = document.getElementById('visa-context-pdf-option');
+                    const fileExt = fileType.toLowerCase();
+                    if (['jpg', 'png', 'jpeg'].includes(fileExt)) {
+                        pdfOption.style.display = 'block';
+                    } else {
+                        pdfOption.style.display = 'none';
+                    }
+
+                    // Show/hide signature options based on file type and status
+                    const sendSignature = document.getElementById('visa-context-send-signature');
+                    const checkSignature = document.getElementById('visa-context-check-signature');
+                    const downloadSigned = document.getElementById('visa-context-download-signed');
+                    
+                    if (fileType.toLowerCase() === 'pdf') {
+                        if (fileStatus === 'draft') {
+                            sendSignature.style.display = 'block';
+                            checkSignature.style.display = 'none';
+                            downloadSigned.style.display = 'none';
+                        } else if (fileStatus === 'sent') {
+                            sendSignature.style.display = 'none';
+                            checkSignature.style.display = 'block';
+                            downloadSigned.style.display = 'none';
+                        } else if (fileStatus === 'signed') {
+                            sendSignature.style.display = 'none';
+                            checkSignature.style.display = 'none';
+                            downloadSigned.style.display = 'block';
+                        } else {
+                            sendSignature.style.display = 'none';
+                            checkSignature.style.display = 'none';
+                            downloadSigned.style.display = 'none';
+                        }
+                    } else {
+                        sendSignature.style.display = 'none';
+                        checkSignature.style.display = 'none';
+                        downloadSigned.style.display = 'none';
+                    }
+
+                    // Position menu at cursor with edge detection
+                    const MENU_WIDTH = 180;
+                    const MENU_HEIGHT = 350;
+                    
+                    // Get scroll position
+                    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                    
+                    // Get viewport dimensions
+                    const viewportWidth = window.innerWidth;
+                    const viewportHeight = window.innerHeight;
+                    
+                    // Use clientX/Y for viewport-relative position, then add scroll for document position
+                    let menuLeft = event.clientX + scrollLeft + 5;
+                    let menuTop = event.clientY + scrollTop + 5;
+                    
+                    // Check right edge - if menu would go beyond viewport, show on left
+                    if (event.clientX + MENU_WIDTH + 5 > viewportWidth) {
+                        menuLeft = event.clientX + scrollLeft - MENU_WIDTH - 5;
+                    }
+                    
+                    // Check bottom edge - if menu would go beyond viewport, show above
+                    if (event.clientY + MENU_HEIGHT + 5 > viewportHeight) {
+                        menuTop = event.clientY + scrollTop - MENU_HEIGHT - 5;
+                    }
+                    
+                    // Apply position
+                    menu.style.left = menuLeft + 'px';
+                    menu.style.top = menuTop + 'px';
+
+                    menu.style.display = 'block';
+
+                    // Hide menu when clicking elsewhere
+                    setTimeout(() => {
+                        document.addEventListener('click', hideVisaContextMenu);
+                    }, 100);
+                }
+
+                function hideVisaContextMenu() {
+                    const menu = document.getElementById('visaFileContextMenu');
+                    menu.style.display = 'none';
+                    document.removeEventListener('click', hideVisaContextMenu);
+                }
+
+                function handleVisaContextAction(action) {
+                    if (!currentVisaContextFile) return;
+
+                    hideVisaContextMenu();
+
+                    switch(action) {
+                        case 'rename-checklist':
+                            $('.renamechecklist[data-id="' + currentVisaContextFile + '"]').click();
+                            break;
+                        case 'rename-doc':
+                            $('.renamedoc[data-id="' + currentVisaContextFile + '"]').click();
+                            break;
+                        case 'preview':
+                            window.open(currentVisaContextData.fileUrl, '_blank');
+                            break;
+                        case 'pdf':
+                            const pdfUrl = '{{ URL::to('/admin/document/download/pdf') }}/' + currentVisaContextFile;
+                            window.open(pdfUrl, '_blank');
+                            break;
+                        case 'download':
+                            $('.download-file[data-filelink="' + currentVisaContextData.fileUrl + '"]').click();
+                            break;
+                        case 'not-used':
+                            $('.notuseddoc[data-id="' + currentVisaContextFile + '"]').click();
+                            break;
+                        case 'send-signature':
+                            const sendSignatureUrl = '{{ route('documents.edit', ':id') }}'.replace(':id', currentVisaContextFile);
+                            window.open(sendSignatureUrl, '_blank');
+                            break;
+                        case 'check-signature':
+                            const checkSignatureUrl = '{{ route('documents.index', ':id') }}'.replace(':id', currentVisaContextFile);
+                            window.open(checkSignatureUrl, '_blank');
+                            break;
+                        case 'download-signed':
+                            const downloadSignedUrl = '{{ route('download.signed', ':id') }}'.replace(':id', currentVisaContextFile);
+                            window.open(downloadSignedUrl, '_blank');
+                            break;
+                    }
+                }
+
+                // Hide context menu on escape key
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        hideVisaContextMenu();
+                    }
+                });
+            </script>
+
+            <style>
+                .context-menu-item:hover {
+                    background-color: #f8f9fa;
+                }
+            </style>
 
