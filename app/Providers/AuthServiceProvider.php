@@ -21,10 +21,22 @@ class AuthServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    public function boot()
+    public function boot(): void
     {
         $this->registerPolicies();
 
-        //
+        // Client authorization gates
+        Gate::define('view', function ($user, $client) {
+            // Admin can view if they are assigned to the client or have admin role
+            return $user->role === 1 || // Super admin
+                   $user->id === $client->admin_id || // Assigned admin
+                   $user->id === $client->id; // The client themselves
+        });
+
+        Gate::define('update', function ($user, $client) {
+            // Admin can update if they have update permissions
+            return $user->role === 1 || // Super admin
+                   $user->id === $client->admin_id; // Assigned admin
+        });
     }
 }

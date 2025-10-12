@@ -122,6 +122,443 @@
         margin-left: 0 !important;
         padding-left: 0 !important;
     }
+
+    /* ========================================
+       MODERN ASSIGN USER MODAL STYLES
+       ======================================== */
+
+    /* Modal Container */
+    .assign-user-modal {
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        border: none;
+        overflow: hidden;
+    }
+
+    /* Header Styling */
+    .assign-user-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-bottom: none;
+        padding: 20px 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-title-section {
+        display: flex;
+        align-items: center;
+    }
+
+    .modal-title-section .modal-title {
+        font-weight: 600;
+        font-size: 1.4rem;
+    }
+
+    .modal-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .modal-actions .close {
+        color: white;
+        opacity: 0.8;
+        font-size: 1.5rem;
+        padding: 0;
+        margin: 0;
+    }
+
+    .modal-actions .close:hover {
+        opacity: 1;
+    }
+
+    /* Body Styling */
+    .assign-user-body {
+        padding: 30px 25px;
+        background: #fafbfc;
+    }
+
+    /* Enhanced Form Groups */
+    .enhanced-form-group {
+        margin-bottom: 25px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 8px;
+        font-size: 0.95rem;
+    }
+
+    .form-label i {
+        font-size: 0.9rem;
+    }
+
+    /* Input Groups */
+    .input-group-text {
+        background: #f7fafc;
+        border-color: #e2e8f0;
+        color: #718096;
+        border-radius: 8px 0 0 8px;
+        padding: 12px 15px;
+    }
+
+    .enhanced-input,
+    .enhanced-select,
+    .enhanced-textarea {
+        border-radius: 0 8px 8px 0;
+        border-color: #e2e8f0;
+        padding: 12px 15px;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        background: white;
+    }
+
+    .enhanced-input:focus,
+    .enhanced-select:focus,
+    .enhanced-textarea:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        outline: none;
+    }
+
+    .enhanced-textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    /* Modern Dropdown Styling */
+    .modern-dropdown {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+    }
+
+    .enhanced-dropdown-btn {
+        width: 100%;
+        text-align: left;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 12px 15px;
+        background: white;
+        color: #2d3748;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 48px;
+        position: relative;
+    }
+
+    .enhanced-dropdown-btn #selected-users-text {
+        flex: 1;
+        margin: 0 10px;
+        word-wrap: break-word;
+        white-space: normal;
+    }
+
+    /* Only apply truncation when text is actually too long */
+    .enhanced-dropdown-btn.has-long-text #selected-users-text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .enhanced-dropdown-btn:hover,
+    .enhanced-dropdown-btn:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        outline: none;
+    }
+
+    /* Button styling when users are selected */
+    .enhanced-dropdown-btn.has-selection {
+        border-color: #667eea;
+        background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
+        color: #667eea;
+        font-weight: 500;
+    }
+
+    .enhanced-dropdown-btn.has-selection:hover {
+        background: linear-gradient(135deg, #f0f4ff 0%, #e6f0ff 100%);
+        border-color: #5a67d8;
+    }
+
+    /* Selection indicator */
+    .enhanced-dropdown-btn.has-selection::before {
+        content: '';
+        position: absolute;
+        top: 8px;
+        right: 40px;
+        width: 8px;
+        height: 8px;
+        background: #667eea;
+        border-radius: 50%;
+        box-shadow: 0 0 0 2px white;
+    }
+
+    .modern-dropdown-menu {
+        min-width: 100%;
+        max-height: 300px;
+        overflow-y: auto;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 15px;
+        background: white;
+        margin-top: 5px;
+    }
+
+    .dropdown-search {
+        margin-bottom: 15px;
+    }
+
+    .dropdown-search .form-control {
+        border-radius: 6px;
+        border: 1px solid #e2e8f0;
+        padding: 8px 12px;
+        font-size: 0.9rem;
+        color: #2d3748;
+        background: white;
+    }
+
+    .dropdown-search .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        outline: none;
+        color: #2d3748;
+    }
+
+    .dropdown-actions {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 15px;
+    }
+
+    .dropdown-actions .btn {
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #2d3748;
+    }
+
+    .dropdown-actions .btn:hover {
+        color: #2d3748;
+    }
+
+    .dropdown-divider {
+        margin: 15px 0;
+        border-color: #e2e8f0;
+    }
+
+    .users-list-container {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    /* Modern User Items */
+    .modern-user-item {
+        margin-bottom: 8px;
+        padding: 8px;
+        border-radius: 6px;
+        transition: background-color 0.2s ease;
+    }
+
+    .modern-user-item:hover {
+        background-color: #f7fafc;
+    }
+
+    .modern-user-label {
+        margin: 0;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        padding: 0;
+        font-size: 0.9rem;
+        color: #2d3748;
+    }
+
+    .modern-user-label .text-muted {
+        color: #2d3748 !important;
+    }
+
+    .modern-checkbox {
+        margin-right: 10px;
+        margin-left: 0;
+        flex-shrink: 0;
+        width: 16px;
+        height: 16px;
+    }
+
+    .user-name {
+        font-weight: 500;
+        color: #2d3748;
+        margin-right: 5px;
+    }
+
+    .user-branch {
+        font-size: 0.85rem;
+        color: #2d3748 !important;
+        font-weight: 400;
+    }
+
+    /* Footer Buttons */
+    .modal-footer-buttons {
+        display: flex;
+        justify-content: flex-end;
+        gap: 15px;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .btn-assign-user {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 8px;
+        padding: 12px 30px;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-assign-user:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+    }
+
+    .btn-outline-secondary {
+        border-radius: 8px;
+        padding: 12px 30px;
+        font-weight: 600;
+        font-size: 1rem;
+        border-width: 2px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-outline-secondary:hover {
+        background-color: #6c757d;
+        border-color: #6c757d;
+        transform: translateY(-1px);
+    }
+
+    /* Custom Error Styling */
+    .custom-error {
+        color: #e53e3e;
+        font-size: 0.85rem;
+        margin-top: 5px;
+        font-weight: 500;
+    }
+
+    /* Note Deadline Styling */
+    .note_deadline .form-label {
+        margin-bottom: 0;
+    }
+
+    .note_deadline_checkbox {
+        width: 18px;
+        height: 18px;
+        margin-right: 8px;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .assign-user-body {
+            padding: 20px 15px;
+        }
+        
+        .modal-footer-buttons {
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .btn-assign-user,
+        .btn-outline-secondary {
+            width: 100%;
+            padding: 15px 20px;
+        }
+        
+        .modal-title-section .modal-title {
+            font-size: 1.2rem;
+        }
+    }
+
+    /* Loading State */
+    .popuploader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+
+    .popuploader > div {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .popuploader i {
+        font-size: 32px;
+        color: #667eea;
+        margin-bottom: 15px;
+    }
+
+    .popuploader p {
+        margin: 0;
+        font-weight: 500;
+        color: #2d3748;
+    }
+
+    /* Enhanced Tooltip Styling */
+    .tooltip-inner {
+        background: #2d3748;
+        color: white;
+        border-radius: 8px;
+        padding: 12px 16px;
+        font-size: 0.85rem;
+        line-height: 1.4;
+        max-width: 300px;
+        text-align: left;
+        white-space: pre-line;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .tooltip.bs-tooltip-bottom .arrow::before {
+        border-bottom-color: #2d3748;
+    }
+
+    /* Selection count badge */
+    .selection-count-badge {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: #667eea;
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
 </style>
 
 <!-- Assign User Modal -->
@@ -152,27 +589,29 @@
                                 <button type="button" class="btn btn-default dropdown-toggle enhanced-dropdown-btn" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                     <i class="fas fa-user-plus mr-2"></i>
                                     <span id="selected-users-text">Assign User</span>
-                                    <i class="fas fa-chevron-down float-right"></i>
+                                    <i class="fas fa-chevron-down"></i>
                                 </button>
-                                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton" style="min-width: 100%;max-height: 300px;overflow-y: auto;box-shadow: rgba(0, 0, 0, 0.2) 0px 8px 16px 0px;z-index: 1;padding: 8px;border-radius: 4px;border: 1px solid rgb(204, 204, 204);font-size: 14px;background-color: white;margin-left: -8px;">
+                                <div class="dropdown-menu modern-dropdown-menu" aria-labelledby="dropdownMenuButton">
                                     <!-- Search input -->
-                                    <div style="margin-bottom: 10px;">
-                                        <input type="text" id="user-search" class="form-control" placeholder="Search users..." style="font-size: 12px; padding: 5px;">
+                                    <div class="dropdown-search">
+                                        <input type="text" id="user-search" class="form-control" placeholder="Search users...">
                                     </div>
                                     <!-- Select All/None buttons -->
-                                    <div style="margin-bottom: 10px; text-align: center;">
-                                        <button type="button" id="select-all-users" class="btn btn-sm btn-outline-primary" style="margin-right: 5px; font-size: 11px;">Select All</button>
-                                        <button type="button" id="select-none-users" class="btn btn-sm btn-outline-secondary" style="font-size: 11px;">Select None</button>
+                                    <div class="dropdown-actions">
+                                        <button type="button" id="select-all-users" class="btn btn-sm btn-outline-primary">Select All</button>
+                                        <button type="button" id="select-none-users" class="btn btn-sm btn-outline-secondary">Select None</button>
                                     </div>
-                                    <hr style="margin: 8px 0;">
+                                    <hr class="dropdown-divider">
                                     <!-- Users list -->
-                                    <div id="users-list" style="margin-left: 0; padding-left: 0;">
+                                    <div id="users-list" class="users-list-container">
                                         @foreach(\App\Models\Admin::where('role','!=',7)->where('status',1)->orderby('first_name','ASC')->get() as $admin)
                                         <?php $branchname = \App\Models\Branch::where('id',$admin->office_id)->first(); ?>
-                                        <div class="user-item" data-name="{{ strtolower($admin->first_name.' '.$admin->last_name.' '.@$branchname->office_name) }}" style="margin-bottom: 8px; padding-left: 0;">
-                                            <label style="margin-bottom: 0; cursor: pointer; display: flex; align-items: center; padding-left: 0; margin-left: 0; text-align: left;">
-                                                <input type="checkbox" class="checkbox-item" value="{{ $admin->id }}" data-name="{{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})" style="margin-right: 8px; margin-left: 0; flex-shrink: 0;">
-                                                <span style="margin-left: 0; padding-left: 0; text-align: left; text-indent: 0;">{{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})</span>
+                                        <div class="user-item modern-user-item" data-name="{{ strtolower($admin->first_name.' '.$admin->last_name.' '.@$branchname->office_name) }}">
+                                            <label class="modern-user-label">
+                                                <input type="checkbox" class="checkbox-item modern-checkbox" value="{{ $admin->id }}" data-name="{{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})">
+                                                <i class="fas fa-user-circle mr-2 text-muted"></i>
+                                                <span class="user-name">{{ $admin->first_name }} {{ $admin->last_name }}</span>
+                                                <span class="user-branch text-muted">({{ @$branchname->office_name }})</span>
                                             </label>
                                         </div>
                                         @endforeach
@@ -188,69 +627,93 @@
                             <option value="{{ $admin->id }}">{{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})</option>
                             @endforeach
                         </select>
-
                     </div>
-                    <div class="clearfix"></div>
-                </div>
-            </div>
 
-            <div id="popover-content">
-                <div class="box-header with-border">
-                    <div class="form-group row" style="margin-bottom:12px;">
-                        <label for="inputEmail3" class="col-sm-3 control-label c6 f13" style="margin-top:8px;">Note</label>
-                        <div class="col-sm-9">
-                            <textarea id="assignnote" class="form-control" placeholder="Enter a note..."></textarea>
+                    <div class="col-12">
+                        <div class="form-group enhanced-form-group">
+                            <label for="assignnote" class="form-label">
+                                <i class="fas fa-sticky-note text-muted mr-1"></i>
+                                Note <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text"><i class="fas fa-align-left"></i></span>
+                                </div>
+                                <textarea id="assignnote" class="form-control enhanced-textarea" placeholder="Enter a note..."></textarea>
+                            </div>
                         </div>
-
-                        <div class="clearfix"></div>
                     </div>
-                </div>
 
-                <div class="box-header with-border">
-                    <div class="form-group row" style="margin-bottom:12px;">
-                        <label for="inputEmail3" class="col-sm-3 control-label c6 f13" style="margin-top:8px;">Date</label>
-                        <div class="col-sm-9">
-                            <input type="date" class="form-control f13" placeholder="yyyy-mm-dd" id="popoverdatetime" value="{{ date('Y-m-d') }}" name="popoverdate">
+                    <div class="col-12 col-md-6">
+                        <div class="form-group enhanced-form-group">
+                            <label for="popoverdatetime" class="form-label">
+                                <i class="fas fa-calendar text-muted mr-1"></i>
+                                Date <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                                </div>
+                                <input type="date" class="form-control enhanced-input" placeholder="yyyy-mm-dd" id="popoverdatetime" value="{{ date('Y-m-d') }}" name="popoverdate">
+                            </div>
                         </div>
-                        <div class="clearfix"></div>
                     </div>
-                </div>
 
-                <div class="form-group row" style="margin-bottom:12px;">
-                    <label for="inputSub3" class="col-sm-3 control-label c6 f13" style="margin-top:8px;">Group</label>
-                    <div class="col-sm-9">
-                        <select class="assigneeselect2 form-control selec_reg" id="task_group" name="task_group">
-                            <option value="">Select</option>
-                            <option value="Call">Call</option>
-                            <option value="Checklist">Checklist</option>
-                            <option value="Review">Review</option>
-                            <option value="Query">Query</option>
-                            <option value="Urgent">Urgent</option>
-                        </select>
+                    <div class="col-12 col-md-6">
+                        <div class="form-group enhanced-form-group">
+                            <label for="task_group" class="form-label">
+                                <i class="fas fa-tag text-muted mr-1"></i>
+                                Group <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text"><i class="fas fa-list"></i></span>
+                                </div>
+                                <select class="form-control enhanced-select" id="task_group" name="task_group">
+                                    <option value="">Select Group</option>
+                                    <option value="Call">📞 Call</option>
+                                    <option value="Checklist">✅ Checklist</option>
+                                    <option value="Review">📋 Review</option>
+                                    <option value="Query">❓ Query</option>
+                                    <option value="Urgent">⚠️ Urgent</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
-                    <div class="clearfix"></div>
-                </div>
 
-                <div class="form-group row note_deadline">
-                    <label for="inputSub3" class="col-sm-3 control-label c6 f13" style="margin-top:8px;">Note Deadline
-                        <input class="note_deadline_checkbox" type="checkbox" id="note_deadline_checkbox" name="note_deadline_checkbox" value="">
-                    </label>
-                    <div class="col-sm-9">
-                        <input type="date" class="form-control f13" placeholder="yyyy-mm-dd" id="note_deadline" value="<?php echo date('Y-m-d');?>" name="note_deadline" disabled>
+                    <div class="col-12">
+                        <div class="form-group enhanced-form-group note_deadline">
+                            <div class="row align-items-center">
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label d-flex align-items-center">
+                                        <input class="note_deadline_checkbox mr-2" type="checkbox" id="note_deadline_checkbox" name="note_deadline_checkbox" value="">
+                                        <i class="fas fa-clock text-muted mr-1"></i>
+                                        Note Deadline
+                                    </label>
+                                </div>
+                                <div class="col-12 col-md-8">
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-calendar-check"></i></span>
+                                        </div>
+                                        <input type="date" class="form-control enhanced-input" placeholder="yyyy-mm-dd" id="note_deadline" value="<?php echo date('Y-m-d');?>" name="note_deadline" disabled>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="clearfix"></div>
                 </div>
 
                 <input id="assign_client_id" type="hidden" value="{{ base64_encode(convert_uuencode(@$fetchedData->id)) }}">
-                <div class="box-footer" style="padding:10px 0;">
-                    <div class="row">
-                        <input type="hidden" value="" id="popoverrealdate" name="popoverrealdate" />
-                    </div>
-                    <div class="row text-center">
-                        <div class="col-md-12 text-center">
-                            <button class="btn btn-danger" id="assignUser" style="background-color: #0d6efd !important;">Assign User</button>
-                        </div>
-                    </div>
+                <input type="hidden" value="" id="popoverrealdate" name="popoverrealdate" />
+                
+                <div class="modal-footer-buttons">
+                    <button class="btn btn-primary btn-lg btn-assign-user" id="assignUser">
+                        <i class="fas fa-user-plus mr-2"></i>Assign User
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-lg" data-dismiss="modal">
+                        <i class="fas fa-times mr-2"></i>Cancel
+                    </button>
                 </div>
             </div>
         </div>

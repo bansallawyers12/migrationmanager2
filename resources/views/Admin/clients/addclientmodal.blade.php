@@ -71,6 +71,10 @@ $(document).ready(function() {
     // Initialize the multi-select dropdown functionality
     initializeMultiSelectDropdown();
 
+    // Ensure dropdown functionality works (remove any conflicting tooltip data-toggle)
+    $('#dropdownMenuButton').removeAttr('data-toggle');
+    $('#dropdownMenuButton').attr('data-toggle', 'dropdown');
+
     // Handle checkbox changes
     $('.checkbox-item').on('change', function() {
         updateSelectedUsers();
@@ -106,15 +110,76 @@ function initializeMultiSelectDropdown() {
 
 function updateSelectedUsers() {
     var selectedUsers = [];
+    var selectedUsersWithDetails = [];
+    
     $('.checkbox-item:checked').each(function() {
-        selectedUsers.push($(this).data('name'));
+        var userName = $(this).data('name');
+        var userId = $(this).val();
+        
+        selectedUsers.push(userName);
+        
+        // Get full details for tooltip
+        var userItem = $(this).closest('.modern-user-item');
+        var fullName = userItem.find('.user-name').text();
+        var branch = userItem.find('.user-branch').text();
+        selectedUsersWithDetails.push(fullName + ' ' + branch);
     });
 
-    var buttonText = selectedUsers.length > 0 ?
-        (selectedUsers.length === 1 ? selectedUsers[0] : selectedUsers.length + ' users selected') :
-        'Assign User';
+    var buttonText;
+    var tooltipText = '';
+    
+    if (selectedUsers.length === 0) {
+        buttonText = 'Assign User';
+        tooltipText = 'No users selected';
+    } else if (selectedUsers.length === 1) {
+        buttonText = selectedUsers[0];
+        tooltipText = 'Selected: ' + selectedUsersWithDetails[0];
+    } else if (selectedUsers.length <= 2) {
+        // Show all names if 2 or fewer
+        buttonText = selectedUsers.join(', ');
+        tooltipText = 'Selected Users:\n• ' + selectedUsersWithDetails.join('\n• ');
+    } else {
+        // Show first 2 names and count for more
+        var firstTwo = selectedUsers.slice(0, 2).join(', ');
+        var remaining = selectedUsers.length - 2;
+        buttonText = firstTwo + ' +' + remaining + ' more';
+        tooltipText = 'Selected Users:\n• ' + selectedUsersWithDetails.join('\n• ');
+    }
 
+    // Update button text
     $('#selected-users-text').text(buttonText);
+    
+    // Update visual state
+    var $dropdownBtn = $('#dropdownMenuButton');
+    if (selectedUsers.length > 0) {
+        $dropdownBtn.addClass('has-selection');
+        
+        // Add or update selection count badge
+        if ($dropdownBtn.find('.selection-count-badge').length === 0) {
+            $dropdownBtn.append('<span class="selection-count-badge">' + selectedUsers.length + '</span>');
+        } else {
+            $dropdownBtn.find('.selection-count-badge').text(selectedUsers.length);
+        }
+        
+        // Check if text is too long and add truncation class (with small delay for DOM update)
+        setTimeout(function() {
+            var $textElement = $('#selected-users-text');
+            var textWidth = $textElement[0].scrollWidth;
+            var containerWidth = $textElement.parent()[0].clientWidth - 60; // Account for icons and padding
+            
+            if (textWidth > containerWidth) {
+                $dropdownBtn.addClass('has-long-text');
+            } else {
+                $dropdownBtn.removeClass('has-long-text');
+            }
+        }, 10);
+    } else {
+        $dropdownBtn.removeClass('has-selection has-long-text');
+        $dropdownBtn.find('.selection-count-badge').remove();
+    }
+    
+    // Ensure dropdown functionality is preserved
+    $dropdownBtn.attr('data-toggle', 'dropdown');
 }
 
 function updateHiddenSelect() {

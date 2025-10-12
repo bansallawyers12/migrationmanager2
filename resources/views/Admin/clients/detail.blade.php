@@ -10,7 +10,7 @@
 <?php
 use App\Http\Controllers\Controller;
 ?>
-<div class="crm-container">
+<div class="crm-container" data-client-id="{{ $fetchedData->id }}">
     <!-- Collapsed Toggle Button (shown when sidebar is collapsed) -->
     <button id="collapsed-toggle" class="collapsed-toggle-btn" title="Show Sidebar">
         ☰
@@ -236,6 +236,12 @@ use App\Http\Controllers\Controller;
                     <i class="fas fa-file-contract"></i>
                     <span>Visa Documents</span>
                 </button>
+                @if(isset($isEoiMatter) && $isEoiMatter)
+                <button class="client-nav-button" data-tab="eoiroi">
+                    <i class="fas fa-passport"></i>
+                    <span>EOI / ROI</span>
+                </button>
+                @endif
                 <button class="client-nav-button" data-tab="accounts">
                     <i class="fas fa-calculator"></i>
                     <span>Accounts</span>
@@ -313,6 +319,11 @@ use App\Http\Controllers\Controller;
             ?>
             @if((isset($id1) && $id1 != "") || $matter_cnt > 0)
                 @include('Admin.clients.tabs.visa_documents')
+                
+                @if(isset($isEoiMatter) && $isEoiMatter)
+                    @include('Admin.clients.tabs.eoi_roi')
+                @endif
+                
                 @include('Admin.clients.tabs.accounts')
                 @include('Admin.clients.tabs.conversations')
                 @include('Admin.clients.tabs.form_generation_client')

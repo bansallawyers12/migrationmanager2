@@ -4216,12 +4216,34 @@ class ClientsController extends Controller
 
                 // Fetch client family details with optimized query
                 $clientFamilyDetails = ClientRelationship::Where('client_id', $id)->get()?? [];
+                
+                // Detect if current matter is EOI-related
+                $isEoiMatter = false;
+                if ($id1) {
+                    // Check if the current matter is EOI
+                    $currentMatter = DB::table('client_matters as cm')
+                        ->join('matters as m', 'cm.sel_matter_id', '=', 'm.id')
+                        ->where('cm.client_id', $id)
+                        ->where('cm.client_unique_matter_no', $id1)
+                        ->where('cm.matter_status', 1)
+                        ->select('m.nick_name', 'm.title')
+                        ->first();
+                    
+                    if ($currentMatter) {
+                        $isEoiMatter = (
+                            strtolower($currentMatter->nick_name) === 'eoi' ||
+                            stripos($currentMatter->title, 'eoi') !== false ||
+                            stripos($currentMatter->title, 'expression of interest') !== false
+                        );
+                    }
+                }
+                
                 //dd($clientFamilyDetails);
                 //Return the view with all data
                 return view('Admin.clients.detail', compact(
                     'fetchedData', 'clientAddresses', 'clientContacts', 'emails', 'qualifications',
                     'experiences', 'testScores', 'visaCountries', 'clientOccupations','ClientPoints', 'clientSpouseDetail',
-                    'encodeId', 'id1','clientFamilyDetails', 'activeTab'
+                    'encodeId', 'id1','clientFamilyDetails', 'activeTab', 'isEoiMatter'
                 ));
             } else {
                 return redirect('/admin/clients')->with('error', 'Clients Not Exist');

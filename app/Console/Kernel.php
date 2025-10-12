@@ -21,6 +21,7 @@ class Kernel extends ConsoleKernel
         '\App\Console\Commands\ProcessServiceAccountTokens',
         '\App\Console\Commands\MigrateSecondDatabase',
         '\App\Console\Commands\CleanUtf8Data',
+        '\App\Console\Commands\BackfillEoiRoiData',
         //'\App\Console\Commands\RandomClientSelectionReward',
         //'\App\Console\Commands\VisaExpireReminderEmail',
     ];

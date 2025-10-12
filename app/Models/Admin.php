@@ -82,4 +82,35 @@ class Admin extends Authenticatable
     {
         return $this->hasMany(Label::class, 'user_id');
     }*/
+
+    /**
+     * Get the EOI/ROI references for this client.
+     */
+    public function eoiReferences(): HasMany
+    {
+        return $this->hasMany(\App\Models\ClientEoiReference::class, 'client_id');
+    }
+
+    /**
+     * Get relationships needed for points calculation
+     */
+    public function testScores(): HasMany
+    {
+        return $this->hasMany(\App\Models\ClientTestScore::class, 'client_id');
+    }
+
+    public function experiences(): HasMany
+    {
+        return $this->hasMany(\App\Models\ClientExperience::class, 'client_id');
+    }
+
+    public function qualifications(): HasMany
+    {
+        return $this->hasMany(\App\Models\ClientQualification::class, 'client_id');
+    }
+
+    public function partner()
+    {
+        return $this->hasOne(\App\Models\ClientSpouseDetail::class, 'client_id');
+    }
 }

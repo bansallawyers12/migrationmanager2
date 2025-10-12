@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\ClientsController;
+use App\Http\Controllers\Admin\ClientEoiRoiController;
 use App\Http\Controllers\AdminConsole\AnzscoOccupationController;
 use App\Http\Controllers\Admin\Clients\ClientNotesController;
 
@@ -233,6 +234,16 @@ Route::prefix('admin')->group(function() {
         Route::post('/documents/update-personal-category', [\App\Http\Controllers\Admin\Clients\ClientDocumentsController::class, 'updatePersonalDocCategory'])->name('admin.clients.documents.updatePersonalDocCategory');
         Route::post('/documents/add-visa-category', [\App\Http\Controllers\Admin\Clients\ClientDocumentsController::class, 'addVisaDocCategory'])->name('admin.clients.documents.addVisaDocCategory');
         Route::post('/documents/update-visa-category', [\App\Http\Controllers\Admin\Clients\ClientDocumentsController::class, 'updateVisaDocCategory'])->name('admin.clients.documents.updateVisaDocCategory');
+        
+        /*---------- Client EOI/ROI Management (Laravel 12 Syntax) ----------*/
+        Route::prefix('clients/{client}/eoi-roi')->name('admin.clients.eoi-roi.')->group(function () {
+            Route::get('/', [ClientEoiRoiController::class, 'index'])->name('index');
+            Route::get('/calculate-points', [ClientEoiRoiController::class, 'calculatePoints'])->name('calculatePoints');
+            Route::post('/', [ClientEoiRoiController::class, 'upsert'])->name('upsert');
+            Route::get('/{eoiReference}', [ClientEoiRoiController::class, 'show'])->name('show');
+            Route::delete('/{eoiReference}', [ClientEoiRoiController::class, 'destroy'])->name('destroy');
+            Route::get('/{eoiReference}/reveal-password', [ClientEoiRoiController::class, 'revealPassword'])->name('revealPassword');
+        });
         
 		Route::post('/savetoapplication', 'Admin\ClientsController@savetoapplication');
 
