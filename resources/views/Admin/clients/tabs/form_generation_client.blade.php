@@ -32,7 +32,7 @@
                                 if($id1)
                                 { //if client unique reference id is present in url
                                     $matter_info_arr = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
-                                    if($matter_info_arr->id){
+                                    if($matter_info_arr && $matter_info_arr->id){
                                         $formlists = \App\Models\Form956::where('client_id', $fetchedData->id)
                                         ->where('client_matter_id', $matter_info_arr->id)
                                         ->with(['client', 'agent']) // Eager load relationships
@@ -46,7 +46,7 @@
                                     //dd($matter_cnt);
                                     if($matter_cnt >0){
                                         $matter_info_arr = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->orderBy('id', 'desc')->first();
-                                        if($matter_info_arr->id){
+                                        if($matter_info_arr && $matter_info_arr->id){
                                             $formlists = \App\Models\Form956::where('client_id', $fetchedData->id)
                                             ->where('client_matter_id', $matter_info_arr->id)
                                             ->with(['client', 'agent']) // Eager load relationships
@@ -143,7 +143,7 @@
                                 if($id1)
                                 { //if client unique reference id is present in url
                                     $matter_info_arr = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
-                                    if($matter_info_arr->id){
+                                    if($matter_info_arr && $matter_info_arr->id){
                                         $formlists1 = \App\Models\CostAssignmentForm::where('client_id', $fetchedData->id)
                                         ->where('client_matter_id', $matter_info_arr->id)
                                         ->with(['client', 'agent']) // Eager load relationships
@@ -156,7 +156,7 @@
                                     $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
                                     if($matter_cnt >0){
                                         $matter_info_arr = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->orderBy('id', 'desc')->first();
-                                        if($matter_info_arr->id){
+                                        if($matter_info_arr && $matter_info_arr->id){
                                             $formlists1 = \App\Models\CostAssignmentForm::where('client_id', $fetchedData->id)
                                             ->where('client_matter_id', $matter_info_arr->id)
                                             ->with(['client', 'agent']) // Eager load relationships
@@ -229,7 +229,7 @@
                                 if($id1)
                                 { //if client unique reference id is present in url
                                     $matter_info_arr = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
-                                    if($matter_info_arr->id){
+                                    if($matter_info_arr && $matter_info_arr->id){
                                         $formlists2 = \App\Models\Document::where('client_id', $fetchedData->id)
                                         ->where('client_matter_id', $matter_info_arr->id)
                                         ->where('type', 'client')
@@ -243,7 +243,7 @@
                                     $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
                                     if($matter_cnt >0){
                                         $matter_info_arr = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->orderBy('id', 'desc')->first();
-                                        if($matter_info_arr->id){
+                                        if($matter_info_arr && $matter_info_arr->id){
                                             $formlists2 = \App\Models\Document::where('client_id', $fetchedData->id)
                                             ->where('client_matter_id', $matter_info_arr->id)
                                             ->where('type', 'client')

@@ -97,9 +97,17 @@
                                                 <?php foreach ($documents as $visaKey => $fetch): ?>
                                                     <?php
                                                     $admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
-                                                    $fileUrl = $fetch->myfile_key ? $fetch->myfile : 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/' . $fetchedData->id . '/visa/' . $fetch->myfile;
+                                                    
+                                                    // Ensure $fileUrl is always a valid full URL
+                                                    if (!empty($fetch->myfile) && strpos($fetch->myfile, 'http') === 0) {
+                                                        // Already a full URL
+                                                        $fileUrl = $fetch->myfile;
+                                                    } else {
+                                                        // Legacy format or relative path - construct full URL
+                                                        $fileUrl = 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/' . $fetchedData->id . '/visa/' . $fetch->myfile;
+                                                    }
                                                     ?>
-                                                    <tr class="drow" data-matterid="<?= $fetch->client_matter_id ?>" id="id_<?= $fetch->id ?>">
+                                                    <tr class="drow" data-matterid="<?= $fetch->client_matter_id ?>" data-catid="<?= $fetch->folder_name ?>" id="id_<?= $fetch->id ?>">
                                                         <td style="white-space: initial;">
                                                             <div data-id="<?= $fetch->id ?>" data-visachecklistname="<?= htmlspecialchars($fetch->checklist) ?>" class="visachecklist-row" title="Uploaded by: <?= htmlspecialchars($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>">
                                                                 <span><?= htmlspecialchars($fetch->checklist) ?></span>
@@ -108,7 +116,7 @@
                                                         <td style="white-space: initial;">
                                                             <?php if ($fetch->file_name): ?>
                                                                 <div data-id="<?= $fetch->id ?>" data-name="<?= htmlspecialchars($fetch->file_name) ?>" class="doc-row" title="Uploaded by: <?= htmlspecialchars($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" oncontextmenu="showVisaFileContextMenu(event, <?= $fetch->id ?>, '<?= htmlspecialchars($fetch->filetype) ?>', '<?= $fileUrl ?>', '<?= $id ?>', '<?= $fetch->status ?? 'draft' ?>'); return false;">
-                                                                    <a href="javascript:void(0);" onclick="previewFile('<?= $fetch->filetype ?>','<?= $fetch->myfile ?>','preview-container-migdocumnetlist')">
+                                                                    <a href="javascript:void(0);" onclick="previewFile('<?= $fetch->filetype ?>','<?= $fileUrl ?>','preview-container-migdocumnetlist')">
                                                                         <i class="fas fa-file-image"></i> <span><?= htmlspecialchars($fetch->file_name . '.' . $fetch->filetype) ?></span>
                                                                     </a>
                                                                 </div>
@@ -133,8 +141,8 @@
                                                             <?php if ($fetch->myfile): ?>
                                                                 <a class="renamechecklist" data-id="<?= $fetch->id ?>" href="javascript:;" style="display: none;"></a>
                                                                 <a class="renamedoc" data-id="<?= $fetch->id ?>" href="javascript:;" style="display: none;"></a>
-                                                                <a class="download-file" data-filelink="<?= $fetch->myfile ?>" data-filename="<?= $fetch->myfile_key ?>" href="#" style="display: none;"></a>
-                                                                <a class="notuseddoc" data-id="<?= $fetch->id ?>" data-doctype="visa" data-href="notuseddoc" href="javascript:;" style="display: none;"></a>
+                                                                <a class="download-file" data-filelink="<?= $fileUrl ?>" data-filename="<?= $fetch->myfile_key ?: basename($fetch->myfile) ?>" data-id="<?= $fetch->id ?>" href="#" style="display: none;"></a>
+                                                                <a class="notuseddoc" data-id="<?= $fetch->id ?>" data-doctype="visa" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
                                                             <?php endif; ?>
                                                         </td>
                                                     </tr>
@@ -363,7 +371,18 @@
                             window.open(pdfUrl, '_blank');
                             break;
                         case 'download':
-                            $('.download-file[data-filelink="' + currentVisaContextData.fileUrl + '"]').click();
+                            // Try to find download button by filelink
+                            let $downloadBtn = $('.download-file[data-filelink="' + currentVisaContextData.fileUrl + '"]');
+                            if ($downloadBtn.length === 0) {
+                                // Fallback: try finding by document ID
+                                $downloadBtn = $('.download-file[data-id="' + currentVisaContextFile + '"]');
+                            }
+                            if ($downloadBtn.length > 0) {
+                                $downloadBtn.click();
+                            } else {
+                                console.error('Download button not found for file ID:', currentVisaContextFile);
+                                alert('Download link not found. Please refresh the page and try again.');
+                            }
                             break;
                         case 'not-used':
                             $('.notuseddoc[data-id="' + currentVisaContextFile + '"]').click();

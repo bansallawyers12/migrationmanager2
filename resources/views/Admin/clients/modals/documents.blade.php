@@ -54,7 +54,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" action="{{URL::to('/admin/add-personaldoccategory')}}" name="add_pers_doc_cat_form" id="add_pers_doc_cat_form" autocomplete="off"  enctype="multipart/form-data">
+				<form method="post" action="{{URL::to('/admin/documents/add-personal-category')}}" name="add_pers_doc_cat_form" id="add_pers_doc_cat_form" autocomplete="off"  enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="clientid" value="{{$fetchedData->id}}">
 
@@ -94,7 +94,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" action="{{URL::to('/admin/add-visadoccategory')}}" name="add_visa_doc_cat_form" id="add_visa_doc_cat_form" autocomplete="off"  enctype="multipart/form-data">
+				<form method="post" action="{{URL::to('/admin/documents/add-visa-category')}}" name="add_visa_doc_cat_form" id="add_visa_doc_cat_form" autocomplete="off"  enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="clientid" value="{{$fetchedData->id}}">
 					<input type="hidden" name="clientmatterid" id="visaclientmatterid" value="">

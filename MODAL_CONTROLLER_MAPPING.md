@@ -166,7 +166,7 @@ Includes 13 Modal Files (applications, notes, tasks, etc.)
 **Secondary Controllers:**
 - `Admin\Form956Controller.php` - Form 956 generation
 - `Admin\ClientPersonalDetailsController.php` - Client details
-- `Admin\ClientNotesController.php` - Notes management
+- `Admin\Clients\ClientNotesController.php` - Notes management
 - `Admin\ApplicationsController.php` - Applications
 - `Admin\AssigneeController.php` - Assignee management
 - `Admin\AppointmentsController.php` - Appointments

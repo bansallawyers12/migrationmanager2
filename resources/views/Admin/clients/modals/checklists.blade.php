@@ -116,7 +116,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" action="{{URL::to('/admin/add-edudocchecklist')}}" name="edu_upload_form" id="edu_upload_form" autocomplete="off"  enctype="multipart/form-data">
+				<form method="post" action="{{URL::to('/admin/documents/add-edu-checklist')}}" name="edu_upload_form" id="edu_upload_form" autocomplete="off"  enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="clientid" value="{{$fetchedData->id}}">
                     <input type="hidden" name="type" value="client">
@@ -168,7 +168,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" action="{{URL::to('/admin/add-visadocchecklist')}}" name="mig_upload_form" id="mig_upload_form" autocomplete="off"  enctype="multipart/form-data">
+				<form method="post" action="{{URL::to('/admin/documents/add-visa-checklist')}}" name="mig_upload_form" id="mig_upload_form" autocomplete="off"  enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="clientid" value="{{$fetchedData->id}}">
                     <input type="hidden" name="type" value="client">

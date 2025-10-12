@@ -29,14 +29,14 @@ use App\Http\Controllers\Controller;
                     if($id1) { //if client unique reference id is present in url
                         $matter_info_arr = \App\Models\ClientMatter::select('client_unique_matter_no')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
                     ?>
-                        {{$fetchedData->client_id}}-{{$matter_info_arr->client_unique_matter_no}}
+                        {{$fetchedData->client_id}}-{{$matter_info_arr ? $matter_info_arr->client_unique_matter_no : 'N/A'}}
                     <?php
                     } else {
                         $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
                         if($matter_cnt >0){
                             $matter_info_arr = \App\Models\ClientMatter::select('client_unique_matter_no')->where('client_id',$fetchedData->id)->where('matter_status',1)->orderBy('id', 'desc')->first();
                         ?>
-                            {{$fetchedData->client_id}}-{{$matter_info_arr->client_unique_matter_no}}
+                            {{$fetchedData->client_id}}-{{$matter_info_arr ? $matter_info_arr->client_unique_matter_no : 'N/A'}}
                         <?php
                         } else {
                         ?>
@@ -1146,7 +1146,7 @@ use App\Http\Controllers\Controller;
         encodeId: '{{ $encodeId }}',
         matterId: '{{ $id1 ?? "" }}',
         activeTab: '{{ $activeTab ?? "personaldetails" }}',
-        matterRefNo: '{{ $id1 ?? ($matter_info_arr->client_unique_matter_no ?? null) }}',
+        matterRefNo: '{{ $id1 ?? ($matter_info_arr ? $matter_info_arr->client_unique_matter_no : null) }}',
         clientFirstName: '{{ $fetchedData->first_name ?? "user" }}',
         csrfToken: '{{ csrf_token() }}',
         currentDate: '{{ date("Y-m-d") }}',
@@ -1155,7 +1155,7 @@ use App\Http\Controllers\Controller;
             base: '{{ URL::to("/") }}',
             admin: '{{ URL::to("/admin") }}',
             fetchVisaExpiryMessages: '{{ URL::to("/admin/fetch-visa_expiry_messages") }}',
-            downloadDocument: '{{ url("/admin/download-document") }}',
+            downloadDocument: '{{ url("/admin/documents/download") }}',
             getTopInvoiceNo: '{{ URL::to("/admin/clients/getTopInvoiceNoFromDB") }}',
             getTopReceiptVal: '{{ URL::to("/admin/clients/getTopReceiptValInDB") }}',
             listOfInvoice: '{{ URL::to("/admin/clients/listOfInvoice") }}',
@@ -1207,8 +1207,8 @@ use App\Http\Controllers\Controller;
             getProduct: '{{ URL::to("/admin/getproduct") }}',
             getBranch: '{{ URL::to("/admin/getbranch") }}',
             convertApplication: '{{ URL::to("/admin/convertapplication") }}',
-            renameDoc: '{{ URL::to("/admin/renamedoc") }}',
-            renameChecklistDoc: '{{ URL::to("/admin/renamechecklistdoc") }}',
+            renameDoc: '{{ URL::to("/admin/documents/rename") }}',
+            renameChecklistDoc: '{{ URL::to("/admin/documents/rename-checklist") }}',
             deleteEducation: '{{ URL::to("/admin/delete-education") }}',
             getSubjects: '{{ URL::to("/admin/getsubjects") }}',
             getAppointmentDetail: '{{ URL::to("/admin/getAppointmentdetail") }}',

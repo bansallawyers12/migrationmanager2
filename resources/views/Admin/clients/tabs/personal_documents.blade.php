@@ -85,9 +85,15 @@
                                                 <?php foreach ($documents as $docKey => $fetch): ?>
                                                     <?php
                                                     $admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
-                                                    $fileUrl = $fetch->myfile_key
-                                                        ? $fetch->myfile
-                                                        : 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/' . $clientId . '/personal/' . $fetch->myfile;
+                                                    
+                                                    // Ensure $fileUrl is always a valid full URL
+                                                    if (!empty($fetch->myfile) && strpos($fetch->myfile, 'http') === 0) {
+                                                        // Already a full URL
+                                                        $fileUrl = $fetch->myfile;
+                                                    } else {
+                                                        // Legacy format or relative path - construct full URL
+                                                        $fileUrl = 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/' . $clientId . '/personal/' . $fetch->myfile;
+                                                    }
                                                     ?>
                                                     <tr class="drow" id="id_<?= $fetch->id ?>">
                                                         <td style="white-space: initial;">
@@ -119,7 +125,13 @@
                                                             <?php endif; ?>
                                                         </td>
                                                         <td>
-                                                            <!-- Action dropdown removed - functionality moved to right-click context menu -->
+                                                            <!-- Hidden elements for context menu actions -->
+                                                            <?php if ($fetch->myfile): ?>
+                                                                <a class="renamechecklist" data-id="<?= $fetch->id ?>" href="javascript:;" style="display: none;"></a>
+                                                                <a class="renamedoc" data-id="<?= $fetch->id ?>" href="javascript:;" style="display: none;"></a>
+                                                                <a class="download-file" data-filelink="<?= $fileUrl ?>" data-filename="<?= $fetch->myfile_key ?: basename($fetch->myfile) ?>" data-id="<?= $fetch->id ?>" href="#" style="display: none;"></a>
+                                                                <a class="notuseddoc" data-id="<?= $fetch->id ?>" data-doctype="personal" data-doccategory="<?= $catVal->title ?>" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
+                                                            <?php endif; ?>
                                                         </td>
                                                     </tr>
                                                 <?php endforeach; ?>
@@ -339,7 +351,18 @@
                             window.open(pdfUrl, '_blank');
                             break;
                         case 'download':
-                            $('.download-file[data-filelink="' + currentContextData.fileUrl + '"]').click();
+                            // Try to find download button by filelink
+                            let $downloadBtn = $('.download-file[data-filelink="' + currentContextData.fileUrl + '"]');
+                            if ($downloadBtn.length === 0) {
+                                // Fallback: try finding by document ID
+                                $downloadBtn = $('.download-file[data-id="' + currentContextFile + '"]');
+                            }
+                            if ($downloadBtn.length > 0) {
+                                $downloadBtn.click();
+                            } else {
+                                console.error('Download button not found for file ID:', currentContextFile);
+                                alert('Download link not found. Please refresh the page and try again.');
+                            }
                             break;
                         case 'not-used':
                             $('.notuseddoc[data-id="' + currentContextFile + '"]').click();

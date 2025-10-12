@@ -52,7 +52,7 @@
             var newTitle = prompt('Enter new title for the category:');
             if (newTitle) {
                 $.ajax({
-                    url: '/admin/update-personal-doc-category',
+                    url: '/admin/documents/update-personal-category',
                     method: 'POST',
                     data: {
                         _token: $('meta[name="csrf-token"]').attr('content'),
@@ -99,7 +99,7 @@
             var newTitle = prompt('Enter new title for the category:');
             if (newTitle) {
                 $.ajax({
-                    url: '/admin/update-visa-doc-category',
+                    url: '/admin/documents/update-visa-category',
                     method: 'POST',
                     data: {
                         _token: $('meta[name="csrf-token"]').attr('content'),
@@ -4126,39 +4126,6 @@ Bansal Immigration`;
             });
         });
 
-        var verify_doc_id = '';
-        var verify_doc_href = '';
-        var verify_doc_type = '';
-
-        $(document).delegate('.verifydoc', 'click', function(){
-            $('#confirmDocModal').modal('show');
-            verify_doc_id = $(this).attr('data-id');
-            verify_doc_href = $(this).attr('data-href');
-            verify_doc_type = $(this).attr('data-doctype');
-        });
-
-        $(document).delegate('#confirmDocModal .accept', 'click', function(){
-            $('.popuploader').show();
-            $.ajax({
-                url: window.ClientDetailConfig.urls.admin + '/' + verify_doc_href,
-                type:'POST',
-                datatype:'json',
-                data:{doc_id:verify_doc_id, doc_type:verify_doc_type},
-                success:function(response){
-                    $('.popuploader').hide();
-                    var res = JSON.parse(response);
-                    $('#confirmDocModal').modal('hide');
-                    if(res.status){
-                        if(res.doc_type == 'personal') {
-                            $('.documnetlist_'+res.doc_category+' #docverifiedby_'+verify_doc_id).html(res.verified_by + "<br>" + res.verified_at);
-                        } else if( res.doc_type == 'visa') {
-                            $('.migdocumnetlist1 #visadocverifiedby_'+verify_doc_id).html(res.verified_by + "<br>" + res.verified_at);
-                        }
-                        getallactivities();
-                    }
-                }
-            });
-        });
 
 
         var notuse_doc_id = '';
@@ -5236,7 +5203,7 @@ Bansal Immigration`;
             $('.custom-error-msg').html('<span class="alert alert-info"><i class="fa fa-clock-o"></i> Uploading document...</span>');
 
             $.ajax({
-                url: site_url + '/admin/upload-edudocument',
+                url: site_url + '/admin/documents/upload-edu-document',
                 type: 'POST',
                 dataType: 'json',
                 data: formData,
@@ -5366,7 +5333,7 @@ Bansal Immigration`;
             $(this).val('');
             
             $.ajax({
-                url: site_url+'/admin/upload-visadocument',
+                url: site_url+'/admin/documents/upload-visa-document',
                 type:'POST',
                 dataType: 'json',
                 data: formData,
