@@ -132,18 +132,29 @@ Route::prefix('admin')->group(function() {
     // User role routes moved to routes/adminconsole.php
 
     /*---------- Leads Management ----------*/
-    Route::get('/leads', 'Admin\LeadController@index')->name('admin.leads.index');
-    Route::get('/leads/history/{id}', 'Admin\LeadController@history')->name('admin.leads.history');
-    Route::get('/leads/create', 'Admin\LeadController@create')->name('admin.leads.create');
-    Route::post('/leads/assign', 'Admin\LeadController@assign')->name('admin.leads.assign');
-    Route::get('/leads/edit/{id}', 'Admin\LeadController@edit')->name('admin.leads.edit');
-    Route::post('/leads/edit', 'Admin\LeadController@edit')->name('admin.leads.edit');
-    Route::get('/leads/notes/delete/{id}', 'Admin\LeadController@leaddeleteNotes');
-    Route::get('/get-notedetail', 'Admin\LeadController@getnotedetail');
+    // Lead CRUD operations
+    Route::get('/leads', 'Admin\Leads\LeadController@index')->name('admin.leads.index');
+    Route::get('/leads/history/{id}', 'Admin\Leads\LeadController@history')->name('admin.leads.history');
+    Route::get('/leads/create', 'Admin\Leads\LeadController@create')->name('admin.leads.create');
+    Route::get('/leads/edit/{id}', 'Admin\Leads\LeadController@edit')->name('admin.leads.edit');
+    Route::post('/leads/edit', 'Admin\Leads\LeadController@edit')->name('admin.leads.edit');
+    Route::post('/leads/store', 'Admin\Leads\LeadController@store')->name('admin.leads.store');
 
-    Route::post('/leads/store', 'Admin\LeadController@store')->name('admin.leads.store');
-    Route::get('/leads/convert', 'Admin\LeadController@convertoClient');
-    Route::get('/leads/pin/{id}', 'Admin\LeadController@leadPin');
+    // Lead Assignment operations
+    Route::post('/leads/assign', 'Admin\Leads\LeadAssignmentController@assign')->name('admin.leads.assign');
+    Route::post('/leads/bulk-assign', 'Admin\Leads\LeadAssignmentController@bulkAssign')->name('admin.leads.bulk_assign');
+    Route::get('/leads/assignable-users', 'Admin\Leads\LeadAssignmentController@getAssignableUsers')->name('admin.leads.assignable_users');
+
+    // Lead Conversion operations
+    Route::get('/leads/convert', 'Admin\Leads\LeadConversionController@convertToClient')->name('admin.leads.convert');
+    Route::post('/leads/convert-single', 'Admin\Leads\LeadConversionController@convertSingleLead')->name('admin.leads.convert_single');
+    Route::post('/leads/bulk-convert', 'Admin\Leads\LeadConversionController@bulkConvertToClient')->name('admin.leads.bulk_convert');
+    Route::get('/leads/conversion-stats', 'Admin\Leads\LeadConversionController@getConversionStats')->name('admin.leads.conversion_stats');
+
+    // Legacy routes (deprecated functionality)
+    Route::get('/leads/notes/delete/{id}', 'Admin\Leads\LeadController@leaddeleteNotes');
+    Route::get('/get-notedetail', 'Admin\Leads\LeadController@getnotedetail');
+    Route::get('/leads/pin/{id}', 'Admin\Leads\LeadController@leadPin');
 
 	/*---------- Email Templates ----------*/
     Route::get('/email_templates', 'Admin\EmailTemplateController@index')->name('admin.email.index');
@@ -236,7 +247,7 @@ Route::prefix('admin')->group(function() {
         Route::post('/documents/update-visa-category', [\App\Http\Controllers\Admin\Clients\ClientDocumentsController::class, 'updateVisaDocCategory'])->name('admin.clients.documents.updateVisaDocCategory');
         
         /*---------- Client EOI/ROI Management (Laravel 12 Syntax) ----------*/
-        Route::prefix('clients/{client}/eoi-roi')->name('admin.clients.eoi-roi.')->group(function () {
+        Route::prefix('clients/{admin}/eoi-roi')->name('admin.clients.eoi-roi.')->group(function () {
             Route::get('/', [ClientEoiRoiController::class, 'index'])->name('index');
             Route::get('/calculate-points', [ClientEoiRoiController::class, 'calculatePoints'])->name('calculatePoints');
             Route::post('/', [ClientEoiRoiController::class, 'upsert'])->name('upsert');
@@ -410,8 +421,8 @@ Route::prefix('admin')->group(function() {
         Route::post('/get_assignee_list', 'Admin\AssigneeController@get_assignee_list');
 
         //For email and contact number uniqueness
-        Route::post('/is_email_unique', 'Admin\LeadController@is_email_unique');
-        Route::post('/is_contactno_unique', 'Admin\LeadController@is_contactno_unique');
+        Route::post('/is_email_unique', 'Admin\Leads\LeadController@is_email_unique');
+        Route::post('/is_contactno_unique', 'Admin\Leads\LeadController@is_contactno_unique');
 
         //merge records
         Route::post('/merge_records','Admin\ClientsController@merge_records')->name('client.merge_records');
@@ -598,7 +609,7 @@ Route::prefix('admin')->group(function() {
 		Route::post('/clients/getCostAssignmentMigrationAgentDetailLead', 'Admin\ClientsController@getCostAssignmentMigrationAgentDetailLead')->name('clients.getCostAssignmentMigrationAgentDetailLead');
         
 
-		Route::post('/clients/{client}/upload-agreement', 'Admin\ClientsController@uploadAgreement')->name('clients.uploadAgreement');
+		Route::post('/clients/{admin}/upload-agreement', 'Admin\ClientsController@uploadAgreement')->name('clients.uploadAgreement');
 		//Get matter template
 		Route::get('/get-matter-templates', 'Admin\AdminController@getmattertemplates')->name('admin.clients.getmattertemplates');
     

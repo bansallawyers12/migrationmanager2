@@ -41,6 +41,11 @@ class ClientEoiReference extends Model
     ];
 
     /**
+     * The accessors to append to the model's array form.
+     */
+    protected $appends = ['formatted_subclasses', 'formatted_states'];
+
+    /**
      * Encrypt password when setting
      */
     public function setEOIPasswordAttribute($value)

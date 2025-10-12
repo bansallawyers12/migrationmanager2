@@ -107,6 +107,16 @@
             $('#activity-feed').hide();
         }
         
+        // Handle EOI-ROI tab activation
+        if (tabId === 'eoiroi') {
+            // Trigger EOI-ROI initialization when tab is shown
+            setTimeout(function() {
+                if (typeof window.EoiRoi !== 'undefined') {
+                    window.EoiRoi.reload();
+                }
+            }, 100);
+        }
+        
         // Store active tab
         localStorage.setItem('activeTab', tabId);
     }

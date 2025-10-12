@@ -1,0 +1,183 @@
+<?php
+namespace App\Http\Controllers\Admin\Leads;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redirect;
+use App\Models\Admin;
+use App\Models\Lead;
+use App\Models\ClientMatter;
+use App\Models\Matter;
+use Auth;
+use Config;
+
+class LeadConversionController extends Controller
+{
+    /**
+     * Create a new controller instance.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->middleware('auth:admin');
+    }
+
+    /**
+     * Convert lead to client
+     */
+    public function convertToClient(Request $request)
+    {
+        $requestData = $request->all();
+        
+        // Get all leads (including archived) for conversion
+        $enqdatas = Lead::withArchived()->paginate(500);
+        
+        foreach($enqdatas as $lead){
+            $id = $lead->id;
+            $enqdata = Admin::where('lead_id', $id)->first();
+            if($enqdata){
+                $obj = Admin::find($enqdata->id);
+                $obj->created_at = $lead->created_at;
+                $obj->updated_at = $lead->updated_at;
+                $obj->save();
+            }
+            echo $id.'<br>';
+        }
+    }
+
+    /**
+     * Convert single lead to client with matter creation
+     */
+    public function convertSingleLead(Request $request)
+    {
+        $requestData = $request->all();
+        
+        $leadId = $this->decodeString($requestData['lead_id']);
+        $lead = Lead::withArchived()->find($leadId);
+        
+        if(!$lead) {
+            return redirect()->back()->with('error', 'Lead not found');
+        }
+
+        // Start transaction
+        DB::beginTransaction();
+        
+        try {
+            // Convert lead to client using Lead model method
+            $client = $lead->convertToClient();
+            
+            // Update user_id if provided
+            if(isset($requestData['user_id'])) {
+                $client->user_id = $requestData['user_id'];
+                $client->save();
+            }
+
+            // Create matter if matter data is provided
+            if(isset($requestData['matter_id']) && isset($requestData['migration_agent'])) {
+                $matter = new ClientMatter();
+                $matter->user_id = $requestData['user_id'] ?? Auth::user()->id;
+                $matter->client_id = $client->id;
+                $matter->sel_migration_agent = $requestData['migration_agent'];
+                $matter->sel_person_responsible = $requestData['person_responsible'] ?? null;
+                $matter->sel_person_assisting = $requestData['person_assisting'] ?? null;
+                $matter->sel_matter_id = $requestData['matter_id'];
+
+                // Get matter info for unique matter number
+                $matterInfo = Matter::select('nick_name')->where('id', '=', $requestData['matter_id'])->first();
+                
+                // Generate unique matter number
+                $client_matters_cnt_per_client = DB::table('client_matters')
+                    ->select('id')
+                    ->where('sel_matter_id', $requestData['matter_id'])
+                    ->where('client_id', $client->id)
+                    ->count();
+                    
+                $client_matters_current_no = str_pad($client_matters_cnt_per_client + 1, 3, '0', STR_PAD_LEFT);
+                
+                if($matterInfo) {
+                    $matter->client_unique_matter_no = $matterInfo->nick_name . "_" . $client_matters_current_no;
+                }
+                
+                $matter->workflow_stage_id = 1;
+                $matter->save();
+            }
+
+            DB::commit();
+            
+            return redirect()->back()->with('success', 'Lead converted to client successfully');
+            
+        } catch (\Exception $e) {
+            DB::rollback();
+            return redirect()->back()->with('error', 'Failed to convert lead: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Bulk convert leads to clients
+     */
+    public function bulkConvertToClient(Request $request)
+    {
+        $requestData = $request->all();
+        
+        if(!isset($requestData['lead_ids'])) {
+            return redirect()->back()->with('error', 'No leads selected');
+        }
+
+        $leadIds = $requestData['lead_ids'];
+        $convertedCount = 0;
+        $errors = [];
+
+        foreach($leadIds as $leadId) {
+            try {
+                $lead = Lead::withArchived()->find($leadId);
+                if($lead) {
+                    $lead->convertToClient();
+                    $convertedCount++;
+                }
+            } catch (\Exception $e) {
+                $errors[] = "Lead ID {$leadId}: " . $e->getMessage();
+            }
+        }
+
+        $message = "Successfully converted {$convertedCount} leads to clients";
+        if(!empty($errors)) {
+            $message .= ". Errors: " . implode(', ', $errors);
+        }
+
+        return redirect()->back()->with('success', $message);
+    }
+
+    /**
+     * Get conversion statistics
+     */
+    public function getConversionStats()
+    {
+        $totalLeads = Lead::count();
+        $totalClients = Admin::where('role', 7)->where('type', 'client')->count();
+        $convertedThisMonth = Admin::where('role', 7)
+            ->where('type', 'client')
+            ->whereMonth('updated_at', now()->month)
+            ->whereYear('updated_at', now()->year)
+            ->count();
+
+        return [
+            'total_leads' => $totalLeads,
+            'total_clients' => $totalClients,
+            'converted_this_month' => $convertedThisMonth,
+            'conversion_rate' => $totalLeads > 0 ? round(($totalClients / ($totalLeads + $totalClients)) * 100, 2) : 0
+        ];
+    }
+
+    /**
+     * Decode string helper method - overrides parent method
+     */
+    public function decodeString($string = NULL)
+    {
+        if (base64_encode(base64_decode($string, true)) === $string) {
+            return convert_uudecode(base64_decode($string));
+        }
+        return $string;
+    }
+}

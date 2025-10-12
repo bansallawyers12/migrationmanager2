@@ -1,5 +1,5 @@
 {{-- EOI/ROI Tab Content --}}
-<div class="tab-pane" id="eoiroi" style="display:none;">
+<div class="tab-pane" id="eoiroi-tab" style="display:none;">
     <div class="eoi-roi-container">
         <div class="eoi-roi-header">
             <h2>

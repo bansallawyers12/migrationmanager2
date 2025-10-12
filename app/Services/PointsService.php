@@ -238,8 +238,9 @@ class PointsService
         // Load employment history
         $experiences = $client->experiences ?? collect();
         
-        $auYears = $this->calculateFTEYears($experiences->where('country', 'Australia'), $referenceDate);
-        $osYears = $this->calculateFTEYears($experiences->where('country', '!=', 'Australia'), $referenceDate);
+        // Use actual field name: job_country
+        $auYears = $this->calculateFTEYears($experiences->where('job_country', 'Australia'), $referenceDate);
+        $osYears = $this->calculateFTEYears($experiences->where('job_country', '!=', 'Australia'), $referenceDate);
         
         $auPoints = $this->getEmploymentPoints($auYears, 'australian');
         $osPoints = $this->getEmploymentPoints($osYears, 'overseas');
@@ -266,12 +267,13 @@ class PointsService
         $totalDays = 0;
         
         foreach ($experiences as $exp) {
-            if (!$exp->start_date) {
+            // Use actual field names from ClientExperience model
+            if (!$exp->job_start_date) {
                 continue;
             }
             
-            $start = Carbon::parse($exp->start_date);
-            $end = $exp->end_date ? Carbon::parse($exp->end_date) : $referenceDate;
+            $start = Carbon::parse($exp->job_start_date);
+            $end = $exp->job_finish_date ? Carbon::parse($exp->job_finish_date) : $referenceDate;
             
             // Don't count future experience
             if ($start->gt($referenceDate)) {
@@ -282,8 +284,13 @@ class PointsService
             
             $days = $start->diffInDays($end);
             
-            // Apply FTE multiplier if available (default 1.0 for full-time)
+            // Apply FTE multiplier if available, otherwise default to 1.0 (full-time)
+            // If job_type indicates part-time, use 0.5 multiplier as estimate
             $fte = $exp->fte_multiplier ?? 1.0;
+            if (!isset($exp->fte_multiplier) && isset($exp->job_type) && stripos($exp->job_type, 'part') !== false) {
+                $fte = 0.5; // Rough estimate for part-time work
+            }
+            
             $totalDays += ($days * $fte);
         }
         
@@ -441,8 +448,25 @@ class PointsService
         $qualifications = $client->qualifications ?? collect();
         
         return $qualifications->contains(function ($qual) {
-            return ($qual->country === 'Australia' || $qual->australian_study === 1) 
-                && $qual->duration_years >= 2; // Minimum 2 years
+            // Check if country is Australia
+            if ($qual->country !== 'Australia') {
+                return false;
+            }
+            
+            // Calculate duration from start_date and finish_date
+            if (!$qual->start_date || !$qual->finish_date) {
+                return false;
+            }
+            
+            try {
+                $start = Carbon::parse($qual->start_date);
+                $finish = Carbon::parse($qual->finish_date);
+                $durationYears = $finish->diffInYears($start);
+                
+                return $durationYears >= 2; // Minimum 2 years required
+            } catch (\Exception $e) {
+                return false;
+            }
         });
     }
 
@@ -453,9 +477,10 @@ class PointsService
     {
         $qualifications = $client->qualifications ?? collect();
         
+        // Check if specialist_education column exists, otherwise return false
         return $qualifications->contains(function ($qual) {
-            return $qual->specialist_education === 1 
-                || $qual->stem_qualification === 1;
+            return ($qual->specialist_education ?? 0) == 1 
+                || ($qual->stem_qualification ?? 0) == 1;
         });
     }
 
@@ -466,8 +491,9 @@ class PointsService
     {
         $qualifications = $client->qualifications ?? collect();
         
+        // Check if regional_study column exists, otherwise return false
         return $qualifications->contains(function ($qual) {
-            return $qual->regional_study === 1;
+            return ($qual->regional_study ?? 0) == 1;
         });
     }
 
@@ -476,9 +502,9 @@ class PointsService
      */
     protected function hasNAATI(Admin $client): bool
     {
-        // Check in client points or qualifications
-        return $client->naati_credential === 1 
-            || $client->ccl_credential === 1;
+        // Check naati_test field (0/1 boolean in DB)
+        // CCL is typically combined with NAATI credential
+        return $client->naati_test == 1;
     }
 
     /**
@@ -486,7 +512,8 @@ class PointsService
      */
     protected function hasProfessionalYear(Admin $client): bool
     {
-        return $client->professional_year === 1;
+        // Check py_test field (0/1 boolean in DB)
+        return $client->py_test == 1;
     }
 
     /**
@@ -505,8 +532,8 @@ class PointsService
 
         $partner = $client->partner;
         
-        // Partner is citizen/PR
-        if ($partner->is_citizen || $partner->has_pr) {
+        // Partner is citizen/PR - check if columns exist
+        if (($partner->is_citizen ?? 0) == 1 || ($partner->has_pr ?? 0) == 1) {
             return [
                 'detail' => 'Partner is citizen/PR (10 pts)',
                 'points' => 10,
@@ -514,10 +541,34 @@ class PointsService
             ];
         }
 
-        // Partner with skills assessment
-        $hasSkills = $partner->has_skills_assessment === 1;
-        $hasEnglish = $partner->english_level === 'competent' || $partner->english_level === 'proficient';
-        $partnerAge = $partner->dob ? Carbon::parse($partner->dob)->diffInYears($referenceDate) : 99;
+        // Partner with skills assessment (use actual field name)
+        $hasSkills = ($partner->spouse_has_skill_assessment ?? 0) == 1;
+        
+        // Partner English level - derive from scores if has test
+        $hasEnglish = false;
+        if (($partner->spouse_has_english_score ?? 0) == 1) {
+            // Check if scores meet competent threshold (e.g., IELTS 6.0 or PTE 50)
+            $overallScore = $partner->spouse_overall_score ?? 0;
+            
+            // Simplified check - in production, should check each component
+            if ($partner->spouse_test_type === 'IELTS') {
+                $hasEnglish = $overallScore >= 6.0; // Competent English
+            } elseif ($partner->spouse_test_type === 'PTE') {
+                $hasEnglish = $overallScore >= 50; // Competent English
+            } elseif ($partner->spouse_test_type === 'TOEFL iBT') {
+                $hasEnglish = $overallScore >= 60; // Competent English
+            }
+        }
+        
+        // Get partner age if DOB exists
+        $partnerAge = 99;
+        if (isset($partner->dob) && $partner->dob) {
+            try {
+                $partnerAge = Carbon::parse($partner->dob)->diffInYears($referenceDate);
+            } catch (\Exception $e) {
+                $partnerAge = 99;
+            }
+        }
         
         if ($hasSkills && $hasEnglish && $partnerAge < 45) {
             return [

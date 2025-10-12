@@ -563,7 +563,8 @@ class ClientsController extends Controller
             $client_id = $firstFourLetters . date('y') . $client_current_counter;
 
             // Create the main client/lead record in the admins table
-            $client = new Admin();
+            // Use Lead model if type is 'lead', otherwise use Admin model for clients
+            $client = ($validated['type'] === 'lead') ? new \App\Models\Lead() : new Admin();
             $client->first_name = $validated['first_name'];
             $client->last_name = $validated['last_name'] ?? null;
             $client->dob = $validated['dob'] ? date('Y-m-d', strtotime(str_replace('/', '-', $validated['dob']))) : null;
@@ -4233,9 +4234,26 @@ class ClientsController extends Controller
                         $isEoiMatter = (
                             strtolower($currentMatter->nick_name) === 'eoi' ||
                             stripos($currentMatter->title, 'eoi') !== false ||
-                            stripos($currentMatter->title, 'expression of interest') !== false
+                            stripos($currentMatter->title, 'expression of interest') !== false ||
+                            stripos($currentMatter->title, 'expression') !== false ||
+                            stripos($currentMatter->title, 'interest') !== false
                         );
                     }
+                } else {
+                    // If no specific matter is selected, check if client has any EOI matter
+                    $eoiMatterExists = DB::table('client_matters as cm')
+                        ->join('matters as m', 'cm.sel_matter_id', '=', 'm.id')
+                        ->where('cm.client_id', $id)
+                        ->where('cm.matter_status', 1)
+                        ->where(function($query) {
+                            $query->whereRaw('LOWER(m.nick_name) = ?', ['eoi'])
+                                  ->orWhere('m.title', 'LIKE', '%eoi%')
+                                  ->orWhere('m.title', 'LIKE', '%expression of interest%')
+                                  ->orWhere('m.title', 'LIKE', '%expression%');
+                        })
+                        ->exists();
+                    
+                    $isEoiMatter = $eoiMatterExists;
                 }
                 
                 //dd($clientFamilyDetails);
@@ -10033,8 +10051,11 @@ class ClientsController extends Controller
             $lastInsertedId = $obj5->id; // ← This gets the last inserted ID
             if($saved5) 
             {
-                //update type client from lead in admins table
-                \App\Models\Admin::where('id', $requestData['client_id'])->update(['type' => 'client']);
+                //update type client from lead in admins table - using Lead model
+                $lead = \App\Models\Lead::withArchived()->find($requestData['client_id']);
+                if($lead) {
+                    $lead->convertToClient();
+                }
 
                 if( isset($requestData['surcharge']) && $requestData['surcharge'] != '') {
                     $surcharge = $requestData['surcharge'];
@@ -10320,7 +10341,7 @@ class ClientsController extends Controller
     }
 
     //Upload agreement in PDF
-    public function uploadAgreement(Request $request, $clientId)
+    public function uploadAgreement(Request $request, Admin $admin)
     {
         //1. Validate only PDF files (max 10MB)
         $request->validate([
@@ -10335,9 +10356,8 @@ class ClientsController extends Controller
         $size = $pdfFile->getSize();
         $timestampedName = time() . '_' . $originalName;
 
-        //3. Build S3 path using client ID
-        $adminInfo = \App\Models\Admin::select('client_id')->where('id', $clientId)->first();
-        $clientUniqueId = !empty($adminInfo) ? $adminInfo->client_id : "";
+        //3. Build S3 path using client ID (admin is the client record)
+        $clientUniqueId = $admin->client_id ?? "";
         $s3Path = $clientUniqueId . '/agreement/' . $timestampedName;
 
         //4. Upload directly to S3
@@ -10351,7 +10371,7 @@ class ClientsController extends Controller
         $doc->myfile = Storage::disk('s3')->url($s3Path);
         $doc->myfile_key = $timestampedName;
         $doc->user_id = Auth::user()->id;
-        $doc->client_id = $clientId;
+        $doc->client_id = $admin->id;
         $doc->type = 'client';
         $doc->file_size = $size;
         $doc->doc_type = 'agreement';
@@ -10361,7 +10381,7 @@ class ClientsController extends Controller
         //6. Log activity if saved
         if ($saved) {
             $log = new \App\Models\ActivitiesLog;
-            $log->client_id = $clientId;
+            $log->client_id = $admin->id;
             $log->created_by = Auth::user()->id;
             $log->description = '';
             $log->subject = 'Finalized visa agreement uploaded as PDF';
@@ -10864,6 +10884,61 @@ class ClientsController extends Controller
         } catch (\Exception $e) {
             \Log::error('Failed to send client portal deactivation email: ' . $e->getMessage());
             throw $e;
+        }
+    }
+
+    /**
+     * Change client type (lead to client conversion)
+     */
+    public function changetype(Request $request, $id = Null, $slug = Null){
+        //dd($request->all());
+        if(isset($id) && !empty($id)) {
+            $id = $this->decodeString($id);
+            // Check if it's a lead first, then fall back to Admin for clients
+            $lead = \App\Models\Lead::withArchived()->find($id);
+            if($lead) {
+                if($slug == 'client') {
+                    $lead->user_id = $request['user_id'];
+                    $saved = $lead->convertToClient();
+
+                    $matter = new ClientMatter();
+                    $matter->user_id = $request['user_id'];
+                    $matter->client_id = $request['client_id'];
+                    $matter->sel_migration_agent = $request['migration_agent'];
+                    $matter->sel_person_responsible = $request['person_responsible'];
+                    $matter->sel_person_assisting = $request['person_assisting'];
+                    $matter->sel_matter_id = $request['matter_id'];
+
+                    $client_matters_cnt_per_client = DB::table('client_matters')->select('id')->where('sel_matter_id',$request['matter_id'])->where('client_id',$request['client_id'])->count();
+                    $client_matters_current_no = $client_matters_cnt_per_client+1;
+                    if($request['matter_id'] == 1) {
+                        $matter->client_unique_matter_no = 'GN_'.$client_matters_current_no;
+                    } else {
+                        $matterInfo = Matter::select('nick_name')->where('id', '=', $request['matter_id'])->first();
+                        $matter->client_unique_matter_no = $matterInfo->nick_name."_".$client_matters_current_no;
+                    }
+
+                    $matter->workflow_stage_id = 1;
+                    $matter->save();
+
+                    // Get the last inserted ID
+                    /*$lastInsertedId = $matter->id;
+                    $existingPost = ClientMatter::find($lastInsertedId);
+                    if ($existingPost) { // Update the record
+                        $existingPost->client_unique_matter_id = 'Matter_'.$lastInsertedId;
+                        $existingPost->save();
+                    }*/
+                } else if($slug == 'lead' ) {
+                    $obj->type = $slug;
+                    $obj->user_id = "";
+                    $saved = $obj->save();
+                }
+                return Redirect::to('/admin/clients/detail/'.base64_encode(convert_uuencode(@$id)))->with('success', 'Record Updated successfully');
+            } else {
+                return Redirect::to('/admin/clients')->with('error', 'Clients Not Exist');
+            }
+        } else {
+            return Redirect::to('/admin/clients')->with('error', Config::get('constants.unauthorized'));
         }
     }
 

@@ -1,39 +1,214 @@
 <?php
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Notifications\Notifiable;
 use Kyslik\ColumnSortable\Sortable;
-use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class Lead extends Authenticatable
+class Lead extends Admin
 {
-    use Notifiable;
-	use Sortable;
-
-	protected $fillable = [
-        'id', 'name', 'status', 'created_at', 'updated_at'
+    use Notifiable, Sortable;
+    
+    // Use the same table as Admin
+    protected $table = 'admins';
+    
+    // Lead-specific sortable columns
+    public $sortable = [
+        'id', 
+        'first_name', 
+        'last_name', 
+        'email', 
+        'phone',
+        'lead_quality',
+        'status',
+        'created_at', 
+        'updated_at'
     ];
-	
-	public $sortable = ['id', 'name', 'created_at', 'updated_at'];
-	
-	public function package_detail()
+    
+    /**
+     * Boot method to add global scopes
+     */
+    protected static function booted()
     {
-        return $this->belongsTo('App\\Models\\Package','package_id','id');
+        // Automatically filter all queries to leads only
+        static::addGlobalScope('lead', function (Builder $builder) {
+            $builder->where('role', 7)
+                    ->where('type', 'lead')
+                    ->whereNull('is_deleted');
+        });
+        
+        // Automatically set type and role when creating a new lead
+        static::creating(function ($lead) {
+            $lead->type = 'lead';
+            $lead->role = 7;
+            if (!isset($lead->is_archived)) {
+                $lead->is_archived = 0;
+            }
+        });
     }
-	
-	public function user()
+    
+    /**
+     * Include archived leads in query
+     * Usage: Lead::withArchived()->get()
+     */
+    public function scopeWithArchived(Builder $query)
     {
-        return $this->belongsTo('App\\Models\\User','user_id','id');
+        return $query->withoutGlobalScope('lead')
+                    ->where('role', 7)
+                    ->where('type', 'lead')
+                    ->whereNull('is_deleted');
     }
-	
-	public function agentdetail()
+    
+    /**
+     * Get only archived leads
+     * Usage: Lead::onlyArchived()->get()
+     */
+    public function scopeOnlyArchived(Builder $query)
     {
-        return $this->belongsTo('App\\Models\\User','agent_id','id');
+        return $query->withoutGlobalScope('lead')
+                    ->where('role', 7)
+                    ->where('type', 'lead')
+                    ->where('is_archived', 1)
+                    ->whereNull('is_deleted');
     }
-	
-	public function staffuser()
+    
+    /**
+     * Filter by lead quality
+     * Usage: Lead::quality('hot')->get()
+     */
+    public function scopeQuality(Builder $query, $quality)
     {
-        return $this->belongsTo('App\\Models\\\Models\\Admin','assign_to','id');
+        return $query->where('lead_quality', $quality);
     }
-   
+    
+    /**
+     * Filter by lead status
+     * Usage: Lead::status('active')->get()
+     */
+    public function scopeStatus(Builder $query, $status)
+    {
+        return $query->where('status', $status);
+    }
+    
+    /**
+     * Filter by assigned agent
+     * Usage: Lead::assignedTo($userId)->get()
+     */
+    public function scopeAssignedTo(Builder $query, $userId)
+    {
+        return $query->where('assignee', $userId);
+    }
+    
+    /**
+     * Filter by lead source
+     * Usage: Lead::fromSource('website')->get()
+     */
+    public function scopeFromSource(Builder $query, $source)
+    {
+        return $query->where('source', $source);
+    }
+    
+    /**
+     * Get the assigned agent/staff member
+     */
+    public function assignedAgent()
+    {
+        return $this->belongsTo(Admin::class, 'assignee', 'id')
+                    ->where('type', '!=', 'lead')
+                    ->where('type', '!=', 'client');
+    }
+    
+    /**
+     * Get the user who created this lead
+     */
+    public function createdBy()
+    {
+        return $this->belongsTo(Admin::class, 'user_id', 'id');
+    }
+    
+    /**
+     * Assign lead to a user/agent
+     */
+    public function assignToUser($userId)
+    {
+        $this->assignee = $userId;
+        return $this->save();
+    }
+    
+    /**
+     * Convert lead to client
+     */
+    public function convertToClient()
+    {
+        $this->type = 'client';
+        $this->save();
+        
+        // Return as Admin model instance with client type
+        return Admin::find($this->id);
+    }
+    
+    /**
+     * Archive this lead
+     */
+    public function archive()
+    {
+        $this->is_archived = 1;
+        return $this->save();
+    }
+    
+    /**
+     * Unarchive this lead
+     */
+    public function unarchive()
+    {
+        $this->is_archived = 0;
+        return $this->save();
+    }
+    
+    /**
+     * Soft delete (set is_deleted timestamp)
+     */
+    public function softDelete()
+    {
+        $this->is_deleted = now();
+        return $this->save();
+    }
+    
+    /**
+     * Check if lead is archived
+     */
+    public function isArchived()
+    {
+        return $this->is_archived == 1;
+    }
+    
+    /**
+     * Check if lead has been assigned
+     */
+    public function isAssigned()
+    {
+        return !empty($this->assignee);
+    }
+    
+    /**
+     * Get full name
+     */
+    public function getFullNameAttribute(): string
+    {
+        return trim($this->first_name . ' ' . $this->last_name);
+    }
+    
+    /**
+     * Get lead quality badge HTML (optional helper)
+     */
+    public function getQualityBadge()
+    {
+        $badges = [
+            'hot' => '<span class="badge bg-danger">Hot</span>',
+            'warm' => '<span class="badge bg-warning">Warm</span>',
+            'cold' => '<span class="badge bg-info">Cold</span>',
+        ];
+        
+        return $badges[$this->lead_quality] ?? '<span class="badge bg-secondary">Unknown</span>';
+    }
 }

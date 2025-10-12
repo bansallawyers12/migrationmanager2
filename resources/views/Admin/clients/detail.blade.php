@@ -1157,7 +1157,7 @@ use App\Http\Controllers\Controller;
         encodeId: '{{ $encodeId }}',
         matterId: '{{ $id1 ?? "" }}',
         activeTab: '{{ $activeTab ?? "personaldetails" }}',
-        matterRefNo: '{{ $id1 ?? ($matter_info_arr ? $matter_info_arr->client_unique_matter_no : null) }}',
+        matterRefNo: '{{ $id1 ?? "" }}',
         clientFirstName: '{{ $fetchedData->first_name ?? "user" }}',
         csrfToken: '{{ csrf_token() }}',
         currentDate: '{{ date("Y-m-d") }}',

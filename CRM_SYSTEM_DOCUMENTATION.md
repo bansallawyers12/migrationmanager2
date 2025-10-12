@@ -174,7 +174,7 @@ Route::get('/clients/detail/{id}', 'Agent\ClientsController@detail')->name('agen
 - `App\Package` - Service packages
 
 #### Key Controllers
-- `App\Http\Controllers\Admin\LeadController`
+- `App\Http\Controllers\Admin\Leads\LeadController`
 
 #### Key Features
 - **Lead Capture**: Website lead capture forms

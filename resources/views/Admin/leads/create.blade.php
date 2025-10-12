@@ -46,9 +46,8 @@
                 <button class="tab-button" onclick="openTab(event, 'familyTab')"><i class="fas fa-info-circle"></i> Family Information</button>
             </div>
 
-            <form id="createLeadForm" action="{{ route('admin.clients.store') }}" method="POST">
+            <form id="createLeadForm" action="{{ route('admin.leads.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
-                <input type="hidden" name="type" value="lead">
 
                 <!-- Personal Tab -->
                 <div id="personalTab" class="tab-content active">
@@ -438,6 +437,108 @@
 
                 <!-- Other Information Tab -->
                 <div id="otherInformationTab" class="tab-content">
+                    <!-- Lead Management Fields -->
+                    <section class="form-section">
+                        <h3><i class="fas fa-cog"></i> Lead Management</h3>
+                        <div class="content-grid">
+                            <div class="form-group">
+                                <label for="contact_type">Contact Type <span class="text-danger">*</span></label>
+                                <select id="contact_type" name="contact_type" required>
+                                    <option value="">Select Contact Type</option>
+                                    <option value="Personal" {{ old('contact_type') == 'Personal' ? 'selected' : '' }}>Personal</option>
+                                    <option value="Office" {{ old('contact_type') == 'Office' ? 'selected' : '' }}>Office</option>
+                                </select>
+                                @error('contact_type')
+                                    <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="email_type">Email Type <span class="text-danger">*</span></label>
+                                <select id="email_type" name="email_type" required>
+                                    <option value="">Select Email Type</option>
+                                    <option value="Personal" {{ old('email_type') == 'Personal' ? 'selected' : '' }}>Personal</option>
+                                    <option value="Business" {{ old('email_type') == 'Business' ? 'selected' : '' }}>Business</option>
+                                </select>
+                                @error('email_type')
+                                    <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="service">Service <span class="text-danger">*</span></label>
+                                <select id="service" name="service" required>
+                                    <option value="">Select Service</option>
+                                    @foreach(\App\Models\Matter::select('id', 'title', 'nick_name')->where('status', 1)->orderBy('title', 'ASC')->get() as $service)
+                                        <option value="{{$service->id}}" {{ old('service') == $service->id ? 'selected' : '' }}>{{$service->title}} ({{@$service->nick_name}})</option>
+                                    @endforeach
+                                </select>
+                                @error('service')
+                                    <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="assign_to">Assign To <span class="text-danger">*</span></label>
+                                <select id="assign_to" name="assign_to" required>
+                                    <option value="">Select User</option>
+                                    @php
+                                        $admins = \App\Models\Admin::where('role','!=',7)->orderby('first_name','ASC')->get();
+                                    @endphp
+                                    @foreach($admins as $admin)
+                                        @php
+                                            $branchname = \App\Models\Branch::where('id',$admin->office_id)->first();
+                                        @endphp
+                                        <option value="{{$admin->id}}" {{ old('assign_to') == $admin->id ? 'selected' : '' }}>
+                                            {{$admin->first_name}} {{$admin->last_name}} ({{@$branchname->office_name}})
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('assign_to')
+                                    <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="lead_quality">Lead Quality <span class="text-danger">*</span></label>
+                                <select id="lead_quality" name="lead_quality" required>
+                                    <option value="">Select Quality</option>
+                                    <option value="1" {{ old('lead_quality') == '1' ? 'selected' : '' }}>1</option>
+                                    <option value="2" {{ old('lead_quality') == '2' ? 'selected' : '' }}>2</option>
+                                    <option value="3" {{ old('lead_quality') == '3' ? 'selected' : '' }}>3</option>
+                                    <option value="4" {{ old('lead_quality') == '4' ? 'selected' : '' }}>4</option>
+                                    <option value="5" {{ old('lead_quality') == '5' ? 'selected' : '' }}>5</option>
+                                </select>
+                                @error('lead_quality')
+                                    <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="lead_source">Lead Source <span class="text-danger">*</span></label>
+                                <select id="lead_source" name="lead_source" required>
+                                    <option value="">Select Lead Source</option>
+                                    <option value="Website" {{ old('lead_source') == 'Website' ? 'selected' : '' }}>Website</option>
+                                    <option value="Google Ads" {{ old('lead_source') == 'Google Ads' ? 'selected' : '' }}>Google Ads</option>
+                                    <option value="Facebook" {{ old('lead_source') == 'Facebook' ? 'selected' : '' }}>Facebook</option>
+                                    <option value="Referral" {{ old('lead_source') == 'Referral' ? 'selected' : '' }}>Referral</option>
+                                    <option value="Walk-in" {{ old('lead_source') == 'Walk-in' ? 'selected' : '' }}>Walk-in</option>
+                                    <option value="Phone Call" {{ old('lead_source') == 'Phone Call' ? 'selected' : '' }}>Phone Call</option>
+                                    <option value="Email" {{ old('lead_source') == 'Email' ? 'selected' : '' }}>Email</option>
+                                    <option value="LinkedIn" {{ old('lead_source') == 'LinkedIn' ? 'selected' : '' }}>LinkedIn</option>
+                                    <option value="Instagram" {{ old('lead_source') == 'Instagram' ? 'selected' : '' }}>Instagram</option>
+                                    <option value="YouTube" {{ old('lead_source') == 'YouTube' ? 'selected' : '' }}>YouTube</option>
+                                    <option value="Partner Agency" {{ old('lead_source') == 'Partner Agency' ? 'selected' : '' }}>Partner Agency</option>
+                                    <option value="Trade Show" {{ old('lead_source') == 'Trade Show' ? 'selected' : '' }}>Trade Show</option>
+                                    <option value="Other" {{ old('lead_source') == 'Other' ? 'selected' : '' }}>Other</option>
+                                </select>
+                                @error('lead_source')
+                                    <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        </div>
+                    </section>
+                    
                     <section class="form-section">
                         <h3><i class="fas fa-exclamation-circle"></i> Character & History</h3>
 
@@ -505,13 +606,6 @@
                         </div>
                     </section>
 
-                    <div class="form-group" style="width: 50%;">
-                        <label>Source</label>
-                        <select name="source" id="source" style="width: 100%;">
-                            <option value="SubAgent">SubAgent</option>
-                            <option value="Others">Others</option>
-                        </select>
-                    </div>
                 </div>
 
                 <!-- Family Information Tab -->
