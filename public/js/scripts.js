@@ -360,11 +360,25 @@ $(function () {
     $(".summernote-simple").summernote({
       dialogsInBody: true,
       minHeight: 150,
+      height: 120,
+      placeholder: 'Write your note here...',
       toolbar: [
-        ["style", ["bold", "italic", "underline", "clear"]],
-        ["font", ["strikethrough"]],
-        ["para", ["paragraph"]]
-      ]
+        ["style", ["bold", "italic", "underline", "strikethrough"]],
+        ["color", ["color"]],
+        ["para", ["ul", "ol"]],
+        ["insert", ["link"]]
+      ],
+      colors: [
+        ['#000000', '#424242', '#636363', '#9C9C94', '#CEC6CE', '#EFEFEF', '#F7F7F7', '#FFFFFF'],
+        ['#E53E3E', '#DD6B20', '#D69E2E', '#38A169', '#319795', '#3182CE', '#805AD5', '#D53F8C'],
+        ['#FC8181', '#F6AD55', '#F6E05E', '#68D391', '#4FD1C5', '#63B3ED', '#B794F4', '#F687B3'],
+        ['#FED7D7', '#FEEBC8', '#FEFCBF', '#C6F6D5', '#B2F5EA', '#BEE3F8', '#E9D8FD', '#FED7E2']
+      ],
+      popover: {
+        image: [],
+        link: [],
+        air: []
+      }
     });
   }
 

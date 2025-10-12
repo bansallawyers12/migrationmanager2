@@ -1610,7 +1610,7 @@ $(document).ready(function() {
 
 
         // Handle click event on the action button
-        $(document).delegate('.btn-assignuser', 'click', function(){
+        $(document).delegate('.btn-assignuser, .btn-create-action', 'click', function(){
             // Get the value from the #note_description Summernote editor
             var note_description = $('#note_description').summernote('code');
 
@@ -1698,24 +1698,10 @@ $(document).ready(function() {
         });
 
 
-        //Matter checkbox start
+        //Matter selection - unified dropdown approach
         var selectedMatter = '';
 
-        //Add note popup Select client
-        $(document).delegate('.general_matter_checkbox', 'change', function(){
-            if (this.checked) {
-                $('#matter_id').prop('disabled', true).trigger('change');
-                $('#matter_id').removeAttr('data-valid').trigger('change');
-            } else {
-                $('#matter_id').prop('disabled', false).trigger('change');
-                $('#matter_id').attr('data-valid', 'required').trigger('change');
-            }
-        });
-
-        $(document).delegate('.general_matter_checkbox', 'click', function(){
-            // Uncheck all checkboxes
-            $('.general_matter_checkbox').not(this).prop('checked', false);
-        });
+        //Note: General matter checkbox handlers removed - now using unified dropdown approach
 
 
         //Convert lead to client popup and select matter

@@ -127,22 +127,32 @@
 <!-- Assign User Modal -->
 <div class="modal fade custom_modal" id="create_action_popup" tabindex="-1" role="dialog" aria-labelledby="create_action_popupLabel" aria-hidden="true">
     <div class="modal-dialog">
-        <div class="modal-content" style="padding: 20px;">
-            <div class="modal-header" style="padding-bottom: 11px;">
-                <h5 class="modal-title assignnn" id="create_action_popupLabel" style="margin: 0 -24px;">Assign User</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+        <div class="modal-content assign-user-modal">
+            <div class="modal-header assign-user-header">
+                <div class="modal-title-section">
+                    <i class="fas fa-user-plus text-white mr-2"></i>
+                    <h5 class="modal-title mb-0" id="create_action_popupLabel">Assign User</h5>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
             </div>
 
-            <div class="box-header with-border">
-                <div class="form-group row" style="margin-bottom:12px;">
-                    <label for="inputSub3" class="col-sm-3 control-label c6 f13" style="margin-top:8px;">Select Assignee</label>
-                    <div class="col-sm-9">
-                        <div class="form-group">
-                            <div class="dropdown-multi-select" style="position: relative;display: inline-block;border: 1px solid #ccc;border-radius: 4px;padding: 8px;width: 336px;">
-                                <button type="button" style="color: #34395e !important;border: none;width: 100%;text-align: left;" class="btn btn-default dropdown-toggle" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <span id="selected-users-text">Assign User</span>
+            <div class="modal-body assign-user-body">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="form-group enhanced-form-group">
+                            <label for="dropdownMenuButton" class="form-label">
+                                <i class="fas fa-users text-muted mr-1"></i>
+                                Select Assignee <span class="text-danger">*</span>
+                            </label>
+                            <div class="dropdown-multi-select modern-dropdown">
+                                <button type="button" class="btn btn-default dropdown-toggle enhanced-dropdown-btn" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i class="fas fa-user-plus mr-2"></i>
+                                    <span id="selected-users-text">Assign User</span>
+                                    <i class="fas fa-chevron-down float-right"></i>
                                 </button>
                                 <div class="dropdown-menu" aria-labelledby="dropdownMenuButton" style="min-width: 100%;max-height: 300px;overflow-y: auto;box-shadow: rgba(0, 0, 0, 0.2) 0px 8px 16px 0px;z-index: 1;padding: 8px;border-radius: 4px;border: 1px solid rgb(204, 204, 204);font-size: 14px;background-color: white;margin-left: -8px;">
                                     <!-- Search input -->
