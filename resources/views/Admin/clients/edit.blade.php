@@ -1502,7 +1502,13 @@
                                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; align-items: center;">
                                                 <div class="summary-item-inline">
                                                     <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">DETAILS:</span>
-                                                    <span class="summary-value" style="color: #212529; font-weight: 500;">{{ $child->relatedClient ? $child->relatedClient->first_name . ' ' . $child->relatedClient->last_name : $child->details }}</span>
+                                                    <span class="summary-value" style="color: #212529; font-weight: 500;">
+                                                        @if($child->relatedClient && $child->related_client_id && $child->related_client_id != 0)
+                                                            {{ $child->relatedClient->first_name . ' ' . $child->relatedClient->last_name }}
+                                                        @else
+                                                            Not set
+                                                        @endif
+                                                    </span>
                                                 </div>
                                                 <div class="summary-item-inline">
                                                     <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">RELATIONSHIP:</span>
@@ -1547,6 +1553,283 @@
                             </div>
                         </div>
                     </section>
+
+                    <!-- Parents Section -->
+                    <section class="form-section">
+                        <div class="section-header">
+                            <h3><i class="fas fa-user-friends"></i> Parents</h3>
+                            <div class="section-actions">
+                                <button type="button" class="edit-section-btn" onclick="toggleEditMode('parentsInfo')">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                                <button type="button" class="add-section-btn" onclick="addPartnerRow('parent')" title="Add Parent">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Summary View -->
+                        <div id="parentsInfoSummary" class="summary-view">
+                            @php
+                                $parents = $clientPartners->whereIn('relationship_type', ['Father', 'Mother', 'Step Father', 'Step Mother']);
+                            @endphp
+                            @if($parents->count() > 0)
+                                <div style="margin-top: 15px;">
+                                    @foreach($parents as $index => $parent)
+                                        <div class="parents-entry-compact" style="margin-bottom: 12px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #007bff;">
+                                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; align-items: center;">
+                                                <div class="summary-item-inline">
+                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">DETAILS:</span>
+                                                    <span class="summary-value" style="color: #212529; font-weight: 500;">
+                                                        @if($parent->relatedClient && $parent->related_client_id && $parent->related_client_id != 0)
+                                                            {{ $parent->relatedClient->first_name . ' ' . $parent->relatedClient->last_name }}
+                                                        @else
+                                                            @php
+                                                                $firstName = trim($parent->first_name ?? '');
+                                                                $lastName = trim($parent->last_name ?? '');
+                                                                
+                                                                if (empty($firstName) && empty($lastName)) {
+                                                                    $displayName = $parent->details ?: 'Name not provided';
+                                                                } elseif (empty($firstName)) {
+                                                                    $displayName = $lastName;
+                                                                } elseif (empty($lastName)) {
+                                                                    $displayName = $firstName;
+                                                                } else {
+                                                                    $displayName = $firstName . ' ' . $lastName;
+                                                                }
+                                                            @endphp
+                                                            {{ $displayName }}
+                                                        @endif
+                                                    </span>
+                                                </div>
+                                                <div class="summary-item-inline">
+                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">RELATIONSHIP:</span>
+                                                    <span class="summary-value" style="color: #212529; font-weight: 500;">{{ $parent->relationship_type ?: 'Not set' }}</span>
+                                                </div>
+                                                <div class="summary-item-inline">
+                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">GENDER:</span>
+                                                    <span class="summary-value" style="color: #212529; font-weight: 500;">{{ $parent->gender ?: 'Not set' }}</span>
+                                                </div>
+                                                <div class="summary-item-inline">
+                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">COMPANY TYPE:</span>
+                                                    <span class="summary-value" style="color: #212529; font-weight: 500;">{{ $parent->company_type ?: 'Not set' }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="empty-state" style="margin-top: 15px;">
+                                    <p>No parents information added yet.</p>
+                                </div>
+                            @endif
+                        </div>
+
+                        <!-- Edit View -->
+                        <div id="parentsInfoEdit" class="edit-view" style="display: none;">
+                            <div id="parentContainer">
+                                @foreach($parents as $index => $parent)
+                                    <x-client-edit.family-member-field 
+                                        :index="$index"
+                                        :member="$parent"
+                                        type="parent"
+                                        :relationshipOptions="['Father', 'Mother', 'Step Father', 'Step Mother']"
+                                    />
+                                @endforeach
+                            </div>
+
+                            <button type="button" class="add-item-btn" onclick="addPartnerRow('parent')"><i class="fas fa-plus-circle"></i> Add Parent</button>
+                            <div class="edit-actions">
+                                <button type="button" class="btn btn-primary" onclick="saveParentsInfo()">Save</button>
+                                <button type="button" class="btn btn-secondary" onclick="cancelEdit('parentsInfo')">Cancel</button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Siblings Section -->
+                    <section class="form-section">
+                        <div class="section-header">
+                            <h3><i class="fas fa-users"></i> Siblings</h3>
+                            <div class="section-actions">
+                                <button type="button" class="edit-section-btn" onclick="toggleEditMode('siblingsInfo')">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                                <button type="button" class="add-section-btn" onclick="addPartnerRow('siblings')" title="Add Sibling">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Summary View -->
+                        <div id="siblingsInfoSummary" class="summary-view">
+                            @php
+                                $siblings = $clientPartners->whereIn('relationship_type', ['Brother', 'Sister', 'Step Brother', 'Step Sister']);
+                            @endphp
+                            @if($siblings->count() > 0)
+                                <div style="margin-top: 15px;">
+                                    @foreach($siblings as $index => $sibling)
+                                        <div class="siblings-entry-compact" style="margin-bottom: 12px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #007bff;">
+                                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; align-items: center;">
+                                                <div class="summary-item-inline">
+                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">DETAILS:</span>
+                                                    <span class="summary-value" style="color: #212529; font-weight: 500;">
+                                                        @if($sibling->relatedClient && $sibling->related_client_id && $sibling->related_client_id != 0)
+                                                            {{ $sibling->relatedClient->first_name . ' ' . $sibling->relatedClient->last_name }}
+                                                        @else
+                                                            @php
+                                                                $firstName = trim($sibling->first_name ?? '');
+                                                                $lastName = trim($sibling->last_name ?? '');
+                                                                
+                                                                if (empty($firstName) && empty($lastName)) {
+                                                                    $displayName = $sibling->details ?: 'Name not provided';
+                                                                } elseif (empty($firstName)) {
+                                                                    $displayName = $lastName;
+                                                                } elseif (empty($lastName)) {
+                                                                    $displayName = $firstName;
+                                                                } else {
+                                                                    $displayName = $firstName . ' ' . $lastName;
+                                                                }
+                                                            @endphp
+                                                            {{ $displayName }}
+                                                        @endif
+                                                    </span>
+                                                </div>
+                                                <div class="summary-item-inline">
+                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">RELATIONSHIP:</span>
+                                                    <span class="summary-value" style="color: #212529; font-weight: 500;">{{ $sibling->relationship_type ?: 'Not set' }}</span>
+                                                </div>
+                                                <div class="summary-item-inline">
+                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">GENDER:</span>
+                                                    <span class="summary-value" style="color: #212529; font-weight: 500;">{{ $sibling->gender ?: 'Not set' }}</span>
+                                                </div>
+                                                <div class="summary-item-inline">
+                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">COMPANY TYPE:</span>
+                                                    <span class="summary-value" style="color: #212529; font-weight: 500;">{{ $sibling->company_type ?: 'Not set' }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="empty-state" style="margin-top: 15px;">
+                                    <p>No siblings information added yet.</p>
+                                </div>
+                            @endif
+                        </div>
+
+                        <!-- Edit View -->
+                        <div id="siblingsInfoEdit" class="edit-view" style="display: none;">
+                            <div id="siblingsContainer">
+                                @foreach($siblings as $index => $sibling)
+                                    <x-client-edit.family-member-field 
+                                        :index="$index"
+                                        :member="$sibling"
+                                        type="siblings"
+                                        :relationshipOptions="['Brother', 'Sister', 'Step Brother', 'Step Sister']"
+                                    />
+                                @endforeach
+                            </div>
+
+                            <button type="button" class="add-item-btn" onclick="addPartnerRow('siblings')"><i class="fas fa-plus-circle"></i> Add Sibling</button>
+                            <div class="edit-actions">
+                                <button type="button" class="btn btn-primary" onclick="saveSiblingsInfo()">Save</button>
+                                <button type="button" class="btn btn-secondary" onclick="cancelEdit('siblingsInfo')">Cancel</button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Others Section -->
+                    <section class="form-section">
+                        <div class="section-header">
+                            <h3><i class="fas fa-users"></i> Others</h3>
+                            <div class="section-actions">
+                                <button type="button" class="edit-section-btn" onclick="toggleEditMode('othersInfo')">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                                <button type="button" class="add-section-btn" onclick="addPartnerRow('others')" title="Add Other">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Summary View -->
+                        <div id="othersInfoSummary" class="summary-view">
+                            @php
+                                $others = $clientPartners->whereIn('relationship_type', ['Cousin', 'Friend', 'Uncle', 'Aunt', 'Grandchild', 'Granddaughter', 'Grandparent', 'Niece', 'Nephew', 'Grandfather']);
+                            @endphp
+                            @if($others->count() > 0)
+                                <div style="margin-top: 15px;">
+                                    @foreach($others as $index => $other)
+                                        <div class="others-entry-compact" style="margin-bottom: 12px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #007bff;">
+                                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; align-items: center;">
+                                                <div class="summary-item-inline">
+                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">DETAILS:</span>
+                                                    <span class="summary-value" style="color: #212529; font-weight: 500;">
+                                                        @if($other->relatedClient && $other->related_client_id && $other->related_client_id != 0)
+                                                            {{ $other->relatedClient->first_name . ' ' . $other->relatedClient->last_name }}
+                                                        @else
+                                                            @php
+                                                                $firstName = trim($other->first_name ?? '');
+                                                                $lastName = trim($other->last_name ?? '');
+                                                                
+                                                                if (empty($firstName) && empty($lastName)) {
+                                                                    $displayName = $other->details ?: 'Name not provided';
+                                                                } elseif (empty($firstName)) {
+                                                                    $displayName = $lastName;
+                                                                } elseif (empty($lastName)) {
+                                                                    $displayName = $firstName;
+                                                                } else {
+                                                                    $displayName = $firstName . ' ' . $lastName;
+                                                                }
+                                                            @endphp
+                                                            {{ $displayName }}
+                                                        @endif
+                                                    </span>
+                                                </div>
+                                                <div class="summary-item-inline">
+                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">RELATIONSHIP:</span>
+                                                    <span class="summary-value" style="color: #212529; font-weight: 500;">{{ $other->relationship_type ?: 'Not set' }}</span>
+                                                </div>
+                                                <div class="summary-item-inline">
+                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">GENDER:</span>
+                                                    <span class="summary-value" style="color: #212529; font-weight: 500;">{{ $other->gender ?: 'Not set' }}</span>
+                                                </div>
+                                                <div class="summary-item-inline">
+                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">COMPANY TYPE:</span>
+                                                    <span class="summary-value" style="color: #212529; font-weight: 500;">{{ $other->company_type ?: 'Not set' }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="empty-state" style="margin-top: 15px;">
+                                    <p>No others information added yet.</p>
+                                </div>
+                            @endif
+                        </div>
+
+                        <!-- Edit View -->
+                        <div id="othersInfoEdit" class="edit-view" style="display: none;">
+                            <div id="othersContainer">
+                                @foreach($others as $index => $other)
+                                    <x-client-edit.family-member-field 
+                                        :index="$index"
+                                        :member="$other"
+                                        type="others"
+                                        :relationshipOptions="['Cousin', 'Friend', 'Uncle', 'Aunt', 'Grandchild', 'Granddaughter', 'Grandparent', 'Niece', 'Nephew', 'Grandfather']"
+                                    />
+                                @endforeach
+                            </div>
+
+                            <button type="button" class="add-item-btn" onclick="addPartnerRow('others')"><i class="fas fa-plus-circle"></i> Add Other</button>
+                            <div class="edit-actions">
+                                <button type="button" class="btn btn-primary" onclick="saveOthersInfo()">Save</button>
+                                <button type="button" class="btn btn-secondary" onclick="cancelEdit('othersInfo')">Cancel</button>
+                            </div>
+                        </div>
+                    </section>
+                </section>
                 </section>
 
                 <!-- EOI Reference Section -->

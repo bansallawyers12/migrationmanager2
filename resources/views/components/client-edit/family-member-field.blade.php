@@ -24,7 +24,22 @@
             <input type="text" 
                    name="{{ $fieldPrefix }}_details[{{ $index }}]" 
                    class="partner-details" 
-                   value="{{ $member->relatedClient ? $member->relatedClient->first_name . ' ' . $member->relatedClient->last_name . ' (' . $member->relatedClient->email . ', ' . $member->relatedClient->phone . ', ' . $member->relatedClient->client_id . ')' : $member->details }}" 
+                   value="@if($member->relatedClient && $member->related_client_id && $member->related_client_id != 0){{ $member->relatedClient->first_name . ' ' . $member->relatedClient->last_name . ' (' . $member->relatedClient->email . ', ' . $member->relatedClient->phone . ', ' . $member->relatedClient->client_id . ')' }}@else
+@php
+    $firstName = trim($member->first_name ?? '');
+    $lastName = trim($member->last_name ?? '');
+    
+    if (empty($firstName) && empty($lastName)) {
+        $displayName = $member->details ?: '';
+    } elseif (empty($firstName)) {
+        $displayName = $lastName;
+    } elseif (empty($lastName)) {
+        $displayName = $firstName;
+    } else {
+        $displayName = $firstName . ' ' . $lastName;
+    }
+@endphp
+{{ $displayName }}@endif" 
                    placeholder="Search by Name, Email, Client ID, or Phone" 
                    readonly>
             <div class="autocomplete-items"></div>
@@ -66,23 +81,23 @@
         <div class="content-grid single-row">
             <div class="form-group">
                 <label>Email</label>
-                <input type="email" name="{{ $fieldPrefix }}_email[{{ $index }}]" placeholder="Email">
+                <input type="email" name="{{ $fieldPrefix }}_email[{{ $index }}]" value="{{ $member->email ?? '' }}" placeholder="Email">
             </div>
             <div class="form-group">
                 <label>First Name</label>
-                <input type="text" name="{{ $fieldPrefix }}_first_name[{{ $index }}]" placeholder="First Name">
+                <input type="text" name="{{ $fieldPrefix }}_first_name[{{ $index }}]" value="{{ $member->first_name ?? '' }}" placeholder="First Name">
             </div>
             <div class="form-group">
                 <label>Last Name <span class="text-danger">*</span></label>
-                <input type="text" name="{{ $fieldPrefix }}_last_name[{{ $index }}]" placeholder="Last Name">
+                <input type="text" name="{{ $fieldPrefix }}_last_name[{{ $index }}]" value="{{ $member->last_name ?? '' }}" placeholder="Last Name">
             </div>
             <div class="form-group">
                 <label>Phone</label>
-                <input type="text" name="{{ $fieldPrefix }}_phone[{{ $index }}]" placeholder="Phone">
+                <input type="text" name="{{ $fieldPrefix }}_phone[{{ $index }}]" value="{{ $member->phone ?? '' }}" placeholder="Phone">
             </div>
             <div class="form-group">
                 <label>DOB <span class="text-danger">*</span></label>
-                <input type="text" name="{{ $fieldPrefix }}_dob[{{ $index }}]" placeholder="dd/mm/yyyy" class="date-picker">
+                <input type="text" name="{{ $fieldPrefix }}_dob[{{ $index }}]" value="{{ $member->dob ? \Carbon\Carbon::parse($member->dob)->format('d/m/Y') : '' }}" placeholder="dd/mm/yyyy" class="date-picker">
             </div>
         </div>
     </div>

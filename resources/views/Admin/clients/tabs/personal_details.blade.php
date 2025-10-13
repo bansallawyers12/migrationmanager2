@@ -447,26 +447,48 @@
                                         @foreach($clientFamilyDetails as $relationship)
                                             <?php
                                             //dd($relationship->related_client_id);
-                                            if(isset($relationship->related_client_id) && $relationship->related_client_id != "")
+                                            if(isset($relationship->related_client_id) && $relationship->related_client_id != "" && $relationship->related_client_id != 0)
                                             { //Existing Client
                                                 $relatedClientInfo = App\Models\Admin::select('client_id','first_name','last_name')->where('id', $relationship->related_client_id)->first();
                                                 //dd($relatedClientInfo);
                                                 if($relatedClientInfo){
                                                     $relatedClientId = $relatedClientInfo->client_id;
-                                                    $relatedClientFullName = $relatedClientInfo->first_name.' '.$relatedClientInfo->last_name."<br/>";
-                                                    $relatedClientFullName .= $relatedClientId;
+                                                    $clientFirstName = trim($relatedClientInfo->first_name ?? '');
+                                                    $clientLastName = trim($relatedClientInfo->last_name ?? '');
+                                                    
+                                                    if (empty($clientFirstName) && empty($clientLastName)) {
+                                                        $relatedClientFullName = 'Client ID: ' . $relatedClientId;
+                                                    } elseif (empty($clientFirstName)) {
+                                                        $relatedClientFullName = $clientLastName . "<br/>" . $relatedClientId;
+                                                    } elseif (empty($clientLastName)) {
+                                                        $relatedClientFullName = $clientFirstName . "<br/>" . $relatedClientId;
+                                                    } else {
+                                                        $relatedClientFullName = $clientFirstName.' '.$clientLastName."<br/>".$relatedClientId;
+                                                    }
                                                 } else {
                                                     $relatedClientId = 'NA';
-                                                    $relatedClientFullName = 'NA';
+                                                    $relatedClientFullName = 'Client not found';
                                                 }
                                             }  else { //New Client
                                                 $relatedClientId = 'NA';
-                                                $relatedClientFullName = $relationship->first_name . ' ' . $relationship->last_name;
+                                                // Handle empty or null names properly
+                                                $firstName = trim($relationship->first_name ?? '');
+                                                $lastName = trim($relationship->last_name ?? '');
+                                                
+                                                if (empty($firstName) && empty($lastName)) {
+                                                    $relatedClientFullName = 'Name not provided';
+                                                } elseif (empty($firstName)) {
+                                                    $relatedClientFullName = $lastName;
+                                                } elseif (empty($lastName)) {
+                                                    $relatedClientFullName = $firstName;
+                                                } else {
+                                                    $relatedClientFullName = $firstName . ' ' . $lastName;
+                                                }
                                             }?>
                                             <tr>
                                                 <td style="color: #6c757d;">
                                                     <?php
-                                                    if(isset($relationship->related_client_id) && $relationship->related_client_id != "")
+                                                    if(isset($relationship->related_client_id) && $relationship->related_client_id != "" && $relationship->related_client_id != 0)
                                                     { ?>
                                                         <a href="{{URL::to('/admin/clients/detail/'.base64_encode(convert_uuencode(@$relationship->related_client_id)))}}"><?php echo $relatedClientFullName;?> </a>
                                                     <?php

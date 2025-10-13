@@ -3180,7 +3180,7 @@ window.savePartnerInfo = function() {
             } else {
                 console.log(`Section ${index + 1} - no validation errors`);
                 partners.push({
-                    partner_id: partnerId || '',
+                    partner_id: (partnerId && partnerId !== '0') ? partnerId : null,
                     details: details,
                     relationship_type: relationshipType,
                     gender: gender,
@@ -3269,24 +3269,140 @@ window.saveChildrenInfo = function() {
     const container = document.getElementById('childrenContainer');
     const sections = container.querySelectorAll('.repeatable-section');
     const children = [];
+    let validationErrors = [];
     
-    sections.forEach(section => {
+    sections.forEach((section, index) => {
+        console.log(`Processing children section ${index + 1}:`);
+        console.log('Section element:', section);
+        console.log('Section HTML:', section.outerHTML.substring(0, 500) + '...');
+        
         const childId = section.querySelector('input[name*="children_id"]')?.value;
         const details = section.querySelector('.partner-details').value;
         const relationshipType = section.querySelector('select[name*="children_relationship_type"]').value;
         const gender = section.querySelector('select[name*="children_gender"]').value;
         const companyType = section.querySelector('select[name*="children_company_type"]').value;
         
-        if (details || relationshipType || gender || companyType) {
-            children.push({
-                child_id: childId || '',
+        // Check if extra fields exist in this section
+        const lastNameField = section.querySelector('input[name*="children_last_name"]');
+        const dobField = section.querySelector('input[name*="children_dob"]');
+        const emailField = section.querySelector('input[name*="children_email"]');
+        const firstNameField = section.querySelector('input[name*="children_first_name"]');
+        const phoneField = section.querySelector('input[name*="children_phone"]');
+        
+        const lastName = lastNameField?.value || '';
+        const dob = dobField?.value || '';
+        const email = emailField?.value || '';
+        const firstName = firstNameField?.value || '';
+        const phone = phoneField?.value || '';
+        
+        console.log(`Section ${index + 1} field detection:`, {
+            hasDetailsField: !!section.querySelector('.partner-details'),
+            hasRelationshipField: !!section.querySelector('select[name*="children_relationship_type"]'),
+            hasGenderField: !!section.querySelector('select[name*="children_gender"]'),
+            hasCompanyTypeField: !!section.querySelector('select[name*="children_company_type"]'),
+            hasLastNameField: !!lastNameField,
+            hasDobField: !!dobField,
+            hasEmailField: !!emailField,
+            hasFirstNameField: !!firstNameField,
+            hasPhoneField: !!phoneField
+        });
+        
+        // Simple approach: Only validate Last Name and DOB if they have values or if they're actually visible
+        // Check if the extra fields section exists and is not hidden
+        const extraFieldsSection = section.querySelector('.partner-extra-fields');
+        const isExtraFieldsVisible = extraFieldsSection && !extraFieldsSection.classList.contains('hidden-fields');
+        
+        // Check if this section has any data
+        console.log(`Section ${index + 1} data check:`, {
+            details: details,
+            relationshipType: relationshipType,
+            gender: gender,
+            companyType: companyType,
+            lastName: lastName,
+            dob: dob,
+            email: email,
+            firstName: firstName,
+            phone: phone,
+            hasData: !!(details || relationshipType || gender || companyType || lastName || dob || email || firstName || phone)
+        });
+        
+        // Check if this section has any form fields (regardless of whether they have data)
+        const hasFormFields = section.querySelector('.partner-details') || 
+                             section.querySelector('select[name*="children_relationship_type"]') || 
+                             section.querySelector('select[name*="children_gender"]') || 
+                             section.querySelector('select[name*="children_company_type"]') ||
+                             lastNameField || dobField || emailField || firstNameField || phoneField;
+        
+        if (hasFormFields) {
+            console.log(`Section ${index + 1} - Validation triggered because form fields exist`);
+            // Validate required fields
+            const errors = [];
+            if (!relationshipType) errors.push('Relationship Type');
+            if (!gender) errors.push('Gender');
+            if (!companyType) errors.push('Company Type');
+            
+            // Debug logging
+            console.log('Validation debug:', {
                 details: details,
-                relationship_type: relationshipType,
+                relationshipType: relationshipType,
                 gender: gender,
-                company_type: companyType
+                companyType: companyType,
+                lastName: lastName,
+                dob: dob,
+                isExtraFieldsVisible: isExtraFieldsVisible
             });
+
+            // Conditional validation based on Details field:
+            // If Details is empty (no existing client found), validate Last Name and DOB
+            // If Details is not empty (existing client found), skip Last Name and DOB validation
+            if (!details || details.trim() === '') {
+                // Details field is empty - validate Last Name and DOB
+                console.log('Details is empty - validating Last Name and DOB');
+                console.log('Last Name value:', lastName, 'DOB value:', dob);
+                
+                if (!lastName || lastName.trim() === '') {
+                    console.log('Adding Last Name error');
+                    errors.push('Last Name');
+                }
+                if (!dob || dob.trim() === '') {
+                    console.log('Adding DOB error');
+                    errors.push('DOB');
+                }
+            } else {
+                console.log('Details is not empty - skipping Last Name and DOB validation');
+            }
+            
+            if (errors.length > 0) {
+                console.log(`Section ${index + 1} validation errors:`, errors);
+                validationErrors = validationErrors.concat(errors);
+            } else {
+                console.log(`Section ${index + 1} - no validation errors`);
+                children.push({
+                    child_id: (childId && childId !== '0') ? childId : '',
+                    details: details,
+                    relationship_type: relationshipType,
+                    gender: gender,
+                    company_type: companyType,
+                    last_name: lastName || '',
+                    dob: dob || '',
+                    email: email || '',
+                    first_name: firstName || '',
+                    phone: phone || ''
+                });
+            }
+        } else {
+            console.log(`Section ${index + 1} - No form fields found, skipping`);
         }
     });
+    
+    // Check for validation errors before proceeding
+    if (validationErrors.length > 0) {
+        const uniqueErrors = [...new Set(validationErrors)]; // Remove duplicates
+        const errorMessage = `Please fill in the following required fields:\n• ${uniqueErrors.join('\n• ')}`;
+        showNotification(errorMessage, 'error');
+        console.log('Validation errors:', uniqueErrors);
+        return; // Stop execution if there are validation errors
+    }
     
     const formData = new FormData();
     formData.append('children', JSON.stringify(children));
@@ -5961,4 +6077,277 @@ function formatRelatedFileSelection(partner) {
 }
 
 // English proficiency functions moved to separate file: english-proficiency.js
+
+/**
+ * Save Parents Information
+ */
+async function saveParentsInfo() {
+    const parentsData = [];
+    const container = document.getElementById('parentContainer');
+    
+    if (!container) {
+        console.error('Parent container not found');
+        showNotification('Parent container not found', 'error');
+        return;
+    }
+
+    const parentRows = container.querySelectorAll('.repeatable-section');
+    console.log('Processing', parentRows.length, 'parent rows');
+
+    for (let i = 0; i < parentRows.length; i++) {
+        const row = parentRows[i];
+        const parentId = row.querySelector('input[name*="_id"]')?.value || '';
+        const details = row.querySelector('input[name*="_details"]')?.value || '';
+        const relationshipType = row.querySelector('select[name*="_relationship_type"]')?.value || '';
+        const gender = row.querySelector('select[name*="_gender"]')?.value || '';
+        const companyType = row.querySelector('select[name*="_company_type"]')?.value || '';
+        const email = row.querySelector('input[name*="_email"]')?.value || '';
+        const firstName = row.querySelector('input[name*="_first_name"]')?.value || '';
+        const lastName = row.querySelector('input[name*="_last_name"]')?.value || '';
+        const phone = row.querySelector('input[name*="_phone"]')?.value || '';
+        const dob = row.querySelector('input[name*="_dob"]')?.value || '';
+
+        // Validation
+        const validationErrors = [];
+        if (!relationshipType) validationErrors.push('Relationship Type');
+        if (!gender) validationErrors.push('Gender');
+        if (!companyType) validationErrors.push('Company Type');
+        
+        // Conditional validation based on details field
+        if (!details || details.trim() === '') {
+            if (!lastName || lastName.trim() === '') validationErrors.push('Last Name');
+            if (!dob || dob.trim() === '') validationErrors.push('DOB');
+        }
+
+        if (validationErrors.length > 0) {
+            const uniqueErrors = [...new Set(validationErrors)];
+            const errorMessage = `Please fill in the following required fields:\n• ${uniqueErrors.join('\n• ')}`;
+            showNotification(errorMessage, 'error');
+            return;
+        }
+
+        parentsData.push({
+            parent_id: (parentId && parentId !== '0') ? parentId : '',
+            details: details,
+            relationship_type: relationshipType,
+            gender: gender,
+            company_type: companyType,
+            email: email,
+            first_name: firstName,
+            last_name: lastName,
+            phone: phone,
+            dob: dob
+        });
+    }
+
+    try {
+        const response = await fetch('/admin/clients/save-section', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                section: 'parentsInfo',
+                id: window.currentClientId,
+                parents: parentsData
+            })
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('Parents information saved successfully!', 'success');
+            cancelEdit('parentsInfo');
+            location.reload(); // Reload to show updated data
+        } else {
+            showNotification(result.message || 'Failed to save parents information', 'error');
+        }
+    } catch (error) {
+        console.error('Error saving parents info:', error);
+        showNotification('An error occurred while saving parents information', 'error');
+    }
+}
+
+/**
+ * Save Siblings Information
+ */
+async function saveSiblingsInfo() {
+    const siblingsData = [];
+    const container = document.getElementById('siblingsContainer');
+    
+    if (!container) {
+        console.error('Siblings container not found');
+        showNotification('Siblings container not found', 'error');
+        return;
+    }
+
+    const siblingRows = container.querySelectorAll('.repeatable-section');
+    console.log('Processing', siblingRows.length, 'sibling rows');
+
+    for (let i = 0; i < siblingRows.length; i++) {
+        const row = siblingRows[i];
+        const siblingId = row.querySelector('input[name*="_id"]')?.value || '';
+        const details = row.querySelector('input[name*="_details"]')?.value || '';
+        const relationshipType = row.querySelector('select[name*="_relationship_type"]')?.value || '';
+        const gender = row.querySelector('select[name*="_gender"]')?.value || '';
+        const companyType = row.querySelector('select[name*="_company_type"]')?.value || '';
+        const email = row.querySelector('input[name*="_email"]')?.value || '';
+        const firstName = row.querySelector('input[name*="_first_name"]')?.value || '';
+        const lastName = row.querySelector('input[name*="_last_name"]')?.value || '';
+        const phone = row.querySelector('input[name*="_phone"]')?.value || '';
+        const dob = row.querySelector('input[name*="_dob"]')?.value || '';
+
+        // Validation
+        const validationErrors = [];
+        if (!relationshipType) validationErrors.push('Relationship Type');
+        if (!gender) validationErrors.push('Gender');
+        if (!companyType) validationErrors.push('Company Type');
+        
+        // Conditional validation based on details field
+        if (!details || details.trim() === '') {
+            if (!lastName || lastName.trim() === '') validationErrors.push('Last Name');
+            if (!dob || dob.trim() === '') validationErrors.push('DOB');
+        }
+
+        if (validationErrors.length > 0) {
+            const uniqueErrors = [...new Set(validationErrors)];
+            const errorMessage = `Please fill in the following required fields:\n• ${uniqueErrors.join('\n• ')}`;
+            showNotification(errorMessage, 'error');
+            return;
+        }
+
+        siblingsData.push({
+            sibling_id: (siblingId && siblingId !== '0') ? siblingId : '',
+            details: details,
+            relationship_type: relationshipType,
+            gender: gender,
+            company_type: companyType,
+            email: email,
+            first_name: firstName,
+            last_name: lastName,
+            phone: phone,
+            dob: dob
+        });
+    }
+
+    try {
+        const response = await fetch('/admin/clients/save-section', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                section: 'siblingsInfo',
+                id: window.currentClientId,
+                siblings: siblingsData
+            })
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('Siblings information saved successfully!', 'success');
+            cancelEdit('siblingsInfo');
+            location.reload(); // Reload to show updated data
+        } else {
+            showNotification(result.message || 'Failed to save siblings information', 'error');
+        }
+    } catch (error) {
+        console.error('Error saving siblings info:', error);
+        showNotification('An error occurred while saving siblings information', 'error');
+    }
+}
+
+/**
+ * Save Others Information
+ */
+async function saveOthersInfo() {
+    const othersData = [];
+    const container = document.getElementById('othersContainer');
+    
+    if (!container) {
+        console.error('Others container not found');
+        showNotification('Others container not found', 'error');
+        return;
+    }
+
+    const otherRows = container.querySelectorAll('.repeatable-section');
+    console.log('Processing', otherRows.length, 'other rows');
+
+    for (let i = 0; i < otherRows.length; i++) {
+        const row = otherRows[i];
+        const otherId = row.querySelector('input[name*="_id"]')?.value || '';
+        const details = row.querySelector('input[name*="_details"]')?.value || '';
+        const relationshipType = row.querySelector('select[name*="_relationship_type"]')?.value || '';
+        const gender = row.querySelector('select[name*="_gender"]')?.value || '';
+        const companyType = row.querySelector('select[name*="_company_type"]')?.value || '';
+        const email = row.querySelector('input[name*="_email"]')?.value || '';
+        const firstName = row.querySelector('input[name*="_first_name"]')?.value || '';
+        const lastName = row.querySelector('input[name*="_last_name"]')?.value || '';
+        const phone = row.querySelector('input[name*="_phone"]')?.value || '';
+        const dob = row.querySelector('input[name*="_dob"]')?.value || '';
+
+        // Validation
+        const validationErrors = [];
+        if (!relationshipType) validationErrors.push('Relationship Type');
+        if (!gender) validationErrors.push('Gender');
+        if (!companyType) validationErrors.push('Company Type');
+        
+        // Conditional validation based on details field
+        if (!details || details.trim() === '') {
+            if (!lastName || lastName.trim() === '') validationErrors.push('Last Name');
+            if (!dob || dob.trim() === '') validationErrors.push('DOB');
+        }
+
+        if (validationErrors.length > 0) {
+            const uniqueErrors = [...new Set(validationErrors)];
+            const errorMessage = `Please fill in the following required fields:\n• ${uniqueErrors.join('\n• ')}`;
+            showNotification(errorMessage, 'error');
+            return;
+        }
+
+        othersData.push({
+            other_id: (otherId && otherId !== '0') ? otherId : '',
+            details: details,
+            relationship_type: relationshipType,
+            gender: gender,
+            company_type: companyType,
+            email: email,
+            first_name: firstName,
+            last_name: lastName,
+            phone: phone,
+            dob: dob
+        });
+    }
+
+    try {
+        const response = await fetch('/admin/clients/save-section', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                section: 'othersInfo',
+                id: window.currentClientId,
+                others: othersData
+            })
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('Others information saved successfully!', 'success');
+            cancelEdit('othersInfo');
+            location.reload(); // Reload to show updated data
+        } else {
+            showNotification(result.message || 'Failed to save others information', 'error');
+        }
+    } catch (error) {
+        console.error('Error saving others info:', error);
+        showNotification('An error occurred while saving others information', 'error');
+    }
+}
 
