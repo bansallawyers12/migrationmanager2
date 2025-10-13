@@ -441,7 +441,7 @@
 	</div>
 </div>
 @endsection
-@section('scripts')
+@push('scripts')
 <script>
 jQuery(document).ready(function($){
 	$('.listing-container .filter_btn').on('click', function(){
@@ -748,5 +748,5 @@ jQuery(document).ready(function($){
     }
 });
 </script>
-@endsection
+@endpush
 

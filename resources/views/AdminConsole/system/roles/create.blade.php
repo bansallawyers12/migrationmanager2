@@ -339,7 +339,7 @@
 	</section>
 </div>
 @endsection
-@section('scripts')
+@push('scripts')
 <script>
 	jQuery(document).ready(function($){
 		$('.select_toggle a.select_all').on('click', function(){
@@ -352,4 +352,4 @@
 		});
 	});
 </script>
-@endsection
+@endpush

@@ -599,7 +599,7 @@ class ClientPersonalDetailsController extends Controller
         $obj->dob	=	@$dob;
         $obj->age	=	@$requestData['age'];
         $obj->gender	=	@$requestData['gender'];
-        $obj->martial_status	=	@$requestData['martial_status'];
+        $obj->marital_status	=	@$requestData['marital_status'];
 
         $naatiTest = isset($requestData['naati_test']) && $requestData['naati_test'] === '1' ? 1 : 0;
         $obj->naati_test = $naatiTest;
@@ -1497,9 +1497,9 @@ class ClientPersonalDetailsController extends Controller
             }
 
             // Map marital status values for backward compatibility
-            $martialStatus = $validated['marital_status'] ?? null;
-            if ($martialStatus === 'Defacto') {
-                $martialStatus = 'De Facto';
+            $maritalStatus = $validated['marital_status'] ?? null;
+            if ($maritalStatus === 'Defacto') {
+                $maritalStatus = 'De Facto';
             }
 
             // Use direct assignment pattern (like the working old methods)
@@ -1509,7 +1509,7 @@ class ClientPersonalDetailsController extends Controller
             $client->dob = $dob;
             $client->age = $age;
             $client->gender = $validated['gender'] ?? null;
-            $client->martial_status = $martialStatus;
+            $client->marital_status = $maritalStatus;
             $client->save();
 
             return response()->json([

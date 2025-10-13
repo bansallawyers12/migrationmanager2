@@ -115,7 +115,7 @@
 </div>
 @endsection
 
-@section('scripts')
+@push('scripts')
 <script>
     jQuery(document).ready(function($){
         $('.listing-container [data-checkboxes]').each(function () {
@@ -155,6 +155,6 @@
         });
     });
 </script>
-@endsection
+@endpush
 
 

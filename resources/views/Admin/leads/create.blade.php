@@ -106,17 +106,17 @@
                                 @enderror
                             </div>
                             <div class="form-group">
-                                <label for="martialStatus">Marital Status</label>
-                                <select id="martialStatus" name="martial_status">
+                                <label for="maritalStatus">Marital Status</label>
+                                <select id="maritalStatus" name="marital_status">
                                     <option value="">Select Marital Status</option>
-                                    <option value="Single" {{ old('martial_status') == 'Single' ? 'selected' : '' }}>Single</option>
-                                    <option value="Married" {{ old('martial_status') == 'Married' ? 'selected' : '' }}>Married</option>
-                                    <option value="De Facto" {{ old('martial_status') == 'De Facto' ? 'selected' : '' }}>De Facto</option>
-                                    <option value="Divorced" {{ old('martial_status') == 'Divorced' ? 'selected' : '' }}>Divorced</option>
-                                    <option value="Widowed" {{ old('martial_status') == 'Widowed' ? 'selected' : '' }}>Widowed</option>
-                                    <option value="Separated" {{ old('martial_status') == 'Separated' ? 'selected' : '' }}>Separated</option>
+                                    <option value="Single" {{ old('marital_status') == 'Single' ? 'selected' : '' }}>Single</option>
+                                    <option value="Married" {{ old('marital_status') == 'Married' ? 'selected' : '' }}>Married</option>
+                                    <option value="De Facto" {{ old('marital_status') == 'De Facto' ? 'selected' : '' }}>De Facto</option>
+                                    <option value="Divorced" {{ old('marital_status') == 'Divorced' ? 'selected' : '' }}>Divorced</option>
+                                    <option value="Widowed" {{ old('marital_status') == 'Widowed' ? 'selected' : '' }}>Widowed</option>
+                                    <option value="Separated" {{ old('marital_status') == 'Separated' ? 'selected' : '' }}>Separated</option>
                                 </select>
-                                @error('martial_status')
+                                @error('marital_status')
                                     <span class="text-danger">{{ $message }}</span>
                                 @enderror
                             </div>
@@ -1567,10 +1567,10 @@
 
             // Toggle Spouse Details Section
             function toggleSpouseDetailsSection() {
-                const martialStatus = document.getElementById('martialStatus').value;
+                const maritalStatus = document.getElementById('maritalStatus').value;
                 const spouseDetailsSection = document.getElementById('spouseDetailsSection');
 
-                if (martialStatus === 'Married') {
+                if (maritalStatus === 'Married') {
                     spouseDetailsSection.style.display = 'block';
                     toggleSpouseEnglishFields();
                     toggleSpouseSkillFields();
@@ -1611,7 +1611,7 @@
                 toggleSpouseDetailsSection();
             });
 
-            document.getElementById('martialStatus').addEventListener('change', function() {
+            document.getElementById('maritalStatus').addEventListener('change', function() {
                 toggleSpouseDetailsSection();
             });
 

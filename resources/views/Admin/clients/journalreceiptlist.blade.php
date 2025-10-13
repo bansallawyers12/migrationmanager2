@@ -504,7 +504,7 @@
     </section>
 </div>
 @endsection
-@section('scripts')
+@push('scripts')
 <script>
 jQuery(document).ready(function($){
     $("[data-checkboxes]").each(function () {
@@ -603,4 +603,4 @@ jQuery(document).ready(function($){
     });
 });
 </script>
-@endsection
+@endpush

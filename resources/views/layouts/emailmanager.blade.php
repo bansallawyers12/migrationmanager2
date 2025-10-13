@@ -842,7 +842,7 @@ function formatRepoSelectioncheck (repo) {
 		</div>
 	</div>
 </div>
-@yield('scripts')
+@stack('scripts')
 
 </body>
 </html>

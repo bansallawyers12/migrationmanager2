@@ -419,7 +419,7 @@ body, html {
 
 
 @endsection
-@section('scripts')
+@push('scripts')
 <script>
 jQuery(document).ready(function($){
     $(document).delegate('.attendsessionforclient', 'click', function(){
@@ -521,4 +521,4 @@ window.onclick = function(event) {
 
 
 </script>
-@endsection
+@endpush

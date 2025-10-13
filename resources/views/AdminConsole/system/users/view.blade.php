@@ -680,7 +680,7 @@ use App\Http\Controllers\Controller;
 	</div>
 </div>
 @endsection
-@section('scripts')
+@push('scripts')
 <?php
 $leadsconverted = \App\Models\Lead::where('converted', 1)->where('assign_to', $fetchedData->id)->count();
 $totalleads = \App\Models\Lead::where('assign_to', $fetchedData->id)->count();
@@ -1940,4 +1940,4 @@ $(document).delegate('#notes-tab', 'click', function(){
 
 });
 </script>
-@endsection
+@endpush

@@ -83,11 +83,11 @@
     								    </span>
     							</p>
 								@endif
-								@if($fetchedData->martial_status != '')
+								@if($fetchedData->marital_status != '')
 								<p class="clearfix"> 
-    								<span class="float-left">Martial Status:</span>
+    								<span class="float-left">Marital Status:</span>
     								<span class="float-right text-muted">
-    								    {{@$fetchedData->martial_status}}</span>
+    								    {{@$fetchedData->marital_status}}</span>
     							</p>
 								@endif
 								@if($fetchedData->visa_expiry_date != '')
@@ -309,7 +309,7 @@
 	</div>
 </div>
 @endsection
-@section('scripts')
+@push('scripts')
 <div id="emailmodal"  data-backdrop="static" data-keyboard="false" class="modal fade custom_modal" tabindex="-1" role="dialog" aria-labelledby="clientModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
@@ -617,4 +617,4 @@ $(document).delegate('#setreminder','click', function(){
 	});
 });
 </script>
-@endsection
+@endpush

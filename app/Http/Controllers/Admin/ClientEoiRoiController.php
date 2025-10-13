@@ -236,6 +236,12 @@ class ClientEoiRoiController extends Controller
         try {
             $this->authorize('view', $client);
 
+            // Load client relationships needed for points calculation (following existing codebase pattern)
+            $client->testScores = \App\Models\ClientTestScore::where('client_id', $client->id)->get();
+            $client->qualifications = \App\Models\ClientQualification::where('client_id', $client->id)->get();
+            $client->experiences = \App\Models\ClientExperience::where('client_id', $client->id)->get();
+            $client->partner = \App\Models\ClientSpouseDetail::where('client_id', $client->id)->first();
+
             $subclass = $request->input('subclass');
             $monthsAhead = (int) ($request->input('months_ahead', 6));
 

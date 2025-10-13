@@ -138,7 +138,7 @@ class LeadController extends Controller
             $lead->gender = $requestData['gender'];
             $lead->dob = $dob;
             $lead->age = $requestData['age'] ?? null;
-            $lead->martial_status = $requestData['martial_status'] ?? null;
+            $lead->marital_status = $requestData['marital_status'] ?? null;
             $lead->passport_no = $requestData['passport_no'] ?? null;
             $lead->visa_type = $requestData['visa_type'] ?? null;
             $lead->visa_expiry_date = $visa_expiry_date;
@@ -246,7 +246,7 @@ class LeadController extends Controller
 
             $lead->dob = $dob;
             $lead->age = $requestData['age'];
-            $lead->martial_status = $requestData['martial_status'];
+            $lead->marital_status = $requestData['marital_status'];
             $lead->passport_no = $requestData['passport_no'];
             $lead->visa_type = $requestData['visa_type'];
             $lead->visa_expiry_date = $visa_expiry_date;

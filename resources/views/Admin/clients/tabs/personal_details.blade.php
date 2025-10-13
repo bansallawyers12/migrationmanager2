@@ -57,8 +57,8 @@
                             <span class="field-label">Marital Status</span>
                             <span class="field-value">
                                 <?php
-                                if ( isset($fetchedData->martial_status) && $fetchedData->martial_status != '') {
-                                    echo $fetchedData->martial_status;
+                                if ( isset($fetchedData->marital_status) && $fetchedData->marital_status != '') {
+                                    echo $fetchedData->marital_status;
                                 } else {
                                     echo 'N/A';
                                 } ?>

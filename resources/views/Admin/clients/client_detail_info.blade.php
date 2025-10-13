@@ -127,21 +127,21 @@
 
                                     <div class="col-3 col-md-3 col-lg-3">
                                         <div class="form-group">
-                                            <label for="martial_status">Marital Status</label>
-                                            <select style="padding: 0px 5px;width: 165px;" name="martial_status" id="marital-status-select" class="form-control">
+                                            <label for="marital_status">Marital Status</label>
+                                            <select style="padding: 0px 5px;width: 165px;" name="marital_status" id="marital-status-select" class="form-control">
                                                 <option value="">Select Marital Status</option>
-                                                <option value="Married" @if(@$fetchedData->martial_status == "Married") selected @endif>Married</option>
-                                                <option value="Never Married" @if(@$fetchedData->martial_status == "Never Married") selected @endif>Never Married</option>
-                                                <option value="Engaged" @if(@$fetchedData->martial_status == "Engaged") selected @endif>Engaged</option>
-                                                <option value="Divorced" @if(@$fetchedData->martial_status == "Divorced") selected @endif>Divorced</option>
-                                                <option value="Separated" @if(@$fetchedData->martial_status == "Separated") selected @endif>Separated</option>
-                                                <option value="De facto" @if(@$fetchedData->martial_status == "De facto") selected @endif>De facto</option>
-                                                <option value="Widowed" @if(@$fetchedData->martial_status == "Widowed") selected @endif>Widowed</option>
-                                                <option value="Others" @if(@$fetchedData->martial_status == "Others") selected @endif>Others</option>
+                                                <option value="Married" @if(@$fetchedData->marital_status == "Married") selected @endif>Married</option>
+                                                <option value="Never Married" @if(@$fetchedData->marital_status == "Never Married") selected @endif>Never Married</option>
+                                                <option value="Engaged" @if(@$fetchedData->marital_status == "Engaged") selected @endif>Engaged</option>
+                                                <option value="Divorced" @if(@$fetchedData->marital_status == "Divorced") selected @endif>Divorced</option>
+                                                <option value="Separated" @if(@$fetchedData->marital_status == "Separated") selected @endif>Separated</option>
+                                                <option value="De facto" @if(@$fetchedData->marital_status == "De facto") selected @endif>De facto</option>
+                                                <option value="Widowed" @if(@$fetchedData->marital_status == "Widowed") selected @endif>Widowed</option>
+                                                <option value="Others" @if(@$fetchedData->marital_status == "Others") selected @endif>Others</option>
                                             </select>
-                                            @if ($errors->has('martial_status'))
+                                            @if ($errors->has('marital_status'))
                                             <span class="custom-error" role="alert">
-                                                <strong>{{ @$errors->first('martial_status') }}</strong>
+                                                <strong>{{ @$errors->first('marital_status') }}</strong>
                                             </span>
                                             @endif
                                         </div>

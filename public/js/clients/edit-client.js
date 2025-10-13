@@ -1406,7 +1406,7 @@ function initializeDatepickers() {
  * Toggle Spouse Details Section based on Marital Status
  */
 function toggleSpouseDetailsSection() {
-    const maritalStatus = document.getElementById('martialStatus').value;
+    const maritalStatus = document.getElementById('maritalStatus').value;
     const spouseDetailsSection = document.getElementById('spouseDetailsSection');
 
     // Check if the spouseDetailsSection element exists before trying to access its style
@@ -1855,7 +1855,7 @@ window.saveBasicInfo = function() {
     formData.append('dob', document.getElementById('dob').value);
     formData.append('age', document.getElementById('age').value);
     formData.append('gender', document.getElementById('gender').value);
-    formData.append('marital_status', document.getElementById('martialStatus').value);
+    formData.append('marital_status', document.getElementById('maritalStatus').value);
     
     saveSectionData('basicInfo', formData, function() {
         // Update summary view on success
@@ -1885,7 +1885,7 @@ window.saveBasicInfo = function() {
             </div>
             <div class="summary-item">
                 <span class="summary-label">Marital Status:</span>
-                <span class="summary-value">${document.getElementById('martialStatus').value || 'Not set'}</span>
+                <span class="summary-value">${document.getElementById('maritalStatus').value || 'Not set'}</span>
             </div>
         `;
         
@@ -3560,9 +3560,9 @@ $(document).ready(function() {
     toggleSpouseDetailsSection();
 
     // Run on Marital Status change
-    const martialStatusElement = document.getElementById('martialStatus');
-    if (martialStatusElement) {
-        martialStatusElement.addEventListener('change', function() {
+    const maritalStatusElement = document.getElementById('maritalStatus');
+    if (maritalStatusElement) {
+        maritalStatusElement.addEventListener('change', function() {
             toggleSpouseDetailsSection();
         });
     }

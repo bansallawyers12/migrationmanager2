@@ -505,7 +505,7 @@
 </div>
 @endsection
 
-@section('scripts')
+@push('scripts')
 <script src="{{URL::to('/')}}/js/popover.js"></script>
 <style>
 /* Ensure popovers display correctly */
@@ -1441,4 +1441,4 @@ $(function () {
     });
 });
 </script>
-@endsection
+@endpush

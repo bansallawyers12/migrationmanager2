@@ -1400,7 +1400,7 @@
 		</div>
 	</div>
 </div>
-@yield('scripts')
+@stack('scripts')
 	<!--<script src="{{--asset('js/custom-chart.js')--}}"></script>-->
 
 

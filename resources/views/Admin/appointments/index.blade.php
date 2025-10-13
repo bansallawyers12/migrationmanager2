@@ -326,7 +326,7 @@ html, body {
 	</div>
 </div>
 @endsection
-@section('scripts')
+@push('scripts')
   <script src="{{URL::asset('public/js/bootstrap-datepicker.js')}}"></script>
 <script>
 	jQuery(document).ready(function($){
@@ -516,4 +516,4 @@ html, body {
 	});
 });
 </script>
-@endsection
+@endpush

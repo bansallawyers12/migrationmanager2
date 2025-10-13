@@ -196,7 +196,7 @@
 
 @endsection
 
-@section('scripts')
+@push('scripts')
 <script>
 $(document).ready(function() {
     $('#occupationForm').on('submit', function(e) {
@@ -234,5 +234,5 @@ $(document).ready(function() {
     });
 });
 </script>
-@endsection
+@endpush
 

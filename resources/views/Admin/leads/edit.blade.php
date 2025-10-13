@@ -136,7 +136,7 @@
                                 </div>
                                 <div class="summary-item">
                                     <span class="summary-label">Marital Status:</span>
-                                    <span class="summary-value">{{ $fetchedData->martial_status ?: 'Not set' }}</span>
+                                    <span class="summary-value">{{ $fetchedData->marital_status ?: 'Not set' }}</span>
                                 </div>
                             </div>
 											</div>	
@@ -197,17 +197,17 @@
 											</div>
 
 												<div class="form-group"> 
-                                    <label for="martialStatus">Marital Status</label>
-                                    <select id="martialStatus" name="martial_status">
+                                    <label for="maritalStatus">Marital Status</label>
+                                    <select id="maritalStatus" name="marital_status">
                                         <option value="">Select Marital Status</option>
-                                        <option value="Single" {{ $fetchedData->martial_status == 'Single' ? 'selected' : '' }}>Single</option>
-                                        <option value="Married" {{ $fetchedData->martial_status == 'Married' ? 'selected' : '' }}>Married</option>
-                                        <option value="Defacto" {{ ($fetchedData->martial_status == 'Defacto' || $fetchedData->martial_status == 'De Facto') ? 'selected' : '' }}>De Facto</option>
-                                        <option value="Separated" {{ $fetchedData->martial_status == 'Separated' ? 'selected' : '' }}>Separated</option>
-                                        <option value="Divorced" {{ $fetchedData->martial_status == 'Divorced' ? 'selected' : '' }}>Divorced</option>
-                                        <option value="Widowed" {{ $fetchedData->martial_status == 'Widowed' ? 'selected' : '' }}>Widowed</option>
+                                        <option value="Single" {{ $fetchedData->marital_status == 'Single' ? 'selected' : '' }}>Single</option>
+                                        <option value="Married" {{ $fetchedData->marital_status == 'Married' ? 'selected' : '' }}>Married</option>
+                                        <option value="Defacto" {{ ($fetchedData->marital_status == 'Defacto' || $fetchedData->marital_status == 'De Facto') ? 'selected' : '' }}>De Facto</option>
+                                        <option value="Separated" {{ $fetchedData->marital_status == 'Separated' ? 'selected' : '' }}>Separated</option>
+                                        <option value="Divorced" {{ $fetchedData->marital_status == 'Divorced' ? 'selected' : '' }}>Divorced</option>
+                                        <option value="Widowed" {{ $fetchedData->marital_status == 'Widowed' ? 'selected' : '' }}>Widowed</option>
                                     </select>
-                                    @error('martial_status')
+                                    @error('marital_status')
                                         <span class="text-danger">{{ $message }}</span>
                                     @enderror
 													</div>

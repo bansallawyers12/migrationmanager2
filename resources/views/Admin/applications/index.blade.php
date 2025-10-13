@@ -200,7 +200,7 @@
 </div>
 
 @endsection
-@section('scripts')
+@push('scripts')
 <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
 <script>
  function suggest(inputString) {
@@ -277,4 +277,4 @@ $(document).delegate('.importmodal', 'click', function(){
 $('#importmodal').modal('show');
 });
 </script>
-@endsection
+@endpush

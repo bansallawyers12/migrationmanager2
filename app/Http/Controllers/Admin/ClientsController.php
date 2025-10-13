@@ -277,7 +277,7 @@ class ClientsController extends Controller
                 'dob_verify_document' => 'nullable|string|max:255',
                 'age' => 'nullable|string',
                 'gender' => 'nullable|in:Male,Female,Other',
-                'martial_status' => 'nullable|in:Single,Married,De Facto,Divorced,Widowed,Separated',
+                'marital_status' => 'nullable|in:Single,Married,De Facto,Divorced,Widowed,Separated',
 
                 'phone_verified' => 'nullable|in:1',
                 'contact_type_hidden.*' => 'nullable|in:Personal,Work,Mobile,Business,Secondary,Father,Mother,Brother,Sister,Uncle,Aunt,Cousin,Others,Partner,Not In Use',
@@ -583,7 +583,7 @@ class ClientsController extends Controller
 
             $client->age = $validated['age'] ?? null;
             $client->gender = $validated['gender'] ?? null;
-            $client->martial_status = $validated['martial_status'] ?? null;
+            $client->marital_status = $validated['marital_status'] ?? null;
             $client->country_passport = $validated['visa_country'][0] ?? null;
             $client->client_counter = $client_current_counter;
             $client->client_id = $client_id;
@@ -922,7 +922,7 @@ class ClientsController extends Controller
             }
 
             // Save spouse details
-            if (isset($validated['martial_status']) && $validated['martial_status'] === 'Married') {
+            if (isset($validated['marital_status']) && $validated['marital_status'] === 'Married') {
                 ClientSpouseDetail::create([
                     'client_id' => $client->id,
                     'admin_id' => Auth::user()->id,
@@ -1250,7 +1250,7 @@ class ClientsController extends Controller
                 'dob' => 'nullable|date_format:d/m/Y|after_or_equal:1000-01-01', // Updated to expect dd/mm/yyyy
                 'client_id' => 'required|max:255|unique:admins,client_id,' . $requestData['id'],
                 'gender' => 'nullable|in:Male,Female,Other',
-                'martial_status' => 'nullable|in:Single,Married,De Facto,Divorced,Widowed,Separated',
+                'marital_status' => 'nullable|in:Single,Married,De Facto,Divorced,Widowed,Separated',
 
                 'visa_country' => 'nullable|string|max:255',
                 'passports.*.passport_number' => 'nullable|string|max:50',
@@ -1577,7 +1577,7 @@ class ClientsController extends Controller
             }
 
             // Add validation for spouse details if marital status is Married
-            if ($requestData['martial_status'] === 'Married') {
+            if ($requestData['marital_status'] === 'Married') {
                 $validationRules['spouse_has_english_score'] = 'required|in:Yes,No';
                 $validationRules['spouse_has_skill_assessment'] = 'required|in:Yes,No';
 
@@ -2045,7 +2045,7 @@ class ClientsController extends Controller
             $obj->dob = $dob;
             $obj->age = $age;
             $obj->gender = $requestData['gender'] ?? null;
-            $obj->martial_status = $requestData['martial_status'] ?? null;
+            $obj->marital_status = $requestData['marital_status'] ?? null;
             $obj->client_id = $requestData['client_id'];
             //$obj->city = $requestData['town_city'] ?? null;
             //$obj->state = $requestData['state_region'] ?? null;
@@ -3086,7 +3086,7 @@ class ClientsController extends Controller
             }
 
             // Spouse Detail Handling
-            if ($requestData['martial_status'] === 'Married') {
+            if ($requestData['marital_status'] === 'Married') {
                 // Only process spouse details if marital status is Married
                 $hasEnglishScore = isset($requestData['spouse_has_english_score']) && $requestData['spouse_has_english_score'] === 'Yes';
                 $hasSkillAssessment = isset($requestData['spouse_has_skill_assessment']) && $requestData['spouse_has_skill_assessment'] === 'Yes';
@@ -3658,9 +3658,9 @@ class ClientsController extends Controller
             }
 
             // Map marital status values for backward compatibility
-            $martialStatus = $validated['marital_status'] ?? null;
-            if ($martialStatus === 'Defacto') {
-                $martialStatus = 'De Facto';
+            $maritalStatus = $validated['marital_status'] ?? null;
+            if ($maritalStatus === 'Defacto') {
+                $maritalStatus = 'De Facto';
             }
 
             // Use direct assignment pattern (like the working old methods)
@@ -3670,7 +3670,7 @@ class ClientsController extends Controller
             $client->dob = $dob;
             $client->age = $age;
             $client->gender = $validated['gender'] ?? null;
-            $client->martial_status = $martialStatus;
+            $client->marital_status = $maritalStatus;
             $client->save();
 
             return response()->json([

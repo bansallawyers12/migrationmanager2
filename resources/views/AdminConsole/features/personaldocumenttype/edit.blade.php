@@ -70,7 +70,7 @@
 	</section>
 </div>
 @endsection
-@section('scripts')
+@push('scripts')
 
-@endsection
+@endpush
 

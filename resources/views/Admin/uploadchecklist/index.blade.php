@@ -165,7 +165,7 @@
 
 @endsection
 
-@section('scripts')
+@push('scripts')
 <script>
 jQuery(document).ready(function($){
     // Handle disabled select field for matter-specific view
@@ -174,4 +174,4 @@ jQuery(document).ready(function($){
     }
 });
 </script>
-@endsection
+@endpush

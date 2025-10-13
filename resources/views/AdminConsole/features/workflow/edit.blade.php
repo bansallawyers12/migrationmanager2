@@ -115,7 +115,7 @@
 </div>
 
 @endsection
-@section('scripts')
+@push('scripts')
 <script>
 jQuery(document).ready(function($){
 	$('.add_stage').on('click', function(){
@@ -133,4 +133,4 @@ jQuery(document).ready(function($){
 	});
 });
 </script>
-@endsection
+@endpush

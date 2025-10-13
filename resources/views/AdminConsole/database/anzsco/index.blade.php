@@ -82,7 +82,7 @@
 
 @endsection
 
-@section('scripts')
+@push('scripts')
 <script>
 $(document).ready(function() {
     // Initialize DataTable
@@ -178,5 +178,5 @@ $(document).ready(function() {
     });
 });
 </script>
-@endsection
+@endpush
 

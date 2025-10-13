@@ -239,7 +239,7 @@
 
 @endsection
 
-@section('scripts')
+@push('scripts')
 <script>
 $(document).ready(function() {
     // Update file input label
@@ -329,5 +329,5 @@ $(document).ready(function() {
     });
 });
 </script>
-@endsection
+@endpush
 

@@ -2536,6 +2536,6 @@
         <!-- Notifications will be dynamically added here -->
     </div>
 
-    @yield('scripts')
+    @stack('scripts')
 </body>
 </html>

@@ -1,4 +1,4 @@
-﻿@extends('layouts.admin_client_detail')
+@extends('layouts.admin_client_detail')
 @section('title', 'Client Detail')
 
 @section('content')
@@ -1141,7 +1141,7 @@ use App\Http\Controllers\Controller;
 </div>
 
 @endsection
-@section('scripts')
+@push('scripts')
 <script src="{{URL::to('/')}}/js/popover.js"></script>
 <script src="{{URL::asset('js/bootstrap-datepicker.js')}}"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.20/jquery.datetimepicker.full.min.js"></script>
@@ -1310,4 +1310,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-@endsection
+@endpush

@@ -196,7 +196,7 @@ foreach($appointmentsData as $appointment){ //dd($appointment);
 //dd($sched_res);
 ?>
 @endsection
-@section('scripts')
+@push('scripts')
 <script src="{{URL::asset('public/js/bootstrap-datepicker.js')}}"></script>
 <script>
 jQuery(document).ready(function($){
@@ -405,4 +405,4 @@ var calendar = $("#myEvent").fullCalendar({
             this.value = String(hours).padStart(2, '0') + ':' + String(roundedMinutes).padStart(2, '0');
         });
     </script>
-@endsection
+@endpush

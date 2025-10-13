@@ -437,7 +437,7 @@
 	</div>
 </div>
 @endsection
-@section('scripts')
+@push('scripts')
 <script src="{{URL::to('/')}}/js/popover.js"></script>
 <script>
 	jQuery(document).ready(function($){
@@ -723,4 +723,4 @@
 	});
 });
 </script>
-@endsection
+@endpush

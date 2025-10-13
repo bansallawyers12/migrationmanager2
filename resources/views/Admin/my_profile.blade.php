@@ -219,7 +219,7 @@
 	</section>
 </div>
 @endsection
-@section('scripts')
+@push('scripts')
 <script>
 jQuery(document).ready(function($){
 	$('#select_country').attr('data-selected-country','<?php echo @$fetchedData->country; ?>');
@@ -237,4 +237,4 @@ jQuery(document).ready(function($){
     }
   };
 </script>
-@endsection
+@endpush
