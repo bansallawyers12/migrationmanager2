@@ -162,16 +162,15 @@ Route::post('/broadcasting/auth', function (Request $request) {
         
         \Log::info('Channel auth successful', ['user_id' => $user->id, 'channel' => $channelName]);
 
-        // Generate auth response using Laravel Reverb
+        // Generate auth response using Pusher Cloud
         $pusher = new \Pusher\Pusher(
-            config('broadcasting.connections.reverb.key'),
-            config('broadcasting.connections.reverb.secret'),
-            config('broadcasting.connections.reverb.app_id'),
+            config('broadcasting.connections.pusher.key'),
+            config('broadcasting.connections.pusher.secret'),
+            config('broadcasting.connections.pusher.app_id'),
             [
-                'host' => config('broadcasting.connections.reverb.options.host'),
-                'port' => config('broadcasting.connections.reverb.options.port'),
-                'scheme' => config('broadcasting.connections.reverb.options.scheme'),
-                'useTLS' => config('broadcasting.connections.reverb.options.useTLS', false),
+                'cluster' => config('broadcasting.connections.pusher.options.cluster'),
+                'useTLS' => config('broadcasting.connections.pusher.options.useTLS', true),
+                'encrypted' => config('broadcasting.connections.pusher.options.encrypted', true),
             ]
         );
 

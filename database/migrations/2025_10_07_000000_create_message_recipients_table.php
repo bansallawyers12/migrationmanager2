@@ -11,28 +11,30 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Create message_recipients pivot table
-        Schema::create('message_recipients', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('message_id');
-            $table->unsignedBigInteger('recipient_id');
-            $table->string('recipient')->nullable(); // Recipient name
-            $table->boolean('is_read')->default(false);
-            $table->timestamp('read_at')->nullable();
-            $table->timestamps();
+        // Create message_recipients pivot table only if it doesn't exist
+        if (!Schema::hasTable('message_recipients')) {
+            Schema::create('message_recipients', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('message_id');
+                $table->unsignedBigInteger('recipient_id');
+                $table->string('recipient')->nullable(); // Recipient name
+                $table->boolean('is_read')->default(false);
+                $table->timestamp('read_at')->nullable();
+                $table->timestamps();
 
-            // Foreign key constraint
-            $table->foreign('message_id')
-                  ->references('id')
-                  ->on('messages')
-                  ->onDelete('cascade');
+                // Foreign key constraint
+                $table->foreign('message_id')
+                      ->references('id')
+                      ->on('messages')
+                      ->onDelete('cascade');
 
-            // Indexes for better query performance
-            $table->index('message_id');
-            $table->index('recipient_id');
-            $table->index(['recipient_id', 'is_read']); // For unread count queries
-            $table->index(['message_id', 'recipient_id']); // For lookup queries
-        });
+                // Indexes for better query performance
+                $table->index('message_id');
+                $table->index('recipient_id');
+                $table->index(['recipient_id', 'is_read']); // For unread count queries
+                $table->index(['message_id', 'recipient_id']); // For lookup queries
+            });
+        }
 
         // Remove recipient-related columns from messages table
         Schema::table('messages', function (Blueprint $table) {

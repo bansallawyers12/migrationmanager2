@@ -5,6 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Admin;
+use App\Models\ClientMatter;
+use App\Models\WorkflowStage;
 
 class Message extends Model
 {
@@ -44,7 +47,7 @@ class Message extends Model
      */
     public function sender()
     {
-        return $this->belongsTo(Admin::class, 'sender_id')->withDefault();
+        return $this->belongsTo('App\\Models\\Admin', 'sender_id')->withDefault();
     }
 
     /**
@@ -52,7 +55,7 @@ class Message extends Model
      */
     public function recipient()
     {
-        return $this->belongsTo(Admin::class, 'recipient_id')->withDefault();
+        return $this->belongsTo('App\\Models\\Admin', 'recipient_id')->withDefault();
     }
 
     /**
@@ -60,7 +63,7 @@ class Message extends Model
      */
     public function clientMatter()
     {
-        return $this->belongsTo(ClientMatter::class, 'client_matter_id')->withDefault();
+        return $this->belongsTo(\App\Models\ClientMatter::class, 'client_matter_id')->withDefault();
     }
 
     /**
@@ -68,7 +71,7 @@ class Message extends Model
      */
     public function workflowStage()
     {
-        return $this->belongsTo(WorkflowStage::class, 'client_matter_stage_id')->withDefault();
+        return $this->belongsTo(\App\Models\WorkflowStage::class, 'client_matter_stage_id')->withDefault();
     }
 
     /**
