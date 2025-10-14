@@ -563,7 +563,6 @@
 }
 
 .repeatable-section {
-    border: 1px dashed var(--border-color);
     padding: 15px;
     margin-bottom: 15px;
     border-radius: 5px;
@@ -696,7 +695,7 @@ input:checked + .slider:before {
     position: absolute;
     z-index: 1000;
     background-color: #fff;
-    border: 1px solid var(--border-color);
+    /*border: 1px solid var(--border-color);*/
     border-radius: 5px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     max-height: 200px;

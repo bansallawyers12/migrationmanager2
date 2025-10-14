@@ -1444,6 +1444,12 @@ class ClientPersonalDetailsController extends Controller
                     return $this->savePartnerEoiInfoSection($request, $client);
                 case 'childrenInfo':
                     return $this->saveChildrenInfoSection($request, $client);
+                case 'parentsInfo':
+                    return $this->saveParentsInfoSection($request, $client);
+                case 'siblingsInfo':
+                    return $this->saveSiblingsInfoSection($request, $client);
+                case 'othersInfo':
+                    return $this->saveOthersInfoSection($request, $client);
                 case 'eoiInfo':
                     return $this->saveEoiInfoSection($request, $client);
                 case 'occupation':
@@ -2264,9 +2270,11 @@ class ClientPersonalDetailsController extends Controller
 
             // Insert new character records
             foreach ($characters as $charData) {
-                if (!empty($charData['detail'])) {
+                if (!empty($charData['detail']) && !empty($charData['type_of_character'])) {
                     ClientCharacter::create([
                         'client_id' => $client->id,
+                        'admin_id' => auth()->id(),
+                        'type_of_character' => $charData['type_of_character'],
                         'character_detail' => $charData['detail']
                     ]);
                 }
@@ -2297,22 +2305,83 @@ class ClientPersonalDetailsController extends Controller
             }
 
             // Delete existing partner records for this client (filter by partner relationship types)
+            // First, get the related_client_ids that will be affected
+            $existingRelationships = ClientRelationship::where('client_id', $client->id)
+                ->whereIn('relationship_type', ['Husband', 'Wife', 'Ex-Wife', 'Defacto'])
+                ->get();
+            
+            // Delete the main relationships
             ClientRelationship::where('client_id', $client->id)
                 ->whereIn('relationship_type', ['Husband', 'Wife', 'Ex-Wife', 'Defacto'])
                 ->delete();
+            
+            // Delete reciprocal relationships
+            foreach ($existingRelationships as $relationship) {
+                if ($relationship->related_client_id) {
+                    ClientRelationship::where('client_id', $relationship->related_client_id)
+                        ->where('related_client_id', $client->id)
+                        ->whereIn('relationship_type', ['Husband', 'Wife', 'Ex-Wife', 'Defacto'])
+                        ->delete();
+                }
+            }
 
             // Insert new partner records
             foreach ($partners as $partnerData) {
                 if (!empty($partnerData['details']) || !empty($partnerData['relationship_type'])) {
+                    // Convert DOB from dd/mm/yyyy to YYYY-mm-dd format
+                    $dob = null;
+                    if (!empty($partnerData['dob']) && $partnerData['dob'] !== 'dd/mm/yyyy') {
+                        try {
+                            $dobDate = \Carbon\Carbon::createFromFormat('d/m/Y', $partnerData['dob']);
+                            $dob = $dobDate->format('Y-m-d');
+                        } catch (\Exception $e) {
+                            // If date format is invalid, set to null
+                            $dob = null;
+                        }
+                    }
+                    
+                    // Create the main relationship entry
                     ClientRelationship::create([
                         'admin_id' => auth()->id(),
                         'client_id' => $client->id,
-                        'related_client_id' => $partnerData['partner_id'] ?? null,
+                        'related_client_id' => (!empty($partnerData['partner_id']) && $partnerData['partner_id'] !== '0') ? $partnerData['partner_id'] : null,
                         'details' => $partnerData['details'],
                         'relationship_type' => $partnerData['relationship_type'] ?? null,
                         'gender' => $partnerData['gender'] ?? null,
-                        'company_type' => $partnerData['company_type'] ?? null
+                        'company_type' => $partnerData['company_type'] ?? null,
+                        'last_name' => $partnerData['last_name'] ?? null,
+                        'dob' => $dob,
+                        'email' => $partnerData['email'] ?? null,
+                        'first_name' => $partnerData['first_name'] ?? null,
+                        'phone' => $partnerData['phone'] ?? null
                     ]);
+                    
+                    // Create reciprocal relationship entry if partner_id exists (existing client)
+                    if (!empty($partnerData['partner_id'])) {
+                        // Get the related client's details for the reciprocal entry
+                        $relatedClient = Admin::where('id', $partnerData['partner_id'])->where('role', '7')->first();
+                        
+                        if ($relatedClient) {
+                            // Determine reciprocal relationship type
+                            $reciprocalRelationshipType = $this->getReciprocalRelationshipType($partnerData['relationship_type']);
+                            
+                            // Create reciprocal entry
+                            ClientRelationship::create([
+                                'admin_id' => auth()->id(),
+                                'client_id' => $partnerData['partner_id'],
+                                'related_client_id' => $client->id,
+                                'details' => $client->first_name . ' ' . $client->last_name . ' (' . $client->email . ', ' . $client->phone . ', ' . $client->client_id . ')',
+                                'relationship_type' => $reciprocalRelationshipType,
+                                'gender' => $client->gender ?? null,
+                                'company_type' => null, // Reciprocal entries should have null company_type
+                                'last_name' => null,    // Reciprocal entries should have null last_name
+                                'dob' => null,          // Reciprocal entries should have null dob
+                                'email' => null,        // Reciprocal entries should have null email
+                                'first_name' => null,   // Reciprocal entries should have null first_name
+                                'phone' => null         // Reciprocal entries should have null phone
+                            ]);
+                        }
+                    }
                 }
             }
 
@@ -2325,6 +2394,25 @@ class ClientPersonalDetailsController extends Controller
                 'success' => false,
                 'message' => 'Error saving partner information: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Get reciprocal relationship type
+     */
+    private function getReciprocalRelationshipType($relationshipType)
+    {
+        switch ($relationshipType) {
+            case 'Husband':
+                return 'Wife';
+            case 'Wife':
+                return 'Husband';
+            case 'Ex-Wife':
+                return 'Ex-Husband';
+            case 'Defacto':
+                return 'Defacto';
+            default:
+                return $relationshipType; // Return same type if no specific reciprocal
         }
     }
 
@@ -2501,6 +2589,28 @@ class ClientPersonalDetailsController extends Controller
                 ], 400);
             }
 
+            // Function to get reciprocal relationship for children
+            $getReciprocalRelationship = function($relationshipType, $childGender, $parentGender) {
+                $reciprocalMap = [
+                    'Son' => 'Father', // Default to Father
+                    'Daughter' => 'Father', // Default to Father
+                    'Step Son' => 'Step Father', // Default to Step Father
+                    'Step Daughter' => 'Step Father', // Default to Step Father
+                ];
+                
+                // Adjust based on parent's gender
+                if (strtolower($parentGender) === 'female') {
+                    $reciprocalMap = [
+                        'Son' => 'Mother',
+                        'Daughter' => 'Mother',
+                        'Step Son' => 'Step Mother',
+                        'Step Daughter' => 'Step Mother',
+                    ];
+                }
+                
+                return $reciprocalMap[$relationshipType] ?? 'Parent';
+            };
+
             // Delete existing children records for this client (filter by children relationship types)
             ClientRelationship::where('client_id', $client->id)
                 ->whereIn('relationship_type', ['Son', 'Daughter', 'Step Son', 'Step Daughter'])
@@ -2509,15 +2619,96 @@ class ClientPersonalDetailsController extends Controller
             // Insert new children records
             foreach ($children as $childData) {
                 if (!empty($childData['details']) || !empty($childData['relationship_type'])) {
-                    ClientRelationship::create([
+                    $relatedClientId = !empty($childData['child_id']) && $childData['child_id'] != 0 ? $childData['child_id'] : null;
+                    $saveExtraFields = !$relatedClientId;
+                    
+                    // Convert DOB from d/m/Y format to Y-m-d format for database storage
+                    $dobFormatted = null;
+                    if ($saveExtraFields && !empty($childData['dob']) && $childData['dob'] !== 'dd/mm/yyyy') {
+                        try {
+                            $dobDate = \Carbon\Carbon::createFromFormat('d/m/Y', $childData['dob']);
+                            $dobFormatted = $dobDate->format('Y-m-d');
+                        } catch (\Exception $e) {
+                            // If date format is invalid, set to null and log the error
+                            \Log::warning('Invalid DOB format for child: ' . $childData['dob']);
+                            $dobFormatted = null;
+                        }
+                    }
+                    
+                    // Prepare details field for primary relationship
+                    $primaryDetails = null;
+                    if ($relatedClientId) {
+                        // For existing clients, use the details from the form (which contains the constructed string)
+                        $primaryDetails = $childData['details'];
+                    } else {
+                        // For new clients, construct details from the form data
+                        $firstName = trim($childData['first_name'] ?? '');
+                        $lastName = trim($childData['last_name'] ?? '');
+                        $email = trim($childData['email'] ?? '');
+                        $phone = trim($childData['phone'] ?? '');
+                        
+                        if (!empty($firstName) || !empty($lastName)) {
+                            $primaryDetails = trim($firstName . ' ' . $lastName);
+                            if (!empty($email)) {
+                                $primaryDetails .= ' (' . $email;
+                                if (!empty($phone)) {
+                                    $primaryDetails .= ', ' . $phone;
+                                }
+                                $primaryDetails .= ')';
+                            } elseif (!empty($phone)) {
+                                $primaryDetails .= ' (' . $phone . ')';
+                            }
+                        } else {
+                            $primaryDetails = $childData['details'];
+                        }
+                    }
+                    
+                    // Create the primary relationship (parent -> child)
+                    $newChild = ClientRelationship::create([
                         'admin_id' => auth()->id(),
                         'client_id' => $client->id,
-                        'related_client_id' => $childData['child_id'] ?? null,
-                        'details' => $childData['details'],
+                        'related_client_id' => $relatedClientId,
+                        'details' => $primaryDetails,
                         'relationship_type' => $childData['relationship_type'] ?? null,
                         'gender' => $childData['gender'] ?? null,
-                        'company_type' => $childData['company_type'] ?? null
+                        'company_type' => $childData['company_type'] ?? null,
+                        'email' => $saveExtraFields ? ($childData['email'] ?? null) : null,
+                        'first_name' => $saveExtraFields ? ($childData['first_name'] ?? null) : null,
+                        'last_name' => $saveExtraFields ? ($childData['last_name'] ?? null) : null,
+                        'phone' => $saveExtraFields ? ($childData['phone'] ?? null) : null,
+                        'dob' => $dobFormatted
                     ]);
+
+                    // Create reciprocal relationship if related_client_id is set and not 0
+                    if ($relatedClientId) {
+                        $relatedChild = \App\Models\Admin::find($relatedClientId);
+                        if ($relatedChild) {
+                            // Get the reciprocal relationship type based on parent's gender
+                            $reciprocalRelationshipType = $getReciprocalRelationship(
+                                $childData['relationship_type'] ?? 'Son', 
+                                $childData['gender'] ?? 'Male', 
+                                $client->gender ?? 'Male'
+                            );
+                            
+                            // Check if reciprocal relationship already exists to avoid duplicates
+                            $existingReciprocal = ClientRelationship::where('client_id', $relatedClientId)
+                                ->where('related_client_id', $client->id)
+                                ->where('relationship_type', $reciprocalRelationshipType)
+                                ->first();
+                            
+                            if (!$existingReciprocal) {
+                                ClientRelationship::create([
+                                    'admin_id' => auth()->id(),
+                                    'client_id' => $relatedClientId,
+                                    'related_client_id' => $client->id,
+                                    'details' => "{$client->first_name} {$client->last_name} ({$client->email}, {$client->phone}, {$client->client_id})",
+                                    'relationship_type' => $reciprocalRelationshipType,
+                                    'company_type' => null, // Reciprocal entries should have null company_type
+                                    'gender' => $client->gender ?? null
+                                ]);
+                            }
+                        }
+                    }
                 }
             }
 
@@ -3002,6 +3193,533 @@ class ClientPersonalDetailsController extends Controller
             
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Save Parents Information Section
+     */
+    public function saveParentsInfoSection(Request $request)
+    {
+        try {
+            $clientId = $request->input('id'); // Use 'id' instead of 'client_id' - 'id' is the database ID
+            $client = Admin::where('id', $clientId)->where('role', '7')->first();
+            
+            if (!$client) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Client not found'
+                ], 404);
+            }
+
+            $parentsData = $request->input('parents', []);
+            
+            // Delete existing parent relationships for this client
+            ClientRelationship::where('client_id', $client->id)
+                ->whereIn('relationship_type', ['Father', 'Mother', 'Step Father', 'Step Mother'])
+                ->delete();
+
+            foreach ($parentsData as $parentData) {
+                if (empty($parentData['relationship_type'])) {
+                    continue;
+                }
+
+                $saveExtraFields = empty($parentData['details']) || trim($parentData['details']) === '';
+                
+                // Format DOB from d/m/Y to Y-m-d
+                $dobFormatted = null;
+                if ($saveExtraFields && !empty($parentData['dob']) && $parentData['dob'] !== 'dd/mm/yyyy') {
+                    try {
+                        $dobDate = \Carbon\Carbon::createFromFormat('d/m/Y', $parentData['dob']);
+                        $dobFormatted = $dobDate->format('Y-m-d');
+                    } catch (\Exception $e) {
+                        \Log::warning('Invalid DOB format for parent: ' . $parentData['dob']);
+                        $dobFormatted = null;
+                    }
+                }
+
+                // For existing clients (details not empty), use details as-is
+                // For new clients (details empty), construct details from first_name, last_name, email, phone
+                $primaryDetails = '';
+                if (!$saveExtraFields) {
+                    // Existing client - use details as-is
+                    $primaryDetails = $parentData['details'];
+                } else {
+                    // New client - construct details from individual fields
+                    $detailsParts = [];
+                    if (!empty($parentData['first_name'])) $detailsParts[] = trim($parentData['first_name']);
+                    if (!empty($parentData['last_name'])) $detailsParts[] = trim($parentData['last_name']);
+                    if (!empty($parentData['email'])) $detailsParts[] = trim($parentData['email']);
+                    if (!empty($parentData['phone'])) $detailsParts[] = trim($parentData['phone']);
+                    $primaryDetails = implode(', ', $detailsParts);
+                }
+
+                // Save primary parent relationship
+                $parentRelationship = ClientRelationship::create([
+                    'admin_id' => auth()->id(),
+                    'client_id' => $client->id,
+                    'related_client_id' => null,
+                    'relationship_type' => $parentData['relationship_type'],
+                    'details' => $primaryDetails,
+                    'email' => $saveExtraFields ? ($parentData['email'] ?? null) : null,
+                    'first_name' => $saveExtraFields ? ($parentData['first_name'] ?? null) : null,
+                    'last_name' => $saveExtraFields ? ($parentData['last_name'] ?? null) : null,
+                    'phone' => $saveExtraFields ? ($parentData['phone'] ?? null) : null,
+                    'dob' => $dobFormatted,
+                    'gender' => $parentData['gender'] ?? null,
+                    'company_type' => $parentData['company_type'] ?? null
+                ]);
+
+                // Create reciprocal relationship if related client exists
+                if (!empty($parentData['details']) && trim($parentData['details']) !== '') {
+                    // Try to find related client by details
+                    $relatedClient = $this->findRelatedClientByDetails($parentData['details']);
+                    
+                    if ($relatedClient) {
+                        // Update primary relationship with related client ID
+                        $parentRelationship->update(['related_client_id' => $relatedClient->id]);
+
+                        // Determine reciprocal relationship type based on parent's gender
+                        $reciprocalRelationshipType = $this->getReciprocalRelationshipForParent($parentData['relationship_type'], $parentData['gender'] ?? '');
+                        
+                        // Check if reciprocal relationship already exists
+                        $existingReciprocal = ClientRelationship::where('client_id', $relatedClient->id)
+                            ->where('related_client_id', $client->id)
+                            ->where('relationship_type', $reciprocalRelationshipType)
+                            ->first();
+
+                        // Create reciprocal relationship if it doesn't exist
+                        if (!$existingReciprocal) {
+                            ClientRelationship::create([
+                                'admin_id' => auth()->id(),
+                                'client_id' => $relatedClient->id,
+                                'related_client_id' => $client->id,
+                                'relationship_type' => $reciprocalRelationshipType,
+                                'details' => $client->first_name . ' ' . $client->last_name . ' (' . $client->email . ', ' . $client->phone . ', ' . $client->client_id . ')',
+                                'email' => null,
+                                'first_name' => null,
+                                'last_name' => null,
+                                'phone' => null,
+                                'dob' => null,
+                                'company_type' => null, // Reciprocal entries should have null company_type
+                                'gender' => $client->gender ?? null
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Parents information updated successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error saving parents information: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Save Siblings Information Section
+     */
+    public function saveSiblingsInfoSection(Request $request)
+    {
+        try {
+            $clientId = $request->input('id'); // Use 'id' instead of 'client_id' - 'id' is the database ID
+            $client = Admin::where('id', $clientId)->where('role', '7')->first();
+            
+            if (!$client) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Client not found'
+                ], 404);
+            }
+
+            $siblingsData = $request->input('siblings', []);
+            
+            // Delete existing sibling relationships for this client
+            ClientRelationship::where('client_id', $client->id)
+                ->whereIn('relationship_type', ['Brother', 'Sister', 'Step Brother', 'Step Sister'])
+                ->delete();
+
+            foreach ($siblingsData as $siblingData) {
+                if (empty($siblingData['relationship_type'])) {
+                    continue;
+                }
+
+                $saveExtraFields = empty($siblingData['details']) || trim($siblingData['details']) === '';
+                
+                // Format DOB from d/m/Y to Y-m-d
+                $dobFormatted = null;
+                if ($saveExtraFields && !empty($siblingData['dob']) && $siblingData['dob'] !== 'dd/mm/yyyy') {
+                    try {
+                        $dobDate = \Carbon\Carbon::createFromFormat('d/m/Y', $siblingData['dob']);
+                        $dobFormatted = $dobDate->format('Y-m-d');
+                    } catch (\Exception $e) {
+                        \Log::warning('Invalid DOB format for sibling: ' . $siblingData['dob']);
+                        $dobFormatted = null;
+                    }
+                }
+
+                // For existing clients (details not empty), use details as-is
+                // For new clients (details empty), construct details from first_name, last_name, email, phone
+                $primaryDetails = '';
+                if (!$saveExtraFields) {
+                    // Existing client - use details as-is
+                    $primaryDetails = $siblingData['details'];
+                } else {
+                    // New client - construct details from individual fields
+                    $detailsParts = [];
+                    if (!empty($siblingData['first_name'])) $detailsParts[] = trim($siblingData['first_name']);
+                    if (!empty($siblingData['last_name'])) $detailsParts[] = trim($siblingData['last_name']);
+                    if (!empty($siblingData['email'])) $detailsParts[] = trim($siblingData['email']);
+                    if (!empty($siblingData['phone'])) $detailsParts[] = trim($siblingData['phone']);
+                    $primaryDetails = implode(', ', $detailsParts);
+                }
+
+                // Save primary sibling relationship
+                $siblingRelationship = ClientRelationship::create([
+                    'admin_id' => auth()->id(),
+                    'client_id' => $client->id,
+                    'related_client_id' => null,
+                    'relationship_type' => $siblingData['relationship_type'],
+                    'details' => $primaryDetails,
+                    'email' => $saveExtraFields ? ($siblingData['email'] ?? null) : null,
+                    'first_name' => $saveExtraFields ? ($siblingData['first_name'] ?? null) : null,
+                    'last_name' => $saveExtraFields ? ($siblingData['last_name'] ?? null) : null,
+                    'phone' => $saveExtraFields ? ($siblingData['phone'] ?? null) : null,
+                    'dob' => $dobFormatted,
+                    'gender' => $siblingData['gender'] ?? null,
+                    'company_type' => $siblingData['company_type'] ?? null
+                ]);
+
+                // Create reciprocal relationship if related client exists
+                if (!empty($siblingData['details']) && trim($siblingData['details']) !== '') {
+                    // Try to find related client by details
+                    $relatedClient = $this->findRelatedClientByDetails($siblingData['details']);
+                    
+                    if ($relatedClient) {
+                        // Update primary relationship with related client ID
+                        $siblingRelationship->update(['related_client_id' => $relatedClient->id]);
+
+                        // Determine reciprocal relationship type based on current client's gender
+                        $reciprocalRelationshipType = $this->getReciprocalRelationshipForSibling($siblingData['relationship_type'], $client->gender ?? '');
+                        
+                        // Check if reciprocal relationship already exists
+                        $existingReciprocal = ClientRelationship::where('client_id', $relatedClient->id)
+                            ->where('related_client_id', $client->id)
+                            ->where('relationship_type', $reciprocalRelationshipType)
+                            ->first();
+
+                        // Create reciprocal relationship if it doesn't exist
+                        if (!$existingReciprocal) {
+                            ClientRelationship::create([
+                                'admin_id' => auth()->id(),
+                                'client_id' => $relatedClient->id,
+                                'related_client_id' => $client->id,
+                                'relationship_type' => $reciprocalRelationshipType,
+                                'details' => $client->first_name . ' ' . $client->last_name . ' (' . $client->email . ', ' . $client->phone . ', ' . $client->client_id . ')',
+                                'email' => null,
+                                'first_name' => null,
+                                'last_name' => null,
+                                'phone' => null,
+                                'dob' => null,
+                                'company_type' => null, // Reciprocal entries should have null company_type
+                                'gender' => $client->gender ?? null
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Siblings information updated successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error saving siblings information: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Save Others Information Section
+     */
+    public function saveOthersInfoSection(Request $request)
+    {
+        try {
+            $clientId = $request->input('id'); // Use 'id' instead of 'client_id' - 'id' is the database ID
+            $client = Admin::where('id', $clientId)->where('role', '7')->first();
+            
+            if (!$client) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Client not found'
+                ], 404);
+            }
+
+            $othersData = $request->input('others', []);
+            
+            // Delete existing other relationships for this client
+            ClientRelationship::where('client_id', $client->id)
+                ->whereIn('relationship_type', ['Cousin', 'Friend', 'Uncle', 'Aunt', 'Grandchild', 'Granddaughter', 'Grandparent', 'Niece', 'Nephew', 'Grandfather'])
+                ->delete();
+
+            foreach ($othersData as $otherData) {
+                if (empty($otherData['relationship_type'])) {
+                    continue;
+                }
+
+                $saveExtraFields = empty($otherData['details']) || trim($otherData['details']) === '';
+                
+                // Format DOB from d/m/Y to Y-m-d
+                $dobFormatted = null;
+                if ($saveExtraFields && !empty($otherData['dob']) && $otherData['dob'] !== 'dd/mm/yyyy') {
+                    try {
+                        $dobDate = \Carbon\Carbon::createFromFormat('d/m/Y', $otherData['dob']);
+                        $dobFormatted = $dobDate->format('Y-m-d');
+                    } catch (\Exception $e) {
+                        \Log::warning('Invalid DOB format for other: ' . $otherData['dob']);
+                        $dobFormatted = null;
+                    }
+                }
+
+                // For existing clients (details not empty), use details as-is
+                // For new clients (details empty), construct details from first_name, last_name, email, phone
+                $primaryDetails = '';
+                if (!$saveExtraFields) {
+                    // Existing client - use details as-is
+                    $primaryDetails = $otherData['details'];
+                } else {
+                    // New client - construct details from individual fields
+                    $detailsParts = [];
+                    if (!empty($otherData['first_name'])) $detailsParts[] = trim($otherData['first_name']);
+                    if (!empty($otherData['last_name'])) $detailsParts[] = trim($otherData['last_name']);
+                    if (!empty($otherData['email'])) $detailsParts[] = trim($otherData['email']);
+                    if (!empty($otherData['phone'])) $detailsParts[] = trim($otherData['phone']);
+                    $primaryDetails = implode(', ', $detailsParts);
+                }
+
+                // Save primary other relationship
+                $otherRelationship = ClientRelationship::create([
+                    'admin_id' => auth()->id(),
+                    'client_id' => $client->id,
+                    'related_client_id' => null,
+                    'relationship_type' => $otherData['relationship_type'],
+                    'details' => $primaryDetails,
+                    'email' => $saveExtraFields ? ($otherData['email'] ?? null) : null,
+                    'first_name' => $saveExtraFields ? ($otherData['first_name'] ?? null) : null,
+                    'last_name' => $saveExtraFields ? ($otherData['last_name'] ?? null) : null,
+                    'phone' => $saveExtraFields ? ($otherData['phone'] ?? null) : null,
+                    'dob' => $dobFormatted,
+                    'gender' => $otherData['gender'] ?? null,
+                    'company_type' => $otherData['company_type'] ?? null
+                ]);
+
+                // Create reciprocal relationship if related client exists
+                if (!empty($otherData['details']) && trim($otherData['details']) !== '') {
+                    // Try to find related client by details
+                    $relatedClient = $this->findRelatedClientByDetails($otherData['details']);
+                    
+                    if ($relatedClient) {
+                        // Update primary relationship with related client ID
+                        $otherRelationship->update(['related_client_id' => $relatedClient->id]);
+
+                        // Determine reciprocal relationship type based on other's gender
+                        $reciprocalRelationshipType = $this->getReciprocalRelationshipForOther($otherData['relationship_type'], $otherData['gender'] ?? '');
+                        
+                        // Check if reciprocal relationship already exists
+                        $existingReciprocal = ClientRelationship::where('client_id', $relatedClient->id)
+                            ->where('related_client_id', $client->id)
+                            ->where('relationship_type', $reciprocalRelationshipType)
+                            ->first();
+
+                        // Create reciprocal relationship if it doesn't exist
+                        if (!$existingReciprocal) {
+                            ClientRelationship::create([
+                                'admin_id' => auth()->id(),
+                                'client_id' => $relatedClient->id,
+                                'related_client_id' => $client->id,
+                                'relationship_type' => $reciprocalRelationshipType,
+                                'details' => $client->first_name . ' ' . $client->last_name . ' (' . $client->email . ', ' . $client->phone . ', ' . $client->client_id . ')',
+                                'email' => null,
+                                'first_name' => null,
+                                'last_name' => null,
+                                'phone' => null,
+                                'dob' => null,
+                                'company_type' => null, // Reciprocal entries should have null company_type
+                                'gender' => $client->gender ?? null
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Others information updated successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error saving others information: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Find related client by details string
+     * The details string contains client information like "John Doe (john@email.com, +1234567890, CLI123)"
+     */
+    private function findRelatedClientByDetails($details)
+    {
+        if (empty($details) || trim($details) === '') {
+            return null;
+        }
+
+        // Extract email, phone, and client_id from the details string
+        // Format: "Name (email, phone, client_id)"
+        $email = null;
+        $phone = null;
+        $clientId = null;
+        
+        // Try to extract email from parentheses
+        if (preg_match('/\(([^,]+),/', $details, $matches)) {
+            $email = trim($matches[1]);
+        }
+        
+        // Try to extract phone (second item in parentheses)
+        if (preg_match('/\([^,]+,([^,]+),/', $details, $matches)) {
+            $phone = trim($matches[1]);
+        }
+        
+        // Try to extract client_id (third item in parentheses)
+        if (preg_match('/\([^,]+,[^,]+,([^)]+)\)/', $details, $matches)) {
+            $clientId = trim($matches[1]);
+        }
+
+        // Search for client by email first (most reliable)
+        if ($email) {
+            $client = Admin::where('role', '7')
+                ->where('email', $email)
+                ->first();
+            if ($client) {
+                return $client;
+            }
+        }
+
+        // Search by client_id if email not found
+        if ($clientId) {
+            $client = Admin::where('role', '7')
+                ->where('client_id', $clientId)
+                ->first();
+            if ($client) {
+                return $client;
+            }
+        }
+
+        // Search by phone if email and client_id not found
+        if ($phone) {
+            $client = Admin::where('role', '7')
+                ->where('phone', $phone)
+                ->first();
+            if ($client) {
+                return $client;
+            }
+        }
+
+        // If no specific identifiers found, try to extract name and search by name
+        $namePart = trim(explode('(', $details)[0]);
+        $nameParts = explode(' ', $namePart);
+        
+        if (count($nameParts) >= 2) {
+            $firstName = trim($nameParts[0]);
+            $lastName = trim($nameParts[1]);
+            
+            $client = Admin::where('role', '7')
+                ->where('first_name', $firstName)
+                ->where('last_name', $lastName)
+                ->first();
+            if ($client) {
+                return $client;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Get reciprocal relationship for parent
+     */
+    private function getReciprocalRelationshipForParent($parentRelationship, $parentGender)
+    {
+        switch ($parentRelationship) {
+            case 'Father':
+                return $parentGender === 'Female' ? 'Daughter' : 'Son';
+            case 'Mother':
+                return $parentGender === 'Female' ? 'Daughter' : 'Son';
+            case 'Step Father':
+                return $parentGender === 'Female' ? 'Step Daughter' : 'Step Son';
+            case 'Step Mother':
+                return $parentGender === 'Female' ? 'Step Daughter' : 'Step Son';
+            default:
+                return 'Child';
+        }
+    }
+
+    /**
+     * Get reciprocal relationship for sibling
+     * If client has a Brother, the reciprocal is Brother (if client is Male) or Sister (if client is Female)
+     * If client has a Sister, the reciprocal is Sister (if client is Female) or Brother (if client is Male)
+     */
+    private function getReciprocalRelationshipForSibling($siblingRelationship, $clientGender)
+    {
+        switch ($siblingRelationship) {
+            case 'Brother':
+                return $clientGender === 'Female' ? 'Sister' : 'Brother';
+            case 'Sister':
+                return $clientGender === 'Female' ? 'Sister' : 'Brother';
+            case 'Step Brother':
+                return $clientGender === 'Female' ? 'Step Sister' : 'Step Brother';
+            case 'Step Sister':
+                return $clientGender === 'Female' ? 'Step Sister' : 'Step Brother';
+            default:
+                return 'Sibling';
+        }
+    }
+
+    /**
+     * Get reciprocal relationship for other
+     */
+    private function getReciprocalRelationshipForOther($otherRelationship, $otherGender)
+    {
+        switch ($otherRelationship) {
+            case 'Uncle':
+                return $otherGender === 'Female' ? 'Niece' : 'Nephew';
+            case 'Aunt':
+                return $otherGender === 'Female' ? 'Niece' : 'Nephew';
+            case 'Niece':
+                return $otherGender === 'Female' ? 'Aunt' : 'Uncle';
+            case 'Nephew':
+                return $otherGender === 'Female' ? 'Aunt' : 'Uncle';
+            case 'Grandfather':
+                return $otherGender === 'Female' ? 'Granddaughter' : 'Grandchild';
+            case 'Grandparent':
+                return $otherGender === 'Female' ? 'Granddaughter' : 'Grandchild';
+            case 'Grandchild':
+                return $otherGender === 'Female' ? 'Grandmother' : 'Grandfather';
+            case 'Granddaughter':
+                return $otherGender === 'Female' ? 'Grandmother' : 'Grandfather';
+            case 'Cousin':
+                return 'Cousin';
+            case 'Friend':
+                return 'Friend';
+            default:
+                return 'Other';
         }
     }
 }
