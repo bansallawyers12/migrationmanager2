@@ -49,4 +49,18 @@ class ClientContact extends Model
     {
         return $this->isAustralianNumber() && !$this->is_verified;
     }
+
+    public function isPlaceholderNumber()
+    {
+        // Remove any non-digit characters
+        $cleaned = preg_replace('/[^\d]/', '', $this->phone);
+        
+        // Check if it starts with 4444444444 (placeholder pattern)
+        return strpos($cleaned, '4444444444') === 0;
+    }
+
+    public function canVerify()
+    {
+        return $this->isAustralianNumber() && !$this->isPlaceholderNumber();
+    }
 }

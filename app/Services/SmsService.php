@@ -9,6 +9,7 @@ class SmsService
 {
     protected $twilioClient;
     protected $fromNumber;
+    protected $cellcastService;
 
     public function __construct()
     {
@@ -17,6 +18,7 @@ class SmsService
         $this->fromNumber = config('services.twilio.from');
         
         $this->twilioClient = new TwilioClient($accountSid, $authToken);
+        $this->cellcastService = new CellcastSmsService();
     }
 
     public function sendSms($to, $message)
@@ -124,10 +126,16 @@ class SmsService
     }
 
     /**
-     * Send verification code SMS
+     * Send verification code SMS using Cellcast for Australian numbers
      */
     public function sendVerificationCodeSMS($to, $message)
     {
+        // Use Cellcast for verification SMS (Australian numbers)
+        if ($this->cellcastService->isAustralianNumber($to)) {
+            return $this->cellcastService->sendVerificationCodeSMS($to, $message);
+        }
+        
+        // Use Twilio for other numbers
         return $this->sendSms($to, $message);
     }
 

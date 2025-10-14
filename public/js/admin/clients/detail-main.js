@@ -2926,8 +2926,8 @@ Bansal Immigration`;
                 var timeslot_col_date = $('#timeslot_col_date').val();
                 var timeslot_col_time = $('#timeslot_col_time').val();
 
-                //var phoneRegex = /^[0-9]{10,}$/;
-                var phoneRegex = /^\+?[0-9]{1,4}[-.\s]?[0-9]{10,}$/;
+                // Standardized phone validation regex
+                var phoneRegex = /^[0-9]{10,15}$/;
                 // Regular expression to allow only letters and spaces (no special characters)
                 var nameRegex = /^[a-zA-Z\s]+$/;
 
@@ -2959,9 +2959,8 @@ Bansal Immigration`;
                     $('#sendCodeBtn').after('<span class="custom-error" role="alert">Phone number is required</span>');
                 } else if (!phoneRegex.test(phone)) {
                     flag = 0;
-                    // Show error message if phone number is not valid (less than 10 digits or contains non-digits)
-                    //$('.phone').after('<span class="custom-error" role="alert">Phone number must be at least 10 digits and only contain numbers</span>');
-                    $('#sendCodeBtn').after('<span class="custom-error" role="alert">Phone must contain extension with phone.</span>');
+                    // Show standardized error message
+                    $('#sendCodeBtn').after('<span class="custom-error" role="alert">Phone number must be 10-15 digits and contain only numbers</span>');
                 } else if( $('#phone_verified_bit').val() != "1" ){
                     flag = 0;
                     $('#sendCodeBtn').after('<span class="custom-error" role="alert">Phone number is not verified</span>');

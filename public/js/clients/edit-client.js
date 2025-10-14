@@ -1190,7 +1190,21 @@ function validatePersonalPhoneNumbers() {
         const fullPhone = countryCode + phone;
 
         if (type === 'Personal' && phone) {
-            if (personalPhones[fullPhone]) {
+            // Validate phone number first
+            const validation = validatePhoneNumber(phone);
+            if (!validation.valid) {
+                const errorMessage = `<span class="text-danger">Personal phone number: ${validation.message}</span>`;
+                section.querySelector('.content-grid').insertAdjacentHTML('afterend', errorMessage);
+                // Disable the submit button
+                const submitButton = document.querySelector('button[type="submit"]');
+                if (submitButton) {
+                    submitButton.disabled = true;
+                }
+                return;
+            }
+
+            // Skip duplicate check for placeholder numbers
+            if (!validation.isPlaceholder && personalPhones[fullPhone]) {
                 // Duplicate found
                 const errorMessage = `<span class="text-danger">Personal phone number ${fullPhone} is already used in another entry.</span>`;
                 section.querySelector('.content-grid').insertAdjacentHTML('afterend', errorMessage);
@@ -1199,7 +1213,7 @@ function validatePersonalPhoneNumbers() {
                 if (submitButton) {
                     submitButton.disabled = true;
                 }
-            } else {
+            } else if (!validation.isPlaceholder) {
                 personalPhones[fullPhone] = true;
             }
         }
@@ -1939,9 +1953,12 @@ window.savePhoneNumbers = function() {
         
         if (phoneNumbers.length > 0) {
             summaryGrid.innerHTML = phoneNumbers.map((phone, index) => {
-                // For newly saved numbers, show verify button for +61 numbers
+                // Check if it's a placeholder number
+                const isPlaceholder = isPlaceholderNumber(phone.phone);
+                
+                // For newly saved numbers, show verify button for +61 numbers (excluding placeholders)
                 // The actual verification status will be loaded from the server on page refresh
-                const verificationButton = phone.country_code === '+61' ? 
+                const verificationButton = (phone.country_code === '+61' && !isPlaceholder) ? 
                     `<button type="button" class="btn-verify-phone" onclick="sendOTP('${phone.id || 'pending'}', '${phone.phone}', '${phone.country_code}')" data-contact-id="${phone.id || 'pending'}">
                         <i class="fas fa-lock"></i> Verify
                      </button>` : '';
@@ -6349,5 +6366,70 @@ async function saveOthersInfo() {
         console.error('Error saving others info:', error);
         showNotification('An error occurred while saving others information', 'error');
     }
+}
+
+/**
+ * Check if phone number is a placeholder
+ */
+function isPlaceholderNumber(phone) {
+    // Remove any non-digit characters
+    const cleaned = phone.replace(/\D/g, '');
+    
+    // Check if it starts with 4444444444 (placeholder pattern)
+    return cleaned.startsWith('4444444444');
+}
+
+/**
+ * Validate phone number using standardized rules
+ */
+function validatePhoneNumber(phone) {
+    if (!phone || phone.trim() === '') {
+        return {
+            valid: false,
+            message: 'Phone number is required'
+        };
+    }
+
+    // Remove any non-digit characters for validation
+    const cleaned = phone.replace(/\D/g, '');
+
+    // Check if it's a placeholder number (allow it)
+    if (isPlaceholderNumber(cleaned)) {
+        return {
+            valid: true,
+            message: 'Placeholder number detected',
+            isPlaceholder: true
+        };
+    }
+
+    // Check length
+    if (cleaned.length < 10) {
+        return {
+            valid: false,
+            message: 'Phone number must be at least 10 digits'
+        };
+    }
+
+    if (cleaned.length > 15) {
+        return {
+            valid: false,
+            message: 'Phone number must not exceed 15 digits'
+        };
+    }
+
+    // Check if it contains only digits
+    const phoneRegex = /^[0-9]{10,15}$/;
+    if (!phoneRegex.test(cleaned)) {
+        return {
+            valid: false,
+            message: 'Phone number must contain only digits'
+        };
+    }
+
+    return {
+        valid: true,
+        message: 'Valid phone number',
+        isPlaceholder: false
+    };
 }
 

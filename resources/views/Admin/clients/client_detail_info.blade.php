@@ -334,8 +334,11 @@
                                         var phone = $input.val().trim();
                                         var $row = $input.closest('.contact-group');
                                         var $error = $row.find('.error-message');
-                                        //if (/^\d{10}$/.test(phone)) {
-                                        if (phone.length >= 10) {
+                                        
+                                        // Standardized phone validation
+                                        var phoneRegex = /^[0-9]{10,15}$/;
+                                        
+                                        if (phone.length >= 10 && phone.length <= 15 && phoneRegex.test(phone)) {
                                             $input.removeClass('error-border');
                                             $error.hide();
                                             return true;

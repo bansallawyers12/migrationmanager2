@@ -66,6 +66,9 @@ return [
 
     'cellcast' => [
         'api_key' => env('CELLCAST_API_KEY'),
+        'base_url' => env('CELLCAST_BASE_URL', 'https://api.cellcast.com.au/api/v3'),
+        'sender_id' => env('CELLCAST_SENDER_ID', 'BANSAL IMMIGRATION'),
+        'timeout' => env('CELLCAST_TIMEOUT', 30),
     ],
 
     'twilio' => [

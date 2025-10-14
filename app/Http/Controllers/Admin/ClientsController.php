@@ -1294,8 +1294,15 @@ class ClientsController extends Controller
                     'required',
                     'distinct',
                     function ($attribute, $value, $fail) use ($requestData) {
-                        // Allow 4444444444 to be duplicated (will be handled later with timestamp)
-                        if ($value === '4444444444') {
+                        // Use centralized validation
+                        $validation = \App\Helpers\PhoneValidationHelper::validatePhoneNumber($value);
+                        if (!$validation['valid']) {
+                            $fail($validation['message']);
+                            return;
+                        }
+                        
+                        // Allow placeholder numbers to be duplicated
+                        if ($validation['is_placeholder']) {
                             return;
                         }
                         

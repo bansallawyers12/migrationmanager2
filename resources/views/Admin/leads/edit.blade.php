@@ -242,7 +242,7 @@
                                             <span class="summary-label">{{ $contact->contact_type }}:</span>
                                             <span class="summary-value">{{ $contact->country_code }}{{ $contact->phone }}</span>
                                             <!-- Verification Button/Badge -->
-                                            @if($contact->country_code == '+61')
+                                            @if($contact->canVerify())
                                                 @if($contact->is_verified)
                                                     <span class="verified-badge" title="Verified on {{ $contact->verified_at ? $contact->verified_at->format('M j, Y g:i A') : 'Unknown' }}">
                                                         <i class="fas fa-check-circle"></i> Verified

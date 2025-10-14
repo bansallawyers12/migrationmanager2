@@ -27,6 +27,14 @@ class PhoneVerificationService
     {
         $contact = ClientContact::findOrFail($contactId);
 
+        // Check if it's a placeholder number
+        if ($this->isPlaceholderNumber($contact->phone)) {
+            return [
+                'success' => false,
+                'message' => 'Cannot verify placeholder phone numbers'
+            ];
+        }
+
         // Validate it's an Australian number
         if (!$contact->isAustralianNumber()) {
             return [
@@ -187,5 +195,17 @@ class PhoneVerificationService
 
         $timeSinceLastSend = Carbon::now()->diffInSeconds($lastVerification->otp_sent_at);
         return $timeSinceLastSend >= $this->resendCooldownSeconds;
+    }
+
+    /**
+     * Check if phone number is a placeholder
+     */
+    protected function isPlaceholderNumber($phone)
+    {
+        // Remove any non-digit characters
+        $cleaned = preg_replace('/[^\d]/', '', $phone);
+        
+        // Check if it starts with 4444444444 (placeholder pattern)
+        return strpos($cleaned, '4444444444') === 0;
     }
 }

@@ -1571,18 +1571,30 @@ class ClientPersonalDetailsController extends Controller
                     $phone = $phoneData['phone'];
                     $countryCode = $phoneData['country_code'] ?? '';
 
-                    // Check for duplicate phone numbers within the same client
-                    $duplicatePhone = ClientContact::where('phone', $phone)
-                        ->where('country_code', $countryCode)
-                        ->where('client_id', $client->id)
-                        ->where('id', '!=', $phoneData['id'] ?? null)
-                        ->first();
-
-                    if ($duplicatePhone) {
+                    // Use centralized validation
+                    $validation = \App\Helpers\PhoneValidationHelper::validatePhoneNumber($phone);
+                    if (!$validation['valid']) {
                         return response()->json([
                             'success' => false,
-                            'message' => 'This phone number is already taken for this client: ' . $countryCode . $phone
+                            'message' => 'Phone number ' . ($index + 1) . ': ' . $validation['message']
                         ], 422);
+                    }
+
+                    // Skip duplicate check for placeholder numbers
+                    if (!$validation['is_placeholder']) {
+                        // Check for duplicate phone numbers within the same client
+                        $duplicatePhone = ClientContact::where('phone', $phone)
+                            ->where('country_code', $countryCode)
+                            ->where('client_id', $client->id)
+                            ->where('id', '!=', $phoneData['id'] ?? null)
+                            ->first();
+
+                        if ($duplicatePhone) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'This phone number is already taken for this client: ' . $countryCode . $phone
+                            ], 422);
+                        }
                     }
                 }
             }
