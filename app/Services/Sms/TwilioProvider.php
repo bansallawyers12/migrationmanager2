@@ -2,10 +2,11 @@
 
 namespace App\Services\Sms;
 
+use App\Services\Sms\Contracts\SmsProviderInterface;
 use Twilio\Rest\Client as TwilioClient;
 use Illuminate\Support\Facades\Log;
 
-class TwilioProvider
+class TwilioProvider implements SmsProviderInterface
 {
     protected $twilioClient;
     protected $fromNumber;
@@ -19,7 +20,7 @@ class TwilioProvider
         $this->twilioClient = new TwilioClient($accountSid, $authToken);
     }
 
-    public function sendSms($to, $message)
+    public function sendSms(string $to, string $message): array
     {
         try {
             // Convert single number to array if needed
@@ -131,6 +132,64 @@ class TwilioProvider
     {
         $message = "Your verification code is: $code";
         return $this->sendSms($to, $message);
+    }
+
+    /**
+     * Get provider name
+     */
+    public function getProviderName(): string
+    {
+        return 'twilio';
+    }
+
+    /**
+     * Supports delivery status via webhooks
+     */
+    public function supportsDeliveryStatus(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Supports bulk sending (Twilio has messaging service)
+     */
+    public function supportsBulkSending(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Get Twilio configuration health status
+     */
+    public function getHealthStatus(): array
+    {
+        $issues = [];
+        $configured = true;
+
+        if (!config('services.twilio.account_sid')) {
+            $issues[] = 'Missing Twilio Account SID';
+            $configured = false;
+        }
+
+        if (!config('services.twilio.auth_token')) {
+            $issues[] = 'Missing Twilio Auth Token';
+            $configured = false;
+        }
+
+        if (!config('services.twilio.from')) {
+            $issues[] = 'Missing Twilio From Number';
+            $configured = false;
+        }
+
+        return [
+            'configured' => $configured,
+            'issues' => $issues,
+            'details' => [
+                'account_sid' => config('services.twilio.account_sid') ? 'Configured' : 'Missing',
+                'auth_token' => config('services.twilio.auth_token') ? 'Configured' : 'Missing',
+                'from_number' => config('services.twilio.from') ?: 'Missing',
+            ]
+        ];
     }
 }
 

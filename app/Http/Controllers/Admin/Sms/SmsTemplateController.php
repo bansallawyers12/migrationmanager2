@@ -26,7 +26,7 @@ class SmsTemplateController extends Controller
     public function index(Request $request)
     {
         // TODO: Implement in Sprint 4
-        $templates = SmsTemplate::orderBy('name')->paginate(20);
+        $templates = SmsTemplate::orderBy('title')->paginate(20);
         
         return view('Admin.sms.templates.index', compact('templates'));
     }
@@ -46,10 +46,10 @@ class SmsTemplateController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255|unique:sms_templates,name',
+            'title' => 'required|string|max:255|unique:sms_templates,title',
             'message' => 'required|string|max:1600',
             'description' => 'nullable|string',
-            'variables' => 'nullable|array',
+            'variables' => 'nullable|string',  // Changed from 'array' to 'string' to accept JSON
             'category' => 'nullable|string|max:100',
             'is_active' => 'boolean',
         ]);
@@ -90,10 +90,10 @@ class SmsTemplateController extends Controller
         $template = SmsTemplate::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255|unique:sms_templates,name,' . $id,
+            'title' => 'required|string|max:255|unique:sms_templates,title,' . $id,
             'message' => 'required|string|max:1600',
             'description' => 'nullable|string',
-            'variables' => 'nullable|array',
+            'variables' => 'nullable|string',  // Changed from 'array' to 'string' to accept JSON
             'category' => 'nullable|string|max:100',
             'is_active' => 'boolean',
         ]);
@@ -157,8 +157,8 @@ class SmsTemplateController extends Controller
     public function active()
     {
         $templates = SmsTemplate::where('is_active', true)
-            ->orderBy('name')
-            ->get(['id', 'name', 'message', 'variables', 'category']);
+            ->orderBy('title')
+            ->get(['id', 'title', 'message', 'variables', 'category']);
 
         return response()->json([
             'success' => true,

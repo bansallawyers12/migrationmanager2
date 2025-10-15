@@ -2,11 +2,12 @@
 
 namespace App\Services\Sms;
 
+use App\Services\Sms\Contracts\SmsProviderInterface;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use Exception;
 
-class CellcastProvider
+class CellcastProvider implements SmsProviderInterface
 {
     protected $apiKey;
     protected $baseUrl;
@@ -23,7 +24,7 @@ class CellcastProvider
     /**
      * Send SMS via Cellcast API
      */
-    public function sendSms($to, $message)
+    public function sendSms(string $to, string $message): array
     {
         try {
             // Validate phone number
@@ -280,6 +281,60 @@ class CellcastProvider
                 'message' => 'Status check error: ' . $e->getMessage()
             ];
         }
+    }
+
+    /**
+     * Get provider name
+     */
+    public function getProviderName(): string
+    {
+        return 'cellcast';
+    }
+
+    /**
+     * Supports delivery status via webhooks
+     */
+    public function supportsDeliveryStatus(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Supports bulk sending
+     */
+    public function supportsBulkSending(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Get Cellcast configuration health status
+     */
+    public function getHealthStatus(): array
+    {
+        $issues = [];
+        $configured = true;
+
+        if (!config('services.cellcast.api_key')) {
+            $issues[] = 'Missing Cellcast API Key';
+            $configured = false;
+        }
+
+        if (!config('services.cellcast.base_url')) {
+            $issues[] = 'Missing Cellcast Base URL';
+            $configured = false;
+        }
+
+        return [
+            'configured' => $configured,
+            'issues' => $issues,
+            'details' => [
+                'api_key' => config('services.cellcast.api_key') ? 'Configured' : 'Missing',
+                'base_url' => config('services.cellcast.base_url') ?: 'Missing',
+                'sender_id' => config('services.cellcast.sender_id') ?: 'Not configured',
+                'timeout' => config('services.cellcast.timeout') ?: 'Default (30s)',
+            ]
+        ];
     }
 }
 

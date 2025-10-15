@@ -5,6 +5,7 @@ namespace App\Services\Sms;
 use App\Models\SmsLog;
 use App\Models\ActivitiesLog;
 use App\Helpers\PhoneValidationHelper;
+use App\Services\Sms\Contracts\SmsProviderInterface;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -21,8 +22,8 @@ use Illuminate\Support\Str;
  */
 class UnifiedSmsManager
 {
-    protected $cellcastService;
-    protected $smsService;
+    protected SmsProviderInterface $cellcastService;
+    protected SmsProviderInterface $smsService;
     
     public function __construct(CellcastProvider $cellcastService, TwilioProvider $smsService)
     {

@@ -30,14 +30,27 @@ class SmsController extends Controller
      */
     public function dashboard(Request $request)
     {
-        // TODO: Implement in Sprint 4
-        // Will show:
-        // - SMS statistics
-        // - Recent SMS activity
-        // - Provider status
-        // - Cost summary
+        // Get today's statistics
+        $todayStart = now()->startOfDay();
+        $todayEnd = now()->endOfDay();
         
-        return view('Admin.sms.dashboard');
+        $stats = [
+            'total_today' => SmsLog::whereBetween('created_at', [$todayStart, $todayEnd])->count(),
+            'cellcast_today' => SmsLog::whereBetween('created_at', [$todayStart, $todayEnd])
+                                      ->where('provider', 'cellcast')->count(),
+            'twilio_today' => SmsLog::whereBetween('created_at', [$todayStart, $todayEnd])
+                                    ->where('provider', 'twilio')->count(),
+            'failed_today' => SmsLog::whereBetween('created_at', [$todayStart, $todayEnd])
+                                    ->where('status', 'failed')->count(),
+        ];
+        
+        // Get recent SMS activity (last 10)
+        $recentSms = SmsLog::with(['client', 'contact', 'sender'])
+                           ->orderBy('created_at', 'desc')
+                           ->limit(10)
+                           ->get();
+        
+        return view('Admin.sms.dashboard', compact('stats', 'recentSms'));
     }
 
     /**
@@ -51,7 +64,7 @@ class SmsController extends Controller
         // - Search by phone, client, date range
         // - Export functionality
         
-        $query = SmsLog::with(['client', 'clientContact', 'sender'])
+        $query = SmsLog::with(['client', 'contact', 'sender'])
             ->orderBy('created_at', 'desc');
 
         // Add filters when implemented
@@ -69,7 +82,7 @@ class SmsController extends Controller
     public function show($id)
     {
         // TODO: Implement in Sprint 4
-        $smsLog = SmsLog::with(['client', 'clientContact', 'sender'])->findOrFail($id);
+        $smsLog = SmsLog::with(['client', 'contact', 'sender'])->findOrFail($id);
         
         return view('Admin.sms.history.show', compact('smsLog'));
     }

@@ -12,6 +12,7 @@ class SmsTemplate extends Model
     protected $fillable = [
         'title',
         'message',
+        'description',
         'variables',
         'category',
         'alias',
@@ -72,6 +73,29 @@ class SmsTemplate extends Model
     public function scopeByAlias($query, $alias)
     {
         return $query->where('alias', $alias);
+    }
+
+    /**
+     * Set variables attribute - handles JSON string, array, or comma-separated string
+     */
+    public function setVariablesAttribute($value)
+    {
+        if (is_array($value)) {
+            // If it's already an array, convert to comma-separated
+            $this->attributes['variables'] = implode(',', array_map('trim', $value));
+        } elseif (is_string($value)) {
+            // Check if it's a JSON string
+            $decoded = json_decode($value, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                // It's a JSON string, convert to comma-separated
+                $this->attributes['variables'] = implode(',', array_map('trim', $decoded));
+            } else {
+                // It's already a comma-separated string or empty, store as-is
+                $this->attributes['variables'] = $value;
+            }
+        } else {
+            $this->attributes['variables'] = null;
+        }
     }
 
     /**
