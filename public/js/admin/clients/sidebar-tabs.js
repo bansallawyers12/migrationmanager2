@@ -205,6 +205,8 @@
         // Filter content by matter
         switch(tabId) {
             case 'noteterm':
+                // Ensure All tab is active and trigger initial filtering
+                ensureAllTabActive();
                 filterNotesByMatter(SidebarTabs.selectedMatter);
                 break;
             case 'visadocuments':
@@ -226,26 +228,60 @@
     }
 
     /**
+     * Ensure All tab is active for notes
+     */
+    function ensureAllTabActive() {
+        // Check if any subtab8 button is active
+        const $activeTab = $('.subtab8-button.active');
+        
+        if (!$activeTab.length) {
+            // No active tab, make All tab active
+            $('.subtab8-button.pill-tab[data-subtab8="All"]').addClass('active');
+            console.log('[SidebarTabs] Activated All tab (no active tab found)');
+        } else {
+            // Check if All tab is already active
+            const activeTabType = $activeTab.data('subtab8');
+            if (activeTabType !== 'All') {
+                // Remove active from current tab and make All tab active
+                $('.subtab8-button.pill-tab').removeClass('active');
+                $('.subtab8-button.pill-tab[data-subtab8="All"]').addClass('active');
+                console.log('[SidebarTabs] Switched to All tab from:', activeTabType);
+            }
+        }
+    }
+
+    /**
      * Filter notes by matter
      */
     function filterNotesByMatter(matterId) {
-        if (matterId !== "") {
-            $('#noteterm-tab').find('.note-card-redesign').each(function() {
-                if ($(this).data('matterid') == matterId) {
-                    $(this).show();
-                } else {
-                    $(this).hide();
-                }
-            });
-        } else {
-            $('#noteterm-tab').find('.note-card-redesign').each(function() {
-                if ($(this).data('matterid') == '') {
-                    $(this).show();
-                } else {
-                    $(this).hide();
-                }
-            });
-        }
+        // Get the active task group tab (default to 'All' if none active)
+        const activeTaskGroup = $('.subtab8-button.active').data('subtab8') || 'All';
+        
+        $('#noteterm-tab').find('.note-card-redesign').each(function() {
+            const $note = $(this);
+            const noteMatterId = $note.data('matterid');
+            const noteType = $note.data('type');
+            
+            // Check type match (All tab shows all types)
+            const typeMatch = (activeTaskGroup === 'All' || noteType === activeTaskGroup);
+            
+            // Check matter match
+            let matterMatch = false;
+            if (matterId !== "" && matterId !== null && matterId !== undefined) {
+                // Show notes that match the selected matter OR notes with no matter_id
+                matterMatch = (noteMatterId == matterId || noteMatterId == '' || noteMatterId == null);
+            } else {
+                // Show all notes when no matter is selected
+                matterMatch = true;
+            }
+            
+            // Show/hide based on both type and matter match
+            if (typeMatch && matterMatch) {
+                $note.show();
+            } else {
+                $note.hide();
+            }
+        });
     }
 
     /**
@@ -328,6 +364,7 @@
     window.SidebarTabs = {
         init: init,
         activateTab: activateTab,
+        ensureAllTabActive: ensureAllTabActive,
         filterNotesByMatter: filterNotesByMatter,
         filterVisaDocumentsByMatter: filterVisaDocumentsByMatter,
         filterEmailsByMatter: filterEmailsByMatter

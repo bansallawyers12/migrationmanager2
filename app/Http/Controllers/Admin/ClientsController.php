@@ -10961,4 +10961,106 @@ class ClientsController extends Controller
         }
     }
 
+    /**
+     * Store follow-up note with assignee information
+     * Handles the "Assign User" popup functionality
+     * Supports both single and multiple assignees
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function followupstore(Request $request)
+    {
+        $requestData = $request->all(); //dd($requestData);
+        // Decode the client ID
+        $clientId = $this->decodeString(@$requestData['client_id']);
+
+        // Get the next unique ID for this task
+        //$lastUniqueId = \App\Models\Note::max('unique_group_id'); // Get the last unique_id
+        //$taskUniqueId = $lastUniqueId ? $lastUniqueId + 1 : 1; // Increment by 1 or start from 1
+
+        $taskUniqueId = 'group_' . uniqid('', true);
+
+        // Loop through each assignee and create a follow-up note
+        foreach ($requestData['rem_cat'] as $assigneeId) {
+            // Create a new followup note for each assignee
+            $followup = new \App\Models\Note;
+            $followup->client_id = $clientId;
+            $followup->user_id = Auth::user()->id;
+            $followup->description = @$requestData['description'];
+            $followup->unique_group_id = $taskUniqueId;
+
+            // Set the title for the current assignee
+            $assigneeName = $this->getAssigneeName($assigneeId);
+            $followup->title = @$requestData['remindersubject'] ?? 'Lead assigned to ' . $assigneeName;
+
+            $followup->folloup = 1;
+            $followup->task_group = @$requestData['task_group'];
+            $followup->assigned_to = $assigneeId;
+
+            if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
+                $followup->followup_date = @$requestData['followup_datetime'];
+            }
+
+            //add note deadline
+            if(isset($requestData['note_deadline_checkbox']) && $requestData['note_deadline_checkbox'] != ''){
+                if($requestData['note_deadline_checkbox'] == 1){
+                    $followup->note_deadline = $requestData['note_deadline'];
+                } else {
+                    $followup->note_deadline = NULL;
+                }
+            } else {
+                $followup->note_deadline = NULL;
+            }
+
+            $saved = $followup->save();
+
+            if ($saved) {
+                // Update lead follow-up date
+                if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
+                    $Lead = Admin::find($clientId);
+                    $Lead->followup_date = @$requestData['followup_datetime'];
+                    $Lead->save();
+                }
+
+                // Create a notification for the current assignee
+                $o = new \App\Models\Notification;
+                $o->sender_id = Auth::user()->id;
+                $o->receiver_id = $assigneeId;
+                $o->module_id = $clientId;
+                $o->url = \URL::to('/admin/clients/detail/' . @$requestData['client_id']);
+                $o->notification_type = 'client';
+                $o->message = 'Followup Assigned by ' . Auth::user()->first_name . ' ' . Auth::user()->last_name . ' on ' . date('d/M/Y h:i A', strtotime(@$requestData['followup_datetime']));
+                $o->save();
+
+                // Log the activity for the current assignee
+                $objs = new ActivitiesLog;
+                $objs->client_id = $clientId;
+                $objs->created_by = Auth::user()->id;
+                $objs->subject = 'Set action for ' . $assigneeName;
+                $objs->description = '<span class="text-semi-bold">' . @$requestData['remindersubject'] . '</span><p>' . @$requestData['description'] . '</p>';
+
+                if (Auth::user()->id != $assigneeId) {
+                    $objs->use_for = $assigneeId;
+                } else {
+                    $objs->use_for = "";
+                }
+
+                $objs->followup_date = @$requestData['followup_datetime'];
+                $objs->task_group = @$requestData['task_group'];
+                $objs->save();
+            }
+        }
+        echo json_encode(array('success' => true, 'message' => 'successfully saved', 'clientID' => $requestData['client_id']));
+        exit;
+    }
+
+    // Helper function to get assignee name
+    protected function getAssigneeName($assigneeId)
+    {
+        $admin = \App\Models\Admin::find($assigneeId);
+        return $admin ? $admin->first_name . ' ' . $admin->last_name : 'Unknown Assignee';
+    }
+
+
 }

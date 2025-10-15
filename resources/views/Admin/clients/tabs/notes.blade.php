@@ -17,6 +17,7 @@
                             <button class="subtab8-button pill-tab" data-subtab8="In-Person">In-Person</button>
                             <button class="subtab8-button pill-tab" data-subtab8="Others">Others</button>
                             <button class="subtab8-button pill-tab" data-subtab8="Attention">Attention</button>
+                            <button class="subtab8-button pill-tab" data-subtab8="Uncategorized">Uncategorized</button>
                         </nav>
                     </div>
 
@@ -60,6 +61,7 @@
                         .note-type-email { background: #fdeaea; color: #e74c3c; }
                         .note-type-attention { background: #f3e8ff; color: #8e44ad; }
                         .note-type-others { background: #f5f5f5; color: #888; }
+                        .note-type-uncategorized { background: #fff3cd; color: #856404; }
                         .note-title {
                             font-size: 1.18rem;
                             font-weight: 700;
@@ -120,19 +122,25 @@
                             ->where('type', 'client')
                             ->orderby('pin', 'DESC')
                             ->orderBy('updated_at', 'DESC')
-                            ->get();
+                            ->get(); 
                         foreach($notelist as $list) {
                             $admin = \App\Models\Admin::where('id', $list->user_id)->first();
                             // Determine type label and color
-                            $type = strtolower($list->task_group ?? $list->task_group ?? 'others');
-                            $typeLabel = 'Others';
-                            $typeClass = 'note-type-others';
+                            if($list->task_group === null || $list->task_group === '') {
+                                // Handle NULL or empty task_group - assign to "Uncategorized"
+                                $typeLabel = 'Uncategorized';
+                                $typeClass = 'note-type-uncategorized';
+                            } else {
+                                $type = strtolower($list->task_group);
+                                $typeLabel = 'Others';
+                                $typeClass = 'note-type-others';
 
-                            if(strpos($type, 'call') !== false) { $typeLabel = 'Call'; $typeClass = 'note-type-call'; }
-                            else if(strpos($type, 'email') !== false) { $typeLabel = 'Email'; $typeClass = 'note-type-email'; }
-                            else if(strpos($type, 'in-person') !== false) { $typeLabel = 'In-Person'; $typeClass = 'note-type-inperson'; }
-                            else if(strpos($type, 'others') !== false) { $typeLabel = 'Others'; $typeClass = 'note-type-others'; }
-                            else if(strpos($type, 'attention') !== false) { $typeLabel = 'Attention'; $typeClass = 'note-type-attention'; }
+                                if(strpos($type, 'call') !== false) { $typeLabel = 'Call'; $typeClass = 'note-type-call'; }
+                                else if(strpos($type, 'email') !== false) { $typeLabel = 'Email'; $typeClass = 'note-type-email'; }
+                                else if(strpos($type, 'in-person') !== false) { $typeLabel = 'In-Person'; $typeClass = 'note-type-inperson'; }
+                                else if(strpos($type, 'others') !== false) { $typeLabel = 'Others'; $typeClass = 'note-type-others'; }
+                                else if(strpos($type, 'attention') !== false) { $typeLabel = 'Attention'; $typeClass = 'note-type-attention'; }
+                            }
 
                             //$desc = strip_tags($list->description);
                         ?>
@@ -202,22 +210,85 @@
                         document.querySelectorAll('.subtab8-button.pill-tab').forEach(t => t.classList.remove('active'));
                         this.classList.add('active');
                         const type = this.getAttribute('data-subtab8');
+                        console.log('Selected Matter:', selectedMatter, 'Type:', type);
                         // Show/hide notes based on type and matter
                         document.querySelectorAll('.note-card-redesign').forEach(card => {
                             const cardType = card.getAttribute('data-type');
                             const cardMatter = card.getAttribute('data-matterid');
                             const typeMatch = (type === 'All' || cardType === type);
-                            const matterMatch = (selectedMatter === null || selectedMatter === '' || cardMatter === selectedMatter);
+                            
+                            let matterMatch = false;
+                            // Matter filtering logic
+                            if (selectedMatter && selectedMatter !== "" && selectedMatter !== null && selectedMatter !== undefined) {
+                                // Show notes that match the selected matter OR notes with no matter_id
+                                matterMatch = (cardMatter == selectedMatter || cardMatter == '' || cardMatter == null);
+                            } else {
+                                // Show all notes when no matter is selected
+                                matterMatch = true;
+                            }
+                            
+                            console.log('Note:', cardType, 'Matter:', cardMatter, 'TypeMatch:', typeMatch, 'MatterMatch:', matterMatch);
+                            
                             if (typeMatch && matterMatch) {
                                 card.style.display = '';
+                                console.log('SHOWING note:', cardType);
                             } else {
                                 card.style.display = 'none';
+                                console.log('HIDING note:', cardType);
                             }
                         });
                     });
                 });
-                // Trigger default (All) on load
-                document.querySelector('.subtab8-button.pill-tab.active').click();
+                // On page load, ensure All tab is active and shows all notes
+                setTimeout(function() {
+                    const allTab = document.querySelector('.subtab8-button.pill-tab[data-subtab8="All"]');
+                    if (allTab) {
+                        // Remove active from all tabs first
+                        document.querySelectorAll('.subtab8-button.pill-tab').forEach(t => t.classList.remove('active'));
+                        
+                        // Make All tab active
+                        allTab.classList.add('active');
+                        
+                        // Get selected matter
+                        let selectedMatter;
+                        if ($('.general_matter_checkbox_client_detail').is(':checked')) {
+                            selectedMatter = $('.general_matter_checkbox_client_detail').val();
+                        } else {
+                            selectedMatter = $('#sel_matter_id_client_detail').val();
+                        }
+                        
+                        console.log('Page load - Selected Matter:', selectedMatter, 'Type: All');
+                        
+                        // Show/hide notes based on All type and matter
+                        document.querySelectorAll('.note-card-redesign').forEach(card => {
+                            const cardType = card.getAttribute('data-type');
+                            const cardMatter = card.getAttribute('data-matterid');
+                            const typeMatch = true; // All tab shows all types
+                            
+                            let matterMatch = false;
+                            // Matter filtering logic
+                            if (selectedMatter && selectedMatter !== "" && selectedMatter !== null && selectedMatter !== undefined) {
+                                // Show notes that match the selected matter OR notes with no matter_id
+                                matterMatch = (cardMatter == selectedMatter || cardMatter == '' || cardMatter == null);
+                            } else {
+                                // Show all notes when no matter is selected
+                                matterMatch = true;
+                            }
+                            
+                            console.log('Page load - Note:', cardType, 'Matter:', cardMatter, 'TypeMatch:', typeMatch, 'MatterMatch:', matterMatch);
+                            
+                            if (typeMatch && matterMatch) {
+                                card.style.display = '';
+                                console.log('Page load - SHOWING note:', cardType);
+                            } else {
+                                card.style.display = 'none';
+                                console.log('Page load - HIDING note:', cardType);
+                            }
+                        });
+                        
+                        console.log('Page load - All tab activated and notes filtered');
+                    }
+                }, 200);
                 
 
             });

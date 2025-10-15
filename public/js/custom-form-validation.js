@@ -2430,21 +2430,49 @@ function customValidate(formName, savetype = '')
 										data:{clientid:client_id,type:'client'},
 										success: function(responses){
 											$('.note_term_list').html(responses);
-                                            if ($('.general_matter_checkbox_client_detail').is(':checked')) {
-                                                selectedMatter = $('.general_matter_checkbox_client_detail').val();
-                                            } else {
-                                                selectedMatter = $('#sel_matter_id_client_detail').val();
+                                            // Get the task group that was selected when creating the note
+                                            const createdTaskGroup = $('#noteType').val();
+                                            
+                                            // Auto-switch to the correct task group tab
+                                            if (createdTaskGroup && createdTaskGroup !== '') {
+                                                $('.subtab8-button').removeClass('active');
+                                                $('.subtab8-pane').removeClass('active');
+                                                $(`[data-subtab8="${createdTaskGroup}"]`).addClass('active');
+                                                $(`#${createdTaskGroup}-subtab8`).addClass('active');
                                             }
-                                            //console.log('selectedMatter@@@=='+ selectedMatter);
-                                            if(selectedMatter != "" ) {
-                                                $('#noteterm-tab').find('.note-card-redesign').each(function() {
-                                                    if ($(this).data('matterid') == selectedMatter) {
-                                                        $(this).show();
-                                                    } else {
-                                                        $(this).hide();
-                                                    }
-                                                });
-                                            }
+                                            
+                                            // Apply combined matter and task group filtering
+                                            const selectedMatter = $('.general_matter_checkbox_client_detail').is(':checked') 
+                                                ? $('.general_matter_checkbox_client_detail').val() 
+                                                : $('#sel_matter_id_client_detail').val();
+                                            const activeTaskGroup = $('.subtab8-button.active').data('subtab8') || 'All';
+                                            
+                                            $('#noteterm-tab').find('.note-card-redesign').each(function() {
+                                                const noteMatterId = $(this).data('matterid');
+                                                const noteType = $(this).data('type');
+                                                
+                                                let showNote = false;
+                                                
+                                                // Matter filtering logic
+                                                if (selectedMatter !== "") {
+                                                    // Show notes that match the selected matter OR notes with no matter_id
+                                                    showNote = (noteMatterId == selectedMatter || noteMatterId == '' || noteMatterId == null);
+                                                } else {
+                                                    // Show all notes when no matter is selected
+                                                    showNote = true;
+                                                }
+                                                
+                                                // Task group filtering logic
+                                                if (showNote && activeTaskGroup !== 'All') {
+                                                    showNote = (noteType === activeTaskGroup);
+                                                }
+                                                
+                                                if (showNote) {
+                                                    $(this).show();
+                                                } else {
+                                                    $(this).hide();
+                                                }
+                                            });
 										}
 									});
 									//Fetch All Activities
@@ -2485,21 +2513,49 @@ function customValidate(formName, savetype = '')
 										data:{clientid:client_id,type:'client'},
 										success: function(responses){
 											$('.note_term_list').html(responses);
-                                            if ($('.general_matter_checkbox_client_detail').is(':checked')) {
-                                                selectedMatter = $('.general_matter_checkbox_client_detail').val();
-                                            } else {
-                                                selectedMatter = $('#sel_matter_id_client_detail').val();
+                                            // Get the task group that was selected when creating the note
+                                            const createdTaskGroup = $('#noteType').val();
+                                            
+                                            // Auto-switch to the correct task group tab
+                                            if (createdTaskGroup && createdTaskGroup !== '') {
+                                                $('.subtab8-button').removeClass('active');
+                                                $('.subtab8-pane').removeClass('active');
+                                                $(`[data-subtab8="${createdTaskGroup}"]`).addClass('active');
+                                                $(`#${createdTaskGroup}-subtab8`).addClass('active');
                                             }
-                                            //console.log('selectedMatter@@@=='+ selectedMatter);
-                                            if(selectedMatter != "" ) {
-                                                $('#noteterm-tab').find('.note-card-redesign').each(function() {
-                                                    if ($(this).data('matterid') == selectedMatter) {
-                                                        $(this).show();
-                                                    } else {
-                                                        $(this).hide();
-                                                    }
-                                                });
-                                            }
+                                            
+                                            // Apply combined matter and task group filtering
+                                            const selectedMatter = $('.general_matter_checkbox_client_detail').is(':checked') 
+                                                ? $('.general_matter_checkbox_client_detail').val() 
+                                                : $('#sel_matter_id_client_detail').val();
+                                            const activeTaskGroup = $('.subtab8-button.active').data('subtab8') || 'All';
+                                            
+                                            $('#noteterm-tab').find('.note-card-redesign').each(function() {
+                                                const noteMatterId = $(this).data('matterid');
+                                                const noteType = $(this).data('type');
+                                                
+                                                let showNote = false;
+                                                
+                                                // Matter filtering logic
+                                                if (selectedMatter !== "") {
+                                                    // Show notes that match the selected matter OR notes with no matter_id
+                                                    showNote = (noteMatterId == selectedMatter || noteMatterId == '' || noteMatterId == null);
+                                                } else {
+                                                    // Show all notes when no matter is selected
+                                                    showNote = true;
+                                                }
+                                                
+                                                // Task group filtering logic
+                                                if (showNote && activeTaskGroup !== 'All') {
+                                                    showNote = (noteType === activeTaskGroup);
+                                                }
+                                                
+                                                if (showNote) {
+                                                    $(this).show();
+                                                } else {
+                                                    $(this).hide();
+                                                }
+                                            });
 										}
 									});
                                     //Fetch All activities

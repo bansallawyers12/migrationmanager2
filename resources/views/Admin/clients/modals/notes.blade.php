@@ -99,13 +99,13 @@
 							<div class="form-group enhanced-form-group">
 								<label for="matter_id" class="form-label">
 									<i class="fas fa-folder-open text-muted mr-1"></i>
-									Select Matter <span class="text-danger">*</span>
+									Select Matter
 								</label>
 								<div class="input-group">
 									<div class="input-group-prepend">
 										<span class="input-group-text"><i class="fas fa-list-ul"></i></span>
                                         </div>
-									<select name="matter_id" id="matter_id" class="form-control enhanced-select" data-valid="required">
+									<select name="matter_id" id="matter_id" class="form-control enhanced-select">
 								    <option value="">Select Client Matters</option>
                                     <?php
 	                                    // Get all active matters for the client (including sel_matter_id=1 as General Matter)

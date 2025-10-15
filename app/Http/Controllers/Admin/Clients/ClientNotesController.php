@@ -236,15 +236,21 @@ class ClientNotesController extends Controller
             $admin = Admin::where('id', $list->user_id)->first();
 
             // Determine type label and color
-            $type11 = strtolower($list->task_group ?? $list->task_group ?? 'others');
-            $typeLabel = 'Others';
-            $typeClass = 'note-type-others';
+            if($list->task_group === null || $list->task_group === '') {
+                // Handle NULL or empty task_group - assign to "Uncategorized"
+                $typeLabel = 'Uncategorized';
+                $typeClass = 'note-type-uncategorized';
+            } else {
+                $type11 = strtolower($list->task_group);
+                $typeLabel = 'Others';
+                $typeClass = 'note-type-others';
 
-            if(strpos($type11, 'call') !== false) { $typeLabel = 'Call'; $typeClass = 'note-type-call'; }
-            else if(strpos($type11, 'email') !== false) { $typeLabel = 'Email'; $typeClass = 'note-type-email'; }
-            else if(strpos($type11, 'in-person') !== false) { $typeLabel = 'In-Person'; $typeClass = 'note-type-inperson'; }
-            else if(strpos($type11, 'others') !== false) { $typeLabel = 'Others'; $typeClass = 'note-type-others'; }
-            else if(strpos($type11, 'attention') !== false) { $typeLabel = 'Attention'; $typeClass = 'note-type-attention'; }
+                if(strpos($type11, 'call') !== false) { $typeLabel = 'Call'; $typeClass = 'note-type-call'; }
+                else if(strpos($type11, 'email') !== false) { $typeLabel = 'Email'; $typeClass = 'note-type-email'; }
+                else if(strpos($type11, 'in-person') !== false) { $typeLabel = 'In-Person'; $typeClass = 'note-type-inperson'; }
+                else if(strpos($type11, 'others') !== false) { $typeLabel = 'Others'; $typeClass = 'note-type-others'; }
+                else if(strpos($type11, 'attention') !== false) { $typeLabel = 'Attention'; $typeClass = 'note-type-attention'; }
+            }
             //$desc = strip_tags($list->description);
             ?>
             <div class="note-card-redesign <?php if($list->pin == 1) echo 'pinned'; ?>" data-matterid="<?php echo $list->matter_id; ?>" id="note_id_<?php echo $list->id; ?>" data-id="<?php echo $list->id;?>" data-type="<?php echo $typeLabel;?>">
