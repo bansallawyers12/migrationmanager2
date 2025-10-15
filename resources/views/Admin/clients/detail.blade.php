@@ -58,6 +58,7 @@ use App\Http\Controllers\Controller;
                     <div class="client-actions">
                         <a href="javascript:;" class="create_note_d" datatype="note" title="Add Notes"><i class="fas fa-plus"></i></a>
                         <a href="javascript:;" data-id="{{@$fetchedData->id}}" data-email="{{@$fetchedData->email}}" data-name="{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}" class="clientemail" title="Compose Mail"><i class="fa fa-envelope"></i></a>
+                        <a href="javascript:;" class="send-sms-btn" data-client-id="{{@$fetchedData->id}}" data-client-name="{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}" title="Send SMS"><i class="fas fa-sms"></i></a>
                         <a href="javascript:;" datatype="not_picked_call" class="not_picked_call" title="Not Picked Call"><i class="fas fa-mobile-alt"></i></a>
                         <a href="javascript:;" data-toggle="modal" data-target="#create_appoint" title="Add Appointment"><i class="fas fa-calendar-plus"></i></a>
                     </div>
@@ -664,7 +665,77 @@ use App\Http\Controllers\Controller;
 	</div>
 </div>
 
-
+<!-- Send SMS Modal -->
+<div id="sendSmsModal" data-backdrop="static" data-keyboard="false" class="modal fade custom_modal" tabindex="-1" role="dialog" aria-labelledby="smsModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="smsModalLabel">
+					<i class="fas fa-sms"></i> Send SMS
+				</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<form id="sendSmsForm">
+				    @csrf
+                    <input type="hidden" name="client_id" id="sms_client_id" value="">
+                    
+					<div class="row">
+						<!-- Phone Number Selection -->
+						<div class="col-12">
+							<div class="form-group">
+								<label for="sms_phone">Send To <span class="span_req">*</span></label>
+								<select class="form-control" id="sms_phone" name="phone" required>
+									<option value="">Select phone number...</option>
+								</select>
+								<small class="form-text text-muted">
+									<i class="fas fa-info-circle"></i> 
+									Australian numbers will use Cellcast, international numbers will use Twilio
+								</small>
+							</div>
+						</div>
+						
+						<!-- Template Selection -->
+						<div class="col-12">
+							<div class="form-group">
+								<label for="sms_template">Quick Template (Optional)</label>
+								<select class="form-control" id="sms_template">
+									<option value="">Type your own message or select a template...</option>
+								</select>
+							</div>
+						</div>
+						
+						<!-- Message -->
+						<div class="col-12">
+							<div class="form-group">
+								<label for="sms_message">Message <span class="span_req">*</span></label>
+								<textarea class="form-control" id="sms_message" name="message" rows="5" maxlength="1600" required></textarea>
+								<div class="d-flex justify-content-between">
+									<small class="form-text text-muted">
+										<span id="sms_char_count">0</span> / 1600 characters
+									</small>
+									<small class="form-text text-muted">
+										<span id="sms_parts_count">1</span> SMS part(s)
+									</small>
+								</div>
+							</div>
+						</div>
+						
+						<!-- Buttons -->
+                        <div class="col-12">
+							<button type="submit" class="btn btn-primary" id="sendSmsBtn">
+								<i class="fas fa-paper-plane"></i> Send SMS
+							</button>
+							<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
 
 <div class="modal fade  custom_modal" id="interest_service_view" tabindex="-1" role="dialog" aria-labelledby="interest_serviceModalLabel">
 	<div class="modal-dialog modal-lg">
@@ -1225,6 +1296,11 @@ $(document).ready(function() {
         activeTab: '{{ $activeTab ?? "personaldetails" }}',
         matterRefNo: '{{ $id1 ?? "" }}',
         clientFirstName: '{{ $fetchedData->first_name ?? "user" }}',
+        // SMS Template Variables
+        staffName: '{{ $staffName ?? "" }}',
+        matterNumber: '{{ $matterNumber ?? "" }}',
+        officePhone: '{{ $officePhone ?? "" }}',
+        officeCountryCode: '{{ $officeCountryCode ?? "+61" }}',
         csrfToken: '{{ csrf_token() }}',
         currentDate: '{{ date("Y-m-d") }}',
         appId: '{{ $_GET["appid"] ?? "" }}',
@@ -1372,6 +1448,197 @@ document.addEventListener('DOMContentLoaded', function() {
         sidebar.classList.remove('collapsed');
         container.classList.remove('sidebar-collapsed');
         localStorage.setItem('sidebarCollapsed', 'false');
+    });
+});
+
+// SMS Modal Functionality
+// Declare global variables for SMS functionality
+let smsClientId = null;
+let smsClientName = null;
+
+$('.send-sms-btn').on('click', function() {
+    smsClientId = $(this).data('client-id');
+    smsClientName = $(this).data('client-name');
+    
+    $('#sms_client_id').val(smsClientId);
+    $('#smsModalLabel').text(`Send SMS to ${smsClientName}`);
+    
+    // Show loading state
+    const phoneSelect = $('#sms_phone');
+    phoneSelect.empty();
+    phoneSelect.append('<option value="">Loading phone numbers...</option>');
+    
+    // Load client phone numbers
+    $.ajax({
+        url: '{{ URL::to("/admin/clients/fetchClientContactNo") }}',
+        type: 'POST',
+        dataType: 'json',
+        data: {
+            _token: '{{ csrf_token() }}',
+            client_id: smsClientId
+        },
+        success: function(response) {
+            console.log('Phone numbers response:', response);
+            phoneSelect.empty();
+            phoneSelect.append('<option value="">Select phone number...</option>');
+            
+            // Parse response if it's a string (fallback for older jQuery versions)
+            const data = (typeof response === 'string') ? $.parseJSON(response) : response;
+            
+            if (data && data.clientContacts && data.clientContacts.length > 0) {
+                data.clientContacts.forEach(function(contact) {
+                    console.log('Processing contact:', contact);
+                    // Handle missing fields gracefully
+                    const countryCode = contact.country_code || '';
+                    const phone = contact.phone || '';
+                    const contactType = contact.contact_type || 'Phone';
+                    const fullPhone = countryCode + phone;
+                    const label = contactType + ': ' + fullPhone;
+                    phoneSelect.append(`<option value="${fullPhone}">${label}</option>`);
+                });
+            } else {
+                phoneSelect.append('<option value="">No phone numbers found</option>');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Failed to fetch phone numbers:', error);
+            phoneSelect.empty();
+            phoneSelect.append('<option value="">Error loading phone numbers</option>');
+            iziToast.error({
+                title: 'Error',
+                message: 'Failed to load phone numbers. Please try again.',
+                position: 'topRight'
+            });
+        }
+    });
+    
+    // Load SMS templates
+    $.ajax({
+        url: '{{ URL::to("/admin/sms/templates-active") }}',
+        type: 'GET',
+        dataType: 'json',
+        success: function(response) {
+            const templateSelect = $('#sms_template');
+            templateSelect.empty();
+            templateSelect.append('<option value="">Type your own message or select a template...</option>');
+            
+            if (response.success && response.data && response.data.length > 0) {
+                response.data.forEach(function(template) {
+                    templateSelect.append(`<option value="${template.id}" data-message="${template.message}">${template.title}</option>`);
+                });
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Failed to fetch SMS templates:', error);
+            const templateSelect = $('#sms_template');
+            templateSelect.empty();
+            templateSelect.append('<option value="">Error loading templates</option>');
+            iziToast.error({
+                title: 'Error',
+                message: 'Failed to load SMS templates. Please try again.',
+                position: 'topRight'
+            });
+        }
+    });
+    
+    // Reset form
+    $('#sms_message').val('');
+    $('#sms_char_count').text('0');
+    $('#sms_parts_count').text('1');
+    
+    $('#sendSmsModal').modal('show');
+});
+
+// Template selection
+$('#sms_template').on('change', function() {
+    const selectedOption = $(this).find('option:selected');
+    const message = selectedOption.data('message');
+    if (message && smsClientName) {
+        // Replace placeholders with actual client data
+        let processedMessage = message;
+        
+        // Basic client variables
+        processedMessage = processedMessage.replace(/\{first_name\}/g, smsClientName.split(' ')[0] || '');
+        processedMessage = processedMessage.replace(/\{last_name\}/g, smsClientName.split(' ').slice(1).join(' ') || '');
+        processedMessage = processedMessage.replace(/\{client_name\}/g, smsClientName);
+        processedMessage = processedMessage.replace(/\{full_name\}/g, smsClientName);
+        
+        // New variables from ClientDetailConfig
+        processedMessage = processedMessage.replace(/\{staff_name\}/g, window.ClientDetailConfig.staffName || '');
+        processedMessage = processedMessage.replace(/\{matter_number\}/g, window.ClientDetailConfig.matterNumber || '');
+        
+        // Format office phone with country code
+        const officePhone = window.ClientDetailConfig.officeCountryCode + window.ClientDetailConfig.officePhone;
+        processedMessage = processedMessage.replace(/\{office_phone\}/g, officePhone || '');
+        
+        $('#sms_message').val(processedMessage).trigger('input');
+    }
+});
+
+// Character counter
+$('#sms_message').on('input', function() {
+    const length = $(this).val().length;
+    $('#sms_char_count').text(length);
+    
+    const parts = Math.ceil(length / 160) || 1;
+    $('#sms_parts_count').text(parts);
+});
+
+// Form submission
+$('#sendSmsForm').on('submit', function(e) {
+    e.preventDefault();
+    
+    const submitBtn = $('#sendSmsBtn');
+    const originalText = submitBtn.html();
+    
+    submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Sending...');
+    
+    const formData = {
+        _token: '{{ csrf_token() }}',
+        client_id: $('#sms_client_id').val(),
+        phone: $('#sms_phone').val(),
+        message: $('#sms_message').val()
+    };
+    
+    $.ajax({
+        url: '{{ URL::to("/admin/sms/send") }}',
+        type: 'POST',
+        data: formData,
+        success: function(response) {
+            if (response.success) {
+                iziToast.success({
+                    title: 'Success',
+                    message: 'SMS sent successfully!',
+                    position: 'topRight'
+                });
+                $('#sendSmsModal').modal('hide');
+                
+                // Reload activity feed if exists
+                if (typeof loadActivities === 'function') {
+                    loadActivities();
+                }
+            } else {
+                iziToast.error({
+                    title: 'Error',
+                    message: response.message || 'Failed to send SMS',
+                    position: 'topRight'
+                });
+            }
+        },
+        error: function(xhr) {
+            let errorMessage = 'An error occurred while sending SMS';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMessage = xhr.responseJSON.message;
+            }
+            iziToast.error({
+                title: 'Error',
+                message: errorMessage,
+                position: 'topRight'
+            });
+        },
+        complete: function() {
+            submitBtn.prop('disabled', false).html(originalText);
+        }
     });
 });
 </script>
