@@ -63,6 +63,19 @@
 
 			
 			<li class="{{(Route::currentRouteName() == 'adminconsole.features.matter.index' ) ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.features.matter.index')}}">Matter List</a></li>
+
+			<?php
+			// SMS Management menu - Only for super admin
+			if(Auth::user()->role == 1) {
+				$smsclasstype = '';
+				if(str_starts_with(Route::currentRouteName() ?? '', 'adminconsole.features.sms.')){
+					$smsclasstype = 'active';
+				}
+			?>
+			<li class="{{$smsclasstype}}"><a class="nav-link" href="{{route('adminconsole.features.sms.dashboard')}}">SMS Management</a></li>
+			<?php
+			}
+			?>
 			
 		</ul>
 </div>

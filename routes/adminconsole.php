@@ -15,6 +15,10 @@ use App\Http\Controllers\AdminConsole\UserroleController;
 use App\Http\Controllers\AdminConsole\TeamController;
 use App\Http\Controllers\AdminConsole\BranchesController;
 use App\Http\Controllers\AdminConsole\AnzscoOccupationController;
+use App\Http\Controllers\AdminConsole\Sms\SmsController;
+use App\Http\Controllers\AdminConsole\Sms\SmsSendController;
+use App\Http\Controllers\AdminConsole\Sms\SmsTemplateController;
+use App\Http\Controllers\AdminConsole\Sms\SmsWebhookController;
 
 /*
 |--------------------------------------------------------------------------
@@ -105,6 +109,28 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin'])
         Route::post('/document-checklist/store', [DocumentChecklistController::class, 'store'])->name('documentchecklist.store');
         Route::get('/document-checklist/edit/{id}', [DocumentChecklistController::class, 'edit'])->name('documentchecklist.edit');
         Route::put('/document-checklist/{id}', [DocumentChecklistController::class, 'update'])->name('documentchecklist.update');
+        
+        // SMS Management routes
+        Route::prefix('sms')->name('sms.')->group(function() {
+            // SMS Dashboard & History
+            Route::get('/dashboard', [SmsController::class, 'dashboard'])->name('dashboard');
+            Route::get('/history', [SmsController::class, 'history'])->name('history');
+            Route::get('/history/{id}', [SmsController::class, 'show'])->name('history.show');
+            
+            // SMS Statistics & Status (API endpoints)
+            Route::get('/statistics', [SmsController::class, 'statistics'])->name('statistics');
+            Route::get('/status/{smsLogId}', [SmsController::class, 'checkStatus'])->name('status.check');
+            
+            // Manual SMS Sending
+            Route::get('/send', [SmsSendController::class, 'create'])->name('send.create');
+            Route::post('/send', [SmsSendController::class, 'send'])->name('send');
+            Route::post('/send/template', [SmsSendController::class, 'sendFromTemplate'])->name('send.template');
+            Route::post('/send/bulk', [SmsSendController::class, 'sendBulk'])->name('send.bulk');
+            
+            // SMS Templates
+            Route::resource('templates', SmsTemplateController::class);
+            Route::get('/templates-active', [SmsTemplateController::class, 'active'])->name('templates.active');
+        });
         
     });
     

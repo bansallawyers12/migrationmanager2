@@ -1,167 +1,27 @@
-@extends('layouts.admin')
+@extends('layouts.admin_client_detail')
 @section('title', 'SMS Dashboard')
 
-@section('styles')
-<style>
-    .sms-dashboard {
-        padding: 20px;
-    }
-    
-    .sms-stats-cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px;
-        margin-bottom: 30px;
-    }
-    
-    .sms-stat-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 25px;
-        border-radius: 12px;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-        transition: transform 0.3s ease;
-    }
-    
-    .sms-stat-card:hover {
-        transform: translateY(-5px);
-    }
-    
-    .sms-stat-card.cellcast {
-        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
-    }
-    
-    .sms-stat-card.twilio {
-        background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
-    }
-    
-    .sms-stat-card.failed {
-        background: linear-gradient(135deg, #ff7979 0%, #d63031 100%);
-    }
-    
-    .stat-icon {
-        font-size: 2.5rem;
-        margin-bottom: 15px;
-        opacity: 0.9;
-    }
-    
-    .stat-number {
-        font-size: 2.2rem;
-        font-weight: bold;
-        margin-bottom: 5px;
-    }
-    
-    .stat-label {
-        font-size: 0.9rem;
-        opacity: 0.9;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-    
-    .sms-actions {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 15px;
-        margin-bottom: 30px;
-    }
-    
-    .sms-action-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 15px 20px;
-        background: white;
-        border: 2px solid #e9ecef;
-        border-radius: 8px;
-        color: #495057;
-        text-decoration: none;
-        transition: all 0.3s ease;
-        font-weight: 500;
-    }
-    
-    .sms-action-btn:hover {
-        border-color: #667eea;
-        color: #667eea;
-        text-decoration: none;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    }
-    
-    .sms-action-btn i {
-        margin-right: 10px;
-        font-size: 1.2rem;
-    }
-    
-    .sms-recent {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        overflow: hidden;
-    }
-    
-    .sms-recent-header {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        padding: 20px;
-        border-bottom: 1px solid #dee2e6;
-    }
-    
-    .sms-recent-header h3 {
-        margin: 0;
-        color: #495057;
-        font-size: 1.2rem;
-        font-weight: 600;
-    }
-    
-    .coming-soon {
-        text-align: center;
-        padding: 40px 20px;
-        color: #6c757d;
-    }
-    
-    .coming-soon i {
-        font-size: 3rem;
-        margin-bottom: 15px;
-        color: #dee2e6;
-    }
-    
-    .coming-soon h4 {
-        margin-bottom: 10px;
-        color: #495057;
-    }
-    
-    .coming-soon p {
-        margin: 0;
-        font-size: 0.9rem;
-    }
-    
-    .provider-status {
-        display: inline-block;
-        padding: 4px 8px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    
-    .provider-status.online {
-        background-color: #d4edda;
-        color: #155724;
-    }
-    
-    .provider-status.offline {
-        background-color: #f8d7da;
-        color: #721c24;
-    }
-</style>
-@endsection
-
 @section('content')
-<div class="sms-dashboard">
-    <div class="main-content-header">
-        <h2><i class="fas fa-sms"></i> SMS Management Dashboard</h2>
-        <p class="text-muted">Monitor SMS activity, manage templates, and send messages</p>
-    </div>
+<!-- Main Content -->
+<div class="main-content">
+    <section class="section">
+        <div class="section-body">
+            <div class="server-error">
+                @include('../Elements/flash-message')
+            </div>
+            <div class="custom-error-msg">
+            </div>
+            <div class="row">
+                <div class="col-3 col-md-3 col-lg-3">
+                    @include('../Elements/Admin/setting')
+                </div>
+                <div class="col-9 col-md-9 col-lg-9">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4><i class="fas fa-sms"></i> SMS Management Dashboard</h4>
+                            <p class="text-muted">Monitor SMS activity, manage templates, and send messages</p>
+                        </div>
+                        <div class="card-body">
 
     {{-- Statistics Cards --}}
     <div class="sms-stats-cards">

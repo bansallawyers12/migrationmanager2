@@ -163,6 +163,33 @@
             </li>
             <?php
             }
+            
+            // SMS Management menu
+            if(Auth::user()->role == 1){ // Only for super admin
+                $smsclasstype = '';
+                if(str_starts_with(Route::currentRouteName() ?? '', 'adminconsole.features.sms.')){
+                    $smsclasstype = 'active';
+                }
+            ?>
+            <li class="dropdown {{@$smsclasstype}}">
+                <a href="#" class="menu-toggle nav-link has-dropdown" title="SMS Management"><i class="fas fa-sms"></i><span>SMS Management</span></a>
+                <ul class="dropdown-menu">
+                    <li class="{{(Route::currentRouteName() == 'adminconsole.features.sms.dashboard') ? 'active' : ''}}">
+                        <a href="{{route('adminconsole.features.sms.dashboard')}}" class="nav-link"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+                    </li>
+                    <li class="{{(Route::currentRouteName() == 'adminconsole.features.sms.history') ? 'active' : ''}}">
+                        <a href="{{route('adminconsole.features.sms.history')}}" class="nav-link"><i class="fas fa-history"></i><span>SMS History</span></a>
+                    </li>
+                    <li class="{{(Route::currentRouteName() == 'adminconsole.features.sms.templates.index') ? 'active' : ''}}">
+                        <a href="{{route('adminconsole.features.sms.templates.index')}}" class="nav-link"><i class="fas fa-file-alt"></i><span>Templates</span></a>
+                    </li>
+                    <li class="{{(Route::currentRouteName() == 'adminconsole.features.sms.send.create') ? 'active' : ''}}">
+                        <a href="{{route('adminconsole.features.sms.send.create')}}" class="nav-link"><i class="fas fa-paper-plane"></i><span>Send SMS</span></a>
+                    </li>
+                </ul>
+            </li>
+            <?php
+            }
             ?>
 
             <li class="dropdown">
