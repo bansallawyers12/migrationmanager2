@@ -79,7 +79,7 @@ class ClientPersonalDetailsController extends Controller
       public function fetchClientContactNo(Request $request){ //dd($request->all());
         if( ClientContact::where('client_id', $request->client_id)->exists()){
             //Fetch All client contacts
-            $clientContacts = ClientContact::select('phone')->where('client_id', $request->client_id)->get();
+            $clientContacts = ClientContact::select('phone', 'country_code', 'contact_type')->where('client_id', $request->client_id)->get();
             //dd($clientContacts);
             if( !empty($clientContacts) && count($clientContacts)>0 ){
                 $response['status'] 	= 	true;

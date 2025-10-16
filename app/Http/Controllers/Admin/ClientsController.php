@@ -4276,11 +4276,20 @@ class ClientsController extends Controller
                 }
                 
                 //dd($clientFamilyDetails);
+                
+                // Get current admin user data for SMS templates
+                $currentAdmin = Auth::user();
+                $staffName = $currentAdmin->first_name . ' ' . $currentAdmin->last_name;
+                $matterNumber = $id1 ?? '';
+                $officePhone = $currentAdmin->phone ?? $currentAdmin->att_phone ?? '';
+                $officeCountryCode = $currentAdmin->att_country_code ?? '+61';
+                
                 //Return the view with all data
                 return view('Admin.clients.detail', compact(
                     'fetchedData', 'clientAddresses', 'clientContacts', 'emails', 'qualifications',
                     'experiences', 'testScores', 'visaCountries', 'clientOccupations','ClientPoints', 'clientSpouseDetail',
-                    'encodeId', 'id1','clientFamilyDetails', 'activeTab', 'isEoiMatter'
+                    'encodeId', 'id1','clientFamilyDetails', 'activeTab', 'isEoiMatter',
+                    'staffName', 'matterNumber', 'officePhone', 'officeCountryCode'
                 ));
             } else {
                 return redirect()->route('admin.clients.index')->with('error', 'Clients Not Exist');
