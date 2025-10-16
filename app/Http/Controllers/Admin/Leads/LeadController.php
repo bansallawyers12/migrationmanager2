@@ -370,6 +370,12 @@ class LeadController extends Controller
             ->with('matter:id,title,nick_name')
             ->get() ?? collect();
         $clientPassports = \App\Models\ClientPassportInformation::where('client_id', $id)->get() ?? collect();
+        $clientAddresses = \App\Models\ClientAddress::where('client_id', $id)
+            ->orderBy('created_at', 'desc')
+            ->get() ?? collect();
+        $clientTravels = \App\Models\ClientTravelInformation::where('client_id', $id)
+            ->orderByRaw('travel_arrival_date IS NULL, STR_TO_DATE(travel_arrival_date, "%Y-%m-%d") ASC')
+            ->get() ?? collect();
         $visaTypes = \App\Models\Matter::where('title', 'not like', '%skill assessment%')
             ->where('status', 1)
             ->orderBy('title', 'ASC')
@@ -377,7 +383,7 @@ class LeadController extends Controller
         
         return view('Admin.leads.edit', compact(
             'fetchedData', 'countries', 'clientContacts', 'emails', 
-            'visaCountries', 'clientPassports', 'visaTypes'
+            'visaCountries', 'clientPassports', 'clientAddresses', 'clientTravels', 'visaTypes'
         ));
     }
 

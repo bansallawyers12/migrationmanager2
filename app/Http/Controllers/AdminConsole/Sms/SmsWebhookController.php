@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin\Sms;
+namespace App\Http\Controllers\AdminConsole\Sms;
 
 use App\Http\Controllers\Controller;
 use App\Models\SmsLog;
@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Log;
 /**
  * SmsWebhookController
  * 
- * Handles webhooks from SMS providers (Twilio, Cellcast)
+ * Handles webhooks from SMS providers (Twilio, Cellcast) for AdminConsole
  * Used for delivery status updates and incoming messages
  */
 class SmsWebhookController extends Controller
@@ -126,4 +126,3 @@ class SmsWebhookController extends Controller
         return $statusMap[strtoupper($cellcastStatus)] ?? 'unknown';
     }
 }
-

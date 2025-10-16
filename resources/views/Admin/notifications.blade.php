@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('layouts.admin_client_detail')
 @section('title', 'Notifications')
 
 @section('content')
@@ -7,47 +7,67 @@
 <div class="main-content">
 	<section class="section">
 		<div class="section-body">
+			<div class="server-error">
+				@include('../Elements/flash-message')
+			</div>
+			<div class="custom-error-msg">
+			</div>
 			<div class="row">
 				<div class="col-12 col-md-12 col-lg-12">
 					<div class="card">
 						<div class="card-header">
 							<h4>Notifications</h4>
-							
+							<div class="card-header-action">
+								<span class="badge badge-primary">{{ $lists->total() }} Total</span>
+							</div>
 						</div>
 						<div class="card-body">
-							<table class="table">
-								<thead>
-									<tr>
-									  <th></th>
-									  <th></th>
-									  <th>Date</th>
-									 
-									</tr> 
-								</thead>
-								
-								@foreach (@$lists as $list)
-							
-								<tbody class="tdata taskdata ">	
-									<tr id="id_{{@$list->id}}"> 
-										<td >
-										@if($list->receiver_status == 1)
-											<span class="check"><i class="fa fa-eye"></i></span>
-										@else
-											<span class="round"></span>
-										@endif
-										</td>
-										<td><a href="{{$list->url}}?t={{$list->id}}">{{$list->message}}</a></td> 
-										<td>{{date('d/m/Y h:i A',strtotime($list->created_at))}}</td> 
-										
-									</tr>	
-								@endforeach	
-								</tbody>
-								
-							</table> 
+							@if($lists->count() > 0)
+							<div class="table-responsive">
+								<table class="table">
+									<thead>
+										<tr>
+										  <th width="50">Status</th>
+										  <th>Message</th>
+										  <th width="200">Date</th>
+										</tr> 
+									</thead>
+									<tbody class="tdata">	
+										@foreach ($lists as $list)
+										<tr id="id_{{@$list->id}}" style="{{ $list->receiver_status == 0 ? 'background-color: #f8f9fa; font-weight: 600;' : '' }}"> 
+											<td class="text-center">
+												@if($list->receiver_status == 1)
+													<i class="fas fa-check-circle text-success" data-toggle="tooltip" title="Read"></i>
+												@else
+													<i class="fas fa-circle text-primary" data-toggle="tooltip" title="Unread"></i>
+												@endif
+											</td>
+											<td>
+												<a href="{{$list->url}}?t={{$list->id}}">
+													{{$list->message}}
+												</a>
+											</td> 
+											<td>
+												{{date('d/m/Y h:i A', strtotime($list->created_at))}}
+											</td>
+										</tr>	
+										@endforeach	
+									</tbody>
+								</table>
+							</div>
+							@else
+							<div class="text-center" style="padding: 40px;">
+								<i class="fas fa-bell" style="font-size: 48px; color: #ddd;"></i>
+								<h5 class="mt-3">No Notifications</h5>
+								<p class="text-muted">You don't have any notifications yet.</p>
+							</div>
+							@endif
 						</div>
+						@if($lists->count() > 0)
 						<div class="card-footer">
 							{!! $lists->appends(\Request::except('page'))->render() !!}
 						</div>
+						@endif
 					</div>
 				</div>
 			</div>

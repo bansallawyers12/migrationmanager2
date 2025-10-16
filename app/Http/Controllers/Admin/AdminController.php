@@ -1069,12 +1069,6 @@ class AdminController extends Controller
 		die;
 	}
 
-	public function sessions(Request $request)
-	{
-		return view('Admin.sessions');
-	}
-
-
 	public function getpartnerbranch(Request $request){
 		$catid = $request->cat_id;
 		// Partner functionality removed - no partners available

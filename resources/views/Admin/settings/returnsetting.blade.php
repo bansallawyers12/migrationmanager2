@@ -1,79 +1,32 @@
-@extends('layouts.admin')
+@extends('layouts.admin_client_detail')
 @section('title', 'Tax Setting')
 
 @section('content')
- <style>
- 
- <?php if(@Auth::user()->is_business_gst != ''){ if(@Auth::user()->is_business_gst == 'yes'){ ?>.is_gst_yes{display:block;} <?php }else{ ?>.is_gst_yes{display:none;} <?php }}else{ ?>.is_gst_yes{display:none;}<?php } ?>
- </style>
-<!-- Content Wrapper. Contains page content -->
-<div class="content-wrapper">
-	<div class="content-header">
-		<div class="container-fluid">
-			<div class="row mb-2">
-				<div class="col-sm-6">
-					<h1 class="m-0 text-dark">Tax Setting</h1>
-				</div><!-- /.col -->
-				<div class="col-sm-6">
-					<ol class="breadcrumb float-sm-right">
-						<li class="breadcrumb-item"><a href="#">Home</a></li>
-						<li class="breadcrumb-item active">Tax Setting</li>
-					</ol>
-				</div><!-- /.col -->
-			</div><!-- /.row -->
-		</div><!-- /.container-fluid -->
-	</div>
-	<!-- /.content-header -->	
-	<!-- Breadcrumb start-->
-	<!--<ol class="breadcrumb">
-		<li class="breadcrumb-item active">
-			Home / <b>Dashboard</b>
-		</li>
-		@include('../Elements/Admin/breadcrumb')
-	</ol>-->
-	<!-- Breadcrumb end-->
-	
-	<!-- Main content --> 
-	<section class="content">
-		<div class="container-fluid">
+
+<!-- Main Content -->
+<div class="main-content">
+	<section class="section">
+		<div class="section-body">
+			<div class="server-error">
+				@include('../Elements/flash-message')
+			</div>
+			<div class="custom-error-msg">
+			</div>
 			<div class="row">
-				<div class="col-md-12">
-					<!-- Flash Message Start -->
-					<div class="server-error">
-						@include('../Elements/flash-message')
-					</div>
-					<!-- Flash Message End -->
-				</div> 
-				<div class="col-md-4">	
+				<div class="col-12 col-md-12 col-lg-12">
 					<div class="card">
-						<div class="card-body p-0" style="display: block;">
-							<ul class="nav nav-pills flex-column"> <!---->
-								<li class="nav-item"> <a href="{{route('admin.returnsetting')}}" id="ember5168" class="nav-link active ember-view"> GST Settings </a> </li> <!----><!----> </ul>
+						<div class="card-header">
+							<h4>GST Settings</h4>
 						</div>
-					</div>
-				</div>
-				<div class="col-md-8">
-					<div class="card card-primary">
-					  <div class="card-header">
-						<h3 class="card-title">GST Settings</h3>
-					  </div> 
-					  <!-- /.card-header -->
-					  <!-- form start -->
-						  <form action="{{ url('admin/settings/taxes/savereturnsetting') }}" method="POST" name="add-city" autocomplete="off" enctype="multipart/form-data">
+						<form action="{{ url('admin/settings/taxes/savereturnsetting') }}" method="POST" name="add-city" autocomplete="off" enctype="multipart/form-data">
 							@csrf
 						<div class="card-body">
 							<div class="row">
-								<div class="col-sm-12">
-									<div class="form-group" style="text-align:right;">
-							
-									</div>
-								</div>
-							
-								<div class="col-sm-12">
+								<div class="col-12 col-md-12 col-lg-12">
 									<div class="form-group"> 
-										<label for="" class="col-form-label">Is your business registered for GST?</label>
-										<label for="" class=""><input type="radio" value="yes" <?php if(@Auth::user()->is_business_gst == 'yes'){ echo 'checked'; } ?> name="is_business_gst"> Yes</label>
-										<label for="" class=""><input type="radio" <?php if(@Auth::user()->is_business_gst != ''){ if(Auth::user()->is_business_gst == 'no'){ echo 'checked'; } }else{ echo 'checked'; } ?> value="no" name="is_business_gst"> No</label>
+										<label for="" class="col-form-label">Is your business registered for GST?</label><br>
+										<label class="mr-3"><input type="radio" value="yes" <?php if(@Auth::user()->is_business_gst == 'yes'){ echo 'checked'; } ?> name="is_business_gst"> Yes</label>
+										<label><input type="radio" <?php if(@Auth::user()->is_business_gst != ''){ if(Auth::user()->is_business_gst == 'no'){ echo 'checked'; } }else{ echo 'checked'; } ?> value="no" name="is_business_gst"> No</label>
 										@if ($errors->has('name'))
 											<span class="custom-error" role="alert">
 												<strong>{{ @$errors->first('name') }}</strong>
@@ -81,11 +34,11 @@
 										@endif
 									</div>
 								</div>
-								<div class="col-sm-12 is_gst_yes">
+								<div class="col-12 col-md-6 col-lg-6 is_gst_yes" style="<?php if(@Auth::user()->is_business_gst != ''){ if(@Auth::user()->is_business_gst == 'yes'){ ?>display:block;<?php }else{ ?>display:none;<?php }}else{ ?>display:none;<?php } ?>">
 									<div class="form-group"> 
-										<label for="gstin" class="col-form-label">GSTIN <span style="color:#ff0000;">*</span></label>
+										<label for="gstin">GSTIN <span class="span_req">*</span></label>
 										<input type="text" name="gstin" value="{{ @Auth::user()->gstin }}" class="form-control" data-valid="" autocomplete="off" placeholder="">
-										<p>(Maximum 15 digits)</p>
+										<small class="form-text text-muted">Maximum 15 digits</small>
 										@if ($errors->has('gstin'))
 											<span class="custom-error" role="alert">
 												<strong>{{ @$errors->first('gstin') }}</strong>
@@ -93,9 +46,9 @@
 										@endif
 									</div>
 								</div>
-								<div class="col-sm-12 is_gst_yes ">
+								<div class="col-12 col-md-6 col-lg-6 is_gst_yes" style="<?php if(@Auth::user()->is_business_gst != ''){ if(@Auth::user()->is_business_gst == 'yes'){ ?>display:block;<?php }else{ ?>display:none;<?php }}else{ ?>display:none;<?php } ?>">
 									<div class="form-group"> 
-										<label for="gst_date" class="col-form-label">GST Registered On</label>
+										<label for="gst_date">GST Registered On</label>
 										<input type="text" name="gst_date" value="{{ @Auth::user()->gst_date }}" class="form-control commodategst" data-valid="" autocomplete="off" placeholder="">
 										
 										@if ($errors->has('gst_date'))
@@ -105,14 +58,14 @@
 										@endif
 									</div>
 								</div>
-								<div class="col-sm-12 <?php if(@Auth::user()->is_business_gst != ''){ if(@Auth::user()->is_business_gst == 'yes'){ ?><?php }else{ ?><?php }}else{ ?>is_gst_yes<?php } ?>" >
+								<div class="col-12">
 									<div class="form-group float-right">
 										<button type="submit" class="btn btn-primary" onClick="customValidate('add-city')"><i class="fa fa-save"></i> Save</button>
 									</div> 
 								</div> 
 							</div> 
 						</div> 
-						  </form>
+						</form>
 					</div>	
 				</div>	
 			</div>

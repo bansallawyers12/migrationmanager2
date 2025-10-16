@@ -1,70 +1,35 @@
-@extends('layouts.admin')
-@section('title', 'Tax Setting')
+@extends('layouts.admin_client_detail')
+@section('title', 'Edit Tax')
 
 @section('content')
- 
-<!-- Content Wrapper. Contains page content -->
-<div class="content-wrapper">
-	<div class="content-header">
-		<div class="container-fluid">
-			<div class="row mb-2">
-				<div class="col-sm-6">
-					<h1 class="m-0 text-dark">Edit Tax</h1>
-				</div><!-- /.col -->
-				<div class="col-sm-6">
-					<ol class="breadcrumb float-sm-right">
-						<li class="breadcrumb-item"><a href="#">Home</a></li>
-						<li class="breadcrumb-item active">Tax Setting</li>
-					</ol>
-				</div><!-- /.col -->
-			</div><!-- /.row -->
-		</div><!-- /.container-fluid -->
-	</div>
-	<!-- /.content-header -->	
-	<!-- Breadcrumb start-->
-	<!--<ol class="breadcrumb">
-		<li class="breadcrumb-item active">
-			Home / <b>Dashboard</b>
-		</li>
-		@include('../Elements/Admin/breadcrumb')
-	</ol>-->
-	<!-- Breadcrumb end-->
-	
-	<!-- Main content --> 
-	<section class="content">
-		<div class="container-fluid">
+
+<!-- Main Content -->
+<div class="main-content">
+	<section class="section">
+		<div class="section-body">
+			<div class="server-error">
+				@include('../Elements/flash-message')
+			</div>
+			<div class="custom-error-msg">
+			</div>
 			<div class="row">
-				<div class="col-md-12">
-					<!-- Flash Message Start -->
-					<div class="server-error">
-						@include('../Elements/flash-message')
-					</div>
-					<!-- Flash Message End -->
-				</div> 
-				<div class="col-md-4">	
+				<div class="col-12 col-md-12 col-lg-12">
 					<div class="card">
-						<div class="card-body p-0" style="display: block;">
-							<ul class="nav nav-pills flex-column"> <!---->
-								<li class="nav-item"> <a href="{{route('admin.returnsetting')}}" id="ember5168" class="nav-link ember-view"> GST Settings </a> </li> <!----><!----> </ul>
+						<div class="card-header">
+							<h4>Edit Tax</h4>
+							<div class="card-header-action">
+								<a href="{{route('admin.returnsetting')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
+							</div>
 						</div>
-					</div>
-				</div>
-				<div class="col-md-8">
-					<div class="card card-primary">
-					  <div class="card-header">
-						<h3 class="card-title">Edit Tax</h3>
-					  </div> 
-					  <!-- /.card-header -->
-					  <!-- form start -->
-						  <form action="{{ url('admin/settings/taxes/savereturnsetting') }}" method="POST" name="add-city" autocomplete="off" enctype="multipart/form-data">
+						<form action="{{ url('admin/settings/taxes/savereturnsetting') }}" method="POST" name="add-city" autocomplete="off" enctype="multipart/form-data">
 							@csrf
 							<input type="hidden" name="id" value="{{ @$fetchedData->id }}">
 						<div class="card-body">
 							<div class="row">
-								<div class="col-sm-12 is_gst_yes">
+								<div class="col-12 col-md-6 col-lg-6">
 									<div class="form-group"> 
-										<label for="name" class="col-form-label">Tax Name <span style="color:#ff0000;">*</span></label>
-										<input type="text" name="name" value="{{ @$fetchedData->name }}" class="form-control" data-valid="required" autocomplete="off" placeholder="">
+										<label for="name">Tax Name <span class="span_req">*</span></label>
+										<input type="text" name="name" value="{{ @$fetchedData->name }}" class="form-control" data-valid="required" autocomplete="off" placeholder="Enter Tax Name">
 						
 										@if ($errors->has('name'))
 											<span class="custom-error" role="alert">
@@ -73,11 +38,10 @@
 										@endif
 									</div>
 								</div>
-								<div class="col-sm-12 is_gst_yes ">
+								<div class="col-12 col-md-6 col-lg-6">
 									<div class="form-group"> 
-										<label for="rate" class="col-form-label">Rate % <span style="color:#ff0000;">*</span></label>
-									
-										<input type="text" name="rate" value="{{@$fetchedData->rate}}" onkeyup="this.value=this.value.replace(/[^0-9\.]/g,'')" autocomplete="off" class="form-control" data-valid="required">
+										<label for="rate">Rate % <span class="span_req">*</span></label>
+										<input type="text" name="rate" value="{{@$fetchedData->rate}}" onkeyup="this.value=this.value.replace(/[^0-9\.]/g,'')" autocomplete="off" class="form-control" data-valid="required" placeholder="Enter Rate">
 										@if ($errors->has('rate'))
 											<span class="custom-error" role="alert">
 												<strong>{{ @$errors->first('rate') }}</strong>
@@ -85,14 +49,14 @@
 										@endif
 									</div>
 								</div>
-								<div class="col-sm-12" >
+								<div class="col-12">
 									<div class="form-group float-right">
-										<button type="submit" class="btn btn-primary" onClick="customValidate('add-city')"><i class="fa fa-save"></i> Save</button>
+										<button type="submit" class="btn btn-primary" onClick="customValidate('add-city')"><i class="fa fa-save"></i> Update</button>
 									</div> 
 								</div> 
 							</div> 
 						</div> 
-						  </form>
+						</form>
 					</div>	
 				</div>	
 			</div>

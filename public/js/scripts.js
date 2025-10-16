@@ -330,16 +330,17 @@ $(function () {
     });
   }
 
-  $(".notification-toggle").dropdown();
-  $(".notification-toggle")
-    .parent()
-    .on("shown.bs.dropdown", function () {
-      $(".dropdown-list-icons").niceScroll({
-        cursoropacitymin: 0.3,
-        cursoropacitymax: 0.8,
-        cursorwidth: 7
-      });
-    });
+  // Notification dropdown functionality removed - using page redirect instead
+  // $(".notification-toggle").dropdown(); // Removed - not needed for redirect functionality
+  // $(".notification-toggle")
+  //   .parent()
+  //   .on("shown.bs.dropdown", function () {
+  //     $(".dropdown-list-icons").niceScroll({
+  //       cursoropacitymin: 0.3,
+  //       cursoropacitymax: 0.8,
+  //       cursorwidth: 7
+  //     });
+  //   });
 
   $(".message-toggle").dropdown();
   $(".message-toggle")

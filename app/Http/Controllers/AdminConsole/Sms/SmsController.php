@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin\Sms;
+namespace App\Http\Controllers\AdminConsole\Sms;
 
 use App\Http\Controllers\Controller;
 use App\Models\SmsLog;
@@ -12,8 +12,7 @@ use Illuminate\Support\Facades\Auth;
 /**
  * SmsController
  * 
- * Handles SMS dashboard, history, and manual sending
- * Sprint 4 will expand this with full UI
+ * Handles SMS dashboard, history, and manual sending for AdminConsole
  */
 class SmsController extends Controller
 {
@@ -26,7 +25,7 @@ class SmsController extends Controller
     }
 
     /**
-     * Show SMS dashboard (Sprint 4)
+     * Show SMS dashboard
      */
     public function dashboard(Request $request)
     {
@@ -50,20 +49,14 @@ class SmsController extends Controller
                            ->limit(10)
                            ->get();
         
-        return view('Admin.sms.dashboard', compact('stats', 'recentSms'));
+        return view('AdminConsole.features.sms.dashboard', compact('stats', 'recentSms'));
     }
 
     /**
-     * Show SMS history (Sprint 4)
+     * Show SMS history
      */
     public function history(Request $request)
     {
-        // TODO: Implement in Sprint 4
-        // Will show:
-        // - Filterable SMS log table
-        // - Search by phone, client, date range
-        // - Export functionality
-        
         $query = SmsLog::with(['client', 'contact', 'sender'])
             ->orderBy('created_at', 'desc');
 
@@ -73,18 +66,17 @@ class SmsController extends Controller
 
         $smsLogs = $query->paginate(50);
 
-        return view('Admin.sms.history.index', compact('smsLogs'));
+        return view('AdminConsole.features.sms.history.index', compact('smsLogs'));
     }
 
     /**
-     * Show single SMS details (Sprint 4)
+     * Show single SMS details
      */
     public function show($id)
     {
-        // TODO: Implement in Sprint 4
         $smsLog = SmsLog::with(['client', 'contact', 'sender'])->findOrFail($id);
         
-        return view('Admin.sms.history.show', compact('smsLog'));
+        return view('AdminConsole.features.sms.history.show', compact('smsLog'));
     }
 
     /**
@@ -113,4 +105,3 @@ class SmsController extends Controller
         return response()->json($result);
     }
 }
-

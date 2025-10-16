@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin\Sms;
+namespace App\Http\Controllers\AdminConsole\Sms;
 
 use App\Http\Controllers\Controller;
 use App\Models\SmsTemplate;
@@ -10,8 +10,7 @@ use Illuminate\Support\Facades\Validator;
 /**
  * SmsTemplateController
  * 
- * Handles SMS template CRUD operations
- * Sprint 4 will add full UI for template management
+ * Handles SMS template CRUD operations for AdminConsole
  */
 class SmsTemplateController extends Controller
 {
@@ -21,23 +20,21 @@ class SmsTemplateController extends Controller
     }
 
     /**
-     * List all SMS templates (Sprint 4)
+     * List all SMS templates
      */
     public function index(Request $request)
     {
-        // TODO: Implement in Sprint 4
         $templates = SmsTemplate::orderBy('title')->paginate(20);
         
-        return view('Admin.sms.templates.index', compact('templates'));
+        return view('AdminConsole.features.sms.templates.index', compact('templates'));
     }
 
     /**
-     * Show create template form (Sprint 4)
+     * Show create template form
      */
     public function create()
     {
-        // TODO: Implement in Sprint 4
-        return view('Admin.sms.templates.create');
+        return view('AdminConsole.features.sms.templates.create');
     }
 
     /**
@@ -72,14 +69,13 @@ class SmsTemplateController extends Controller
     }
 
     /**
-     * Show edit template form (Sprint 4)
+     * Show edit template form
      */
     public function edit($id)
     {
-        // TODO: Implement in Sprint 4
         $template = SmsTemplate::findOrFail($id);
         
-        return view('Admin.sms.templates.edit', compact('template'));
+        return view('AdminConsole.features.sms.templates.edit', compact('template'));
     }
 
     /**
@@ -166,4 +162,3 @@ class SmsTemplateController extends Controller
         ]);
     }
 }
-

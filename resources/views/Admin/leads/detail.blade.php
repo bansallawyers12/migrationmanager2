@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('layouts.admin_client_detail')
 @section('title', 'Lead Details')
 
 @section('content')
@@ -7,6 +7,62 @@
 .popover {max-width:700px;}
 .timeline{margin:0 0 45px;padding:0;position:relative}.timeline::before{border-radius:.25rem;background:#dee2e6;bottom:0;content:'';left:31px;margin:0;position:absolute;top:0;width:4px}.timeline>div{margin-bottom:15px;margin-right:10px;position:relative}.timeline>div::after,.timeline>div::before{content:"";display:table}.timeline>div>.timeline-item{box-shadow:0 0 1px rgba(0,0,0,.125),0 1px 3px rgba(0,0,0,.2);border-radius:.25rem;background:#fff;color:#495057;margin-left:60px;margin-right:15px;margin-top:0;padding:0;position:relative}.timeline>div>.timeline-item>.time{color:#999;float:right;font-size:12px;padding:10px}.timeline>div>.timeline-item>.timeline-header{border-bottom:1px solid rgba(0,0,0,.125);color:#495057;font-size:16px;line-height:1.1;margin:0;padding:10px}.timeline>div>.timeline-item>.timeline-header>a{font-weight:600}.timeline>div>.timeline-item>.timeline-body,.timeline>div>.timeline-item>.timeline-footer{padding:10px}.timeline>div>.timeline-item>.timeline-body>img{margin:10px}.timeline>div>.timeline-item>.timeline-body ol,.timeline>div>.timeline-item>.timeline-body>ul,.timeline>div>.timeline-item>.timeline-body>dl{margin:0}.timeline>div>.timeline-item>.timeline-footer>a{color:#fff}.timeline>div>.fa,.timeline>div>.fab,.timeline>div>.far,.timeline>div>.fas,.timeline>div>.glyphicon,.timeline>div>.ion{background:#adb5bd;border-radius:50%;font-size:15px;height:30px;left:18px;line-height:30px;position:absolute;text-align:center;top:0;width:30px}.timeline>.time-label>span{border-radius:4px;background-color:#fff;display:inline-block;font-weight:600;padding:5px}.timeline-inverse>div>.timeline-item{box-shadow:none;background:#f8f9fa;border:1px solid #dee2e6}.timeline-inverse>div>.timeline-item>.timeline-header{border-bottom-color:#dee2e6}
 .timeline i{color: #fff;}
+
+/* Fix text contrast issues */
+.card-body .float-left {
+    color: #495057 !important;
+    font-weight: 600;
+}
+
+.card-body .float-right.text-muted {
+    color: #495057 !important;
+    font-weight: 400;
+}
+
+.card-body .client_info_tags span {
+    color: #495057 !important;
+    font-weight: 600;
+}
+
+/* Table header styling for better contrast */
+.table th {
+    background-color: #f8f9fa !important;
+    color: #495057 !important;
+    font-weight: 600;
+    border-color: #dee2e6;
+}
+
+.table td {
+    background-color: #ffffff;
+    color: #495057;
+    border-color: #dee2e6;
+}
+
+.table tbody tr:nth-child(even) td {
+    background-color: #f8f9fa;
+}
+
+/* Personal Info section styling */
+.card-header h5 {
+    color: #495057 !important;
+    font-weight: 600;
+}
+
+/* Author box styling */
+.author-box-name a {
+    color: #495057 !important;
+    font-weight: 600;
+}
+
+.author-box-name .text-muted {
+    color: #6c757d !important;
+}
+
+/* Lead Overview section */
+.card-header h5 {
+    color: #495057 !important;
+    font-weight: 600;
+}
 </style>
 <!-- Content Wrapper. Contains page content -->
 <div class="main-content">

@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('layouts.admin_client_detail')
 @section('title', 'Matter Checklists')
 
 @section('content')
@@ -25,16 +25,13 @@
 									@if(isset($matter))
 										<a href="{{route('adminconsole.features.matter.index')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back to Matters</a>
 									@else
-										<a href="{{route('admin.checklist.index')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
+										<a href="{{route('adminconsole.features.documentchecklist.index')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
 									@endif
 								</div>
 							</div>
 						</div>
 					</div>
-					<div class="col-3 col-md-3 col-lg-3">
-			        	@include('../Elements/Admin/setting')
-    		        </div>       
-    				<div class="col-9 col-md-9 col-lg-9">
+					<div class="col-12 col-md-12 col-lg-12">
 						<div class="card">
 							<div class="card-body">
 								<div id="accordion"> 

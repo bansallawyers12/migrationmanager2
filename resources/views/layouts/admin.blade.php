@@ -193,8 +193,8 @@
     /* Sidebar Collapse Styles - Always keep collapsed */
     .sidebar-mini .main-content { 
         padding-left: 25px !important; 
-        margin-left: 80px !important;
-        width: calc(100vw - 80px) !important;
+        margin-left: 65px !important;
+        width: calc(100vw - 65px) !important;
         overflow-x: hidden !important;
     }
     
@@ -203,11 +203,13 @@
         position: fixed !important;
         top: 70px !important;
         left: 0 !important;
-        width: 60px !important;
+        width: 50px !important;
         height: calc(100vh - 70px) !important;
         overflow: initial !important;
-        box-shadow: 2px 0 5px rgba(0,0,0,0.1) !important;
+        box-shadow: 2px 0 8px rgba(0,0,0,0.12) !important;
         z-index: 999 !important;
+        background: linear-gradient(180deg, #ffffff 0%, #f1f3f4 100%) !important;
+        border-right: 1px solid #e9ecef !important;
     }
     
     /* Additional sidebar styles for better scrolling */
@@ -244,7 +246,7 @@
     /* Simple fix for dropdown menus - let the existing theme handle most styling */
     .sidebar-mini .main-sidebar .sidebar-menu li ul.dropdown-menu {
         position: absolute !important;
-        left: 65px !important;
+        left: 55px !important;
         top: 10px !important;
         width: 200px !important;
         z-index: 1001 !important;
@@ -315,9 +317,101 @@
         text-overflow: ellipsis !important;
         flex: 1 !important;
     }
+    
+    /* Enhanced sidebar menu styling */
+    .main-sidebar .sidebar-menu li {
+        margin: 2px 0 !important;
+        border-radius: 8px !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    .main-sidebar .sidebar-menu li a {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 12px 8px !important;
+        margin: 0 6px !important;
+        border-radius: 8px !important;
+        transition: all 0.3s ease !important;
+        color: #6c757d !important;
+        text-decoration: none !important;
+        position: relative !important;
+    }
+    
+    .main-sidebar .sidebar-menu li a:hover {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: #ffffff !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+    }
+    
+    .main-sidebar .sidebar-menu li.active a {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: #ffffff !important;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2) !important;
+    }
+    
+    .main-sidebar .sidebar-menu li a i {
+        font-size: 16px !important;
+        width: 20px !important;
+        text-align: center !important;
+        margin-right: 0 !important;
+    }
+    
+    .main-sidebar .sidebar-menu li a span {
+        display: none !important;
+    }
+    
+    /* Ensure sidebar-mini mode is properly applied */
+    body.sidebar-mini .main-sidebar .sidebar-menu li a span {
+        display: none !important;
+    }
+    
+    body.sidebar-mini .main-sidebar .sidebar-menu li a {
+        justify-content: center !important;
+        text-align: center !important;
+    }
+    
+    /* Sidebar brand styling */
+    .main-sidebar .sidebar-brand {
+        padding: 15px 8px !important;
+        text-align: center !important;
+        border-bottom: 1px solid #e9ecef !important;
+        margin-bottom: 10px !important;
+    }
+    
+    .main-sidebar .sidebar-brand a {
+        color: #495057 !important;
+        text-decoration: none !important;
+        font-weight: 700 !important;
+        font-size: 14px !important;
+    }
+    
+    /* Menu header styling */
+    .main-sidebar .sidebar-menu .menu-header {
+        padding: 8px 8px 4px !important;
+        font-size: 10px !important;
+        font-weight: 600 !important;
+        color: #adb5bd !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        text-align: center !important;
+    }
+    
+    /* Count badges styling */
+    .main-sidebar .sidebar-menu li a .countInPersonWaitingAction,
+    .main-sidebar .sidebar-menu li a .countTotalActivityAction {
+        position: absolute !important;
+        top: 8px !important;
+        right: 8px !important;
+        font-size: 9px !important;
+        min-width: 16px !important;
+        height: 16px !important;
+        padding: 2px 4px !important;
+    }
     </style>
 </head>
-<body >
+<body class="sidebar-mini">
 	<div class="loader"></div>
 	<div class="popuploader" style="display: none;"></div>
 	<div id="app">
@@ -1421,8 +1515,8 @@
         $('body').addClass('sidebar-mini');
         $('.main-sidebar').removeClass('sidebar-expanded');
         $('.main-content').css({
-            'margin-left': '80px',
-            'width': 'calc(100vw - 80px)',
+            'margin-left': '65px',
+            'width': 'calc(100vw - 65px)',
             'overflow-x': 'hidden'
         });
         localStorage.setItem('sidebarState', 'collapsed');

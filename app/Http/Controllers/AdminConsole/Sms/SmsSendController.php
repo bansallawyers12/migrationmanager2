@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin\Sms;
+namespace App\Http\Controllers\AdminConsole\Sms;
 
 use App\Http\Controllers\Controller;
 use App\Services\Sms\UnifiedSmsManager;
@@ -10,8 +10,7 @@ use Illuminate\Support\Facades\Validator;
 /**
  * SmsSendController
  * 
- * Handles manual SMS sending and bulk operations
- * Sprint 4 will add UI for these features
+ * Handles manual SMS sending and bulk operations for AdminConsole
  */
 class SmsSendController extends Controller
 {
@@ -24,18 +23,11 @@ class SmsSendController extends Controller
     }
 
     /**
-     * Show manual SMS send form (Sprint 4)
+     * Show manual SMS send form
      */
     public function create(Request $request)
     {
-        // TODO: Implement in Sprint 4
-        // Will show form with:
-        // - Phone number input
-        // - Message text area
-        // - Template selector
-        // - Client selector (optional)
-        
-        return view('Admin.sms.send.create');
+        return view('AdminConsole.features.sms.send.create');
     }
 
     /**
@@ -106,11 +98,11 @@ class SmsSendController extends Controller
     }
 
     /**
-     * Send bulk SMS (Sprint 4+)
+     * Send bulk SMS
      */
     public function sendBulk(Request $request)
     {
-        // TODO: Implement in Sprint 4+
+        // TODO: Implement bulk SMS feature
         // Will support:
         // - Multiple phone numbers
         // - CSV upload
@@ -119,8 +111,7 @@ class SmsSendController extends Controller
         
         return response()->json([
             'success' => false,
-            'message' => 'Bulk SMS feature coming in Sprint 4'
+            'message' => 'Bulk SMS feature coming soon'
         ], 501);
     }
 }
-

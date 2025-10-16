@@ -1,104 +1,85 @@
-@extends('layouts.admin')
-@section('title', 'Email Template')
+@extends('layouts.admin_client_detail')
+@section('title', 'Create Email Template')
 
 @section('content')
- 
-<!-- Content Wrapper. Contains page content -->
-<div class="content-wrapper">
-	<div class="content-header">
-		<div class="container-fluid">
-			<div class="row mb-2">
-				<div class="col-sm-6">
-					<h1 class="m-0 text-dark">Email Template</h1>
-				</div><!-- /.col -->
-				<div class="col-sm-6">
-					<ol class="breadcrumb float-sm-right">
-						<li class="breadcrumb-item"><a href="#">Home</a></li>
-						<li class="breadcrumb-item active">Email Template</li>
-					</ol>
-				</div><!-- /.col -->
-			</div><!-- /.row -->
-		</div><!-- /.container-fluid -->
-	</div>
-	<!-- /.content-header -->	
-	<!-- Breadcrumb start-->
-	<!--<ol class="breadcrumb">
-		<li class="breadcrumb-item active">
-			Home / <b>Dashboard</b>
-		</li>
-		@include('../Elements/Admin/breadcrumb')
-	</ol>-->
-	<!-- Breadcrumb end-->
-	
-	<!-- Main content --> 
-	<section class="content">
-		<div class="container-fluid">
-			<div class="row">
-				<div class="col-md-12">
-					<!-- Flash Message Start -->
-					<div class="server-error">
-						@include('../Elements/flash-message')
-					</div>
-					<!-- Flash Message End -->
-				</div> 
-				<div class="col-md-12">
-					<div class="card card-primary">
-					  <div class="card-header">
-						<h3 class="card-title">Create Email Template</h3>
-					  </div> 
-					  <!-- /.card-header -->
-					  <!-- form start -->
-						  <form action="{{ url('admin/email_templates/store') }}" method="POST" name="add-template" autocomplete="off" enctype="multipart/form-data">
-							@csrf
-					   
-						<div class="card-body">
-							<div class="form-group" style="text-align:right;">
-								<a style="margin-right:5px;" href="{{route('admin.email.index')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>  
-								<button type="submit" class="btn btn-primary" onClick="customValidate('add-template')"><i class="fa fa-save"></i> Save Template</button>
-							</div>
-							<div class="form-group row"> 
-								<label for="title" class="col-sm-2 col-form-label">Name <span style="color:#ff0000;">*</span></label>
-								<div class="col-sm-10">
-								<input type="text" name="title" value="" class="form-control" data-valid="required" autocomplete="off" placeholder="Enter Name">
-								@if ($errors->has('title'))
-									<span class="custom-error" role="alert">
-										<strong>{{ @$errors->first('title') }}</strong>
-									</span> 
-								@endif
-								</div>
-						  </div>
-						  <div class="form-group row"> 
-								<label for="subject" class="col-sm-2 col-form-label">Subject <span style="color:#ff0000;">*</span></label>
-								<div class="col-sm-10">
-								<input type="text" name="subject" value="" class="form-control" data-valid="required" autocomplete="off" placeholder="Enter Subject">
-								@if ($errors->has('subject'))
-									<span class="custom-error" role="alert">
-										<strong>{{ @$errors->first('subject') }}</strong>
-									</span> 
-								@endif
-								</div>
-						  </div>
-						 
-						  <div class="form-group row">
-								<label for="description" class="col-sm-2 col-form-label">Description <span style="color:#ff0000;">*</span></label>
-								<div class="col-sm-10">
-									<textarea name="description" data-valid="required" value="" class="textarea" placeholder="Please Add Description Here" style="width: 100%; height: 200px; font-size: 14px; line-height: 18px; border: 1px solid #dddddd; padding: 10px;"></textarea>
-									@if ($errors->has('description'))
-										<span class="custom-error" role="alert">
-											<strong>{{ @$errors->first('description') }}</strong>
-										</span> 
-									@endif
-								</div>
-						  </div>
-						  
-						  <div class="form-group float-right">
-							<button type="submit" class="btn btn-primary" onClick="customValidate('add-template')"><i class="fa fa-save"></i> Save Template</button>
-						  </div> 
-						</div> 
-						  </form>
-					</div>	   
-				</div>	
+
+<!-- Main Content -->
+<div class="main-content">
+	<section class="section">
+		<div class="section-body">
+			<div class="server-error">
+				@include('../Elements/flash-message')
 			</div>
+			<div class="custom-error-msg">
+			</div>
+			<form action="{{ url('admin/email_templates/store') }}" method="POST" name="add-template" autocomplete="off" enctype="multipart/form-data">
+				@csrf
+				<div class="row">
+					<div class="col-12 col-md-12 col-lg-12">
+						<div class="card">
+							<div class="card-header">
+								<h4>Create Email Template</h4>
+								<div class="card-header-action">
+									<a href="{{route('admin.email.index')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-12 col-md-12 col-lg-12">
+						<div class="card">
+							<div class="card-body">
+								<div id="accordion">
+									<div class="accordion">
+										<div class="accordion-header" role="button" data-toggle="collapse" data-target="#primary_info" aria-expanded="true">
+											<h4>Template Information</h4>
+										</div>
+										<div class="accordion-body collapse show" id="primary_info" data-parent="#accordion">
+											<div class="row">
+												<div class="col-12 col-md-12 col-lg-12">
+													<div class="form-group">
+														<label for="title">Name <span class="span_req">*</span></label>
+														<input type="text" name="title" value="" class="form-control" data-valid="required" autocomplete="off" placeholder="Enter Template Name">
+														@if ($errors->has('title'))
+															<span class="custom-error" role="alert">
+																<strong>{{ @$errors->first('title') }}</strong>
+															</span> 
+														@endif
+													</div>
+												</div>
+												<div class="col-12 col-md-12 col-lg-12">
+													<div class="form-group">
+														<label for="subject">Subject <span class="span_req">*</span></label>
+														<input type="text" name="subject" value="" class="form-control" data-valid="required" autocomplete="off" placeholder="Enter Subject">
+														@if ($errors->has('subject'))
+															<span class="custom-error" role="alert">
+																<strong>{{ @$errors->first('subject') }}</strong>
+															</span> 
+														@endif
+													</div>
+												</div>
+												<div class="col-12 col-md-12 col-lg-12">
+													<div class="form-group">
+														<label for="description">Description <span class="span_req">*</span></label>
+														<textarea name="description" data-valid="required" class="form-control summernote-simple" placeholder="Enter template description" style="height: 200px;"></textarea>
+														@if ($errors->has('description'))
+															<span class="custom-error" role="alert">
+																<strong>{{ @$errors->first('description') }}</strong>
+															</span> 
+														@endif
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div class="form-group float-right">
+									<button type="submit" class="btn btn-primary" onClick="customValidate('add-template')"><i class="fa fa-save"></i> Save Template</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</form>
 		</div>
 	</section>
 </div>
