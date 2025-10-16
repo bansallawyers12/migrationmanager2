@@ -21,8 +21,8 @@
 		<li class="{{(Route::currentRouteName() == 'admin.feature.source.index' || Route::currentRouteName() == 'admin.feature.source.create' || Route::currentRouteName() == 'admin.feature.source.edit') ? 'active' : ''}}"><a class="nav-link" href="{{route('admin.feature.source.index')}}">Source</a></li>
 		--}}
 		<li class="{{(Route::currentRouteName() == 'adminconsole.features.tags.index' || Route::currentRouteName() == 'adminconsole.features.tags.create' || Route::currentRouteName() == 'adminconsole.features.tags.edit') ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.features.tags.index')}}">Tags</a></li>
-		{{-- Commented out routes that don't exist yet
-		<li class="{{(Route::currentRouteName() == 'admin.checklist.index' || Route::currentRouteName() == 'admin.checklist.create' || Route::currentRouteName() == 'admin.checklist.edit') ? 'active' : ''}}"><a class="nav-link" href="{{route('admin.checklist.index')}}">Checklist</a></li>
+		{{-- Old admin routes replaced with AdminConsole routes (see line 60 for Document Checklist)
+		<li class="{{(Route::currentRouteName() == 'adminconsole.features.documentchecklist.index' || Route::currentRouteName() == 'adminconsole.features.documentchecklist.create' || Route::currentRouteName() == 'adminconsole.features.documentchecklist.edit') ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.features.documentchecklist.index')}}">Document Checklist</a></li>
 		<li class="{{(Route::currentRouteName() == 'admin.enquirysource.index' || Route::currentRouteName() == 'admin.enquirysource.create' || Route::currentRouteName() == 'admin.enquirysource.edit') ? 'active' : ''}}"><a class="nav-link" href="{{route('admin.enquirysource.index')}}">Enquiry Source</a></li>
 		--}}
 

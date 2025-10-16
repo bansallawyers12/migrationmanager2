@@ -1,80 +1,65 @@
-@extends('layouts.admin')
+@extends('layouts.admin_client_detail')
 @section('title', 'Change Password')
 @section('content')
 
-<!-- Content Wrapper. Contains page content -->
-<div class="content-wrapper">
-	<div class="content-header">
-		<div class="container-fluid">
-			<div class="row mb-2">
-				<div class="col-sm-6">
-					<h1 class="m-0 text-dark">Change Password</h1>
-				</div><!-- /.col -->
-				<div class="col-sm-6">
-					<ol class="breadcrumb float-sm-right">
-						<li class="breadcrumb-item"><a href="#">Home</a></li>
-						<li class="breadcrumb-item active">Change Password</li>
-					</ol>
-				</div><!-- /.col -->
-			</div><!-- /.row -->
-		</div><!-- /.container-fluid -->
-	</div>
-	
-	<!-- Main content --> 
-	<section class="content">
-		<div class="container-fluid">
+<!-- Main Content -->
+<div class="main-content">
+	<section class="section">
+		<div class="section-body">
+			<div class="server-error">
+				@include('../Elements/flash-message')
+			</div>
+			<div class="custom-error-msg">
+			</div>
 			<div class="row">
-				<div class="col-md-12">
-					<!-- Flash Message Start -->
-					<div class="server-error">
-						@include('../Elements/flash-message')
-					</div>
-					<!-- Flash Message End -->
+				<div class="col-3 col-md-3 col-lg-3">
+					@include('../Elements/Admin/setting')
 				</div>
-			</div>	
-
-			<div class="row">
-				<div class="col-sm-6">
-					<div class="card card-primary">
+				<div class="col-9 col-md-9 col-lg-9">
+					<div class="card">
 						<div class="card-header">
-							<h3 class="card-title" style="display:block;">Change Password</h3>
+							<h4>Change Password</h4>
 						</div>
 						<form action="{{ url('admin/change_password') }}" method="POST" name="change-password">
 							@csrf
 							<input type="hidden" name="admin_id" value="{{ @Auth::user()->id }}">
 							<div class="card-body">
-								<div class="form-group">
-									<label for="old_password">Old Password <span style="color:#ff0000;">*</span></label>
-									<input type="password" name="old_password" class="form-control" data-valid="required">
-								
-									@if ($errors->has('old_password'))
-										<span class="custom-error" role="alert">
-											<strong>{{ $errors->first('old_password') }}</strong>
-										</span>
-									@endif
-								</div>
-								<div class="form-group">
-									<label for="password">New Password <span style="color:#ff0000;">*</span></label>
-									<input type="password" name="password" class="form-control" data-valid="required">
-								
-									@if ($errors->has('password'))
-										<span class="custom-error" role="alert">
-											<strong>{{ $errors->first('password') }}</strong>
-										</span>
-									@endif 
-								</div>
-								<div class="form-group">
-									<label for="password_confirmation">Confirm Password <span style="color:#ff0000;">*</span></label>
-									<input type="password" name="password_confirmation" class="form-control" data-valid="required">
-								
-									@if ($errors->has('password_confirmation'))
-										<span class="custom-error" role="alert">
-											<strong>{{ $errors->first('password_confirmation') }}</strong>
-										</span>
-									@endif
-								</div>
-								<div class="form-group">
-									<button type="submit" class="btn btn-primary px-4" onClick="customValidate('change-password')"><i class="fa fa-refresh"></i> Change</button>
+								<div class="row">
+									<div class="col-12 col-md-8 col-lg-8">
+										<div class="form-group">
+											<label for="old_password">Old Password <span class="span_req">*</span></label>
+											<input type="password" name="old_password" class="form-control" data-valid="required" placeholder="Enter current password">
+										
+											@if ($errors->has('old_password'))
+												<span class="custom-error" role="alert">
+													<strong>{{ $errors->first('old_password') }}</strong>
+												</span>
+											@endif
+										</div>
+										<div class="form-group">
+											<label for="password">New Password <span class="span_req">*</span></label>
+											<input type="password" name="password" class="form-control" data-valid="required" placeholder="Enter new password">
+										
+											@if ($errors->has('password'))
+												<span class="custom-error" role="alert">
+													<strong>{{ $errors->first('password') }}</strong>
+												</span>
+											@endif 
+										</div>
+										<div class="form-group">
+											<label for="password_confirmation">Confirm Password <span class="span_req">*</span></label>
+											<input type="password" name="password_confirmation" class="form-control" data-valid="required" placeholder="Confirm new password">
+										
+											@if ($errors->has('password_confirmation'))
+												<span class="custom-error" role="alert">
+													<strong>{{ $errors->first('password_confirmation') }}</strong>
+												</span>
+											@endif
+										</div>
+										<div class="form-group">
+											<button type="submit" class="btn btn-primary px-4" onClick="customValidate('change-password')"><i class="fa fa-key"></i> Change Password</button>
+										</div>
+									</div>
 								</div>
 							</div>    
 						</form>	
@@ -82,6 +67,6 @@
 				</div>
 			</div>
 		</div>
-	</div>
-</main>
+	</section>
+</div>
 @endsection

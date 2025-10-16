@@ -97,8 +97,6 @@ Route::prefix('admin')->group(function() {
     Route::post('/my_profile', 'Admin\AdminController@myProfile')->name('admin.my_profile.update');
     Route::get('/change_password', 'Admin\AdminController@change_password')->name('admin.change_password');
     Route::post('/change_password', 'Admin\AdminController@change_password')->name('admin.change_password.update');
-    Route::get('/sessions', 'Admin\AdminController@sessions')->name('admin.sessions');
-    Route::post('/sessions', 'Admin\AdminController@sessions')->name('admin.sessions.update');
     Route::post('/update_action', 'Admin\AdminController@updateAction');
     Route::post('/approved_action', 'Admin\AdminController@approveAction');
     Route::post('/process_action', 'Admin\AdminController@processAction');
@@ -123,21 +121,9 @@ Route::prefix('admin')->group(function() {
     Route::get('/checkclientexist', 'Admin\AdminController@checkclientexist');
 
 	/*---------- CRM & User Management Routes ----------*/
-    // User management routes moved to routes/adminconsole.php
-
-    Route::get('/staff', 'Admin\StaffController@index')->name('admin.staff.index');
-    Route::get('/staff/create', 'Admin\StaffController@create')->name('admin.staff.create');
-    Route::post('/staff/store', 'Admin\StaffController@store')->name('admin.staff.store');
-    Route::get('/staff/edit/{id}', 'Admin\StaffController@edit')->name('admin.staff.edit');
-    Route::post('/staff/edit', 'Admin\StaffController@edit')->name('admin.staff.edit');
-
-    Route::get('/usertype', 'Admin\UsertypeController@index')->name('admin.usertype.index');
-    Route::get('/usertype/create', 'Admin\UsertypeController@create')->name('admin.usertype.create');
-    Route::post('/usertype/store', 'Admin\UsertypeController@store')->name('admin.usertype.store');
-    Route::get('/usertype/edit/{id}', 'Admin\UsertypeController@edit')->name('admin.usertype.edit');
-    Route::post('/usertype/edit', 'Admin\UsertypeController@edit')->name('admin.usertype.edit');
-
-    // User role routes moved to routes/adminconsole.php
+    // All user management routes moved to routes/adminconsole.php
+    // - Staff management: Use adminconsole.system.users routes
+    // - User types/roles: Use adminconsole.system.roles routes
 
     /*---------- Leads Management (Modern Laravel Syntax) ----------*/
     // Lead CRUD operations
@@ -358,12 +344,9 @@ Route::prefix('admin')->group(function() {
 		Route::get('/deleteapplicationdocs', 'Admin\ApplicationsController@deleteapplicationdocs');
 		Route::get('/application/publishdoc', 'Admin\ApplicationsController@publishdoc');
 
-		/*---------- Checklist Management ----------*/
-		Route::get('/checklist', 'Admin\ChecklistController@index')->name('admin.checklist.index');
-		Route::get('/checklist/create', 'Admin\ChecklistController@create')->name('admin.checklist.create');
-		Route::post('checklist/store', 'Admin\ChecklistController@store')->name('admin.checklist.store');
-		Route::get('/checklist/edit/{id}', 'Admin\ChecklistController@edit')->name('admin.checklist.edit');
-		Route::post('/checklist/edit', 'Admin\ChecklistController@edit')->name('admin.checklist.edit');
+		/*---------- Checklist Management - MOVED TO ADMINCONSOLE ----------*/
+		// Legacy checklist routes removed - use /adminconsole/features/document-checklist instead
+		// All document checklist functionality now handled by AdminConsole\DocumentChecklistController
 
 		/*---------- Applications & Office Visits ----------*/
 		Route::get('/applications', 'Admin\ApplicationsController@index')->name('admin.applications.index');
