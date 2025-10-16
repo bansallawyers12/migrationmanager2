@@ -63,23 +63,6 @@ use App\Http\Controllers\Controller;
                         <a href="javascript:;" data-toggle="modal" data-target="#create_appoint" title="Add Appointment"><i class="fas fa-calendar-plus"></i></a>
                     </div>
                     
-                    <!-- Client Portal Toggle -->
-                    <?php
-                    // Check if client has any records in client_matters table
-                    $client_matters_exist = DB::table('client_matters')
-                        ->where('client_id', $fetchedData->id)
-                        ->exists();
-                    ?>
-                    @if($client_matters_exist)
-                    <div class="sidebar-portal-toggle" title="Client Portal">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="client-portal-toggle" 
-                                   data-client-id="{{ $fetchedData->id}}" 
-                                   {{ isset($fetchedData->cp_status) && $fetchedData->cp_status == 1 ? 'checked' : '' }}>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    @endif
                 </div>
             </div>
             

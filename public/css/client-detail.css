@@ -641,6 +641,8 @@
     background-color: #007bff !important;
     border: 1px solid #007bff !important;
     color: #ffffff !important;
+}
+
     opacity: 1 !important;
 }
 #appointments-tab .card-header-action .btn-primary:hover {

@@ -246,7 +246,7 @@ Route::post('/clients/update-session-completed', 'Admin\ClientsController@update
 Route::post('/clients/getAllUser', 'Admin\ClientsController@getAllUser')->name('admin.clients.getAllUser');
 
 /*---------- Client Portal ----------*/
-Route::post('/clients/toggle-client-portal', 'Admin\ClientsController@toggleClientPortal')->name('admin.clients.toggleClientPortal');
+Route::post('/clients/toggle-client-portal', 'Admin\ClientPortalController@toggleClientPortal')->name('admin.clients.toggleClientPortal');
 
 /*---------- ANZSCO Occupation Search ----------*/
 Route::get('/anzsco/search', [AnzscoOccupationController::class, 'search'])->name('admin.anzsco.search');
