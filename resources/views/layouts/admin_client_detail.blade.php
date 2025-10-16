@@ -1366,7 +1366,6 @@
         <div class="main-wrapper main-wrapper-1">
             <div class="navbar-bg"></div>
             @include('../Elements/Admin/header_client_detail')
-            @include('../Elements/Admin/left-side-bar_client_detail')
             @yield('content')
             @include('../Elements/Admin/footer_client_detail')
         </div>

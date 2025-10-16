@@ -13,10 +13,7 @@
 			<div class="custom-error-msg">
 			</div>
 			<div class="row">
-				<div class="col-3 col-md-3 col-lg-3">
-					@include('../Elements/Admin/setting')
-				</div>
-				<div class="col-9 col-md-9 col-lg-9">
+				<div class="col-12 col-md-12 col-lg-12">
 					<div class="card">
 						<div class="card-header">
 							<h4>Audit Logs</h4>
