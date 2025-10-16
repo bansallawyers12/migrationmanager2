@@ -630,11 +630,208 @@ text-overflow: ellipsis;white-space: nowrap;}
 .note_term_list .note_col .note_content .pined_note{position: absolute;top: 5px;right: 5px;}
 .note_term_list .note_col .note_content .pined_note i{font-size:12px;color:#6777ef;}
 
-.custom_nav_setting{background: #fff;border-radius: 4px;overflow: hidden;}
+.custom_nav_setting{background: #fff;border-radius: 6px;overflow: hidden;box-shadow: 0 2px 8px rgba(0,0,0,0.08);max-width: 340px;min-width: 320px;}
 .custom_nav_setting ul{list-style-type:none;padding:0px;}
 .custom_nav_setting ul li{padding:0px;}
-.custom_nav_setting ul li a{ font-size: 14px;line-height: 21px;padding: 10px 10px;color:#000;border-bottom:1px solid #eee;}
-.custom_nav_setting ul li.active a, .custom_nav_setting ul li a:hover{background:#6777ef;color:#fff;}
+.custom_nav_setting ul li a{ font-size: 14px;line-height: 22px;padding: 12px 20px;color:#495057;border-bottom:1px solid #f1f3f4;transition: all 0.2s ease;font-weight: 500;min-height: 48px;display: flex;align-items: center;}
+.custom_nav_setting ul li.active a, .custom_nav_setting ul li a:hover{background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:#fff;transform: translateX(2px);box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);}
+
+/* Enhanced tab spacing and visual improvements */
+.custom_nav_setting ul li {
+    margin: 1px 0;
+}
+
+.custom_nav_setting ul li:first-child {
+    margin-top: 0;
+}
+
+.custom_nav_setting ul li:last-child {
+    margin-bottom: 0;
+}
+
+.custom_nav_setting ul li a:hover {
+    border-left: 3px solid #667eea;
+    padding-left: 17px;
+}
+
+.custom_nav_setting ul li.active a {
+    border-left: 3px solid #ffffff;
+    padding-left: 17px;
+}
+
+/* Modern AdminConsole Design Improvements */
+.main-content {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: calc(100vh - 70px);
+    padding: 20px;
+}
+
+.section {
+    margin-bottom: 0;
+}
+
+.section-body {
+    padding: 0;
+}
+
+/* Enhanced Card Styling */
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    background: #ffffff;
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+}
+
+.card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #ffffff;
+    padding: 20px 25px;
+    border-bottom: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-header h4 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.card-header-action .btn-primary {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.card-header-action .btn-primary:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-1px);
+}
+
+.card-body {
+    padding: 25px;
+    background: #ffffff;
+}
+
+/* Enhanced Table Styling */
+.table-responsive {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.table {
+    margin-bottom: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table thead th {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    color: #495057;
+    font-weight: 600;
+    padding: 15px 20px;
+    border: none;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.table tbody tr {
+    transition: all 0.2s ease;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.table tbody tr:hover {
+    background: linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%);
+    transform: scale(1.01);
+}
+
+.table tbody td {
+    padding: 15px 20px;
+    vertical-align: middle;
+    border: none;
+    color: #495057;
+    font-size: 14px;
+}
+
+/* Enhanced Button Styling */
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.dropdown-toggle::after {
+    margin-left: 8px;
+}
+
+.dropdown-menu {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    padding: 8px 0;
+    margin-top: 8px;
+}
+
+.dropdown-item {
+    padding: 10px 20px;
+    transition: all 0.2s ease;
+    color: #495057;
+}
+
+.dropdown-item:hover {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #ffffff;
+    transform: translateX(5px);
+}
+
+.dropdown-item.has-icon i {
+    margin-right: 8px;
+    width: 16px;
+    text-align: center;
+}
+
+/* Enhanced Row Styling */
+.table tbody tr:nth-child(even) {
+    background: #fafbfc;
+}
+
+.table tbody tr:nth-child(odd) {
+    background: #ffffff;
+}
+
+/* No Records Styling */
+.table tbody tr td[colspan] {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6c757d;
+    font-style: italic;
+    background: #f8f9fa;
+}
 .card .card-body .lead_table_data table tbody tr td{height:70px!important;font-size: 13px;line-height: 21px;}
 .action_toggle a:after{display:none;}
 
