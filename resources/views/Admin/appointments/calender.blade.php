@@ -292,7 +292,7 @@ foreach($appointments as $appointment){
 ?>
 @endsection
 @push('scripts')
-<script src="{{URL::asset('public/js/bootstrap-datepicker.js')}}"></script>
+<script src="{{URL::asset('js/bootstrap-datepicker.js')}}"></script>
 <script>
 jQuery(document).ready(function($){
     $('.followup_date').datepicker({

@@ -17,9 +17,11 @@ use App\Models\ClientVisaCountry;
 use App\Models\ClientPassportInformation;
 use App\Models\Matter;
 use Carbon\Carbon;
+use App\Traits\ClientHelpers;
 
 class LeadController extends Controller
 {
+    use ClientHelpers;
     /**
      * Create a new controller instance.
      *
@@ -121,67 +123,72 @@ class LeadController extends Controller
      */
     public function store(Request $request)
     {
+        
         if ($request->isMethod('post')) {
-            $requestData = $request->all();
+            $requestData = $request->all(); 
             
-            // Extract primary phone and email from dynamic arrays
-            $primaryPhone = null;
-            $primaryEmail = null;
+            // Extract phone and email (now only one of each)
+            $primaryPhone = $requestData['phone'][0] ?? null;
+            $primaryEmail = $requestData['email'][0] ?? null;
             
-            // Get the first phone number marked as "Personal" or the first one available
-            if (isset($requestData['phone']) && is_array($requestData['phone'])) {
-                $primaryPhone = reset($requestData['phone']); // Get first phone number
-            }
-            
-            // Get the first email marked as "Personal" or the first one available  
-            if (isset($requestData['email']) && is_array($requestData['email'])) {
-                $primaryEmail = reset($requestData['email']); // Get first email
-            }
 
             // Validate required fields
             $this->validate($request, [
                 'first_name' => 'required|max:255',
                 'last_name' => 'required|max:255',
                 'gender' => 'required|max:255',
+                'dob' => 'required',
+                'phone.0' => 'required|max:255',
+                'email.0' => 'required|email|max:255',
+            ], [
+                'phone.0.required' => 'Phone number is required.',
+                'email.0.required' => 'Email address is required.',
+                'email.0.email' => 'Please enter a valid email address.',
             ]);
+            
+           
 
-            // Custom validation for dynamic phone and email fields
-            if (!$primaryPhone) {
-                return redirect()->back()
-                    ->withInput()
-                    ->withErrors(['phone' => 'At least one phone number is required.']);
-            }
+            // Custom validation for uniqueness of phone and email fields
+            $errors = [];
 
-            if (!$primaryEmail) {
-                return redirect()->back()
-                    ->withInput()
-                    ->withErrors(['email' => 'At least one email address is required.']);
-            }
-
-            // Additional validation for uniqueness
+            // Validate uniqueness for phone number (check both admins table and client_contacts table)
             if ($primaryPhone) {
-                $existingPhone = Lead::where('phone', $primaryPhone)->first();
+                // Check in admins table (primary phone) - check all records regardless of role/type
+                $existingPhone = Admin::where('phone', $primaryPhone)->first();
                 if ($existingPhone) {
-                    return redirect()->back()
-                        ->withInput()
-                        ->withErrors(['phone' => 'This phone number is already registered.']);
+                    $errors["phone.0"] = "This phone number is already registered.";
+                }
+                
+                // Check in client_contacts table (all phone numbers)
+                $existingContact = ClientContact::where('phone', $primaryPhone)->first();
+                if ($existingContact) {
+                    $errors["phone.0"] = "This phone number is already registered.";
                 }
             }
 
+            // Validate uniqueness for email address (check both admins table and client_emails table)
             if ($primaryEmail) {
-                $existingEmail = Lead::where('email', $primaryEmail)->first();
+                // Check in admins table (primary email) - check all records regardless of role/type
+                $existingEmail = Admin::where('email', $primaryEmail)->first();
                 if ($existingEmail) {
-                    return redirect()->back()
-                        ->withInput()
-                        ->withErrors(['email' => 'This email address is already registered.']);
+                    $errors["email.0"] = "This email address is already registered.";
+                }
+                
+                // Check in client_emails table (all email addresses)
+                $existingClientEmail = ClientEmail::where('email', $primaryEmail)->first();
+                if ($existingClientEmail) {
+                    $errors["email.0"] = "This email address is already registered.";
                 }
             }
 
-            // Process related files with type validation
-            $related_files = '';
-            if (isset($requestData['related_files']) && is_array($requestData['related_files'])) {
-                $related_files = implode(',', $requestData['related_files']);
+            // If there are any custom errors, return them
+            if (!empty($errors)) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors($errors);
             }
+            
+
 
             // Process dates with validation
             $dob = null;
@@ -192,131 +199,133 @@ class LeadController extends Controller
                 }
             }
 
-            $visa_expiry_date = null;
-            if (!empty($requestData['visa_expiry_date'])) {
-                $visa_expiry_dates = explode('/', $requestData['visa_expiry_date']);
-                if (count($visa_expiry_dates) === 3) {
-                    $visa_expiry_date = $visa_expiry_dates[2] . '-' . $visa_expiry_dates[1] . '-' . $visa_expiry_dates[0];
-                }
-            }
 
             // Use database transaction for data integrity
             DB::beginTransaction();
             
             try {
-                // Handle profile image upload
-                $profile_img = null;
-                if ($request->hasfile('profile_img')) {
-                    $profile_img = $this->uploadFile($request->file('profile_img'), config('constants.profile_imgs'));
-                    if (!$profile_img) {
-                        throw new \Exception('Profile image upload failed');
-                    }
+                // Generate client_counter and client_id (same logic as ClientsController)
+                $clientCntExist = DB::table('admins')->select('id')->where('role', 7)->count();
+                if ($clientCntExist > 0) {
+                    $clientLatestArr = DB::table('admins')->select('client_counter')->where('role', 7)->latest()->first();
+                    $client_latest_counter = $clientLatestArr ? $clientLatestArr->client_counter : "00000";
+                } else {
+                    $client_latest_counter = "00000";
                 }
 
-                // Create new lead using Lead model
-                $lead = new Lead();
-                $lead->user_id = Auth::user()->id;
-                $lead->password = Hash::make(uniqid()); // Required field, set a random password for leads
-                $lead->first_name = $requestData['first_name'];
-                $lead->last_name = $requestData['last_name'];
-                $lead->gender = $requestData['gender'];
-                $lead->dob = $dob;
-                $lead->age = $requestData['age'] ?? null;
-                $lead->marital_status = $requestData['marital_status'] ?? null;
-                $lead->passport_number = $requestData['passport_no'] ?? null;
-                $lead->visa_type = $requestData['visa_type'] ?? null;
-                $lead->visaExpiry = $visa_expiry_date;
-                $lead->tagname = $requestData['tags_label'] ?? null;
-                $lead->contact_type = is_array($requestData['contact_type_hidden'] ?? null) ? ($requestData['contact_type_hidden'][0] ?? null) : ($requestData['contact_type_hidden'] ?? null);
-                $lead->country_code = is_array($requestData['country_code'] ?? null) ? ($requestData['country_code'][0] ?? null) : ($requestData['country_code'] ?? null);
-                $lead->phone = $primaryPhone;
-                $lead->email_type = is_array($requestData['email_type_hidden'] ?? null) ? ($requestData['email_type_hidden'][0] ?? null) : ($requestData['email_type_hidden'] ?? null);
-                $lead->email = $primaryEmail;
-                $lead->service = $requestData['service'] ?? null;
-                $lead->assignee = $requestData['assign_to'] ?? null;
-                $lead->status = $requestData['status'] ?? null;
-                $lead->lead_quality = $requestData['lead_quality'] ?? null;
-                $lead->att_country_code = $requestData['att_country_code'] ?? null;
-                $lead->att_phone = $requestData['att_phone'] ?? null;
-                $lead->att_email = $requestData['att_email'] ?? null;
-                $lead->source = $requestData['lead_source'] ?? null;
-                $lead->related_files = rtrim($related_files, ',');
-                $lead->comments_note = $requestData['comments_note'] ?? null;
-                $lead->profile_img = $profile_img;
+                $client_current_counter = $this->getNextCounter($client_latest_counter);
+                $firstFourLetters = strtoupper(strlen($requestData['first_name']) >= 4
+                    ? substr($requestData['first_name'], 0, 4)
+                    : $requestData['first_name']);
+                $client_id = $firstFourLetters . date('y') . $client_current_counter;
 
-                // Additional fields
-                $lead->preferredIntake = $requestData['preferredIntake'] ?? null;
-                $lead->country_passport = $requestData['country_passport'] ?? null;
-                $lead->address = $requestData['address'] ?? null;
-                $lead->city = $requestData['city'] ?? null;
-                $lead->state = $requestData['state'] ?? null;
-                $lead->zip = $requestData['zip'] ?? null;
-                $lead->country = $requestData['country'] ?? null;
-                $lead->nomi_occupation = $requestData['nomi_occupation'] ?? null;
-                $lead->skill_assessment = $requestData['skill_assessment'] ?? null;
-                $lead->high_quali_aus = $requestData['high_quali_aus'] ?? null;
-                $lead->high_quali_overseas = $requestData['high_quali_overseas'] ?? null;
-                $lead->relevant_work_exp_aus = $requestData['relevant_work_exp_aus'] ?? null;
-                $lead->relevant_work_exp_over = $requestData['relevant_work_exp_over'] ?? null;
-                $lead->naati_py = $requestData['naati_py'] ?? null;
-                $lead->married_partner = $requestData['married_partner'] ?? null;
-                $lead->total_points = $requestData['total_points'] ?? null;
-                $lead->start_process = $requestData['start_process'] ?? null;
 
-                $lead->save();
-                
-                // Save ALL phone numbers to client_contacts table
-                if (isset($requestData['contact_type_hidden']) && is_array($requestData['contact_type_hidden'])) {
-                    foreach ($requestData['contact_type_hidden'] as $index => $contactType) {
-                        $phone = $requestData['phone'][$index] ?? null;
-                        $countryCode = $requestData['country_code'][$index] ?? '';
-                        
-                        if (!empty($phone)) {
-                            ClientContact::create([
-                                'admin_id' => Auth::user()->id,
-                                'client_id' => $lead->id,
-                                'contact_type' => $contactType,
-                                'phone' => $phone,
-                                'country_code' => $countryCode,
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ]);
-                        }
+                // Create new lead using DB query builder - only fields from simplified form
+                $adminData = [
+                    // System fields
+                    'user_id' => Auth::user()->id,
+                    'password' => '', // Set empty password for leads (password field is NOT nullable)
+                    'client_counter' => $client_current_counter,
+                    'client_id' => $client_id,
+                    'status' => '1', // Default status: 1 (Active)
+                    'role' => 7, // Lead role
+                    'type' => 'lead', // Lead type
+                    'is_archived' => 0, // Not archived
+                    'is_deleted' => null, // Not deleted
+                    
+                    // Form fields from simplified create form
+                    'first_name' => $requestData['first_name'],
+                    'last_name' => $requestData['last_name'],
+                    'gender' => $requestData['gender'],
+                    'dob' => $dob,
+                    'age' => $requestData['age'] ?? null,
+                    'marital_status' => $requestData['marital_status'] ?? null,
+                    
+                    // Contact information
+                    'contact_type' => $requestData['contact_type_hidden'][0] ?? null,
+                    'country_code' => $requestData['country_code'][0] ?? null,
+                    'phone' => $primaryPhone,
+                    'email_type' => $requestData['email_type_hidden'][0] ?? null,
+                    'email' => $primaryEmail,
+                    
+                    // Timestamps
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+
+
+                try {
+                    // Insert into admins table and get the ID
+                    $adminId = \DB::table('admins')->insertGetId($adminData);
+                    
+                    // Create an object to maintain compatibility with existing code
+                    $admin = (object) array_merge($adminData, ['id' => $adminId]);
+                    
+                    // Validate insert was successful
+                    if (!$admin->id) {
+                        throw new \Exception('Failed to insert lead - no ID returned');
                     }
+                } catch (\Illuminate\Database\QueryException $queryException) {
+                    // Handle database-specific errors
+                    \Log::error('Database query failed: ' . $queryException->getMessage());
+                    \Log::error('SQL Error Code: ' . $queryException->getCode());
+                    \Log::error('Failed data: ' . json_encode($adminData));
+                    throw $queryException; // Re-throw to be caught by outer try-catch
+                } catch (\Exception $saveException) {
+                    \Log::error('Insert operation failed: ' . $saveException->getMessage());
+                    \Log::error('Insert exception details: ' . $saveException->getTraceAsString());
+                    throw $saveException; // Re-throw to be caught by outer try-catch
                 }
                 
-                // Save ALL emails to client_emails table
-                if (isset($requestData['email_type_hidden']) && is_array($requestData['email_type_hidden'])) {
-                    foreach ($requestData['email_type_hidden'] as $index => $emailType) {
-                        $email = $requestData['email'][$index] ?? null;
-                        
-                        if (!empty($email)) {
-                            ClientEmail::create([
-                                'admin_id' => Auth::user()->id,
-                                'client_id' => $lead->id,
-                                'email_type' => $emailType,
-                                'email' => $email,
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ]);
-                        }
-                    }
+                // Save phone number to client_contacts table
+                if ($primaryPhone) {
+                    $contactType = $requestData['contact_type_hidden'][0] ?? 'Personal';
+                    $countryCode = $requestData['country_code'][0] ?? '';
+                    
+                    ClientContact::create([
+                        'admin_id' => Auth::user()->id,
+                        'client_id' => $admin->id,
+                        'contact_type' => $contactType,
+                        'phone' => $primaryPhone,
+                        'country_code' => $countryCode,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+                
+                // Save email to client_emails table
+                if ($primaryEmail) {
+                    $emailType = $requestData['email_type_hidden'][0] ?? 'Personal';
+                    
+                    ClientEmail::create([
+                        'admin_id' => Auth::user()->id,
+                        'client_id' => $admin->id,
+                        'email_type' => $emailType,
+                        'email' => $primaryEmail,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
                 }
                 
                 DB::commit();
                 
-                return Redirect::to('/admin/leads')->with('success', 'Lead added successfully');
+                // Encode the client/lead ID for the URL
+                $encodedId = base64_encode(convert_uuencode($admin->id));
+                
+                return redirect()->route('admin.clients.edit', ['id' => $encodedId])
+                    ->with('success', 'Lead added successfully');
             } catch (\Exception $e) {
                 DB::rollBack();
                 
+                \Log::error('Lead creation failed: ' . $e->getMessage());
+                \Log::error('Stack trace: ' . $e->getTraceAsString());
+                
                 // Clean up uploaded file if exists
-                if ($profile_img) {
-                    $this->unlinkFile($profile_img, config('constants.profile_imgs'));
-                }
+                // No profile image to clean up
                 
                 return redirect()->back()
                     ->withInput()
-                    ->with('error', config('constants.server_error'));
+                    ->withErrors(['error' => 'Failed to create lead: ' . $e->getMessage()]);
             }
         }
         
@@ -397,6 +406,7 @@ class LeadController extends Controller
             'first_name' => 'required|max:255',
             'last_name' => 'required|max:255',
             'gender' => 'required|max:255',
+            'dob' => 'required',
         ]);
 
         // Custom validation for phone array

@@ -306,25 +306,32 @@ Route::prefix('admin')->group(function() {
 		Route::post('/edit-interested-service', 'Admin\ClientsController@editinterestedService');
 		Route::get('/get-services', 'Admin\ClientsController@getServices');
 		Route::post('/servicesavefee', 'Admin\ClientsController@servicesavefee');
-		Route::get('/deleteappointment', 'Admin\ClientsController@deleteappointment');
-		Route::post('/add-appointment', 'Admin\ClientsController@addAppointment');
-        Route::post('/add-appointment-book', 'Admin\ClientsController@addAppointmentBook');
-		Route::post('/editappointment', 'Admin\ClientsController@editappointment');
+
+		
+
 		Route::post('/upload-mail', 'Admin\ClientsController@uploadmail');
         Route::post('/upload-fetch-mail', 'Admin\ClientsController@uploadfetchmail'); //upload inbox email
         Route::post('/upload-sent-fetch-mail', 'Admin\ClientsController@uploadsentfetchmail'); //upload sent email
 
 
-		Route::post('/updatefollowupschedule', 'Admin\ClientsController@updatefollowupschedule');
-		Route::get('/updateappointmentstatus/{status}/{id}', 'Admin\ClientsController@updateappointmentstatus');
-		Route::get('/get-appointments', 'Admin\ClientsController@getAppointments');
+        Route::get('/deleteappointment', 'Admin\AppointmentsController@deleteappointment');
+		Route::post('/add-appointment', 'Admin\AppointmentsController@addAppointment');
+        Route::post('/add-appointment-book', 'Admin\AppointmentsController@addAppointmentBook');
+		Route::post('/editappointment', 'Admin\AppointmentsController@editappointment');
+        
+        Route::post('/updatefollowupschedule', 'Admin\AppointmentsController@updatefollowupschedule');
+		Route::get('/updateappointmentstatus/{status}/{id}', 'Admin\AppointmentsController@updateappointmentstatus');
+		Route::get('/get-appointments', 'Admin\AppointmentsController@getAppointments');
+        Route::get('/getAppointmentdetail', 'Admin\AppointmentsController@getAppointmentdetail');
+
+
 
         Route::get('/pinnote', [ClientNotesController::class, 'pinnote']);
         Route::get('/pinactivitylog', 'Admin\ClientsController@pinactivitylog');
 
 		Route::get('/getintrestedservice', 'Admin\ClientsController@getintrestedservice');
 		Route::get('/getintrestedserviceedit', 'Admin\ClientsController@getintrestedserviceedit');
-		Route::get('/getAppointmentdetail', 'Admin\ClientsController@getAppointmentdetail');
+		
 		Route::get('/getapplicationdetail', 'Admin\ApplicationsController@getapplicationdetail');
 		Route::post('/load-application-insert-update-data', 'Admin\ApplicationsController@loadApplicationInsertUpdateData');
 		Route::get('/updatestage', 'Admin\ApplicationsController@updatestage');

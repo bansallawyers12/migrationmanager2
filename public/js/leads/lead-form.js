@@ -64,7 +64,8 @@ function addPhoneNumber() {
                 </div>
                 <div class="form-group">
                     <label>Phone Number</label>
-                    <input type="text" name="phone[${index}]" class="phone-number-input" placeholder="Enter phone number" pattern="[0-9]*" inputmode="numeric">
+                    <input type="text" name="phone[${index}]" class="phone-number-input" placeholder="Enter phone number" pattern="[0-9]*" inputmode="numeric" required>
+                    <div class="phone-error phone-error-${index}" style="color: #dc3545; font-size: 12px; margin-top: 5px; display: none;"></div>
                 </div>
             </div>
         </div>
@@ -125,7 +126,8 @@ function addEmailAddress() {
                 </div>
                 <div class="form-group">
                     <label>Email Address</label>
-                    <input type="email" name="email[${index}]" class="email-input" placeholder="Enter email address">
+                    <input type="email" name="email[${index}]" class="email-input" placeholder="Enter email address" required>
+                    <div class="email-error email-error-${index}" style="color: #dc3545; font-size: 12px; margin-top: 5px; display: none;"></div>
                 </div>
             </div>
         </div>

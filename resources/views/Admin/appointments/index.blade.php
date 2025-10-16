@@ -3,7 +3,7 @@
 
 @section('content')
 
-<link rel="stylesheet" href="{{URL::asset('public/css/bootstrap-datepicker.min.css')}}">
+<link rel="stylesheet" href="{{URL::asset('css/bootstrap-datepicker.min.css')}}">
 
 <style>
 /* Force prevent horizontal scroll on this page */
@@ -327,7 +327,7 @@ html, body {
 </div>
 @endsection
 @push('scripts')
-  <script src="{{URL::asset('public/js/bootstrap-datepicker.js')}}"></script>
+  <script src="{{URL::asset('js/bootstrap-datepicker.js')}}"></script>
 <script>
 	jQuery(document).ready(function($){
 

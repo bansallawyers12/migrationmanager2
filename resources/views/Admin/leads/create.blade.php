@@ -1,26 +1,79 @@
 @extends('layouts.admin_client_detail_dashboard')
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('css/address-autocomplete.css') }}">
     <link rel="stylesheet" href="{{asset('css/client-forms.css')}}">
     <link rel="stylesheet" href="{{asset('css/clients/edit-client-components.css')}}">
     <link rel="stylesheet" href="{{asset('css/leads/lead-form.css')}}">
+    
+    <style>
+        /* Compact Error Display Styles */
+        .form-validation-errors {
+            margin: 20px 0;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .error-container {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            padding: 15px 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .error-container h4 {
+            color: #721c24;
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .error-container ul {
+            margin: 0;
+            padding-left: 20px;
+            list-style-type: disc;
+        }
+        
+        .error-container li {
+            color: #721c24;
+            font-size: 13px;
+            margin-bottom: 5px;
+            line-height: 1.4;
+        }
+        
+        .error-container li:last-child {
+            margin-bottom: 0;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .form-validation-errors {
+                margin: 15px 10px;
+            }
+            
+            .error-container {
+                padding: 12px 15px;
+            }
+            
+            .error-container h4 {
+                font-size: 13px;
+            }
+            
+            .error-container li {
+                font-size: 12px;
+            }
+        }
+    </style>
 @endpush
 
 @section('content')
     <div class="crm-container">
         <div class="main-content">
 
-            <!-- Display General Errors -->
-            @if ($errors->any())
-                <div class="alert alert-danger">
-                    <ul>
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
 
             <!-- Mobile Sidebar Toggle -->
             <button class="sidebar-toggle" onclick="toggleSidebar()">
@@ -36,26 +89,6 @@
                     <button class="nav-item active" onclick="scrollToSection('personalSection')">
                         <i class="fas fa-user-circle"></i>
                         <span>Personal</span>
-                    </button>
-                    <button class="nav-item" onclick="scrollToSection('visaPassportSection')">
-                        <i class="fas fa-id-card"></i>
-                        <span>Visa, Passport & Citizenship</span>
-                    </button>
-                    <button class="nav-item" onclick="scrollToSection('addressTravelSection')">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span>Address & Travel</span>
-                    </button>
-                    <button class="nav-item" onclick="scrollToSection('skillsEducationSection')">
-                        <i class="fas fa-briefcase"></i>
-                        <span>Skills & Education</span>
-                    </button>
-                    <button class="nav-item" onclick="scrollToSection('otherInformationSection')">
-                        <i class="fas fa-info-circle"></i>
-                        <span>Other Information</span>
-                    </button>
-                    <button class="nav-item" onclick="scrollToSection('familySection')">
-                        <i class="fas fa-users"></i>
-                        <span>Family Information</span>
                     </button>
                 </nav>
                 
@@ -76,6 +109,7 @@
             <div class="main-content-area">
                 <form id="createLeadForm" action="{{ route('admin.leads.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
+
 
                     {{-- ==================== PERSONAL SECTION ==================== --}}
                     <section id="personalSection" class="content-section">
@@ -103,8 +137,8 @@
                                 </div>
 
                                 <div class="form-group">
-                                    <label for="dob">Date of Birth</label>
-                                    <input type="text" id="dob" name="dob" value="{{ old('dob') }}" class="date-picker" placeholder="dd/mm/yyyy">
+                                    <label for="dob">Date of Birth <span class="text-danger">*</span></label>
+                                    <input type="text" id="dob" name="dob" value="{{ old('dob') }}" class="date-picker" placeholder="dd/mm/yyyy" required>
                                     @error('dob')
                                         <span class="text-danger">{{ $message }}</span>
                                     @enderror
@@ -116,12 +150,13 @@
                                 </div>
 
                                 <div class="form-group">
-                                    <label>Gender <span class="text-danger">*</span></label>
-                                    <div class="radio-group">
-                                        <label><input type="radio" name="gender" value="Male" {{ old('gender') == 'Male' ? 'checked' : '' }} required> Male</label>
-                                        <label><input type="radio" name="gender" value="Female" {{ old('gender') == 'Female' ? 'checked' : '' }}> Female</label>
-                                        <label><input type="radio" name="gender" value="Other" {{ old('gender') == 'Other' ? 'checked' : '' }}> Other</label>
-                                    </div>
+                                    <label for="gender">Gender <span class="text-danger">*</span></label>
+                                    <select id="gender" name="gender" required>
+                                        <option value="">Select Gender</option>
+                                        <option value="Male" {{ old('gender') == 'Male' ? 'selected' : '' }}>Male</option>
+                                        <option value="Female" {{ old('gender') == 'Female' ? 'selected' : '' }}>Female</option>
+                                        <option value="Other" {{ old('gender') == 'Other' ? 'selected' : '' }}>Other</option>
+                                    </select>
                                     @error('gender')
                                         <span class="text-danger">{{ $message }}</span>
                                     @enderror
@@ -133,11 +168,14 @@
                                         <option value="">Select Marital Status</option>
                                         <option value="Single" {{ old('marital_status') == 'Single' ? 'selected' : '' }}>Single</option>
                                         <option value="Married" {{ old('marital_status') == 'Married' ? 'selected' : '' }}>Married</option>
-                                        <option value="De Facto" {{ old('marital_status') == 'De Facto' ? 'selected' : '' }}>De Facto</option>
+                                        <option value="Defacto" {{ (old('marital_status') == 'Defacto' || old('marital_status') == 'De Facto') ? 'selected' : '' }}>De Facto</option>
+                                        <option value="Separated" {{ old('marital_status') == 'Separated' ? 'selected' : '' }}>Separated</option>
                                         <option value="Divorced" {{ old('marital_status') == 'Divorced' ? 'selected' : '' }}>Divorced</option>
                                         <option value="Widowed" {{ old('marital_status') == 'Widowed' ? 'selected' : '' }}>Widowed</option>
-                                        <option value="Separated" {{ old('marital_status') == 'Separated' ? 'selected' : '' }}>Separated</option>
                                     </select>
+                                    @error('marital_status')
+                                        <span class="text-danger">{{ $message }}</span>
+                                    @enderror
                                 </div>
                             </div>
                         </section>
@@ -145,236 +183,105 @@
                         <!-- Phone Numbers -->
                         <section class="form-section">
                             <div class="section-header">
-                                <h3><i class="fas fa-phone"></i> Phone Numbers</h3>
+                                <h3><i class="fas fa-phone"></i> Phone Number <span class="text-danger">*</span></h3>
                             </div>
                             
-                            <div id="phoneNumbersContainer">
-                                <!-- Initially empty; will be populated by JavaScript on page load -->
+                            <div class="repeatable-section">
+                                <div class="content-grid">
+                                    <div class="form-group">
+                                        <label>Type</label>
+                                        <select name="contact_type_hidden[0]" class="contact-type-selector">
+                                            <option value="Personal">Personal</option>
+                                            <option value="Work">Work</option>
+                                            <option value="Mobile">Mobile</option>
+                                            <option value="Business">Business</option>
+                                            <option value="Secondary">Secondary</option>
+                                            <option value="Father">Father</option>
+                                            <option value="Mother">Mother</option>
+                                            <option value="Brother">Brother</option>
+                                            <option value="Sister">Sister</option>
+                                            <option value="Uncle">Uncle</option>
+                                            <option value="Aunt">Aunt</option>
+                                            <option value="Cousin">Cousin</option>
+                                            <option value="Partner">Partner</option>
+                                            <option value="Others">Others</option>
+                                            <option value="Not In Use">Not In Use</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Country Code</label>
+                                        <select name="country_code[0]" class="country-code-selector">
+                                            <option value="+61">+61 (Australia)</option>
+                                            <option value="+1">+1 (USA/Canada)</option>
+                                            <option value="+44">+44 (UK)</option>
+                                            <option value="+91">+91 (India)</option>
+                                            <option value="+86">+86 (China)</option>
+                                            <option value="+81">+81 (Japan)</option>
+                                            <option value="+49">+49 (Germany)</option>
+                                            <option value="+33">+33 (France)</option>
+                                            <option value="+39">+39 (Italy)</option>
+                                            <option value="+34">+34 (Spain)</option>
+                                            <option value="+7">+7 (Russia)</option>
+                                            <option value="+55">+55 (Brazil)</option>
+                                            <option value="+52">+52 (Mexico)</option>
+                                            <option value="+82">+82 (South Korea)</option>
+                                            <option value="+65">+65 (Singapore)</option>
+                                            <option value="+60">+60 (Malaysia)</option>
+                                            <option value="+66">+66 (Thailand)</option>
+                                            <option value="+63">+63 (Philippines)</option>
+                                            <option value="+84">+84 (Vietnam)</option>
+                                            <option value="+62">+62 (Indonesia)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Phone Number <span class="text-danger">*</span></label>
+                                        <input type="text" name="phone[0]" class="form-control" placeholder="Enter phone number" value="{{ old('phone.0') }}" required>
+                                        @error('phone.0')
+                                            <span class="text-danger">{{ $message }}</span>
+                                        @enderror
+                                    </div>
+                                </div>
                             </div>
-                            @error('phone')
-                                <span class="text-danger">{{ $message }}</span>
-                            @enderror
                             
-                            <button type="button" class="add-item-btn" onclick="addPhoneNumber()">
-                                <i class="fas fa-plus-circle"></i> Add Phone Number
-                            </button>
                         </section>
 
                         <!-- Email Addresses -->
                         <section class="form-section">
                             <div class="section-header">
-                                <h3><i class="fas fa-envelope"></i> Email Addresses</h3>
+                                <h3><i class="fas fa-envelope"></i> Email Address <span class="text-danger">*</span></h3>
                             </div>
                             
-                            <div id="emailAddressesContainer">
-                                <!-- Initially empty; will be populated by JavaScript on page load -->
-                            </div>
-                            @error('email')
-                                <span class="text-danger">{{ $message }}</span>
-                            @enderror
-                            
-                            <button type="button" class="add-item-btn" onclick="addEmailAddress()">
-                                <i class="fas fa-plus-circle"></i> Add Email Address
-                            </button>
-                        </section>
-                    </section>
-
-                    {{-- ==================== VISA, PASSPORT & CITIZENSHIP SECTION ==================== --}}
-                    <section id="visaPassportSection" class="content-section">
-                        <!-- Passports -->
-                        <section class="form-section">
-                            <div class="section-header">
-                                <h3><i class="fas fa-passport"></i> Passports</h3>
-                            </div>
-                            
-                            <div id="passportsContainer">
-                                <!-- Initially empty; will be populated by JavaScript on page load -->
-                            </div>
-                            
-                            <button type="button" class="add-item-btn" onclick="addPassport()">
-                                <i class="fas fa-plus-circle"></i> Add Passport
-                            </button>
-                        </section>
-
-                        <!-- Visas -->
-                        <section class="form-section">
-                            <div class="section-header">
-                                <h3><i class="fas fa-id-card"></i> Visas</h3>
-                            </div>
-                            
-                            <div id="visasContainer">
-                                <!-- Initially empty; will be populated by JavaScript on page load -->
-                            </div>
-                            
-                            <button type="button" class="add-item-btn" onclick="addVisa()">
-                                <i class="fas fa-plus-circle"></i> Add Visa
-                            </button>
-                        </section>
-                    </section>
-
-                    {{-- ==================== ADDRESS & TRAVEL SECTION ==================== --}}
-                    <section id="addressTravelSection" class="content-section">
-                        <!-- Addresses -->
-                        <section class="form-section">
-                            <div class="section-header">
-                                <h3><i class="fas fa-map-marker-alt"></i> Addresses</h3>
-                            </div>
-                            
-                            <div id="addressesContainer">
-                                <!-- Initially empty; will be populated by JavaScript on page load -->
-                            </div>
-                            
-                            <button type="button" class="add-item-btn" onclick="addAddress()">
-                                <i class="fas fa-plus-circle"></i> Add Address
-                            </button>
-                        </section>
-
-                        <!-- Travel History -->
-                        <section class="form-section">
-                            <div class="section-header">
-                                <h3><i class="fas fa-plane"></i> Travel History</h3>
-                            </div>
-                            
-                            <div id="travelContainer">
-                                <!-- Initially empty; will be populated by JavaScript on page load -->
-                            </div>
-                            
-                            <button type="button" class="add-item-btn" onclick="addTravel()">
-                                <i class="fas fa-plus-circle"></i> Add Travel Entry
-                            </button>
-                        </section>
-                    </section>
-
-                    {{-- ==================== SKILLS & EDUCATION SECTION ==================== --}}
-                    <section id="skillsEducationSection" class="content-section">
-                        <!-- Test Scores -->
-                        <section class="form-section">
-                            <div class="section-header">
-                                <h3><i class="fas fa-graduation-cap"></i> Test Scores</h3>
-                            </div>
-                            
-                            <div id="testScoresContainer">
-                                <!-- Initially empty; will be populated by JavaScript on page load -->
-                            </div>
-                            
-                            <button type="button" class="add-item-btn" onclick="addTestScore()">
-                                <i class="fas fa-plus-circle"></i> Add Test Score
-                            </button>
-                        </section>
-
-                        <!-- Qualifications -->
-                        <section class="form-section">
-                            <div class="section-header">
-                                <h3><i class="fas fa-certificate"></i> Qualifications</h3>
-                            </div>
-                            
-                            <div id="qualificationsContainer">
-                                <!-- Initially empty; will be populated by JavaScript on page load -->
-                            </div>
-                            
-                            <button type="button" class="add-item-btn" onclick="addQualification()">
-                                <i class="fas fa-plus-circle"></i> Add Qualification
-                            </button>
-                        </section>
-
-                        <!-- Work Experience -->
-                        <section class="form-section">
-                            <div class="section-header">
-                                <h3><i class="fas fa-briefcase"></i> Work Experience</h3>
-                            </div>
-                            
-                            <div id="experienceContainer">
-                                <!-- Initially empty; will be populated by JavaScript on page load -->
-                            </div>
-                            
-                            <button type="button" class="add-item-btn" onclick="addExperience()">
-                                <i class="fas fa-plus-circle"></i> Add Work Experience
-                            </button>
-                        </section>
-
-                        <!-- Occupations -->
-                        <section class="form-section">
-                            <div class="section-header">
-                                <h3><i class="fas fa-user-tie"></i> Nominated Occupations</h3>
-                            </div>
-                            
-                            <div id="occupationsContainer">
-                                <!-- Initially empty; will be populated by JavaScript on page load -->
-                            </div>
-                            
-                            <button type="button" class="add-item-btn" onclick="addOccupation()">
-                                <i class="fas fa-plus-circle"></i> Add Occupation
-                            </button>
-                        </section>
-                    </section>
-
-                    {{-- ==================== OTHER INFORMATION SECTION ==================== --}}
-                    <section id="otherInformationSection" class="content-section">
-                        <section class="form-section">
-                            <div class="section-header">
-                                <h3><i class="fas fa-info-circle"></i> Lead Information</h3>
-                            </div>
-                            
+                            <div class="repeatable-section">
                             <div class="content-grid">
                                 <div class="form-group">
-                                    <label for="leadSource">Lead Source</label>
-                                    <select id="leadSource" name="lead_source">
-                                        <option value="">Select Source</option>
-                                        <option value="Website">Website</option>
-                                        <option value="Referral">Referral</option>
-                                        <option value="Social Media">Social Media</option>
-                                        <option value="Advertisement">Advertisement</option>
-                                        <option value="Walk-in">Walk-in</option>
-                                        <option value="Other">Other</option>
+                                        <label>Type</label>
+                                        <select name="email_type_hidden[0]" class="email-type-selector">
+                                            <option value="Personal">Personal</option>
+                                            <option value="Work">Work</option>
+                                            <option value="Business">Business</option>
+                                            <option value="Secondary">Secondary</option>
+                                            <option value="Father">Father</option>
+                                            <option value="Mother">Mother</option>
+                                            <option value="Brother">Brother</option>
+                                            <option value="Sister">Sister</option>
+                                            <option value="Uncle">Uncle</option>
+                                            <option value="Aunt">Aunt</option>
+                                            <option value="Cousin">Cousin</option>
+                                            <option value="Partner">Partner</option>
+                                            <option value="Others">Others</option>
+                                            <option value="Not In Use">Not In Use</option>
                                     </select>
                                 </div>
-
                                 <div class="form-group">
-                                    <label for="leadQuality">Lead Quality</label>
-                                    <select id="leadQuality" name="lead_quality">
-                                        <option value="">Select Quality</option>
-                                        <option value="hot">Hot</option>
-                                        <option value="warm">Warm</option>
-                                        <option value="cold">Cold</option>
-                                    </select>
+                                        <label>Email Address <span class="text-danger">*</span></label>
+                                        <input type="email" name="email[0]" class="form-control" placeholder="Enter email address" value="{{ old('email.0') }}" required>
+                                        @error('email.0')
+                                            <span class="text-danger">{{ $message }}</span>
+                                        @enderror
                                 </div>
-
-                                <div class="form-group">
-                                    <label for="service">Service Interested</label>
-                                    <input type="text" id="service" name="service" value="{{ old('service') }}">
                                 </div>
-
-                                <div class="form-group">
-                                    <label for="assignTo">Assign To</label>
-                                    <select id="assignTo" name="assign_to">
-                                        <option value="">Select Agent</option>
-                                        <!-- Populate from agents -->
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="commentsNote">Notes / Comments</label>
-                                <textarea id="commentsNote" name="comments_note" rows="5">{{ old('comments_note') }}</textarea>
-                            </div>
-                        </section>
-                    </section>
-
-                    {{-- ==================== FAMILY INFORMATION SECTION ==================== --}}
-                    <section id="familySection" class="content-section">
-                        <!-- Family Members -->
-                        <section class="form-section">
-                            <div class="section-header">
-                                <h3><i class="fas fa-users"></i> Family Members</h3>
                             </div>
                             
-                            <div id="familyMembersContainer">
-                                <!-- Initially empty; will be populated by JavaScript on page load -->
-                            </div>
-                            
-                            <button type="button" class="add-item-btn" onclick="addFamilyMember()">
-                                <i class="fas fa-plus-circle"></i> Add Family Member
-                            </button>
                         </section>
                     </section>
 
@@ -387,6 +294,7 @@
                             <i class="fas fa-save"></i> Save Lead
                         </button>
                     </div>
+                    
                 </form>
             </div>
         </div>
@@ -411,25 +319,70 @@
 @push('scripts')
     <script src="{{ asset('js/leads/lead-form-navigation.js') }}"></script>
     <script src="{{ asset('js/leads/lead-form.js') }}"></script>
-    <script src="{{ asset('js/address-autocomplete.js') }}"></script>
+    
+    <!-- Ensure Daterangepicker is loaded -->
+    <script>
+        // Fallback: Load daterangepicker if not already loaded
+        if (typeof $.fn.daterangepicker === 'undefined') {
+            console.log('Loading Daterangepicker...');
+            $.getScript('{{ asset("js/daterangepicker.js") }}', function() {
+                console.log('✅ Daterangepicker loaded via fallback');
+                // Initialize after loading
+                setTimeout(initDatePicker, 100);
+            }).fail(function() {
+                console.error('❌ Failed to load Daterangepicker');
+            });
+        }
+    </script>
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM Content Loaded');
+            
             const floatingSaveBtn = document.getElementById('floatingSaveBtn');
             const hiddenSubmitBtn = document.getElementById('hiddenSubmitBtn');
             const form = document.getElementById('createLeadForm');
             const floatingContainer = document.querySelector('.floating-save-container');
             
+            console.log('Elements found:', {
+                floatingSaveBtn: !!floatingSaveBtn,
+                hiddenSubmitBtn: !!hiddenSubmitBtn,
+                form: !!form,
+                floatingContainer: !!floatingContainer
+            });
+            
+            // Add form submit event listener for debugging
+            form.addEventListener('submit', function(e) {
+                console.log('Form submit event triggered');
+                console.log('Form action:', form.action);
+                console.log('Form method:', form.method);
+                
+                // Check CSRF token
+                const csrfToken = document.querySelector('input[name="_token"]');
+                console.log('CSRF token found:', !!csrfToken);
+                if (csrfToken) {
+                    console.log('CSRF token value:', csrfToken.value);
+                }
+            });
+            
             // Handle floating save button click
             floatingSaveBtn.addEventListener('click', function(e) {
                 e.preventDefault();
+                console.log('Floating save button clicked');
+                console.log('Form element:', form);
+                console.log('Form action:', form.action);
+                console.log('Form method:', form.method);
                 
-                // Show loading state
-                floatingSaveBtn.classList.add('loading');
-                floatingSaveBtn.innerHTML = '<i class="fas fa-spinner"></i><span>Saving...</span>';
+                // Check form data
+                const formData = new FormData(form);
+                console.log('Form data entries:');
+                for (let [key, value] of formData.entries()) {
+                    console.log(key + ': ' + value);
+                }
                 
-                // Trigger form submission
-                hiddenSubmitBtn.click();
+                // Simple form submission without complex validation
+                console.log('Submitting form directly...');
+                form.submit();
             });
             
             // Add scroll-based visibility control
@@ -506,37 +459,231 @@
     // Initialize form with at least one field in each required sections
     document.addEventListener('DOMContentLoaded', function() {
         // Add initial phone and email fields
-        const phoneContainer = document.getElementById('phoneNumbersContainer');
-        const emailContainer = document.getElementById('emailAddressesContainer');
+        // Phone and email fields are now static HTML, no need to initialize dynamically
         
-        if (phoneContainer && phoneContainer.children.length === 0) {
-            addPhoneNumber();
-        }
-        if (emailContainer && emailContainer.children.length === 0) {
-            addEmailAddress();
-        }
+        // Display validation errors for phone and email fields
+        displayFieldErrors();
         
-        // DOB to Age calculation
+        // Add real-time error clearing for phone and email fields
+        setupErrorClearing();
+        
+        // DOB to Age calculation (same as client edit page)
         const dobField = document.getElementById('dob');
-        if (dobField) {
-            dobField.addEventListener('change', function() {
-                const dob = this.value;
-                if (dob) {
-                    const parts = dob.split('/');
-                    if (parts.length === 3) {
-                        const birthDate = new Date(parts[2], parts[1] - 1, parts[0]);
-                        const today = new Date();
-                        let age = today.getFullYear() - birthDate.getFullYear();
-                        const monthDiff = today.getMonth() - birthDate.getMonth();
-                        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-                            age--;
-                        }
-                        document.getElementById('age').value = age;
-                    }
-                }
+        const ageField = document.getElementById('age');
+        if (dobField && ageField) {
+            // Initialize age if DOB exists
+            if (dobField.value) {
+                ageField.value = calculateAge(dobField.value);
+            }
+
+            // Handle manual input changes (e.g., typing or pasting)
+            dobField.addEventListener('input', function() {
+                ageField.value = calculateAge(this.value);
             });
         }
     });
+    
+    // Initialize datepicker after all scripts are loaded
+    $(document).ready(function() {
+        // Wait a bit for all scripts to load
+        setTimeout(function() {
+            initDatePicker();
+        }, 500);
+    });
+    
+    // Function to display validation errors for each field
+    function displayFieldErrors() {
+        // Get all error messages from Laravel
+        const errors = @json($errors->all());
+        const errorBag = @json($errors->getMessageBag()->toArray());
+        
+        // Clear any existing error messages first
+        document.querySelectorAll('.phone-error, .email-error, .field-error').forEach(el => {
+            el.textContent = '';
+            el.style.display = 'none';
+        });
+        
+        // Check if we have field-specific errors
+        let hasFieldSpecificErrors = false;
+        
+        // Display phone errors
+        Object.keys(errorBag).forEach(key => {
+            if (key.startsWith('phone.')) {
+                hasFieldSpecificErrors = true;
+                const index = key.split('.')[1];
+                const errorElement = document.querySelector(`.phone-error-${index}`);
+                if (errorElement) {
+                    errorElement.textContent = errorBag[key][0];
+                    errorElement.style.display = 'block';
+                    errorElement.style.color = '#dc3545';
+                    errorElement.style.fontSize = '12px';
+                    errorElement.style.marginTop = '5px';
+                }
+            } else if (key === 'phone') {
+                // General phone error - show in the section
+                const phoneContainer = document.getElementById('phoneNumbersContainer');
+                if (phoneContainer) {
+                    // Remove existing general error
+                    const existingError = phoneContainer.querySelector('.general-phone-error');
+                    if (existingError) {
+                        existingError.remove();
+                    }
+                    
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'general-phone-error text-danger';
+                    errorDiv.style.marginTop = '10px';
+                    errorDiv.style.fontSize = '12px';
+                    errorDiv.textContent = errorBag[key][0];
+                    phoneContainer.appendChild(errorDiv);
+                }
+            }
+        });
+        
+        // Display email errors
+        Object.keys(errorBag).forEach(key => {
+            if (key.startsWith('email.')) {
+                hasFieldSpecificErrors = true;
+                const index = key.split('.')[1];
+                const errorElement = document.querySelector(`.email-error-${index}`);
+                if (errorElement) {
+                    errorElement.textContent = errorBag[key][0];
+                    errorElement.style.display = 'block';
+                    errorElement.style.color = '#dc3545';
+                    errorElement.style.fontSize = '12px';
+                    errorElement.style.marginTop = '5px';
+                }
+            } else if (key === 'email') {
+                // General email error - show in the section
+                const emailContainer = document.getElementById('emailAddressesContainer');
+                if (emailContainer) {
+                    // Remove existing general error
+                    const existingError = emailContainer.querySelector('.general-email-error');
+                    if (existingError) {
+                        existingError.remove();
+                    }
+                    
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'general-email-error text-danger';
+                    errorDiv.style.marginTop = '10px';
+                    errorDiv.style.fontSize = '12px';
+                    errorDiv.textContent = errorBag[key][0];
+                    emailContainer.appendChild(errorDiv);
+                }
+            }
+        });
+        
+        // Hide general error container if we have field-specific errors
+        const generalErrorContainer = document.querySelector('.form-validation-errors');
+        if (generalErrorContainer) {
+            if (hasFieldSpecificErrors) {
+                generalErrorContainer.style.display = 'none';
+            } else {
+                generalErrorContainer.style.display = 'block';
+            }
+        }
+    }
+    
+    // Function to setup error clearing when user types
+    function setupErrorClearing() {
+        // Clear phone errors when user types
+        document.addEventListener('input', function(e) {
+            if (e.target.classList.contains('phone-number-input')) {
+                const index = e.target.name.match(/\[(\d+)\]/)[1];
+                const errorElement = document.querySelector(`.phone-error-${index}`);
+                if (errorElement) {
+                    errorElement.style.display = 'none';
+                    errorElement.textContent = '';
+                }
+            }
+            
+            if (e.target.classList.contains('email-input')) {
+                const index = e.target.name.match(/\[(\d+)\]/)[1];
+                const errorElement = document.querySelector(`.email-error-${index}`);
+                if (errorElement) {
+                    errorElement.style.display = 'none';
+                    errorElement.textContent = '';
+                }
+            }
+        });
+    }
+    
+    // Function to initialize daterangepicker (same as client edit page)
+    function initDatePicker() {
+        try {
+            // Check if jQuery and daterangepicker are available
+            if (typeof $ !== 'undefined' && typeof $.fn.daterangepicker !== 'undefined') {
+                const dobInput = document.getElementById('dob');
+                const ageInput = document.getElementById('age');
+                
+                if (dobInput && ageInput) {
+                    // Initialize daterangepicker (same as client edit page)
+                    $(dobInput).daterangepicker({
+                        singleDatePicker: true,
+                        showDropdowns: true,
+                        locale: {
+                            format: 'DD/MM/YYYY',
+                            applyLabel: 'Apply',
+                            cancelLabel: 'Cancel',
+                            daysOfWeek: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+                            monthNames: [
+                                'January', 'February', 'March', 'April', 'May', 'June',
+                                'July', 'August', 'September', 'October', 'November', 'December'
+                            ],
+                            firstDay: 1
+                        },
+                        autoApply: true,
+                        minDate: '01/01/1000',
+                        minYear: 1000,
+                        maxYear: parseInt(moment().format('YYYY')) + 50
+                    }).on('apply.daterangepicker', function(ev, picker) {
+                        // Update age when date is selected (same as client edit page)
+                        const dobValue = dobInput.value;
+                        ageInput.value = calculateAge(dobValue);
+                    });
+                    
+                    console.log('✅ DOB Daterangepicker initialized successfully');
+                }
+            } else {
+                console.warn('⚠️ jQuery or Daterangepicker not available');
+                console.log('jQuery available:', typeof $ !== 'undefined');
+                console.log('Daterangepicker available:', typeof $.fn.daterangepicker !== 'undefined');
+            }
+        } catch(e) {
+            console.error('❌ Daterangepicker initialization failed:', e.message);
+        }
+    }
+    
+    // Age calculation function (same as client edit page)
+    function calculateAge(dob) {
+        if (!dob || !/^\d{2}\/\d{2}\/\d{4}$/.test(dob)) return '';
+
+        try {
+            const [day, month, year] = dob.split('/').map(Number);
+            const dobDate = new Date(year, month - 1, day);
+            if (isNaN(dobDate.getTime())) return ''; // Invalid date
+
+            const today = new Date();
+            let years = today.getFullYear() - dobDate.getFullYear();
+            let months = today.getMonth() - dobDate.getMonth();
+
+            if (months < 0) {
+                years--;
+                months += 12;
+            }
+
+            if (today.getDate() < dobDate.getDate()) {
+                months--;
+                if (months < 0) {
+                    years--;
+                    months += 12;
+                }
+            }
+
+            return years + ' years ' + months + ' months';
+        } catch (e) {
+            return '';
+        }
+    }
     
     </script>
 @endpush
