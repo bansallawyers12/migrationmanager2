@@ -93,7 +93,7 @@ class CronJob extends Command
 					$array['file_name'] = $invoicefilename;
 
 					//sends email to customer with the invoice pdf attached
-					$issuccess = self::send_attachment_email_template($array, $replace, $replace_with, 'invoice-reminder', $invoice->customer->contact_email, $subContent, 'info@crm.travelsdata.com');
+					$issuccess = self::send_attachment_email_template($array, $replace, $replace_with, 'invoice-reminder', $invoice->customer->contact_email, $subContent, config('mail.from.address'));
 					unlink($array['file']);
 					$objf				= 	new InvoiceFollowup;
 				$objf->invoice_id	=	$invoice->id;
@@ -133,7 +133,7 @@ class CronJob extends Command
 					$array['file_name'] = $invoicefilename;
 
 					//sends email to customer with the invoice pdf attached
-					$issuccess = self::send_attachment_email_template($array, $replace, $replace_with, 'invoice-reminder', $invoice->customer->contact_email, $subContent, 'info@crm.travelsdata.com');
+					$issuccess = self::send_attachment_email_template($array, $replace, $replace_with, 'invoice-reminder', $invoice->customer->contact_email, $subContent, config('mail.from.address'));
 					unlink($array['file']);
 					$objf				= 	new InvoiceFollowup;
 				$objf->invoice_id	=	$invoice->id;

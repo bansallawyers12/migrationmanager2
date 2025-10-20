@@ -3,8 +3,9 @@
 
 @section('content')
 <meta name="csrf-token" content="{{ csrf_token() }}">
-<link rel="stylesheet" href="{{URL::asset('css/bootstrap-datepicker.min.css')}}">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.20/jquery.datetimepicker.min.css">
+{{-- Datepicker CSS already loaded in parent layout admin_client_detail.blade.php --}}
+{{-- <link rel="stylesheet" href="{{URL::asset('css/bootstrap-datepicker.min.css')}}"> --}}
+{{-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.20/jquery.datetimepicker.min.css"> --}} {{-- ❌ REMOVED: Not used, causes conflicts --}}
 <link rel="stylesheet" href="{{ URL::asset('css/client-detail.css') }}">
 
 <?php

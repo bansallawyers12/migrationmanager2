@@ -465,6 +465,7 @@
 	<!-- Page Specific JS File -->
 	<script src="{{asset('js/summernote-bs4.js')}}"></script>
 	<script src="{{asset('js/daterangepicker.js')}}"></script>
+	<script src="{{asset('js/global-datepicker.js')}}"></script> {{-- ✅ Global DatePicker Helper for NEW code --}}
 	<script src="{{asset('js/bootstrap-timepicker.min.js')}}"></script>
     <script src="{{asset('js/select2.full.min.js')}}"></script>
 	<script src="{{asset('js/bootstrap-formhelpers.min.js')}}"></script>

@@ -258,7 +258,8 @@
     <script src="https://momentjs.com/downloads/moment.js"></script>
     <script src="{{asset('js/dataTables.bootstrap4.js')}}"></script>
     <script src="{{asset('js/summernote-bs4.js')}}"></script>
-    <script src="{{asset('js/daterangepicker.js')}}"></script>
+    <script src="{{asset('js/daterangepicker.js')}}"></script> {{-- ✅ Daterangepicker for appointments --}}
+    <script src="{{asset('js/global-datepicker.js')}}"></script> {{-- ✅ Global DatePicker Helper for NEW code --}}
     <script src="{{asset('js/bootstrap-timepicker.min.js')}}"></script>
     <script src="{{asset('js/select2.full.min.js')}}"></script>
     <script src="{{asset('js/bootstrap-formhelpers.min.js')}}"></script>

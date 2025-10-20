@@ -5,10 +5,10 @@
 #login_bg{min-height: 140vh!important;background-size: 60%!important;background-position: 115% 10%!important;}
 </style>
 <div id="login" class="myregister">
-		<aside class="tside">
-			<figure>
-				<a href="#"><img src="{!! asset('public/img/Frontend/img/bookmatic-logo.png') !!}" data-retina="true" alt="" class="Book Matic"></a>
-			</figure>
+	<aside class="tside">
+		<figure>
+			<a href="#"><img src="{!! asset('public/img/logo.png') !!}" data-retina="true" alt="" width="150"></a>
+		</figure>
 			  <form method="POST" action="{{ route('register') }}">
                 @csrf
 					<div class="form-group row">
@@ -102,10 +102,7 @@
                                 <a class="btn btn-warning" href="{{URL::to('/admin')}}"><b>back to Login</b></a>
                             </div>
                         </div>
-			</form>
-			<div class="locking_img">
-				<img src="{!! asset('public/img/Frontend/img/lock_img.jpg') !!}" alt=""/>
-			</div>
-		</aside>
+		</form>
+	</aside>
 	</div>
 @endsection

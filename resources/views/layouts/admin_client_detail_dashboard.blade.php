@@ -29,10 +29,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="{{asset('js/jquery_min_latest.js')}}"></script>
     
-    <!-- Bootstrap Datepicker CSS -->
-    <link rel="stylesheet" href="{{asset('css/bootstrap-datepicker.min.css')}}">
-    <!-- Bootstrap Datepicker JS -->
-    <script src="{{asset('js/bootstrap-datepicker.min.js')}}"></script>
+    {{-- Bootstrap Datepicker CSS --}}
+    {{-- <link rel="stylesheet" href="{{asset('css/bootstrap-datepicker.min.css')}}"> --}} {{-- ❌ REMOVED: Conflicts with daterangepicker used in leads --}}
+    {{-- Bootstrap Datepicker JS --}}
+    {{-- <script src="{{asset('js/bootstrap-datepicker.min.js')}}"></script> --}} {{-- ❌ REMOVED: Leads/Dashboard use daterangepicker instead --}}
 
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -523,7 +523,8 @@
     <script src="https://momentjs.com/downloads/moment.js"></script>
     <script src="{{asset('js/dataTables.bootstrap4.js')}}"></script>
     <script src="{{asset('js/summernote-bs4.js')}}"></script>
-    <script src="{{asset('js/daterangepicker.js')}}"></script>
+    <script src="{{asset('js/daterangepicker.js')}}"></script> {{-- ✅ Daterangepicker for leads/dashboard --}}
+    <script src="{{asset('js/global-datepicker.js')}}"></script> {{-- ✅ Global DatePicker Helper for NEW code --}}
     <script src="{{asset('js/bootstrap-timepicker.min.js')}}"></script>
     <script src="{{asset('js/select2.full.min.js')}}"></script>
     <script src="{{asset('js/bootstrap-formhelpers.min.js')}}"></script>

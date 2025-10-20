@@ -54,7 +54,7 @@ Route::post('/exception', 'ExceptionController@index')->name('exception.store');
 /*--------------------------------------------------
 | SECTION: Authentication Routes
 |--------------------------------------------------*/
-Auth::routes();
+// Auth::routes(); // Disabled - Using custom admin login at /admin and API login at /api/login instead
 
 /*--------------------------------------------------
 | SECTION: Email Manager Routes

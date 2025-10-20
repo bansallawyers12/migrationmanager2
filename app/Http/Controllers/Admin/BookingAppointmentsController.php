@@ -71,6 +71,13 @@ class BookingAppointmentsController extends Controller
     {
         $query = BookingAppointment::with(['client', 'consultant']);
 
+        // Filter by calendar type (consultant type)
+        if ($request->filled('type')) {
+            $query->whereHas('consultant', function($q) use ($request) {
+                $q->where('calendar_type', $request->type);
+            });
+        }
+
         // Filter by status
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -92,6 +99,14 @@ class BookingAppointmentsController extends Controller
         // Check if calendar format is requested
         if ($request->get('format') === 'calendar') {
             $appointments = $query->get();
+            
+            // Debug logging
+            \Log::info('Calendar API Request', [
+                'type' => $request->get('type'),
+                'start' => $request->get('start'),
+                'end' => $request->get('end'),
+                'appointments_count' => $appointments->count()
+            ]);
             
             return response()->json([
                 'success' => true,
@@ -194,7 +209,7 @@ class BookingAppointmentsController extends Controller
             ->get();
 
         $calendarTitle = match($type) {
-            'paid' => 'Paid Services (Others)',
+            'paid' => 'Pr_complex matters',
             'jrp' => 'JRP/Skill Assessment',
             'education' => 'Education/Student Visa',
             'tourist' => 'Tourist Visa',
@@ -224,9 +239,15 @@ class BookingAppointmentsController extends Controller
                 })
                 ->where('status', 'pending')
                 ->count(),
+            'no_show' => BookingAppointment::whereHas('consultant', function ($q) use ($type) {
+                    $q->where('calendar_type', $type);
+                })
+                ->where('status', 'no_show')
+                ->count(),
         ];
 
-        return view('Admin.booking.appointments.calendar', compact('type', 'appointments', 'calendarTitle', 'stats'));
+        // Use FullCalendar v6 version
+        return view('Admin.booking.appointments.calendar-v6', compact('type', 'appointments', 'calendarTitle', 'stats'));
     }
 
     /**

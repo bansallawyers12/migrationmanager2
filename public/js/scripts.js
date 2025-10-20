@@ -521,16 +521,30 @@ $(function () {
 
   // Daterangepicker
   if (jQuery().daterangepicker) {
-    if ($(".datepicker").length) {
-      $(".datepicker").daterangepicker({
-        locale: { cancelLabel: 'Clear',format: "YYYY-MM-DD" },
-        singleDatePicker: true,
-		 autoUpdateInput: false,
-        showDropdowns: true
-      }).on("apply.daterangepicker", function (e, picker) {
-        picker.element.val(picker.startDate.format(picker.locale.format));
-    });
-    }if ($(".dobdatepicker").length) {
+    // Check if we're on client detail page (uses bootstrap-datepicker instead)
+    // Client detail pages have .report_date_fields or .client-navigation-sidebar
+    var isClientDetailPage = $('.report_date_fields').length > 0 || 
+                             $('.client-navigation-sidebar').length > 0;
+    
+    if (isClientDetailPage) {
+      console.log('✅ Client detail page detected - bootstrap-datepicker will handle dates');
+      // Skip daterangepicker initialization on client detail pages
+    } else {
+      // Initialize daterangepicker for all other pages
+      if ($(".datepicker").length) {
+        $(".datepicker").daterangepicker({
+          locale: { cancelLabel: 'Clear',format: "YYYY-MM-DD" },
+          singleDatePicker: true,
+          autoUpdateInput: false,
+          showDropdowns: true
+        }).on("apply.daterangepicker", function (e, picker) {
+          picker.element.val(picker.startDate.format(picker.locale.format));
+        });
+      }
+    }
+    
+    // These are safe - they don't conflict with bootstrap-datepicker
+    if ($(".dobdatepicker").length) {
       $(".dobdatepicker").daterangepicker({
         locale: { cancelLabel: 'Clear',format: "DD/MM/YYYY" },
         singleDatePicker: true,
@@ -671,9 +685,9 @@ $(function () {
         opens: "right"
       }).on("apply.daterangepicker", function (e, picker) {
         picker.element.val(picker.startDate.format(picker.locale.format));
-    });
+      });
     }
-  }
+  } // End: if (isClientDetailPage) check
 
   // Timepicker
   if (jQuery().timepicker && $(".timepicker").length) {

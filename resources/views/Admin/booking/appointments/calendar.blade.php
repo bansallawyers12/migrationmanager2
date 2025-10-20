@@ -21,10 +21,31 @@ html, body {
     cursor: pointer;
     border-radius: 3px;
     padding: 2px 5px;
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: ellipsis;
+    min-width: 120px;
 }
 
 .fc-event:hover {
     opacity: 0.8;
+}
+
+.fc-event .fc-title {
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: ellipsis;
+    max-width: none;
+}
+
+/* Ensure calendar cells have enough space */
+.fc-day-grid-event {
+    margin: 1px 2px 0;
+    white-space: nowrap;
+}
+
+.fc-time-grid-event {
+    white-space: nowrap;
 }
 
 /* Status colors for calendar events */
@@ -103,6 +124,54 @@ html, body {
     margin: 5px 0 0 0;
     color: #6c757d;
 }
+
+/* Fix navigation button contrast - Ensure proper visibility */
+.btn-outline-primary {
+    color: #007bff !important;
+    border-color: #007bff !important;
+    background-color: transparent !important;
+    font-weight: 500 !important;
+}
+
+.btn-outline-primary:hover {
+    color: #fff !important;
+    background-color: #007bff !important;
+    border-color: #007bff !important;
+}
+
+.btn-outline-primary:focus {
+    color: #007bff !important;
+    border-color: #007bff !important;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+}
+
+.btn-outline-primary:active {
+    color: #fff !important;
+    background-color: #007bff !important;
+    border-color: #007bff !important;
+}
+
+/* Additional specificity for calendar navigation buttons */
+.btn-group .btn-outline-primary {
+    color: #007bff !important;
+    border-color: #007bff !important;
+    background-color: transparent !important;
+}
+
+.btn-group .btn-outline-primary:hover {
+    color: #fff !important;
+    background-color: #007bff !important;
+    border-color: #007bff !important;
+}
+
+/* Override Bootstrap CSS variables for better visibility */
+.btn-outline-primary {
+    --bs-btn-color: #007bff !important;
+    --bs-btn-border-color: #007bff !important;
+    --bs-btn-hover-color: #fff !important;
+    --bs-btn-hover-bg: #007bff !important;
+    --bs-btn-hover-border-color: #007bff !important;
+}
 </style>
 
 <div class="section-body">
@@ -115,23 +184,28 @@ html, body {
                 </a>
                 <div class="btn-group ml-2" role="group">
                     <a href="{{ route('booking.appointments.calendar', ['type' => 'paid']) }}" 
-                       class="btn btn-sm {{ $type === 'paid' ? 'btn-primary' : 'btn-outline-primary' }}">
-                        <i class="far fa-calendar-check"></i> Paid Services
+                       class="btn btn-sm {{ $type === 'paid' ? 'btn-primary' : 'btn-outline-primary' }}" 
+                       style="{{ $type === 'paid' ? '' : 'color: #007bff !important; border-color: #007bff !important;' }}">
+                        <i class="far fa-calendar-check"></i> Pr_complex matters
                     </a>
                     <a href="{{ route('booking.appointments.calendar', ['type' => 'jrp']) }}" 
-                       class="btn btn-sm {{ $type === 'jrp' ? 'btn-primary' : 'btn-outline-primary' }}">
+                       class="btn btn-sm {{ $type === 'jrp' ? 'btn-primary' : 'btn-outline-primary' }}" 
+                       style="{{ $type === 'jrp' ? '' : 'color: #007bff !important; border-color: #007bff !important;' }}">
                         <i class="far fa-calendar"></i> JRP
                     </a>
                     <a href="{{ route('booking.appointments.calendar', ['type' => 'education']) }}" 
-                       class="btn btn-sm {{ $type === 'education' ? 'btn-primary' : 'btn-outline-primary' }}">
+                       class="btn btn-sm {{ $type === 'education' ? 'btn-primary' : 'btn-outline-primary' }}" 
+                       style="{{ $type === 'education' ? '' : 'color: #007bff !important; border-color: #007bff !important;' }}">
                         <i class="fas fa-graduation-cap"></i> Education
                     </a>
                     <a href="{{ route('booking.appointments.calendar', ['type' => 'tourist']) }}" 
-                       class="btn btn-sm {{ $type === 'tourist' ? 'btn-primary' : 'btn-outline-primary' }}">
+                       class="btn btn-sm {{ $type === 'tourist' ? 'btn-primary' : 'btn-outline-primary' }}" 
+                       style="{{ $type === 'tourist' ? '' : 'color: #007bff !important; border-color: #007bff !important;' }}">
                         <i class="fas fa-plane"></i> Tourist
                     </a>
                     <a href="{{ route('booking.appointments.calendar', ['type' => 'adelaide']) }}" 
-                       class="btn btn-sm {{ $type === 'adelaide' ? 'btn-primary' : 'btn-outline-primary' }}">
+                       class="btn btn-sm {{ $type === 'adelaide' ? 'btn-primary' : 'btn-outline-primary' }}" 
+                       style="{{ $type === 'adelaide' ? '' : 'color: #007bff !important; border-color: #007bff !important;' }}">
                         <i class="fas fa-city"></i> Adelaide
                     </a>
                 </div>
@@ -168,6 +242,10 @@ html, body {
                         <div class="stat-box">
                             <h3>{{ $stats['pending'] ?? 0 }}</h3>
                             <p>Pending</p>
+                        </div>
+                        <div class="stat-box">
+                            <h3>{{ $stats['no_show'] ?? 0 }}</h3>
+                            <p>No Show</p>
                         </div>
                     </div>
 
@@ -228,79 +306,156 @@ html, body {
 <script src="{{URL::asset('js/fullcalendar.min.js')}}"></script>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    var calendarEl = document.getElementById('calendar');
+// Ensure jQuery is loaded
+if (typeof jQuery === 'undefined') {
+    console.error('jQuery is required but not loaded!');
+}
+
+$(document).ready(function() {
+    console.log('Initializing calendar with jQuery...');
     
-    var calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
-        headerToolbar: {
+    var calendarEl = $('#calendar');
+    if (!calendarEl.length) {
+        console.error('Calendar element not found!');
+        return;
+    }
+    
+    // Use v3.x jQuery plugin syntax instead of v4+ class syntax
+    calendarEl.fullCalendar({
+        header: {
             left: 'prev,next today',
             center: 'title',
-            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            right: 'month,agendaWeek,agendaDay'
         },
+        defaultView: 'month',
         editable: false,
         selectable: false,
-        selectMirror: true,
         dayMaxEvents: true,
-        weekNumbers: false,
         navLinks: true,
+        timeFormat: 'h:mm A',
         
         // Fetch events from server
-        events: function(info, successCallback, failureCallback) {
+        events: function(start, end, timezone, callback) {
+            console.log('Loading events...');
+            
             $.ajax({
                 url: '{{ route("booking.api.appointments") }}',
                 method: 'GET',
                 data: {
                     type: '{{ $type }}',
-                    start: info.startStr,
-                    end: info.endStr,
+                    start: start.format('YYYY-MM-DD'),
+                    end: end.format('YYYY-MM-DD'),
                     format: 'calendar'
                 },
                 success: function(response) {
-                    var events = response.data.map(function(appointment) {
-                        return {
-                            id: appointment.id,
-                            title: appointment.client_name + ' (' + appointment.service_type + ')',
-                            start: appointment.appointment_datetime,
-                            end: moment(appointment.appointment_datetime).add(appointment.duration_minutes, 'minutes').toISOString(),
-                            className: 'event-' + appointment.status,
-                            extendedProps: {
-                                client_name: appointment.client_name,
+                    console.log('API Response:', response);
+                    
+                    if (response.success && response.data) {
+                        var events = response.data.map(function(appointment) {
+                            var endTime = moment(appointment.appointment_datetime)
+                                .add(appointment.duration_minutes || 15, 'minutes');
+                            
+                            // Create a more readable title with proper truncation handling
+                            var serviceType = appointment.service_type || 'Service';
+                            var clientName = appointment.client_name || 'Unknown Client';
+                            var title = clientName + ' (' + serviceType + ')';
+                            
+                            return {
+                                id: appointment.id,
+                                title: title,
+                                start: appointment.appointment_datetime,
+                                end: endTime.format('YYYY-MM-DD HH:mm:ss'),
+                                className: 'event-' + appointment.status,
+                                client_name: clientName,
                                 client_email: appointment.client_email,
                                 client_phone: appointment.client_phone,
-                                service_type: appointment.service_type,
+                                service_type: serviceType,
                                 status: appointment.status,
                                 location: appointment.location,
                                 consultant: appointment.consultant ? appointment.consultant.name : 'Not Assigned',
                                 payment_status: appointment.is_paid ? 'Paid' : 'Free'
-                            }
-                        };
-                    });
-                    successCallback(events);
+                            };
+                        });
+                        console.log('Processed events:', events);
+                        callback(events);
+                    } else {
+                        console.log('No data received');
+                        callback([]);
+                    }
                 },
-                error: function() {
-                    failureCallback();
-                    alert('Failed to load appointments');
+                error: function(xhr, status, error) {
+                    console.error('AJAX Error:', xhr.responseText);
+                    callback([]);
+                    alert('Failed to load appointments: ' + error);
                 }
             });
         },
         
         // Event click handler
-        eventClick: function(info) {
-            var event = info.event;
-            var props = event.extendedProps;
+        eventClick: function(event, jsEvent, view) {
+            console.log('Event clicked:', event);
             
             var modalBody = `
                 <div class="appointment-details">
-                    <p><strong>Client:</strong> ${props.client_name}</p>
-                    <p><strong>Email:</strong> ${props.client_email}</p>
-                    <p><strong>Phone:</strong> ${props.client_phone}</p>
-                    <p><strong>Service:</strong> ${props.service_type}</p>
-                    <p><strong>Date & Time:</strong> ${moment(event.start).format('DD MMM YYYY, hh:mm A')}</p>
-                    <p><strong>Location:</strong> ${props.location}</p>
-                    <p><strong>Consultant:</strong> ${props.consultant}</p>
-                    <p><strong>Status:</strong> <span class="badge badge-${getStatusClass(props.status)}">${props.status.toUpperCase()}</span></p>
-                    <p><strong>Payment:</strong> <span class="badge badge-${props.payment_status === 'Paid' ? 'success' : 'secondary'}">${props.payment_status}</span></p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Client:</strong> ${event.client_name}</p>
+                            <p><strong>Email:</strong> ${event.client_email}</p>
+                            <p><strong>Phone:</strong> ${event.client_phone}</p>
+                            <p><strong>Service:</strong> ${event.service_type}</p>
+                            <p><strong>Date & Time:</strong> ${moment(event.start).format('DD MMM YYYY, hh:mm A')}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Location:</strong> ${event.location}</p>
+                            <p><strong>Consultant:</strong> ${event.consultant}</p>
+                            <p><strong>Status:</strong> <span class="badge badge-${getStatusClass(event.status)}" id="statusBadge">${event.status.toUpperCase()}</span></p>
+                            <p><strong>Payment:</strong> <span class="badge badge-${event.payment_status === 'Paid' ? 'success' : 'secondary'}">${event.payment_status}</span></p>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Action Controls -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-edit"></i> Change Status</h6>
+                            <div class="btn-group-vertical w-100" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-success" onclick="updateAppointmentStatus(${event.id}, 'confirmed')">
+                                    <i class="fas fa-check"></i> Mark as Confirmed
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="updateAppointmentStatus(${event.id}, 'completed')">
+                                    <i class="fas fa-check-circle"></i> Mark as Complete
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-warning" onclick="updateAppointmentStatus(${event.id}, 'pending')">
+                                    <i class="fas fa-clock"></i> Mark as Pending
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="updateAppointmentStatus(${event.id}, 'cancelled')">
+                                    <i class="fas fa-times"></i> Mark as Cancelled
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateAppointmentStatus(${event.id}, 'no_show')">
+                                    <i class="fas fa-user-times"></i> Mark as No Show
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-exchange-alt"></i> Change Calendar Type</h6>
+                            <div class="form-group">
+                                <select class="form-control form-control-sm" id="consultantSelect" onchange="updateAppointmentConsultant(${event.id}, this.value)">
+                                    <option value="">Select Consultant...</option>
+                                    <option value="1" ${event.consultant.includes('Arun') ? 'selected' : ''}>Arun Kumar (Pr_complex matters)</option>
+                                    <option value="2" ${event.consultant.includes('Shubham') ? 'selected' : ''}>Shubham/Yadwinder (JRP)</option>
+                                    <option value="3" ${event.consultant.includes('Education') ? 'selected' : ''}>Education Team</option>
+                                    <option value="4" ${event.consultant.includes('Tourist') ? 'selected' : ''}>Tourist Visa Team</option>
+                                    <option value="5" ${event.consultant.includes('Adelaide') ? 'selected' : ''}>Adelaide Office</option>
+                                </select>
+                            </div>
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle"></i> Changing consultant will move this appointment to the selected calendar type.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             `;
             
@@ -310,7 +465,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    calendar.render();
+    console.log('Calendar initialized successfully');
     
     // Helper function for status badge class
     function getStatusClass(status) {
@@ -321,6 +476,132 @@ document.addEventListener('DOMContentLoaded', function() {
             case 'cancelled': return 'danger';
             case 'no_show': return 'dark';
             default: return 'secondary';
+        }
+    }
+    
+    // Global functions for modal actions
+    window.updateAppointmentStatus = function(appointmentId, newStatus) {
+        if (!confirm(`Are you sure you want to change the status to "${newStatus}"?`)) {
+            return;
+        }
+        
+        // Show loading state
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+        button.disabled = true;
+        
+        $.ajax({
+            url: `/admin/booking/appointments/${appointmentId}/update-status`,
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            data: {
+                status: newStatus
+            },
+            success: function(data) {
+                if (data.success) {
+                    // Update the status badge in the modal
+                    const statusBadge = document.getElementById('statusBadge');
+                    if (statusBadge) {
+                        statusBadge.textContent = newStatus.toUpperCase();
+                        statusBadge.className = `badge badge-${getStatusClass(newStatus)}`;
+                    }
+                    
+                    // Refresh the calendar to show updated status
+                    $('#myEvent').fullCalendar('refetchEvents');
+                    
+                    // Show success message
+                    showAlert('success', 'Status updated successfully!');
+                } else {
+                    showAlert('danger', 'Failed to update status: ' + (data.message || 'Unknown error'));
+                }
+            },
+            error: function(xhr) {
+                console.error('Error updating status:', xhr.responseText);
+                showAlert('danger', 'Failed to update status. Please try again.');
+            },
+            complete: function() {
+                // Restore button state
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        });
+    };
+    
+    window.updateAppointmentConsultant = function(appointmentId, consultantId) {
+        if (!consultantId) {
+            return;
+        }
+        
+        if (!confirm('Are you sure you want to change the consultant? This will move the appointment to a different calendar.')) {
+            // Reset the select to previous value
+            const select = document.getElementById('consultantSelect');
+            select.value = '';
+            return;
+        }
+        
+        // Show loading state
+        const select = document.getElementById('consultantSelect');
+        const originalValue = select.value;
+        select.disabled = true;
+        
+        $.ajax({
+            url: `/admin/booking/appointments/${appointmentId}/update-consultant`,
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            data: {
+                consultant_id: consultantId
+            },
+            success: function(data) {
+                if (data.success) {
+                    // Close the modal and refresh calendar
+                    $('#eventModal').modal('hide');
+                    $('#myEvent').fullCalendar('refetchEvents');
+                    
+                    // Show success message
+                    showAlert('success', 'Consultant updated successfully! The appointment has been moved to the new calendar.');
+                } else {
+                    showAlert('danger', 'Failed to update consultant: ' + (data.message || 'Unknown error'));
+                    select.value = originalValue;
+                }
+            },
+            error: function(xhr) {
+                console.error('Error updating consultant:', xhr.responseText);
+                showAlert('danger', 'Failed to update consultant. Please try again.');
+                select.value = originalValue;
+            },
+            complete: function() {
+                select.disabled = false;
+            }
+        });
+    };
+    
+    function showAlert(type, message) {
+        // Create alert element
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="close" data-dismiss="alert">
+                <span>&times;</span>
+            </button>
+        `;
+        
+        // Insert at the top of the page
+        const container = document.querySelector('.section-body');
+        if (container) {
+            container.insertBefore(alertDiv, container.firstChild);
+            
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
         }
     }
 });

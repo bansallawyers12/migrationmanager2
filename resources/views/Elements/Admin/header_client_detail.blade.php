@@ -41,7 +41,7 @@
                     </a>
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'paid']) }}">
-                        <i class="far fa-calendar-check mr-2"></i> Paid Services
+                        <i class="far fa-calendar-check mr-2"></i> Pr_complex matters
                     </a>
                     <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'jrp']) }}">
                         <i class="far fa-calendar mr-2"></i> JRP Calendar

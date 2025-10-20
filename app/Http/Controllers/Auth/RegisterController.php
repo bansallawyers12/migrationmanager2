@@ -99,12 +99,12 @@ class RegisterController extends Controller
 				'user_id' => $result->id,
 				'token' => str_random(40)
 			]);
-			$tokenurl = \URL::to('/user/verify/'.$verifyUser->token);
-		$replaceav = array('{company_logo}','{emailid}','{tokenemail}');
-		$replace_withav = array(\URL::to('/').'/public/img/Frontend/img/bookmatic-logo.png', @$result->email, $tokenurl);			
-		$emailtemplate	= 	DB::table('email_templates')->where('alias', 'verify-email')->first();
-		$subContentav 	= 	$emailtemplate->subject;
-		$issuccess = $this->send_email_template($replaceav, $replace_withav, 'verify-email', @$result->email,$subContentav,'info@travelsdata.com'); 
+		$tokenurl = \URL::to('/user/verify/'.$verifyUser->token);
+	$replaceav = array('{company_logo}','{emailid}','{tokenemail}');
+	$replace_withav = array(\URL::to('/').'/public/img/logo.png', @$result->email, $tokenurl);			
+	$emailtemplate	= 	DB::table('email_templates')->where('alias', 'verify-email')->first();
+	$subContentav 	= 	$emailtemplate->subject;
+	$issuccess = $this->send_email_template($replaceav, $replace_withav, 'verify-email', @$result->email,$subContentav, config('mail.from.address'));
 			return $result;
 		}
     }

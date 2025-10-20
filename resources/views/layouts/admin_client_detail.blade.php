@@ -14,9 +14,9 @@
     <link rel="stylesheet" href="{{asset('css/iziToast.min.css')}}">
     <link rel="stylesheet" href="{{asset('css/fullcalendar.min.css')}}">
     <link rel="stylesheet" href="{{asset('css/summernote-bs4.css')}}">
-    <link rel="stylesheet" href="{{asset('css/daterangepicker.css')}}">
+    {{-- <link rel="stylesheet" href="{{asset('css/daterangepicker.css')}}"> --}} {{-- ❌ REMOVED: Conflicts with bootstrap-datepicker on client detail --}}
     <link rel="stylesheet" href="{{asset('css/bootstrap-timepicker.min.css')}}">
-    <link rel="stylesheet" href="{{asset('css/bootstrap-datepicker.min.css')}}">
+    <link rel="stylesheet" href="{{asset('css/bootstrap-datepicker.min.css')}}"> {{-- ✅ ONLY datepicker CSS for client detail --}}
     <link rel="stylesheet" href="{{asset('css/select2.min.css')}}">
     <link rel="stylesheet" href="{{asset('css/bootstrap-formhelpers.min.css')}}">
     <link rel="stylesheet" href="{{asset('css/intlTelInput.css')}}">
@@ -1398,9 +1398,9 @@
     <script src="https://momentjs.com/downloads/moment.js"></script>
     <script src="{{asset('js/dataTables.bootstrap4.js')}}"></script>
     <script src="{{asset('js/summernote-bs4.js')}}"></script>
-    <script src="{{asset('js/daterangepicker.js')}}"></script>
+    {{-- <script src="{{asset('js/daterangepicker.js')}}"></script> --}} {{-- ❌ REMOVED: Conflicts with bootstrap-datepicker on client detail --}}
     <script src="{{asset('js/bootstrap-timepicker.min.js')}}"></script>
-    <script src="{{asset('js/bootstrap-datepicker.min.js')}}"></script>
+    <script src="{{asset('js/bootstrap-datepicker.min.js')}}"></script> {{-- ✅ ONLY datepicker for client detail pages --}}
     <script src="{{asset('js/select2.full.min.js')}}"></script>
     <script src="{{asset('js/bootstrap-formhelpers.min.js')}}"></script>
     <script src="{{asset('js/intlTelInput.js')}}"></script>

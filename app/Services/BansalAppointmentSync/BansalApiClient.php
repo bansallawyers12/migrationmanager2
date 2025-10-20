@@ -14,8 +14,8 @@ class BansalApiClient
      * Create a new API client instance.
      */
     public function __construct(
-        protected string $baseUrl = '',
-        protected string $apiToken = '',
+        protected ?string $baseUrl = null,
+        protected ?string $apiToken = null,
         protected int $timeout = 30
     ) {
         $this->baseUrl = $baseUrl ?: config('services.bansal_api.url', 'https://bansalimmigration.com/api/crm');
