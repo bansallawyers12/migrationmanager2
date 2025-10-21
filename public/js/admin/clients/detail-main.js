@@ -6309,6 +6309,102 @@ Bansal Immigration`;
 
         });
 
+        // Handle uploadAndFetchMail form submission via AJAX
+        $(document).on('submit', '#uploadAndFetchMail', function(e) {
+            e.preventDefault();
+            
+            var formData = new FormData(this);
+            $('.popuploader').show();
+            $('.custom-error-msg').html('');
+            
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    $('.popuploader').hide();
+                    if (response.status) {
+                        $('.custom-error-msg').html('<span class="alert alert-success">' + response.message + '</span>');
+                        $('#uploadAndFetchMailModel').modal('hide');
+                        // Reload the page to show the uploaded emails
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1500);
+                    } else {
+                        $('.custom-error-msg').html('<span class="alert alert-danger">' + response.message + '</span>');
+                    }
+                },
+                error: function(xhr) {
+                    $('.popuploader').hide();
+                    var errorMessage = 'An unexpected error occurred. Please try again.';
+                    
+                    if (xhr.responseJSON && xhr.responseJSON.errors) {
+                        var errors = xhr.responseJSON.errors;
+                        var errorHtml = '<span class="alert alert-danger">';
+                        for (var field in errors) {
+                            errorHtml += errors[field][0] + '<br>';
+                        }
+                        errorHtml += '</span>';
+                        $('.custom-error-msg').html(errorHtml);
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                        $('.custom-error-msg').html('<span class="alert alert-danger">' + xhr.responseJSON.message + '</span>');
+                    } else {
+                        $('.custom-error-msg').html('<span class="alert alert-danger">' + errorMessage + '</span>');
+                    }
+                }
+            });
+        });
+
+        // Handle uploadSentAndFetchMail form submission via AJAX
+        $(document).on('submit', '#uploadSentAndFetchMail', function(e) {
+            e.preventDefault();
+            
+            var formData = new FormData(this);
+            $('.popuploader').show();
+            $('.custom-error-msg').html('');
+            
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    $('.popuploader').hide();
+                    if (response.status) {
+                        $('.custom-error-msg').html('<span class="alert alert-success">' + response.message + '</span>');
+                        $('#uploadSentAndFetchMailModel').modal('hide');
+                        // Reload the page to show the uploaded emails
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1500);
+                    } else {
+                        $('.custom-error-msg').html('<span class="alert alert-danger">' + response.message + '</span>');
+                    }
+                },
+                error: function(xhr) {
+                    $('.popuploader').hide();
+                    var errorMessage = 'An unexpected error occurred. Please try again.';
+                    
+                    if (xhr.responseJSON && xhr.responseJSON.errors) {
+                        var errors = xhr.responseJSON.errors;
+                        var errorHtml = '<span class="alert alert-danger">';
+                        for (var field in errors) {
+                            errorHtml += errors[field][0] + '<br>';
+                        }
+                        errorHtml += '</span>';
+                        $('.custom-error-msg').html(errorHtml);
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                        $('.custom-error-msg').html('<span class="alert alert-danger">' + xhr.responseJSON.message + '</span>');
+                    } else {
+                        $('.custom-error-msg').html('<span class="alert alert-danger">' + errorMessage + '</span>');
+                    }
+                }
+            });
+        });
+
 
 
 

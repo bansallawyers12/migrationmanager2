@@ -25,6 +25,7 @@
         "mews/captcha": "^3.3",
         "mikehaertl/php-pdftk": "0.13.1",
         "php-mime-mail-parser/php-mime-mail-parser": "^1.0",
+        "pear/pear-core-minimal": "^1.10.13",
         "phpoffice/phpspreadsheet": "^1.29",
         "phpoffice/phpword": "^1.3",
         "salmanzafar/laravel-geocode": "^1.0",
