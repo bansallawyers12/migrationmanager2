@@ -224,7 +224,6 @@ ROLLBACK: Uncomment lines 33-35 in admin_client_detail_dashboard.blade.php
 
 **Pages:** 
 - `/admin/appointments/calender`
-- `/admin/appointments_api/calender`
 
 1. [ ] Navigate to appointment calendar
 2. [ ] Test calendar navigation

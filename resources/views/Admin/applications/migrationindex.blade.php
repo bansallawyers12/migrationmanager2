@@ -1,13 +1,15 @@
-@extends('layouts.admin')
+@extends('layouts.admin_client_detail')
 @section('title', 'Applications')
 
-@section('content')
+@section('styles')
 <link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
 <style>
     .filter_panel {background: #f7f7f7;margin-bottom: 10px;border: 1pxsolid #eee;display: none;}
 .card .card-body .filter_panel { padding: 20px;}
 </style>
-<!-- Main Content -->
+@endsection
+
+@section('main-content')
 <div class="main-content">
 	<section class="section">
 		<div class="section-body">
@@ -159,8 +161,8 @@
 		</div>
 	</section>
 </div>
-
 @endsection
+
 @push('scripts')
 <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
 <script>
