@@ -10737,19 +10737,21 @@ class ClientsController extends Controller
 		try {
 			$clientMatters = DB::table('client_matters')
 				->leftJoin('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
-				->select('client_matters.id', 'client_matters.client_unique_matter_no', 'matters.title')
+				->select('client_matters.id', 'client_matters.client_unique_matter_no', 'matters.title', 'client_matters.sel_matter_id')
 				->where('client_matters.matter_status', 1)
 				->where('client_matters.client_id', $clientId)
-				->where(function($query) {
-					$query->where('client_matters.sel_matter_id', '!=', 1)
-						->orWhere('client_matters.client_unique_matter_no', 'like', 'GN_%');
-				})
 				->orderBy('client_matters.id', 'desc')
 				->get();
 			
 			$matters = [];
 			foreach($clientMatters as $matter){
-				$displayName = $matter->title ? $matter->title . ' - ' . $matter->client_unique_matter_no : $matter->client_unique_matter_no;
+				// If sel_matter_id is 1 or title is null, use "General Matter"
+				$matterName = 'General Matter';
+				if ($matter->sel_matter_id != 1 && !empty($matter->title)) {
+					$matterName = $matter->title;
+				}
+				
+				$displayName = $matterName . ' - ' . $matter->client_unique_matter_no;
 				$matters[] = [
 					'id' => $matter->id,
 					'display_name' => $displayName,
@@ -10989,18 +10991,39 @@ class ClientsController extends Controller
                 return redirect()->back()->with('error', 'Client not found');
             }
 
-            // Convert tag array to comma-separated string
-            $tagString = '';
+            // Process tags - create new ones if they don't exist, get IDs for existing ones
+            $tagIds = [];
             if (!empty($tags) && is_array($tags)) {
-                // Filter out empty values
-                $validTags = array_filter($tags, function($tag) {
-                    return !empty($tag);
-                });
-                $tagString = implode(',', $validTags);
+                foreach ($tags as $tagValue) {
+                    if (!empty($tagValue)) {
+                        // Check if tag exists by name first
+                        $existingTag = \App\Models\Tag::where('name', $tagValue)->first();
+                        
+                        if ($existingTag) {
+                            // Tag exists, use its ID
+                            $tagIds[] = $existingTag->id;
+                        } else {
+                            // Check if it's an ID (numeric)
+                            if (is_numeric($tagValue)) {
+                                $tagById = \App\Models\Tag::find($tagValue);
+                                if ($tagById) {
+                                    $tagIds[] = $tagById->id;
+                                }
+                            } else {
+                                // Create new tag
+                                $newTag = new \App\Models\Tag();
+                                $newTag->name = $tagValue;
+                                $newTag->created_by = auth()->id();
+                                $newTag->save();
+                                $tagIds[] = $newTag->id;
+                            }
+                        }
+                    }
+                }
             }
 
-            // Update the client's tagname field
-            $client->tagname = $tagString;
+            // Update the client's tagname field with tag IDs
+            $client->tagname = implode(',', $tagIds);
             $client->save();
 
             return redirect()->back()->with('success', 'Tags saved successfully');

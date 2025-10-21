@@ -106,7 +106,7 @@ class UnifiedSmsManager
                 'provider' => $provider,
                 'provider_message_id' => $providerMessageId,
                 'status' => $result['success'] ? 'sent' : 'failed',
-                'error_message' => $result['success'] ? null : $result['message'],
+                'error_message' => $result['success'] ? null : ($result['message'] ?? $result['error'] ?? 'Unknown error'),
                 'sent_at' => $result['success'] ? now() : null,
             ]);
 

@@ -37,7 +37,7 @@ class TwilioProvider implements SmsProviderInterface
                 
                 return [
                     'success' => false,
-                    'error' => 'Twilio credentials not configured',
+                    'message' => 'Twilio credentials not configured',
                     'to' => $to
                 ];
             }

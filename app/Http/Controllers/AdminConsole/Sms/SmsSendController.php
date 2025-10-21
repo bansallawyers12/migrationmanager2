@@ -38,7 +38,7 @@ class SmsSendController extends Controller
         $validator = Validator::make($request->all(), [
             'phone' => 'required|string',
             'message' => 'required|string|max:1600',
-            'client_id' => 'nullable|exists:clients,id',
+            'client_id' => 'nullable|exists:admins,id',
             'contact_id' => 'nullable|exists:client_contacts,id',
         ]);
 
@@ -72,7 +72,7 @@ class SmsSendController extends Controller
             'phone' => 'required|string',
             'template_id' => 'required|exists:sms_templates,id',
             'variables' => 'nullable|array',
-            'client_id' => 'nullable|exists:clients,id',
+            'client_id' => 'nullable|exists:admins,id',
             'contact_id' => 'nullable|exists:client_contacts,id',
         ]);
 

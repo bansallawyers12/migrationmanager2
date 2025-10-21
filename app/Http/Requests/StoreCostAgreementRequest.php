@@ -22,7 +22,7 @@ class StoreCostAgreementRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'client_id' => 'required|exists:clients,id',
+            'client_id' => 'required|exists:admins,id',
             'agent_id' => 'required|exists:agent_details,id',
             'visa_type' => 'nullable|string|max:255',
             'visa_subclass' => 'nullable|string|max:255',

@@ -95,10 +95,9 @@ use App\Http\Controllers\Controller;
                             // Fetch all matters, but we'll sort them in Blade to prioritize the URL matter
                             $matter_list_arr = DB::table('client_matters')
                             ->leftJoin('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
-                            ->select('client_matters.id','client_matters.client_unique_matter_no','matters.title')
+                            ->select('client_matters.id','client_matters.client_unique_matter_no','matters.title','client_matters.sel_matter_id')
                             ->where('client_matters.client_id',@$fetchedData->id)
                             ->where('client_matters.matter_status',1)
-                            ->where('client_matters.sel_matter_id','!=',1)
                             ->get();
                             $clientmatter_info_arr = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
                             $latestClientMatterId = $clientmatter_info_arr ? $clientmatter_info_arr->id : null;
@@ -118,7 +117,14 @@ use App\Http\Controllers\Controller;
                         <select name="matter_id" id="sel_matter_id_client_detail" class="form-control select2 visa-dropdown" data-valid="required">
                             <option value="">Select Matters</option>
                             @foreach($matter_list_arr as $matterlist)
-                                <option value="{{$matterlist->id}}" {{ $matterlist->id == $latestClientMatterId ? 'selected' : '' }} data-clientuniquematterno="{{@$matterlist->client_unique_matter_no}}">{{@$matterlist->title}}({{@$matterlist->client_unique_matter_no}})</option>
+                                @php
+                                    // If sel_matter_id is 1 or title is null, use "General Matter"
+                                    $matterName = 'General Matter';
+                                    if ($matterlist->sel_matter_id != 1 && !empty($matterlist->title)) {
+                                        $matterName = $matterlist->title;
+                                    }
+                                @endphp
+                                <option value="{{$matterlist->id}}" {{ $matterlist->id == $latestClientMatterId ? 'selected' : '' }} data-clientuniquematterno="{{@$matterlist->client_unique_matter_no}}">{{$matterName}}({{@$matterlist->client_unique_matter_no}})</option>
                             @endforeach
                         </select>
                     <?php
@@ -136,10 +142,9 @@ use App\Http\Controllers\Controller;
                         {
                             $matter_list_arr = DB::table('client_matters')
                             ->leftJoin('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
-                            ->select('client_matters.id','client_matters.client_unique_matter_no','matters.title')
+                            ->select('client_matters.id','client_matters.client_unique_matter_no','matters.title','client_matters.sel_matter_id')
                             ->where('client_matters.client_id',@$fetchedData->id)
                             ->where('client_matters.matter_status',1)
-                            ->where('client_matters.sel_matter_id','!=',1)
                             ->orderBy('client_matters.created_at', 'desc')
                             ->get();
                             $latestClientMatter = \App\Models\ClientMatter::where('client_id',$fetchedData->id)->where('matter_status',1)->latest()->first();
@@ -148,7 +153,14 @@ use App\Http\Controllers\Controller;
                         <select name="matter_id" id="sel_matter_id_client_detail" class="form-control select2 visa-dropdown" data-valid="required">
                             <option value="">Select Matters</option>
                             @foreach($matter_list_arr as $matterlist)
-                                <option value="{{$matterlist->id}}" {{ $matterlist->id == $latestClientMatterId ? 'selected' : '' }} data-clientuniquematterno="{{@$matterlist->client_unique_matter_no}}">{{@$matterlist->title}}({{@$matterlist->client_unique_matter_no}})</option>
+                                @php
+                                    // If sel_matter_id is 1 or title is null, use "General Matter"
+                                    $matterName = 'General Matter';
+                                    if ($matterlist->sel_matter_id != 1 && !empty($matterlist->title)) {
+                                        $matterName = $matterlist->title;
+                                    }
+                                @endphp
+                                <option value="{{$matterlist->id}}" {{ $matterlist->id == $latestClientMatterId ? 'selected' : '' }} data-clientuniquematterno="{{@$matterlist->client_unique_matter_no}}">{{$matterName}}({{@$matterlist->client_unique_matter_no}})</option>
                             @endforeach
                         </select>
                     <?php
@@ -986,7 +998,7 @@ use App\Http\Controllers\Controller;
 						<div class="col-12 col-md-12 col-lg-12">
 							<div class="form-group">
 								<label for="super_agent">Tags <span class="span_req">*</span></label>
-								<select data-valid="required" multiple class="tagsselec form-control super_tag" id="tag" name="tag[]">
+								<select data-valid="required" multiple class="tagsselec form-control super_tag" id="tag" name="tag[]" data-tags="true">
 								<?php $r = array();
 								if($fetchedData->tagname != ''){
 									$r = explode(',', $fetchedData->tagname);
@@ -995,7 +1007,7 @@ use App\Http\Controllers\Controller;
 									<option value="">Please Select</option>
 									<?php $stagd = \App\Models\Tag::where('id','!=','')->get(); ?>
 									@foreach($stagd as $sa)
-										<option <?php if(in_array($sa->id, $r)){ echo 'selected'; } ?> value="{{$sa->id}}">{{$sa->name}}</option>
+										<option <?php if(in_array($sa->id, $r)){ echo 'selected'; } ?> value="{{$sa->name}}">{{$sa->name}}</option>
 									@endforeach
 								</select>
 
