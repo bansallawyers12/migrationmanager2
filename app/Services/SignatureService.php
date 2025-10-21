@@ -6,6 +6,8 @@ use App\Models\Document;
 use App\Models\Signer;
 use App\Models\Admin;
 use App\Models\Lead;
+use App\Models\DocumentNote;
+use App\Models\ActivitiesLog;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
@@ -13,12 +15,21 @@ use Illuminate\Support\Facades\Storage;
 
 class SignatureService
 {
+    protected EmailConfigService $emailConfigService;
+
+    /**
+     * Constructor with dependency injection
+     */
+    public function __construct(EmailConfigService $emailConfigService)
+    {
+        $this->emailConfigService = $emailConfigService;
+    }
     /**
      * Send a document for signature
      *
      * @param Document $document
      * @param array $signers Array of ['email' => '', 'name' => '']
-     * @param array $options Additional options
+     * @param array $options Additional options (subject, message, from_email, template, attachments)
      * @return bool
      */
     public function send(Document $document, array $signers, array $options = []): bool
@@ -61,25 +72,81 @@ class SignatureService
     }
 
     /**
-     * Send signing email to a signer
+     * Send signing email to a signer using branded templates and custom SMTP
      */
     protected function sendSigningEmail(Document $document, Signer $signer, array $options = []): void
     {
-        $signingUrl = url("/sign/{$document->id}/{$signer->token}");
-        
-        $subject = $options['subject'] ?? 'Document Signature Request';
-        $message = $options['message'] ?? "Please sign the document: {$document->display_title}";
+        try {
+            // Apply email configuration if specified
+            if (isset($options['from_email'])) {
+                $emailConfig = $this->emailConfigService->forAccount($options['from_email']);
+                $this->emailConfigService->applyConfig($emailConfig);
+            } else {
+                // Use default email config
+                $defaultConfig = $this->emailConfigService->getDefaultAccount();
+                if ($defaultConfig) {
+                    $this->emailConfigService->applyConfig($defaultConfig);
+                }
+            }
 
-        Mail::raw("{$message}\n\nClick here to sign: {$signingUrl}", function ($mail) use ($signer, $subject) {
-            $mail->to($signer->email, $signer->name)
-                 ->subject($subject);
-        });
+            $signingUrl = url("/sign/{$document->id}/{$signer->token}");
+            
+            // Determine template based on document type or options
+            $template = $options['template'] ?? 'emails.signature.send';
+            if ($document->document_type === 'agreement') {
+                $template = 'emails.signature.send_agreement';
+            }
+            
+            $subject = $options['subject'] ?? 'Document Signature Request from Bansal Migration';
+            $message = $options['message'] ?? "Please review and sign the attached document.";
+            
+            // Prepare template data
+            $templateData = [
+                'signerName' => $signer->name,
+                'documentTitle' => $document->display_title ?? $document->title,
+                'signingUrl' => $signingUrl,
+                'message' => $message,
+                'documentType' => $document->document_type ?? 'document',
+                'dueDate' => $document->due_at ? $document->due_at->format('F j, Y') : null,
+            ];
+
+            // Send email with template
+            Mail::send($template, $templateData, function ($mail) use ($signer, $subject, $options) {
+                $mail->to($signer->email, $signer->name)
+                     ->subject($subject);
+                
+                // Add attachments if provided
+                if (isset($options['attachments']) && is_array($options['attachments'])) {
+                    foreach ($options['attachments'] as $attachment) {
+                        if (isset($attachment['path']) && file_exists($attachment['path'])) {
+                            $mail->attach($attachment['path'], [
+                                'as' => $attachment['name'] ?? basename($attachment['path']),
+                                'mime' => $attachment['mime'] ?? 'application/octet-stream',
+                            ]);
+                        }
+                    }
+                }
+            });
+
+            Log::info('Signing email sent', [
+                'document_id' => $document->id,
+                'signer_email' => $signer->email,
+                'template' => $template
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to send signing email', [
+                'document_id' => $document->id,
+                'signer_id' => $signer->id,
+                'error' => $e->getMessage()
+            ]);
+            throw $e;
+        }
     }
 
     /**
-     * Send reminder to a signer
+     * Send reminder to a signer using branded template
      */
-    public function remind(Signer $signer): bool
+    public function remind(Signer $signer, array $options = []): bool
     {
         try {
             // Check reminder limits
@@ -91,20 +158,42 @@ class SignatureService
                 throw new \Exception('Please wait 24 hours between reminders');
             }
 
+            // Apply email configuration if specified
+            if (isset($options['from_email'])) {
+                $emailConfig = $this->emailConfigService->forAccount($options['from_email']);
+                $this->emailConfigService->applyConfig($emailConfig);
+            } else {
+                $defaultConfig = $this->emailConfigService->getDefaultAccount();
+                if ($defaultConfig) {
+                    $this->emailConfigService->applyConfig($defaultConfig);
+                }
+            }
+
             $document = $signer->document;
             $signingUrl = url("/sign/{$document->id}/{$signer->token}");
 
-            Mail::raw("This is a reminder to sign your document: {$document->display_title}\n\nClick here to sign: {$signingUrl}", 
-                function ($mail) use ($signer) {
-                    $mail->to($signer->email, $signer->name)
-                         ->subject('Reminder: Please Sign Your Document');
-                }
-            );
+            $templateData = [
+                'signerName' => $signer->name,
+                'documentTitle' => $document->display_title ?? $document->title,
+                'signingUrl' => $signingUrl,
+                'reminderNumber' => $signer->reminder_count + 1,
+                'dueDate' => $document->due_at ? $document->due_at->format('F j, Y') : null,
+            ];
+
+            Mail::send('emails.signature.reminder', $templateData, function ($mail) use ($signer) {
+                $mail->to($signer->email, $signer->name)
+                     ->subject('Reminder: Please Sign Your Document - Bansal Migration');
+            });
 
             // Update reminder tracking
             $signer->update([
                 'last_reminder_sent_at' => now(),
                 'reminder_count' => $signer->reminder_count + 1
+            ]);
+
+            Log::info('Reminder sent', [
+                'signer_id' => $signer->id,
+                'reminder_count' => $signer->reminder_count
             ]);
 
             return true;
@@ -164,6 +253,30 @@ class SignatureService
                 'origin' => $entityType,
             ]);
 
+            // Create audit trail entry in document_notes
+            DocumentNote::create([
+                'document_id' => $document->id,
+                'created_by' => auth('admin')->id() ?? 1,
+                'action_type' => 'associated',
+                'note' => $note ?? "Document associated with {$entityType}",
+                'metadata' => [
+                    'entity_type' => $entityType,
+                    'entity_id' => $entityId,
+                    'documentable_type' => $documentableType
+                ]
+            ]);
+
+            // Create activity log on Client/Lead timeline
+            if ($entityType === 'client') {
+                ActivitiesLog::create([
+                    'client_id' => $entityId,
+                    'created_by' => auth('admin')->id() ?? 1,
+                    'activity_type' => 'document',
+                    'subject' => "Document #{$document->id} attached",
+                    'description' => $note ?? "Document '{$document->display_title}' was attached to this client"
+                ]);
+            }
+
             // Log the association
             Log::info('Document associated', [
                 'document_id' => $document->id,
@@ -188,11 +301,39 @@ class SignatureService
     public function detach(Document $document, string $reason = null): bool
     {
         try {
+            $oldEntityType = $document->documentable_type;
+            $oldEntityId = $document->documentable_id;
+            $entityType = $document->documentable_type === Admin::class ? 'client' : 'lead';
+
             $document->update([
                 'documentable_type' => null,
                 'documentable_id' => null,
                 'origin' => 'ad_hoc',
             ]);
+
+            // Create audit trail entry
+            DocumentNote::create([
+                'document_id' => $document->id,
+                'created_by' => auth('admin')->id() ?? 1,
+                'action_type' => 'detached',
+                'note' => $reason ?? "Document detached from {$entityType}",
+                'metadata' => [
+                    'old_entity_type' => $entityType,
+                    'old_entity_id' => $oldEntityId,
+                    'old_documentable_type' => $oldEntityType
+                ]
+            ]);
+
+            // Create activity log on Client/Lead timeline
+            if ($oldEntityType === Admin::class && $oldEntityId) {
+                ActivitiesLog::create([
+                    'client_id' => $oldEntityId,
+                    'created_by' => auth('admin')->id() ?? 1,
+                    'activity_type' => 'document',
+                    'subject' => "Document #{$document->id} detached",
+                    'description' => $reason ?? "Document '{$document->display_title}' was detached from this client"
+                ]);
+            }
 
             // Log the detachment
             if ($reason) {
@@ -223,11 +364,34 @@ class SignatureService
             ->first();
 
         if ($client) {
+            // Get client's matters
+            $matters = \DB::table('client_matters')
+                ->where('client_id', $client->id)
+                ->join('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
+                ->select(
+                    'client_matters.id',
+                    'client_matters.client_unique_matter_no',
+                    'matters.title as matter_title',
+                    'client_matters.matter_status'
+                )
+                ->orderBy('client_matters.created_at', 'desc')
+                ->get()
+                ->map(function($matter) {
+                    return [
+                        'id' => $matter->id,
+                        'label' => $matter->client_unique_matter_no . ' - ' . $matter->matter_title,
+                        'status' => $matter->matter_status
+                    ];
+                })
+                ->toArray();
+
             return [
                 'type' => 'client',
                 'id' => $client->id,
                 'name' => trim("{$client->first_name} {$client->last_name}"),
-                'email' => $client->email
+                'email' => $client->email,
+                'matters' => $matters,
+                'has_matters' => count($matters) > 0
             ];
         }
 
@@ -239,7 +403,9 @@ class SignatureService
                 'type' => 'lead',
                 'id' => $lead->id,
                 'name' => trim("{$lead->first_name} {$lead->last_name}"),
-                'email' => $lead->email
+                'email' => $lead->email,
+                'matters' => [],
+                'has_matters' => false
             ];
         }
 

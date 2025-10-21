@@ -247,10 +247,82 @@
         border-color: #667eea;
         background: #e8ecff;
     }
+    
+    .match-alert {
+        background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        border-left: 4px solid #4caf50;
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: none;
+        animation: slideDown 0.3s ease;
+    }
+    
+    .match-alert.show {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .match-alert-icon {
+        font-size: 32px;
+        color: #4caf50;
+    }
+    
+    .match-alert-content {
+        flex: 1;
+    }
+    
+    .match-alert-title {
+        font-weight: 600;
+        color: #2e7d32;
+        margin-bottom: 5px;
+    }
+    
+    .match-alert-text {
+        color: #558b2f;
+        font-size: 14px;
+    }
+    
+    .match-alert-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .btn-match-accept {
+        background: #4caf50;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-weight: 500;
+    }
+    
+    .btn-match-dismiss {
+        background: #757575;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-weight: 500;
+    }
+    
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 </style>
 @endsection
 
-@section('main-content')
+@section('content')
 <div class="send-document-container">
     <div class="page-header">
         <nav aria-label="breadcrumb">
@@ -272,6 +344,25 @@
         </ul>
     </div>
     @endif
+    
+    <!-- Match Alert Banner -->
+    <div id="matchAlert" class="match-alert">
+        <div class="match-alert-icon">
+            <i class="fas fa-user-check"></i>
+        </div>
+        <div class="match-alert-content">
+            <div class="match-alert-title" id="matchAlertTitle">Found matching client!</div>
+            <div class="match-alert-text" id="matchAlertText"></div>
+        </div>
+        <div class="match-alert-actions">
+            <button type="button" class="btn-match-accept" onclick="acceptMatch()">
+                <i class="fas fa-link"></i> Link Document
+            </button>
+            <button type="button" class="btn-match-dismiss" onclick="dismissMatch()">
+                <i class="fas fa-times"></i> Dismiss
+            </button>
+        </div>
+    </div>
 
     <form action="{{ route('admin.signatures.store') }}" method="POST" enctype="multipart/form-data" id="sendDocumentForm">
         @csrf
@@ -339,6 +430,53 @@
                 </div>
             </div>
 
+            <!-- Email Template & Configuration Section -->
+            <div class="form-section">
+                <h3 class="form-section-title">
+                    <i class="fas fa-envelope"></i>
+                    Email Settings
+                </h3>
+                
+                <div class="form-group">
+                    <label for="from_email">Send From Email Account</label>
+                    <select class="form-control" id="from_email" name="from_email">
+                        <option value="">-- Use Default --</option>
+                        @foreach($emailAccounts as $account)
+                            <option value="{{ $account->email }}">{{ $account->display_name }} ({{ $account->email }})</option>
+                        @endforeach
+                    </select>
+                    <small class="form-help-text">Select which email account to send from</small>
+                </div>
+
+                <div class="form-group" style="margin-top: 15px;">
+                    <label for="email_template">Email Template</label>
+                    <select class="form-control" id="email_template" name="email_template">
+                        <option value="emails.signature.send">Standard - Professional signature request</option>
+                        <option value="emails.signature.send_agreement">Agreement - With legal notices and attachments</option>
+                    </select>
+                    <small class="form-help-text">Choose the email template to use</small>
+                </div>
+
+                <div class="form-group" style="margin-top: 15px;">
+                    <label for="email_subject">Email Subject (Optional)</label>
+                    <input type="text" class="form-control" id="email_subject" name="email_subject" 
+                           placeholder="Leave blank for default subject" value="{{ old('email_subject') }}">
+                </div>
+
+                <div class="form-group" style="margin-top: 15px;">
+                    <label for="email_message">Custom Message (Optional)</label>
+                    <textarea class="form-control" id="email_message" name="email_message" rows="3"
+                              placeholder="Add a personal message...">{{ old('email_message') }}</textarea>
+                    <small class="form-help-text">This message will be included in the email</small>
+                </div>
+
+                <div style="margin-top: 15px;">
+                    <button type="button" class="btn btn-outline-primary" onclick="previewEmail()">
+                        <i class="fas fa-eye"></i> Preview Email
+                    </button>
+                </div>
+            </div>
+
             <!-- Association Section -->
             <div class="form-section">
                 <h3 class="form-section-title">
@@ -367,6 +505,15 @@
                         <select class="form-control" id="association_id" name="association_id">
                             <option value="">-- Select --</option>
                         </select>
+                    </div>
+                    
+                    <!-- Matter selection for clients -->
+                    <div id="matterSelection" style="display: none; margin-top: 15px;">
+                        <label for="client_matter_id">Select Matter (Optional)</label>
+                        <select class="form-control" id="client_matter_id" name="client_matter_id">
+                            <option value="">-- No specific matter --</option>
+                        </select>
+                        <small class="form-help-text">Associate this document with a specific matter</small>
                     </div>
                 </div>
             </div>
@@ -413,6 +560,34 @@
             </div>
         </div>
     </form>
+</div>
+
+<!-- Email Preview Modal -->
+<div class="modal fade" id="emailPreviewModal" tabindex="-1" role="dialog" aria-labelledby="emailPreviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document" style="max-width: 800px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="emailPreviewModalLabel">
+                    <i class="fas fa-eye"></i> Email Preview
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="emailPreviewContent" style="padding: 0; max-height: 70vh; overflow-y: auto;">
+                <div style="text-align: center; padding: 40px;">
+                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                    <p style="margin-top: 15px;">Loading preview...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="$('#emailPreviewModal').modal('hide')">
+                    <i class="fas fa-check"></i> Looks Good
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -477,13 +652,18 @@ document.querySelectorAll('input[name="association_type"]').forEach(radio => {
         const type = this.value;
         const searchDiv = document.getElementById('associationSearch');
         const select = document.getElementById('association_id');
+        const matterDiv = document.getElementById('matterSelection');
         
         if (type === '') {
             searchDiv.style.display = 'none';
+            matterDiv.style.display = 'none';
             select.innerHTML = '<option value="">-- Select --</option>';
         } else {
             searchDiv.style.display = 'block';
             document.getElementById('associationTypeLabel').textContent = type === 'client' ? 'Client' : 'Lead';
+            
+            // Hide matter selection by default
+            matterDiv.style.display = 'none';
             
             // Populate select
             const data = type === 'client' ? clients : leads;
@@ -498,6 +678,49 @@ document.querySelectorAll('input[name="association_type"]').forEach(radio => {
     });
 });
 
+// Client selection change - load matters
+document.getElementById('association_id').addEventListener('change', function() {
+    const type = document.querySelector('input[name="association_type"]:checked')?.value;
+    
+    if (type === 'client' && this.value) {
+        loadClientMatters(this.value);
+    } else {
+        document.getElementById('matterSelection').style.display = 'none';
+    }
+});
+
+// Load matters for a client
+function loadClientMatters(clientId) {
+    const matterDiv = document.getElementById('matterSelection');
+    const matterSelect = document.getElementById('client_matter_id');
+    
+    // Show loading state
+    matterSelect.innerHTML = '<option value="">Loading matters...</option>';
+    matterDiv.style.display = 'block';
+    
+    // Fetch matters from backend
+    fetch(`/admin/clients/${clientId}/matters`)
+        .then(response => response.json())
+        .then(data => {
+            matterSelect.innerHTML = '<option value="">-- No specific matter --</option>';
+            
+            if (data.matters && data.matters.length > 0) {
+                data.matters.forEach(matter => {
+                    const option = document.createElement('option');
+                    option.value = matter.id;
+                    option.textContent = matter.label;
+                    matterSelect.appendChild(option);
+                });
+            } else {
+                matterSelect.innerHTML = '<option value="">-- No matters found --</option>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading matters:', error);
+            matterSelect.innerHTML = '<option value="">-- Error loading matters --</option>';
+        });
+}
+
 // Priority selector
 document.querySelectorAll('.priority-option').forEach(option => {
     option.addEventListener('click', function() {
@@ -509,6 +732,209 @@ document.querySelectorAll('.priority-option').forEach(option => {
 
 // Initialize none as active
 document.getElementById('noneTypeBtn').classList.add('active');
+
+// ===== EMAIL PREVIEW FEATURE =====
+function previewEmail() {
+    const signerName = document.getElementById('signer_name').value;
+    const documentTitle = document.getElementById('title').value;
+    const emailTemplate = document.getElementById('email_template').value;
+    const emailMessage = document.getElementById('email_message').value;
+    
+    if (!signerName) {
+        alert('Please enter a signer name first');
+        return;
+    }
+    
+    // Show modal
+    $('#emailPreviewModal').modal('show');
+    
+    // Reset content
+    document.getElementById('emailPreviewContent').innerHTML = `
+        <div style="text-align: center; padding: 40px;">
+            <i class="fas fa-spinner fa-spin fa-2x"></i>
+            <p style="margin-top: 15px;">Loading preview...</p>
+        </div>
+    `;
+    
+    // Fetch preview
+    fetch('{{ route("admin.signatures.preview-email") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            template: emailTemplate,
+            signer_name: signerName,
+            document_title: documentTitle || 'Your Document',
+            message: emailMessage
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('emailPreviewContent').innerHTML = data.html;
+        } else {
+            document.getElementById('emailPreviewContent').innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #dc3545;">
+                    <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    <p style="margin-top: 15px;">Failed to load preview</p>
+                    <small>${data.error || 'Unknown error'}</small>
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        document.getElementById('emailPreviewContent').innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #dc3545;">
+                <i class="fas fa-exclamation-triangle fa-2x"></i>
+                <p style="margin-top: 15px;">Failed to load preview</p>
+                <small>${error.message}</small>
+            </div>
+        `;
+    });
+}
+
+// Auto-select template based on document type
+document.getElementById('document_type').addEventListener('change', function() {
+    const documentType = this.value;
+    const templateSelect = document.getElementById('email_template');
+    
+    if (documentType === 'agreement') {
+        templateSelect.value = 'emails.signature.send_agreement';
+    } else {
+        templateSelect.value = 'emails.signature.send';
+    }
+});
+
+// ===== AUTO-SUGGEST FEATURE =====
+let matchedEntity = null;
+let emailCheckTimeout = null;
+
+// Email field change detection with debounce
+document.getElementById('signer_email').addEventListener('input', function() {
+    clearTimeout(emailCheckTimeout);
+    const email = this.value.trim();
+    
+    // Only check if it's a valid-looking email
+    if (email && email.includes('@') && email.includes('.')) {
+        emailCheckTimeout = setTimeout(() => {
+            checkEmailMatch(email);
+        }, 800); // Wait 800ms after user stops typing
+    } else {
+        dismissMatch();
+    }
+});
+
+// Check for email match via API
+function checkEmailMatch(email) {
+    fetch('{{ route('admin.signatures.suggest-association') }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ email: email })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.match) {
+            matchedEntity = data.match;
+            showMatchAlert(data.match);
+        } else {
+            dismissMatch();
+        }
+    })
+    .catch(error => {
+        console.error('Error checking email match:', error);
+    });
+}
+
+// Show the match alert banner
+function showMatchAlert(match) {
+    const alert = document.getElementById('matchAlert');
+    const title = document.getElementById('matchAlertTitle');
+    const text = document.getElementById('matchAlertText');
+    
+    const entityType = match.type === 'client' ? 'Client' : 'Lead';
+    const icon = match.type === 'client' ? 'fa-user' : 'fa-user-tag';
+    
+    title.innerHTML = `<i class="fas ${icon}"></i> Found matching ${entityType}!`;
+    
+    let textContent = `${match.name} (${match.email}) is already in your system.`;
+    if (match.has_matters && match.matters.length > 0) {
+        textContent += ` This client has ${match.matters.length} matter(s).`;
+    }
+    text.textContent = textContent + ' Link this document?';
+    
+    alert.classList.add('show');
+    
+    // Auto-fill signer name if field is empty
+    const signerNameField = document.getElementById('signer_name');
+    if (!signerNameField.value || signerNameField.value === '') {
+        signerNameField.value = match.name;
+        // Add visual feedback
+        signerNameField.style.background = '#e8f5e9';
+        setTimeout(() => {
+            signerNameField.style.background = '';
+        }, 2000);
+    }
+}
+
+// Accept match - auto-select association
+function acceptMatch() {
+    if (!matchedEntity) return;
+    
+    // Select the appropriate radio button
+    const typeRadio = document.querySelector(`input[name="association_type"][value="${matchedEntity.type}"]`);
+    if (typeRadio) {
+        typeRadio.checked = true;
+        typeRadio.dispatchEvent(new Event('change'));
+        
+        // Wait for the dropdown to populate, then select the entity
+        setTimeout(() => {
+            const associationSelect = document.getElementById('association_id');
+            associationSelect.value = matchedEntity.id;
+            
+            // Visual feedback
+            associationSelect.style.background = '#e8f5e9';
+            setTimeout(() => {
+                associationSelect.style.background = '';
+            }, 2000);
+            
+            // If client has matters, populate the matter dropdown
+            if (matchedEntity.type === 'client' && matchedEntity.has_matters && matchedEntity.matters.length > 0) {
+                const matterDiv = document.getElementById('matterSelection');
+                const matterSelect = document.getElementById('client_matter_id');
+                
+                matterSelect.innerHTML = '<option value="">-- No specific matter --</option>';
+                matchedEntity.matters.forEach(matter => {
+                    const option = document.createElement('option');
+                    option.value = matter.id;
+                    option.textContent = matter.label;
+                    matterSelect.appendChild(option);
+                });
+                
+                matterDiv.style.display = 'block';
+                
+                // Visual feedback
+                matterDiv.style.background = '#e8f5e9';
+                setTimeout(() => {
+                    matterDiv.style.background = '';
+                }, 2000);
+            }
+        }, 100);
+    }
+    
+    dismissMatch();
+}
+
+// Dismiss match alert
+function dismissMatch() {
+    const alert = document.getElementById('matchAlert');
+    alert.classList.remove('show');
+    matchedEntity = null;
+}
 </script>
 @endsection
 

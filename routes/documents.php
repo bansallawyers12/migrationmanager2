@@ -97,10 +97,19 @@ Route::prefix('signatures')->group(function () {
     Route::get('/', [SignatureDashboardController::class, 'index'])->name('admin.signatures.index');
     Route::get('/create', [SignatureDashboardController::class, 'create'])->name('admin.signatures.create');
     Route::post('/', [SignatureDashboardController::class, 'store'])->name('admin.signatures.store');
+    Route::post('/suggest-association', [SignatureDashboardController::class, 'suggestAssociation'])->name('admin.signatures.suggest-association');
+    Route::post('/preview-email', [SignatureDashboardController::class, 'previewEmail'])->name('admin.signatures.preview-email');
     Route::get('/{id}', [SignatureDashboardController::class, 'show'])->name('admin.signatures.show');
     Route::post('/{id}/reminder', [SignatureDashboardController::class, 'sendReminder'])->name('admin.signatures.reminder');
     Route::get('/{id}/copy-link', [SignatureDashboardController::class, 'copyLink'])->name('admin.signatures.copy-link');
+    
+    // Association management (Phase 3)
+    Route::post('/{id}/associate', [SignatureDashboardController::class, 'associate'])->name('admin.signatures.associate');
+    Route::post('/{id}/detach', [SignatureDashboardController::class, 'detach'])->name('admin.signatures.detach');
 });
+
+/*---------- Client Matters API ----------*/
+Route::get('/clients/{id}/matters', [SignatureDashboardController::class, 'getClientMatters'])->name('admin.clients.matters');
 
 }); // End of admin routes group
 

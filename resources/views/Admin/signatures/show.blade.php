@@ -336,7 +336,7 @@
 </style>
 @endsection
 
-@section('main-content')
+@section('content')
 <div class="document-detail-container">
     <div class="page-header">
         <div>
@@ -388,16 +388,25 @@
     <!-- Association Info -->
     @if($document->documentable)
     <div class="association-info">
-        <strong><i class="fas fa-link"></i> Associated with:</strong>
-        @if($document->documentable_type === 'App\Models\Admin')
-        <a href="{{ route('admin.client.detail', $document->documentable_id) }}">
-            Client: {{ $document->documentable->first_name }} {{ $document->documentable->last_name }}
-        </a>
-        @elseif($document->documentable_type === 'App\Models\Lead')
-        <a href="{{ route('admin.lead.detail', $document->documentable_id) }}">
-            Lead: {{ $document->documentable->first_name }} {{ $document->documentable->last_name }}
-        </a>
-        @endif
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <strong><i class="fas fa-link"></i> Associated with:</strong>
+                @if($document->documentable_type === 'App\Models\Admin')
+                <a href="{{ route('admin.client.detail', $document->documentable_id) }}">
+                    Client: {{ $document->documentable->first_name }} {{ $document->documentable->last_name }}
+                </a>
+                @elseif($document->documentable_type === 'App\Models\Lead')
+                <a href="{{ route('admin.lead.detail', $document->documentable_id) }}">
+                    Lead: {{ $document->documentable->first_name }} {{ $document->documentable->last_name }}
+                </a>
+                @endif
+            </div>
+            @if(auth('admin')->user()->role === 1)
+            <button type="button" class="btn btn-sm btn-danger" onclick="confirmDetach()">
+                <i class="fas fa-unlink"></i> Detach
+            </button>
+            @endif
+        </div>
     </div>
     @endif
 
@@ -574,6 +583,35 @@
                 </div>
             </div>
 
+            <!-- Association History Card -->
+            @if($document->notes->count() > 0)
+            <div class="sidebar-card" style="margin-top: 20px;">
+                <h3 class="section-title" style="font-size: 16px;">
+                    <i class="fas fa-clipboard-list"></i>
+                    Association History
+                </h3>
+
+                <div style="padding-left: 10px;">
+                    @foreach($document->notes as $note)
+                    <div class="timeline-item">
+                        <div class="timeline-date">{{ $note->created_at->format('M d, Y g:i A') }}</div>
+                        <div class="timeline-text">
+                            <strong>{{ $note->action_text }}</strong>
+                            @if($note->creator)
+                            <br><small>by {{ $note->creator->first_name }} {{ $note->creator->last_name }}</small>
+                            @endif
+                        </div>
+                        @if($note->note)
+                        <div style="margin-top: 5px; font-size: 13px; color: #6c757d; font-style: italic;">
+                            "{{ $note->note }}"
+                        </div>
+                        @endif
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
             <!-- Activity Timeline Card -->
             <div class="sidebar-card" style="margin-top: 20px;">
                 <h3 class="section-title" style="font-size: 16px;">
@@ -613,6 +651,43 @@
     </div>
 </div>
 
+<!-- Detach Confirmation Modal -->
+<div class="modal fade" id="detachModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form action="{{ route('admin.signatures.detach', $document->id) }}" method="POST">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-unlink"></i> Detach Document
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Are you sure?</strong>
+                        <p style="margin: 10px 0 0 0;">This will remove the association between this document and the client/lead.</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Reason for detachment (Optional)</label>
+                        <textarea class="form-control" name="reason" rows="3" placeholder="Why is this document being detached?"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-unlink"></i> Detach Document
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 function copySigningLink(url) {
     navigator.clipboard.writeText(url).then(function() {
@@ -625,6 +700,10 @@ function copySigningLink(url) {
 
 function viewDocument() {
     alert('Document viewer feature coming soon!');
+}
+
+function confirmDetach() {
+    $('#detachModal').modal('show');
 }
 </script>
 @endsection

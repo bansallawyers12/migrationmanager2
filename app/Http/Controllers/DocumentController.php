@@ -924,8 +924,7 @@ class DocumentController extends Controller
     {
         try {
             $document = Document::findOrFail($id);
-            //$pdfPath = $document->getFirstMediaPath('documents');
-             $url = $document->myfile;
+            $url = $document->myfile;
             $pdfPath = null;
 
             // Try to extract S3 key from URL if possible
@@ -949,18 +948,49 @@ class DocumentController extends Controller
                 abort(404, 'Document file not found');
             }
 
-
             // Download PDF from S3 to a temp file
             $tmpPdfPath = storage_path('app/tmp_' . uniqid() . '.pdf');
             $pdfStream = \Storage::disk('s3')->get($pdfPath);
             file_put_contents($tmpPdfPath, $pdfStream);
 
-            $imagePath = storage_path('app/public/page_' . $id . '_' . $page . '.jpg');
-
             try {
+                // Try Python PDF Service first (recommended)
+                $pythonPDFService = new \App\Services\PythonPDFService();
+                
+                if ($pythonPDFService->isHealthy()) {
+                    $result = $pythonPDFService->convertPageToImage($tmpPdfPath, (int)$page, 150);
+                    
+                    if ($result && $result['success']) {
+                        // Clean up temp PDF file
+                        @unlink($tmpPdfPath);
+                        
+                        // Extract base64 image data and return as response
+                        $imageData = $result['image_data'];
+                        
+                        // Remove data URI prefix if present
+                        if (strpos($imageData, 'data:image/png;base64,') === 0) {
+                            $imageData = substr($imageData, strlen('data:image/png;base64,'));
+                        }
+                        
+                        $imageBytes = base64_decode($imageData);
+                        
+                        return response($imageBytes)
+                            ->header('Content-Type', 'image/png')
+                            ->header('Cache-Control', 'public, max-age=3600');
+                    }
+                    
+                    \Log::warning('Python PDF service failed, falling back to Spatie', [
+                        'document_id' => $id,
+                        'page' => $page
+                    ]);
+                }
+
+                // Fallback to Spatie PdfToImage (requires Ghostscript)
+                $imagePath = storage_path('app/public/page_' . $id . '_' . $page . '.jpg');
+                
                 $image = (new \Spatie\PdfToImage\Pdf($tmpPdfPath))
                     ->selectPage($page)
-                    ->resolution(72)  // Set to 72 DPI to match PDF positioning standards (prevents scaling shifts)
+                    ->resolution(150)
                     ->save($imagePath);
 
                 // Clean up temp file
@@ -971,6 +1001,7 @@ class DocumentController extends Controller
                 }
 
                 return response()->file($imagePath);
+                
             } catch (\Exception $e) {
                 @unlink($tmpPdfPath);
                 \Log::error('Error generating PDF page image', [

@@ -7,10 +7,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Kyslik\ColumnSortable\Sortable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Admin;
+use App\Models\Lead;
 
 class Document extends Model
 {
-    use Sortable;
+    use Sortable, HasFactory;
 
     protected $table = 'documents';
 
@@ -95,6 +98,11 @@ class Document extends Model
         return $this->morphTo();
     }
 
+    public function notes(): HasMany
+    {
+        return $this->hasMany(DocumentNote::class)->orderBy('created_at', 'desc');
+    }
+
     // Scopes
     public function scopeForUser($query, $userId)
     {
@@ -123,6 +131,42 @@ class Document extends Model
         return $query->whereNull('archived_at');
     }
 
+    /**
+     * Scope to filter documents based on user visibility permissions
+     * Implements the same logic as DocumentPolicy::view()
+     */
+    public function scopeVisible($query, $user)
+    {
+        // Super admins can see everything
+        if ($user->role === 1) {
+            return $query;
+        }
+
+        return $query->where(function($q) use ($user) {
+            // Documents created by the user
+            $q->where('created_by', $user->id)
+              // Documents where user is a signer
+              ->orWhereHas('signers', function($signerQuery) use ($user) {
+                  $signerQuery->where('email', $user->email);
+              })
+              // Documents associated with entities the user owns/manages
+              ->orWhere(function($assocQuery) use ($user) {
+                  $assocQuery->where(function($adminDocs) use ($user) {
+                      // Admin (client) associations
+                      $adminDocs->where('documentable_type', Admin::class)
+                                ->where('documentable_id', $user->id);
+                  })
+                  ->orWhere(function($leadDocs) use ($user) {
+                      // Lead associations where user is the owner
+                      $leadDocs->where('documentable_type', Lead::class)
+                               ->whereHas('documentable', function($leadQuery) use ($user) {
+                                   $leadQuery->where('user_id', $user->id);
+                               });
+                  });
+              });
+        });
+    }
+
     // Accessors
     public function getDisplayTitleAttribute()
     {
@@ -142,5 +186,76 @@ class Document extends Model
     public function getIsOverdueAttribute()
     {
         return $this->due_at && $this->due_at->isPast() && $this->status !== 'signed';
+    }
+
+    /**
+     * Get visibility type for current authenticated user
+     * Returns: 'owner', 'signer', 'associated', or null
+     * 
+     * NOTE: Use eager loading for signers relationship to avoid N+1 queries
+     * Example: Document::with('signers')->get()
+     */
+    public function getVisibilityTypeAttribute()
+    {
+        $user = auth('admin')->user();
+        if (!$user) {
+            return null;
+        }
+
+        // Check if user is the creator (highest priority)
+        if ($this->created_by === $user->id) {
+            return 'owner';
+        }
+
+        // Check if user is a signer (use collection if loaded, query if not)
+        if ($this->relationLoaded('signers')) {
+            $isSigner = $this->signers->contains('email', $user->email);
+        } else {
+            $isSigner = $this->signers()->where('email', $user->email)->exists();
+        }
+        
+        if ($isSigner) {
+            return 'signer';
+        }
+
+        // Check if document is associated with user's entity
+        if ($this->documentable_type && $this->documentable_id) {
+            if ($this->documentable_type === Admin::class && $this->documentable_id === $user->id) {
+                return 'associated';
+            }
+            if ($this->documentable_type === Lead::class) {
+                // Use loaded relationship if available
+                if ($this->relationLoaded('documentable')) {
+                    $lead = $this->documentable;
+                } else {
+                    // Query using the polymorphic relationship
+                    $lead = $this->documentable;
+                }
+                if ($lead && isset($lead->user_id) && $lead->user_id === $user->id) {
+                    return 'associated';
+                }
+            }
+        }
+
+        // Admin viewing all
+        if ($user->role === 1) {
+            return 'admin';
+        }
+
+        return null;
+    }
+
+    /**
+     * Get visibility icon and label
+     */
+    public function getVisibilityBadgeAttribute()
+    {
+        return match($this->visibility_type) {
+            'owner' => ['icon' => '🔒', 'label' => 'My Document', 'class' => 'badge-owner'],
+            'signer' => ['icon' => '✍️', 'label' => 'Need to Sign', 'class' => 'badge-signer'],
+            'associated' => ['icon' => '🔗', 'label' => 'Associated', 'class' => 'badge-associated'],
+            'admin' => ['icon' => '🌐', 'label' => 'Organization', 'class' => 'badge-admin'],
+            default => ['icon' => '👁️', 'label' => 'Visible', 'class' => 'badge-visible']
+        };
     }
 }

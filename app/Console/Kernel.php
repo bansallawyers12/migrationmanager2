@@ -33,6 +33,10 @@ class Kernel extends ConsoleKernel
         '\App\Console\Commands\SendAppointmentReminders',
         '\App\Console\Commands\TestBansalApiConnection',
         '\App\Console\Commands\BackfillBansalAppointments',
+        
+        // Signature Management System Commands
+        '\App\Console\Commands\ArchiveOldDrafts',
+        '\App\Console\Commands\SendSignatureReminders',
     ];
 
     /**
@@ -74,6 +78,21 @@ class Kernel extends ConsoleKernel
             ->timezone('Australia/Melbourne')
             ->withoutOverlapping(10)
             ->appendOutputTo(storage_path('logs/appointment-reminders.log'));
+        
+        // Signature Management - Archive old drafts daily at 2 AM
+        $schedule->command('signatures:archive-drafts --days=30')
+            ->daily()
+            ->at('02:00')
+            ->timezone('Australia/Melbourne')
+            ->appendOutputTo(storage_path('logs/signature-archive.log'));
+        
+        // Signature Management - Send auto-reminders daily at 10 AM
+        $schedule->command('signatures:send-auto-reminders --days=7')
+            ->daily()
+            ->at('10:00')
+            ->timezone('Australia/Melbourne')
+            ->withoutOverlapping(30)
+            ->appendOutputTo(storage_path('logs/signature-auto-reminders.log'));
     }
 
     /**

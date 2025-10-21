@@ -5,6 +5,7 @@
     <div class="topbar-left">
         <div class="icon-group">
             <a href="{{route('admin.dashboard')}}" class="icon-btn" title="Dashboard"><i class="fas fa-tachometer-alt"></i></a>
+            <a href="{{ route('admin.signatures.index') }}" class="icon-btn" title="Signature Dashboard"><i class="fas fa-pen"></i></a>
             <div class="icon-dropdown js-dropdown">
                 <a href="{{ route('appointments.index') }}" class="icon-btn" title="Appointments"><i class="fas fa-calendar-alt"></i></a>
                 <div class="icon-dropdown-menu">

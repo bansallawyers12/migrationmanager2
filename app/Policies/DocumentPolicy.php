@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Admin;
 use App\Models\Document;
+use App\Models\Lead;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class DocumentPolicy
@@ -57,8 +58,8 @@ class DocumentPolicy
             }
 
             // For Lead associations
-            if ($document->documentable_type === \App\Models\Lead::class) {
-                $lead = \App\Models\Lead::find($document->documentable_id);
+            if ($document->documentable_type === Lead::class) {
+                $lead = Lead::find($document->documentable_id);
                 if ($lead && $lead->user_id === $user->id) {
                     return true;
                 }

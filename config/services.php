@@ -100,5 +100,11 @@ return [
         'timeout' => env('BANSAL_API_TIMEOUT', 30),
     ],
 
+    'python_pdf' => [
+        'url' => env('PYTHON_PDF_SERVICE_URL', 'http://127.0.0.1:5000'),
+        'timeout' => env('PYTHON_PDF_SERVICE_TIMEOUT', 30),
+        'enabled' => env('PYTHON_PDF_SERVICE_ENABLED', true),
+    ],
+
 ];
 

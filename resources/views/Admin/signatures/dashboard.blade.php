@@ -224,6 +224,41 @@
         font-size: 10px;
     }
     
+    .visibility-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 15px;
+        font-size: 11px;
+        font-weight: 500;
+    }
+    
+    .badge-owner {
+        background: #e3f2fd;
+        color: #1565c0;
+    }
+    
+    .badge-signer {
+        background: #fff3e0;
+        color: #e65100;
+    }
+    
+    .badge-associated {
+        background: #f3e5f5;
+        color: #6a1b9a;
+    }
+    
+    .badge-admin {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+    
+    .badge-visible {
+        background: #fce4ec;
+        color: #c2185b;
+    }
+    
     .btn-action {
         padding: 6px 12px;
         font-size: 12px;
@@ -251,6 +286,16 @@
     
     .btn-remind:hover {
         background: #e0a800;
+    }
+    
+    .btn-attach {
+        background: #28a745;
+        color: white;
+    }
+    
+    .btn-attach:hover {
+        background: #218838;
+        color: white;
     }
     
     .btn-primary-custom {
@@ -293,7 +338,7 @@
 </style>
 @endsection
 
-@section('main-content')
+@section('content')
 <div class="signature-dashboard">
     <!-- Header -->
     <div class="dashboard-header">
@@ -311,7 +356,7 @@
     <!-- Stats Cards -->
     <div class="stats-cards">
         <div class="stat-card sent">
-            <h3>Sent by Me</h3>
+            <h3>My Documents</h3>
             <div class="number">{{ $counts['sent_by_me'] ?? 0 }}</div>
         </div>
         <div class="stat-card pending">
@@ -326,6 +371,12 @@
         <div class="stat-card overdue">
             <h3>Overdue</h3>
             <div class="number">{{ $counts['overdue'] ?? 0 }}</div>
+        </div>
+        @endif
+        @if($user->role !== 1)
+        <div class="stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+            <h3>Visible to Me</h3>
+            <div class="number">{{ $counts['visible_to_me'] ?? 0 }}</div>
         </div>
         @endif
     </div>
@@ -383,7 +434,23 @@
         <!-- Filters -->
         <div class="filter-bar">
             <form method="GET" action="{{ route('admin.signatures.index') }}" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center; width: 100%;">
-                <input type="hidden" name="tab" value="{{ request('tab', 'sent_by_me') }}">
+                <input type="hidden" name="tab" value="{{ request('tab') }}">
+                
+                <!-- Visibility Scope Filter -->
+                <div style="display: flex; gap: 5px; padding: 4px; background: #e9ecef; border-radius: 8px;">
+                    <a href="{{ route('admin.signatures.index', array_merge(request()->except('scope'), ['scope' => 'team'])) }}" 
+                       class="btn btn-sm {{ !request('scope') || request('scope') == 'team' ? 'btn-primary' : 'btn-light' }}"
+                       style="padding: 6px 15px; font-size: 13px;">
+                        👥 My Documents
+                    </a>
+                    @if($user->role === 1)
+                    <a href="{{ route('admin.signatures.index', array_merge(request()->except('scope'), ['scope' => 'organization'])) }}" 
+                       class="btn btn-sm {{ request('scope') == 'organization' ? 'btn-primary' : 'btn-light' }}"
+                       style="padding: 6px 15px; font-size: 13px;">
+                        🌐 Organization
+                    </a>
+                    @endif
+                </div>
                 
                 <select name="association" class="form-control" style="width: auto;" onchange="this.form.submit()">
                     <option value="">All Types</option>
@@ -405,8 +472,8 @@
                     <i class="fas fa-search"></i> Search
                 </button>
                 
-                @if(request()->anyFilled(['association', 'status', 'search']))
-                <a href="{{ route('admin.signatures.index', ['tab' => request('tab', 'sent_by_me')]) }}" class="btn btn-secondary">
+                @if(request()->anyFilled(['association', 'status', 'search', 'scope']))
+                <a href="{{ route('admin.signatures.index', ['tab' => request('tab')]) }}" class="btn btn-secondary">
                     Clear Filters
                 </a>
                 @endif
@@ -420,6 +487,7 @@
                 <thead>
                     <tr>
                         <th>Document</th>
+                        <th>Visibility</th>
                         <th>Signer</th>
                         <th>Status</th>
                         <th>Association</th>
@@ -436,6 +504,12 @@
                             @if($doc->is_overdue)
                             <br><span class="overdue-indicator">⚠️ OVERDUE</span>
                             @endif
+                        </td>
+                        <td>
+                            <span class="visibility-badge {{ $doc->visibility_badge['class'] }}" 
+                                  title="{{ $doc->visibility_badge['label'] }}">
+                                {{ $doc->visibility_badge['icon'] }} {{ $doc->visibility_badge['label'] }}
+                            </span>
                         </td>
                         <td>
                             {{ $doc->primary_signer_email ?? 'N/A' }}
@@ -489,6 +563,12 @@
                                 <input type="hidden" name="signer_id" value="{{ $doc->signers->first()->id ?? '' }}">
                             </form>
                             @endif
+                            
+                            @if($doc->status === 'signed' && !$doc->documentable)
+                            <button type="button" class="btn btn-action btn-attach" onclick="openAttachModal({{ $doc->id }}, {{ json_encode($doc->display_title) }})">
+                                <i class="fas fa-link"></i> Attach
+                            </button>
+                            @endif
                         </td>
                     </tr>
                     @endforeach
@@ -512,5 +592,103 @@
         </div>
     </div>
 </div>
+
+<!-- Attach Document Modal -->
+<div class="modal fade" id="attachModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form id="attachForm" method="POST">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-link"></i> Attach Document to Client/Lead
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Document</label>
+                        <input type="text" id="attachDocTitle" class="form-control" readonly>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Attach To <span style="color: #dc3545;">*</span></label>
+                        <select class="form-control" id="attachEntityType" name="entity_type" required>
+                            <option value="">-- Select Type --</option>
+                            <option value="client">Client</option>
+                            <option value="lead">Lead</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" id="entitySelectGroup" style="display: none;">
+                        <label id="entitySelectLabel">Select Entity <span style="color: #dc3545;">*</span></label>
+                        <select class="form-control" id="attachEntityId" name="entity_id" required>
+                            <option value="">-- Select --</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Note (Optional)</label>
+                        <textarea class="form-control" name="note" rows="3" placeholder="Add a note about this attachment..."></textarea>
+                        <small class="form-text text-muted">This note will appear in the audit trail</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-check"></i> Attach Document
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@endsection
+
+@section('scripts')
+<script>
+const clients = @json(\App\Models\Admin::where('role', '!=', 7)->get(['id', 'first_name', 'last_name', 'email']));
+const leads = @json(\App\Models\Lead::get(['id', 'first_name', 'last_name', 'email']));
+
+let currentDocId = null;
+
+function openAttachModal(docId, docTitle) {
+    currentDocId = docId;
+    document.getElementById('attachDocTitle').value = docTitle;
+    document.getElementById('attachEntityType').value = '';
+    document.getElementById('entitySelectGroup').style.display = 'none';
+    document.getElementById('attachEntityId').innerHTML = '<option value="">-- Select --</option>';
+    document.getElementById('attachForm').action = '{{ url("/admin/signatures") }}/' + docId + '/associate';
+    $('#attachModal').modal('show');
+}
+
+document.getElementById('attachEntityType').addEventListener('change', function() {
+    const type = this.value;
+    const selectGroup = document.getElementById('entitySelectGroup');
+    const select = document.getElementById('attachEntityId');
+    const label = document.getElementById('entitySelectLabel');
+    
+    if (!type) {
+        selectGroup.style.display = 'none';
+        return;
+    }
+    
+    selectGroup.style.display = 'block';
+    label.textContent = 'Select ' + (type === 'client' ? 'Client' : 'Lead') + ' ';
+    
+    const data = type === 'client' ? clients : leads;
+    select.innerHTML = '<option value="">-- Select --</option>';
+    
+    data.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item.id;
+        option.textContent = `${item.first_name} ${item.last_name} (${item.email})`;
+        select.appendChild(option);
+    });
+});
+</script>
 @endsection
 
