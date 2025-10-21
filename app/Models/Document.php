@@ -37,6 +37,9 @@ class Document extends Model
         'status',
         'signature_doc_link',
         'signed_doc_link',
+        'signed_hash',
+        'hash_generated_at',
+        'certificate_path',
         'is_client_portal_verify',
         'client_portal_verified_by',
         'client_portal_verified_at',
@@ -62,6 +65,7 @@ class Document extends Model
         'due_at' => 'datetime',
         'last_activity_at' => 'datetime',
         'archived_at' => 'datetime',
+        'hash_generated_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -257,5 +261,133 @@ class Document extends Model
             'admin' => ['icon' => '🌐', 'label' => 'Organization', 'class' => 'badge-admin'],
             default => ['icon' => '👁️', 'label' => 'Visible', 'class' => 'badge-visible']
         };
+    }
+
+    // ==================== Hash Verification Methods (Phase 7) ====================
+
+    /**
+     * Generate SHA-256 hash for the signed document
+     * 
+     * @param string $filePath Path to the signed PDF file
+     * @return string SHA-256 hash
+     */
+    public function generateSignedHash(string $filePath): string
+    {
+        if (!file_exists($filePath)) {
+            throw new \Exception("File not found for hashing: {$filePath}");
+        }
+
+        $hash = hash_file('sha256', $filePath);
+        
+        // Update the document with the hash
+        $this->signed_hash = $hash;
+        $this->hash_generated_at = now();
+        $this->save();
+
+        \Log::info('Document hash generated', [
+            'document_id' => $this->id,
+            'hash' => $hash,
+            'file_path' => $filePath
+        ]);
+
+        return $hash;
+    }
+
+    /**
+     * Verify the integrity of the signed document
+     * 
+     * @param string|null $filePath Optional path to file (if not provided, downloads from S3)
+     * @return bool True if hash matches, false if tampered
+     */
+    public function verifySignedHash(?string $filePath = null): bool
+    {
+        if (!$this->signed_hash) {
+            \Log::warning('No hash stored for document verification', ['document_id' => $this->id]);
+            return false;
+        }
+
+        if (!$this->signed_doc_link) {
+            \Log::warning('No signed document link for verification', ['document_id' => $this->id]);
+            return false;
+        }
+
+        try {
+            // If no file path provided, download from S3
+            if (!$filePath) {
+                $parsed = parse_url($this->signed_doc_link);
+                if (!isset($parsed['path'])) {
+                    return false;
+                }
+
+                $s3Key = ltrim($parsed['path'], '/');
+                $disk = \Storage::disk('s3');
+
+                if (!$disk->exists($s3Key)) {
+                    \Log::error('Signed document not found in S3', ['s3_key' => $s3Key]);
+                    return false;
+                }
+
+                // Download to temp file
+                $filePath = storage_path('app/tmp_verify_' . uniqid() . '.pdf');
+                $content = $disk->get($s3Key);
+                file_put_contents($filePath, $content);
+                $shouldDeleteTempFile = true;
+            } else {
+                $shouldDeleteTempFile = false;
+            }
+
+            // Calculate current hash
+            $currentHash = hash_file('sha256', $filePath);
+
+            // Clean up temp file if we created one
+            if ($shouldDeleteTempFile) {
+                @unlink($filePath);
+            }
+
+            $isValid = $currentHash === $this->signed_hash;
+
+            \Log::info('Document hash verification', [
+                'document_id' => $this->id,
+                'is_valid' => $isValid,
+                'stored_hash' => $this->signed_hash,
+                'current_hash' => $currentHash
+            ]);
+
+            return $isValid;
+        } catch (\Exception $e) {
+            \Log::error('Error verifying document hash', [
+                'document_id' => $this->id,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Check if document has been tampered with
+     * 
+     * @return bool True if document has been tampered with
+     */
+    public function getIsTamperedAttribute(): bool
+    {
+        if (!$this->signed_hash || $this->status !== 'signed') {
+            return false;
+        }
+
+        return !$this->verifySignedHash();
+    }
+
+    /**
+     * Get hash display for UI (shortened)
+     * 
+     * @return string|null
+     */
+    public function getHashDisplayAttribute(): ?string
+    {
+        if (!$this->signed_hash) {
+            return null;
+        }
+
+        return substr($this->signed_hash, 0, 8) . '...' . substr($this->signed_hash, -8);
     }
 }

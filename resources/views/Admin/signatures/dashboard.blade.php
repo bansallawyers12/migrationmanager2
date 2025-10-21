@@ -347,9 +347,17 @@
                 <h1>📝 Signature Dashboard</h1>
                 <p style="color: #6c757d;">Manage and track document signatures</p>
             </div>
-            <a href="{{ route('admin.signatures.create') }}" class="btn-primary-custom">
-                <i class="fas fa-plus"></i> Send New Document
-            </a>
+            <div style="display: flex; gap: 10px;">
+                <a href="{{ route('admin.signatures.analytics') }}" class="btn btn-info">
+                    <i class="fas fa-chart-line"></i> Analytics
+                </a>
+                <a href="{{ route('admin.signatures.export', ['format' => 'csv']) }}" class="btn btn-success">
+                    <i class="fas fa-download"></i> Export CSV
+                </a>
+                <a href="{{ route('admin.signatures.create') }}" class="btn-primary-custom">
+                    <i class="fas fa-plus"></i> Send New Document
+                </a>
+            </div>
         </div>
     </div>
 
@@ -483,9 +491,36 @@
         <!-- Documents Table -->
         <div class="documents-table">
             @if($documents->count() > 0)
+            
+            <!-- Bulk Actions Bar -->
+            <div id="bulk-actions-bar" style="display: none; padding: 15px; background: #f8f9fa; border-radius: 8px; margin-bottom: 15px;">
+                <span id="selected-count" style="font-weight: 600; margin-right: 15px;">0 selected</span>
+                <button type="button" onclick="bulkArchive()" class="btn btn-sm btn-secondary">
+                    <i class="fas fa-archive"></i> Archive
+                </button>
+                <button type="button" onclick="bulkResend()" class="btn btn-sm btn-warning">
+                    <i class="fas fa-bell"></i> Send Reminders
+                </button>
+                <button type="button" onclick="bulkVoid()" class="btn btn-sm btn-danger">
+                    <i class="fas fa-ban"></i> Void
+                </button>
+                <button type="button" onclick="clearSelection()" class="btn btn-sm btn-light">
+                    Clear Selection
+                </button>
+            </div>
+            
+            <form id="bulk-action-form" method="POST">
+                @csrf
+                <input type="hidden" name="ids" id="bulk-ids">
+                <input type="hidden" name="reason" id="bulk-reason">
+            </form>
+            
             <table>
                 <thead>
                     <tr>
+                        <th style="width: 40px;">
+                            <input type="checkbox" id="select-all" onchange="toggleSelectAll(this)">
+                        </th>
                         <th>Document</th>
                         <th>Visibility</th>
                         <th>Signer</th>
@@ -499,6 +534,9 @@
                 <tbody>
                     @foreach($documents as $doc)
                     <tr>
+                        <td>
+                            <input type="checkbox" class="doc-checkbox" value="{{ $doc->id }}" onchange="updateBulkActions()">
+                        </td>
                         <td>
                             <strong>{{ $doc->display_title }}</strong>
                             @if($doc->is_overdue)
@@ -650,6 +688,79 @@
 
 @section('scripts')
 <script>
+// Bulk Actions
+function toggleSelectAll(checkbox) {
+    document.querySelectorAll('.doc-checkbox').forEach(cb => {
+        cb.checked = checkbox.checked;
+    });
+    updateBulkActions();
+}
+
+function updateBulkActions() {
+    const checkboxes = document.querySelectorAll('.doc-checkbox:checked');
+    const count = checkboxes.length;
+    const bulkBar = document.getElementById('bulk-actions-bar');
+    const countSpan = document.getElementById('selected-count');
+    
+    if (count > 0) {
+        bulkBar.style.display = 'block';
+        countSpan.textContent = `${count} selected`;
+    } else {
+        bulkBar.style.display = 'none';
+        document.getElementById('select-all').checked = false;
+    }
+}
+
+function getSelectedIds() {
+    const checkboxes = document.querySelectorAll('.doc-checkbox:checked');
+    return Array.from(checkboxes).map(cb => cb.value);
+}
+
+function bulkArchive() {
+    const ids = getSelectedIds();
+    if (ids.length === 0) return;
+    
+    if (confirm(`Archive ${ids.length} document(s)?`)) {
+        const form = document.getElementById('bulk-action-form');
+        form.action = '{{ route("admin.signatures.bulk-archive") }}';
+        document.getElementById('bulk-ids').value = JSON.stringify(ids);
+        form.submit();
+    }
+}
+
+function bulkResend() {
+    const ids = getSelectedIds();
+    if (ids.length === 0) return;
+    
+    if (confirm(`Send reminders for ${ids.length} document(s)?`)) {
+        const form = document.getElementById('bulk-action-form');
+        form.action = '{{ route("admin.signatures.bulk-resend") }}';
+        document.getElementById('bulk-ids').value = JSON.stringify(ids);
+        form.submit();
+    }
+}
+
+function bulkVoid() {
+    const ids = getSelectedIds();
+    if (ids.length === 0) return;
+    
+    const reason = prompt('Reason for voiding (optional):');
+    if (reason !== null) {
+        const form = document.getElementById('bulk-action-form');
+        form.action = '{{ route("admin.signatures.bulk-void") }}';
+        document.getElementById('bulk-ids').value = JSON.stringify(ids);
+        document.getElementById('bulk-reason').value = reason;
+        form.submit();
+    }
+}
+
+function clearSelection() {
+    document.querySelectorAll('.doc-checkbox').forEach(cb => cb.checked = false);
+    document.getElementById('select-all').checked = false;
+    updateBulkActions();
+}
+
+// Association Modal
 const clients = @json(\App\Models\Admin::where('role', '!=', 7)->get(['id', 'first_name', 'last_name', 'email']));
 const leads = @json(\App\Models\Lead::get(['id', 'first_name', 'last_name', 'email']));
 

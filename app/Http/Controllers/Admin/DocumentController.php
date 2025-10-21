@@ -1262,6 +1262,13 @@ class DocumentController extends Controller
                     return redirect('/')->with('error', 'Error saving signed PDF: ' . $e->getMessage());
                 }
 
+                // Generate SHA-256 hash for tamper detection (Phase 7)
+                $signedHash = hash_file('sha256', $outputTmpPath);
+                \Log::info('Generated document hash', [
+                    'document_id' => $document->id,
+                    'hash' => $signedHash
+                ]);
+
                 // Upload signed PDF to S3
                 $s3SignedPath = $clientId . '/' . $docType . '/signed/' . $document->id . '_signed.pdf';
                 \Storage::disk('s3')->put($s3SignedPath, fopen($outputTmpPath, 'r'));
@@ -1271,13 +1278,14 @@ class DocumentController extends Controller
                 @unlink($tmpPdfPath);
                 @unlink($outputTmpPath);
 
-                // Update statuses and document links
+                // Update statuses and document links with hash
                 $signer->update(['status' => 'signed', 'signed_at' => now()]);
-
 
                 $document->status = 'signed';
                 $document->signature_doc_link = json_encode($signatureLinks);
                 $document->signed_doc_link = $s3SignedUrl ?? null;
+                $document->signed_hash = $signedHash;
+                $document->hash_generated_at = now();
                 $docSigned = $document->save();
 
                 if( $docSigned && $document->doc_type == 'agreement'){

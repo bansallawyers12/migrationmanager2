@@ -7,16 +7,19 @@ use App\Models\Document;
 use App\Models\Admin;
 use App\Models\Lead;
 use App\Services\SignatureService;
+use App\Services\SignatureAnalyticsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class SignatureDashboardController extends Controller
 {
     protected $signatureService;
+    protected $analyticsService;
 
-    public function __construct(SignatureService $signatureService)
+    public function __construct(SignatureService $signatureService, SignatureAnalyticsService $analyticsService)
     {
         $this->signatureService = $signatureService;
+        $this->analyticsService = $analyticsService;
     }
 
     public function index(Request $request)
@@ -348,6 +351,274 @@ class SignatureDashboardController extends Controller
         } else {
             return back()->with('error', 'Failed to detach document. Please try again.');
         }
+    }
+
+    /**
+     * Show analytics dashboard
+     */
+    public function analytics(Request $request)
+    {
+        $user = Auth::guard('admin')->user();
+        
+        // Date range filtering
+        $startDate = $request->get('start_date', now()->subDays(30)->format('Y-m-d'));
+        $endDate = $request->get('end_date', now()->format('Y-m-d'));
+        
+        // Get analytics data
+        $medianHours = $this->analyticsService->getMedianTimeToSign();
+        $completionRate = $this->analyticsService->getCompletionRate($startDate, $endDate);
+        $avgReminders = $this->analyticsService->getAverageReminders($startDate, $endDate);
+        $overdueCount = $this->analyticsService->getOverdueCount();
+        
+        // Get detailed data
+        $topSigners = $this->analyticsService->getTopSigners(10);
+        $documentTypeStats = $this->analyticsService->getDocumentTypeStats();
+        $trendData = $this->analyticsService->getSignatureTrend($startDate, $endDate, 'day');
+        $overdueDocuments = $this->analyticsService->getOverdueAnalytics();
+        
+        // Admin-only: User performance
+        $userPerformance = null;
+        if ($user->role === 1) {
+            $userPerformance = $this->analyticsService->getUserPerformance();
+        }
+        
+        // Activity by hour
+        $activityByHour = $this->analyticsService->getActivityByHour();
+        
+        // Provide errors variable for the layout
+        $errors = $request->session()->get('errors') ?? new \Illuminate\Support\MessageBag();
+        
+        return view('Admin.signatures.analytics', compact(
+            'medianHours',
+            'completionRate',
+            'avgReminders',
+            'overdueCount',
+            'topSigners',
+            'documentTypeStats',
+            'trendData',
+            'overdueDocuments',
+            'userPerformance',
+            'activityByHour',
+            'startDate',
+            'endDate',
+            'user',
+            'errors'
+        ));
+    }
+
+    /**
+     * Bulk archive documents
+     */
+    public function bulkArchive(Request $request)
+    {
+        // Decode JSON if necessary
+        $ids = is_string($request->ids) ? json_decode($request->ids, true) : $request->ids;
+        
+        $request->merge(['ids' => $ids]);
+        $request->validate(['ids' => 'required|array|min:1']);
+        
+        try {
+            $count = Document::whereIn('id', $ids)
+                ->whereNull('archived_at')
+                ->update(['archived_at' => now()]);
+            
+            return back()->with('success', "Successfully archived {$count} document(s)");
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to archive documents: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Bulk void documents
+     */
+    public function bulkVoid(Request $request)
+    {
+        // Decode JSON if necessary
+        $ids = is_string($request->ids) ? json_decode($request->ids, true) : $request->ids;
+        
+        $request->merge(['ids' => $ids]);
+        $request->validate([
+            'ids' => 'required|array|min:1',
+            'reason' => 'nullable|string|max:500'
+        ]);
+        
+        try {
+            $user = Auth::guard('admin')->user();
+            $documents = Document::whereIn('id', $ids)->get();
+            $count = 0;
+            $skipped = 0;
+            
+            foreach ($documents as $doc) {
+                // Check authorization using Gate instead of policy directly
+                if ($user->can('void', $doc)) {
+                    if ($this->signatureService->void($doc, $request->reason)) {
+                        $count++;
+                    }
+                } else {
+                    $skipped++;
+                }
+            }
+            
+            $message = "Successfully voided {$count} document(s)";
+            if ($skipped > 0) {
+                $message .= " ({$skipped} skipped due to permissions)";
+            }
+            
+            return back()->with('success', $message);
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to void documents: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Bulk resend reminders
+     */
+    public function bulkResend(Request $request)
+    {
+        // Decode JSON if necessary
+        $ids = is_string($request->ids) ? json_decode($request->ids, true) : $request->ids;
+        
+        $request->merge(['ids' => $ids]);
+        $request->validate(['ids' => 'required|array|min:1']);
+        
+        try {
+            $documents = Document::with('signers')->whereIn('id', $ids)->get();
+            $sent = 0;
+            $skipped = 0;
+            
+            foreach ($documents as $doc) {
+                foreach ($doc->signers as $signer) {
+                    if ($signer->status === 'pending') {
+                        if ($this->signatureService->remind($signer)) {
+                            $sent++;
+                        } else {
+                            $skipped++;
+                        }
+                    }
+                }
+            }
+            
+            $message = "Sent {$sent} reminder(s)";
+            if ($skipped > 0) {
+                $message .= " ({$skipped} skipped due to limits)";
+            }
+            
+            return back()->with('success', $message);
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to send reminders: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Export audit report
+     */
+    public function exportAudit(Request $request)
+    {
+        $request->validate([
+            'format' => 'required|in:csv,pdf',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date',
+        ]);
+        
+        $query = Document::with(['creator', 'signers', 'documentable', 'notes'])
+            ->notArchived();
+        
+        if ($request->filled('start_date')) {
+            $query->where('created_at', '>=', $request->start_date);
+        }
+        
+        if ($request->filled('end_date')) {
+            $query->where('created_at', '<=', $request->end_date);
+        }
+        
+        $documents = $query->orderBy('created_at', 'desc')->get();
+        
+        if ($request->format === 'csv') {
+            return $this->exportCSV($documents);
+        } else {
+            return $this->exportPDF($documents);
+        }
+    }
+
+    /**
+     * Export as CSV
+     */
+    protected function exportCSV($documents)
+    {
+        $filename = 'signature_audit_' . date('Y-m-d') . '.csv';
+        
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ];
+        
+        $callback = function() use ($documents) {
+            $file = fopen('php://output', 'w');
+            
+            // Header row
+            fputcsv($file, [
+                'Document ID',
+                'Title',
+                'Status',
+                'Created By',
+                'Created At',
+                'Signer Email',
+                'Signer Name',
+                'Signer Status',
+                'Sent At',
+                'Signed At',
+                'Reminders Sent',
+                'Document Type',
+                'Priority',
+                'Associated With',
+                'Due Date'
+            ]);
+            
+            // Data rows
+            foreach ($documents as $doc) {
+                foreach ($doc->signers as $signer) {
+                    $association = 'Ad-hoc';
+                    if ($doc->documentable) {
+                        $type = class_basename($doc->documentable_type);
+                        $name = isset($doc->documentable->first_name) 
+                            ? $doc->documentable->first_name . ' ' . $doc->documentable->last_name 
+                            : 'Unknown';
+                        $association = "{$type}: {$name}";
+                    }
+                    
+                    fputcsv($file, [
+                        $doc->id,
+                        $doc->display_title,
+                        $doc->status,
+                        $doc->creator ? $doc->creator->first_name . ' ' . $doc->creator->last_name : 'Unknown',
+                        $doc->created_at->format('Y-m-d H:i:s'),
+                        $signer->email,
+                        $signer->name,
+                        $signer->status,
+                        $doc->created_at->format('Y-m-d H:i:s'),
+                        $signer->signed_at ? $signer->signed_at->format('Y-m-d H:i:s') : 'N/A',
+                        $signer->reminder_count,
+                        $doc->document_type ?? 'general',
+                        $doc->priority ?? 'normal',
+                        $association,
+                        $doc->due_at ? $doc->due_at->format('Y-m-d') : 'N/A'
+                    ]);
+                }
+            }
+            
+            fclose($file);
+        };
+        
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Export as PDF
+     */
+    protected function exportPDF($documents)
+    {
+        $pdf = \PDF::loadView('Admin.signatures.audit_report', compact('documents'));
+        return $pdf->download('signature_audit_' . date('Y-m-d') . '.pdf');
     }
 
     /**
