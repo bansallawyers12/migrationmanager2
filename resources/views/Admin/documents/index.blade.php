@@ -115,7 +115,7 @@
                             </div>
                         @endif
 
-                        @if ($selectedDocument && $selectedDocument->status === 'draft')
+                        @if ($selectedDocument && in_array($selectedDocument->status, ['draft', 'signature_placed']))
                             <div class="flex flex-col sm:flex-row gap-4">
                                 <?php
                                 if( isset($selectedDocument) && isset($selectedDocument->doc_type) && $selectedDocument->doc_type == 'agreement')
@@ -180,7 +180,7 @@
                                         </div>
                                     </div>
                                     <div class="flex space-x-2">
-                                        <a href="{{ route('admin.documents.index', $document->id) }}" 
+                                        <a href="{{ route('admin.signatures.show', $document->id) }}" 
                                            class="px-3 py-1 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition">
                                             View
                                         </a>
@@ -278,7 +278,11 @@
                         }
                         ?>
                         <?php
-                        $fetchedData = \App\Models\Admin::where('id',$selectedDocument->client_id )->first();
+                        // Fetch client data if client_id exists
+                        $fetchedData = null;
+                        if ($selectedDocument->client_id) {
+                            $fetchedData = \App\Models\Admin::where('id',$selectedDocument->client_id )->first();
+                        }
                         ?>
                         <div class="row">
                             <div class="col-12 col-md-6 col-lg-6">
@@ -300,7 +304,7 @@
                             <div class="col-12 col-md-6 col-lg-6">
                                 <div class="form-group">
                                     <label for="signer_email">Signer Email <span class="span_req">*</span></label>
-                                    <input type="email" name="signer_email" value="{{$fetchedData->email}}" placeholder="Signer Email" class="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50" required>
+                                    <input type="email" name="signer_email" value="{{ $fetchedData ? $fetchedData->email : '' }}" placeholder="Signer Email" class="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50" required>
                                 </div>
                             </div>
 
@@ -308,7 +312,7 @@
                             <div class="col-12 col-md-6 col-lg-6">
                                 <div class="form-group">
                                     <label for="signer_email">Signer Name <span class="span_req">*</span></label>
-                                    <input type="text" name="signer_name" value="{{$fetchedData->first_name.' '.$fetchedData->last_name}}" placeholder="Signer Name" class="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50" required>
+                                    <input type="text" name="signer_name" value="{{ $fetchedData ? ($fetchedData->first_name.' '.$fetchedData->last_name) : '' }}" placeholder="Signer Name" class="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50" required>
                                 </div>
                             </div>
 
@@ -316,7 +320,7 @@
                                 <div class="form-group">
                                     <label for="template">Select Matter Template <span class="span_req">*</span></label>
                                     @php
-                                    $token = \Str::random(64);
+                                    $token = \Illuminate\Support\Str::random(64);
                                     $pdfurlforsign = url("/sign/{$selectedDocument->id}/{$token}");
                                     @endphp
                                     <input type="hidden" name="pdf_sign_token" value="{{$token}}">

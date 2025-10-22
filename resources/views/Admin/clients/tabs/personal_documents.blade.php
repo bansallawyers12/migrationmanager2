@@ -167,7 +167,7 @@
                                                                             @endif
 
                                                                             @if($fetch->status === 'sent')
-                                                                                <form method="GET" action="{{ route('admin.documents.index', $fetch->id) }}" target="_blank" style="display: inline;">
+                                                                                <form method="GET" action="{{ route('admin.signatures.show', $fetch->id) }}" target="_blank" style="display: inline;">
                                                                                     <button type="submit" class="dropdown-item" style="background: none; border: none; width: 100%; text-align: left; padding: 0.25rem 1.5rem;">
                                                                                         Check To Signature
                                                                                     </button>
@@ -372,7 +372,7 @@
                             window.open(sendSignatureUrl, '_blank');
                             break;
                         case 'check-signature':
-                            const checkSignatureUrl = '{{ route('admin.documents.index') }}';
+                            const checkSignatureUrl = '{{ route('admin.signatures.index') }}';
                             window.open(checkSignatureUrl, '_blank');
                             break;
                         case 'download-signed':

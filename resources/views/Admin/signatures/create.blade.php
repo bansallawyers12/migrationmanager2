@@ -116,6 +116,21 @@
         color: #dc3545;
     }
     
+    .document-info .btn {
+        white-space: nowrap;
+        font-size: 14px;
+    }
+    
+    .document-info .btn-outline-primary {
+        border-color: #667eea;
+        color: #667eea;
+    }
+    
+    .document-info .btn-outline-primary:hover {
+        background-color: #667eea;
+        color: white;
+    }
+    
     .document-details h4 {
         margin: 0 0 8px 0;
         font-size: 16px;
@@ -379,10 +394,21 @@
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{{ route('admin.signatures.index') }}">Signature Dashboard</a></li>
-                <li class="breadcrumb-item active">Send New Document</li>
+                @if(isset($document) && $document)
+                    <li class="breadcrumb-item"><a href="{{ route('admin.signatures.show', $document->id) }}">Document Details</a></li>
+                    <li class="breadcrumb-item active">Add Signer</li>
+                @else
+                    <li class="breadcrumb-item active">Send New Document</li>
+                @endif
             </ol>
         </nav>
-        <h1>📤 Send Document for Signature</h1>
+        <h1>
+            @if(isset($document) && $document)
+                👤 Add Signer to Document
+            @else
+                📤 Send Document for Signature
+            @endif
+        </h1>
     </div>
 
     @if($errors->any())
@@ -420,6 +446,7 @@
         
         <div class="form-card">
             <!-- Document Upload Section -->
+            @if(!isset($document) || !$document)
             <div class="form-section">
                 <h3 class="form-section-title">
                     <i class="fas fa-file-upload"></i>
@@ -435,10 +462,18 @@
                                 <div class="document-details">
                                     <h4>{{ $document->title ?: $document->file_name }}</h4>
                                     <p class="document-meta">
-                                        <span class="status-badge status-signature-placed">Signature Placed</span>
+                                        <span class="status-badge status-signature-placed">
+                                            <i class="fas fa-check-circle"></i> Signature Fields Placed ({{ $document->signatureFields->count() }} field{{ $document->signatureFields->count() != 1 ? 's' : '' }})
+                                        </span>
                                         <span class="upload-date">Uploaded: {{ $document->created_at->format('M d, Y H:i') }}</span>
                                     </p>
                                 </div>
+                                <a href="{{ route('admin.documents.edit', $document->id) }}" 
+                                   class="btn btn-sm btn-outline-primary" 
+                                   style="margin-left: auto;"
+                                   title="Edit signature field placement">
+                                    <i class="fas fa-edit"></i> Edit Placement
+                                </a>
                             </div>
                         </div>
                         <input type="hidden" name="document_id" value="{{ $document->id }}">
@@ -476,6 +511,7 @@
                     </select>
                 </div>
             </div>
+            @endif
 
             <!-- Signer Information Section -->
             <div class="form-section">
@@ -546,6 +582,7 @@
             </div>
 
             <!-- Association Section -->
+            @if(!isset($document) || !$document)
             <div class="form-section">
                 <h3 class="form-section-title">
                     <i class="fas fa-link"></i>
@@ -585,8 +622,10 @@
                     </div>
                 </div>
             </div>
+            @endif
 
             <!-- Additional Options Section -->
+            @if(!isset($document) || !$document)
             <div class="form-section">
                 <h3 class="form-section-title">
                     <i class="fas fa-cog"></i>
@@ -618,13 +657,21 @@
                     <small class="form-help-text">Set a deadline for signing (will show as overdue if not signed by this date)</small>
                 </div>
             </div>
+            @endif
 
             <!-- Submit Buttons -->
             <div style="text-align: right; margin-top: 30px;">
-                <a href="{{ route('admin.signatures.index') }}" class="btn btn-cancel">Cancel</a>
-                <button type="submit" class="btn-submit">
-                    <i class="fas fa-paper-plane"></i> Send for Signature
-                </button>
+                @if(isset($document) && $document)
+                    <a href="{{ route('admin.signatures.show', $document->id) }}" class="btn btn-cancel">Cancel</a>
+                    <button type="submit" class="btn-submit">
+                        <i class="fas fa-user-plus"></i> Add Signer
+                    </button>
+                @else
+                    <a href="{{ route('admin.signatures.index') }}" class="btn btn-cancel">Cancel</a>
+                    <button type="submit" class="btn-submit">
+                        <i class="fas fa-paper-plane"></i> Send for Signature
+                    </button>
+                @endif
             </div>
         </div>
     </form>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Image Loading</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .test-container {
+            border: 2px solid #ccc;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        img {
+            max-width: 100%;
+            border: 2px solid red;
+        }
+    </style>
+</head>
+<body>
+    <h1>PDF Image Loading Test</h1>
+    
+    <div class="test-container">
+        <h2>Test 1: Direct Image Load</h2>
+        <p>This should show the PDF page as an image:</p>
+        <img src="/debug-pdf-page/23/1" alt="Test Image" onload="console.log('Image loaded successfully')" onerror="console.error('Image failed to load')">
+    </div>
+    
+    <div class="test-container">
+        <h2>Test 2: With Full URL</h2>
+        <img src="http://127.0.0.1:8000/debug-pdf-page/23/1" alt="Test Image Full URL">
+    </div>
+    
+    <div class="test-container">
+        <h2>Test 3: Page 2</h2>
+        <img src="/debug-pdf-page/23/2" alt="Page 2">
+    </div>
+    
+    <script>
+        console.log('Test page loaded');
+        console.log('Image 1 src:', document.querySelectorAll('img')[0].src);
+        console.log('Image 2 src:', document.querySelectorAll('img')[1].src);
+        console.log('Image 3 src:', document.querySelectorAll('img')[2].src);
+    </script>
+</body>
+</html>
+

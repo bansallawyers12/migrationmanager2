@@ -291,7 +291,7 @@
             <!-- Back Link -->
             <div class="mt-6 text-center">
                 <a
-                    href="{{ route('admin.documents.index', $document->id) }}"
+                    href="{{ route('admin.signatures.show', $document->id) }}"
                     class="text-blue-600 dark:text-blue-400 hover:underline"
                 >
                     ← Back to Document

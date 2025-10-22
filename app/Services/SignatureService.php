@@ -358,54 +358,49 @@ class SignatureService
      */
     public function suggestAssociation(string $email): ?array
     {
-        // Try to find matching client (Admin with role != 7)
-        $client = Admin::where('email', $email)
-            ->where('role', '!=', 7)
+        // Try to find matching client or lead (both are in admins table with role = 7)
+        $entity = Admin::where('email', $email)
+            ->where('role', '=', 7)
+            ->whereNull('is_deleted')
             ->first();
 
-        if ($client) {
-            // Get client's matters
-            $matters = \DB::table('client_matters')
-                ->where('client_id', $client->id)
-                ->join('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
-                ->select(
-                    'client_matters.id',
-                    'client_matters.client_unique_matter_no',
-                    'matters.title as matter_title',
-                    'client_matters.matter_status'
-                )
-                ->orderBy('client_matters.created_at', 'desc')
-                ->get()
-                ->map(function($matter) {
-                    return [
-                        'id' => $matter->id,
-                        'label' => $matter->client_unique_matter_no . ' - ' . $matter->matter_title,
-                        'status' => $matter->matter_status
-                    ];
-                })
-                ->toArray();
+        if ($entity) {
+            // Determine if it's a client or lead based on type field
+            $entityType = ($entity->type === 'lead') ? 'lead' : 'client';
+            
+            if ($entityType === 'client') {
+                // Get client's matters
+                $matters = \DB::table('client_matters')
+                    ->where('client_id', $entity->id)
+                    ->join('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
+                    ->select(
+                        'client_matters.id',
+                        'client_matters.client_unique_matter_no',
+                        'matters.title as matter_title',
+                        'client_matters.matter_status'
+                    )
+                    ->orderBy('client_matters.created_at', 'desc')
+                    ->get()
+                    ->map(function($matter) {
+                        return [
+                            'id' => $matter->id,
+                            'label' => $matter->client_unique_matter_no . ' - ' . $matter->matter_title,
+                            'status' => $matter->matter_status
+                        ];
+                    })
+                    ->toArray();
+            } else {
+                // Leads don't have matters
+                $matters = [];
+            }
 
             return [
-                'type' => 'client',
-                'id' => $client->id,
-                'name' => trim("{$client->first_name} {$client->last_name}"),
-                'email' => $client->email,
+                'type' => $entityType,
+                'id' => $entity->id,
+                'name' => trim("{$entity->first_name} {$entity->last_name}"),
+                'email' => $entity->email,
                 'matters' => $matters,
                 'has_matters' => count($matters) > 0
-            ];
-        }
-
-        // Try to find matching lead
-        $lead = Lead::where('email', $email)->first();
-
-        if ($lead) {
-            return [
-                'type' => 'lead',
-                'id' => $lead->id,
-                'name' => trim("{$lead->first_name} {$lead->last_name}"),
-                'email' => $lead->email,
-                'matters' => [],
-                'has_matters' => false
             ];
         }
 

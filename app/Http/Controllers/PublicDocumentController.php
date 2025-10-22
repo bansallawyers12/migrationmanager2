@@ -340,29 +340,91 @@ class PublicDocumentController extends Controller
             $document = Document::findOrFail($id);
             $url = $document->myfile;
             $pdfPath = null;
+            $tmpPdfPath = null;
+            $isLocalFile = false;
 
-            if ($url) {
+            // Check if URL is a full S3 URL or local path
+            if ($url && filter_var($url, FILTER_VALIDATE_URL) && strpos($url, 's3') !== false) {
+                // This is an S3 URL - extract the key
                 $parsed = parse_url($url);
                 if (isset($parsed['path'])) {
                     $pdfPath = ltrim(urldecode($parsed['path']), '/');
                 }
-            }
+                
+                if (!$pdfPath || !Storage::disk('s3')->exists($pdfPath)) {
+                    Log::error('PDF file not found in S3 for document: ' . $id, [
+                        'document_id' => $id,
+                        's3Key' => $pdfPath,
+                        'myfile' => $url,
+                        's3_exists' => $pdfPath ? Storage::disk('s3')->exists($pdfPath) : 'no_path'
+                    ]);
+                    abort(404, 'Document file not found');
+                }
 
-            if (empty($pdfPath) && !empty($document->myfile_key) && !empty($document->doc_type) && !empty($document->client_id)) {
-                $admin = \DB::table('admins')->select('client_id')->where('id', $document->client_id)->first();
-                if ($admin && $admin->client_id) {
-                    $pdfPath = $admin->client_id . '/' . $document->doc_type . '/' . $document->myfile_key;
+                // Download PDF from S3 to a temp file
+                $tmpPdfPath = storage_path('app/tmp_' . uniqid() . '.pdf');
+                $pdfStream = Storage::disk('s3')->get($pdfPath);
+                file_put_contents($tmpPdfPath, $pdfStream);
+                Log::info('Downloaded S3 file for document page', ['s3Key' => $pdfPath, 'tempPath' => $tmpPdfPath]);
+            } elseif ($url && file_exists(storage_path('app/public/' . $url))) {
+                // This is a local file path and file exists
+                $tmpPdfPath = storage_path('app/public/' . $url);
+                $isLocalFile = true;
+                Log::info('Using local file for document page', ['path' => $tmpPdfPath]);
+            } else {
+                // Try to build S3 key from DB fields as fallback
+                if (!empty($document->myfile_key) && !empty($document->doc_type) && !empty($document->client_id)) {
+                    $admin = \DB::table('admins')->select('client_id')->where('id', $document->client_id)->first();
+                    if ($admin && $admin->client_id) {
+                        $pdfPath = $admin->client_id . '/' . $document->doc_type . '/' . $document->myfile_key;
+                        
+                        if (Storage::disk('s3')->exists($pdfPath)) {
+                            // Download PDF from S3 to a temp file
+                            $tmpPdfPath = storage_path('app/tmp_' . uniqid() . '.pdf');
+                            $pdfStream = Storage::disk('s3')->get($pdfPath);
+                            file_put_contents($tmpPdfPath, $pdfStream);
+                            Log::info('Downloaded S3 file via fallback for document page', ['s3Key' => $pdfPath, 'tempPath' => $tmpPdfPath]);
+                        } else {
+                            Log::error('PDF file not found in S3 fallback for document: ' . $id, [
+                                'document_id' => $id,
+                                's3Key' => $pdfPath,
+                                'myfile' => $url,
+                                'myfile_key' => $document->myfile_key,
+                                'doc_type' => $document->doc_type,
+                                'client_id' => $document->client_id,
+                                'local_exists' => $url ? file_exists(storage_path('app/public/' . $url)) : false
+                            ]);
+                            abort(404, 'Document file not found');
+                        }
+                    } else {
+                        Log::error('Admin not found for document: ' . $id, [
+                            'document_id' => $id,
+                            'client_id' => $document->client_id
+                        ]);
+                        abort(404, 'Document file not found');
+                    }
+                } else {
+                    Log::error('PDF file not found for document: ' . $id, [
+                        'document_id' => $id,
+                        'myfile' => $url,
+                        'myfile_key' => $document->myfile_key,
+                        'doc_type' => $document->doc_type,
+                        'client_id' => $document->client_id,
+                        'local_exists' => $url ? file_exists(storage_path('app/public/' . $url)) : false
+                    ]);
+                    abort(404, 'Document file not found');
                 }
             }
 
-            if (!$pdfPath || !Storage::disk('s3')->exists($pdfPath)) {
+            // Ensure we have a valid PDF path
+            if (!$tmpPdfPath || !file_exists($tmpPdfPath)) {
+                Log::error('No valid PDF path found for document: ' . $id, [
+                    'document_id' => $id,
+                    'tmpPdfPath' => $tmpPdfPath,
+                    'file_exists' => $tmpPdfPath ? file_exists($tmpPdfPath) : false
+                ]);
                 abort(404, 'Document file not found');
             }
-
-            // Download PDF from S3
-            $tmpPdfPath = storage_path('app/tmp_' . uniqid() . '.pdf');
-            $pdfStream = Storage::disk('s3')->get($pdfPath);
-            file_put_contents($tmpPdfPath, $pdfStream);
 
             try {
                 // Try Python PDF Service first
@@ -372,7 +434,10 @@ class PublicDocumentController extends Controller
                     $result = $pythonPDFService->convertPageToImage($tmpPdfPath, (int)$page, 150);
                     
                     if ($result && $result['success']) {
-                        @unlink($tmpPdfPath);
+                        // Only delete temp files, not local files
+                        if (!$isLocalFile && $tmpPdfPath && strpos($tmpPdfPath, 'tmp_') !== false) {
+                            @unlink($tmpPdfPath);
+                        }
                         $imageData = $result['image_data'];
                         
                         if (strpos($imageData, 'data:image/png;base64,') === 0) {
@@ -394,7 +459,10 @@ class PublicDocumentController extends Controller
                     ->resolution(150)
                     ->save($imagePath);
 
-                @unlink($tmpPdfPath);
+                // Only delete temp files, not local files
+                if (!$isLocalFile && $tmpPdfPath && strpos($tmpPdfPath, 'tmp_') !== false) {
+                    @unlink($tmpPdfPath);
+                }
 
                 if (!file_exists($imagePath)) {
                     throw new \Exception('Failed to generate page image');
@@ -402,7 +470,10 @@ class PublicDocumentController extends Controller
 
                 return response()->file($imagePath);
             } catch (\Exception $e) {
-                @unlink($tmpPdfPath);
+                // Only delete temp files, not local files
+                if (!$isLocalFile && $tmpPdfPath && strpos($tmpPdfPath, 'tmp_') !== false) {
+                    @unlink($tmpPdfPath);
+                }
                 Log::error('Error generating PDF page image', [
                     'document_id' => $id,
                     'page' => $page,
@@ -411,6 +482,10 @@ class PublicDocumentController extends Controller
                 abort(500, 'Error generating page image');
             }
         } catch (\Exception $e) {
+            // Only delete temp files, not local files
+            if (isset($isLocalFile) && !$isLocalFile && isset($tmpPdfPath) && $tmpPdfPath && strpos($tmpPdfPath, 'tmp_') !== false) {
+                @unlink($tmpPdfPath);
+            }
             Log::error('Error in getPage', [
                 'document_id' => $id,
                 'page' => $page,

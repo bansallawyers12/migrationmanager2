@@ -10,6 +10,8 @@ use App\Services\SignatureService;
 use App\Services\SignatureAnalyticsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Mail;
 
 class SignatureDashboardController extends Controller
 {
@@ -103,7 +105,7 @@ class SignatureDashboardController extends Controller
         $this->authorize('create', Document::class);
         
         // Get clients and leads for association dropdown
-        $clients = Admin::where('role', '!=', 7)->get(['id', 'first_name', 'last_name', 'email']);
+        $clients = Admin::where('role', '=', 7)->whereNull('is_deleted')->get(['id', 'first_name', 'last_name', 'email']);
         $leads = Lead::get(['id', 'first_name', 'last_name', 'email']);
 
         // Get active email accounts for template picker
@@ -115,11 +117,9 @@ class SignatureDashboardController extends Controller
         // Check if we're sending an existing document for signing
         $document = null;
         if ($request->has('document_id')) {
-            $document = Document::findOrFail($request->document_id);
-            // Verify the document has signatures placed
-            if ($document->status !== 'signature_placed') {
-                return redirect()->route('admin.documents.index')->with('error', 'Document must have signatures placed before sending for signing.');
-            }
+            $document = Document::with('signatureFields')->findOrFail($request->document_id);
+            // For existing documents, we'll allow adding signers even if status is not signature_placed
+            // The user can still add signers and the system will handle the workflow
         }
 
         // Provide errors variable for the layout
@@ -139,19 +139,161 @@ class SignatureDashboardController extends Controller
                 'document_id' => 'required|integer|exists:documents,id',
                 'signer_email' => 'required|email',
                 'signer_name' => 'required|string|min:2|max:100',
-                'document_type' => 'nullable|string|in:agreement,nda,general,contract',
-                'priority' => 'nullable|string|in:low,normal,high',
-                'due_at' => 'nullable|date|after:now',
-                'association_type' => 'nullable|string|in:client,lead',
-                'association_id' => 'nullable|integer',
-                'client_matter_id' => 'nullable|integer',
+                'email_template' => 'nullable|string',
+                'email_subject' => 'nullable|string|max:255',
+                'email_message' => 'nullable|string|max:1000',
+                'from_email' => 'nullable|email',
+                'client_matter_id' => 'nullable|integer|exists:client_matters,id',
+                'selected_client_id' => 'nullable|integer|exists:admins,id',
             ]);
             
             $document = Document::findOrFail($request->document_id);
             
-            // Verify the document has signatures placed
-            if ($document->status !== 'signature_placed') {
-                return redirect()->back()->with('error', 'Document must have signatures placed before sending for signing.');
+            // Check for duplicate signer
+            $existingSigner = $document->signers()->where('email', $request->signer_email)->first();
+            if ($existingSigner && $existingSigner->status === 'pending') {
+                return redirect()->back()->withErrors(['signer_email' => 'A signing link has already been sent to this email address.']);
+            }
+
+            // Create new signer
+            $signer = $document->signers()->create([
+                'email' => $request->signer_email,
+                'name' => $request->signer_name,
+                'token' => Str::random(64),
+                'status' => 'pending',
+            ]);
+            
+            // Associate document with matter if specified, or with lead/client if no matter
+            if ($request->has('client_matter_id') && $request->client_matter_id) {
+                // Get the matter details
+                $matter = \DB::table('client_matters')
+                    ->where('id', $request->client_matter_id)
+                    ->first();
+                    
+                if ($matter) {
+                    // Associate document with the client
+                    $client = Admin::find($matter->client_id);
+                    if ($client) {
+                        $document->update([
+                            'documentable_type' => Admin::class,
+                            'documentable_id' => $client->id,
+                            'origin' => 'client',
+                        ]);
+                        
+                        // Create a note about the matter association
+                        \App\Models\DocumentNote::create([
+                            'document_id' => $document->id,
+                            'created_by' => auth('admin')->id(),
+                            'action_type' => 'associated',
+                            'note' => "Document associated with matter: {$matter->client_unique_matter_no}",
+                            'metadata' => [
+                                'matter_id' => $matter->id,
+                                'matter_number' => $matter->client_unique_matter_no,
+                                'client_id' => $client->id
+                            ]
+                        ]);
+                    }
+                }
+            } elseif ($request->has('selected_client_id') && $request->selected_client_id) {
+                // Associate document with selected client/lead (no specific matter)
+                $entity = Admin::find($request->selected_client_id);
+                if ($entity) {
+                    $entityType = ($entity->type === 'lead') ? 'lead' : 'client';
+                    
+                    $document->update([
+                        'documentable_type' => Admin::class,
+                        'documentable_id' => $entity->id,
+                        'origin' => $entityType,
+                    ]);
+                    
+                    // Create a note about the association
+                    $folderName = ($entityType === 'lead') ? 'personal documents' : 'general documents';
+                    \App\Models\DocumentNote::create([
+                        'document_id' => $document->id,
+                        'created_by' => auth('admin')->id(),
+                        'action_type' => 'associated',
+                        'note' => "Document associated with {$entityType}: {$entity->first_name} {$entity->last_name} (folder: {$folderName})",
+                        'metadata' => [
+                            'entity_id' => $entity->id,
+                            'entity_type' => $entityType,
+                            'folder' => $folderName
+                        ]
+                    ]);
+                }
+            }
+
+            // Update document status based on current status
+            if ($document->status === 'draft') {
+                $document->update(['status' => 'sent']);
+            } elseif ($document->status === 'signature_placed') {
+                $document->update(['status' => 'sent']);
+            }
+
+            // Send email to signer
+            $signingUrl = url("/sign/{$document->id}/{$signer->token}");
+            
+            // Determine template
+            $template = $request->email_template ?? 'emails.signature.send';
+            if ($document->document_type === 'agreement') {
+                $template = 'emails.signature.send_agreement';
+            }
+            
+            $subject = $request->email_subject ?? 'Document Signature Request from Bansal Migration';
+            $message = $request->email_message ?? "Please review and sign the attached document.";
+            
+            // Prepare template data
+            $templateData = [
+                'signerName' => $signer->name,
+                'documentTitle' => $document->display_title ?? $document->title,
+                'signingUrl' => $signingUrl,
+                'message' => $message,
+                'documentType' => $document->document_type ?? 'document',
+                'dueDate' => $document->due_at ? $document->due_at->format('F j, Y') : null,
+            ];
+
+            try {
+                // Apply email configuration if specified
+                if ($request->from_email) {
+                    $emailConfig = app(\App\Services\EmailConfigService::class)->forAccount($request->from_email);
+                    app(\App\Services\EmailConfigService::class)->applyConfig($emailConfig);
+                } else {
+                    $defaultConfig = app(\App\Services\EmailConfigService::class)->getDefaultAccount();
+                    if ($defaultConfig) {
+                        app(\App\Services\EmailConfigService::class)->applyConfig($defaultConfig);
+                    }
+                }
+
+                // Send email
+                Mail::send($template, $templateData, function ($mail) use ($signer, $subject) {
+                    $mail->to($signer->email, $signer->name)
+                         ->subject($subject);
+                });
+
+                $successMessage = "Signer added successfully! Signing link sent to {$signer->email}";
+                if ($request->has('client_matter_id') && $request->client_matter_id) {
+                    $matter = \DB::table('client_matters')->where('id', $request->client_matter_id)->first();
+                    if ($matter) {
+                        $successMessage .= " and document associated with matter: {$matter->client_unique_matter_no}";
+                    }
+                } elseif ($request->has('selected_client_id') && $request->selected_client_id) {
+                    $entity = Admin::find($request->selected_client_id);
+                    if ($entity) {
+                        $entityType = ($entity->type === 'lead') ? 'lead' : 'client';
+                        $folderName = ($entityType === 'lead') ? 'personal documents' : 'general documents';
+                        $successMessage .= " and document associated with {$entityType}: {$entity->first_name} {$entity->last_name} (folder: {$folderName})";
+                    }
+                }
+                
+                return redirect()->route('admin.signatures.show', $document->id)
+                    ->with('success', $successMessage);
+            } catch (\Exception $e) {
+                \Log::error('Failed to send signing email', [
+                    'signer_id' => $signer->id,
+                    'error' => $e->getMessage()
+                ]);
+                
+                return redirect()->route('admin.signatures.show', $document->id)
+                    ->with('error', 'Signer added but failed to send email. You can copy the signing link manually.');
             }
         } else {
             $request->validate([
@@ -219,10 +361,16 @@ class SignatureDashboardController extends Controller
         // Check authorization using policy
         $this->authorize('view', $document);
 
+        // Get active email accounts for template picker
+        $emailAccounts = \App\Models\Email::where('status', true)
+            ->select('id', 'email', 'display_name')
+            ->orderBy('email')
+            ->get();
+
         // Provide errors variable for the layout
         $errors = request()->session()->get('errors') ?? new \Illuminate\Support\MessageBag();
 
-        return view('Admin.signatures.show', compact('document', 'errors'));
+        return view('Admin.signatures.show', compact('document', 'errors', 'emailAccounts'));
     }
 
     public function sendReminder(Request $request, $id)
@@ -269,11 +417,58 @@ class SignatureDashboardController extends Controller
             'email' => 'required|email'
         ]);
 
-        $suggestion = $this->signatureService->suggestAssociation($request->email);
+        $matches = [];
+        
+        // Find all clients and leads with this email (both are in admins table with role = 7)
+        $entities = Admin::where('email', $request->email)
+            ->where('role', '=', 7)
+            ->whereNull('is_deleted')
+            ->get();
+            
+        foreach ($entities as $entity) {
+            // Determine if it's a client or lead based on type field
+            $entityType = ($entity->type === 'lead') ? 'lead' : 'client';
+            
+            if ($entityType === 'client') {
+                // Get client's matters
+                $matters = \DB::table('client_matters')
+                    ->where('client_id', $entity->id)
+                    ->join('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
+                    ->select(
+                        'client_matters.id',
+                        'client_matters.client_unique_matter_no',
+                        'matters.title as matter_title',
+                        'client_matters.matter_status'
+                    )
+                    ->orderBy('client_matters.created_at', 'desc')
+                    ->get()
+                    ->map(function($matter) {
+                        return [
+                            'id' => $matter->id,
+                            'label' => $matter->client_unique_matter_no . ' - ' . $matter->matter_title,
+                            'status' => $matter->matter_status
+                        ];
+                    })
+                    ->toArray();
+            } else {
+                // Leads don't have matters
+                $matters = [];
+            }
+
+            $matches[] = [
+                'type' => $entityType,
+                'id' => $entity->id,
+                'name' => trim("{$entity->first_name} {$entity->last_name}"),
+                'email' => $entity->email,
+                'matters' => $matters,
+                'has_matters' => count($matters) > 0
+            ];
+        }
 
         return response()->json([
             'success' => true,
-            'match' => $suggestion
+            'matches' => $matches,
+            'match' => count($matches) === 1 ? $matches[0] : null // For backward compatibility
         ]);
     }
 

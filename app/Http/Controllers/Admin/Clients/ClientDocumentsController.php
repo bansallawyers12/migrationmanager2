@@ -163,7 +163,7 @@ class ClientDocumentsController extends Controller
 
                                                 if($fetch->status === 'sent') {
 
-                                                    $url2 = route('admin.documents.index', $fetch->id);
+                                                    $url2 = route('admin.signatures.show', $fetch->id);
                                                 ?>
                                                     <a target="_blank" href="<?php echo $url2;?>" class="dropdown-item">Check To Signature</a>
                                                 <?php
@@ -450,7 +450,7 @@ class ClientDocumentsController extends Controller
 
                                                 if($fetch->status === 'sent') {
 
-                                                    $url2 = route('admin.documents.index', $fetch->id);
+                                                    $url2 = route('admin.signatures.show', $fetch->id);
                                                 ?>
                                                     <a target="_blank" href="<?php echo $url2;?>" class="dropdown-item">Check To Signature</a>
                                                 <?php

@@ -190,7 +190,7 @@
                                                                             @endif
 
                                                                             @if($fetch->status === 'sent')
-                                                                                <a target="_blank" href="{{ route('admin.documents.index', $fetch->id) }}" class="dropdown-item">Check To Signature</a>
+                                                                                <a target="_blank" href="{{ route('admin.signatures.show', $fetch->id) }}" class="dropdown-item">Check To Signature</a>
                                                                             @endif
 
                                                                             @if($fetch->status === 'signed')
@@ -392,7 +392,7 @@
                             window.open(sendSignatureUrl, '_blank');
                             break;
                         case 'check-signature':
-                            const checkSignatureUrl = '{{ route('admin.documents.index', ':id') }}'.replace(':id', currentVisaContextFile);
+                            const checkSignatureUrl = '{{ route('admin.signatures.show', ':id') }}'.replace(':id', currentVisaContextFile);
                             window.open(checkSignatureUrl, '_blank');
                             break;
                         case 'download-signed':

@@ -36,11 +36,17 @@ use App\Http\Controllers\Admin\SignatureDashboardController;
 Route::prefix('admin')->middleware('auth:admin')->group(function () {
 
 /*---------- Document CRUD Operations ----------*/
-Route::get('/documents', [AdminDocumentController::class, 'index'])
-    ->name('admin.documents.index');
-
 Route::get('/documents/create', [AdminDocumentController::class, 'create'])
     ->name('admin.documents.create');
+
+// Redirect old document index to Signature Dashboard
+Route::get('/documents/{id?}', function($id = null) {
+    if ($id) {
+        return redirect()->route('admin.signatures.show', $id);
+    }
+    return redirect()->route('admin.signatures.index');
+})->name('admin.documents.index')
+    ->where('id', '[0-9]+');
 
 Route::post('/documents', [AdminDocumentController::class, 'store'])
     ->name('admin.documents.store');
@@ -120,6 +126,43 @@ Route::prefix('signatures')->group(function () {
 Route::get('/clients/{id}/matters', [SignatureDashboardController::class, 'getClientMatters'])->name('admin.clients.matters');
 
 }); // End of admin routes group
+
+// Debug route for testing PDF page generation (temporary - outside admin group)
+Route::get('/debug-pdf-page/{id}/{page}', function($id, $page) {
+    // Clear any output buffers to prevent corruption
+    if (ob_get_level()) {
+        ob_end_clean();
+    }
+    
+    try {
+        $document = \App\Models\Document::findOrFail($id);
+        $url = $document->myfile;
+        
+        if ($url && file_exists(storage_path('app/public/' . $url))) {
+            $filePath = storage_path('app/public/' . $url);
+            
+            $pdfService = app(\App\Services\PythonPDFService::class);
+            if ($pdfService->isHealthy()) {
+                $result = $pdfService->convertPageToImage($filePath, $page, 150);
+                
+                if ($result && ($result['success'] ?? false)) {
+                    $imageData = base64_decode(explode(',', $result['image_data'])[1]);
+                    
+                    // Return raw binary response with proper headers
+                    return response($imageData, 200, [
+                        'Content-Type' => 'image/png',
+                        'Content-Length' => strlen($imageData),
+                        'Cache-Control' => 'public, max-age=3600',
+                    ]);
+                }
+            }
+        }
+        
+        return response()->json(['error' => 'Failed to generate image'], 500);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+})->name('debug.pdf.page');
 
 /*
 |--------------------------------------------------------------------------

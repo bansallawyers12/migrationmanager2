@@ -219,7 +219,7 @@
                         <div class="relative">
                             <img
                                 id="pdf-image-{{ $i }}"
-                                src="{{ route('documents.page', ['id' => $document->id, 'page' => $i]) }}"
+                                src="{{ route('public.documents.page', ['id' => $document->id, 'page' => $i]) }}"
                                 alt="Page {{ $i }}"
                                 class="w-full h-auto rounded-md shadow-sm"
                                 style="max-width: 100%; z-index: 1; pointer-events: none;"
@@ -247,7 +247,7 @@
             </div>
 
             <!-- Signature Form -->
-            <form method="POST" action="{{ route('documents.submitSignatures', $document->id) }}">
+            <form method="POST" action="{{ route('public.documents.submitSignatures', $document->id) }}">
                 @csrf
                 <input type="hidden" name="signer_id" value="{{ $signer->id }}">
                 @for ($i = 1; $i <= $pdfPages; $i++)

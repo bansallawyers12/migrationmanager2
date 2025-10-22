@@ -303,15 +303,8 @@ class DocumentController extends Controller
         return view('Admin.documents.index', compact('documents'));
     }*/
 
-    public function index($id = null)
-    {
-        $documents = Document::with('signers')->get();
-        $selectedDocument = null;
-        if ($id) {
-            $selectedDocument = Document::with('signers')->find($id);
-        } //dd($selectedDocument);
-        return view('Admin.documents.index', compact('documents', 'selectedDocument'));
-    }
+    // This method is now handled by route redirect to Signature Dashboard
+    // public function index($id = null) - REMOVED - now redirects to admin.signatures.index
 
     public function create()
     {
@@ -440,7 +433,7 @@ class DocumentController extends Controller
         $documentId = (int) $id;
         if ($documentId <= 0) {
             \Log::warning('Invalid document ID provided for edit', ['id' => $id]);
-            return redirect()->route('admin.documents.index')->with('error', 'Invalid document ID.');
+            return redirect()->route('admin.signatures.index')->with('error', 'Invalid document ID.');
         }
 
         try {
@@ -471,7 +464,7 @@ class DocumentController extends Controller
                         's3Key' => $s3Key,
                         's3_exists' => $s3Key ? \Storage::disk('s3')->exists($s3Key) : 'no_path'
                     ]);
-                    return redirect()->route('admin.documents.index')->with('error', 'Document file not found.');
+                    return redirect()->route('admin.signatures.index')->with('error', 'Document file not found.');
                 }
 
                 // Download PDF from S3 to a temp file
@@ -511,7 +504,7 @@ class DocumentController extends Controller
                                 'client_id' => $document->client_id,
                                 'local_exists' => $url ? file_exists(storage_path('app/public/' . $url)) : false
                             ]);
-                            return redirect()->route('admin.documents.index')->with('error', 'Document file not found.');
+                            return redirect()->route('admin.signatures.index')->with('error', 'Document file not found.');
                         }
                     } else {
                         \Log::error('PDF file not found - no valid storage method for document: ' . $documentId, [
@@ -521,7 +514,7 @@ class DocumentController extends Controller
                             'client_id' => $document->client_id,
                             'local_exists' => $url ? file_exists(storage_path('app/public/' . $url)) : false
                         ]);
-                        return redirect()->route('admin.documents.index')->with('error', 'Document file not found.');
+                        return redirect()->route('admin.signatures.index')->with('error', 'Document file not found.');
                     }
                 } else {
                     \Log::error('PDF file not found - no storage information for document: ' . $documentId, [
@@ -531,7 +524,7 @@ class DocumentController extends Controller
                         'client_id' => $document->client_id,
                         'local_exists' => $url ? file_exists(storage_path('app/public/' . $url)) : false
                     ]);
-                    return redirect()->route('admin.documents.index')->with('error', 'Document file not found.');
+                    return redirect()->route('admin.signatures.index')->with('error', 'Document file not found.');
                 }
             }
 
@@ -574,7 +567,7 @@ class DocumentController extends Controller
             /*$pdfPages = $this->countPdfPages($pdfPath);
             if (!$pdfPages || $pdfPages < 1) {
                 \Log::error('Failed to count PDF pages for document: ' . $documentId);
-                return redirect()->route('admin.documents.index')->with('error', 'Failed to read PDF file.');
+                return redirect()->route('admin.signatures.index')->with('error', 'Failed to read PDF file.');
             }*/
 
             // Get page dimensions
@@ -598,7 +591,7 @@ class DocumentController extends Controller
                 $e,
                 'document_edit',
                 'An error occurred while loading the document for editing.',
-                'admin.documents.index',
+                'admin.signatures.index',
                 ['document_id' => $documentId]
             );
         }
@@ -768,7 +761,9 @@ class DocumentController extends Controller
             // Update document status to indicate signatures have been placed
             $document->update(['status' => 'signature_placed']);
             
-            return redirect()->route('admin.documents.index')->with('success', 'Signature locations added successfully! Document is ready for signing.');
+            // Redirect to the signature creation page where user can associate with client/lead and send
+            return redirect()->route('admin.signatures.create', ['document_id' => $document->id])
+                ->with('success', 'Signature locations added successfully! Now associate with client/lead and send for signing.');
         } catch (\Exception $e) {
             return $this->handleError(
                 $e,
@@ -1008,7 +1003,7 @@ class DocumentController extends Controller
                 'user_id' => auth('admin')->id()
             ]);
 
-            return redirect()->route('admin.documents.index', ['id' => $document->id])->with('success', 'Signing link sent successfully!');
+            return redirect()->route('admin.signatures.show', $document->id)->with('success', 'Signing link sent successfully!');
         } catch (\Exception $e) {
             return $this->handleError(
                 $e,
@@ -1101,6 +1096,14 @@ class DocumentController extends Controller
 
     public function getPage($id, $page)
     {
+        // Log the request for debugging
+        \Log::info('getPage method called', [
+            'document_id' => $id,
+            'page' => $page,
+            'user_id' => auth('admin')->id(),
+            'authenticated' => auth('admin')->check()
+        ]);
+        
         // ADD Python PDF Service integration
         $pdfService = app(\App\Services\PythonPDFService::class);
         
@@ -1189,7 +1192,7 @@ class DocumentController extends Controller
                 }
             }
 
-            // TRY PYTHON SERVICE FIRST
+            // PRIORITIZE PYTHON SERVICE - It's working reliably
             if ($pdfService->isHealthy()) {
                 $result = $pdfService->convertPageToImage($tmpPdfPath, $page, 150);
                 
@@ -1199,13 +1202,34 @@ class DocumentController extends Controller
                         @unlink($tmpPdfPath);
                     }
                     
+                    // Clear any output buffers to prevent image corruption
+                    if (ob_get_level()) {
+                        ob_end_clean();
+                    }
+                    
                     // Decode base64 and return
                     $imageData = base64_decode(explode(',', $result['image_data'])[1]);
-                    return response($imageData)->header('Content-Type', 'image/png');
+                    
+                    return response($imageData, 200, [
+                        'Content-Type' => 'image/png',
+                        'Content-Length' => strlen($imageData),
+                        'Cache-Control' => 'public, max-age=3600',
+                    ]);
+                } else {
+                    \Log::warning('Python PDF service failed to convert page', [
+                        'document_id' => $id,
+                        'page' => $page,
+                        'result' => $result
+                    ]);
                 }
+            } else {
+                \Log::warning('Python PDF service is not healthy', [
+                    'document_id' => $id,
+                    'page' => $page
+                ]);
             }
 
-            // FALLBACK: Continue with existing PHP method
+            // FALLBACK: Try Spatie PDF-to-Image (may fail due to Ghostscript issues)
             $imagePath = storage_path('app/public/page_' . $id . '_' . $page . '.jpg');
 
             try {
@@ -1225,14 +1249,26 @@ class DocumentController extends Controller
 
                 return response()->file($imagePath);
             } catch (\Exception $e) {
-                @unlink($tmpPdfPath);
+                // Clean up temp file
+                if ($tmpPdfPath && !$isLocalFile) {
+                    @unlink($tmpPdfPath);
+                }
+                
                 \Log::error('Error generating PDF page image', [
                     'context' => 'pdf_page_generation',
                     'document_id' => $id,
                     'page' => $page,
-                    'error' => $e->getMessage()
+                    'error' => $e->getMessage(),
+                    'python_service_healthy' => $pdfService->isHealthy()
                 ]);
-                abort(500, 'Error generating page image');
+                
+                // Return a placeholder image or error response
+                return response()->json([
+                    'error' => 'Unable to generate page preview',
+                    'message' => 'PDF processing service is currently unavailable. Please try again later.',
+                    'document_id' => $id,
+                    'page' => $page
+                ], 503);
             }
         } catch (\Exception $e) {
             \Log::error('Error in getPage', [
@@ -1280,7 +1316,7 @@ class DocumentController extends Controller
                     'document_id' => $document->id,
                     'signer_document_id' => $signer->document_id
                 ]);
-                return redirect()->route('admin.documents.index', ['id' => $document->id])->with('error', 'Invalid signing attempt.');
+                return redirect()->route('admin.signatures.show', $document->id)->with('error', 'Invalid signing attempt.');
             }
 
             \Log::info("Starting signature submission", [
@@ -1783,13 +1819,13 @@ class DocumentController extends Controller
         $documentId = (int) $id;
         if ($documentId <= 0) {
             \Log::warning('Invalid document ID in sign method', ['id' => $id]);
-            return redirect()->route('admin.documents.index')->with('error', 'Invalid document link.');
+            return redirect()->route('admin.signatures.index')->with('error', 'Invalid document link.');
         }
 
         // Validate token format
         if (!$token || !is_string($token) || strlen($token) < 32 || !preg_match('/^[a-zA-Z0-9]+$/', $token)) {
             \Log::warning('Invalid token format in sign method', ['token_length' => strlen($token ?? '')]);
-            return redirect()->route('admin.documents.index', ['id' => $documentId])->with('error', 'Invalid or expired signing link.');
+            return redirect()->route('admin.signatures.show', $documentId)->with('error', 'Invalid or expired signing link.');
         }
 
         try {
@@ -1819,7 +1855,7 @@ class DocumentController extends Controller
                     'signer_exists' => !is_null($signer),
                     'signer_status' => $signer ? $signer->status : 'none'
                 ]);
-                return redirect()->route('admin.documents.index', ['id' => $documentId])->with('error', 'Invalid or expired signing link.');
+                return redirect()->route('admin.signatures.show', $documentId)->with('error', 'Invalid or expired signing link.');
             }
 
             // Check token expiration (optional - add expiration logic)
@@ -1874,7 +1910,7 @@ class DocumentController extends Controller
                 $e,
                 'document_sign',
                 'An error occurred while loading the signing page.',
-                'admin.documents.index',
+                'admin.signatures.index',
                 ['document_id' => $documentId, 'token_present' => !empty($token)]
             );
         }

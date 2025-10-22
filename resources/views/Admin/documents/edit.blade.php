@@ -13,6 +13,14 @@
             border-radius: 8px;
             overflow: hidden;
             background: white;
+            min-height: 500px;
+            min-width: 400px;
+        }
+        
+        #preview-image {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
         }
         
         .signature-field-preview {
@@ -230,7 +238,7 @@
                     <div class="preview-container" id="preview-container">
                         <img
                             id="preview-image"
-                            src="{{ route('admin.documents.page', ['id' => $document->id, 'page' => 1]) }}"
+                            src="{{ url('debug-pdf-page/' . $document->id . '/1') }}"
                             alt="Document Preview"
                             style="max-width: 100%; height: auto; display: block;"
                         >
@@ -291,7 +299,7 @@
             <!-- Back Link -->
             <div class="mt-6 text-center">
                 <a
-                    href="{{ route('admin.documents.index', $document->id) }}"
+                    href="{{ route('admin.signatures.show', $document->id) }}"
                     class="text-blue-600 dark:text-blue-400 hover:underline"
                 >
                     ← Back to Document
@@ -326,6 +334,11 @@
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM Content Loaded');
+            const img = document.getElementById('preview-image');
+            console.log('Preview image element:', img);
+            console.log('Image src:', img ? img.src : 'Image not found');
+            
             loadSignatureFields();
             updatePreview();
             updateNavigationState(); // Initialize navigation state
@@ -340,9 +353,22 @@
             // Add resize listener for dynamic positioning
             window.addEventListener('resize', updatePreview);
             // Add image onload for dynamic preview
-            const img = document.getElementById('preview-image');
             if (img) {
-                img.onload = updatePreview;
+                img.onload = function() {
+                    console.log('Image loaded successfully');
+                    updatePreview();
+                };
+                img.onerror = function() {
+                    console.error('Image failed to load:', img.src);
+                };
+                
+                // If image is already loaded (cached), trigger update
+                if (img.complete) {
+                    console.log('Image already loaded (cached)');
+                    updatePreview();
+                }
+            } else {
+                console.error('Preview image element not found!');
             }
         });
 
@@ -352,12 +378,10 @@
             // Update navigation buttons
             updateNavigationState();
             
-            // Update preview image with proper route parameters
+            // Update preview image with debug route (temporary fix)
             const documentId = {{ $document->id }};
-            const baseUrl = '{{ route("admin.documents.page", ["id" => $document->id, "page" => 1]) }}';
-            const newUrl = baseUrl.replace('/page/1', `/page/${pageNumber}`);
             const img = document.getElementById('preview-image');
-            img.src = newUrl;
+            img.src = `{{ url('debug-pdf-page') }}/${documentId}/${pageNumber}`;
             
             // Wait for image load to update preview (ensures correct dimensions)
             img.onload = function() {

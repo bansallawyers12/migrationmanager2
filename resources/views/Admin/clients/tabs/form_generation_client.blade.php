@@ -297,14 +297,14 @@
                                                                 @endif
 
                                                                 @if($formlist2->status === 'sent')
-                                                                    <a target="_blank" href="{{ route('admin.documents.index', $formlist2->id) }}" class="btn btn-primary">Check To Signature</a>
+                                                                    <a target="_blank" href="{{ route('admin.signatures.show', $formlist2->id) }}" class="btn btn-primary">Check To Signature</a>
                                                                 @endif
 
                                                                 @if($formlist2->status === 'signed')
                                                                     <a target="_blank" href="{{ route('admin.documents.download.signed', $formlist2->id) }}" class="btn btn-primary">Download Signed</a>
                                                                 @endif
 
-                                                                <a target="_blank" href="{{ route('admin.documents.index', $formlist2->id) }}" class="btn btn-primary">Go To Document</a>
+                                                                <a target="_blank" href="{{ route('admin.signatures.show', $formlist2->id) }}" class="btn btn-primary">Go To Document</a>
 
 
                                                                 
