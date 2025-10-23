@@ -99,8 +99,8 @@
 				</a>
 
 				<div class="dropdown-divider"></div>
-				<a href="{{route('email_users.logout')}}" class="dropdown-item has-icon text-danger" onclick="event.preventDefault(); document.getElementById('logout-form').submit();"> <i class="fas fa-sign-out-alt"></i> Logout</a>
-				<form action="{{ url('email_users/logout') }}" method="post" name="admin_login" id="logout-form">
+				<a href="javascript:void(0)" class="dropdown-item has-icon text-danger" onclick="event.preventDefault(); document.getElementById('email-header-logout-form').submit();"> <i class="fas fa-sign-out-alt"></i> Logout</a>
+				<form action="{{ url('email_users/logout') }}" method="post" name="admin_login" id="email-header-logout-form">
 					@csrf
 					<input type="hidden" name="id" value="{{Auth::user()->id}}">
 				</form>

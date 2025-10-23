@@ -20,7 +20,7 @@ class AdminLoginController extends Controller
      *
      * @var string
      */
-    protected $redirectTo = '/admin/dashboard';
+    protected $redirectTo = '/dashboard';
     /**
      * Create a new controller instance.
      *
@@ -189,6 +189,6 @@ class AdminLoginController extends Controller
         $request->session()->flush();
         $request->session()->regenerate();
 
-		return redirect()->route('admin.login');
+		return redirect()->route('crm.login');
     }
 }

@@ -55,14 +55,15 @@
                                 </a>
 
                                 <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
-                                    <a class="dropdown-item" href="{{ route('logout') }}"
+                                    <a class="dropdown-item" href="javascript:void(0)"
                                        onclick="event.preventDefault();
-                                                     document.getElementById('logout-form').submit();">
+                                                     document.getElementById('app-logout-form').submit();">
                                         {{ __('Logout') }}
                                     </a>
 
-                                    <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                                    <form id="app-logout-form" action="{{ route('crm.logout') }}" method="POST" style="display: none;">
                                         @csrf
+                                        <input type="hidden" name="id" value="{{ Auth::user() ? Auth::user()->id : '' }}">
                                     </form>
                                 </div>
                             </li>

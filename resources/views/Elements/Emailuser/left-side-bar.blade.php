@@ -69,8 +69,8 @@
             
 
             <li class="dropdown">
-                <a href="{{route('email_users.logout')}}" class="nav-link" onclick="event.preventDefault(); document.getElementById('logout-form').submit();"><i data-feather="log-out"></i><span>Logout</span></a>
-                <form action="{{ url('email_users/logout') }}" method="post" name="admin_login" id="logout-form">
+                <a href="javascript:void(0)" class="nav-link" onclick="event.preventDefault(); document.getElementById('email-sidebar-logout-form').submit();"><i data-feather="log-out"></i><span>Logout</span></a>
+                <form action="{{ url('email_users/logout') }}" method="post" name="admin_login" id="email-sidebar-logout-form">
                     @csrf
                     <input type="hidden" name="id" value="{{Auth::user()->id}}">
                 </form>

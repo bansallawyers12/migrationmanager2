@@ -58,7 +58,7 @@
                 <div class="mt-5 text-muted text-center">
                     <h5 style="color: #6777ef;">Migration Manager Login</h5><br/>
                     <!--<a href="{{--URL::to('/admin/login')--}}">Register Here</a><br/>-->
-                    <a href="{{URL::to('/admin/login')}}">Login</a>
+                    <a href="{{URL::to('/login')}}">Login</a>
                 </div>
             </div>
         </div>

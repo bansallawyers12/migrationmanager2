@@ -119,7 +119,7 @@
                 </a>
                 @endif
                 <div class="dropdown-divider"></div>
-                <a href="{{route('crm.logout')}}" class="text-danger" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                <a href="javascript:void(0)" class="text-danger" onclick="event.preventDefault(); document.getElementById('crm-logout-form').submit();">
                     <i class="fas fa-sign-out-alt"></i> 
                     <span>Logout</span>
                 </a>
@@ -128,7 +128,7 @@
     </div>
 </nav>
 
-<form id="logout-form" action="{{ route('crm.logout') }}" method="POST" style="display: none;">
+<form id="crm-logout-form" action="{{ route('crm.logout') }}" method="POST" style="display: none;">
     @csrf
     <input type="hidden" name="id" value="{{ Auth::user() ? Auth::user()->id : '' }}">
 </form>

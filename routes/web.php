@@ -76,10 +76,12 @@ require __DIR__ . '/adminconsole.php';
 | SECTION: Authentication Routes
 |--------------------------------------------------*/
 // CRM authentication routes (no /admin prefix)
-Route::get('/', [AdminLoginController::class, 'showLoginForm'])->name('crm.login');
 Route::get('/login', [AdminLoginController::class, 'showLoginForm'])->name('crm.login');
 Route::post('/login', [AdminLoginController::class, 'login'])->name('crm.login.post');
 Route::post('/logout', [AdminLoginController::class, 'logout'])->name('crm.logout');
+Route::get('/logout', function() {
+    return redirect()->route('crm.login');
+})->name('crm.logout.get');
 
 /*--------------------------------------------------
 | SECTION: CRM Application Routes (Protected)

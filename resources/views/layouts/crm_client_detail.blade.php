@@ -1524,12 +1524,15 @@
                 var v = $(this).val(); 
                 var s = v.split('/');
                 if(s[1] == 'Matter' && s[2] != ''){
-                    window.location = '{{route('clients.detail', '')}}/'+s[0]+'/'+s[2]; // redirect
+                    // Build URL manually since we can't pass dynamic parameters to route() in JavaScript
+                    window.location = '{{ url("/clients/detail") }}/' + s[0] + '/' + s[2]; // redirect
                 } else {
                     if(s[1] == 'Client'){
-                        window.location = '{{route('clients.detail', '')}}/'+s[0]; // redirect
+                        // Build URL manually since we can't pass dynamic parameters to route() in JavaScript
+                        window.location = '{{ url("/clients/detail") }}/' + s[0]; // redirect
                     }  else{
-                        window.location = '{{route('history', '')}}/'+s[0]; // redirect
+                        // Build URL manually since we can't pass dynamic parameters to route() in JavaScript
+                        window.location = '{{ url("/history") }}/' + s[0]; // redirect
                     }
                 }
                 return false;

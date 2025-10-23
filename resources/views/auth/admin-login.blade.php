@@ -19,7 +19,7 @@
 								@include('../Elements/flash-message')
 							</div>
 
-							<form action="{{URL::to('admin/login')}}" method="post" name="admin_login">
+							<form action="{{URL::to('login')}}" method="post" name="admin_login">
 							<input type="hidden" name="_token" value="{{ csrf_token() }}">
 								<div class="form-group">
 									<label for="email">Email</label>
