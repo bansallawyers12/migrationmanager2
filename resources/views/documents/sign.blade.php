@@ -197,7 +197,10 @@
 <body class="bg-gray-100 dark:bg-gray-900 font-sans antialiased">
     
     <div class="signing-header">
-        <div class="progress"><span id="progress-count">0</span> of <span id="progress-total">0</span> required fields</div>
+        <div class="progress">
+            <span id="loading-progress" style="display: none;">Loading pages: <span id="loaded-pages">0</span>/<span id="total-pages">{{ $pdfPages }}</span> | </span>
+            <span id="progress-count">0</span> of <span id="progress-total">0</span> required fields
+        </div>
         <div class="controls">
             <button id="start-signing-btn" class="btn btn-primary">Start</button>
             <button id="next-field-btn" class="btn btn-secondary">Next</button>
@@ -415,6 +418,17 @@
     <script>
         // Image loading handlers - Make them global for inline handlers
         window.handleImageLoadSuccess = function(pageNum) {
+            // Prevent duplicate processing
+            if (processedImages.has(pageNum)) {
+                console.log('Page ' + pageNum + ' already processed, skipping...');
+                return;
+            }
+            processedImages.add(pageNum);
+            
+            // Update loading progress
+            loadedPagesCount++;
+            updateLoadingProgress();
+            
             const loadingPlaceholder = document.getElementById('loading-placeholder-' + pageNum);
             const errorPlaceholder = document.getElementById('error-placeholder-' + pageNum);
             const img = document.getElementById('pdf-image-' + pageNum);
@@ -566,25 +580,47 @@
 
         // remove legacy initializer
 
+        // Track which images have been processed to avoid duplicates
+        const processedImages = new Set();
+        let loadedPagesCount = 0;
+        const totalPages = {{ $pdfPages }};
+        
+        function updateLoadingProgress() {
+            const loadingProgress = document.getElementById('loading-progress');
+            const loadedPagesEl = document.getElementById('loaded-pages');
+            
+            if (loadedPagesEl) {
+                loadedPagesEl.textContent = loadedPagesCount;
+            }
+            
+            if (loadingProgress) {
+                if (loadedPagesCount < totalPages) {
+                    loadingProgress.style.display = 'inline';
+                } else {
+                    loadingProgress.style.display = 'none';
+                }
+            }
+        }
+        
         document.addEventListener('DOMContentLoaded', function () {
             console.log('Document signing page loaded');
             
-            // Debug: Log all image URLs and add fallback loading
-            for (let i = 1; i <= {{ $pdfPages }}; i++) {
+            // Show loading progress
+            updateLoadingProgress();
+            
+            // Log all image URLs for debugging
+            for (let i = 1; i <= totalPages; i++) {
                 const img = document.getElementById('pdf-image-' + i);
                 if (img) {
                     console.log('Page ' + i + ' URL:', img.src);
                     
-                    // Fallback: Check if image loaded after a delay
-                    setTimeout(() => {
-                        if (img.complete && img.naturalWidth > 0) {
-                            console.log('Fallback: Image ' + i + ' already loaded');
-                            handleImageLoadSuccess(i);
-                        } else {
-                            console.log('Fallback: Image ' + i + ' not loaded, retrying...');
-                            retryLoadImage(i);
-                        }
-                    }, 2000);
+                    // Check if image is already cached/loaded
+                    if (img.complete && img.naturalWidth > 0) {
+                        console.log('Page ' + i + ' already loaded from cache');
+                        loadedPagesCount++;
+                        updateLoadingProgress();
+                        handleImageLoadSuccess(i);
+                    }
                 }
             }
             
@@ -930,29 +966,21 @@
             });
         }
 
-        document.addEventListener('DOMContentLoaded', function () {
-            for (let i = 1; i <= {{ $pdfPages }}; i++) {
-                const img = document.getElementById('pdf-image-' + i);
-                if (img) {
-                    img.onload = () => positionSignatureFields(i);
-                    // If image is already loaded (from cache)
-                    if (img.complete) positionSignatureFields(i);
-                }
-            }
-            // Debounce function to prevent excessive calls
-            function debounce(func, wait) {
-                let timeout;
-                return function executedFunction(...args) {
-                    const later = () => {
-                        clearTimeout(timeout);
-                        func(...args);
-                    };
+        // Debounce function to prevent excessive calls
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
                     clearTimeout(timeout);
-                    timeout = setTimeout(later, wait);
+                    func(...args);
                 };
-            }
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
 
-            // Update resize handler with debouncing
+        // Update resize handler with debouncing (runs once after DOMContentLoaded)
+        window.addEventListener('load', function() {
             const debouncedReposition = debounce(function() {
                 for (let i = 1; i <= {{ $pdfPages }}; i++) {
                     positionSignatureFields(i);
@@ -1022,13 +1050,32 @@
         }
 
         function finishSigning() {
-            if (!validateAllSignatures()) return;
+            console.log('=== FINISH SIGNING CALLED ===');
             
-            // Show loading state
-            const submitBtn = document.querySelector('button[type="submit"]');
-            const originalText = submitBtn.textContent;
-            submitBtn.textContent = 'Processing...';
-            submitBtn.disabled = true;
+            if (!validateAllSignatures()) {
+                console.log('Validation failed in finishSigning');
+                return;
+            }
+            
+            console.log('Validation passed - proceeding with submission');
+            
+            // Mark that signing is in progress
+            window.signingInProgress = true;
+            
+            // Show loading state for both submit buttons
+            const headerSubmitBtn = document.getElementById('submit-signatures-btn');
+            const formSubmitBtn = document.querySelector('button[type="submit"]');
+            
+            if (headerSubmitBtn) {
+                headerSubmitBtn.textContent = 'Processing...';
+                headerSubmitBtn.disabled = true;
+            }
+            if (formSubmitBtn) {
+                formSubmitBtn.textContent = 'Processing...';
+                formSubmitBtn.disabled = true;
+            }
+            
+            console.log('Loading state applied to buttons');
             
             // Add loading overlay
             const loadingOverlay = document.createElement('div');
@@ -1057,18 +1104,36 @@
             document.body.appendChild(loadingOverlay);
             
             populateHiddenFields();
+            console.log('Hidden fields populated');
+            
             const form = document.getElementById('signature-form');
-            if (form) form.submit();
+            console.log('Form found:', !!form);
+            console.log('Form action:', form ? form.action : 'N/A');
+            
+            if (form) {
+                console.log('Submitting form programmatically...');
+                form.submit();
+            }
         }
 
         // Enhanced form submission with multipage validation
         document.querySelector('form').addEventListener('submit', function (e) {
-            if (!validateAllSignatures()) {
+            console.log('=== FORM SUBMIT EVENT ===');
+            console.log('Form action:', this.action);
+            console.log('Form method:', this.method);
+            console.log('Signing in progress:', window.signingInProgress);
+            
+            // Only validate if not already validated by finishSigning()
+            if (!window.signingInProgress && !validateAllSignatures()) {
+                console.log('Validation failed - preventing submission');
                 e.preventDefault();
                 return false;
             }
             
-            // Continue with existing form submission logic...
+            console.log('Validation passed - form will submit');
+            
+            // Mark that signing is in progress
+            window.signingInProgress = true;
         });
     </script>
 </body>

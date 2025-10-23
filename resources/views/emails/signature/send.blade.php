@@ -150,7 +150,7 @@
             <p class="greeting">Dear {{ $signerName }},</p>
             
             <p class="message">
-                {{ $message }}
+                {{ $emailMessage }}
             </p>
 
             <!-- Document Info -->

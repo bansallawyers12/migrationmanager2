@@ -105,7 +105,7 @@ class SignatureService
                 'signerName' => $signer->name,
                 'documentTitle' => $document->display_title ?? $document->title,
                 'signingUrl' => $signingUrl,
-                'message' => $message,
+                'emailMessage' => $message,
                 'documentType' => $document->document_type ?? 'document',
                 'dueDate' => $document->due_at ? $document->due_at->format('F j, Y') : null,
             ];

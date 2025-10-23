@@ -285,21 +285,7 @@
                         }
                         ?>
                         <div class="row">
-                            <div class="col-12 col-md-6 col-lg-6">
-                                <div class="form-group">
-                                    <label for="email_from">From <span class="span_req">*</span></label>
-                                    <select class="form-control" name="email_from" required>
-                                        <option value="">Select From</option>
-                                        <?php
-                                        $emails = \App\Models\Email::select('email')->where('status', 1)->get();
-                                        foreach($emails as $nemail){
-                                        ?>
-                                            <option value="<?php echo $nemail->email; ?>"><?php echo $nemail->email; ?></option>
-                                        <?php
-                                        }?>
-                                    </select>
-                                </div>
-                            </div>
+                            <input type="hidden" name="email_from" value="info@bansalimmigration.com.au">
 
                             <div class="col-12 col-md-6 col-lg-6">
                                 <div class="form-group">

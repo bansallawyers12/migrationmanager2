@@ -156,6 +156,13 @@ class PublicDocumentController extends Controller
      */
     public function submitSignatures(Request $request, $id)
     {
+        Log::info('=== START submitSignatures ===', [
+            'document_id' => $id,
+            'signer_id' => $request->signer_id,
+            'has_signatures' => $request->has('signatures'),
+            'has_positions' => $request->has('signature_positions')
+        ]);
+        
         // Validation
         $request->validate([
             'signer_id' => 'required|integer|exists:signers,id',
@@ -168,12 +175,20 @@ class PublicDocumentController extends Controller
 
         $documentId = (int) $id;
         if ($documentId <= 0) {
+            Log::error('Invalid document ID in submitSignatures', ['id' => $id]);
             return redirect('/')->with('error', 'Invalid document ID.');
         }
 
         try {
             $document = Document::findOrFail($documentId);
             $signer = Signer::findOrFail($request->signer_id);
+            
+            Log::info('Document and signer loaded', [
+                'document_id' => $document->id,
+                'signer_id' => $signer->id,
+                'signer_status' => $signer->status,
+                'signer_token_set' => $signer->token !== null
+            ]);
 
             // Verify signer belongs to this document
             if ($signer->document_id !== $document->id) {
@@ -195,6 +210,16 @@ class PublicDocumentController extends Controller
                 return redirect('/')->with('error', 'Invalid or expired signing link.');
             }
 
+            // Check if signer has already signed this document
+            if ($signer->status === 'signed') {
+                Log::warning('Signer attempting to re-sign already signed document', [
+                    'signer_id' => $signer->id,
+                    'document_id' => $document->id
+                ]);
+                return redirect()->route('public.documents.thankyou', ['id' => $document->id])
+                    ->with('info', 'This document has already been signed. You can download the signed copy below.');
+            }
+            
             if ($signer->token !== null && $signer->status === 'pending') {
                 // Get PDF file using multiple fallback methods (like CRM)
                 $url = $document->myfile;
@@ -506,7 +531,14 @@ class PublicDocumentController extends Controller
                     ->with('success', 'Document signed successfully! You can now download your signed document.');
             }
 
-            return redirect('/')->with('error', 'Invalid signing attempt.');
+            // If we reach here, something unexpected happened
+            Log::error('Unexpected state in submitSignatures', [
+                'document_id' => $document->id,
+                'signer_id' => $signer->id,
+                'signer_status' => $signer->status,
+                'signer_token_set' => $signer->token !== null
+            ]);
+            return redirect('/')->with('error', 'Invalid signing attempt. Please contact support if this issue persists.');
         } catch (\Exception $e) {
             Log::error("Error in public submitSignatures", [
                 'error' => $e->getMessage(),
@@ -532,6 +564,21 @@ class PublicDocumentController extends Controller
         
         try {
             $document = Document::findOrFail($id);
+            
+            // Check if cached image already exists
+            $cachedImagePath = storage_path('app/public/pdf_pages/doc_' . $id . '_page_' . $page . '.png');
+            if (file_exists($cachedImagePath) && filesize($cachedImagePath) > 0) {
+                Log::info('Serving cached page image', [
+                    'document_id' => $id,
+                    'page' => $page,
+                    'cached_path' => $cachedImagePath
+                ]);
+                return response()->file($cachedImagePath, [
+                    'Content-Type' => 'image/png',
+                    'Cache-Control' => 'public, max-age=86400', // Cache for 24 hours
+                ]);
+            }
+            
             $url = $document->myfile;
             $pdfPath = null;
             $tmpPdfPath = null;
@@ -638,8 +685,14 @@ class PublicDocumentController extends Controller
                         // Decode base64 to image bytes
                         $imageBytes = base64_decode($imageData);
                         
-                        // Save to temporary file (matches working version approach)
-                        $imagePath = storage_path('app/public/page_' . $id . '_' . $page . '.png');
+                        // Ensure cache directory exists
+                        $cacheDir = storage_path('app/public/pdf_pages');
+                        if (!file_exists($cacheDir)) {
+                            mkdir($cacheDir, 0755, true);
+                        }
+                        
+                        // Save to cache directory for reuse
+                        $imagePath = storage_path('app/public/pdf_pages/doc_' . $id . '_page_' . $page . '.png');
                         file_put_contents($imagePath, $imageBytes);
                         
                         // Only delete temp PDF files, not local files

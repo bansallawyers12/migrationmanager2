@@ -631,7 +631,6 @@
             <div class="step-indicator">
                 <div class="step-dot active" id="step1"></div>
                 <div class="step-dot" id="step2"></div>
-                <div class="step-dot" id="step3"></div>
             </div>
 
             <!-- Step 1: Email Input & Search -->
@@ -671,6 +670,7 @@
                 <div id="clientLeadSelection"></div>
             </div>
 
+            <!-- Step 2: Signer Information -->
             <div id="nameStep" class="step-container">
                 <h3 class="form-section-title">
                     <i class="fas fa-user-edit"></i>
@@ -685,46 +685,9 @@
                 </div>
             </div>
 
-            <!-- Step 3: Email Settings & Final Configuration -->
-            <div id="settingsStep" class="step-container">
-                <h3 class="form-section-title">
-                    <i class="fas fa-cog"></i>
-                    Email Settings
-                </h3>
-                
-                <div class="form-group">
-                    <label for="from_email">Send From Email Account</label>
-                    <select class="form-control" id="from_email" name="from_email">
-                        <option value="">-- Use Default --</option>
-                        @foreach($emailAccounts as $account)
-                            <option value="{{ $account->email }}">{{ $account->display_name }} ({{ $account->email }})</option>
-                        @endforeach
-                    </select>
-                    <small class="form-help-text">Select which email account to send from</small>
-                </div>
-
-                <div class="form-group" style="margin-top: 15px;">
-                    <label for="email_template">Email Template</label>
-                    <select class="form-control" id="email_template" name="email_template">
-                        <option value="emails.signature.send">Standard - Professional signature request</option>
-                        <option value="emails.signature.send_agreement">Agreement - With legal notices and attachments</option>
-                    </select>
-                    <small class="form-help-text">Choose the email template to use</small>
-                </div>
-
-                <div class="form-group" style="margin-top: 15px;">
-                    <label for="email_subject">Email Subject (Optional)</label>
-                    <input type="text" class="form-control" id="email_subject" name="email_subject" 
-                           placeholder="Leave blank for default subject" value="{{ old('email_subject') }}">
-                </div>
-
-                <div class="form-group" style="margin-top: 15px;">
-                    <label for="email_message">Custom Message (Optional)</label>
-                    <textarea class="form-control" id="email_message" name="email_message" rows="3"
-                              placeholder="Add a personal message...">{{ old('email_message') }}</textarea>
-                    <small class="form-help-text">This message will be included in the email</small>
-                </div>
-            </div>
+            <!-- Hidden fields for email configuration -->
+            <input type="hidden" name="from_email" value="info@bansalimmigration.com.au">
+            <input type="hidden" name="email_template" value="emails.signature.send">
 
             <!-- Hidden fields for document and association data -->
             @if(isset($document) && $document)
@@ -837,12 +800,12 @@ function searchEmailMatches(email) {
             emailMatches = data.matches;
             
             if (data.matches.length === 1) {
-                // Auto-select single match and go to step 3
+                // Auto-select single match and go to step 2
                 selectedMatch = data.matches[0];
                 selectedClient = data.matches[0];
                 document.getElementById('signer_name').value = selectedMatch.name;
-                currentStep = 3;
-                showStep(3);
+                currentStep = 2;
+                showStep(2);
             } else {
                 // Multiple matches, show selection
                 displayEmailMatches();
@@ -910,10 +873,10 @@ function selectMatch(match, index) {
     // Auto-fill name field
     document.getElementById('signer_name').value = match.name;
     
-    // Auto-advance to step 3 when a match is selected
-    if (currentStep === 1 || currentStep === 2) {
-        currentStep = 3;
-        showStep(3);
+    // Auto-advance to step 2 when a match is selected
+    if (currentStep === 1) {
+        currentStep = 2;
+        showStep(2);
     }
 }
 
@@ -959,21 +922,17 @@ function goNextStep() {
             // Single match, auto-select it
             selectedMatch = emailMatches[0];
             document.getElementById('signer_name').value = selectedMatch.name;
-            currentStep = 3; // Skip to final step
-            showStep(3);
+            currentStep = 2; // Go to final step
+            showStep(2);
         } else if (emailMatches.length > 0 && selectedMatch) {
             // Match already selected, go to final step
-            currentStep = 3;
-            showStep(3);
+            currentStep = 2;
+            showStep(2);
         } else if (emailMatches.length === 0) {
             // No matches, go to name input step
             currentStep = 2;
             showStep(2);
         }
-    } else if (currentStep === 2) {
-        // From selection/name step to final step
-        currentStep = 3;
-        showStep(3);
     }
 }
 
@@ -981,14 +940,6 @@ function goBackStep() {
     if (currentStep === 2) {
         currentStep = 1;
         showStep(1);
-    } else if (currentStep === 3) {
-        if (emailMatches.length > 0) {
-            currentStep = 1;
-            showStep(1);
-        } else {
-            currentStep = 2;
-            showStep(2);
-        }
     }
 }
 
@@ -1009,11 +960,6 @@ function showStep(step) {
             // Show name input step
             document.getElementById('nameStep').style.display = 'block';
         }
-    } else if (step === 3) {
-        // Show email settings step
-        document.getElementById('settingsStep').style.display = 'block';
-        // Also ensure the name field is visible and filled
-        document.getElementById('nameStep').style.display = 'block';
     }
     
     // Update step indicators
@@ -1028,8 +974,8 @@ function showStep(step) {
     
     // Update buttons
     document.getElementById('backBtn').style.display = step > 1 ? 'inline-block' : 'none';
-    document.getElementById('nextBtn').style.display = step < 3 ? 'inline-block' : 'none';
-    document.getElementById('submitBtn').style.display = (step === 3 || selectedMatch) ? 'inline-block' : 'none';
+    document.getElementById('nextBtn').style.display = step < 2 ? 'inline-block' : 'none';
+    document.getElementById('submitBtn').style.display = step === 2 ? 'inline-block' : 'none';
 }
 
 // Populate the selection step with matches
