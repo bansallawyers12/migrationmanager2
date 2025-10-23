@@ -1919,7 +1919,10 @@ class ClientPersonalDetailsController extends Controller
             // Delete existing emails for this client
             ClientEmail::where('client_id', $client->id)->delete();
 
-            // Insert new emails
+            // Insert new emails and update admins table
+            $primaryEmail = null;
+            $primaryEmailType = 'Personal';
+            
             foreach ($emails as $emailData) {
                 if (!empty($emailData['email'])) {
                     ClientEmail::create([
@@ -1928,7 +1931,20 @@ class ClientPersonalDetailsController extends Controller
                         'email_type' => $emailData['email_type'],
                         'email' => $emailData['email']
                     ]);
+                    
+                    // Set primary email for admins table update
+                    if ($emailData['email_type'] === 'Personal' || empty($primaryEmail)) {
+                        $primaryEmail = $emailData['email'];
+                        $primaryEmailType = $emailData['email_type'];
+                    }
                 }
+            }
+            
+            // Update admins table with primary email
+            if (!empty($primaryEmail)) {
+                $client->email = $primaryEmail;
+                $client->email_type = $primaryEmailType;
+                $client->save();
             }
 
             return response()->json([

@@ -48,6 +48,123 @@
         font-weight: 600 !important;
         margin: 0 !important;
     }
+    
+    /* Fix dropdown menu width and item sizing */
+    .dropdown-menu {
+        min-width: 200px !important;
+        max-width: 220px !important;
+        width: auto !important;
+    }
+    
+    .dropdown-item {
+        padding: 8px 12px !important;
+        font-size: 0.9rem !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        max-width: 100% !important;
+    }
+    
+    .dropdown-item i {
+        margin-right: 6px !important;
+        width: 14px !important;
+        text-align: center !important;
+    }
+    
+    /* Ensure dropdown fits within viewport */
+    .dropdown-menu {
+        position: absolute !important;
+        top: auto !important;
+        bottom: 100% !important;
+        z-index: 9999 !important;
+        background-color: #fff !important;
+        border: 1px solid #e9ecef !important;
+        border-radius: 6px !important;
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15) !important;
+        margin-bottom: 2px !important;
+        max-height: 400px !important;
+        overflow-y: auto !important;
+        display: none !important;
+    }
+    
+    .dropdown-menu.show {
+        display: block !important;
+    }
+    
+    
+    /* Ensure all icons and text are aligned consistently */
+    .dropdown-item.has-icon {
+        display: flex !important;
+        align-items: center !important;
+        padding: 8px 12px !important;
+        font-size: 0.8rem !important;
+        line-height: 1.2 !important;
+        position: relative !important;
+        min-height: 32px !important;
+    }
+    
+    .dropdown-item.has-icon i {
+        width: 14px !important;
+        height: 14px !important;
+        flex-shrink: 0 !important;
+        text-align: center !important;
+        display: inline-block !important;
+        margin-right: 8px !important;
+        position: static !important;
+    }
+    
+    /* Ensure text starts at consistent position */
+    .dropdown-item.has-icon {
+        padding-left: 12px !important;
+    }
+    
+    /* Handle long text with ellipsis */
+    .dropdown-item.has-icon {
+        max-width: 180px !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        white-space: nowrap !important;
+    }
+    
+    /* Ensure all dropdown items are visible */
+    .dropdown-menu .dropdown-item {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: relative !important;
+        z-index: 1 !important;
+    }
+    
+    /* Fix table overflow issues */
+    .table-responsive {
+        overflow: visible !important;
+    }
+    
+    .table tbody tr {
+        position: relative !important;
+    }
+    
+    .table tbody tr td:last-child {
+        overflow: visible !important;
+        position: relative !important;
+    }
+    
+    /* Ensure text doesn't wrap and fits properly */
+    .dropdown-item span,
+    .dropdown-item {
+        white-space: nowrap !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+    }
+    
+    /* Ensure only one dropdown is visible at a time */
+    .dropdown-menu:not(.show) {
+        display: none !important;
+    }
+    
+    .dropdown-menu.show {
+        display: block !important;
+    }
 </style>
 <div class="crm-container">
 	<div class="main-content">
@@ -120,7 +237,7 @@
 													@endif
 
 													<a class="dropdown-item has-icon" href="{{route('admin.upload_checklists.matter', @$list->id)}}"><i class="fas fa-list"></i> Matter Checklist</a>
-													<a class="dropdown-item has-icon" href="{{route('adminconsole.features.matterotheremailtemplate.index', @$list->id)}}"><i class="fas fa-envelope"></i> Matter Email Template</a>
+													<a class="dropdown-item has-icon" href="{{route('adminconsole.features.matterotheremailtemplate.index', @$list->id)}}"><i class="fas fa-envelope"></i> Email Templates</a>
 												</div>
 											</div>
 										</td>
@@ -162,6 +279,68 @@ jQuery(document).ready(function($){
         } else {
             $('#checkbox-all').prop('checked',false);
         }
+    });
+    
+    // Fix dropdown to open upward - Enhanced version
+    $('.dropdown-toggle').off('click').on('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        var $this = $(this);
+        var $dropdown = $this.next('.dropdown-menu');
+        var isOpen = $dropdown.hasClass('show');
+        
+        // Force close ALL dropdowns first (more aggressive)
+        $('.dropdown-menu').removeClass('show').css('display', 'none');
+        $('.dropdown-toggle').attr('aria-expanded', 'false');
+        
+        // Small delay to ensure other dropdowns are closed
+        setTimeout(function() {
+            if (!isOpen) {
+                // Open current dropdown
+                $dropdown.addClass('show');
+                $this.attr('aria-expanded', 'true');
+                
+                // Force upward positioning
+                $dropdown.css({
+                    'position': 'absolute',
+                    'top': 'auto',
+                    'bottom': '100%',
+                    'left': '0',
+                    'z-index': '9999',
+                    'display': 'block',
+                    'margin-bottom': '2px'
+                });
+                
+                // Ensure all dropdown items are visible
+                $dropdown.find('.dropdown-item').each(function() {
+                    $(this).css({
+                        'display': 'block',
+                        'visibility': 'visible',
+                        'opacity': '1',
+                        'position': 'relative',
+                        'z-index': '1'
+                    });
+                });
+                
+                // Debug: Log the number of dropdown items found
+                console.log('Dropdown items found:', $dropdown.find('.dropdown-item').length);
+            }
+        }, 10);
+    });
+    
+    // Close dropdowns when clicking outside - Enhanced version
+    $(document).off('click.dropdown').on('click.dropdown', function(e) {
+        if (!$(e.target).closest('.dropdown').length) {
+            $('.dropdown-menu').removeClass('show').css('display', 'none');
+            $('.dropdown-toggle').attr('aria-expanded', 'false');
+        }
+    });
+    
+    // Additional safety - close dropdowns on window resize
+    $(window).on('resize', function() {
+        $('.dropdown-menu').removeClass('show').css('display', 'none');
+        $('.dropdown-toggle').attr('aria-expanded', 'false');
     });
 });
 </script>

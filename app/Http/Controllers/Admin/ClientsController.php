@@ -1236,7 +1236,6 @@ class ClientsController extends Controller
     public function update(Request $request)
     {
         // Check authorization (assumed to be handled elsewhere)
-
         if ($request->isMethod('post')) {
             $requestData = $request->all();  //dd($requestData);
 
@@ -3759,7 +3758,10 @@ class ClientsController extends Controller
             // Delete existing emails for this client
             ClientEmail::where('client_id', $client->id)->delete();
 
-            // Insert new emails
+            // Insert new emails and update admins table
+            $primaryEmail = null;
+            $primaryEmailType = 'Personal';
+            
             foreach ($emails as $emailData) {
                 if (!empty($emailData['email'])) {
                     ClientEmail::create([
@@ -3767,7 +3769,20 @@ class ClientsController extends Controller
                         'email_type' => $emailData['email_type'],
                         'email' => $emailData['email']
                     ]);
+                    
+                    // Set primary email for admins table update
+                    if ($emailData['email_type'] === 'Personal' || empty($primaryEmail)) {
+                        $primaryEmail = $emailData['email'];
+                        $primaryEmailType = $emailData['email_type'];
+                    }
                 }
+            }
+            
+            // Update admins table with primary email
+            if (!empty($primaryEmail)) {
+                $client->email = $primaryEmail;
+                $client->email_type = $primaryEmailType;
+                $client->save();
             }
 
             return response()->json([
