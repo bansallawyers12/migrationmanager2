@@ -342,7 +342,7 @@
                 var v = $(this).val();
                 var s = v.split('/');
                 if(s[1] == 'Client'){
-                    window.location = '{{URL::to('/admin/clients/detail/')}}/'+s[0]; // redirect
+                    window.location = '{{URL::to('/clients/detail/')}}/'+s[0]; // redirect
                 }else{
                     window.location = '{{URL::to('/admin/leads/history/')}}/'+s[0]; // redirect
                 }
@@ -355,10 +355,10 @@
                 //console.log('v='+v);
                 //console.log('s0='+s[0]+'==s1='+s[1]+'==s2='+s[2]);
                 if(s[1] == 'Matter' && s[2] != ''){
-                    window.location = '{{URL::to('/admin/clients/detail/')}}/'+s[0]+'/'+s[2]; // redirect
+                    window.location = '{{URL::to('/clients/detail/')}}/'+s[0]+'/'+s[2]; // redirect
                 } else {
                     if(s[1] == 'Client'){
-                        window.location = '{{URL::to('/admin/clients/detail/')}}/'+s[0]; // redirect
+                        window.location = '{{URL::to('/clients/detail/')}}/'+s[0]; // redirect
                     }  else{
                         window.location = '{{URL::to('/admin/leads/history/')}}/'+s[0]; // redirect
                     }

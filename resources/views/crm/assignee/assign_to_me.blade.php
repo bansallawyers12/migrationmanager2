@@ -122,7 +122,7 @@
                                             </td>
 											<td>{{ $list->assigned_user->first_name ?? ''}}  {{$list->assigned_user->last_name ?? ''}}</td>
 											<td>{{ $full_name??'N/P' }}</td>
-                                            <td><a href="{{URL::to('/admin/clients/detail/'.base64_encode(convert_uuencode(@$list->client_id)))}}" target="_blank" >{{ $list->noteClient->client_id ?? 'N/P' }}</a></td>
+                                            <td><a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->client_id)))}}" target="_blank" >{{ $list->noteClient->client_id ?? 'N/P' }}</a></td>
 											<td>{{ date('d/m/Y',strtotime($list->followup_date)) ?? 'N/P'}} </td>
                                             <td>{{ $list->task_group??'N/P' }}</td>
                                             <td>{{ $list->description??'N/P' }}</td>
@@ -298,7 +298,7 @@
                                             </td>
 											<td>{{ $listC->assigned_user->first_name ?? ''}}  {{$listC->assigned_user->last_name ?? ''}}</td>
 											<td>{{ $full_nameC??'N/P' }}</td>
-                                            <td><a href="{{URL::to('/admin/clients/detail/'.base64_encode(convert_uuencode(@$listC->client_id)))}}" target="_blank" >{{ $listC->noteClient->client_id ?? 'N/P' }}</a></td>
+                                            <td><a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$listC->client_id)))}}" target="_blank" >{{ $listC->noteClient->client_id ?? 'N/P' }}</a></td>
 											<td>{{ date('d/m/Y',strtotime($listC->followup_date)) ?? 'N/P'}} </td>
                                             <td>{{ $listC->task_group??'N/P' }}</td>
                                             <td>{{ $listC->description??'N/P' }}</td>

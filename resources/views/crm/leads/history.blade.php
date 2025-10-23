@@ -487,7 +487,7 @@ $(function () {
 		 closeOnSelect: false,
 		dropdownParent: $('#emailmodal'),
 		  ajax: {
-			url: '{{URL::to('/admin/clients/get-recipients')}}',
+			url: '{{URL::to('/clients/get-recipients')}}',
 			dataType: 'json',
 			processResults: function (data) {
 			  // Transforms the top-level key of the response object from 'items' to 'results'
@@ -539,7 +539,7 @@ function formatRepoSelection (repo) {
 $(document).delegate('.selecttemplate', 'change', function(){
 	var v = $(this).val();
 	$.ajax({
-		url: '{{URL::to('/admin/get-templates')}}',
+		url: '{{URL::to('/get-templates')}}',
 		type:'GET',
 		datatype:'json',
 		data:{id:v},
@@ -558,7 +558,7 @@ $(document).delegate('.editnote', 'click', function(){
 	var v = $(this).attr('data-id');
 	$('#myeditnotes').modal('show');
 	$.ajax({
-		url: '{{URL::to('/admin/get-notedetail')}}',
+		url: '{{URL::to('/get-notedetail')}}',
 		type:'GET',
 		data:{id:v},
 		success: function(response){

@@ -39,20 +39,20 @@
                         </span>
                     </a>
                     <ul class="dropdown-menu">
-                        <li class="{{(Route::currentRouteName() == 'email_users.loadinbox') ? 'active' : ''}}">
-                            <a href="{{route('email_users.loadinbox', ['email_user_id' =>$email_val->id])}}" class="nav-link"><i data-feather="file-text"></i><span>Load Inbox Emails</span></a>
+                        <li class="{{(Route::currentRouteName() == 'email_users.emails.sync') ? 'active' : ''}}">
+                            <a href="{{route('email_users.emails.sync', ['accountId' =>$email_val->id])}}" class="nav-link"><i data-feather="file-text"></i><span>Load Inbox Emails</span></a>
                         </li>
 
-                        <li class="{{(Route::currentRouteName() == 'email_users.loadsent') ? 'active' : ''}}">
-                            <a href="{{route('email_users.loadsent', ['email_user_id' => $email_val->id])}}" class="nav-link"><i data-feather="file-text"></i><span>Load Sent Emails</span></a>
+                        <li class="{{(Route::currentRouteName() == 'email_users.emails.sync') ? 'active' : ''}}">
+                            <a href="{{route('email_users.emails.sync', ['accountId' => $email_val->id])}}" class="nav-link"><i data-feather="file-text"></i><span>Load Sent Emails</span></a>
                         </li>
 
-                        <li class="{{(Route::currentRouteName() == 'email_users.inbox') ? 'active' : ''}}">
-                            <a href="{{route('email_users.inbox', ['email_user_id' => $email_val->id])}}" class="nav-link"><i data-feather="file-text"></i><span>Inbox</span></a>
+                        <li class="{{(Route::currentRouteName() == 'email_users.emails.sync') ? 'active' : ''}}">
+                            <a href="{{route('email_users.emails.sync', ['accountId' => $email_val->id])}}" class="nav-link"><i data-feather="file-text"></i><span>Inbox</span></a>
                         </li>
 
-                        <li class="{{(Route::currentRouteName() == 'email_users.sent') ? 'active' : ''}}">
-                            <a href="{{route('email_users.sent', ['email_user_id' => $email_val->id])}}" class="nav-link"><i data-feather="file-text"></i><span>Sent</span></a>
+                        <li class="{{(Route::currentRouteName() == 'email_users.emails.sync') ? 'active' : ''}}">
+                            <a href="{{route('email_users.emails.sync', ['accountId' => $email_val->id])}}" class="nav-link"><i data-feather="file-text"></i><span>Sent</span></a>
                         </li>
                     </ul>
                 </li>

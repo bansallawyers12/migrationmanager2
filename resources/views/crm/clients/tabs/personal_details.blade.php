@@ -490,7 +490,7 @@
                                                     <?php
                                                     if(isset($relationship->related_client_id) && $relationship->related_client_id != "" && $relationship->related_client_id != 0)
                                                     { ?>
-                                                        <a href="{{URL::to('/admin/clients/detail/'.base64_encode(convert_uuencode(@$relationship->related_client_id)))}}"><?php echo $relatedClientFullName;?> </a>
+                                                        <a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$relationship->related_client_id)))}}"><?php echo $relatedClientFullName;?> </a>
                                                     <?php
                                                     }  else {
                                                         echo $relatedClientFullName;
@@ -543,7 +543,7 @@
                                     {
                                         $relatedclients = \App\Models\Admin::where('id', $EXP)->first();
                                         ?>
-                                        <li><a target="_blank" href="{{URL::to('/admin/clients/detail/'.base64_encode(convert_uuencode(@$relatedclients->id)))}}">{{$relatedclients->first_name}} {{$relatedclients->last_name}}</a></li>
+                                        <li><a target="_blank" href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$relatedclients->id)))}}">{{$relatedclients->first_name}} {{$relatedclients->last_name}}</a></li>
                                     <?php
                                     }
                                 //} ?>

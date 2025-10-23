@@ -165,7 +165,7 @@
                                                         {{ $user_name }}
                                                         <br>
                                                         @if ($list->noteClient)
-                                                            <a href="{{ URL::to('/admin/clients/detail/' . base64_encode(convert_uuencode($list->client_id))) }}" target="_blank">{{ $list->noteClient->client_id }}</a>
+                                                            <a href="{{ URL::to('/clients/detail/' . base64_encode(convert_uuencode($list->client_id))) }}" target="_blank">{{ $list->noteClient->client_id }}</a>
                                                         @endif
                                                     </td>
                                                     <td>{{ $list->followup_date ? date('d/m/Y', strtotime($list->followup_date)) : 'N/P' }}</td>

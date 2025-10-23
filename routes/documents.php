@@ -77,10 +77,10 @@ Route::get('/sign/{id}/{token}', [AdminDocumentController::class, 'sign'])
 Route::get('/documents/{id}/page/{page}', [AdminDocumentController::class, 'getPage'])
     ->name('documents.page');
 
-Route::get('/documents/{id}/download-signed', [AdminDocumentController::class, 'downloadSigned'])
+Route::get('/admin/documents/{id}/download-signed', [AdminDocumentController::class, 'downloadSigned'])
     ->name('documents.download.signed');
 
-Route::get('/documents/{id}/download-signed-and-thankyou', [AdminDocumentController::class, 'downloadSignedAndThankyou'])
+Route::get('/admin/documents/{id}/download-signed-and-thankyou', [AdminDocumentController::class, 'downloadSignedAndThankyou'])
     ->name('documents.download_and_thankyou');
 
 Route::get('/documents/thankyou/{id?}', [AdminDocumentController::class, 'thankyou'])

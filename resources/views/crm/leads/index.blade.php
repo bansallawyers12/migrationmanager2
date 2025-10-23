@@ -202,13 +202,13 @@
                         </li>
 
                         <li class="nav-item is_checked_clientn">
-                            <a class="nav-link " id="clients-tab"  href="{{URL::to('/admin/clients')}}" >Clients</a>
+                            <a class="nav-link " id="clients-tab"  href="{{URL::to('/clients')}}" >Clients</a>
                         </li>
                         <li class="nav-item is_checked_clientn">
-                            <a class="nav-link" id="archived-tab"  href="{{URL::to('/admin/archived')}}" >Archived</a>
+                            <a class="nav-link" id="archived-tab"  href="{{URL::to('/archived')}}" >Archived</a>
                         </li>
                         <li class="nav-item is_checked_clientn">
-                            <a class="nav-link active" id="lead-tab"  href="{{URL::to('/admin/leads')}}" >Leads</a>
+                            <a class="nav-link active" id="lead-tab"  href="{{URL::to('/leads')}}" >Leads</a>
                         </li>
                     </ul>
 
@@ -408,7 +408,7 @@
                 if (confirm(mergeStr)) {
                     $.ajax({
                         type:'post',
-                        url:"{{URL::to('/')}}/admin/merge_records",
+                        url:"{{URL::to('/')}}/merge_records",
                         headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
                         data: {merge_from:clickedIds[0],merge_into:clickedIds[1]},
                         success: function(response){
@@ -541,7 +541,7 @@
         $(document).delegate('.listing-container .selecttemplate', 'change', function(){
             var v = $(this).val();
             $.ajax({
-                url: '{{URL::to('/admin/get-templates')}}',
+                url: '{{URL::to('/get-templates')}}',
                 type:'GET',
                 datatype:'json',
                 data:{id:v},
@@ -560,7 +560,7 @@
             closeOnSelect: false,
             dropdownParent: $('#emailmodal'),
             ajax: {
-                url: '{{URL::to('/admin/clients/get-recipients')}}',
+                url: '{{URL::to('/clients/get-recipients')}}',
                 dataType: 'json',
                 processResults: function (data) {
                   // Transforms the top-level key of the response object from 'items' to 'results'
@@ -579,7 +579,7 @@
             closeOnSelect: false,
             dropdownParent: $('#emailmodal'),
             ajax: {
-                url: '{{URL::to('/admin/clients/get-recipients')}}',
+                url: '{{URL::to('/clients/get-recipients')}}',
                 dataType: 'json',
                 processResults: function (data) {
                     // Transforms the top-level key of the response object from 'items' to 'results'

@@ -242,7 +242,7 @@
                                     @foreach (@$lists as $list)
                                         <tr id="id_{{@$list->id}}">
                                             <td class="tdCls">{{ @$list->client_id == "" ? config('constants.empty') : str_limit(@$list->client_id, '50', '...') }}</td>
-                                            <td class="tdCls"><a href="{{URL::to('/admin/clients/detail/'.base64_encode(convert_uuencode(@$list->id)) )}}">{{ @$list->first_name == "" ? config('constants.empty') : str_limit(@$list->first_name, '50', '...') }} {{ @$list->last_name == "" ? config('constants.empty') : str_limit(@$list->last_name, '50', '...') }}</a></td>
+                                            <td class="tdCls"><a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->id)) )}}">{{ @$list->first_name == "" ? config('constants.empty') : str_limit(@$list->first_name, '50', '...') }} {{ @$list->last_name == "" ? config('constants.empty') : str_limit(@$list->last_name, '50', '...') }}</a></td>
                                             <td class="tdCls">
                                                 <a href="mailto:{{ @$list->email }}">{{ @$list->email == "" ? config('constants.empty') : str_limit(@$list->email, '50', '...') }}</a>
                                             </td>
@@ -254,7 +254,7 @@
                                                 <div class="dropdown d-inline">
                                                     <button class="btn btn-primary dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
                                                     <div class="dropdown-menu">
-                                                        <a class="dropdown-item has-icon" href="{{URL::to('/admin/clients/detail/'.base64_encode(convert_uuencode(@$list->id)) )}}"><i class="fas fa-eye"></i> View Details</a>
+                                                        <a class="dropdown-item has-icon" href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->id)) )}}"><i class="fas fa-eye"></i> View Details</a>
                                                         <a class="dropdown-item has-icon" href="mailto:{{ @$list->email }}"><i class="fas fa-envelope"></i> Send Email</a>
                                                     </div>
                                                 </div>

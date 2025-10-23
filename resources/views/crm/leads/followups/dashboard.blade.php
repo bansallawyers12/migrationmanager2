@@ -377,7 +377,7 @@ $(document).ready(function() {
         const id = $('#complete_followup_id').val();
         
         $.ajax({
-            url: `/admin/leads/followups/${id}/complete`,
+            url: `/leads/followups/${id}/complete`,
             method: 'POST',
             data: $(this).serialize(),
             success: function(response) {
@@ -401,7 +401,7 @@ $(document).ready(function() {
         const id = $('#reschedule_followup_id').val();
         
         $.ajax({
-            url: `/admin/leads/followups/${id}/reschedule`,
+            url: `/leads/followups/${id}/reschedule`,
             method: 'POST',
             data: $(this).serialize(),
             success: function(response) {

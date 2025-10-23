@@ -303,7 +303,7 @@ class AssigneeController extends Controller
                                 $user_name = $firstName . ' ' . $lastName;
                                 $user_name .= "<br>";
                                 $client_encoded_id = base64_encode(convert_uuencode(@$data->client_id));
-                                $user_name .= '<a href="'.url('/admin/clients/detail/'.$client_encoded_id).'" target="_blank">'.$clientId.'</a>';
+                                $user_name .= '<a href="'.url('/clients/detail/'.$client_encoded_id).'" target="_blank">'.$clientId.'</a>';
                             } else {
                                 $user_name = 'N/P';
                             }

@@ -220,7 +220,7 @@
                         <h4>Completed Action</h4>
                         <ul class="nav nav-pills" id="client_tabs" role="tablist">
                             <li class="nav-item is_checked_clientn11">
-                                <a class="nav-link active" id="archived-tab" href="{{URL::to('/admin/action')}}">Incomplete</a>
+                                <a class="nav-link active" id="archived-tab" href="{{URL::to('/action')}}">Incomplete</a>
                             </li>
                         </ul>
                     </div>
@@ -250,24 +250,24 @@
                                         $assigneesCount_Personal_Task_type = \App\Models\Note::where('task_group','like','Personal Task')->where('assigned_to',Auth::user()->id)->where('type','client')->where('folloup',1)->where('status',1)->orderBy('created_at', 'desc')->count();
                                     }
                                     ?>
-                                    <a href="{{URL::to('/admin/action_completed?group_type=All')}}" id="All" class="group_type {{ $task_group == 'All' ? 'active' : '' }}">All <span class="countAction">{{ $assigneesCount_All_type }}</span></a>
+                                    <a href="{{URL::to('/action_completed?group_type=All')}}" id="All" class="group_type {{ $task_group == 'All' ? 'active' : '' }}">All <span class="countAction">{{ $assigneesCount_All_type }}</span></a>
                                     <button type="button">
-                                        <a href="{{URL::to('/admin/action_completed?group_type=Call')}}" id="Call" class="group_type {{ $task_group == 'Call' ? 'active' : '' }}"><i class="fa fa-phone" aria-hidden="true"></i> Call <span class="countAction">{{ $assigneesCount_call_type }}</span></a>
+                                        <a href="{{URL::to('/action_completed?group_type=Call')}}" id="Call" class="group_type {{ $task_group == 'Call' ? 'active' : '' }}"><i class="fa fa-phone" aria-hidden="true"></i> Call <span class="countAction">{{ $assigneesCount_call_type }}</span></a>
                                     </button>
                                     <button type="button">
-                                        <a href="{{URL::to('/admin/action_completed?group_type=Checklist')}}" id="Checklist" class="group_type {{ $task_group == 'Checklist' ? 'active' : '' }}"><i class="fa fa-bars" aria-hidden="true"></i> Checklist <span class="countAction">{{ $assigneesCount_Checklist_type }}</span></a>
+                                        <a href="{{URL::to('/action_completed?group_type=Checklist')}}" id="Checklist" class="group_type {{ $task_group == 'Checklist' ? 'active' : '' }}"><i class="fa fa-bars" aria-hidden="true"></i> Checklist <span class="countAction">{{ $assigneesCount_Checklist_type }}</span></a>
                                     </button>
                                     <button type="button">
-                                        <a href="{{URL::to('/admin/action_completed?group_type=Review')}}" id="Review" class="group_type {{ $task_group == 'Review' ? 'active' : '' }}"><i class="fa fa-check" aria-hidden="true"></i> Review <span class="countAction">{{ $assigneesCount_Review_type }}</span></a>
+                                        <a href="{{URL::to('/action_completed?group_type=Review')}}" id="Review" class="group_type {{ $task_group == 'Review' ? 'active' : '' }}"><i class="fa fa-check" aria-hidden="true"></i> Review <span class="countAction">{{ $assigneesCount_Review_type }}</span></a>
                                     </button>
                                     <button type="button">
-                                        <a href="{{URL::to('/admin/action_completed?group_type=Query')}}" id="Query" class="group_type {{ $task_group == 'Query' ? 'active' : '' }}"><i class="fa fa-question" aria-hidden="true"></i> Query <span class="countAction">{{ $assigneesCount_Query_type }}</span></a>
+                                        <a href="{{URL::to('/action_completed?group_type=Query')}}" id="Query" class="group_type {{ $task_group == 'Query' ? 'active' : '' }}"><i class="fa fa-question" aria-hidden="true"></i> Query <span class="countAction">{{ $assigneesCount_Query_type }}</span></a>
                                     </button>
                                     <button type="button">
-                                        <a href="{{URL::to('/admin/action_completed?group_type=Urgent')}}" id="Urgent" class="group_type {{ $task_group == 'Urgent' ? 'active' : '' }}"><i class="fa fa-flag" aria-hidden="true"></i> Urgent <span class="countAction">{{ $assigneesCount_Urgent_type }}</span></a>
+                                        <a href="{{URL::to('/action_completed?group_type=Urgent')}}" id="Urgent" class="group_type {{ $task_group == 'Urgent' ? 'active' : '' }}"><i class="fa fa-flag" aria-hidden="true"></i> Urgent <span class="countAction">{{ $assigneesCount_Urgent_type }}</span></a>
                                     </button>
                                     <button type="button">
-                                        <a href="{{URL::to('/admin/action_completed?group_type=Personal Task')}}" id="Personal Task" class="group_type {{ $task_group == 'Personal Task' ? 'active' : '' }}"><i class="fa fa-tasks" aria-hidden="true"></i> Personal Task <span class="countAction">{{ $assigneesCount_Personal_Task_type }}</span></a>
+                                        <a href="{{URL::to('/action_completed?group_type=Personal Task')}}" id="Personal Task" class="group_type {{ $task_group == 'Personal Task' ? 'active' : '' }}"><i class="fa fa-tasks" aria-hidden="true"></i> Personal Task <span class="countAction">{{ $assigneesCount_Personal_Task_type }}</span></a>
                                     </button>
                                 </div>
                             </div>
@@ -305,7 +305,7 @@
                                                     <td>
                                                         {{ $user_name }}<br>
                                                         @if($list->noteClient)
-                                                            <a href="{{URL::to('/admin/clients/detail/'.base64_encode(convert_uuencode(@$list->client_id)))}}" target="_blank">{{ $list->noteClient->client_id }}</a>
+                                                            <a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->client_id)))}}" target="_blank">{{ $list->noteClient->client_id }}</a>
                                                         @endif
                                                     </td>
                                                     <td>{{ date('d/m/Y', strtotime($list->followup_date)) ?? 'N/P' }}</td>
@@ -471,7 +471,7 @@ jQuery(document).ready(function($){
         if(row_id != ""){
             $.ajax({
                 type: 'post',
-                url: "{{URL::to('/')}}/admin/update-task-not-completed",
+                url: "{{URL::to('/')}}/update-task-not-completed",
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                 data: { id: row_id, unique_group_id: row_unique_group_id },
                 success: function(response){
@@ -510,7 +510,7 @@ jQuery(document).ready(function($){
         if(flag){
             $.ajax({
                 type: 'post',
-                url: "{{URL::to('/')}}/admin/clients/reassignfollowup/store",
+                url: "{{URL::to('/')}}/clients/reassignfollowup/store",
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                 data: {
                     note_type: 'follow_up',
@@ -544,7 +544,7 @@ jQuery(document).ready(function($){
         $('#openassigneview').modal('show');
         var v = $(this).attr('id');
         $.ajax({
-            url: site_url + '/admin/get-assigne-detail',
+            url: site_url + '/get-assigne-detail',
             type: 'GET',
             data: { id: v },
             success: function(responses){

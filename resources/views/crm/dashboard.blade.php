@@ -44,7 +44,7 @@
                             <div class="task-details">
                                 <span class="client-name">
                                     {{ $note_client && $note_client->first_name ? str_limit($note_client->first_name, '50', '...') : config('constants.empty') }} {{ $note_client && $note_client->last_name ? str_limit($note_client->last_name, '50', '...') : config('constants.empty') }}
-                                    (<a href="{{ $note_client ? URL::to('/admin/clients/detail/'.base64_encode(convert_uuencode($note_client->id))) : '#' }}">{{ $note_client && $note_client->client_id ? str_limit($note_client->client_id, '50', '...') : config('constants.empty') }}</a>)
+                                    (<a href="{{ $note_client ? URL::to('/clients/detail/'.base64_encode(convert_uuencode($note_client->id))) : '#' }}">{{ $note_client && $note_client->client_id ? str_limit($note_client->client_id, '50', '...') : config('constants.empty') }}</a>)
                                 </span>
                                 <span class="task-desc">
                                     <?php echo preg_replace('/<\/?p>/', '', $note->description ); ?>
@@ -80,7 +80,7 @@
                             <div class="case-details">
                                 <span class="client-name">
                                     {{ $client_attention && $client_attention->first_name ? str_limit($client_attention->first_name, '50', '...') : config('constants.empty') }} {{ $client_attention && $client_attention->last_name ? str_limit($client_attention->last_name, '50', '...') : config('constants.empty') }}
-                                    (<a href="{{ $client_attention ? URL::to('/admin/clients/detail/'.base64_encode(convert_uuencode($client_attention->id)).'/'.$attention->client_unique_matter_no) : '#' }}">{{ $client_attention && $client_attention->client_id ? str_limit($client_attention->client_id, '50', '...') : config('constants.empty') }}</a>)
+                                    (<a href="{{ $client_attention ? URL::to('/clients/detail/'.base64_encode(convert_uuencode($client_attention->id)).'/'.$attention->client_unique_matter_no) : '#' }}">{{ $client_attention && $client_attention->client_id ? str_limit($client_attention->client_id, '50', '...') : config('constants.empty') }}</a>)
                                 </span>
                                 <span class="case-info">
                                 <?php
@@ -111,7 +111,7 @@
                                     $daysStalledText = $daysStalled .' days ago';
                                 }
                                 ?>
-                                <a href="{{URL::to('/admin/clients/detail/'.base64_encode(convert_uuencode(@$client_attention->id)).'/'.$attention->client_unique_matter_no )}}">{{ $matter_name}} ({{$attention->client_unique_matter_no }}) </a>
+                                <a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$client_attention->id)).'/'.$attention->client_unique_matter_no )}}">{{ $matter_name}} ({{$attention->client_unique_matter_no }}) </a>
                                 <span style="display: inline-block;" class="stalled-days {{ $daysStalled > 14 ? 'text-danger' : ($daysStalled > 7 ? 'text-warning' : 'text-info') }}">({{ $daysStalledText }})</span>
                                 </span>
                             </div>
@@ -259,10 +259,10 @@
                     ?>
                     <tr>
                         <td class="col-matter" style="white-space: initial;">
-                            <a href="{{URL::to('/admin/clients/detail/'.base64_encode(convert_uuencode(@$item->client_id)).'/'.$item->client_unique_matter_no )}}">{{ $matter_name}} ({{$item->client_unique_matter_no }}) </a>
+                            <a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$item->client_id)).'/'.$item->client_unique_matter_no )}}">{{ $matter_name}} ({{$item->client_unique_matter_no }}) </a>
                             <span class="totalEmailCntToClientMatter">{{$total_email_assign_cnt}}</span>
                         </td>
-                        <td class="col-client_id"><a href="{{URL::to('/admin/clients/detail/'.base64_encode(convert_uuencode(@$item->client_id)) )}}">{{ $client_info && $client_info->client_id ? str_limit($client_info->client_id, '50', '...') : config('constants.empty') }}</a></td>
+                        <td class="col-client_id"><a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$item->client_id)) )}}">{{ $client_info && $client_info->client_id ? str_limit($client_info->client_id, '50', '...') : config('constants.empty') }}</a></td>
                         <td class="col-client_name">{{ $client_info && $client_info->first_name ? str_limit($client_info->first_name, '50', '...') : config('constants.empty') }} {{ $client_info && $client_info->last_name ? str_limit($client_info->last_name, '50', '...') : config('constants.empty') }}</td>
                         <td class="col-dob">{{ @$item->dob == "" ? config('constants.empty') : (strtotime(@$item->dob) ? date('d/m/Y', strtotime(@$item->dob)) : str_limit(@$item->dob, '50', '...')) }}</td>
                         <td class="col-migration_agent">{{ $mig_agent_info && $mig_agent_info->first_name ? str_limit($mig_agent_info->first_name, '50', '...') : config('constants.empty') }} {{ $mig_agent_info && $mig_agent_info->last_name ? str_limit($mig_agent_info->last_name, '50', '...') : config('constants.empty') }}</td>
@@ -1512,7 +1512,7 @@ $(document).ready(function() {
         let itemId = $(this).attr('id').split('_')[1];
         if (stageId) {
             $.ajax({
-                url: "{{URL::to('/')}}/admin/update-stage",
+                url: "{{URL::to('/')}}/update-stage",
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                 method: 'POST',
                 data: { item_id: itemId, stage_id: stageId },
@@ -1751,7 +1751,7 @@ jQuery(document).ready(function($){
 		$('#opentaskview').modal('show');
 		var v = $(this).attr('id');
 		$.ajax({
-			url: site_url+'/admin/get-task-detail',
+			url: site_url+'/get-task-detail',
 			type:'GET',
 			data:{task_id:v},
 			success: function(responses){

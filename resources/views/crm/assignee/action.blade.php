@@ -514,8 +514,8 @@
             <div class="client-header">
                 <h1>Action</h1>
                 <div class="client-status" style="margin-right: 50px;">
-                    <a class="btn btn-primary" style="border-radius: 0px;" id="assigned_by_me"  href="{{URL::to('/admin/assigned_by_me')}}">Assigned by me</a>
-                    <a class="btn btn-primary" style="border-radius: 0px;" id="archived-tab"  href="{{URL::to('/admin/action_completed')}}">Completed</a>
+                    <a class="btn btn-primary" style="border-radius: 0px;" id="assigned_by_me"  href="{{URL::to('/assigned_by_me')}}">Assigned by me</a>
+                    <a class="btn btn-primary" style="border-radius: 0px;" id="archived-tab"  href="{{URL::to('/action_completed')}}">Completed</a>
                     <button class="btn btn-primary tab-button add_my_task" data-container="body" data-role="popover" data-placement="bottom-start" data-html="true" data-content="
                         <div id='popover-content11'>
                             <div class='popover-header' style='background-color: #0d6efd; color: white; padding: 15px 20px; font-weight: 600; font-size: 16px; border-radius: 8px 8px 0 0; margin: -20px -20px 20px -20px;'>Add My Task</div>
@@ -1161,7 +1161,7 @@ $(function () {
                         width: '100%',
                         dropdownParent: $('.popover'),
                         ajax: {
-                            url: '{{URL::to('/admin/clients/get-allclients')}}',
+                            url: '{{URL::to('/clients/get-allclients')}}',
                             dataType: 'json',
                             delay: 250,
                             processResults: function (data) {
@@ -1185,10 +1185,10 @@ $(function () {
                         console.log('Client selected:', v);
                         var s = v.split('/');
                         if(s[1] == 'Matter' && s[2] != ''){
-                            window.location = '{{URL::to('/admin/clients/detail/')}}/'+s[0]+'/'+s[2];
+                            window.location = '{{URL::to('/clients/detail/')}}/'+s[0]+'/'+s[2];
                         } else {
                             if(s[1] == 'Client'){
-                                window.location = '{{URL::to('/admin/clients/detail/')}}/'+s[0];
+                                window.location = '{{URL::to('/clients/detail/')}}/'+s[0];
                             } else {
                                 window.location = '{{URL::to('/admin/leads/history/')}}/'+s[0];
                             }
@@ -1440,7 +1440,7 @@ $(function () {
 
         $.ajax({
             type: 'post',
-            url: "{{URL::to('/')}}/admin/update-task",
+            url: "{{URL::to('/')}}/update-task",
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
             data: {
                 id: taskId,
@@ -1491,7 +1491,7 @@ $(function () {
         if (row_id) {
             $.ajax({
                 type: 'post',
-                url: "{{URL::to('/')}}/admin/update-task-completed",
+                url: "{{URL::to('/')}}/update-task-completed",
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
                 data: {id: row_id, unique_group_id: row_unique_group_id},
                 success: function(response) {
@@ -1534,7 +1534,7 @@ $(function () {
 
             $.ajax({
                 type: 'post',
-                url: "{{URL::to('/')}}/admin/clients/personalfollowup/store",
+                url: "{{URL::to('/')}}/clients/personalfollowup/store",
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
                 data: {
                     note_type: 'follow_up',

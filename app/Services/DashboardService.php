@@ -409,7 +409,7 @@ class DashboardService
                     'sender_id' => Auth::id(),
                     'receiver_id' => $note->assigned_to,
                     'module_id' => $note->client_id,
-                    'url' => url('/admin/clients/detail/' . $note->client_id),
+                    'url' => url('/clients/detail/' . $note->client_id),
                     'notification_type' => 'client',
                     'message' => 'Followup Extended by ' . Auth::user()->first_name . ' ' . Auth::user()->last_name . ' on ' . date('d/M/Y h:i A')
                 ]);

@@ -173,7 +173,7 @@ function formatRepoSelectionmain (repo) {
          var v = $(this).val();
          var s = v.split('/');
          if(s[1] == 'Client'){
-              window.location = '{{URL::to('/admin/clients/detail/')}}/'+s[0]; // redirect
+              window.location = '{{URL::to('/clients/detail/')}}/'+s[0]; // redirect
          }else{
               window.location = '{{URL::to('/admin/leads/history/')}}/'+s[0]; // redirect
          }

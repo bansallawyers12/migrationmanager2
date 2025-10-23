@@ -1600,8 +1600,8 @@ class ClientPersonalDetailsController extends Controller
                 ->first();
 
             $redirectUrl = $latestMatter
-                ? '/admin/clients/detail/'.$encodedId.'/'.$latestMatter->client_unique_matter_no
-                : '/admin/clients/detail/'.$encodedId;
+                ? '/clients/detail/'.$encodedId.'/'.$latestMatter->client_unique_matter_no
+                : '/clients/detail/'.$encodedId;
 
             return Redirect::to($redirectUrl)->with('success', 'Details updated successfully');
         }

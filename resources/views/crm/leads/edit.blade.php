@@ -1126,7 +1126,7 @@
                                                     <div class="summary-item-inline">
                                                         <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">CLIENT NAME:</span>
                                                         <span class="summary-value" style="color: #212529; font-weight: 500;">
-                                                            <a href="{{ URL::to('/admin/clients/edit/'.base64_encode(convert_uuencode($relatedClient->id))) }}" target="_blank" style="color: #007bff; text-decoration: none;">
+                                                            <a href="{{ URL::to('/clients/edit/'.base64_encode(convert_uuencode($relatedClient->id))) }}" target="_blank" style="color: #007bff; text-decoration: none;">
                                                                 {{ $relatedClient->first_name }} {{ $relatedClient->last_name }}
                                                             </a>
 												</span> 

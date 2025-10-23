@@ -104,7 +104,7 @@
 											<td>{{ ++$i }}</td>
 											<td>{{ $list->assigned_user->first_name ?? ''}}  {{$list->assigned_user->last_name ?? ''}}</td>
 											<td>{{ $user_name??'N/P' }}</td>
-                                            <td><a href="{{URL::to('/admin/clients/detail/'.base64_encode(convert_uuencode(@$list->client_id)))}}" target="_blank" >{{ $list->noteClient->client_id ?? 'N/P' }}</a></td>
+                                            <td><a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->client_id)))}}" target="_blank" >{{ $list->noteClient->client_id ?? 'N/P' }}</a></td>
 											<td>{{ date('d/m/Y h:i:s',strtotime($list->followup_date)) ?? 'N/P'}} </td>
                                             <td>{{ $list->task_group??'N/P' }}</td>
                                             <td>{{ $list->description??'N/P' }}</td>

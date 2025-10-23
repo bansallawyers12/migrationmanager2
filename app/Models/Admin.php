@@ -22,13 +22,38 @@ class Admin extends Authenticatable
       * @var array
 	*/
 	protected $fillable = [
-        'id', 'role', 'first_name', 'last_name', 'email', 'password', 'decrypt_password', 'country', 'state', 'city', 'address', 'zip', 'profile_img', 'status', 'service_token', 'token_generated_at', 'cp_status','cp_random_code','cp_code_verify','cp_token_generated_at', 'visa_expiry_verified_at', 'visa_expiry_verified_by', 'naati_test', 'py_test', 'naati_date', 'py_date', 'created_at', 'updated_at',
-        // Lead-specific fields
-        'type', 'service', 'lead_quality', 'att_phone', 'att_email', 'att_country_code', 'client_id', 'is_archived', 'is_deleted', 'lead_status', 'lead_id', 'comments_note', 'phone', 'dob', 'gender', 'marital_status', 'contact_type', 'email_type', 'user_id', 'age', 'passport_number', 'visa_type', 'visaExpiry', 'tagname', 'country_code', 'assignee', 'source', 'related_files', 'preferredIntake', 'country_passport',
-        // Skills and education fields
-        'nomi_occupation', 'skill_assessment', 'high_quali_aus', 'high_quali_overseas', 'relevant_work_exp_aus', 'relevant_work_exp_over', 'naati_py', 'married_partner', 'total_points', 'start_process',
-        // EOI qualification fields for points calculation
-        'australian_study', 'australian_study_date', 'specialist_education', 'specialist_education_date', 'regional_study', 'regional_study_date'
+        'id', 
+        // Core Identity
+        'first_name', 'last_name', 'email', 'password', 'decrypt_password',
+        // Role & Permissions
+        'role', 'position', 'team', 'permission', 'office_id',
+        // Staff ID
+        'staff_id',
+        // Contact Information
+        'phone', 'country_code', 'telephone',
+        // Address
+        'country', 'state', 'city', 'address', 'zip',
+        // Profile
+        'profile_img', 'status', 'verified',
+        // Business/Professional Info
+        'marn_number', 'legal_practitioner_number', 'exempt_person_reason',
+        'company_name', 'company_website', 'primary_email',
+        'gst_no', 'gstin', 'gst_date', 'is_business_gst',
+        'ABN_number', 'business_mobile', 'business_fax', 'company_fax',
+        // Email Configuration
+        'smtp_host', 'smtp_port', 'smtp_enc', 'smtp_username', 'smtp_password',
+        // API/Service Tokens
+        'service_token', 'token_generated_at',
+        // Client Portal (for staff access)
+        'cp_status', 'cp_random_code', 'cp_code_verify', 'cp_token_generated_at',
+        // Verification (staff can verify documents)
+        'visa_expiry_verified_at', 'visa_expiry_verified_by',
+        // Permissions
+        'show_dashboard_per',
+        // Personal (staff might need some personal info)
+        'marital_status', 'time_zone',
+        // Timestamps
+        'created_at', 'updated_at'
     ];
 
 	/**
@@ -58,88 +83,35 @@ class Admin extends Authenticatable
 
 
 	/**
-     * Get the forms related to this client.
-     */
-    public function forms(): HasMany
-    {
-        return $this->hasMany(Form956::class);
-    }
-
-    /**
-     * Get full name
+     * Get full name attribute
     */
     public function getFullNameAttribute(): string
     {
-        return $this->first_name . ' ' . $this->last_name;
+        return trim($this->first_name . ' ' . $this->last_name);
     }
 
+    // ============================================================
+    // STAFF RELATIONSHIPS
+    // ============================================================
+
     /**
-     * Get the emails for this admin.
+     * Get the office this staff member belongs to
      */
-    /*public function emails(): HasMany
+    public function office()
     {
-        return $this->hasMany(EmailUpload::class, 'user_id');
-    }*/
+        return $this->belongsTo(\App\Models\OurOffice::class, 'office_id');
+    }
 
     /**
-     * Get the labels for this admin.
+     * Get the clients assigned to this staff member (as agent)
      */
-    /*public function labels(): HasMany
+    public function assignedClients(): HasMany
     {
-        return $this->hasMany(Label::class, 'user_id');
-    }*/
-
-    /**
-     * Get the EOI/ROI references for this client.
-     */
-    public function eoiReferences(): HasMany
-    {
-        return $this->hasMany(\App\Models\ClientEoiReference::class, 'client_id');
+        return $this->hasMany(\App\Models\Client::class, 'agent_id');
     }
 
     /**
-     * Get relationships needed for points calculation
-     */
-    public function testScores(): HasMany
-    {
-        return $this->hasMany(\App\Models\ClientTestScore::class, 'client_id');
-    }
-
-    public function experiences(): HasMany
-    {
-        return $this->hasMany(\App\Models\ClientExperience::class, 'client_id');
-    }
-
-    public function qualifications(): HasMany
-    {
-        return $this->hasMany(\App\Models\ClientQualification::class, 'client_id');
-    }
-
-    public function partner()
-    {
-        return $this->hasOne(\App\Models\ClientSpouseDetail::class, 'client_id');
-    }
-
-    public function occupations(): HasMany
-    {
-        return $this->hasMany(\App\Models\ClientOccupation::class, 'client_id');
-    }
-
-    public function clientPartners(): HasMany
-    {
-        return $this->hasMany(\App\Models\ClientRelationship::class, 'client_id');
-    }
-
-    /**
-     * Get the followups for this lead.
-     */
-    public function followups(): HasMany
-    {
-        return $this->hasMany(\App\Models\LeadFollowup::class, 'lead_id');
-    }
-
-    /**
-     * Get the followups assigned to this admin.
+     * Get the followups assigned to this staff member
      */
     public function assignedFollowups(): HasMany
     {
@@ -147,10 +119,34 @@ class Admin extends Authenticatable
     }
 
     /**
-     * Get the documents created by this admin.
+     * Get the documents created by this staff member
      */
-    public function documents(): HasMany
+    public function createdDocuments(): HasMany
     {
         return $this->hasMany(\App\Models\Document::class, 'created_by');
+    }
+
+    /**
+     * Get DOB verifications done by this staff member
+     */
+    public function dobVerifications(): HasMany
+    {
+        return $this->hasMany(\App\Models\Client::class, 'dob_verified_by');
+    }
+
+    /**
+     * Get phone verifications done by this staff member
+     */
+    public function phoneVerifications(): HasMany
+    {
+        return $this->hasMany(\App\Models\Client::class, 'phone_verified_by');
+    }
+
+    /**
+     * Get visa expiry verifications done by this staff member
+     */
+    public function visaExpiryVerifications(): HasMany
+    {
+        return $this->hasMany(\App\Models\Client::class, 'visa_expiry_verified_by');
     }
 }

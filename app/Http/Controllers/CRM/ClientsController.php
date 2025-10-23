@@ -3576,8 +3576,8 @@ class ClientsController extends Controller
                 ->first();
 
             $redirectUrl = $latestMatter
-                ? '/admin/clients/detail/'.$encodedId.'/'.$latestMatter->client_unique_matter_no
-                : '/admin/clients/detail/'.$encodedId;
+                ? '/clients/detail/'.$encodedId.'/'.$latestMatter->client_unique_matter_no
+                : '/clients/detail/'.$encodedId;
 
             return Redirect::to($redirectUrl)->with('success',  ($requestData['type'] ?? 'Client') . ' edited successfully');
         }
@@ -10862,13 +10862,13 @@ class ClientsController extends Controller
                         $msg = 'Matter '.$matter->client_unique_matter_no. ' created';
                     }
                     // Redirect with matter number in URL
-                    return Redirect::to('/admin/clients/detail/'.base64_encode(convert_uuencode(@$id)).'/'.$matter->client_unique_matter_no)->with('success', $msg);
+                    return Redirect::to('/clients/detail/'.base64_encode(convert_uuencode(@$id)).'/'.$matter->client_unique_matter_no)->with('success', $msg);
                 } else if($slug == 'lead' ) {
                     $obj->type = $slug;
                     $obj->user_id = "";
                     $saved = $obj->save();
                 }
-                return Redirect::to('/admin/clients/detail/'.base64_encode(convert_uuencode(@$id)))->with('success', 'Record Updated successfully');
+                return Redirect::to('/clients/detail/'.base64_encode(convert_uuencode(@$id)))->with('success', 'Record Updated successfully');
             } else {
                 return Redirect::to('/admin/clients')->with('error', 'Clients Not Exist');
             }
@@ -10944,7 +10944,7 @@ class ClientsController extends Controller
                 $o->sender_id = Auth::user()->id;
                 $o->receiver_id = $assigneeId;
                 $o->module_id = $clientId;
-                $o->url = \URL::to('/admin/clients/detail/' . @$requestData['client_id']);
+                $o->url = \URL::to('/clients/detail/' . @$requestData['client_id']);
                 $o->notification_type = 'client';
                 $o->message = 'Followup Assigned by ' . Auth::user()->first_name . ' ' . Auth::user()->last_name . ' on ' . date('d/M/Y h:i A', strtotime(@$requestData['followup_datetime']));
                 $o->save();

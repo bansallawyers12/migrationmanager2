@@ -167,7 +167,7 @@ foreach($appointments as $appointment){
 
 		$row['appointtime'] = $appointment->time;
 		$row['status'] = $appointment->status;
-		$row['url'] = URL::to('/admin/clients/detail/'.base64_encode(convert_uuencode(@$appointment->client_id)));
+		$row['url'] = URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$appointment->client_id)));
 
         /*if($appointment->status == 1 || $appointment->status == 2 ){ //1=>Approved,2=>Completed
 			$row['backgroundColor'] = "#54ca68"; //Green
@@ -312,7 +312,7 @@ jQuery(document).ready(function($){
 	$(document).delegate('#updateappointmentstatus', 'change', function(){
         var v = $('#updateappointmentstatus option:selected').val();
 		var aid = $('#appid').val();
-		window.location.href = '{{URL::to('/admin/updateappointmentstatus')}}/'+v+'/'+aid;
+		window.location.href = '{{URL::to('/updateappointmentstatus')}}/'+v+'/'+aid;
     });
 
 });
@@ -465,7 +465,7 @@ var calendar = $("#myEvent").fullCalendar({
 
                         </dl>
                          <div class="if_edit_followup" style="display:none">
-							<form method="post" action="{{URL::to('/admin/updatefollowupschedule')}}" name="updatefollowupschedule" id="updatefollowupschedule" autocomplete="off" enctype="multipart/form-data">
+							<form method="post" action="{{URL::to('/updatefollowupschedule')}}" name="updatefollowupschedule" id="updatefollowupschedule" autocomplete="off" enctype="multipart/form-data">
 								@csrf
 								<input type="hidden" name="appointment_id" id="appointment_id">
 								<div class="row">

@@ -292,12 +292,12 @@ body, html {
 													if($list->contact_type == 'Lead'){
 												$client = \App\Models\Lead::where('id', '=', $list->client_id)->first();
 												 ?>
-										    <a href="{{URL::to('/admin/leads/history/'.base64_encode(convert_uuencode(@$client->id)))}}">{{@$client->first_name}} {{@$client->last_name}}</a>
+										    <a href="{{URL::to('/leads/history/'.base64_encode(convert_uuencode(@$client->id)))}}">{{@$client->first_name}} {{@$client->last_name}}</a>
 										    <?php
 										}else{
 										    $client = \App\Models\Admin::where('role', '=', '7')->where('id', '=', $list->client_id)->first();
 										    ?>
-										    <a href="{{URL::to('/admin/clients/detail/'.base64_encode(convert_uuencode(@$client->id)))}}">{{@$client->first_name}} {{@$client->last_name}}</a>
+										    <a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$client->id)))}}">{{@$client->first_name}} {{@$client->last_name}}</a>
 										    <?php
 										}
 
@@ -436,7 +436,7 @@ jQuery(document).ready(function($){
         var appliid = $(this).attr('data-id');
 		$('.popuploader').show();
 		$.ajax({
-			url: site_url+'/admin/office-visits/change_assignee',
+			url: site_url+'/office-visits/change_assignee',
 			type:'GET',
 			data:{id: appliid,assinee: $('#changeassignee').val()},
 			success: function(response){

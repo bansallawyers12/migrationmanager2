@@ -408,7 +408,7 @@ class ClientNotesController extends Controller
 
     	     $save = $obj->save();
     	     if($save){
-    	         return Redirect::to('/admin/clients/detail/'.base64_encode(convert_uuencode(@$requestData['client_id'])))->with('success', 'Previous Visa Updated Successfully');
+    	         return Redirect::to('/clients/detail/'.base64_encode(convert_uuencode(@$requestData['client_id'])))->with('success', 'Previous Visa Updated Successfully');
     	     }else{
     	         return redirect()->back()->with('error', Config::get('constants.server_error'));
     	     }
@@ -486,7 +486,7 @@ class ClientNotesController extends Controller
 
     	     $save = $obj->save();
     	     if($save){
-    	         return Redirect::to('/admin/clients/detail/'.base64_encode(convert_uuencode(@$requestData['client_id'])))->with('success', 'Record Updated Successfully');
+    	         return Redirect::to('/clients/detail/'.base64_encode(convert_uuencode(@$requestData['client_id'])))->with('success', 'Record Updated Successfully');
     	     }else{
     	         return redirect()->back()->with('error', Config::get('constants.server_error'));
     	     }

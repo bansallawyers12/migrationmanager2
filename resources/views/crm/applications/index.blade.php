@@ -31,7 +31,7 @@
 						<div class="card-body">
 						    <div class="filter_panel">
 								<h4>Search By Details</h4>
-								<form action="{{URL::to('/admin/applications')}}" method="get">
+								<form action="{{URL::to('/applications')}}" method="get">
 									<div class="row">
 										<div class="col-md-4">
 											<div class="form-group">
@@ -69,7 +69,7 @@
 										<div class="col-md-12 text-center">
 
 												<button type="submit" class="btn btn-primary btn-theme-lg">Search</button>
-											<a class="btn btn-info" href="{{URL::to('/admin/applications')}}">Reset</a>
+											<a class="btn btn-info" href="{{URL::to('/applications')}}">Reset</a>
 										</div>
 									</div>
 								</form>
@@ -108,7 +108,7 @@
 									?>
 									<tbody class="tdata">
 										<tr id="id_{{@$list->id}}">
-											<td style="white-space: initial;"><a href="{{URL::to('admin/clients/detail/')}}/{{base64_encode(convert_uuencode(@$clientdetail->id))}}?tab=application&appid={{@$list->id}}">{{ @$list->id == "" ? config('constants.empty') : str_limit(@$list->id, '50', '...') }}</a></td>
+											<td style="white-space: initial;"><a href="{{URL::to('clients/detail/')}}/{{base64_encode(convert_uuencode(@$clientdetail->id))}}?tab=application&appid={{@$list->id}}">{{ @$list->id == "" ? config('constants.empty') : str_limit(@$list->id, '50', '...') }}</a></td>
 											<td style="white-space: initial;"><a href="{{URL::to('admin/clients/detail/')}}/{{base64_encode(convert_uuencode(@$clientdetail->id))}}?tab=application">{{@$clientdetail->first_name}} {{@$clientdetail->last_name}}</a><!--<br/>-->{{--@$clientdetail->email--}}</td>
 
 											{{--<td>@$clientdetail->phone }}</td> --}}
@@ -177,7 +177,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="POST" action="{{URL::to('/admin/applications-import')}}"  enctype="multipart/form-data">
+				<form method="POST" action="{{URL::to('/applications-import')}}"  enctype="multipart/form-data">
 				@csrf
 					<div class="row">
 						<div class="col-12 col-md-6 col-lg-6">
@@ -210,7 +210,7 @@ $( ".agent_company_name" ).autocomplete({
 	source : function(request, response) {
     $.ajax({
         type: "GET",
-        url: "{{URL::to('/')}}/admin/getpartnerajax",
+        url: "{{URL::to('/')}}/getpartnerajax",
         dataType : "json",
         cache : false,
         data: {likewith : 'agent_company_name', likevalue: inputString},
@@ -242,7 +242,7 @@ $( ".assignee" ).autocomplete({
 	source : function(request, response) {
     $.ajax({
         type: "GET",
-        url: "{{URL::to('/')}}/admin/getassigneeajax",
+        url: "{{URL::to('/')}}/getassigneeajax",
         dataType : "json",
         cache : false,
         data: {likewith : 'assignee', likevalue: inputString},
