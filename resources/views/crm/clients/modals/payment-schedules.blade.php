@@ -16,7 +16,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" action="{{URL::to('/admin/add-appointment')}}" name="paymentform" id="paymentform" autocomplete="off" enctype="multipart/form-data">
+				<form method="post" action="{{URL::to('/add-appointment')}}" name="paymentform" id="paymentform" autocomplete="off" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
 					<div class="row">
@@ -232,7 +232,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" action="{{URL::to('/admin/setup-paymentschedule')}}" name="setuppaymentschedule" id="setuppaymentschedule" autocomplete="off" enctype="multipart/form-data">
+				<form method="post" action="{{URL::to('/setup-paymentschedule')}}" name="setuppaymentschedule" id="setuppaymentschedule" autocomplete="off" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="application_id" id="application_id" value="">
 				<input type="hidden" name="is_ajax" id="is_ajax" value="true">
@@ -367,7 +367,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-			<form method="post" action="{{URL::to('/admin/create-invoice')}}" name="createinvoive"  autocomplete="off" enctype="multipart/form-data">
+			<form method="post" action="{{URL::to('/create-invoice')}}" name="createinvoive"  autocomplete="off" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="client_id" id="client_id">
 				<input type="hidden" name="application" id="app_id">

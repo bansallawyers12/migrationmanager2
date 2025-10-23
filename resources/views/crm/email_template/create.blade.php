@@ -12,7 +12,7 @@
 			</div>
 			<div class="custom-error-msg">
 			</div>
-			<form action="{{ url('admin/email_templates/store') }}" method="POST" name="add-template" autocomplete="off" enctype="multipart/form-data">
+			<form action="{{ url('email_templates/store') }}" method="POST" name="add-template" autocomplete="off" enctype="multipart/form-data">
 				@csrf
 				<div class="row">
 					<div class="col-12 col-md-12 col-lg-12">

@@ -35,7 +35,7 @@
 
                     <div class="filter_panel">
                         <h4>Search By Details</h4>
-                        <form action="{{URL::to('/admin/clients/officereceiptlist')}}" method="get">
+                        <form action="{{URL::to('/clients/officereceiptlist')}}" method="get">
                             <div class="row">
                                 <div class="col-md-3">
                                     <div class="form-group">
@@ -91,7 +91,7 @@
                                 <div class="col-md-12 text-center">
                                     <div class="filter-buttons-container">
                                         <button type="submit" class="btn btn-primary btn-theme-lg mr-3">Search</button>
-                                        <a class="btn btn-info" href="{{URL::to('/admin/clients/officereceiptlist')}}">Reset</a>
+                                        <a class="btn btn-info" href="{{URL::to('/clients/officereceiptlist')}}">Reset</a>
                                     </div>
                                 </div>
                             </div>
@@ -298,7 +298,7 @@ jQuery(document).ready(function($){
             if (confirm(mergeStr)) {
                 $.ajax({
                     type:'post',
-                    url:"{{URL::to('/')}}/admin/validate_receipt",
+                    url:"{{URL::to('/')}}/validate_receipt",
                     headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
                     data: {clickedReceiptIds:clickedReceiptIds,receipt_type:2},
                     success: function(response){

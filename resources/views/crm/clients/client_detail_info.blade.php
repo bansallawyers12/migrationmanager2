@@ -1,6 +1,6 @@
 
 <div class="section-body clientDetailCls">
-    <form action="{{ url('admin/clients/clientdetailsinfo') }}" method="POST" name="edit-clients" autocomplete="off" enctype="multipart/form-data">
+    <form action="{{ url('clients/clientdetailsinfo') }}" method="POST" name="edit-clients" autocomplete="off" enctype="multipart/form-data">
         @csrf
         <input type="hidden" name="id" value="{{ @$fetchedData->id }}">
         <input type="hidden" name="type" value="{{ @$fetchedData->type }}">

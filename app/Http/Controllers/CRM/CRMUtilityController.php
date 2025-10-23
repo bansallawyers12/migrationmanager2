@@ -105,7 +105,7 @@ class CRMUtilityController extends Controller
 			}
 			else
 			{
-				return Redirect::to('/admin/settings/taxes/returnsetting')->with('success', 'Your Profile has been edited successfully.');
+				return Redirect::to('/settings/taxes/returnsetting')->with('success', 'Your Profile has been edited successfully.');
 			}
 		}else{
 			//return view('crm.my_profile', compact(['fetchedData', 'countries']));
@@ -174,7 +174,7 @@ class CRMUtilityController extends Controller
 			}
 			else
 			{
-				return Redirect::to('/admin/my_profile')->with('success', 'Your Profile has been edited successfully.');
+				return Redirect::to('/my_profile')->with('success', 'Your Profile has been edited successfully.');
 			}
 		}
 		else
@@ -196,7 +196,7 @@ class CRMUtilityController extends Controller
 			/* $check = $this->checkAuthorizationAction('Admin', $request->route()->getActionMethod(), Auth::user()->role);
 			if($check)
 			{
-				return Redirect::to('/admin/dashboard')->with('error',config('constants.unauthorized'));
+				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
 			} */
 		//check authorization end
 
@@ -257,7 +257,7 @@ class CRMUtilityController extends Controller
 			$check = $this->checkAuthorizationAction('Admin', $request->route()->getActionMethod(), Auth::user()->role);
 			if($check)
 			{
-				return Redirect::to('/admin/dashboard')->with('error',config('constants.unauthorized'));
+				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
 			}
 		//check authorization end
 
@@ -310,7 +310,7 @@ class CRMUtilityController extends Controller
 			}
 			else
 			{
-				return Redirect::to('/admin/website_setting')->with('success', 'Website Setting has been edited successfully.');
+				return Redirect::to('/website_setting')->with('success', 'Website Setting has been edited successfully.');
 			}
 		}
 		else
@@ -327,7 +327,7 @@ class CRMUtilityController extends Controller
 			$check = $this->checkAuthorizationAction('api_key', $request->route()->getActionMethod(), Auth::user()->role);
 			if($check)
 			{
-				return Redirect::to('/admin/dashboard')->with('error',config('constants.unauthorized'));
+				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
 			}
 		//check authorization end
 		if ($request->isMethod('post'))
@@ -341,7 +341,7 @@ class CRMUtilityController extends Controller
 			}
 			else
 			{
-				return Redirect::to('/admin/api-key')->with('success', 'Api Key'.Config::get('constants.edited'));
+				return Redirect::to('/api-key')->with('success', 'Api Key'.Config::get('constants.edited'));
 			}
 		}else{
 			return view('crm.apikey');

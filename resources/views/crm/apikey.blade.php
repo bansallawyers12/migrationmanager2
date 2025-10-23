@@ -19,7 +19,7 @@
 							<h4>API Key Management</h4>
 						</div>
 						@if(@Auth::user()->client_id == '')
-						<form action="{{ url('admin/api-key') }}" method="POST" name="add-key" autocomplete="off" enctype="multipart/form-data">
+						<form action="{{ url('api-key') }}" method="POST" name="add-key" autocomplete="off" enctype="multipart/form-data">
 							@csrf
 							<div class="card-body">
 								<div class="alert alert-info">

@@ -7,7 +7,7 @@
 <div class="main-content">
 	<section class="section">
 		<div class="section-body">
-			<form action="{{ url('admin/upload-checklists/store') }}" name="add-visatype" autocomplete="off" enctype="multipart/form-data" method="POST">
+			<form action="{{ url('upload-checklists/store') }}" name="add-visatype" autocomplete="off" enctype="multipart/form-data" method="POST">
 				@csrf
 				<div class="row">   
 					<div class="col-12 col-md-12 col-lg-12">

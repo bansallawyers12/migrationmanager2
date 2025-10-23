@@ -482,7 +482,7 @@
 
             var v = $(this).val();
             $.ajax({
-                url: '{{URL::to('/admin/get-matter-templates')}}',
+                url: '{{URL::to('/get-matter-templates')}}',
                 type:'GET',
                 datatype:'json',
                 data:{id:v},

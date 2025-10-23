@@ -85,7 +85,7 @@ class EmailController extends Controller
 
 			/* if($check)
 			{
-				return Redirect::to('/admin/dashboard')->with('error',config('constants.unauthorized'));
+				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
 			} */
 		//check authorization end
 

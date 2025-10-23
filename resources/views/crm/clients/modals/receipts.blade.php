@@ -33,7 +33,7 @@
 				</div>
 
 				<!-- Client Funds Ledger Form -->
-				<form class="form-type" method="post" action="{{URL::to('/admin/clients/saveaccountreport')}}" name="client_receipt_form" autocomplete="off" id="client_receipt_form" enctype="multipart/form-data">
+				<form class="form-type" method="post" action="{{URL::to('/clients/saveaccountreport')}}" name="client_receipt_form" autocomplete="off" id="client_receipt_form" enctype="multipart/form-data">
 					@csrf
 					<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
 					<input type="hidden" name="loggedin_userid" value="{{@Auth::user()->id}}">
@@ -143,7 +143,7 @@
 				</form>
 
 				<!-- Invoice Receipt Form -->
-				<form class="form-type" method="post" action="{{URL::to('/admin/clients/saveinvoicereport')}}" name="invoice_receipt_form" autocomplete="off" id="invoice_receipt_form" style="display:none;">
+				<form class="form-type" method="post" action="{{URL::to('/clients/saveinvoicereport')}}" name="invoice_receipt_form" autocomplete="off" id="invoice_receipt_form" style="display:none;">
 					@csrf
 					<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
 					<input type="hidden" name="loggedin_userid" value="{{@Auth::user()->id}}">
@@ -254,7 +254,7 @@
 				</form>
 
 				<!-- Office Receipt Form -->
-				<form class="form-type"  method="post" action="{{URL::to('/admin/clients/saveofficereport')}}" name="office_receipt_form" autocomplete="off" id="office_receipt_form" style="display:none;">
+				<form class="form-type"  method="post" action="{{URL::to('/clients/saveofficereport')}}" name="office_receipt_form" autocomplete="off" id="office_receipt_form" style="display:none;">
 					@csrf
 					<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
 					<input type="hidden" name="loggedin_userid" value="{{@Auth::user()->id}}">
@@ -372,7 +372,7 @@
 
 		  	<div class="modal-body">
 				<!-- Invoice Receipt Form -->
-				<form class="form-type" method="post" action="{{URL::to('/admin/clients/saveadjustinvoicereport')}}" name="adjust_invoice_receipt_form" autocomplete="off" id="adjust_invoice_receipt_form">
+				<form class="form-type" method="post" action="{{URL::to('/clients/saveadjustinvoicereport')}}" name="adjust_invoice_receipt_form" autocomplete="off" id="adjust_invoice_receipt_form">
 					@csrf
 					<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
 					<input type="hidden" name="loggedin_userid" value="{{@Auth::user()->id}}">
@@ -488,7 +488,7 @@
 			</div>
 			<div class="modal-body">
                 <input type="hidden"  id="top_value_db" value="">
-				<form method="post" action="{{URL::to('/admin/clients/saveaccountreport')}}" name="create_client_receipt" autocomplete="off" id="create_client_receipt" enctype="multipart/form-data">
+				<form method="post" action="{{URL::to('/clients/saveaccountreport')}}" name="create_client_receipt" autocomplete="off" id="create_client_receipt" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
                 <input type="hidden" name="loggedin_userid" value="{{@Auth::user()->id}}">
@@ -616,7 +616,7 @@
 			</div>
 			<div class="modal-body">
                 <input type="hidden"  id="invoice_top_value_db" value="">
-				<form method="post" action="{{URL::to('/admin/clients/saveinvoicereport')}}" name="create_invoice_receipt" autocomplete="off" id="create_invoice_receipt" >
+				<form method="post" action="{{URL::to('/clients/saveinvoicereport')}}" name="create_invoice_receipt" autocomplete="off" id="create_invoice_receipt" >
 				@csrf
 				<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
                 <input type="hidden" name="loggedin_userid" value="{{@Auth::user()->id}}">
@@ -759,7 +759,7 @@
 			</div>
 			<div class="modal-body">
                 <input type="hidden"  id="office_top_value_db" value="">
-				<form method="post" action="{{URL::to('/admin/clients/saveofficereport')}}" name="create_office_receipt" autocomplete="off" id="create_office_receipt" >
+				<form method="post" action="{{URL::to('/clients/saveofficereport')}}" name="create_office_receipt" autocomplete="off" id="create_office_receipt" >
 				@csrf
 				<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
                 <input type="hidden" name="loggedin_userid" value="{{@Auth::user()->id}}">
@@ -891,7 +891,7 @@
 			</div>
 			<div class="modal-body">
                 <input type="hidden"  id="journal_top_value_db" value="">
-				<form method="post" action="{{URL::to('/admin/clients/savejournalreport')}}" name="create_journal_receipt" autocomplete="off" id="create_journal_receipt" >
+				<form method="post" action="{{URL::to('/clients/savejournalreport')}}" name="create_journal_receipt" autocomplete="off" id="create_journal_receipt" >
 				@csrf
 				<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
                 <input type="hidden" name="loggedin_userid" value="{{@Auth::user()->id}}">

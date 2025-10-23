@@ -9,7 +9,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" action="{{URL::to('/admin/create-invoice')}}" name="noteinvform" autocomplete="off" id="noteinvform" enctype="multipart/form-data">
+				<form method="post" action="{{URL::to('/create-invoice')}}" name="noteinvform" autocomplete="off" id="noteinvform" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
 
@@ -81,7 +81,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" action="{{URL::to('/admin/create-invoice')}}" name="notegetinvform" autocomplete="off" id="notegetinvform" enctype="multipart/form-data">
+				<form method="post" action="{{URL::to('/create-invoice')}}" name="notegetinvform" autocomplete="off" id="notegetinvform" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
 
@@ -142,7 +142,7 @@
 <!-- Payment Details Modal -->
 <div id="addpaymentmodal" tabindex="-1" role="dialog" aria-labelledby="confirmModalLabel" aria-hidden="false" class="modal fade" >
 	<div class="modal-dialog">
-	<form method="post" action="{{ URL::to('admin/invoice/payment-store') }}" name="ajaxinvoicepaymentform" autocomplete="off" enctype="multipart/form-data" id="ajaxinvoicepaymentform">
+	<form method="post" action="{{ URL::to('invoice/payment-store') }}" name="ajaxinvoicepaymentform" autocomplete="off" enctype="multipart/form-data" id="ajaxinvoicepaymentform">
 	@csrf
 	<input type="hidden" value="" name="invoice_id" id="invoice_id">
 	<input type="hidden" value="true" name="is_ajax" id="">

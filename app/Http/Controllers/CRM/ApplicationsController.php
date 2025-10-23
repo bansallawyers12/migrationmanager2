@@ -37,7 +37,7 @@ class ApplicationsController extends Controller
 		//check authorization start
         /* if($check)
         {
-            return Redirect::to('/admin/dashboard')->with('error',config('constants.unauthorized'));
+            return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
         } */
 		//check authorization end
 	    //$allstages = Application::select('stage')->groupBy('stage')->get();
@@ -1138,7 +1138,7 @@ class ApplicationsController extends Controller
 
 			/* if($check)
 			{
-				return Redirect::to('/admin/dashboard')->with('error',config('constants.unauthorized'));
+				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
 			} */
 		//check authorization end
 	    $allstages = Application::select('stage')->where('workflow', '=', 5)->groupBy('stage')->get();

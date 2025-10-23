@@ -112,7 +112,7 @@
                 <div class="card-body">
                     <div class="filter_panel">
                         <h4 style="margin-top: 0; margin-bottom: 8px;">Search By Details</h4>
-                        <form action="{{URL::to('/admin/clients/clientreceiptlist')}}" method="get">
+                        <form action="{{URL::to('/clients/clientreceiptlist')}}" method="get">
                             <div class="row d-flex align-items-end">
                                 <div class="col-md-2">
                                     <div class="form-group">
@@ -179,7 +179,7 @@
                                         <label class="col-form-label" style="color: transparent;">&nbsp;</label>
                                         <div class="d-flex">
                                             <button type="submit" class="btn btn-primary btn-theme-lg mr-3">Search</button>
-                                            <a class="btn btn-info" href="{{URL::to('/admin/clients/clientreceiptlist')}}">Reset</a>
+                                            <a class="btn btn-info" href="{{URL::to('/clients/clientreceiptlist')}}">Reset</a>
                                         </div>
                                     </div>
                                 </div>
@@ -435,7 +435,7 @@ jQuery(document).ready(function($){
             if (confirm(mergeStr)) {
                 $.ajax({
                     type:'post',
-                    url:"{{URL::to('/')}}/admin/validate_receipt",
+                    url:"{{URL::to('/')}}/validate_receipt",
                     headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
                     data: {clickedReceiptIds:clickedReceiptIds,receipt_type:1},
                     success: function(response){
@@ -485,7 +485,7 @@ jQuery(document).ready(function($){
         if (confirm(mergeStr)) {
             $.ajax({
                 type: 'post',
-                url: "{{URL::to('/')}}/admin/delete_receipt",
+                url: "{{URL::to('/')}}/delete_receipt",
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
                 data: { receiptId: clickedReceiptIds[0], receipt_type: 1 },
                 success: function(response) {

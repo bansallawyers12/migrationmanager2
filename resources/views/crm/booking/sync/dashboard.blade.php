@@ -402,7 +402,7 @@ function testConnection() {
     }
     
     $.ajax({
-        url: '{{ url("/admin/booking/sync/test-connection") }}',
+        url: '{{ url("/booking/sync/test-connection") }}',
         method: 'GET',
         success: function(response) {
             if (typeof Swal !== 'undefined') {

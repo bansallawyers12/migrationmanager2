@@ -44,7 +44,7 @@ class UserController extends Controller
         $check = $this->checkAuthorizationAction('user_management', $request->route()->getActionMethod(), Auth::user()->role);
         if($check)
         {
-            return Redirect::to('/admin/dashboard')->with('error',config('constants.unauthorized'));
+            return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
         }
 		//check authorization end
 		$usertype 		= UserRole::all();
@@ -57,7 +57,7 @@ class UserController extends Controller
         $check = $this->checkAuthorizationAction('user_management', $request->route()->getActionMethod(), Auth::user()->role);
         if($check)
         {
-            return Redirect::to('/admin/dashboard')->with('error',config('constants.unauthorized'));
+            return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
         }
 		//check authorization end
 		if ($request->isMethod('post'))
@@ -163,7 +163,7 @@ class UserController extends Controller
         $check = $this->checkAuthorizationAction('user_management', 'edit', Auth::user()->role);
         if($check)
         {
-            return Redirect::to('/admin/dashboard')->with('error',config('constants.unauthorized'));
+            return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
         }
 		//check authorization end
 		$usertype = UserRole::all();
@@ -196,7 +196,7 @@ class UserController extends Controller
         $check = $this->checkAuthorizationAction('user_management', 'update', Auth::user()->role);
         if($check)
         {
-            return Redirect::to('/admin/dashboard')->with('error',config('constants.unauthorized'));
+            return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
         }
 		//check authorization end
 		
@@ -305,7 +305,7 @@ class UserController extends Controller
 			$check = $this->checkAuthorizationAction('user_management', $request->route()->getActionMethod(), Auth::user()->role);
 			if($check)
 			{
-				return Redirect::to('/admin/dashboard')->with('error',config('constants.unauthorized'));
+				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
 			}
 		//check authorization end
 		$query 		= Admin::where('role', '=', '7');
@@ -324,7 +324,7 @@ class UserController extends Controller
 			$check = $this->checkAuthorizationAction('user_management', $request->route()->getActionMethod(), Auth::user()->role);
 			if($check)
 			{
-				return Redirect::to('/admin/dashboard')->with('error',config('constants.unauthorized'));
+				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
 			}
 		//check authorization end
 		return view('AdminConsole.system.users.createclient');
@@ -336,7 +336,7 @@ class UserController extends Controller
 			$check = $this->checkAuthorizationAction('user_management', $request->route()->getActionMethod(), Auth::user()->role);
 			if($check)
 			{
-				return Redirect::to('/admin/dashboard')->with('error',config('constants.unauthorized'));
+				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
 			}
 		//check authorization end
 		if ($request->isMethod('post'))
@@ -402,7 +402,7 @@ class UserController extends Controller
 			$check = $this->checkAuthorizationAction('user_management', 'editclient', Auth::user()->role);
 			if($check)
 			{
-				return Redirect::to('/admin/dashboard')->with('error',config('constants.unauthorized'));
+				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
 			}
 		//check authorization end
 		$usertype = UserType::all();
@@ -435,7 +435,7 @@ class UserController extends Controller
 			$check = $this->checkAuthorizationAction('user_management', 'updateclient', Auth::user()->role);
 			if($check)
 			{
-				return Redirect::to('/admin/dashboard')->with('error',config('constants.unauthorized'));
+				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
 			}
 		//check authorization end
 		

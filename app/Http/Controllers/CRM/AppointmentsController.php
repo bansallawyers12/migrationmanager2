@@ -320,7 +320,7 @@ class AppointmentsController extends Controller
 
         //$data['time']= Carbon::parse($request->time)->format('H:i:s');
        // $appointment->update($data);
-        /*if($request->route == url('/admin/assignee')){
+        /*if($request->route == url('/assignee')){
             return redirect()->route('assignee.index')->with('success','Assignee updated successfully');
         }*/
     }
@@ -611,7 +611,7 @@ public function change_assignee(Request $request){
         $o->sender_id = \Auth::user()->id;
         $o->receiver_id = $request->assinee;
         $o->module_id = $request->id;
-        $o->url = \URL::to('/admin/appointments');
+        $o->url = \URL::to('/appointments');
         $o->notification_type = 'appointment';
         $o->message = $objs->title.' Appointments Assigned by '.\Auth::user()->first_name.' '.\Auth::user()->last_name;
         $o->save();
@@ -1073,7 +1073,7 @@ public function update_apppointment_comment(Request $request){
 				</p></div>';
 				$objs->subject = $subject;
 				$objs->save();
-				//return Redirect::to('/admin/appointments-cal')->with('success', 'Appointment updated successfully.');
+				//return Redirect::to('/appointments-cal')->with('success', 'Appointment updated successfully.');
                 return redirect()->back()->withInput()->with('success', 'Appointment updated successfully.');
 			}else{
 				return redirect()->back()->with('error', 'Record Not Found');
@@ -1255,7 +1255,7 @@ public function update_apppointment_comment(Request $request){
             }
             $objs->subject = $subject;
             $objs->save();
-            //return Redirect::to('/admin/appointments-cal')->with('success', 'Appointment updated successfully.');
+            //return Redirect::to('/appointments-cal')->with('success', 'Appointment updated successfully.');
             return Redirect()->back()->with('success', 'Appointment updated successfully.');
         } else {
             return redirect()->back()->with('error', Config::get('constants.server_error'));
@@ -1357,7 +1357,7 @@ public function update_apppointment_comment(Request $request){
 		$obj = Appointment::find($request->id);
 		if($obj){
 			?>
-			<form method="post" action="<?php echo \URL::to('/admin/editappointment'); ?>" name="editappointment" id="editappointment" autocomplete="off" enctype="multipart/form-data">
+			<form method="post" action="<?php echo \URL::to('/editappointment'); ?>" name="editappointment" id="editappointment" autocomplete="off" enctype="multipart/form-data">
 
 				<input type="hidden" name="_token" value="<?php echo csrf_token(); ?>">
 				<input type="hidden" name="client_id" value="<?php echo $obj->client_id; ?>">

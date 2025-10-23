@@ -1226,10 +1226,10 @@ class ClientsController extends Controller
                 
                 return view('crm.clients.edit', $data);
             } else {
-                return Redirect::to('/admin/clients')->with('error', 'Client does not exist.');
+                return Redirect::to('/clients')->with('error', 'Client does not exist.');
             }
         } else {
-            return Redirect::to('/admin/clients')->with('error', Config::get('constants.unauthorized'));
+            return Redirect::to('/clients')->with('error', Config::get('constants.unauthorized'));
         }
     }
 
@@ -7621,7 +7621,7 @@ class ClientsController extends Controller
 									$explodeimg = explode('.',$fetch->myfile);
 									if($explodeimg[1] == 'jpg'|| $explodeimg[1] == 'png'|| $explodeimg[1] == 'jpeg'){
 									?>
-										<a target="_blank" class="dropdown-item" href="<?php echo \URL::to('/admin/document/download/pdf'); ?>/<?php echo $fetch->id; ?>">PDF</a>
+										<a target="_blank" class="dropdown-item" href="<?php echo \URL::to('/document/download/pdf'); ?>/<?php echo $fetch->id; ?>">PDF</a>
 									<?php } ?>
 
 									<a download class="dropdown-item" href="<?php echo $url.$client_id.'/'.$doctype.'/'.$fetch->myfile; ?>">Download</a>
@@ -7768,7 +7768,7 @@ class ClientsController extends Controller
 									$explodeimg = explode('.',$fetch->myfile);
 									if($explodeimg[1] == 'jpg'|| $explodeimg[1] == 'png'|| $explodeimg[1] == 'jpeg'){
 									?>
-										<a target="_blank" class="dropdown-item" href="<?php echo \URL::to('/admin/document/download/pdf'); ?>/<?php echo $fetch->id; ?>">PDF</a>
+										<a target="_blank" class="dropdown-item" href="<?php echo \URL::to('/document/download/pdf'); ?>/<?php echo $fetch->id; ?>">PDF</a>
 									<?php } ?>
 
 									<a download class="dropdown-item" href="<?php echo $url.$client_id.'/'.$doctype.'/'.$fetch->myfile; ?>">Download</a>
@@ -7914,7 +7914,7 @@ class ClientsController extends Controller
 									$explodeimg = explode('.',$fetch->myfile);
 									if($explodeimg[1] == 'jpg'|| $explodeimg[1] == 'png'|| $explodeimg[1] == 'jpeg'){
 									?>
-										<a target="_blank" class="dropdown-item" href="<?php echo \URL::to('/admin/document/download/pdf'); ?>/<?php echo $fetch->id; ?>">PDF</a>
+										<a target="_blank" class="dropdown-item" href="<?php echo \URL::to('/document/download/pdf'); ?>/<?php echo $fetch->id; ?>">PDF</a>
 									<?php } ?>
 
 									<a download class="dropdown-item" href="<?php echo $url.$client_id.'/'.$doctype.'/'.$fetch->myfile; ?>">Download</a>
@@ -10891,10 +10891,10 @@ class ClientsController extends Controller
                 }
                 return Redirect::to('/clients/detail/'.base64_encode(convert_uuencode(@$id)))->with('success', 'Record Updated successfully');
             } else {
-                return Redirect::to('/admin/clients')->with('error', 'Clients Not Exist');
+                return Redirect::to('/clients')->with('error', 'Clients Not Exist');
             }
         } else {
-            return Redirect::to('/admin/clients')->with('error', Config::get('constants.unauthorized'));
+            return Redirect::to('/clients')->with('error', Config::get('constants.unauthorized'));
         }
 	}
 

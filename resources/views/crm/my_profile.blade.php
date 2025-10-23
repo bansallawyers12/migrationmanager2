@@ -12,7 +12,7 @@
 
 
 
-            <form action="{{ url('admin/my_profile') }}" name="my-profile" enctype="multipart/form-data" method="POST">
+            <form action="{{ url('my_profile') }}" name="my-profile" enctype="multipart/form-data" method="POST">
                 <input type="hidden" name="_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="id" value="{{ $fetchedData->id }}">
 

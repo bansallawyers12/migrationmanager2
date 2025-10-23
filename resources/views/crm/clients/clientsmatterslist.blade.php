@@ -187,7 +187,7 @@
                 <div class="card-body">
                     <div class="filter_panel">
                         <h4>Search By Details</h4>
-                        <form action="{{URL::to('/admin/clientsmatterslist')}}" method="get">
+                        <form action="{{URL::to('/clientsmatterslist')}}" method="get">
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="form-group">
@@ -220,7 +220,7 @@
                                 <div class="col-md-12 text-center">
                                     <div class="filter-buttons-container">
                                         <button type="submit" class="btn btn-primary btn-theme-lg mr-3">Search</button>
-                                        <a class="btn btn-info" href="{{URL::to('/admin/clientsmatterslist')}}">Reset</a>
+                                        <a class="btn btn-info" href="{{URL::to('/clientsmatterslist')}}">Reset</a>
                                     </div>
                                 </div>
                             </div>
@@ -410,7 +410,7 @@ jQuery(document).ready(function($){
     $(document).delegate('.listing-container .selecttemplate', 'change', function(){
         var v = $(this).val();
         $.ajax({
-            url: '{{URL::to('/admin/get-templates')}}',
+            url: '{{URL::to('/get-templates')}}',
             type:'GET',
             datatype:'json',
             data:{id:v},
@@ -429,7 +429,7 @@ jQuery(document).ready(function($){
         closeOnSelect: false,
         dropdownParent: $('#emailmodal'),
         ajax: {
-            url: '{{URL::to('/admin/clients/get-recipients')}}',
+            url: '{{URL::to('/clients/get-recipients')}}',
             dataType: 'json',
             processResults: function (data) {
                 // Transforms the top-level key of the response object from 'items' to 'results'
@@ -446,7 +446,7 @@ jQuery(document).ready(function($){
         closeOnSelect: false,
         dropdownParent: $('#emailmodal'),
         ajax: {
-            url: '{{URL::to('/admin/clients/get-recipients')}}',
+            url: '{{URL::to('/clients/get-recipients')}}',
             dataType: 'json',
             processResults: function (data) {
                 // Transforms the top-level key of the response object from 'items' to 'results'

@@ -27,7 +27,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" action="{{URL::to('/admin/create-note')}}" name="editnotetermform" autocomplete="off" id="editnotetermform" enctype="multipart/form-data">
+				<form method="post" action="{{URL::to('/create-note')}}" name="editnotetermform" autocomplete="off" id="editnotetermform" enctype="multipart/form-data">
 				@csrf 
 				<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
 				<input type="hidden" name="noteid" value="">
@@ -114,7 +114,7 @@
 			<?php
 				$testscores = \App\Models\TestScore::where('client_id', $fetchedData->id)->where('type', 'client')->first();
 				?>
-				<form method="post" action="{{URL::to('/admin/edit-test-scores')}}" name="testscoreform" autocomplete="off" id="testscoreform" enctype="multipart/form-data">
+				<form method="post" action="{{URL::to('/edit-test-scores')}}" name="testscoreform" autocomplete="off" id="testscoreform" enctype="multipart/form-data">
 				@csrf 
 				<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
 				<input type="hidden" name="type" value="client">
@@ -252,7 +252,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" action="{{URL::to('/admin/other-test-scores')}}" name="othertestform" autocomplete="off" id="othertestform" enctype="multipart/form-data">
+				<form method="post" action="{{URL::to('/other-test-scores')}}" name="othertestform" autocomplete="off" id="othertestform" enctype="multipart/form-data">
 				@csrf 
 				<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
 				<input type="hidden" name="type" value="client">

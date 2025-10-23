@@ -17,7 +17,7 @@
 						<div class="card-header">
 							<h4>Change Password</h4>
 						</div>
-						<form action="{{ url('admin/change_password') }}" method="POST" name="change-password">
+						<form action="{{ url('change_password') }}" method="POST" name="change-password">
 							@csrf
 							<input type="hidden" name="admin_id" value="{{ @Auth::user()->id }}">
 							<div class="card-body">

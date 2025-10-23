@@ -231,19 +231,19 @@ body, html {
 
 							<ul class="nav nav-pills" id="checkin_tabs" role="tablist">
                                 <li class="nav-item">
-									<a class="nav-link active" id="waiting-tab"  href="{{URL::to('/admin/office-visits/waiting')}}" >Waiting <span class="countAction">{{ $InPersonCount_waiting_type }}</span></a>
+									<a class="nav-link active" id="waiting-tab"  href="{{URL::to('/office-visits/waiting')}}" >Waiting <span class="countAction">{{ $InPersonCount_waiting_type }}</span></a>
 								</li>
 								<li class="nav-item">
-									<a class="nav-link" id="attending-tab"  href="{{URL::to('/admin/office-visits/attending')}}" >Attending <span class="countAction">{{ $InPersonCount_attending_type }}</span></a>
+									<a class="nav-link" id="attending-tab"  href="{{URL::to('/office-visits/attending')}}" >Attending <span class="countAction">{{ $InPersonCount_attending_type }}</span></a>
 								</li>
 								<li class="nav-item">
-									<a class="nav-link" id="completed-tab"  href="{{URL::to('/admin/office-visits/completed')}}" >Completed <span class="countAction">{{ $InPersonCount_completed_type }}</span></a>
+									<a class="nav-link" id="completed-tab"  href="{{URL::to('/office-visits/completed')}}" >Completed <span class="countAction">{{ $InPersonCount_completed_type }}</span></a>
 								</li>
 								<li class="nav-item">
-									<a class="nav-link" id="archived-tab"  href="{{URL::to('/admin/office-visits/archived')}}" >Archived <span class="countAction">{{ $InPersonCount_archived_type }}</span></a>
+									<a class="nav-link" id="archived-tab"  href="{{URL::to('/office-visits/archived')}}" >Archived <span class="countAction">{{ $InPersonCount_archived_type }}</span></a>
 								</li>
 								<li class="nav-item">
-									<a class="nav-link " id="all-tab"  href="{{URL::to('/admin/office-visits')}}" >All <span class="countAction">{{ $InPersonCount_All_type }}</span></a>
+									<a class="nav-link " id="all-tab"  href="{{URL::to('/office-visits')}}" >All <span class="countAction">{{ $InPersonCount_All_type }}</span></a>
 								</li>
 							</ul>
 							<div class="tab-content" id="checkinContent">
@@ -252,12 +252,12 @@ body, html {
 								  <?php echo isset($_GET['office_name']) ? $_GET['office_name'] : 'All Branches'; ?>
 								   <i style="font-size: 10px;" class="fa fa-arrow-down"></i></button>
 								   <div id="myDropdown" class="dropdown-content">
-                                    <a href="{{URL::to('/admin/office-visits/waiting')}}">All Branches</a>
+                                    <a href="{{URL::to('/office-visits/waiting')}}">All Branches</a>
                                     <?php
                                     $branchs = \App\Models\Branch::all();
                                     foreach($branchs as $branch){
                                         ?>
-                                        <a href="{{URL::to('/admin/office-visits/waiting')}}?office={{$branch->id}}&office_name={{$branch->office_name}}">{{$branch->office_name}}</a>
+                                        <a href="{{URL::to('/office-visits/waiting')}}?office={{$branch->id}}&office_name={{$branch->office_name}}">{{$branch->office_name}}</a>
                                     <?php } ?>
                                     </div>
 								</div>

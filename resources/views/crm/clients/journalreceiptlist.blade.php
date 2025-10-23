@@ -564,7 +564,7 @@ jQuery(document).ready(function($){
             if (confirm(mergeStr)) {
                 $.ajax({
                     type:'post',
-                    url:"{{URL::to('/')}}/admin/validate_receipt",
+                    url:"{{URL::to('/')}}/validate_receipt",
                     headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
                     data: {clickedReceiptIds:clickedReceiptIds,receipt_type:4},
                     success: function(response){

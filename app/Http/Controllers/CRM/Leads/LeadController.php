@@ -91,7 +91,7 @@ class LeadController extends Controller
             $id = $this->decodeString($id);
             
             if (!$id) {
-                return Redirect::to('/admin/leads')->with('error', config('constants.decode_string'));
+                return Redirect::to('/leads')->with('error', config('constants.decode_string'));
             }
             
             // Using Lead model with withArchived scope to include archived leads
@@ -100,10 +100,10 @@ class LeadController extends Controller
             if ($fetchedData) {
                 return view('crm.leads.detail', compact('fetchedData'));
             } else {
-                return Redirect::to('/admin/leads')->with('error', 'Lead does not exist');
+                return Redirect::to('/leads')->with('error', 'Lead does not exist');
             }
         } else {
-            return Redirect::to('/admin/leads')->with('error', config('constants.unauthorized'));
+            return Redirect::to('/leads')->with('error', config('constants.unauthorized'));
         }
     }
 
@@ -364,20 +364,20 @@ class LeadController extends Controller
         // Check authorization
         $check = $this->checkAuthorizationAction('edit_lead', $request->route()->getActionMethod(), Auth::user()->role);
         if ($check) {
-            return Redirect::to('/admin/dashboard')->with('error', config('constants.unauthorized'));
+            return Redirect::to('/dashboard')->with('error', config('constants.unauthorized'));
         }
 
         $id = $this->decodeString($id);
         
         if (!$id) {
-            return Redirect::to('/admin/leads')->with('error', config('constants.decode_string'));
+            return Redirect::to('/leads')->with('error', config('constants.decode_string'));
         }
         
         // Using Lead model - automatically handles filtering
         $fetchedData = Lead::find($id);
         
         if (!$fetchedData) {
-            return Redirect::to('/admin/leads')->with('error', 'Lead not found');
+            return Redirect::to('/leads')->with('error', 'Lead not found');
         }
 
         // Get countries for dropdown
@@ -417,13 +417,13 @@ class LeadController extends Controller
         // Check authorization
         $check = $this->checkAuthorizationAction('edit_lead', $request->route()->getActionMethod(), Auth::user()->role);
         if ($check) {
-            return Redirect::to('/admin/dashboard')->with('error', config('constants.unauthorized'));
+            return Redirect::to('/dashboard')->with('error', config('constants.unauthorized'));
         }
 
         $id = $this->decodeString($id);
         
         if (!$id) {
-            return Redirect::to('/admin/leads')->with('error', config('constants.decode_string'));
+            return Redirect::to('/leads')->with('error', config('constants.decode_string'));
         }
 
         $requestData = $request->all();
@@ -719,7 +719,7 @@ class LeadController extends Controller
             $id = $this->decodeString($id);
             
             if (!$id) {
-                return Redirect::to('/admin/leads')->with('error', config('constants.decode_string'));
+                return Redirect::to('/leads')->with('error', config('constants.decode_string'));
             }
             
             // Using Lead model with withArchived scope to include archived leads
@@ -728,10 +728,10 @@ class LeadController extends Controller
             if ($fetchedData) {
                 return view('crm.leads.history', compact('fetchedData'));
             } else {
-                return Redirect::to('/admin/leads')->with('error', 'Lead does not exist');
+                return Redirect::to('/leads')->with('error', 'Lead does not exist');
             }
         } else {
-            return Redirect::to('/admin/leads')->with('error', config('constants.unauthorized'));
+            return Redirect::to('/leads')->with('error', config('constants.unauthorized'));
         }
     }
 

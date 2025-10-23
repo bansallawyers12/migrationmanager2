@@ -1575,7 +1575,7 @@ class ClientPersonalDetailsController extends Controller
         //dd($route);
         if(!$saved) {
             return redirect()->back()->with('error', Config::get('constants.server_error'));
-        } else if( $route ==url('/admin/assignee')) {
+        } else if( $route ==url('/assignee')) {
             //$subject = 'Lead status has changed to '.@$requestData['status'].' from '. \Auth::user()->first_name;
             $subject = 'Lead status has changed from '. \Auth::user()->first_name;
             $objs = new ActivitiesLog;
@@ -1619,10 +1619,10 @@ class ClientPersonalDetailsController extends Controller
                 
                 return view('crm.clients.edit', $data);
             } else {
-                return Redirect::to('/admin/clients')->with('error', 'Clients Not Exist');
+                return Redirect::to('/clients')->with('error', 'Clients Not Exist');
             }
         } else {
-            return Redirect::to('/admin/clients')->with('error', Config::get('constants.unauthorized'));
+            return Redirect::to('/clients')->with('error', Config::get('constants.unauthorized'));
         }
     }
 }

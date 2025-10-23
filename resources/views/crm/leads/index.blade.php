@@ -299,7 +299,7 @@
                     <span aria-hidden="true">&times;</span>
                   </button>
             </div>
-            <form action="{{ url('admin/leads/assign') }}" method="POST" name="add-assign" autocomplete="off" enctype="multipart/form-data" id="addnoteform">
+            <form action="{{ url('leads/assign') }}" method="POST" name="add-assign" autocomplete="off" enctype="multipart/form-data" id="addnoteform">
     @csrf
     <div class="modal-body">
         <div class="form-group row">

@@ -1190,7 +1190,7 @@ $(function () {
                             if(s[1] == 'Client'){
                                 window.location = '{{URL::to('/clients/detail/')}}/'+s[0];
                             } else {
-                                window.location = '{{URL::to('/admin/leads/history/')}}/'+s[0];
+                                window.location = '{{URL::to('/leads/history/')}}/'+s[0];
                             }
                         }
                         return false;

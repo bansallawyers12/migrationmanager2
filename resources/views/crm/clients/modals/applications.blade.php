@@ -15,7 +15,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" action="{{URL::to('/admin/saveapplication')}}" name="applicationform" id="addapplicationformform" autocomplete="off" enctype="multipart/form-data">
+				<form method="post" action="{{URL::to('/saveapplication')}}" name="applicationform" id="addapplicationformform" autocomplete="off" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
                 <input type="hidden" name="client_matter_id" id="hidden_client_matter_id_latest" value="">
@@ -80,7 +80,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" action="{{URL::to('/admin/discontinue_application')}}" name="discontinue_application" id="discontinue_application" autocomplete="off" enctype="multipart/form-data">
+				<form method="post" action="{{URL::to('/discontinue_application')}}" name="discontinue_application" id="discontinue_application" autocomplete="off" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="diapp_id" value="">
 					<div class="row">
@@ -130,7 +130,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" action="{{URL::to('/admin/revert_application')}}" name="revertapplication" id="revertapplication" autocomplete="off" enctype="multipart/form-data">
+				<form method="post" action="{{URL::to('/revert_application')}}" name="revertapplication" id="revertapplication" autocomplete="off" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="revapp_id" value="">
 					<div class="row">
@@ -164,7 +164,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" action="{{URL::to('/admin/interested-service')}}" name="inter_servform" autocomplete="off" id="inter_servform" enctype="multipart/form-data">
+				<form method="post" action="{{URL::to('/interested-service')}}" name="inter_servform" autocomplete="off" id="inter_servform" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
 					<div class="row">

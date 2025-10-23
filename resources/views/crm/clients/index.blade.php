@@ -188,19 +188,19 @@
                         </li>
 
                         <li class="nav-item is_checked_clientn">
-                            <a class="nav-link active" id="clients-tab"  href="{{URL::to('/admin/clients')}}" >Clients</a>
+                            <a class="nav-link active" id="clients-tab"  href="{{URL::to('/clients')}}" >Clients</a>
                         </li>
                         <li class="nav-item is_checked_clientn">
-                            <a class="nav-link" id="archived-tab"  href="{{URL::to('/admin/archived')}}" >Archived</a>
+                            <a class="nav-link" id="archived-tab"  href="{{URL::to('/archived')}}" >Archived</a>
                         </li>
 
                         <li class="nav-item is_checked_clientn">
-                            <a class="nav-link" id="lead-tab"  href="{{URL::to('/admin/leads')}}" >Leads</a>
+                            <a class="nav-link" id="lead-tab"  href="{{URL::to('/leads')}}" >Leads</a>
                         </li>
                     </ul>
 
                     <div class="filter_panel"><h4>Search By Details</h4>
-                        <form action="{{URL::to('/admin/clients')}}" method="get">
+                        <form action="{{URL::to('/clients')}}" method="get">
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="form-group">
@@ -242,7 +242,7 @@
                                 <div class="col-md-12 text-center">
                                     <div class="filter-buttons-container">
                                         <button type="submit" class="btn btn-primary btn-theme-lg mr-3">Search</button>
-                                        <a class="btn btn-info" href="{{URL::to('/admin/clients')}}">Reset</a>
+                                        <a class="btn btn-info" href="{{URL::to('/clients')}}">Reset</a>
                                     </div>
                                 </div>
                             </div>
@@ -304,7 +304,7 @@
                                                         <a class="dropdown-item has-icon clientemail" data-id="{{@$list->id}}" data-email="{{@$list->email}}" data-name="{{@$list->first_name}} {{@$list->last_name}}" href="javascript:;">
                                                             <i class="far fa-envelope"></i> Email
                                                         </a>
-                                                        <a class="dropdown-item has-icon" href="{{URL::to('/admin/clients/edit/'.base64_encode(convert_uuencode(@$list->id)))}}">
+                                                        <a class="dropdown-item has-icon" href="{{URL::to('/clients/edit/'.base64_encode(convert_uuencode(@$list->id)))}}">
                                                             <i class="far fa-edit"></i> Edit
                                                         </a>
                                                         <a class="dropdown-item has-icon" href="javascript:;" onclick="deleteAction({{$list->id}}, 'admins')">
@@ -347,7 +347,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" name="sendmail" action="{{URL::to('/admin/sendmail')}}" autocomplete="off" enctype="multipart/form-data">
+				<form method="post" name="sendmail" action="{{URL::to('/sendmail')}}" autocomplete="off" enctype="multipart/form-data">
 				@csrf
 					<div class="row">
 						<div class="col-12 col-md-6 col-lg-6">
@@ -523,7 +523,7 @@ jQuery(document).ready(function($){
             if (confirm(mergeStr)) {
                 $.ajax({
                     type:'post',
-                    url:"{{URL::to('/')}}/admin/merge_records",
+                    url:"{{URL::to('/')}}/merge_records",
                     headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
                     data: {merge_from:clickedIds[0],merge_into:clickedIds[1]},
                     success: function(response){
@@ -661,7 +661,7 @@ jQuery(document).ready(function($){
     $(document).delegate('.listing-container .selecttemplate', 'change', function(){
         var v = $(this).val();
         $.ajax({
-            url: '{{URL::to('/admin/get-templates')}}',
+            url: '{{URL::to('/get-templates')}}',
             type:'GET',
             datatype:'json',
             data:{id:v},
@@ -680,7 +680,7 @@ jQuery(document).ready(function($){
 		closeOnSelect: false,
 		dropdownParent: $('#emailmodal'),
 		ajax: {
-			url: '{{URL::to('/admin/clients/get-recipients')}}',
+			url: '{{URL::to('/clients/get-recipients')}}',
 			dataType: 'json',
 			processResults: function (data) {
 			  // Transforms the top-level key of the response object from 'items' to 'results'
@@ -699,7 +699,7 @@ jQuery(document).ready(function($){
 		closeOnSelect: false,
 		dropdownParent: $('#emailmodal'),
 		ajax: {
-			url: '{{URL::to('/admin/clients/get-recipients')}}',
+			url: '{{URL::to('/clients/get-recipients')}}',
 			dataType: 'json',
 			processResults: function (data) {
 			    // Transforms the top-level key of the response object from 'items' to 'results'

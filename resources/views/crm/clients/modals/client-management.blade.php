@@ -9,7 +9,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-                <form method="get" action="{{URL::to('/admin/clients/changetype/'.base64_encode(convert_uuencode($fetchedData->id)).'/client')}}" name="convert_lead_to_client" autocomplete="off" id="convert_lead_to_client">
+                <form method="get" action="{{URL::to('/clients/changetype/'.base64_encode(convert_uuencode($fetchedData->id)).'/client')}}" name="convert_lead_to_client" autocomplete="off" id="convert_lead_to_client">
 				    @csrf
                     <div class="row">
                         <input type="hidden" name="client_id" value="{{$fetchedData->id}}">
@@ -739,7 +739,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-                <form method="post" action="{{URL::to('/admin/clients/updateClientMatterAssignee')}}" name="change_matter_assignee" autocomplete="off" id="change_matter_assignee">
+                <form method="post" action="{{URL::to('/clients/updateClientMatterAssignee')}}" name="change_matter_assignee" autocomplete="off" id="change_matter_assignee">
 				    @csrf
                     <div class="row">
                         <input type="hidden" name="client_id" value="{{$fetchedData->id}}">

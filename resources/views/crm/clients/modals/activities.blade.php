@@ -9,7 +9,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" action="{{URL::to('/admin/add-appointment')}}" name="appliappointform" id="appliappointform" autocomplete="off" enctype="multipart/form-data">
+				<form method="post" action="{{URL::to('/add-appointment')}}" name="appliappointform" id="appliappointform" autocomplete="off" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
 				<input type="hidden" id="type" name="type" value="application">
@@ -151,7 +151,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" action="{{URL::to('/admin/update-note-datetime')}}" name="edit_datetime_form" id="edit_datetime_form" autocomplete="off" enctype="multipart/form-data">
+				<form method="post" action="{{URL::to('/update-note-datetime')}}" name="edit_datetime_form" id="edit_datetime_form" autocomplete="off" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="note_id" id="edit_note_id" value="">
 					<div class="row">
@@ -207,7 +207,7 @@
                 </button>
             </div>
             <div class="modal-body">
-                <form method="post" name="convertActivityToNoteForm" id="convertActivityToNoteForm" action="{{URL::to('/admin/convert-activity-to-note')}}" autocomplete="off" enctype="multipart/form-data">
+                <form method="post" name="convertActivityToNoteForm" id="convertActivityToNoteForm" action="{{URL::to('/convert-activity-to-note')}}" autocomplete="off" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="activity_id" id="convert_activity_id" value="">
                     <input type="hidden" name="client_id" id="convert_client_id" value="">

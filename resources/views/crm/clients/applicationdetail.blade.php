@@ -36,7 +36,7 @@ $workflow = \App\Models\Workflow::where('id', $fetchData->workflow)->first();
 	</div>
 	<div class="float-right">
 		<div class="application_btns">
-			<a target="_blank" href="{{URL::to('/admin/application/export/pdf/')}}/{{$fetchData->id}}" class="btn btn-primary"><i class="fa fa-print"></i></a>
+			<a target="_blank" href="{{URL::to('/application/export/pdf/')}}/{{$fetchData->id}}" class="btn btn-primary"><i class="fa fa-print"></i></a>
           
 			<a style="<?php if($fetchData->status == 2 || $fetchData->status == 1 || $fetchData->status == 8){ echo 'display:none;'; } ?>" href="javascript:;" data-id="{{$fetchData->id}}" class="btn btn-outline-danger discon_application ifdiscont"><i class="fa fa-times"></i> Discontinue</a>
 
@@ -412,7 +412,7 @@ $workflow = \App\Models\Workflow::where('id', $fetchData->workflow)->first();
 									<button class="btn btn-outline-primary dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Schedule</button>
 									<div class="dropdown-menu">
 										<a class="dropdown-item" href="javascript:;">Email Schedule</a>
-										<a target="_blank" class="dropdown-item" href="{{URL::to('/admin/applications/preview-schedules/')}}/{{$fetchData->id}}">Preview Schedule</a>
+										<a target="_blank" class="dropdown-item" href="{{URL::to('/applications/preview-schedules/')}}/{{$fetchData->id}}">Preview Schedule</a>
 									</div> 
 								</div>
 							</div>

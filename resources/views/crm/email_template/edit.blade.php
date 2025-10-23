@@ -12,7 +12,7 @@
 			</div>
 			<div class="custom-error-msg">
 			</div>
-			<form action="{{ url('admin/edit_email_template') }}" method="POST" name="edit-holidaytype" autocomplete="off" enctype="multipart/form-data">
+			<form action="{{ url('edit_email_template') }}" method="POST" name="edit-holidaytype" autocomplete="off" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="id" value="{{ @$fetchedData->id }}">
 				<div class="row">

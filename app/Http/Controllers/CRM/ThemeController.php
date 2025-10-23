@@ -35,7 +35,7 @@ class ThemeController extends Controller
 			//$check = $this->checkAuthorizationAction('holiday_package', $request->route()->getActionMethod(), Auth::user()->role);
 			if(Auth::user()->role != 1)
 			{
-				return Redirect::to('/admin/dashboard')->with('error',config('constants.unauthorized'));
+				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
 			}	
 			
 			$query 		= HolidayTheme::where('id','!=','' );
@@ -69,7 +69,7 @@ class ThemeController extends Controller
 		//check authorization start	
 			if(Auth::user()->role != 1)
 			{
-				return Redirect::to('/admin/dashboard')->with('error',config('constants.unauthorized'));
+				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
 			}	
 		//check authorization end
 		return view('crm.holidaythemes.create');
@@ -80,7 +80,7 @@ class ThemeController extends Controller
 		//check authorization start	
 			if(Auth::user()->role != 1)
 			{
-				return Redirect::to('/admin/dashboard')->with('error',config('constants.unauthorized'));
+				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
 			}		
 		//check authorization end
 		if ($request->isMethod('post')) 
@@ -112,7 +112,7 @@ class ThemeController extends Controller
 			}
 			else
 			{
-				return Redirect::to('/admin/themes')->with('success', 'Holiday Theme added Successfully');
+				return Redirect::to('/themes')->with('success', 'Holiday Theme added Successfully');
 			}				
 		}	
 
@@ -124,7 +124,7 @@ class ThemeController extends Controller
 		//check authorization start	
 			if(Auth::user()->role != 1)
 			{
-				return Redirect::to('/admin/dashboard')->with('error',config('constants.unauthorized'));
+				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
 			}
 		//check authorization end
 	
@@ -165,7 +165,7 @@ class ThemeController extends Controller
 			}
 			else
 			{
-				return Redirect::to('/admin/themes')->with('success', 'Holiday Theme Edited Successfully');
+				return Redirect::to('/themes')->with('success', 'Holiday Theme Edited Successfully');
 			}				
 		}
 		else
@@ -180,12 +180,12 @@ class ThemeController extends Controller
 				}
 				else
 				{
-					return Redirect::to('/admin/themes')->with('error', 'Holiday Theme Not Exist');
+					return Redirect::to('/themes')->with('error', 'Holiday Theme Not Exist');
 				}	
 			}
 			else
 			{
-				return Redirect::to('/admin/themes')->with('error', Config::get('constants.unauthorized'));
+				return Redirect::to('/themes')->with('error', Config::get('constants.unauthorized'));
 			}		
 		}				
 	}

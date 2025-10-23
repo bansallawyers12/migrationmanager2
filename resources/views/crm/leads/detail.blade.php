@@ -449,7 +449,7 @@ jQuery(document).ready(function($){
 $(document).delegate('.selecttemplate', 'change', function(){
 	var v = $(this).val();
 	$.ajax({
-		url: '{{URL::to('/admin/get-templates')}}',
+		url: '{{URL::to('/get-templates')}}',
 		type:'GET',
 		datatype:'json',
 		data:{id:v},

@@ -347,7 +347,7 @@
                             window.open(currentContextData.fileUrl, '_blank');
                             break;
                         case 'pdf':
-                            const pdfUrl = '{{ URL::to('/admin/document/download/pdf') }}/' + currentContextFile;
+                            const pdfUrl = '{{ URL::to('/document/download/pdf') }}/' + currentContextFile;
                             window.open(pdfUrl, '_blank');
                             break;
                         case 'download':

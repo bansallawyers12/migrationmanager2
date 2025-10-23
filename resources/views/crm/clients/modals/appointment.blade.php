@@ -11,7 +11,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" action="{{URL::to('/admin/add-appointment-book')}}" name="appointform" id="appointform" autocomplete="off" enctype="multipart/form-data">
+				<form method="post" action="{{URL::to('/add-appointment-book')}}" name="appointform" id="appointform" autocomplete="off" enctype="multipart/form-data">
 				    @csrf
 				    <input type="hidden" name="client_id" value="{{$fetchedData->id}}">
                     <input type="hidden" name="client_unique_id" value="{{$fetchedData->client_id}}">

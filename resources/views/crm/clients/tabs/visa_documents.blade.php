@@ -367,7 +367,7 @@
                             window.open(currentVisaContextData.fileUrl, '_blank');
                             break;
                         case 'pdf':
-                            const pdfUrl = '{{ URL::to('/admin/document/download/pdf') }}/' + currentVisaContextFile;
+                            const pdfUrl = '{{ URL::to('/document/download/pdf') }}/' + currentVisaContextFile;
                             window.open(pdfUrl, '_blank');
                             break;
                         case 'download':

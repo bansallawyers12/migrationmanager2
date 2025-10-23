@@ -9,7 +9,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" action="{{URL::to('/admin/saveeducation')}}" name="educationform" id="educationform" autocomplete="off" enctype="multipart/form-data">
+				<form method="post" action="{{URL::to('/saveeducation')}}" name="educationform" id="educationform" autocomplete="off" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
 					<div class="row">

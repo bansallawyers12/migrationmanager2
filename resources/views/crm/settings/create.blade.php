@@ -21,7 +21,7 @@
 								<a href="{{route('returnsetting')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
 							</div>
 						</div>
-						<form action="{{ url('admin/settings/taxes/savereturnsetting') }}" method="POST" name="add-city" autocomplete="off" enctype="multipart/form-data">
+						<form action="{{ url('settings/taxes/savereturnsetting') }}" method="POST" name="add-city" autocomplete="off" enctype="multipart/form-data">
 							@csrf
 						<div class="card-body">
 							<div class="row">

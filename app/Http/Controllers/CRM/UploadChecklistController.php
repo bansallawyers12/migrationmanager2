@@ -72,9 +72,9 @@ class UploadChecklistController extends Controller
 			{
 				// Redirect back to matter-specific page if matter_id is provided
 				if (!empty($requestData['matter_id'])) {
-					return Redirect::to('/admin/upload-checklists/matter/' . $requestData['matter_id'])->with('success', 'Record Added Successfully');
+					return Redirect::to('/upload-checklists/matter/' . $requestData['matter_id'])->with('success', 'Record Added Successfully');
 				} else {
-					return Redirect::to('/admin/upload-checklists')->with('success', 'Record Added Successfully');
+					return Redirect::to('/upload-checklists')->with('success', 'Record Added Successfully');
 				}
 			}				
 		}	

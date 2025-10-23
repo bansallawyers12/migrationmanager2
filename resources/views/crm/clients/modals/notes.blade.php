@@ -15,7 +15,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" action="{{URL::to('/admin/create-note')}}" name="notetermform" autocomplete="off" id="notetermform" enctype="multipart/form-data">
+				<form method="post" action="{{URL::to('/create-note')}}" name="notetermform" autocomplete="off" id="notetermform" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
 				<input type="hidden" name="noteid" value="">
@@ -88,7 +88,7 @@
 			</div>
 			</div>
 			<div class="modal-body create-note-body">
-				<form method="post" action="{{URL::to('/admin/create-note')}}" name="notetermform_n" autocomplete="off" id="notetermform_n" enctype="multipart/form-data">
+				<form method="post" action="{{URL::to('/create-note')}}" name="notetermform_n" autocomplete="off" id="notetermform_n" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="client_id" id="client_id" value="{{$fetchedData->id}}">
                     <input type="hidden" name="noteid" value="">
@@ -249,7 +249,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" action="{{URL::to('/admin/create-app-note')}}" name="appnotetermform" autocomplete="off" id="appnotetermform" enctype="multipart/form-data">
+				<form method="post" action="{{URL::to('/create-app-note')}}" name="appnotetermform" autocomplete="off" id="appnotetermform" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
 				<input type="hidden" name="noteid" id="noteid" value="">

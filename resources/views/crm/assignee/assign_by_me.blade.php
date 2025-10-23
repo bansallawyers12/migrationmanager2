@@ -112,10 +112,10 @@
                 <div class="client-status">
                     <ul class="nav nav-pills" id="client_tabs" role="tablist">
                         <li class="nav-item">
-                            <a class="status-badge nav-link active" href="{{ URL::to('/admin/action') }}">Incomplete</a>
+                            <a class="status-badge nav-link active" href="{{ URL::to('/action') }}">Incomplete</a>
                         </li>
                         <li class="nav-item">
-                            <a class="status-badge nav-link" href="{{ URL::to('/admin/action_completed') }}">Completed</a>
+                            <a class="status-badge nav-link" href="{{ URL::to('/action_completed') }}">Completed</a>
                         </li>
                     </ul>
                 </div>
@@ -316,7 +316,7 @@
             if (row_id != "") {
                 $.ajax({
                     type: 'post',
-                    url: "{{ URL::to('/') }}/admin/update-task-not-completed",
+                    url: "{{ URL::to('/') }}/update-task-not-completed",
                     headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                     data: { id: row_id, unique_group_id: row_unique_group_id },
                     success: function(response) {
@@ -333,7 +333,7 @@
             if (row_id != "") {
                 $.ajax({
                     type: 'post',
-                    url: "{{ URL::to('/') }}/admin/update-task-completed",
+                    url: "{{ URL::to('/') }}/update-task-completed",
                     headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                     data: { id: row_id, unique_group_id: row_unique_group_id },
                     success: function(response) {
@@ -371,7 +371,7 @@
             if (flag) {
                 $.ajax({
                     type: 'post',
-                    url: "{{ URL::to('/') }}/admin/clients/updatefollowup/store",
+                    url: "{{ URL::to('/') }}/clients/updatefollowup/store",
                     headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                     data: {
                         note_id: $('#assign_note_id').val(),
@@ -407,7 +407,7 @@
             $('#openassigneview').modal('show');
             var v = $(this).attr('id');
             $.ajax({
-                url: site_url + '/admin/get-assigne-detail',
+                url: site_url + '/get-assigne-detail',
                 type: 'GET',
                 data: { id: v },
                 success: function(responses) {

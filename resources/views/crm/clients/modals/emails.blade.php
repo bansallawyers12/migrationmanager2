@@ -9,7 +9,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-			<form method="post" action="{{URL::to('/admin/upload-mail')}}" name="uploadmail"  autocomplete="off" enctype="multipart/form-data">
+			<form method="post" action="{{URL::to('/upload-mail')}}" name="uploadmail"  autocomplete="off" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="client_id" id="maclient_id">
 					<div class="row">
@@ -62,7 +62,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" name="appkicationsendmail" id="appkicationsendmail" action="{{URL::to('/admin/application-sendmail')}}" autocomplete="off" enctype="multipart/form-data">
+				<form method="post" name="appkicationsendmail" id="appkicationsendmail" action="{{URL::to('/application-sendmail')}}" autocomplete="off" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
 				<input type="hidden" id="type" name="type" value="application">
@@ -166,7 +166,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-			<form method="post" action="{{URL::to('/admin/upload-fetch-mail')}}" name="uploadAndFetchMail" id="uploadAndFetchMail" autocomplete="off" enctype="multipart/form-data">
+			<form method="post" action="{{URL::to('/upload-fetch-mail')}}" name="uploadAndFetchMail" id="uploadAndFetchMail" autocomplete="off" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="client_id" id="maclient_id_fetch">
                 <input type="hidden" name="upload_inbox_mail_client_matter_id" id="upload_inbox_mail_client_matter_id" value="">
@@ -204,7 +204,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-			<form method="post" action="{{URL::to('/admin/upload-sent-fetch-mail')}}" name="uploadSentAndFetchMail" id="uploadSentAndFetchMail" autocomplete="off" enctype="multipart/form-data">
+			<form method="post" action="{{URL::to('/upload-sent-fetch-mail')}}" name="uploadSentAndFetchMail" id="uploadSentAndFetchMail" autocomplete="off" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="client_id" id="maclient_id_fetch_sent" value="">
                 <input type="hidden" name="upload_sent_mail_client_matter_id" id="upload_sent_mail_client_matter_id" value="">

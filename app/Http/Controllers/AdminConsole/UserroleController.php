@@ -36,7 +36,7 @@ class UserroleController extends Controller
 			$check = $this->checkAuthorizationAction('user_role', $request->route()->getActionMethod(), Auth::user()->role);
 			if($check)
 			{
-				return Redirect::to('/admin/dashboard')->with('error',config('constants.unauthorized'));
+				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
 			}	
 		//check authorization end
 		$query 		= UserRole::where('id', '!=', '')->with(['usertypedata']);
@@ -56,7 +56,7 @@ class UserroleController extends Controller
 			$check = $this->checkAuthorizationAction('user_role', $request->route()->getActionMethod(), Auth::user()->role);
 			if($check)
 			{
-				return Redirect::to('/admin/dashboard')->with('error',config('constants.unauthorized'));
+				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
 			}	
 		//check authorization end
 		$usertype 		= UserType::all();
@@ -69,7 +69,7 @@ class UserroleController extends Controller
 			$check = $this->checkAuthorizationAction('user_role', $request->route()->getActionMethod(), Auth::user()->role);
 			if($check)
 			{
-				return Redirect::to('/admin/dashboard')->with('error',config('constants.unauthorized'));
+				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
 			}	
 		//check authorization end
 		if ($request->isMethod('post')) 
@@ -110,7 +110,7 @@ class UserroleController extends Controller
 			$check = $this->checkAuthorizationAction('user_role', 'edit', Auth::user()->role);
 			if($check)
 			{
-				return Redirect::to('/admin/dashboard')->with('error',config('constants.unauthorized'));
+				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
 			}	
 		//check authorization end
 		$usertype = UserType::all();
@@ -143,7 +143,7 @@ class UserroleController extends Controller
 			$check = $this->checkAuthorizationAction('user_role', 'update', Auth::user()->role);
 			if($check)
 			{
-				return Redirect::to('/admin/dashboard')->with('error',config('constants.unauthorized'));
+				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
 			}	
 		//check authorization end
 		

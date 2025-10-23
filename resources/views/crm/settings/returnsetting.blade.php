@@ -18,7 +18,7 @@
 						<div class="card-header">
 							<h4>GST Settings</h4>
 						</div>
-						<form action="{{ url('admin/settings/taxes/savereturnsetting') }}" method="POST" name="add-city" autocomplete="off" enctype="multipart/form-data">
+						<form action="{{ url('settings/taxes/savereturnsetting') }}" method="POST" name="add-city" autocomplete="off" enctype="multipart/form-data">
 							@csrf
 						<div class="card-body">
 							<div class="row">

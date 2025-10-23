@@ -33,7 +33,7 @@ class EmailTemplateController extends Controller
 		//check authorization start	
 			if(Auth::user()->role != 1)
 			{
-				return Redirect::to('/admin/dashboard')->with('error',config('constants.unauthorized'));
+				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
 			}	
 		//check authorization end
 		
@@ -65,7 +65,7 @@ class EmailTemplateController extends Controller
 			 //$check = $this->checkAuthorizationAction('EmailTemplate', $request->route()->getActionMethod(), Auth::user()->role);
 			if(Auth::user()->role != 1)
 			{
-				return Redirect::to('/admin/dashboard')->with('error',config('constants.unauthorized'));
+				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
 			}	 
 		//check authorization end
 		return view('crm.email_template.create');	
@@ -94,7 +94,7 @@ class EmailTemplateController extends Controller
 			}
 			else
 			{
-				return Redirect::to('/admin/email_templates')->with('success', 'Email Template'.Config::get('constants.edited'));
+				return Redirect::to('/email_templates')->with('success', 'Email Template'.Config::get('constants.edited'));
 			}				
 		}
 	}
@@ -104,7 +104,7 @@ class EmailTemplateController extends Controller
 			 //$check = $this->checkAuthorizationAction('EmailTemplate', $request->route()->getActionMethod(), Auth::user()->role);
 			if(Auth::user()->role != 1)
 			{
-				return Redirect::to('/admin/dashboard')->with('error',config('constants.unauthorized'));
+				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
 			}	 
 		//check authorization end
 	
@@ -131,7 +131,7 @@ class EmailTemplateController extends Controller
 			}
 			else
 			{
-				return Redirect::to('/admin/email_templates')->with('success', 'Email Template'.Config::get('constants.edited'));
+				return Redirect::to('/email_templates')->with('success', 'Email Template'.Config::get('constants.edited'));
 			}				
 		}
 		else
@@ -146,12 +146,12 @@ class EmailTemplateController extends Controller
 				}
 				else
 				{
-					return Redirect::to('/admin/email_templates')->with('error', 'Email Template'.Config::get('constants.not_exist'));
+					return Redirect::to('/email_templates')->with('error', 'Email Template'.Config::get('constants.not_exist'));
 				}	
 			}
 			else
 			{
-				return Redirect::to('/admin/email_templates')->with('error', Config::get('constants.unauthorized'));
+				return Redirect::to('/email_templates')->with('error', Config::get('constants.unauthorized'));
 			}		
 		}				
 	}

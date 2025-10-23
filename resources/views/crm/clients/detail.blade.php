@@ -1273,7 +1273,7 @@ $(document).ready(function() {
         appId: '{{ $_GET["appid"] ?? "" }}',
         urls: {
             base: '{{ URL::to("/") }}',
-            admin: '{{ URL::to("/admin") }}',
+            admin: '{{ URL::to("/") }}',
             fetchVisaExpiryMessages: '{{ URL::to("/fetch-visa_expiry_messages") }}',
             downloadDocument: '{{ url("/documents/download") }}',
             getTopInvoiceNo: '{{ URL::to("/clients/getTopInvoiceNoFromDB") }}',
@@ -1437,7 +1437,7 @@ $('.send-sms-btn').on('click', function() {
     
     // Load client phone numbers
     $.ajax({
-        url: '{{ URL::to("/admin/clients/fetchClientContactNo") }}',
+        url: '{{ URL::to("/clients/fetchClientContactNo") }}',
         type: 'POST',
         dataType: 'json',
         data: {

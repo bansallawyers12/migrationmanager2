@@ -323,7 +323,7 @@ function manualSync() {
 
 function quickAction(appointmentId) {
     // This can open a modal with quick actions
-    window.location.href = '{{ url("/admin/booking/appointments") }}/' + appointmentId;
+    window.location.href = '{{ url("/booking/appointments") }}/' + appointmentId;
 }
 
 // Auto-reload every 5 minutes to get latest synced data

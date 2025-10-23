@@ -1,4 +1,4 @@
-<form method="post" action="{{URL::to('/admin/upload-email')}}" name="uploadmail"  autocomplete="off" enctype="multipart/form-data">
+<form method="post" action="{{URL::to('/upload-email')}}" name="uploadmail"  autocomplete="off" enctype="multipart/form-data">
     @csrf
     <input type="hidden" name="client_id" id="maclient_id">
         <div class="row">

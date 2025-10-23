@@ -35,7 +35,7 @@
                 <div class="card-body">
                     <div class="filter_panel">
                         <h4>Search By Details</h4>
-                        <form action="{{URL::to('/admin/clients/invoicelist')}}" method="get">
+                        <form action="{{URL::to('/clients/invoicelist')}}" method="get">
                             <div class="row">
                                 <div class="col-md-3">
                                     <div class="form-group">
@@ -83,7 +83,7 @@
                                 <div class="col-md-12 text-center">
                                     <div class="filter-buttons-container">
                                         <button type="submit" class="btn btn-primary btn-theme-lg mr-3">Search</button>
-                                        <a class="btn btn-info" href="{{URL::to('/admin/clients/invoicelist')}}">Reset</a>
+                                        <a class="btn btn-info" href="{{URL::to('/clients/invoicelist')}}">Reset</a>
                                     </div>
                                 </div>
                             </div>
@@ -258,7 +258,7 @@ jQuery(document).ready(function($){
             if (confirm(mergeStr)) {
                 $.ajax({
                     type:'post',
-                    url:"{{URL::to('/')}}/admin/void_invoice",
+                    url:"{{URL::to('/')}}/void_invoice",
                     headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
                     data: {clickedReceiptIds:clickedReceiptIds},
                     success: function(response){
