@@ -262,7 +262,11 @@
                             <span class="field-label">Country Of Passport</span>
                             <span class="field-value">
                                 <?php
-                                if( $visa_Info && $visa_Info->visa_country != "" ){ echo $visa_Info->visa_country; } else { echo 'N/A'; }
+                                if( isset($fetchedData->country_passport) && $fetchedData->country_passport != "" ){ 
+                                    echo $fetchedData->country_passport; 
+                                } else { 
+                                    echo 'N/A'; 
+                                }
                                 ?>
                             </span>
                         </div>

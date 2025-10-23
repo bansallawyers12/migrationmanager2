@@ -2432,12 +2432,33 @@ class ClientsController extends Controller
                         $passport->delete();
                     }
                 }
+                
+                // Check if all passport data is being deleted
+                $remainingPassports = ClientPassportInformation::where('client_id', $obj->id)->count();
+                $newPassports = isset($requestData['passports']) ? count($requestData['passports']) : 0;
+                
+                // If no remaining passports and no new passports, clear the country_passport field
+                if ($remainingPassports == 0 && $newPassports == 0) {
+                    $obj->country_passport = null;
+                    $obj->save();
+                }
+            }
+
+            // Handle case when all passport information is deleted
+            if (isset($requestData['clear_all_passports']) && $requestData['clear_all_passports'] === '1') {
+                // Clear the country_passport field in admins table
+                $obj->country_passport = null;
+                $obj->save();
+                
+                // Delete all passport records for this client
+                ClientPassportInformation::where('client_id', $obj->id)->delete();
             }
 
             // Passport Information Handling
             if (
                 (isset($requestData['visa_country']) && !empty($requestData['visa_country'])) ||
-                (isset($requestData['passports']) && is_array($requestData['passports']))
+                (isset($requestData['passports']) && is_array($requestData['passports'])) ||
+                (isset($requestData['clear_all_passports']) && $requestData['clear_all_passports'] === '1')
             ) {
                 $passportCountry = $requestData['visa_country'] ?? null;
 

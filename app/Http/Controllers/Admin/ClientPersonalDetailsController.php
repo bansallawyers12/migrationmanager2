@@ -1981,10 +1981,9 @@ class ClientPersonalDetailsController extends Controller
             }
 
             // Update client's primary passport country (column name is country_passport)
-            if ($primaryPassportCountry) {
-                $client->country_passport = $primaryPassportCountry;
-                $client->save();
-            }
+            // Always update the country_passport field - set to null if no passports exist
+            $client->country_passport = $primaryPassportCountry;
+            $client->save();
 
             // Insert new passport records
             foreach ($passports as $passportData) {
