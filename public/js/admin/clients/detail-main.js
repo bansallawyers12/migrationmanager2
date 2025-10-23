@@ -123,7 +123,7 @@
 
                 $.ajax({
 
-                    url: '/admin/documents/update-personal-category',
+                    url: '/documents/update-personal-category',
 
                     method: 'POST',
 
@@ -217,7 +217,7 @@
 
                 $.ajax({
 
-                    url: '/admin/documents/update-visa-category',
+                    url: '/documents/update-visa-category',
 
                     method: 'POST',
 
@@ -2549,7 +2549,7 @@ $(document).ready(function() {
 
         $.ajax({
 
-            url: window.ClientDetailConfig.urls.base + '/admin/clients/filter/sentmails',
+            url: window.ClientDetailConfig.urls.base + '/clients/filter/sentmails',
 
             type: 'POST',
 
@@ -2957,7 +2957,7 @@ $(document).ready(function() {
 
             $.ajax({
 
-                url: window.ClientDetailConfig.urls.base + '/admin/clients/updatemailreadbit',
+                url: window.ClientDetailConfig.urls.base + '/clients/updatemailreadbit',
 
                 method: "POST",
 
@@ -3029,7 +3029,7 @@ $(document).ready(function() {
 
                 $.ajax({
 
-                    url: window.ClientDetailConfig.urls.base + '/admin/clients/listAllMattersWRTSelClient',
+                    url: window.ClientDetailConfig.urls.base + '/clients/listAllMattersWRTSelClient',
 
                     method: "POST",
 
@@ -3141,7 +3141,7 @@ $(document).ready(function() {
 
                 $.ajax({
 
-                    url: window.ClientDetailConfig.urls.base + '/admin/clients/listAllMattersWRTSelClient',
+                    url: window.ClientDetailConfig.urls.base + '/clients/listAllMattersWRTSelClient',
 
                     method: "POST",
 
@@ -3449,7 +3449,7 @@ $(document).ready(function() {
 
                 var clientId = window.ClientDetailConfig.encodeId;
 
-                var baseUrl = '/admin/clients/detail/' + clientId;
+                var baseUrl = '/clients/detail/' + clientId;
 
                 var currentUrl = window.location.href;
 
@@ -3659,7 +3659,7 @@ $(document).ready(function() {
 
             // Build new URL with matter and tab
 
-            baseUrl = '/admin/clients/detail/' + clientId;
+            baseUrl = '/clients/detail/' + clientId;
 
 
 
@@ -6167,7 +6167,7 @@ Bansal Immigration`;
 
             $.ajax({
 
-                url: site_url+'/admin/clients/update-email-verified',
+                url: site_url+'/clients/update-email-verified',
 
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
 
@@ -8001,7 +8001,7 @@ Bansal Immigration`;
 
             $.ajax({
 
-                url: site_url+'/admin/get-task-detail',
+                url: site_url+'/get-task-detail',
 
                 type:'GET',
 
@@ -8025,7 +8025,7 @@ Bansal Immigration`;
 
             $.ajax({
 
-                url: site_url+'/admin/get-notes',
+                url: site_url+'/get-notes',
 
                 type:'GET',
 
@@ -8105,7 +8105,7 @@ Bansal Immigration`;
 
             $.ajax({
 
-                url: site_url+'/admin/get-activities',
+                url: site_url+'/get-activities',
 
                 type:'GET',
 
@@ -8241,7 +8241,7 @@ Bansal Immigration`;
 
             $.ajax({
 
-                url: site_url+'/admin/clients/change_assignee',
+                url: site_url+'/clients/change_assignee',
 
                 type:'GET',
 
@@ -8763,7 +8763,7 @@ Bansal Immigration`;
 
                             $.ajax({
 
-                                url: site_url+'/admin/get-services',
+                                url: site_url+'/get-services',
 
                                 type:'GET',
 
@@ -8789,7 +8789,7 @@ Bansal Immigration`;
 
                             $.ajax({
 
-                                url: site_url+'/admin/get-appointments',
+                                url: site_url+'/get-appointments',
 
                                 type:'GET',
 
@@ -8807,7 +8807,7 @@ Bansal Immigration`;
 
                             $.ajax({
 
-                                url: site_url+'/admin/get-all-paymentschedules',
+                                url: site_url+'/get-all-paymentschedules',
 
                                 type:'GET',
 
@@ -10465,7 +10465,7 @@ Bansal Immigration`;
 
             $.ajax({
 
-                url: site_url + '/admin/documents/upload-edu-document',
+                url: site_url + '/documents/upload-edu-document',
 
                 type: 'POST',
 
@@ -10725,7 +10725,7 @@ Bansal Immigration`;
 
             $.ajax({
 
-                url: site_url+'/admin/documents/upload-visa-document',
+                url: site_url+'/documents/upload-visa-document',
 
                 type:'POST',
 
@@ -10841,7 +10841,7 @@ Bansal Immigration`;
 
                         $.ajax({
 
-                            url: site_url+'/admin/get-services',
+                            url: site_url+'/get-services',
 
                             type:'GET',
 
@@ -10859,7 +10859,7 @@ Bansal Immigration`;
 
                         $.ajax({
 
-                            url: site_url+'/admin/get-application-lists',
+                            url: site_url+'/get-application-lists',
 
                             type:'GET',
 
@@ -10895,7 +10895,7 @@ Bansal Immigration`;
 
             /*$.ajax({
 
-                url: site_url+'/admin/get-application-lists',
+                url: site_url+'/get-application-lists',
 
                 type:'GET',
 
@@ -13703,7 +13703,7 @@ Bansal Immigration`;
 
                         $.ajax({
 
-                            url: site_url+'/admin/get-applications-logs',
+                            url: site_url+'/get-applications-logs',
 
                             type:'GET',
 
@@ -13787,7 +13787,7 @@ Bansal Immigration`;
 
                         $.ajax({
 
-                                url: site_url+'/admin/get-applications-logs',
+                                url: site_url+'/get-applications-logs',
 
                                 type:'GET',
 
@@ -13881,7 +13881,7 @@ Bansal Immigration`;
 
                             $.ajax({
 
-                                url: site_url+'/admin/get-applications-logs',
+                                url: site_url+'/get-applications-logs',
 
                                 type:'GET',
 

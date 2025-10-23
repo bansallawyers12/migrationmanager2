@@ -186,89 +186,89 @@ m1.attr=new Array("11px",false,false,"#ffffff","#035a67","#000000","Arial","#F0F
 
 admin2=new Array
 (
-"Master User","/admin/member.php",0,"",""
-,"Master-Subuser","/admin/membersubuser.php",0,"",""
-,"Credit Approval","/admin/credit.php",0,"",""
-,"Client Ledger","/admin/report_credit.php",0,"",""
+"Master User","/member.php",0,"",""
+,"Master-Subuser","/membersubuser.php",0,"",""
+,"Credit Approval","/credit.php",0,"",""
+,"Client Ledger","/report_credit.php",0,"",""
 ,"Intelligence Report","/report/index.php?com=agents&opt=report",0,"",""
-,"Alert and Notifications","/admin/manage-notification-alert.php",0,"",""
-,"Newsletter Settings","/admin/newsletter-settings.php",0,"",""
+,"Alert and Notifications","/manage-notification-alert.php",0,"",""
+,"Newsletter Settings","/newsletter-settings.php",0,"",""
 )
 
 admin3=new Array
 (
-"Members","/admin/affiliate_user.php",0,"",""
-,"Generate Payment","/admin/affiliate_payment.php",0,"",""
-,"Payment Details","/admin/affiliatepage.php",0,"",""
+"Members","/affiliate_user.php",0,"",""
+,"Generate Payment","/affiliate_payment.php",0,"",""
+,"Payment Details","/affiliatepage.php",0,"",""
 )
 
 admin4=new Array
 (
-"Check Enquiries (QC)","/admin/checkleads.php",0,"",""
-,"Check Junk Enquiries (QC)","/admin/junk.php",0,"",""
-,"Edit Enquiries (QC)","/admin/editlead.php",0,"",""
-,"Add Enquiries (QC)","/admin/addlead.php",0,"",""
-,"Unlock Enquiries (QC)","/admin/lockedleads_qc.php",0,"",""
+"Check Enquiries (QC)","/checkleads.php",0,"",""
+,"Check Junk Enquiries (QC)","/junk.php",0,"",""
+,"Edit Enquiries (QC)","/editlead.php",0,"",""
+,"Add Enquiries (QC)","/addlead.php",0,"",""
+,"Unlock Enquiries (QC)","/lockedleads_qc.php",0,"",""
 
 )
 
 admin5=new Array
 (
-"Website Master","/admin/website.php",0,"",""
-,"Website to Subuser","/admin/websitetouser.php",0,"",""
-,"Serveform Stats","/admin/serveform/index.php?com=stats",0,"",""
+"Website Master","/website.php",0,"",""
+,"Website to Subuser","/websitetouser.php",0,"",""
+,"Serveform Stats","/serveform/index.php?com=stats",0,"",""
 )
 admin6=new Array
 (
-"Search Alias","/admin/manage-alias.php",0,"",""
-,"New Pricing Engine","/admin/pricing-engine.php",0,"",""
+"Search Alias","/manage-alias.php",0,"",""
+,"New Pricing Engine","/pricing-engine.php",0,"",""
 )
 admin7=new Array
 (
-"SMS Alert Subscription","/admin/report_sms.php",0,"",""
-//,"Clientwise Credit Usage","/admin/report_clientwise_usage.php",0,"",""
-,"Sales (Client Wise)","/admin/report_client.php",0,"",""
-,"Sales (Enquiry Wise)","/admin/report_lead.php",0,"",""
-,"Generation & Sales (Portal)","/admin/report_gen.php",0,"",""
-,"Generation & Sales (Date)","/admin/report_gen_date.php",0,"",""
-,"Credit Sales & Revenue","/admin/serveform/index.php?com=report&opt=revenue",0,"",""
-,"Credit Allotment","/admin/report_credit_allotment.php",0,"",""
-,"Lost Clients","/admin/report-lost-client.php",0,"",""
-,"Client Ledger","/admin/report_credit.php",0,"",""
-,"Preferred Report","/admin/report-preferred.php",0,"",""
-,"Lead Quality Report","/admin/report-lead-quality.php",0,"",""
-,"Client Opening/Closing Balance","/admin/report-opening-closing-balance.php",0,"",""
-,"Autobuy","/admin/report-autobuy.php",0,"",""
-,"Clientwise Monthly Status","/admin/report-clientwise-monthly-status.php",0,"",""
-,"Clientwise Segmentation","/admin/report-clientwise-segmentation.php",0,"",""
-,"Country Wise(Generation & Sales)","/admin/report-country-wise-lead-generation.php",0,"",""
-,"Manual Email to Client","/admin/report-enquiry-email-to-client.php",0,"",""
+"SMS Alert Subscription","/report_sms.php",0,"",""
+//,"Clientwise Credit Usage","/report_clientwise_usage.php",0,"",""
+,"Sales (Client Wise)","/report_client.php",0,"",""
+,"Sales (Enquiry Wise)","/report_lead.php",0,"",""
+,"Generation & Sales (Portal)","/report_gen.php",0,"",""
+,"Generation & Sales (Date)","/report_gen_date.php",0,"",""
+,"Credit Sales & Revenue","/serveform/index.php?com=report&opt=revenue",0,"",""
+,"Credit Allotment","/report_credit_allotment.php",0,"",""
+,"Lost Clients","/report-lost-client.php",0,"",""
+,"Client Ledger","/report_credit.php",0,"",""
+,"Preferred Report","/report-preferred.php",0,"",""
+,"Lead Quality Report","/report-lead-quality.php",0,"",""
+,"Client Opening/Closing Balance","/report-opening-closing-balance.php",0,"",""
+,"Autobuy","/report-autobuy.php",0,"",""
+,"Clientwise Monthly Status","/report-clientwise-monthly-status.php",0,"",""
+,"Clientwise Segmentation","/report-clientwise-segmentation.php",0,"",""
+,"Country Wise(Generation & Sales)","/report-country-wise-lead-generation.php",0,"",""
+,"Manual Email to Client","/report-enquiry-email-to-client.php",0,"",""
 )
 admin8=new Array
 (
-"New Signup","/admin/member-listing.php?newsignup=true",0,"",""
-,"Pending STS","/admin/member-listing.php?pendingsts=true",0,"",""
-,"Win Back","/admin/report-clientwise-monthly-status.php?winback=yes",0,"",""
-,"Refill","/admin/report-clientwise-monthly-status.php?refill=yes",0,"",""
+"New Signup","/member-listing.php?newsignup=true",0,"",""
+,"Pending STS","/member-listing.php?pendingsts=true",0,"",""
+,"Win Back","/report-clientwise-monthly-status.php?winback=yes",0,"",""
+,"Refill","/report-clientwise-monthly-status.php?refill=yes",0,"",""
 )
 report=new Array
 (
-"SMS Alert Subscription","/admin/report_sms.php",0,"",""
-//,"Clientwise Credit Usage","/admin/report_clientwise_usage.php",0,"",""
-,"Sales (Client Wise)","/admin/report_client.php",0,"",""
-,"Sales (Enquiry Wise)","/admin/report_lead.php",0,"",""
-,"Generation & Sales (Portal)","/admin/report_gen.php",0,"",""
-,"Generation & Sales (Date)","/admin/report_gen_date.php",0,"",""
-,"Credit Sales & Revenue","/admin/serveform/index.php?com=report&opt=revenue",0,"",""
-,"Credit Allotment","/admin/report_credit_allotment.php",0,"",""
-,"Lost Clients","/admin/report-lost-client.php",0,"",""
-,"Client Ledger","/admin/report_credit.php",0,"",""
-,"Lead Quality Report","/admin/report-lead-quality.php",0,"",""
-,"Client Opening/Closing Balance","/admin/report-opening-closing-balance.php",0,"",""
-,"Autobuy","/admin/report-autobuy.php",0,"",""
-,"Clientwise Monthly Status","/admin/report-clientwise-monthly-status.php",0,"",""
-,"Clientwise Segmentation","/admin/report-clientwise-segmentation.php",0,"",""
-,"Manual Email to Client","/admin/report-enquiry-email-to-client.php",0,"",""
+"SMS Alert Subscription","/report_sms.php",0,"",""
+//,"Clientwise Credit Usage","/report_clientwise_usage.php",0,"",""
+,"Sales (Client Wise)","/report_client.php",0,"",""
+,"Sales (Enquiry Wise)","/report_lead.php",0,"",""
+,"Generation & Sales (Portal)","/report_gen.php",0,"",""
+,"Generation & Sales (Date)","/report_gen_date.php",0,"",""
+,"Credit Sales & Revenue","/serveform/index.php?com=report&opt=revenue",0,"",""
+,"Credit Allotment","/report_credit_allotment.php",0,"",""
+,"Lost Clients","/report-lost-client.php",0,"",""
+,"Client Ledger","/report_credit.php",0,"",""
+,"Lead Quality Report","/report-lead-quality.php",0,"",""
+,"Client Opening/Closing Balance","/report-opening-closing-balance.php",0,"",""
+,"Autobuy","/report-autobuy.php",0,"",""
+,"Clientwise Monthly Status","/report-clientwise-monthly-status.php",0,"",""
+,"Clientwise Segmentation","/report-clientwise-segmentation.php",0,"",""
+,"Manual Email to Client","/report-enquiry-email-to-client.php",0,"",""
 )
 
 
@@ -306,39 +306,39 @@ subuser5=new Array
 
 cc1=new Array
 (
-"Search","/admin/member.php",0,"",""
-,"New Signup","/admin/member-listing.php?newsignup=true",0,"",""
-,"Pending STS","/admin/member-listing.php?pendingsts=true",0,"",""
+"Search","/member.php",0,"",""
+,"New Signup","/member-listing.php?newsignup=true",0,"",""
+,"Pending STS","/member-listing.php?pendingsts=true",0,"",""
 )
 
 cc2=new Array
 (
-"Client Ledger","/admin/report_credit.php",0,"",""
-,"Sales(Client Wise)","/admin/report_client.php",0,"",""
-,"Client Monthly Status","/admin/report-clientwise-monthly-status.php",0,"",""
-,"Alert & Notifications","/admin/manage-notification-alert.php",0,"",""
-,"Manual Email to Client","/admin/report-enquiry-email-to-client.php",0,"",""
-,"Win Back","/admin/report-clientwise-monthly-status.php?winback=yes",0,"",""
-,"Refill","/admin/report-clientwise-monthly-status.php?refill=yes",0,"",""
+"Client Ledger","/report_credit.php",0,"",""
+,"Sales(Client Wise)","/report_client.php",0,"",""
+,"Client Monthly Status","/report-clientwise-monthly-status.php",0,"",""
+,"Alert & Notifications","/manage-notification-alert.php",0,"",""
+,"Manual Email to Client","/report-enquiry-email-to-client.php",0,"",""
+,"Win Back","/report-clientwise-monthly-status.php?winback=yes",0,"",""
+,"Refill","/report-clientwise-monthly-status.php?refill=yes",0,"",""
 )
 
 affiliate=new Array
 (
-"Members","/admin/affiliate_user.php",0,"",""
-,"Generate Payment","/admin/affiliate_payment.php",0,"",""
-,"Payment Details","/admin/affiliatepage.php",0,"",""
-,"Generaton & Sales","/admin/report_gen.php",0,"",""
-,"Serveform Stats","/admin/serveform/index.php?com=stats",0,"",""
+"Members","/affiliate_user.php",0,"",""
+,"Generate Payment","/affiliate_payment.php",0,"",""
+,"Payment Details","/affiliatepage.php",0,"",""
+,"Generaton & Sales","/report_gen.php",0,"",""
+,"Serveform Stats","/serveform/index.php?com=stats",0,"",""
 )
 
 qc1=new Array
 (
-		"Master User","/admin/member.php",0,"",""
-		,"Credit Approval","/admin/credit.php",0,"",""
-		,"Client Ledger","/admin/report_credit.php",0,"",""
-		,"Sales (Clientwise)","/admin/report_client.php",0,"",""
-		,"Credit Allotment","/admin/report_credit_allotment.php",0,"",""
-		,"Generation & Sales (Date)","/admin/report_gen_date.php",0,"",""
+		"Master User","/member.php",0,"",""
+		,"Credit Approval","/credit.php",0,"",""
+		,"Client Ledger","/report_credit.php",0,"",""
+		,"Sales (Clientwise)","/report_client.php",0,"",""
+		,"Credit Allotment","/report_credit_allotment.php",0,"",""
+		,"Generation & Sales (Date)","/report_gen_date.php",0,"",""
 )
 
 

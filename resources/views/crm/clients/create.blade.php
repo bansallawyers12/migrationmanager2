@@ -795,7 +795,7 @@
 
             try {
                 const response = await $.ajax({
-                    url: '{{ route("crm.getVisaTypes") }}',
+                    url: '{{ route("admin.getVisaTypes") }}',
                     method: 'GET',
                     dataType: 'json',
                 });
@@ -888,7 +888,7 @@
 
                 if (occupation.length > 2) {
                     $.ajax({
-                        url: '{{ route("crm.clients.updateOccupation") }}',
+                        url: '{{ route("clients.updateOccupation") }}',
                         headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                         method: 'POST',
                         data: { occupation: occupation },
@@ -1071,7 +1071,7 @@
 
             try {
                 const response = await $.ajax({
-                    url: '{{ route("crm.getCountries") }}',
+                    url: '{{ route("admin.getCountries") }}',
                     method: 'GET',
                     dataType: 'json',
                 });

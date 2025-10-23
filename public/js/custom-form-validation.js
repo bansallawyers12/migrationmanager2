@@ -229,7 +229,7 @@ function customValidate(formName, savetype = '')
 								if(obj.status){
 									$('#create_applicationnote').modal('hide');
 									$.ajax({
-										url: site_url+'/admin/get-applications-logs',
+										url: site_url+'/get-applications-logs',
 										type:'GET',
 										data:{id: noteid},
 										success: function(responses){
@@ -263,7 +263,7 @@ function customValidate(formName, savetype = '')
 									$('#create_note').modal('hide');
 								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 								$.ajax({
-									url: site_url+'/admin/get-notes',
+									url: site_url+'/get-notes',
 									type:'GET',
 									data:{clientid:client_id,type:'partner'},
 									success: function(responses){
@@ -296,7 +296,7 @@ function customValidate(formName, savetype = '')
 									$('#add_clientcontact').modal('hide');
 								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 								$.ajax({
-									url: site_url+'/admin/get-contacts',
+									url: site_url+'/get-contacts',
 									type:'GET',
 									data:{clientid:client_id,type:'partner'},
 									success: function(responses){
@@ -331,7 +331,7 @@ function customValidate(formName, savetype = '')
 									$('#add_clientbranch').modal('hide');
 								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 								$.ajax({
-									url: site_url+'/admin/get-branches',
+									url: site_url+'/get-branches',
 									type:'GET',
 									data:{clientid:client_id,type:'partner'},
 									success: function(responses){
@@ -365,7 +365,7 @@ function customValidate(formName, savetype = '')
 									$('#create_note').modal('hide');
 									$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 									$.ajax({
-										url: site_url+'/admin/get-tasks',
+										url: site_url+'/get-tasks',
 										type:'GET',
 										data:{clientid:client_id},
 										success: function(responses){
@@ -773,7 +773,7 @@ function customValidate(formName, savetype = '')
 												if(subArray.save_type === 'draft'){
 													actionLink = '<a class="link-primary updatedraftinvoice" href="javascript:;" data-receiptid="'+subArray.receipt_id+'"><i class="fas fa-pencil-alt"></i></a>';
 												} else if(subArray.save_type === 'final') {
-													var invoiceUrl = "/admin/clients/genInvoice/" + subArray.receipt_id;
+													var invoiceUrl = "/clients/genInvoice/" + subArray.receipt_id;
 													actionLink = '<a target="_blank" class="link-primary" href="'+invoiceUrl+'"><i class="fas fa-file-pdf"></i></a>';
 												}
 
@@ -811,7 +811,7 @@ function customValidate(formName, savetype = '')
                                             if (subArray.save_type === 'draft') {
                                                 actionLink = '<a class="link-primary updatedraftinvoice" href="javascript:;" data-receiptid="'+subArray.receipt_id+'"><i class="fas fa-pencil-alt"></i></a>';
                                             } else if (subArray.save_type === 'final') {
-                                                var invoiceUrl = "/admin/clients/genInvoice/" + subArray.receipt_id;
+                                                var invoiceUrl = "/clients/genInvoice/" + subArray.receipt_id;
                                                 actionLink = '<a target="_blank" class="link-primary" href="'+invoiceUrl+'"><i class="fas fa-file-pdf"></i></a>';
                                             }
 
@@ -876,7 +876,7 @@ function customValidate(formName, savetype = '')
 													}
 													else if(subArray2.save_type == 'final') {
 														var unique_invoice_id2 = "invoiceTrRow_"+subArray2.id;
-														var invoiceUrl2 = "/admin/clients/genInvoice/"+subArray2.receipt_id;
+														var invoiceUrl2 = "/clients/genInvoice/"+subArray2.receipt_id;
 														var finallink2 = '<a target="_blank" class="link-primary" href="'+invoiceUrl2+'"><i class="fas fa-file-pdf"></i></a>';
 														trRows_invoice2 += "<tr class='invoiceTrRow' id='"+unique_invoice_id2+"'><td>"+subArray2.invoice_no+" "+finallink2+"</td><td>"+subArray2.trans_date+"</td><td>"+subArray2.entry_date+"</td><td>"+subArray2.trans_no+"</td><td>"+subArray2.gst_included+"</td><td>"+subArray2.payment_type+"</td><td>"+subArray2.description+"</td><td>$"+subArray2.deposit_amount+"</td></tr>";
 													}
@@ -897,7 +897,7 @@ function customValidate(formName, savetype = '')
 													var trRows_invoice = "<td>"+subArray.invoice_no+" "+draftlink+"</td><td>"+subArray.trans_date+"</td><td>"+subArray.entry_date+"</td><td>"+subArray.trans_no+"</td><td>"+subArray.gst_included+"</td><td>"+subArray.payment_type+"</td><td>"+subArray.description+"</td><td>$"+subArray.deposit_amount+"</td>";
 												}
 												else if(subArray.save_type == 'final') {
-													var invoiceUrl = "/admin/clients/genInvoice/"+subArray.receipt_id;
+													var invoiceUrl = "/clients/genInvoice/"+subArray.receipt_id;
 													var finallink = '<a target="_blank" class="link-primary" href="'+invoiceUrl+'"><i class="fas fa-file-pdf"></i></a>';
 													var trRows_invoice = "<td>"+subArray.invoice_no+" "+finallink+"</td><td>"+subArray.trans_date+"</td><td>"+subArray.entry_date+"</td><td>"+subArray.trans_no+"</td><td>"+subArray.gst_included+"</td><td>"+subArray.payment_type+"</td><td>"+subArray.description+"</td><td>$"+subArray.deposit_amount+"</td>";
 												}
@@ -1121,7 +1121,7 @@ function customValidate(formName, savetype = '')
                                             if (subArray.save_type === 'draft') {
                                                 actionLink = '<a class="link-primary updatedraftinvoice" href="javascript:;" data-receiptid="'+subArray.receipt_id+'"><i class="fas fa-pencil-alt"></i></a>';
                                             } else if (subArray.save_type === 'final') {
-                                                var invoiceUrl = "/admin/clients/genInvoice/" + subArray.receipt_id;
+                                                var invoiceUrl = "/clients/genInvoice/" + subArray.receipt_id;
                                                 actionLink = '<a target="_blank" class="link-primary" href="'+invoiceUrl+'"><i class="fas fa-file-pdf"></i></a>';
                                             }
 
@@ -1230,7 +1230,7 @@ function customValidate(formName, savetype = '')
 									$('#create_note').modal('hide');
 								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 									$.ajax({
-										url: site_url+'/admin/partner/get-tasks',
+										url: site_url+'/partner/get-tasks',
 										type:'GET',
 										data:{clientid:client_id},
 										success: function(responses){
@@ -1274,7 +1274,7 @@ function customValidate(formName, savetype = '')
 									$('#create_note').modal('hide');
 								    $('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 									$.ajax({
-										url: site_url+'/admin/get-educations',
+										url: site_url+'/get-educations',
 										type:'GET',
 										data:{clientid:client_id},
 										success: function(responses){
@@ -1304,7 +1304,7 @@ function customValidate(formName, savetype = '')
 									$('#new_fee_option').modal('hide');
 								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 									$.ajax({
-										url: site_url+'/admin/get-all-fees',
+										url: site_url+'/get-all-fees',
 										type:'GET',
 										data:{clientid:product_id},
 										success: function(responses){
@@ -1376,7 +1376,7 @@ function customValidate(formName, savetype = '')
 									var t = parseFloat(obj.totalfee) - parseFloat(obj.discount);
 									$('.productfeedata .client_totl').html(t);
 									$.ajax({
-										url: site_url+'/admin/get-services',
+										url: site_url+'/get-services',
 										type:'GET',
 										data:{clientid:obj.client_id},
 										success: function(responses){
@@ -1434,7 +1434,7 @@ function customValidate(formName, savetype = '')
 
 								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 									$.ajax({
-										url: site_url+'/admin/get-all-paymentschedules',
+										url: site_url+'/get-all-paymentschedules',
 										type:'GET',
 										data:{appid:obj.application_id, client_id:obj.client_id},
 										success: function(responses){
@@ -1498,7 +1498,7 @@ function customValidate(formName, savetype = '')
 
 								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 									$.ajax({
-										url: site_url+'/admin/get-all-paymentschedules',
+										url: site_url+'/get-all-paymentschedules',
 										type:'GET',
 										data:{appid:obj.application_id, client_id:obj.client_id},
 										success: function(responses){
@@ -1531,7 +1531,7 @@ function customValidate(formName, savetype = '')
 									$('#editfeeoption').modal('hide');
 								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 									$.ajax({
-										url: site_url+'/admin/get-all-fees',
+										url: site_url+'/get-all-fees',
 										type:'GET',
 										data:{clientid:product_id},
 										success: function(responses){
@@ -1564,7 +1564,7 @@ function customValidate(formName, savetype = '')
 									$('#create_promotion').modal('hide');
 								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 									$.ajax({
-										url: site_url+'/admin/get-promotions',
+										url: site_url+'/get-promotions',
 										type:'GET',
 										data:{clientid:client_id},
 										success: function(responses){
@@ -1597,7 +1597,7 @@ function customValidate(formName, savetype = '')
 									$('#edit_promotion').modal('hide');
 								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 									$.ajax({
-										url: site_url+'/admin/get-promotions',
+										url: site_url+'/get-promotions',
 										type:'GET',
 										data:{clientid:client_id},
 										success: function(responses){
@@ -1659,7 +1659,7 @@ function customValidate(formName, savetype = '')
 									$('#edit_education').modal('hide');
 								    $('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 									$.ajax({
-										url: site_url+'/admin/get-educations',
+										url: site_url+'/get-educations',
 										type:'GET',
 										data:{clientid:client_id},
 										success: function(responses){
@@ -1825,7 +1825,7 @@ function customValidate(formName, savetype = '')
 								if(obj.status){
 								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 									 $.ajax({
-										url: site_url+'/admin/get-invoices',
+										url: site_url+'/get-invoices',
 										type:'GET',
 										data:{clientid:client_id},
 										success: function(responses){
@@ -1898,7 +1898,7 @@ function customValidate(formName, savetype = '')
 								if(obj.status){
 
 									$.ajax({
-										url: site_url+'/admin/get-applications-logs',
+										url: site_url+'/get-applications-logs',
 										type:'GET',
 										data:{id: appliid},
 										success: function(responses){
@@ -2068,7 +2068,7 @@ function customValidate(formName, savetype = '')
 									var t = parseFloat(obj.client_revenue) + parseFloat(obj.partner_revenue) - parseFloat(obj.discounts);
 									$('.appsaleforcastserv .netrevenue').html(t);
 									$.ajax({
-										url: site_url+'/admin/get-services',
+										url: site_url+'/get-services',
 										type:'GET',
 										data:{clientid:obj.client_id},
 										success: function(responses){
@@ -2101,7 +2101,7 @@ function customValidate(formName, savetype = '')
 									$('.add_interested_service').modal('hide');
 								    $('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 									$.ajax({
-										url: site_url+'/admin/get-services',
+										url: site_url+'/get-services',
 										type:'GET',
 										data:{clientid:client_id},
 										success: function(responses){
@@ -2157,7 +2157,7 @@ function customValidate(formName, savetype = '')
 
 								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 									$.ajax({
-										url: site_url+'/admin/get-services',
+										url: site_url+'/get-services',
 										type:'GET',
 										data:{clientid:client_id},
 										success: function(responses){
@@ -2203,7 +2203,7 @@ function customValidate(formName, savetype = '')
                                         $('.add_appointment').modal('hide');
                                         $('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
                                         $.ajax({
-                                            url: site_url+'/admin/get-appointments',
+                                            url: site_url+'/get-appointments',
                                             type:'GET',
                                             data:{clientid:client_id},
                                             success: function(responses){
@@ -2238,7 +2238,7 @@ function customValidate(formName, savetype = '')
 									$('#create_appoint').modal('hide');
 									$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 									$.ajax({
-										url: site_url+'/admin/partner/get-appointments',
+										url: site_url+'/partner/get-appointments',
 										type:'GET',
 										data:{clientid:client_id},
 										success: function(responses){
@@ -2272,7 +2272,7 @@ function customValidate(formName, savetype = '')
 									$('.add_appointment').modal('hide');
 									$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 									$.ajax({
-										url: site_url+'/admin/get-appointments',
+										url: site_url+'/get-appointments',
 										type:'GET',
 										data:{clientid:client_id},
 										success: function(responses){
@@ -2282,7 +2282,7 @@ function customValidate(formName, savetype = '')
 									});
 
 									$.ajax({
-										url: site_url+'/admin/get-applications-logs',
+										url: site_url+'/get-applications-logs',
 										type:'GET',
 										data:{id: noteid},
 										success: function(responses){
@@ -2316,7 +2316,7 @@ function customValidate(formName, savetype = '')
 									$('#applicationemailmodal').modal('hide');
 									$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 									$.ajax({
-										url: site_url+'/admin/get-appointments',
+										url: site_url+'/get-appointments',
 										type:'GET',
 										data:{clientid:client_id},
 										success: function(responses){
@@ -2326,7 +2326,7 @@ function customValidate(formName, savetype = '')
 									});
 
 									$.ajax({
-										url: site_url+'/admin/get-applications-logs',
+										url: site_url+'/get-applications-logs',
 										type:'GET',
 										data:{id: noteid},
 										success: function(responses){
@@ -2359,7 +2359,7 @@ function customValidate(formName, savetype = '')
 									$('#edit_appointment').modal('hide');
 									$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 									$.ajax({
-										url: site_url+'/admin/get-appointments',
+										url: site_url+'/get-appointments',
 										type:'GET',
 										data:{clientid:client_id},
 										success: function(responses){
@@ -2391,7 +2391,7 @@ function customValidate(formName, savetype = '')
 									$('#edit_appointment').modal('hide');
 									$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 									$.ajax({
-										url: site_url+'/admin/partner/get-appointments',
+										url: site_url+'/partner/get-appointments',
 										type:'GET',
 										data:{clientid:client_id},
 										success: function(responses){
@@ -2425,7 +2425,7 @@ function customValidate(formName, savetype = '')
 									$('#create_note').modal('hide');
 									$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 									$.ajax({
-										url: site_url+'/admin/get-notes',
+										url: site_url+'/get-notes',
 										type:'GET',
 										data:{clientid:client_id,type:'client'},
 										success: function(responses){
@@ -2508,7 +2508,7 @@ function customValidate(formName, savetype = '')
 									$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 
 									$.ajax({
-										url: site_url+'/admin/get-notes',
+										url: site_url+'/get-notes',
 										type:'GET',
 										data:{clientid:client_id,type:'client'},
 										success: function(responses){
@@ -2609,7 +2609,7 @@ function customValidate(formName, savetype = '')
 									$('.add_appliation').modal('hide');
                                     $('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
                                     $.ajax({
-                                        url: site_url+'/admin/get-application-lists',
+                                        url: site_url+'/get-application-lists',
                                         type:'GET',
                                         datatype:'json',
                                         data:{id:client_id},
@@ -2927,7 +2927,7 @@ function displayValidationErrors2(errors) {
 // Function to fetch invoice amount via AJAX
 async function getInvoiceAmount(invoiceNo) {
     try {
-        const response = await fetch('/admin/clients/invoiceamount', {
+        const response = await fetch('/clients/invoiceamount', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -2953,7 +2953,7 @@ async function getInvoiceAmount(invoiceNo) {
 //Fetch All Activities
 function getallactivities(client_id){
 	$.ajax({
-		url: site_url+'/admin/get-activities',
+		url: site_url+'/get-activities',
 		type:'GET',
 		datatype:'json',
 		data:{id:client_id},

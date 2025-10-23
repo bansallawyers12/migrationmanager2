@@ -1938,7 +1938,7 @@ window.saveSectionData = function(sectionName, formData, successCallback) {
     formData.append('type', type);
     formData.append('section', sectionName);
     
-    fetch('/admin/clients/save-section', {
+    fetch('/clients/save-section', {
         method: 'POST',
         body: formData,
         headers: {
@@ -3651,7 +3651,7 @@ function fetchPartnerEoiData(partnerId) {
     document.getElementById('partnerDataDisplay').innerHTML = '<p style="color: #666666;"><i class="fas fa-spinner fa-spin"></i> Loading partner data...</p>';
 
     // Fetch partner data
-    fetch(`/admin/clients/partner-eoi-data/${partnerId}`, {
+    fetch(`/clients/partner-eoi-data/${partnerId}`, {
         method: 'GET',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
@@ -4361,7 +4361,7 @@ $(document).ready(function() {
         document.getElementById('verifyOTPBtn').disabled = true;
         
         // Send OTP request
-        fetch('/admin/clients/phone/send-otp', {
+        fetch('/clients/phone/send-otp', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -4401,7 +4401,7 @@ $(document).ready(function() {
         // Disable verify button
         document.getElementById('verifyOTPBtn').disabled = true;
         
-        fetch('/admin/clients/phone/verify-otp', {
+        fetch('/clients/phone/verify-otp', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -4449,7 +4449,7 @@ $(document).ready(function() {
         // Disable resend button temporarily
         document.getElementById('resendOTPBtn').disabled = true;
         
-        fetch('/admin/clients/phone/resend-otp', {
+        fetch('/clients/phone/resend-otp', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -4842,7 +4842,7 @@ window.goBackWithRefresh = function() {
     const currentUrl = window.location.href;
     
     // If we're on an edit page and came from a detail page, refresh the detail page
-    if (referrer && referrer.includes('/admin/clients/detail/') && currentUrl.includes('/admin/clients/edit/')) {
+    if (referrer && referrer.includes('/clients/detail/') && currentUrl.includes('/clients/edit/')) {
         // Navigate back and force refresh
         window.location.href = referrer + (referrer.includes('?') ? '&' : '?') + '_t=' + Date.now();
     } else {
@@ -4872,7 +4872,7 @@ window.sendEmailVerification = function(emailId, emailAddress) {
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
     button.disabled = true;
 
-    fetch('/admin/clients/email/send-verification', {
+    fetch('/clients/email/send-verification', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -4918,7 +4918,7 @@ function resendEmailVerification(emailId, emailAddress) {
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
     button.disabled = true;
 
-    fetch('/admin/clients/email/resend-verification', {
+    fetch('/clients/email/resend-verification', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -5024,7 +5024,7 @@ const activeEmailPollingIntervals = new Map();
 function checkEmailVerificationStatus(emailId) {
     if (!emailId || emailId === 'pending') return;
     
-    fetch(`/admin/clients/email/status/${emailId}`, {
+    fetch(`/clients/email/status/${emailId}`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
@@ -5312,7 +5312,7 @@ async function saveOccupationInfo() {
     }
     
     try {
-        const response = await fetch('/admin/clients/save-section', {
+        const response = await fetch('/clients/save-section', {
             method: 'POST',
             body: formData,
             headers: {
@@ -5447,7 +5447,7 @@ async function saveTestScoreInfo() {
     formData.append('section', 'test_scores');
     
     try {
-        const response = await fetch('/admin/clients/save-section', {
+        const response = await fetch('/clients/save-section', {
             method: 'POST',
             body: formData,
             headers: {
@@ -5673,7 +5673,7 @@ async function searchOccupations(query, autocompleteContainer, row, searchType) 
         autocompleteContainer.innerHTML = '<div class="autocomplete-item"><span class="anzsco-loading"></span> Searching...</div>';
         autocompleteContainer.style.display = 'block';
         
-        const response = await fetch(`/admin/anzsco/search?q=${encodeURIComponent(query)}`, {
+        const response = await fetch(`/anzsco/search?q=${encodeURIComponent(query)}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -5762,7 +5762,7 @@ async function searchOccupations(query, autocompleteContainer, row, searchType) 
 // Search occupation by code
 async function searchOccupationByCode(code, row) {
     try {
-        const response = await fetch(`/admin/anzsco/code/${code}`, {
+        const response = await fetch(`/anzsco/code/${code}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -6095,7 +6095,7 @@ function initializeRelatedFilesSelect2() {
             allowClear: true,
             minimumInputLength: 2,
             ajax: {
-                url: window.editClientConfig?.searchPartnerRoute || '/admin/clients/search-partner',
+                url: window.editClientConfig?.searchPartnerRoute || '/clients/search-partner',
                 type: 'POST',
                 dataType: 'json',
                 delay: 250,
@@ -6168,7 +6168,7 @@ function initializeRelatedFilesSelect2() {
         window.testRelatedFilesSearch = function(query) {
             console.log('Testing search with query:', query);
             $.ajax({
-                url: window.editClientConfig?.searchPartnerRoute || '/admin/clients/search-partner',
+                url: window.editClientConfig?.searchPartnerRoute || '/clients/search-partner',
                 type: 'POST',
                 dataType: 'json',
                 headers: {
@@ -6302,7 +6302,7 @@ async function saveParentsInfo() {
     }
 
     try {
-        const response = await fetch('/admin/clients/save-section', {
+        const response = await fetch('/clients/save-section', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -6393,7 +6393,7 @@ async function saveSiblingsInfo() {
     }
 
     try {
-        const response = await fetch('/admin/clients/save-section', {
+        const response = await fetch('/clients/save-section', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -6484,7 +6484,7 @@ async function saveOthersInfo() {
     }
 
     try {
-        const response = await fetch('/admin/clients/save-section', {
+        const response = await fetch('/clients/save-section', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

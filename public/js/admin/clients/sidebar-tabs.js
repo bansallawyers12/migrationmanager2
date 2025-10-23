@@ -123,7 +123,7 @@
                 console.log('[SidebarTabs] Loading EOI data for client:', clientId);
                 
                 $.ajax({
-                    url: `/admin/clients/${clientId}/eoi-roi`,
+                    url: `/clients/${clientId}/eoi-roi`,
                     method: 'GET',
                     headers: {
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -184,7 +184,7 @@
      * Update URL without reloading page
      */
     function updateUrl(tabId) {
-        let newUrl = '/admin/clients/detail/' + SidebarTabs.clientId;
+        let newUrl = '/clients/detail/' + SidebarTabs.clientId;
         if (SidebarTabs.matterId && SidebarTabs.matterId !== '') {
             newUrl += '/' + SidebarTabs.matterId;
         }

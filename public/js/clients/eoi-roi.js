@@ -123,7 +123,7 @@
             return;
         }
 
-        const url = `/admin/clients/${state.clientId}/eoi-roi`;
+        const url = `/clients/${state.clientId}/eoi-roi`;
 
         $.ajax({
             url: url,
@@ -218,7 +218,7 @@
 
     // Load single EOI record
     function loadEoiRecord(eoiId) {
-        const url = `/admin/clients/${state.clientId}/eoi-roi/${eoiId}`;
+        const url = `/clients/${state.clientId}/eoi-roi/${eoiId}`;
 
         $.ajax({
             url: url,
@@ -308,7 +308,7 @@
         }
 
         const formData = new FormData($('#eoi-roi-form')[0]);
-        const url = `/admin/clients/${state.clientId}/eoi-roi`;
+        const url = `/clients/${state.clientId}/eoi-roi`;
 
         // Show loading
         $('#btn-save-eoi').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
@@ -362,7 +362,7 @@
             return;
         }
 
-        const url = `/admin/clients/${state.clientId}/eoi-roi/${state.selectedEoiId}`;
+        const url = `/clients/${state.clientId}/eoi-roi/${state.selectedEoiId}`;
 
         $.ajax({
             url: url,
@@ -394,7 +394,7 @@
 
         subclass = subclass || $('#points-subclass-selector').val() || '189';
 
-        const url = `/admin/clients/${state.clientId}/eoi-roi/calculate-points?subclass=${subclass || ''}`;
+        const url = `/clients/${state.clientId}/eoi-roi/calculate-points?subclass=${subclass || ''}`;
         console.log('[EOI-ROI] Loading points from URL:', url);
 
         $('#points-summary-content').html('<div class="text-center text-muted"><i class="fas fa-spinner fa-spin"></i> Calculating points...</div>');
@@ -642,7 +642,7 @@
             autocompleteContainer.innerHTML = '<div class="autocomplete-item"><span class="anzsco-loading"></span> Searching...</div>';
             autocompleteContainer.style.display = 'block';
             
-            const response = await fetch(`/admin/anzsco/search?q=${encodeURIComponent(query)}`, {
+            const response = await fetch(`/anzsco/search?q=${encodeURIComponent(query)}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
