@@ -27,19 +27,19 @@
 
                             <ul class="nav nav-pills" id="client_tabs" role="tablist">
                                 <li class="nav-item is_checked_clientn">
-									<a class="nav-link active" id="clients-tab"  href="{{URL::to('/admin/assignee')}}">Incomplete</a>
+									<a class="nav-link active" id="clients-tab"  href="{{URL::to('/assignee')}}">Incomplete</a>
 								</li>
 								<li class="nav-item is_checked_clientn11">
-									<a class="nav-link" id="archived-tab"  href="{{URL::to('/admin/assignee-completed')}}">Completed</a>
+									<a class="nav-link" id="archived-tab"  href="{{URL::to('/assignee-completed')}}">Completed</a>
 								</li>
 
 
                                 <!--<li class="nav-item is_checked_clientn12">
-									<a class="nav-link" id="assigned_by_me"  href="{{URL::to('/admin/assigned_by_me')}}">Assigned by me</a>
+									<a class="nav-link" id="assigned_by_me"  href="{{URL::to('/assigned_by_me')}}">Assigned by me</a>
 								</li>
 
 								<li class="nav-item is_checked_clientn13">
-									<a class="nav-link" id="assigned_to_me"  href="{{URL::to('/admin/assigned_to_me')}}">Assigned to me</a>
+									<a class="nav-link" id="assigned_to_me"  href="{{URL::to('/assigned_to_me')}}">Assigned to me</a>
 								</li>-->
 							</ul>
 						</div>
@@ -274,7 +274,7 @@
         if(row_id !=""){ //&& confirm('Are you sure want to complete the task?')
             $.ajax({
 				type:'post',
-                url:"{{URL::to('/')}}/admin/update-task-completed",
+                url:"{{URL::to('/')}}/update-task-completed",
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
                 data: {id:row_id },
                 success: function(response){
@@ -318,7 +318,7 @@
 		if(flag){
 			$.ajax({
 				type:'post',
-					url:"{{URL::to('/')}}/admin/clients/followup/store",
+					url:"{{URL::to('/')}}/clients/followup/store",
 					headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
 
 					data: {note_type:'follow_up',description:$('#assignnote').val(),client_id:$('#assign_client_id').val(),followup_datetime:$('#popoverdatetime').val(),assignee_name:$('#rem_cat :selected').text(),rem_cat:$('#rem_cat option:selected').val(),task_group:$('#task_group option:selected').val()},
@@ -351,7 +351,7 @@
 		$('.popuploader').show();
 		// console.log($('#changeassignee').val());
 		$.ajax({
-			url: site_url+'/admin/change_assignee',
+			url: site_url+'/change_assignee',
 			type:'GET',
 			data:{id: appliid,assinee: assinee},
 			success: function(response){
@@ -373,7 +373,7 @@
 		var appliid = $(this).attr('data-id');
 		$('.popuploader').show();
 		$.ajax({
-			url: site_url+'/admin/update_apppointment_comment',
+			url: site_url+'/update_apppointment_comment',
 			type:'POST',
 			data:{"_token":$('meta[name="csrf-token"]').attr('content'),id: appliid,visit_comment:visitcomment},
 			success: function(responses){

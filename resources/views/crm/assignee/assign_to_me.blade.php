@@ -551,7 +551,7 @@
 		$('.popuploader').show();
 		// console.log($('#changeassignee').val());
 		$.ajax({
-			url: site_url+'/admin/change_assignee',
+			url: site_url+'/change_assignee',
 			type:'GET',
 			data:{id: appliid,assinee: assinee},
 			success: function(response){
@@ -573,14 +573,14 @@
 		var appliid = $(this).attr('data-id');
 		$('.popuploader').show();
 		$.ajax({
-			url: site_url+'/admin/update_apppointment_comment',
+			url: site_url+'/update_apppointment_comment',
 			type:'POST',
 			data:{"_token":$('meta[name="csrf-token"]').attr('content'),id: appliid,visit_comment:visitcomment},
 			success: function(responses){
 				// $('.popuploader').hide();
 				$('.taskcomment').val('');
 				$.ajax({
-					url: site_url+'/admin/get-assigne-detail',
+					url: site_url+'/get-assigne-detail',
 					type:'GET',
 					data:{id:appliid},
 					success: function(responses){
@@ -613,7 +613,7 @@
 		$('.popuploader').show();
 
 		$.ajax({
-			url: site_url+'/admin/update_list_status',
+			url: site_url+'/update_list_status',
 			type:'POST',
 			data:{"_token":$('meta[name="csrf-token"]').attr('content'),id: appliid,statusname:statusame,status:status},
 			success: function(responses){
@@ -624,7 +624,7 @@
 				    $('.updatestatusview'+appliid).html(obj.viewstatus);
 				}
 				$.ajax({
-					url: site_url+'/admin/get-assigne-detail',
+					url: site_url+'/get-assigne-detail',
 					type:'GET',
 					data:{id:appliid},
 					success: function(responses){
@@ -643,14 +643,14 @@
 		$('.popuploader').show();
 
 		$.ajax({
-			url: site_url+'/admin/update_list_priority',
+			url: site_url+'/update_list_priority',
 			type:'POST',
 			data:{"_token":$('meta[name="csrf-token"]').attr('content'),id: appliid,status:status},
 			success: function(responses){
 				$('.popuploader').hide();
 
 				$.ajax({
-					url: site_url+'/admin/get-assigne-detail',
+					url: site_url+'/get-assigne-detail',
 					type:'GET',
 					data:{id:appliid},
 					success: function(responses){
@@ -679,12 +679,12 @@
 		var appliid = $(this).attr('data-id');
 		$('.popuploader').show();
 		$.ajax({
-			url: site_url+'/admin/update_apppointment_description',
+			url: site_url+'/update_apppointment_description',
 			type:'POST',
 			data:{"_token":$('meta[name="csrf-token"]').attr('content'),id: appliid,visit_purpose:visitpurpose},
 			success: function(responses){
 				$.ajax({
-					url: site_url+'/admin/get-assigne-detail',
+					url: site_url+'/get-assigne-detail',
 					type:'GET',
 					data:{id:appliid},
 					success: function(responses){
@@ -702,12 +702,12 @@
 		var appliid = $(this).attr('data-id');
 		$('.popuploader').show();
 		$.ajax({
-			url: site_url+'/admin/update_apppointment_description',
+			url: site_url+'/update_apppointment_description',
 			type:'POST',
 			data:{"_token":$('meta[name="csrf-token"]').attr('content'),id: appliid,visit_purpose:visitpurpose},
 			success: function(responses){
 				 $.ajax({
-					url: site_url+'/admin/get-assigne-detail',
+					url: site_url+'/get-assigne-detail',
 					type:'GET',
 					data:{id:appliid},
 					success: function(responses){

@@ -109,7 +109,7 @@
 									<tbody class="tdata">
 										<tr id="id_{{@$list->id}}">
 											<td style="white-space: initial;"><a href="{{URL::to('clients/detail/')}}/{{base64_encode(convert_uuencode(@$clientdetail->id))}}?tab=application&appid={{@$list->id}}">{{ @$list->id == "" ? config('constants.empty') : str_limit(@$list->id, '50', '...') }}</a></td>
-											<td style="white-space: initial;"><a href="{{URL::to('admin/clients/detail/')}}/{{base64_encode(convert_uuencode(@$clientdetail->id))}}?tab=application">{{@$clientdetail->first_name}} {{@$clientdetail->last_name}}</a><!--<br/>-->{{--@$clientdetail->email--}}</td>
+											<td style="white-space: initial;"><a href="{{URL::to('clients/detail/')}}/{{base64_encode(convert_uuencode(@$clientdetail->id))}}?tab=application">{{@$clientdetail->first_name}} {{@$clientdetail->last_name}}</a><!--<br/>-->{{--@$clientdetail->email--}}</td>
 
 											{{--<td>@$clientdetail->phone }}</td> --}}
 											<td style="white-space: initial;">{{@$list->application_assignee->first_name}}</td>

@@ -391,7 +391,7 @@ html, body {
 	$('#openassigneview').modal('show');
 	var v = $(this).attr('id');
 		$.ajax({
-			url: site_url+'/admin/get-assigne-detail',
+			url: site_url+'/get-assigne-detail',
 			type:'GET',
 			data:{id:v},
 			success: function(responses){
