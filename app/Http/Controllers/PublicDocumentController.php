@@ -159,6 +159,7 @@ class PublicDocumentController extends Controller
         // Validation
         $request->validate([
             'signer_id' => 'required|integer|exists:signers,id',
+            'token' => 'required|string|min:32',
             'signatures' => 'required|array',
             'signatures.*' => 'nullable|string',
             'signature_positions' => 'required|array',
@@ -183,29 +184,124 @@ class PublicDocumentController extends Controller
                 return redirect('/')->with('error', 'Invalid signing attempt.');
             }
 
+            // Verify token matches
+            if ($signer->token !== $request->token) {
+                Log::warning('Token mismatch for signer', [
+                    'signer_id' => $signer->id,
+                    'document_id' => $document->id,
+                    'provided_token' => substr($request->token, 0, 8) . '...',
+                    'expected_token' => substr($signer->token, 0, 8) . '...'
+                ]);
+                return redirect('/')->with('error', 'Invalid or expired signing link.');
+            }
+
             if ($signer->token !== null && $signer->status === 'pending') {
-                // Get S3 paths
+                // Get PDF file using multiple fallback methods (like CRM)
+                $url = $document->myfile;
+                $tmpPdfPath = null;
+                $isLocalFile = false;
+                $pdfPath = null;
+                
+                // Fallback 1: Check if URL is a full S3 URL
+                if ($url && filter_var($url, FILTER_VALIDATE_URL) && strpos($url, 's3') !== false) {
+                    $parsed = parse_url($url);
+                    if (isset($parsed['path'])) {
+                        $pdfPath = ltrim(urldecode($parsed['path']), '/');
+                    }
+                    
+                    if ($pdfPath && Storage::disk('s3')->exists($pdfPath)) {
+                        $tmpPdfPath = storage_path('app/tmp_' . uniqid() . '.pdf');
+                        try {
+                            $pdfStream = Storage::disk('s3')->get($pdfPath);
+                            if (!$pdfStream || strlen($pdfStream) === 0) {
+                                throw new \Exception('Empty PDF file downloaded from S3');
+                            }
+                            file_put_contents($tmpPdfPath, $pdfStream);
+                            Log::info('Using S3 URL for document submission', ['url' => $url, 'path' => $pdfPath]);
+                        } catch (\Exception $e) {
+                            Log::error('Failed to download from S3 URL', ['url' => $url, 'error' => $e->getMessage()]);
+                            $tmpPdfPath = null;
+                        }
+                    }
+                }
+                
+                // Fallback 2: Check if file exists locally
+                if (!$tmpPdfPath && $url && file_exists(storage_path('app/public/' . $url))) {
+                    $tmpPdfPath = storage_path('app/public/' . $url);
+                    $isLocalFile = true;
+                    Log::info('Using local file for document submission', ['path' => $tmpPdfPath]);
+                }
+                
+                // Fallback 3: Try media library (legacy support)
+                if (!$tmpPdfPath) {
+                    $mediaPath = $document->getFirstMediaPath('documents');
+                    if ($mediaPath && file_exists($mediaPath)) {
+                        $tmpPdfPath = $mediaPath;
+                        $isLocalFile = true;
+                        Log::info('Using media library for document submission', ['path' => $tmpPdfPath]);
+                    }
+                }
+                
+                // Fallback 4: Try to build S3 key from DB fields
+                if (!$tmpPdfPath) {
+                    $clientId = null;
+                    if ($document->client_id) {
+                        $admin = \DB::table('admins')->select('client_id')->where('id', $document->client_id)->first();
+                        if ($admin && $admin->client_id) {
+                            $clientId = $admin->client_id;
+                        }
+                    }
+                    
+                    $docType = $document->doc_type ?? '';
+                    $myfileKey = $document->myfile_key ?? '';
+                    $s3Key = $clientId && $docType && $myfileKey ? ($clientId . '/' . $docType . '/' . $myfileKey) : null;
+                    
+                    if ($s3Key && Storage::disk('s3')->exists($s3Key)) {
+                        $tmpPdfPath = storage_path('app/tmp_' . uniqid() . '.pdf');
+                        try {
+                            $pdfStream = Storage::disk('s3')->get($s3Key);
+                            if (!$pdfStream || strlen($pdfStream) === 0) {
+                                throw new \Exception('Empty PDF file downloaded from S3');
+                            }
+                            file_put_contents($tmpPdfPath, $pdfStream);
+                            Log::info('Using S3 key from DB fields for document submission', ['s3_key' => $s3Key]);
+                        } catch (\Exception $e) {
+                            Log::error('Failed to download from S3 using DB fields', ['s3_key' => $s3Key, 'error' => $e->getMessage()]);
+                            $tmpPdfPath = null;
+                        }
+                    } else {
+                        Log::error('S3 key not found or file does not exist', [
+                            'document_id' => $document->id,
+                            'client_id' => $clientId,
+                            'doc_type' => $docType,
+                            'myfile_key' => $myfileKey,
+                            's3_key' => $s3Key
+                        ]);
+                    }
+                }
+                
+                // Final check: If no file found, return error
+                if (!$tmpPdfPath || !file_exists($tmpPdfPath) || filesize($tmpPdfPath) === 0) {
+                    Log::error('PDF file not found for document submission', [
+                        'document_id' => $document->id,
+                        'url' => $url,
+                        'tmp_pdf_path' => $tmpPdfPath,
+                        'file_exists' => $tmpPdfPath ? file_exists($tmpPdfPath) : false
+                    ]);
+                    return redirect()->back()->with('error', 'Document file not found. Please contact support.');
+                }
+                
+                $outputTmpPath = storage_path('app/tmp_' . uniqid() . '_signed.pdf');
+                
+                // Get client ID and doc type for S3 storage (if needed)
                 $clientId = null;
+                $docType = $document->doc_type ?? '';
                 if ($document->client_id) {
                     $admin = \DB::table('admins')->select('client_id')->where('id', $document->client_id)->first();
                     if ($admin && $admin->client_id) {
                         $clientId = $admin->client_id;
                     }
                 }
-                
-                $docType = $document->doc_type ?? '';
-                $myfileKey = $document->myfile_key ?? '';
-                $s3Key = $clientId && $docType && $myfileKey ? ($clientId . '/' . $docType . '/' . $myfileKey) : null;
-
-                if (!$s3Key) {
-                    return redirect('/')->with('error', 'Document file not found.');
-                }
-
-                // Download PDF from S3
-                $tmpPdfPath = storage_path('app/tmp_' . uniqid() . '.pdf');
-                $pdfStream = Storage::disk('s3')->get($s3Key);
-                file_put_contents($tmpPdfPath, $pdfStream);
-                $outputTmpPath = storage_path('app/tmp_' . uniqid() . '_signed.pdf');
 
                 // Process signatures
                 $signaturePositions = [];
@@ -235,25 +331,47 @@ class PublicDocumentController extends Controller
 
                         $imageData = $sanitizedSignature['imageData'];
 
-                        // Upload to S3
+                        // Store signature (try S3 first, fallback to local storage)
                         $filename = sprintf('%d_field_%d_%s.png', $signer->id, $sanitizedFieldId, bin2hex(random_bytes(8)));
-                        $s3SignaturePath = $clientId . '/' . $docType . '/signatures/' . $filename;
-                        Storage::disk('s3')->put($s3SignaturePath, $imageData);
-                        $s3SignatureUrl = Storage::disk('s3')->url($s3SignaturePath);
+                        $signaturePath = null;
+                        $signatureUrl = null;
+                        
+                        if ($clientId && $docType) {
+                            // Upload to S3 if we have the necessary info
+                            try {
+                                $s3SignaturePath = $clientId . '/' . $docType . '/signatures/' . $filename;
+                                Storage::disk('s3')->put($s3SignaturePath, $imageData);
+                                $signaturePath = $s3SignaturePath;
+                                $signatureUrl = Storage::disk('s3')->url($s3SignaturePath);
+                                Log::info('Signature uploaded to S3', ['path' => $s3SignaturePath]);
+                            } catch (\Exception $e) {
+                                Log::warning('Failed to upload signature to S3, using local storage', ['error' => $e->getMessage()]);
+                                $signaturePath = null;
+                            }
+                        }
+                        
+                        // Fallback to local storage
+                        if (!$signaturePath) {
+                            $localSignaturePath = 'signatures/' . $filename;
+                            Storage::disk('public')->put($localSignaturePath, $imageData);
+                            $signaturePath = storage_path('app/public/' . $localSignaturePath);
+                            $signatureUrl = asset('storage/' . $localSignaturePath);
+                            Log::info('Signature saved locally', ['path' => $signaturePath]);
+                        }
 
                         // Store position
                         $position = $positions[$fieldId] ?? [];
                         $sanitizedPosition = $this->sanitizePositionData($position);
 
                         $signaturePositions[$sanitizedFieldId] = [
-                            'path' => $s3SignaturePath,
+                            'path' => $signaturePath,
                             'page' => $pageNum,
                             'x_percent' => $sanitizedPosition['x_percent'],
                             'y_percent' => $sanitizedPosition['y_percent'],
                             'w_percent' => $sanitizedPosition['w_percent'],
                             'h_percent' => $sanitizedPosition['h_percent']
                         ];
-                        $signatureLinks[$sanitizedFieldId] = $s3SignatureUrl;
+                        $signatureLinks[$sanitizedFieldId] = $signatureUrl;
                         $signaturesSaved = true;
                     }
                 }
@@ -278,7 +396,7 @@ class PublicDocumentController extends Controller
                     foreach ($fields as $field) {
                         if (isset($signaturePositions[$field->id])) {
                             $signatureInfo = $signaturePositions[$field->id];
-                            $s3SignaturePath = $signatureInfo['path'];
+                            $signaturePath = $signatureInfo['path'];
                             
                             $pdfWidth = $specs['width'];
                             $pdfHeight = $specs['height'];
@@ -287,14 +405,30 @@ class PublicDocumentController extends Controller
                             $w_mm = max(15, $signatureInfo['w_percent'] * $pdfWidth);
                             $h_mm = max(15, $signatureInfo['h_percent'] * $pdfHeight);
 
-                            // Download signature from S3
-                            $tmpSignaturePath = storage_path('app/tmp_signature_' . uniqid() . '.png');
-                            $s3Image = Storage::disk('s3')->get($s3SignaturePath);
-                            file_put_contents($tmpSignaturePath, $s3Image);
+                            // Get signature file (handle both S3 and local)
+                            $tmpSignaturePath = null;
+                            
+                            if (file_exists($signaturePath)) {
+                                // Local file
+                                $tmpSignaturePath = $signaturePath;
+                            } else {
+                                // Try S3
+                                try {
+                                    $tmpSignaturePath = storage_path('app/tmp_signature_' . uniqid() . '.png');
+                                    $s3Image = Storage::disk('s3')->get($signaturePath);
+                                    file_put_contents($tmpSignaturePath, $s3Image);
+                                } catch (\Exception $e) {
+                                    Log::warning('Failed to get signature file', ['path' => $signaturePath, 'error' => $e->getMessage()]);
+                                    $tmpSignaturePath = null;
+                                }
+                            }
 
-                            if (file_exists($tmpSignaturePath)) {
+                            if ($tmpSignaturePath && file_exists($tmpSignaturePath)) {
                                 $pdf->Image($tmpSignaturePath, $x_mm, $y_mm, $w_mm, $h_mm, 'PNG');
-                                @unlink($tmpSignaturePath);
+                                // Only delete if it's a temp file (not the original local file)
+                                if (strpos($tmpSignaturePath, 'tmp_signature_') !== false) {
+                                    @unlink($tmpSignaturePath);
+                                }
                             }
                         }
                     }
@@ -304,7 +438,13 @@ class PublicDocumentController extends Controller
                 $pdf->Output($outputTmpPath, 'F');
 
                 if (!file_exists($outputTmpPath) || filesize($outputTmpPath) === 0) {
-                    return redirect('/')->with('error', 'Failed to save the signed PDF. Please contact support.');
+                    Log::error('Failed to create signed PDF', [
+                        'document_id' => $document->id,
+                        'output_path' => $outputTmpPath,
+                        'file_exists' => file_exists($outputTmpPath),
+                        'file_size' => file_exists($outputTmpPath) ? filesize($outputTmpPath) : 0
+                    ]);
+                    return redirect()->back()->with('error', 'Failed to create the signed document. Please try again or contact support.');
                 }
 
                 // Generate SHA-256 hash for tamper detection (Phase 7)
@@ -314,31 +454,56 @@ class PublicDocumentController extends Controller
                     'hash' => $signedHash
                 ]);
 
-                // Upload to S3
-                $s3SignedPath = $clientId . '/' . $docType . '/signed/' . $document->id . '_signed.pdf';
-                Storage::disk('s3')->put($s3SignedPath, fopen($outputTmpPath, 'r'));
-                $s3SignedUrl = Storage::disk('s3')->url($s3SignedPath);
+                // Upload signed PDF (try S3 first, fallback to local)
+                $signedPdfUrl = null;
+                $signedPdfPath = null;
+                
+                if ($clientId && $docType) {
+                    try {
+                        $s3SignedPath = $clientId . '/' . $docType . '/signed/' . $document->id . '_signed.pdf';
+                        Storage::disk('s3')->put($s3SignedPath, fopen($outputTmpPath, 'r'));
+                        $signedPdfUrl = Storage::disk('s3')->url($s3SignedPath);
+                        $signedPdfPath = $s3SignedPath;
+                        Log::info('Signed PDF uploaded to S3', ['path' => $s3SignedPath]);
+                    } catch (\Exception $e) {
+                        Log::warning('Failed to upload signed PDF to S3, using local storage', ['error' => $e->getMessage()]);
+                        $signedPdfUrl = null;
+                    }
+                }
+                
+                // Fallback to local storage
+                if (!$signedPdfUrl) {
+                    $localSignedPath = 'signed/' . $document->id . '_signed.pdf';
+                    Storage::disk('public')->put($localSignedPath, fopen($outputTmpPath, 'r'));
+                    $signedPdfUrl = asset('storage/' . $localSignedPath);
+                    $signedPdfPath = storage_path('app/public/' . $localSignedPath);
+                    Log::info('Signed PDF saved locally', ['path' => $signedPdfPath]);
+                }
 
-                // Clean up temp files
-                @unlink($tmpPdfPath);
+                // Clean up temp files (only if they were temp files)
+                if (!$isLocalFile || strpos($tmpPdfPath, 'tmp_') !== false) {
+                    @unlink($tmpPdfPath);
+                }
                 @unlink($outputTmpPath);
 
                 // Update statuses and save hash
                 $signer->update(['status' => 'signed', 'signed_at' => now()]);
                 $document->status = 'signed';
                 $document->signature_doc_link = json_encode($signatureLinks);
-                $document->signed_doc_link = $s3SignedUrl;
+                $document->signed_doc_link = $signedPdfUrl;
                 $document->signed_hash = $signedHash;
                 $document->hash_generated_at = now();
                 $document->save();
 
                 Log::info("Public document signed successfully", [
                     'document_id' => $document->id,
-                    'signer_id' => $signer->id
+                    'signer_id' => $signer->id,
+                    'signed_at' => now()->toISOString()
                 ]);
 
-                // Redirect to thank you page
-                return redirect()->route('public.documents.thankyou', ['id' => $document->id]);
+                // Redirect to thank you page with success message
+                return redirect()->route('public.documents.thankyou', ['id' => $document->id])
+                    ->with('success', 'Document signed successfully! You can now download your signed document.');
             }
 
             return redirect('/')->with('error', 'Invalid signing attempt.');
@@ -360,6 +525,11 @@ class PublicDocumentController extends Controller
      */
     public function getPage($id, $page)
     {
+        // Clear any existing output buffers
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        
         try {
             $document = Document::findOrFail($id);
             $url = $document->myfile;
@@ -455,32 +625,58 @@ class PublicDocumentController extends Controller
                 $pythonPDFService = new \App\Services\PythonPDFService();
                 
                 if ($pythonPDFService->isHealthy()) {
-                    $result = $pythonPDFService->convertPageToImage($tmpPdfPath, (int)$page, 150);
+                    $result = $pythonPDFService->convertPageToImage($tmpPdfPath, (int)$page, 72);
                     
                     if ($result && $result['success']) {
-                        // Only delete temp files, not local files
-                        if (!$isLocalFile && $tmpPdfPath && strpos($tmpPdfPath, 'tmp_') !== false) {
-                            @unlink($tmpPdfPath);
-                        }
                         $imageData = $result['image_data'];
                         
+                        // Remove data URI prefix if present
                         if (strpos($imageData, 'data:image/png;base64,') === 0) {
                             $imageData = substr($imageData, strlen('data:image/png;base64,'));
                         }
                         
+                        // Decode base64 to image bytes
                         $imageBytes = base64_decode($imageData);
                         
-                        return response($imageBytes)
-                            ->header('Content-Type', 'image/png')
-                            ->header('Cache-Control', 'public, max-age=3600');
+                        // Save to temporary file (matches working version approach)
+                        $imagePath = storage_path('app/public/page_' . $id . '_' . $page . '.png');
+                        file_put_contents($imagePath, $imageBytes);
+                        
+                        // Only delete temp PDF files, not local files
+                        if (!$isLocalFile && $tmpPdfPath && strpos($tmpPdfPath, 'tmp_') !== false) {
+                            @unlink($tmpPdfPath);
+                        }
+                        
+                        // Verify image was saved successfully
+                        if (file_exists($imagePath)) {
+                            Log::info('Page image generated using Python service', [
+                                'document_id' => $id,
+                                'page' => $page,
+                                'image_path' => $imagePath
+                            ]);
+                            
+                            // Use response()->file() instead of response($imageBytes)
+                            return response()->file($imagePath);
+                        } else {
+                            Log::error('Failed to save image file', [
+                                'document_id' => $id,
+                                'page' => $page,
+                                'image_path' => $imagePath
+                            ]);
+                        }
                     }
                 }
 
                 // Fallback to Spatie
+                Log::info('Falling back to Spatie for page conversion', [
+                    'document_id' => $id,
+                    'page' => $page
+                ]);
+                
                 $imagePath = storage_path('app/public/page_' . $id . '_' . $page . '.jpg');
                 (new \Spatie\PdfToImage\Pdf($tmpPdfPath))
                     ->selectPage($page)
-                    ->resolution(150)
+                    ->resolution(72)
                     ->save($imagePath);
 
                 // Only delete temp files, not local files
@@ -490,6 +686,11 @@ class PublicDocumentController extends Controller
 
                 if (!file_exists($imagePath)) {
                     throw new \Exception('Failed to generate page image');
+                }
+
+                // Clear any output buffers before sending file
+                if (ob_get_level()) {
+                    ob_end_clean();
                 }
 
                 return response()->file($imagePath);

@@ -213,8 +213,25 @@
 
             <!-- Error Message -->
             @if (session('error'))
-                <div class="mb-4 p-4 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-lg">
-                    {{ session('error') }}
+                <div class="mb-4 p-4 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-lg border border-red-300 dark:border-red-700">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                        </svg>
+                        <strong>Error:</strong> {{ session('error') }}
+                    </div>
+                </div>
+            @endif
+
+            <!-- Success Message -->
+            @if (session('success'))
+                <div class="mb-4 p-4 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-lg border border-green-300 dark:border-green-700">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                        <strong>Success:</strong> {{ session('success') }}
+                    </div>
                 </div>
             @endif
 
@@ -299,7 +316,7 @@
                 src="{{ route('public.documents.page', ['id' => $document->id, 'page' => $i]) }}"
                 alt="Page {{ $i }}"
                 class="w-full h-auto rounded-md shadow-sm"
-                style="max-width: 100%; z-index: 1; pointer-events: none;"
+                style="max-width: 100%; z-index: 1; pointer-events: none; display: none;"
                 onerror="handleImageLoadError(this, {{ $i }})"
                 onload="handleImageLoadSuccess({{ $i }})"
                 data-debug-url="{{ route('public.documents.page', ['id' => $document->id, 'page' => $i]) }}"
@@ -330,6 +347,7 @@
             <form id="signature-form" method="POST" action="{{ route('public.documents.submitSignatures', $document->id) }}">
                 @csrf
                 <input type="hidden" name="signer_id" value="{{ $signer->id }}">
+                <input type="hidden" name="token" value="{{ $signer->token }}">
                 @for ($i = 1; $i <= $pdfPages; $i++)
                     <input
                         type="hidden"
@@ -403,12 +421,13 @@
             
             if (loadingPlaceholder) loadingPlaceholder.style.display = 'none';
             if (errorPlaceholder) errorPlaceholder.classList.add('hidden');
-            if (img) img.style.display = 'block';
-            
-            console.log('Successfully loaded PDF page image:', pageNum, 'Dimensions:', img.naturalWidth + 'x' + img.naturalHeight);
-            
-            // Position signature fields after image loads
-            positionSignatureFields(pageNum);
+            if (img) {
+                img.style.display = 'block';
+                console.log('Successfully loaded PDF page image:', pageNum, 'Dimensions:', img.naturalWidth + 'x' + img.naturalHeight);
+                
+                // Position signature fields after image loads
+                setTimeout(() => positionSignatureFields(pageNum), 100);
+            }
         };
 
         window.handleImageLoadError = function(imgElement, pageNum) {
@@ -550,11 +569,22 @@
         document.addEventListener('DOMContentLoaded', function () {
             console.log('Document signing page loaded');
             
-            // Debug: Log all image URLs
+            // Debug: Log all image URLs and add fallback loading
             for (let i = 1; i <= {{ $pdfPages }}; i++) {
                 const img = document.getElementById('pdf-image-' + i);
                 if (img) {
                     console.log('Page ' + i + ' URL:', img.src);
+                    
+                    // Fallback: Check if image loaded after a delay
+                    setTimeout(() => {
+                        if (img.complete && img.naturalWidth > 0) {
+                            console.log('Fallback: Image ' + i + ' already loaded');
+                            handleImageLoadSuccess(i);
+                        } else {
+                            console.log('Fallback: Image ' + i + ' not loaded, retrying...');
+                            retryLoadImage(i);
+                        }
+                    }, 2000);
                 }
             }
             
@@ -993,6 +1023,39 @@
 
         function finishSigning() {
             if (!validateAllSignatures()) return;
+            
+            // Show loading state
+            const submitBtn = document.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Processing...';
+            submitBtn.disabled = true;
+            
+            // Add loading overlay
+            const loadingOverlay = document.createElement('div');
+            loadingOverlay.id = 'loading-overlay';
+            loadingOverlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.7);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                color: white;
+                font-size: 18px;
+            `;
+            loadingOverlay.innerHTML = `
+                <div style="text-align: center;">
+                    <div style="margin-bottom: 20px;">⏳</div>
+                    <div>Processing your signatures...</div>
+                    <div style="font-size: 14px; margin-top: 10px; opacity: 0.8;">Please wait while we save your document</div>
+                </div>
+            `;
+            document.body.appendChild(loadingOverlay);
+            
             populateHiddenFields();
             const form = document.getElementById('signature-form');
             if (form) form.submit();
