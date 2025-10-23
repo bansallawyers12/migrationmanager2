@@ -22,7 +22,7 @@
 						</div>
 					</div>
 					 <div class="col-3 col-md-3 col-lg-3">
-			        	@include('../Elements/Admin/setting')
+			        	@include('../Elements/CRM/setting')
     		        </div>       
     				<div class="col-9 col-md-9 col-lg-9">
 						<div class="card">
