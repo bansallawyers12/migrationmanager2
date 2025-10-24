@@ -340,7 +340,7 @@ class AssigneeController extends Controller
                     })
                     ->addColumn('client_reference', function($data) {
                         try {
-                            if ($data->noteClient) {
+                            if ($data->noteClient && $data->client_id) {
                                 $firstName = Utf8Helper::safeSanitize($data->noteClient->first_name ?? '');
                                 $lastName = Utf8Helper::safeSanitize($data->noteClient->last_name ?? '');
                                 $clientId = Utf8Helper::safeSanitize($data->noteClient->client_id ?? '');
@@ -350,7 +350,8 @@ class AssigneeController extends Controller
                                 $client_encoded_id = base64_encode(convert_uuencode(@$data->client_id));
                                 $user_name .= '<a href="'.url('/clients/detail/'.$client_encoded_id).'" target="_blank">'.$clientId.'</a>';
                             } else {
-                                $user_name = 'N/P';
+                                // Personal Task - no client assigned
+                                $user_name = '<span class="badge badge-info">Personal Task</span>';
                             }
                             return $user_name;
                         } catch (\Exception $e) {
@@ -399,13 +400,15 @@ class AssigneeController extends Controller
                             $actionBtn = '';
                             $current_date1 = $list->followup_date ?: date('Y-m-d');
 
-                            if ($list->task_group != 'Personal Task') {
-                                // Update Task button with data attributes but no inline data-content
-                                // Use direct htmlspecialchars instead of Utf8Helper wrapper to avoid redundant sanitization
-                                $safe_description = htmlspecialchars(Utf8Helper::safeSanitize($list->description ?? ''), ENT_QUOTES, 'UTF-8');
-                                $safe_task_group = htmlspecialchars(Utf8Helper::safeSanitize($list->task_group ?? ''), ENT_QUOTES, 'UTF-8');
-                                $actionBtn .= '<button type="button" data-assignedto="'.$list->assigned_to.'" data-noteid="'.$safe_description.'" data-taskid="'.$list->id.'" data-taskgroupid="'.$safe_task_group.'" data-followupdate="'.$current_date1.'" data-clientid="'.base64_encode(convert_uuencode(@$list->client_id)).'" class="btn btn-primary btn-block update_task" data-toggle="popover" data-role="popover" title="" data-placement="left" style="width: 40px;display: inline;margin-top:0px;"><i class="fa fa-edit" aria-hidden="true"></i></button>';
-                            }
+                            // Update Task button - available for all tasks including Personal Tasks
+                            // Use direct htmlspecialchars instead of Utf8Helper wrapper to avoid redundant sanitization
+                            $safe_description = htmlspecialchars(Utf8Helper::safeSanitize($list->description ?? ''), ENT_QUOTES, 'UTF-8');
+                            $safe_task_group = htmlspecialchars(Utf8Helper::safeSanitize($list->task_group ?? ''), ENT_QUOTES, 'UTF-8');
+                            
+                            // For personal tasks, client_id will be null, so use empty string for encoded value
+                            $encoded_client_id = $list->client_id ? base64_encode(convert_uuencode($list->client_id)) : '';
+                            
+                            $actionBtn .= '<button type="button" data-assignedto="'.$list->assigned_to.'" data-noteid="'.$safe_description.'" data-taskid="'.$list->id.'" data-taskgroupid="'.$safe_task_group.'" data-followupdate="'.$current_date1.'" data-clientid="'.$encoded_client_id.'" class="btn btn-primary btn-block update_task" data-toggle="popover" data-role="popover" title="" data-placement="left" style="width: 40px;display: inline;margin-top:0px;"><i class="fa fa-edit" aria-hidden="true"></i></button>';
 
                             // Delete button
                             $actionBtn .= ' <button class="btn btn-danger deleteNote" data-remote="/destroy_activity/'.$list->id.'"><i class="fa fa-trash" aria-hidden="true"></i></button>';
@@ -1011,19 +1014,22 @@ public function update_apppointment_description(Request $request){
         // Validate the incoming request data
         $validated = $request->validate([
             'id' => 'required|exists:notes,id', // Ensure the task ID exists in the notes table
-            'client_id' => 'required|string', // Client ID (might need decoding if encoded)
+            'client_id' => 'nullable|string', // Client ID is optional for Personal Tasks
             'assigned_to' => 'required|exists:admins,id', // Check against the admins table instead of users
             'description' => 'required|string',
             'followup_date' => 'required|date',
-            'task_group' => 'required|string|in:Call,Checklist,Review,Query,Urgent', // Assuming task_group has specific values
+            'task_group' => 'required|string|in:Call,Checklist,Review,Query,Urgent,Personal Task', // Include Personal Task
         ]);
 
         try {
             // Log the incoming assigned_to value for debugging
             Log::info('Updating task with assigned_to: ' . $validated['assigned_to']);
 
-            // Decode client_id if it was encoded
-            $clientId = convert_uudecode(base64_decode($validated['client_id']));
+            // Decode client_id if it was encoded and not empty
+            $clientId = null;
+            if (!empty($validated['client_id'])) {
+                $clientId = convert_uudecode(base64_decode($validated['client_id']));
+            }
 
             // Find the current task (Note) by ID
             $currentTask = Note::findOrFail($validated['id']);
@@ -1035,21 +1041,23 @@ public function update_apppointment_description(Request $request){
             // Step 1: Mark the current task as complete
             $currentTask->update(['status' => '1']);
 
-            // Step 2: Create activity log for task completion
-            $completionLog = new ActivitiesLog;
-            $completionLog->client_id = $currentTask->client_id;
-            $completionLog->created_by = Auth::user()->id;
-            $completionLog->subject = 'Task completed for ' . $assignee_name_old;
-            $completionLog->description = '<p>' . $currentTask->description . '</p>';
-            if (Auth::user()->id != $currentTask->assigned_to) {
-                $completionLog->use_for = $currentTask->assigned_to;
-            } else {
-                $completionLog->use_for = "";
+            // Step 2: Create activity log for task completion (only if there's a client_id)
+            if ($currentTask->client_id) {
+                $completionLog = new ActivitiesLog;
+                $completionLog->client_id = $currentTask->client_id;
+                $completionLog->created_by = Auth::user()->id;
+                $completionLog->subject = 'Task completed for ' . $assignee_name_old;
+                $completionLog->description = '<p>' . $currentTask->description . '</p>';
+                if (Auth::user()->id != $currentTask->assigned_to) {
+                    $completionLog->use_for = $currentTask->assigned_to;
+                } else {
+                    $completionLog->use_for = "";
+                }
+                $completionLog->followup_date = $currentTask->updated_at;
+                $completionLog->task_group = $currentTask->task_group;
+                $completionLog->task_status = 1; // Marked as completed
+                $completionLog->save();
             }
-            $completionLog->followup_date = $currentTask->updated_at;
-            $completionLog->task_group = $currentTask->task_group;
-            $completionLog->task_status = 1; // Marked as completed
-            $completionLog->save();
 
             $admin_data = Admin::where('id', $validated['assigned_to'])->first();
             $assignee_name = $admin_data ? $admin_data->first_name . " " . $admin_data->last_name : 'N/A';
@@ -1069,21 +1077,23 @@ public function update_apppointment_description(Request $request){
             $newTask->unique_group_id = $taskUniqueId; // Generate unique group ID for the new task
             $newTask->save();
 
-            // Step 4: Create activity log for new task creation
-            $newTaskLog = new ActivitiesLog;
-            $newTaskLog->client_id = $clientId;
-            $newTaskLog->created_by = Auth::user()->id;
-            $newTaskLog->subject = 'New task assigned for ' . $assignee_name;
-            $newTaskLog->description = '<p>' . $validated['description'] . '</p>';
-            if (Auth::user()->id != $validated['assigned_to']) {
-                $newTaskLog->use_for = $validated['assigned_to'];
-            } else {
-                $newTaskLog->use_for = "";
+            // Step 4: Create activity log for new task creation (only if there's a client_id)
+            if ($clientId) {
+                $newTaskLog = new ActivitiesLog;
+                $newTaskLog->client_id = $clientId;
+                $newTaskLog->created_by = Auth::user()->id;
+                $newTaskLog->subject = 'New task assigned for ' . $assignee_name;
+                $newTaskLog->description = '<p>' . $validated['description'] . '</p>';
+                if (Auth::user()->id != $validated['assigned_to']) {
+                    $newTaskLog->use_for = $validated['assigned_to'];
+                } else {
+                    $newTaskLog->use_for = "";
+                }
+                $newTaskLog->followup_date = $validated['followup_date'];
+                $newTaskLog->task_group = $validated['task_group'];
+                $newTaskLog->task_status = 0; // New task is incomplete
+                $newTaskLog->save();
             }
-            $newTaskLog->followup_date = $validated['followup_date'];
-            $newTaskLog->task_group = $validated['task_group'];
-            $newTaskLog->task_status = 0; // New task is incomplete
-            $newTaskLog->save();
 
             return response()->json([
                 'success' => true,

@@ -1122,6 +1122,7 @@ $(function () {
                         <option value="Review" ${taskGroup == 'Review' ? 'selected' : ''}>📋 Review</option>
                         <option value="Query" ${taskGroup == 'Query' ? 'selected' : ''}>❓ Query</option>
                         <option value="Urgent" ${taskGroup == 'Urgent' ? 'selected' : ''}>🔥 Urgent</option>
+                        <option value="Personal Task" ${taskGroup == 'Personal Task' ? 'selected' : ''}>👤 Personal Task</option>
                     </select>
                     <div id="task-group-error" class="error-message"></div>
                 </div>
