@@ -905,8 +905,25 @@ class PublicDocumentController extends Controller
             
             if ($document->signed_doc_link) {
                 $signedDocUrl = $document->signed_doc_link;
-                $parsed = parse_url($signedDocUrl);
                 
+                // Parse the URL to get the path
+                $parsed = parse_url($signedDocUrl);
+                $urlPath = $parsed['path'] ?? '';
+                
+                // Check if it's a local storage path (contains /storage/)
+                if (strpos($urlPath, '/storage/') !== false) {
+                    // Extract the path after /storage/
+                    $parts = explode('/storage/', $urlPath);
+                    $relativePath = end($parts);
+                    
+                    // Check if file exists in local storage
+                    if (Storage::disk('public')->exists($relativePath)) {
+                        $filePath = storage_path('app/public/' . $relativePath);
+                        return response()->download($filePath, $document->id . '_signed.pdf');
+                    }
+                }
+                
+                // Try S3 storage
                 if (isset($parsed['path'])) {
                     $s3Key = ltrim($parsed['path'], '/');
                     $disk = Storage::disk('s3');
@@ -947,24 +964,45 @@ class PublicDocumentController extends Controller
             
             if ($document->signed_doc_link) {
                 $signedDocUrl = $document->signed_doc_link;
-                $parsed = parse_url($signedDocUrl);
+                $downloadUrl = null;
                 
-                if (isset($parsed['path'])) {
-                    $s3Key = ltrim($parsed['path'], '/');
-                    $disk = Storage::disk('s3');
+                // Parse the URL to get the path
+                $parsed = parse_url($signedDocUrl);
+                $urlPath = $parsed['path'] ?? '';
+                
+                // Check if it's a local storage path (contains /storage/)
+                if (strpos($urlPath, '/storage/') !== false) {
+                    // Extract the path after /storage/
+                    $parts = explode('/storage/', $urlPath);
+                    $relativePath = end($parts);
                     
-                    if ($disk->exists($s3Key)) {
-                        $tempUrl = $disk->temporaryUrl(
-                            $s3Key,
-                            now()->addMinutes(5),
-                            ['ResponseContentDisposition' => 'attachment; filename="' . $document->id . '_signed.pdf"']
-                        );
-                        
-                        return view('documents.download_and_thankyou', [
-                            'downloadUrl' => $tempUrl,
-                            'thankyouUrl' => route('public.documents.thankyou', ['id' => $id])
-                        ]);
+                    // Check if file exists in local storage
+                    if (Storage::disk('public')->exists($relativePath)) {
+                        // Generate a temporary download route for local files
+                        $downloadUrl = route('public.documents.download.signed', $document->id);
                     }
+                } else {
+                    // Try S3 storage
+                    if (isset($parsed['path'])) {
+                        $s3Key = ltrim($parsed['path'], '/');
+                        $disk = Storage::disk('s3');
+                        
+                        if ($disk->exists($s3Key)) {
+                            $downloadUrl = $disk->temporaryUrl(
+                                $s3Key,
+                                now()->addMinutes(5),
+                                ['ResponseContentDisposition' => 'attachment; filename="' . $document->id . '_signed.pdf"']
+                            );
+                        }
+                    }
+                }
+                
+                // If we found a valid download URL, show the download & thank you view
+                if ($downloadUrl) {
+                    return view('documents.download_and_thankyou', [
+                        'downloadUrl' => $downloadUrl,
+                        'thankyouUrl' => route('public.documents.thankyou', ['id' => $id])
+                    ]);
                 }
                 
                 return view('documents.download_and_thankyou', [

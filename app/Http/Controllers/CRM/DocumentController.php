@@ -402,21 +402,15 @@ class DocumentController extends Controller
                 'filename' => $uploadedFile->getClientOriginalName()
             ]);
 
-            // Option 1: Redirect back to create page with success message and edit link
-            return redirect()->route('documents.create')->with([
-                'success' => 'Document uploaded successfully!',
-                'document_id' => $document->id,
-                'show_edit_link' => true
-            ]);
-            
-            // Option 2: Or redirect to edit page (uncomment below and comment above)
-            // return redirect()->route('documents.edit', $document->id)->with('success', 'Document uploaded successfully! Please place signature fields.');
+            // Redirect directly to edit page to place signature fields
+            return redirect()->route('documents.edit', $document->id)
+                ->with('success', 'Document uploaded successfully! Now place signature fields on the document.');
         } catch (\Exception $e) {
             return $this->handleError(
                 $e,
                 'document_upload',
                 'An error occurred while uploading the document. Please try again.',
-                'back',
+                'documents.create',
                 ['filename' => request()->file('document')?->getClientOriginalName()]
             );
         }
@@ -1640,8 +1634,25 @@ class DocumentController extends Controller
             $document = Document::findOrFail($id);
             if ($document->signed_doc_link) {
                 $signedDocUrl = $document->signed_doc_link;
-                // Try to parse the S3 key from the URL
+                
+                // Parse the URL to get the path
                 $parsed = parse_url($signedDocUrl);
+                $urlPath = $parsed['path'] ?? '';
+                
+                // Check if it's a local storage path (contains /storage/)
+                if (strpos($urlPath, '/storage/') !== false) {
+                    // Extract the path after /storage/
+                    $parts = explode('/storage/', $urlPath);
+                    $relativePath = end($parts);
+                    
+                    // Check if file exists in local storage
+                    if (\Storage::disk('public')->exists($relativePath)) {
+                        $filePath = storage_path('app/public/' . $relativePath);
+                        return response()->download($filePath, $document->id . '_signed.pdf');
+                    }
+                }
+                
+                // Try S3 storage
                 if (isset($parsed['path'])) {
                     // Remove leading slash
                     $s3Key = ltrim($parsed['path'], '/');
@@ -1678,27 +1689,49 @@ class DocumentController extends Controller
             $document = \App\Models\Document::findOrFail($id);
             if ($document->signed_doc_link) {
                 $signedDocUrl = $document->signed_doc_link;
-                // Try to parse the S3 key from the URL
+                $downloadUrl = null;
+                
+                // Parse the URL to get the path
                 $parsed = parse_url($signedDocUrl);
-                if (isset($parsed['path'])) {
-                    // Remove leading slash
-                    $s3Key = ltrim($parsed['path'], '/');
-                    $disk = \Storage::disk('s3');
-                    if ($disk->exists($s3Key)) {
-                        $tempUrl = $disk->temporaryUrl(
-                            $s3Key,
-                            now()->addMinutes(5),
-                            [
-                                'ResponseContentDisposition' => 'attachment; filename="' . $document->id . '_signed.pdf"',
-                            ]
-                        );
-                        // Show a view that triggers the download and then redirects to thank you
-                        return view('crm.documents.download_and_thankyou', [
-                            'downloadUrl' => $tempUrl,
-                            'thankyouUrl' => route('public.documents.thankyou', ['id' => $id])
-                        ]);
+                $urlPath = $parsed['path'] ?? '';
+                
+                // Check if it's a local storage path (contains /storage/)
+                if (strpos($urlPath, '/storage/') !== false) {
+                    // Extract the path after /storage/
+                    $parts = explode('/storage/', $urlPath);
+                    $relativePath = end($parts);
+                    
+                    // Check if file exists in local storage
+                    if (\Storage::disk('public')->exists($relativePath)) {
+                        // Generate a temporary download route for local files
+                        $downloadUrl = route('documents.download.signed', $document->id);
+                    }
+                } else {
+                    // Try S3 storage
+                    if (isset($parsed['path'])) {
+                        // Remove leading slash
+                        $s3Key = ltrim($parsed['path'], '/');
+                        $disk = \Storage::disk('s3');
+                        if ($disk->exists($s3Key)) {
+                            $downloadUrl = $disk->temporaryUrl(
+                                $s3Key,
+                                now()->addMinutes(5),
+                                [
+                                    'ResponseContentDisposition' => 'attachment; filename="' . $document->id . '_signed.pdf"',
+                                ]
+                            );
+                        }
                     }
                 }
+                
+                // If we found a valid download URL, show the download & thank you view
+                if ($downloadUrl) {
+                    return view('crm.documents.download_and_thankyou', [
+                        'downloadUrl' => $downloadUrl,
+                        'thankyouUrl' => route('public.documents.thankyou', ['id' => $id])
+                    ]);
+                }
+                
                 // Fallback: direct download if S3 key not found or file missing
                 return view('crm.documents.download_and_thankyou', [
                     'downloadUrl' => $signedDocUrl,
