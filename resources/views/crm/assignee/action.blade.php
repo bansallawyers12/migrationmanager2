@@ -617,6 +617,47 @@
         <div class="modal-content taskview"></div>
     </div>
 </div>
+
+<!-- Task Completion Notes Modal -->
+<div class="modal fade" id="completionNotesModal" tabindex="-1" role="dialog" aria-labelledby="completionNotesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #3498db; color: white;">
+                <h5 class="modal-title" id="completionNotesModalLabel">
+                    <i class="fa fa-check-circle"></i> Complete Task
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.8;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="completionNotes" class="font-weight-bold">
+                        <i class="fa fa-comment"></i> Completion Notes/Feedback
+                    </label>
+                    <textarea 
+                        class="form-control" 
+                        id="completionNotes" 
+                        rows="5" 
+                        placeholder="Enter any notes or feedback about completing this task..."
+                        style="resize: vertical; border: 2px solid #e9ecef; border-radius: 8px; padding: 12px;"
+                    ></textarea>
+                    <small class="form-text text-muted">
+                        <i class="fa fa-info-circle"></i> These notes will be saved in the activity log.
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer" style="background-color: #f8f9fa;">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fa fa-times"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-success" id="confirmTaskCompletion">
+                    <i class="fa fa-check"></i> Complete Task
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -1509,7 +1550,10 @@ $(function () {
         }
     });
 
-    // Complete task
+    // Complete task - open modal
+    var currentTaskId = null;
+    var currentTaskGroupId = null;
+    
     $('.yajra-datatable').on('click', '.complete_task', function() {
         var row_id = $(this).attr('data-id');
         var row_unique_group_id = $(this).attr('data-unique_group_id') || '';
@@ -1519,17 +1563,65 @@ $(function () {
             return;
         }
         
+        // Store task IDs for later use
+        currentTaskId = row_id;
+        currentTaskGroupId = row_unique_group_id;
+        
+        // Clear previous notes
+        $('#completionNotes').val('');
+        
+        // Show the completion notes modal
+        $('#completionNotesModal').modal('show');
+    });
+    
+    // Handle task completion with notes
+    $(document).on('click', '#confirmTaskCompletion', function() {
+        var completionNotes = $('#completionNotes').val().trim();
+        
+        if (!currentTaskId) {
+            console.error('No task ID found');
+            return;
+        }
+        
+        // Disable button to prevent double submission
+        var $button = $(this);
+        $button.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Completing...');
+        
         $.ajax({
             type: 'post',
             url: "{{URL::to('/')}}/update-task-completed",
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
-            data: {id: row_id, unique_group_id: row_unique_group_id},
+            data: {
+                id: currentTaskId, 
+                unique_group_id: currentTaskGroupId,
+                completion_notes: completionNotes
+            },
             success: function(response) {
+                // Close modal
+                $('#completionNotesModal').modal('hide');
+                
+                // Reset button
+                $button.prop('disabled', false).html('<i class="fa fa-check"></i> Complete Task');
+                
+                // Clear stored IDs
+                currentTaskId = null;
+                currentTaskGroupId = null;
+                
+                // Reload table
                 table.draw(false);
+                
+                // Show success message (optional)
+                if (response.message) {
+                    // You can add a toast notification here if you have one
+                    console.log('Success:', response.message);
+                }
             },
             error: function(xhr) {
                 console.error('Error completing task:', xhr.responseText);
                 alert('An error occurred while completing the task.');
+                
+                // Reset button
+                $button.prop('disabled', false).html('<i class="fa fa-check"></i> Complete Task');
             }
         });
     });

@@ -250,38 +250,36 @@ $('#create_action_popup').on('hidden.bs.modal', function() {
     updateHiddenSelect();
 });
 
-//Start Convert Activity to Note functionality
-document.querySelectorAll('.convert-activity-to-note').forEach(function(icon) {
-    icon.addEventListener('click', function() {
-        const activityId = this.getAttribute('data-activity-id');
-        const activitySubject = this.getAttribute('data-activity-subject');
-        const activityDescription = this.getAttribute('data-activity-description');
-        const activityCreatedBy = this.getAttribute('data-activity-created-by');
-        const activityCreatedAt = this.getAttribute('data-activity-created-at');
-        const clientId = this.getAttribute('data-client-id');
+//Start Convert Activity to Note functionality - Using event delegation for dynamic content
+$(document).on('click', '.convert-activity-to-note', function() {
+    const activityId = this.getAttribute('data-activity-id');
+    const activitySubject = this.getAttribute('data-activity-subject');
+    const activityDescription = this.getAttribute('data-activity-description');
+    const activityCreatedBy = this.getAttribute('data-activity-created-by');
+    const activityCreatedAt = this.getAttribute('data-activity-created-at');
+    const clientId = this.getAttribute('data-client-id');
+    
+    // Show confirmation dialog
+    if (confirm('Are you sure you want to convert this activity into Notes?')) {
+        // Populate modal fields
+        document.getElementById('convert_activity_id').value = activityId;
+        document.getElementById('convert_client_id').value = clientId;
         
-        // Show confirmation dialog
-        if (confirm('Are you sure you want to convert this activity into Notes?')) {
-            // Populate modal fields
-            document.getElementById('convert_activity_id').value = activityId;
-            document.getElementById('convert_client_id').value = clientId;
-            
-            // Process description: remove HTML tags and first span
-            let cleanDescription = processDescription(activityDescription);
-            
-            // Set value for Summernote editor
-            $('#convert_note_description').summernote('code', cleanDescription);
-            
-            // Set Type dropdown based on activity subject and description
-            setNoteType(activitySubject, activityDescription);
-            
-            // Populate client matters dropdown
-            populateClientMatters(clientId);
-            
-            // Show modal
-            $('#convertActivityToNoteModal').modal('show');
-        }
-    });
+        // Process description: remove HTML tags and first span
+        let cleanDescription = processDescription(activityDescription);
+        
+        // Set value for Summernote editor
+        $('#convert_note_description').summernote('code', cleanDescription);
+        
+        // Set Type dropdown based on activity subject and description
+        setNoteType(activitySubject, activityDescription);
+        
+        // Populate client matters dropdown
+        populateClientMatters(clientId);
+        
+        // Show modal
+        $('#convertActivityToNoteModal').modal('show');
+    }
 });
 
 // Function to process description: remove HTML tags and first span

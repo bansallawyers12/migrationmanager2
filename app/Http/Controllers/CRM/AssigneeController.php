@@ -83,11 +83,30 @@ class AssigneeController extends Controller
                 } else {
                     $assignee_name = 'N/A';
                 }
+                
+                // Prepare description with completion notes (completion notes appear first)
+                $description = '';
+                if (!empty($data['completion_notes'])) {
+                    $description .= '<p>';
+                    $description .= '<i class="fas fa-ellipsis-v convert-activity-to-note" ';
+                    $description .= 'style="cursor: pointer; color: #6c757d;" ';
+                    $description .= 'title="Convert to Note" ';
+                    $description .= 'data-activity-id="" ';
+                    $description .= 'data-activity-subject="Completion Notes" ';
+                    $description .= 'data-activity-description="'.htmlspecialchars($data['completion_notes'], ENT_QUOTES).'" ';
+                    $description .= 'data-activity-created-by="'.Auth::user()->id.'" ';
+                    $description .= 'data-activity-created-at="'.now().'" ';
+                    $description .= 'data-client-id="'.$note_data['client_id'].'"></i></p>';
+                    $description .= '<p>'.nl2br(htmlspecialchars($data['completion_notes'])).'</p>';
+                    $description .= '<hr>';
+                }
+                $description .= '<p>'.@$note_data['description'].'</p>';
+                
                 $objs = new ActivitiesLog;
                 $objs->client_id = $note_data['client_id'];
                 $objs->created_by = Auth::user()->id;
-                $objs->subject = 'assigned task for '.@$assignee_name;
-                $objs->description = '<p>'.@$note_data['description'].'</p>';
+                $objs->subject = 'completed task for '.@$assignee_name;
+                $objs->description = $description;
                 if(Auth::user()->id != @$note_data['assigned_to']){
                     $objs->use_for = @$note_data['assigned_to'];
                 } else {
@@ -99,7 +118,7 @@ class AssigneeController extends Controller
                 $objs->save();
             }
             $response['status'] 	= 	true;
-            $response['message']	=	'Task updated successfully';
+            $response['message']	=	'Task completed successfully';
         } else {
             $response['status'] 	= 	false;
             $response['message']	=	'Please try again';
