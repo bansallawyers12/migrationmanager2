@@ -517,62 +517,57 @@
                     <a class="btn btn-primary" style="border-radius: 0px;" id="assigned_by_me"  href="{{URL::to('/assigned_by_me')}}">Assigned by me</a>
                     <a class="btn btn-primary" style="border-radius: 0px;" id="archived-tab"  href="{{URL::to('/action_completed')}}">Completed</a>
                     <button class="btn btn-primary tab-button add_my_task" data-container="body" data-role="popover" data-placement="bottom-start" data-html="true" data-content="
-                        <div id='popover-content11'>
-                            <div class='popover-header' style='background-color: #0d6efd; color: white; padding: 15px 20px; font-weight: 600; font-size: 16px; border-radius: 8px 8px 0 0; margin: -20px -20px 20px -20px;'>Add My Task</div>
-                            <div class='clearfix'></div>
-                            <div class='box-header with-border'>
-                                <div class='form-group'>
-                                    <label for='inputSub3' class='form-label'>Select Assignee</label>
-                                    <div class='dropdown-multi-select'>
-                                        <button type='button' class='btn btn-default dropdown-toggle' id='dropdownMenuButton' data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>
-                                            Assign User
-                                        </button>
-                                        <div class='dropdown-menu' aria-labelledby='dropdownMenuButton'>
-                                            @foreach(\App\Models\Admin::where('role','!=',7)->where('status',1)->orderby('first_name','ASC')->get() as $admin)
-                                                <?php $branchname = \App\Models\Branch::where('id',$admin->office_id)->first(); ?>
-                                                <label class='dropdown-item'>
-                                                    <input type='checkbox' class='checkbox-item' value='{{ $admin->id }}'>
-                                                    {{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})
-                                                </label>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                    <select class='d-none' id='rem_cat' name='rem_cat[]' multiple='multiple'>
+                        <div class='modern-popover-content'>
+                            <div class='form-group'>
+                                <label class='control-label'><i class='fa fa-user-circle'></i> Client</label>
+                                <select id='assign_client_id' class='form-control js-data-example-ajaxccsearch__addmytask' placeholder='Search and select client...'></select>
+                                <div id='client-error' class='error-message'></div>
+                            </div>
+                            
+                            <div class='form-group'>
+                                <label class='control-label'><i class='fa fa-users'></i> Assignees</label>
+                                <div class='dropdown-multi-select' style='width: 100%;'>
+                                    <button type='button' class='btn btn-default dropdown-toggle' id='dropdownMenuButton' data-toggle='dropdown' aria-haspopup='true' aria-expanded='false' style='width: 100%;'>
+                                        Select assignees <span class='selected-count'></span>
+                                    </button>
+                                    <div class='dropdown-menu' aria-labelledby='dropdownMenuButton' style='width: 100%;'>
+                                        <label class='dropdown-item'><input type='checkbox' id='select-all' /> <strong>Select All</strong></label>
+                                        <div style='border-top: 1px solid #e2e8f0; margin: 5px 0;'></div>
                                         @foreach(\App\Models\Admin::where('role','!=',7)->where('status',1)->orderby('first_name','ASC')->get() as $admin)
                                             <?php $branchname = \App\Models\Branch::where('id',$admin->office_id)->first(); ?>
-                                            <option value='{{ $admin->id }}'>{{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})</option>
+                                            <label class='dropdown-item'>
+                                                <input type='checkbox' class='checkbox-item' value='{{ $admin->id }}'>
+                                                {{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})
+                                            </label>
                                         @endforeach
-                                    </select>
+                                    </div>
                                 </div>
+                                <select class='d-none' id='rem_cat' name='rem_cat[]' multiple='multiple'>
+                                    @foreach(\App\Models\Admin::where('role','!=',7)->where('status',1)->orderby('first_name','ASC')->get() as $admin)
+                                        <option value='{{ $admin->id }}'>{{ $admin->first_name }} {{ $admin->last_name }}</option>
+                                    @endforeach
+                                </select>
+                                <div id='assignees-error' class='error-message'></div>
                             </div>
-                            <div id='popover-content'>
-                                <div class='box-header with-border'>
-                                    <div class='form-group'>
-                                        <label for='assignnote' class='form-label'>Note</label>
-                                        <textarea id='assignnote' class='form-control' placeholder='Enter a note....'></textarea>
-                                    </div>
-                                </div>
-                                <div class='box-header with-border'>
-                                    <div class='form-group'>
-                                        <label for='popoverdatetime' class='form-label'>DateTime</label>
-                                        <input type='text' class='form-control datepicker' placeholder='dd/mm/yyyy' id='popoverdatetime' value='<?php echo date('d/m/Y');?>' name='popoverdate'>
-                                    </div>
-                                </div>
-                                <form class='form-inline mr-auto'>
-                                    <div class='box-header with-border'>
-                                        <div class='form-group'>
-                                            <label for='assign_client_id' class='form-label'>Select Client</label>
-                                            <select id='assign_client_id' class='form-control js-data-example-ajaxccsearch__addmytask' type='search' placeholder='Search client...' aria-label='Search' data-width='200' style='width:200px;'></select>
-                                        </div>
-                                    </div>
-                                </form>
-
-                                
-                                <input id='task_group' name='task_group' type='hidden' value='Personal Task'>
-                                <div class='box-footer'>
-                                    <input type='hidden' value='' id='popoverrealdate' name='popoverrealdate' />
-                                    <button class='btn btn-info' id='add_my_task'>Add My Task</button>
-                                </div>
+                            
+                            <div class='form-group'>
+                                <label class='control-label'><i class='fa fa-comment'></i> Task Description</label>
+                                <textarea id='assignnote' class='form-control' rows='3' placeholder='Enter task description...'></textarea>
+                                <div id='note-error' class='error-message'></div>
+                            </div>
+                            
+                            <div class='form-group'>
+                                <label class='control-label'><i class='fa fa-calendar'></i> Follow-up Date</label>
+                                <input type='text' class='form-control datepicker' placeholder='dd/mm/yyyy' id='popoverdatetime' value='@php echo date(\"d/m/Y\"); @endphp' name='popoverdate'>
+                            </div>
+                            
+                            <input id='task_group' name='task_group' type='hidden' value='Personal Task'>
+                            <input type='hidden' value='' id='popoverrealdate' name='popoverrealdate' />
+                            
+                            <div class='text-center'>
+                                <button class='btn btn-primary' id='add_my_task'>
+                                    <i class='fa fa-plus-circle'></i> Add My Task
+                                </button>
                             </div>
                         </div>">
                         <i class="fas fa-plus"></i> Add My Task
@@ -631,7 +626,9 @@
 @endsection
 
 @push('scripts')
+<link rel="stylesheet" href="{{URL::to('/')}}/css/task-popover-modern.css">
 <script src="{{URL::to('/')}}/js/popover.js"></script>
+<script src="{{URL::to('/')}}/js/components/dropdown-multi-select.js"></script>
 <style>
 /* Ensure popovers display correctly */
 .popover {
@@ -985,6 +982,7 @@ $(function () {
         trigger: 'click',
         placement: 'bottom-start',
         container: 'body',
+        title: '<i class="fa fa-plus-circle"></i> Add New Task',
         template: '<div class="popover" role="tooltip"><div class="popover-header"></div><div class="popover-body"></div></div>'
     });
     
@@ -1049,67 +1047,53 @@ $(function () {
         // Convert followupDate to dd/mm/YYYY if it exists
         var formattedDate = followupDate ? moment(followupDate, 'YYYY-MM-DD').format('DD/MM/YYYY') : '<?php echo date('d/m/Y'); ?>';
         return `
-            <div id="popover-content">
-                <div class="clearfix"></div>
-                <div class="box-header with-border">
-                    <div class="form-group row" style="margin-bottom:12px">
-                        <label for="inputSub3" class="col-sm-3 control-label c6 f13" style="margin-top:8px">Select Assignee</label>
-                        <div class="col-sm-9">
-                            <select class="assigneeselect2 form-control selec_reg" id="rem_cat" name="rem_cat">
-                                <option value="">Select</option>
-                                @foreach(\App\Models\Admin::where('role','!=',7)->where('status',1)->orderby('first_name','ASC')->get() as $admin)
-                                    <?php $branchname = \App\Models\Branch::where('id',$admin->office_id)->first(); ?>
-                                    <option value="{{ $admin->id }}" ${assignedTo == {{ $admin->id }} ? 'selected' : ''}>
-                                        {{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})
-                                    </option>
-                                @endforeach
-                            </select>
-                            <div id="assignee-error" class="error-message"></div>
-                        </div>
-                    </div>
+            <div id="popover-content" class="modern-popover-content">
+                <div class="form-group">
+                    <label class="control-label"><i class="fa fa-user"></i> Select Assignee</label>
+                    <select class="assigneeselect2 form-control" id="rem_cat" name="rem_cat">
+                        <option value="">Select Assignee...</option>
+                        @foreach(\App\Models\Admin::where('role','!=',7)->where('status',1)->orderby('first_name','ASC')->get() as $admin)
+                            <?php $branchname = \App\Models\Branch::where('id',$admin->office_id)->first(); ?>
+                            <option value="{{ $admin->id }}" ${assignedTo == {{ $admin->id }} ? 'selected' : ''}>
+                                {{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})
+                            </option>
+                        @endforeach
+                    </select>
+                    <div id="assignee-error" class="error-message"></div>
                 </div>
-                <div class="box-header with-border">
-                    <div class="form-group row" style="margin-bottom:12px">
-                        <label for="inputEmail3" class="col-sm-3 control-label c6 f13" style="margin-top:8px">Note</label>
-                        <div class="col-sm-9">
-                            <textarea id="assignnote" class="form-control summernote-simple f13" placeholder="Enter a note....">${noteId || ''}</textarea>
-                            <div id="note-error" class="error-message"></div>
-                        </div>
-                    </div>
+                
+                <div class="form-group">
+                    <label class="control-label"><i class="fa fa-comment"></i> Task Description</label>
+                    <textarea id="assignnote" class="form-control" rows="3" placeholder="Enter task description...">${noteId || ''}</textarea>
+                    <div id="note-error" class="error-message"></div>
                 </div>
-                <div class="box-header with-border">
-                    <div class="form-group row" style="margin-bottom:12px">
-                        <label for="inputEmail3" class="col-sm-3 control-label c6 f13" style="margin-top:8px">DateTime</label>
-                        <div class="col-sm-9">
-                            <input type="text" class="form-control f13 datepicker" placeholder="dd/mm/yyyy" id="popoverdatetime" value="${formattedDate}" name="popoverdate">
-                        </div>
-                    </div>
+                
+                <div class="form-group">
+                    <label class="control-label"><i class="fa fa-calendar"></i> Follow-up Date</label>
+                    <input type="text" class="form-control datepicker" placeholder="dd/mm/yyyy" id="popoverdatetime" value="${formattedDate}" name="popoverdate">
                 </div>
-                <div class="form-group row" style="margin-bottom:12px">
-                    <label for="inputSub3" class="col-sm-3 control-label c6 f13" style="margin-top:8px">Group</label>
-                    <div class="col-sm-9">
-                        <select class="assigneeselect2 form-control selec_reg" id="task_group" name="task_group">
-                            <option value="">Select</option>
-                            <option value="Call" ${taskGroup == 'Call' ? 'selected' : ''}>Call</option>
-                            <option value="Checklist" ${taskGroup == 'Checklist' ? 'selected' : ''}>Checklist</option>
-                            <option value="Review" ${taskGroup == 'Review' ? 'selected' : ''}>Review</option>
-                            <option value="Query" ${taskGroup == 'Query' ? 'selected' : ''}>Query</option>
-                            <option value="Urgent" ${taskGroup == 'Urgent' ? 'selected' : ''}>Urgent</option>
-                        </select>
-                        <div id="task-group-error" class="error-message"></div>
-                    </div>
+                
+                <div class="form-group">
+                    <label class="control-label"><i class="fa fa-tag"></i> Task Group</label>
+                    <select class="assigneeselect2 form-control" id="task_group" name="task_group">
+                        <option value="">Select Group...</option>
+                        <option value="Call" ${taskGroup == 'Call' ? 'selected' : ''}>📞 Call</option>
+                        <option value="Checklist" ${taskGroup == 'Checklist' ? 'selected' : ''}>✓ Checklist</option>
+                        <option value="Review" ${taskGroup == 'Review' ? 'selected' : ''}>👁 Review</option>
+                        <option value="Query" ${taskGroup == 'Query' ? 'selected' : ''}>❓ Query</option>
+                        <option value="Urgent" ${taskGroup == 'Urgent' ? 'selected' : ''}>🔥 Urgent</option>
+                    </select>
+                    <div id="task-group-error" class="error-message"></div>
                 </div>
+                
                 <input id="assign_note_id" type="hidden" value="${taskId}">
                 <input id="assign_client_id" type="hidden" value="${clientId}">
-                <div class="box-footer" style="padding:10px 0">
-                    <div class="row">
-                        <input type="hidden" value="" id="popoverrealdate" name="popoverrealdate" />
-                    </div>
-                    <div class="row text-center">
-                        <div class="col-md-12 text-center">
-                            <button class="btn btn-info" id="updateTask">Update Task</button>
-                        </div>
-                    </div>
+                <input type="hidden" value="" id="popoverrealdate" name="popoverrealdate" />
+                
+                <div class="text-center">
+                    <button class="btn btn-primary" id="updateTask">
+                        <i class="fa fa-save"></i> Update Task
+                    </button>
                 </div>
             </div>`;
     }

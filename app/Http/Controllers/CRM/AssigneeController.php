@@ -183,8 +183,53 @@ class AssigneeController extends Controller
             })
             ->orderBy('created_at', 'desc')
             ->paginate(20);
+
+        // Get task group counts with single optimized query
+        $taskGroupCounts = $this->getCompletedTaskGroupCounts($user);
+        
         //dd(count($assignees_completed));
-        return view('crm.assignee.action_completed',compact('assignees_completed','task_group'))->with('i', (request()->input('page', 1) - 1) * 20);
+        return view('crm.assignee.action_completed',compact('assignees_completed','task_group','taskGroupCounts'))->with('i', (request()->input('page', 1) - 1) * 20);
+    }
+
+    /**
+     * Get completed task counts grouped by task_group
+     * Uses a single query with GROUP BY for better performance
+     * 
+     * @param \App\Models\Admin $user
+     * @return array
+     */
+    private function getCompletedTaskGroupCounts($user)
+    {
+        $query = \App\Models\Note::where('status', '1')
+            ->where('type', 'client')
+            ->where('folloup', 1)
+            ->when($user->role != 1, function ($query) use ($user) {
+                return $query->where('assigned_to', $user->id);
+            });
+
+        // For admin role, add client_id filter
+        if ($user->role == 1) {
+            $query->whereNotNull('client_id');
+        }
+
+        // Get counts grouped by task_group
+        $groupedCounts = $query->selectRaw('task_group, COUNT(*) as count')
+            ->groupBy('task_group')
+            ->pluck('count', 'task_group')
+            ->toArray();
+
+        // Initialize all task groups with default count of 0
+        $counts = [
+            'All' => array_sum($groupedCounts),
+            'Call' => $groupedCounts['Call'] ?? 0,
+            'Checklist' => $groupedCounts['Checklist'] ?? 0,
+            'Review' => $groupedCounts['Review'] ?? 0,
+            'Query' => $groupedCounts['Query'] ?? 0,
+            'Urgent' => $groupedCounts['Urgent'] ?? 0,
+            'Personal Task' => $groupedCounts['Personal Task'] ?? 0,
+        ];
+
+        return $counts;
     }
 
     public function action() {
@@ -329,15 +374,15 @@ class AssigneeController extends Controller
                     ->addColumn('note_description', function($data) {
                         try {
                             if (isset($data->description) && $data->description != "") {
-                                // Sanitize the description for UTF-8
+                                // Use Utf8Helper for consistent UTF-8 handling
                                 $sanitized_description = Utf8Helper::safeSanitize($data->description);
                                 
                                 if (mb_strlen($sanitized_description, 'UTF-8') > 190) {
-                                    // Use safe HTML encoding for the full description
-                                    $full_description = Utf8Helper::safeHtmlSpecialChars($sanitized_description);
-                                    // Use safe truncation that preserves UTF-8
+                                    // For data attribute: use HTML encoding to prevent XSS
+                                    $encoded_for_attr = htmlspecialchars($sanitized_description, ENT_QUOTES, 'UTF-8');
+                                    // For display: use safe truncation without encoding (DataTables rawColumns handles this)
                                     $truncated_desc = Utf8Helper::safeTruncate($sanitized_description, 190, '');
-                                    $final_desc = $truncated_desc . '<button type="button" class="btn btn-link btn_readmore" data-toggle="popover" data-trigger="click" data-html="true" data-full-content="'.$full_description.'" data-placement="top">Read more</button>';
+                                    $final_desc = $truncated_desc . '<button type="button" class="btn btn-link btn_readmore" data-toggle="popover" data-trigger="click" data-html="true" data-full-content="'.$encoded_for_attr.'" data-placement="top">Read more</button>';
                                 } else {
                                     $final_desc = $sanitized_description;
                                 }
@@ -356,8 +401,9 @@ class AssigneeController extends Controller
 
                             if ($list->task_group != 'Personal Task') {
                                 // Update Task button with data attributes but no inline data-content
-                                $safe_description = Utf8Helper::safeHtmlSpecialChars($list->description ?? '');
-                                $safe_task_group = Utf8Helper::safeHtmlSpecialChars($list->task_group ?? '');
+                                // Use direct htmlspecialchars instead of Utf8Helper wrapper to avoid redundant sanitization
+                                $safe_description = htmlspecialchars(Utf8Helper::safeSanitize($list->description ?? ''), ENT_QUOTES, 'UTF-8');
+                                $safe_task_group = htmlspecialchars(Utf8Helper::safeSanitize($list->task_group ?? ''), ENT_QUOTES, 'UTF-8');
                                 $actionBtn .= '<button type="button" data-assignedto="'.$list->assigned_to.'" data-noteid="'.$safe_description.'" data-taskid="'.$list->id.'" data-taskgroupid="'.$safe_task_group.'" data-followupdate="'.$current_date1.'" data-clientid="'.base64_encode(convert_uuencode(@$list->client_id)).'" class="btn btn-primary btn-block update_task" data-toggle="popover" data-role="popover" title="" data-placement="left" style="width: 40px;display: inline;margin-top:0px;"><i class="fa fa-edit" aria-hidden="true"></i></button>';
                             }
 

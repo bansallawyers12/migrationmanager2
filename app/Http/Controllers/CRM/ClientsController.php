@@ -9491,7 +9491,7 @@ class ClientsController extends Controller
                 'TotalAgentFeeGST' => number_format($gst_fee ?? 0, 2),
                 'TotalAgentFeeIncTax' => number_format($professional_fee + ($gst_fee ?? 0), 2),
                 'BaseApplicationCharge' => number_format($visa_application_charge, 2),
-                'DIBPBaseApplicationChargeIncCCSurcharge' => number_format($visa_application_charge, 2),
+                'DOHABaseApplicationChargeIncCCSurcharge' => number_format($visa_application_charge, 2),
 
                 'AgentName' => $responsiblePerson->first_name,
                 'AgentSurName' => $responsiblePerson->last_name,
@@ -11070,5 +11070,149 @@ class ClientsController extends Controller
         }
     }
 
+    /**
+     * Store personal followup/task (Add My Task functionality)
+     * Used by: action.blade.php
+     */
+    public function personalfollowup(Request $request)
+    {
+        $requestData = $request->all();
+        
+        // Decode the client ID
+        $clientId = $this->decodeString(@$requestData['client_id']);
+
+        // Generate unique task ID
+        $taskUniqueId = 'group_' . uniqid('', true);
+
+        // Handle single or multiple assignees
+        $assignees = is_array($requestData['rem_cat']) ? $requestData['rem_cat'] : [$requestData['rem_cat']];
+
+        // Loop through each assignee and create a task
+        foreach ($assignees as $assigneeId) {
+            // Create a new task note for each assignee
+            $task = new \App\Models\Note;
+            $task->client_id = $clientId;
+            $task->user_id = Auth::user()->id;
+            $task->description = @$requestData['description'];
+            $task->unique_group_id = $taskUniqueId;
+            $task->folloup = 1;
+            $task->type = 'client';
+            $task->task_group = @$requestData['task_group'];
+            $task->assigned_to = $assigneeId;
+            $task->status = '0'; // Not completed
+            
+            if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
+                $task->followup_date = @$requestData['followup_datetime'];
+            }
+
+            $saved = $task->save();
+
+            if ($saved) {
+                // Create a notification for the assignee
+                $notification = new \App\Models\Notification;
+                $notification->sender_id = Auth::user()->id;
+                $notification->receiver_id = $assigneeId;
+                $notification->module_id = $clientId;
+                $notification->url = \URL::to('/clients/detail/' . @$requestData['client_id']);
+                $notification->notify_text = 'assigned you a task';
+                $notification->is_read = 0;
+                $notification->save();
+            }
+        }
+
+        return response()->json(['success' => true, 'message' => 'Task created successfully']);
+    }
+
+    /**
+     * Update existing followup/task
+     * Used by: assign_by_me.blade.php
+     */
+    public function updatefollowup(Request $request)
+    {
+        $requestData = $request->all();
+        
+        try {
+            // Find the existing task
+            $task = \App\Models\Note::findOrFail($requestData['note_id']);
+            
+            // Decode the client ID
+            $clientId = $this->decodeString(@$requestData['client_id']);
+            
+            // Update task fields
+            $task->description = @$requestData['description'];
+            $task->client_id = $clientId;
+            $task->task_group = @$requestData['task_group'];
+            $task->assigned_to = @$requestData['rem_cat'];
+            
+            if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
+                $task->followup_date = @$requestData['followup_datetime'];
+            }
+            
+            $task->save();
+
+            // Create notification for the assignee if changed
+            if ($task->assigned_to != $task->getOriginal('assigned_to')) {
+                $notification = new \App\Models\Notification;
+                $notification->sender_id = Auth::user()->id;
+                $notification->receiver_id = $task->assigned_to;
+                $notification->module_id = $clientId;
+                $notification->url = \URL::to('/clients/detail/' . @$requestData['client_id']);
+                $notification->notify_text = 'updated your task';
+                $notification->is_read = 0;
+                $notification->save();
+            }
+
+            return response()->json(['success' => true, 'message' => 'Task updated successfully']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error updating task: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Reassign followup/task (for completed tasks)
+     * Used by: action_completed.blade.php
+     */
+    public function reassignfollowupstore(Request $request)
+    {
+        $requestData = $request->all();
+        
+        // Decode the client ID
+        $clientId = $this->decodeString(@$requestData['client_id']);
+
+        // Generate unique task ID
+        $taskUniqueId = 'group_' . uniqid('', true);
+
+        // Create a new task
+        $task = new \App\Models\Note;
+        $task->client_id = $clientId;
+        $task->user_id = Auth::user()->id;
+        $task->description = @$requestData['description'];
+        $task->unique_group_id = $taskUniqueId;
+        $task->folloup = 1;
+        $task->type = 'client';
+        $task->task_group = @$requestData['task_group'];
+        $task->assigned_to = @$requestData['rem_cat'];
+        $task->status = '0'; // Not completed
+        
+        if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
+            $task->followup_date = @$requestData['followup_datetime'];
+        }
+
+        $saved = $task->save();
+
+        if ($saved) {
+            // Create a notification for the assignee
+            $notification = new \App\Models\Notification;
+            $notification->sender_id = Auth::user()->id;
+            $notification->receiver_id = $task->assigned_to;
+            $notification->module_id = $clientId;
+            $notification->url = \URL::to('/clients/detail/' . @$requestData['client_id']);
+            $notification->notify_text = 'assigned you a task';
+            $notification->is_read = 0;
+            $notification->save();
+        }
+
+        return response()->json(['success' => true, 'message' => 'Task created successfully']);
+    }
 
 }

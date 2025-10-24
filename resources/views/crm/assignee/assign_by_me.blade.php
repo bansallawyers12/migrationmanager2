@@ -234,6 +234,9 @@
                                                                 </div>'>
                                                                 <i class="fa fa-edit" aria-hidden="true"></i>
                                                             </button>
+                                                            <button class="btn btn-danger btn-sm deleteNote" data-remote="/destroy_activity/{{ $list->id }}" data-toggle="tooltip" title="Delete Task">
+                                                                <i class="fa fa-trash" aria-hidden="true"></i>
+                                                            </button>
                                                         @endif
                                                     </td>
                                                 </tr>
@@ -272,6 +275,7 @@
 @endsection
 
 @push('scripts')
+<link rel="stylesheet" href="{{URL::to('/')}}/css/task-popover-modern.css">
 <script src="{{ URL::to('/') }}/js/popover.js"></script>
 <script>
     jQuery(document).ready(function($) {
@@ -415,6 +419,37 @@
                     $('.taskview').html(responses);
                 }
             });
+        });
+
+        // Delete task record
+        $(document).on('click', '.listing-container .deleteNote', function(e) {
+            e.preventDefault();
+            var url = $(this).data('remote');
+            
+            if (confirm('Are you sure you want to delete this task?')) {
+                $.ajaxSetup({
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    }
+                });
+
+                $.ajax({
+                    type: 'DELETE',
+                    url: url,
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            location.reload();
+                        } else {
+                            alert('Error deleting task: ' + response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        alert('Error deleting task. Please try again.');
+                        console.error('Delete error:', error);
+                    }
+                });
+            }
         });
     });
 </script>

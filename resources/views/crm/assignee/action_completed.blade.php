@@ -231,43 +231,24 @@
                         <form action="{{ route('assignee.action_completed') }}" method="get">
                             <div class="row">
                                 <div class="col-md-12 filter-buttons">
-                                    <?php
-                                    if(\Auth::user()->role == 1){
-                                        $assigneesCount_All_type = \App\Models\Note::where('type','client')->whereNotNull('client_id')->where('folloup',1)->where('status',1)->orderBy('created_at', 'desc')->count();
-                                        $assigneesCount_call_type = \App\Models\Note::where('task_group','like','Call')->where('type','client')->whereNotNull('client_id')->where('folloup',1)->where('status',1)->orderBy('created_at', 'desc')->count();
-                                        $assigneesCount_Checklist_type = \App\Models\Note::where('task_group','like','Checklist')->where('type','client')->whereNotNull('client_id')->where('folloup',1)->where('status',1)->orderBy('created_at', 'desc')->count();
-                                        $assigneesCount_Review_type = \App\Models\Note::where('task_group','like','Review')->where('type','client')->whereNotNull('client_id')->where('folloup',1)->where('status',1)->orderBy('created_at', 'desc')->count();
-                                        $assigneesCount_Query_type = \App\Models\Note::where('task_group','like','Query')->where('type','client')->whereNotNull('client_id')->where('folloup',1)->where('status',1)->orderBy('created_at', 'desc')->count();
-                                        $assigneesCount_Urgent_type = \App\Models\Note::where('task_group','like','Urgent')->where('type','client')->whereNotNull('client_id')->where('folloup',1)->where('status',1)->orderBy('created_at', 'desc')->count();
-                                        $assigneesCount_Personal_Task_type = \App\Models\Note::where('task_group','like','Personal Task')->where('type','client')->whereNotNull('client_id')->where('folloup',1)->where('status',1)->orderBy('created_at', 'desc')->count();
-                                    } else {
-                                        $assigneesCount_All_type = \App\Models\Note::where('assigned_to',Auth::user()->id)->where('type','client')->where('folloup',1)->where('status',1)->orderBy('created_at', 'desc')->count();
-                                        $assigneesCount_call_type = \App\Models\Note::where('task_group','like','Call')->where('assigned_to',Auth::user()->id)->where('type','client')->where('folloup',1)->where('status',1)->orderBy('created_at', 'desc')->count();
-                                        $assigneesCount_Checklist_type = \App\Models\Note::where('task_group','like','Checklist')->where('assigned_to',Auth::user()->id)->where('type','client')->where('folloup',1)->where('status',1)->orderBy('created_at', 'desc')->count();
-                                        $assigneesCount_Review_type = \App\Models\Note::where('task_group','like','Review')->where('assigned_to',Auth::user()->id)->where('type','client')->where('folloup',1)->where('status',1)->orderBy('created_at', 'desc')->count();
-                                        $assigneesCount_Query_type = \App\Models\Note::where('task_group','like','Query')->where('assigned_to',Auth::user()->id)->where('type','client')->where('folloup',1)->where('status',1)->orderBy('created_at', 'desc')->count();
-                                        $assigneesCount_Urgent_type = \App\Models\Note::where('task_group','like','Urgent')->where('assigned_to',Auth::user()->id)->where('type','client')->where('folloup',1)->where('status',1)->orderBy('created_at', 'desc')->count();
-                                        $assigneesCount_Personal_Task_type = \App\Models\Note::where('task_group','like','Personal Task')->where('assigned_to',Auth::user()->id)->where('type','client')->where('folloup',1)->where('status',1)->orderBy('created_at', 'desc')->count();
-                                    }
-                                    ?>
-                                    <a href="{{URL::to('/action_completed?group_type=All')}}" id="All" class="group_type {{ $task_group == 'All' ? 'active' : '' }}">All <span class="countAction">{{ $assigneesCount_All_type }}</span></a>
+                                    <a href="{{URL::to('/action_completed?group_type=All')}}" id="All" class="group_type {{ $task_group == 'All' ? 'active' : '' }}">All <span class="countAction">{{ $taskGroupCounts['All'] }}</span></a>
                                     <button type="button">
-                                        <a href="{{URL::to('/action_completed?group_type=Call')}}" id="Call" class="group_type {{ $task_group == 'Call' ? 'active' : '' }}"><i class="fa fa-phone" aria-hidden="true"></i> Call <span class="countAction">{{ $assigneesCount_call_type }}</span></a>
+                                        <a href="{{URL::to('/action_completed?group_type=Call')}}" id="Call" class="group_type {{ $task_group == 'Call' ? 'active' : '' }}"><i class="fa fa-phone" aria-hidden="true"></i> Call <span class="countAction">{{ $taskGroupCounts['Call'] }}</span></a>
                                     </button>
                                     <button type="button">
-                                        <a href="{{URL::to('/action_completed?group_type=Checklist')}}" id="Checklist" class="group_type {{ $task_group == 'Checklist' ? 'active' : '' }}"><i class="fa fa-bars" aria-hidden="true"></i> Checklist <span class="countAction">{{ $assigneesCount_Checklist_type }}</span></a>
+                                        <a href="{{URL::to('/action_completed?group_type=Checklist')}}" id="Checklist" class="group_type {{ $task_group == 'Checklist' ? 'active' : '' }}"><i class="fa fa-bars" aria-hidden="true"></i> Checklist <span class="countAction">{{ $taskGroupCounts['Checklist'] }}</span></a>
                                     </button>
                                     <button type="button">
-                                        <a href="{{URL::to('/action_completed?group_type=Review')}}" id="Review" class="group_type {{ $task_group == 'Review' ? 'active' : '' }}"><i class="fa fa-check" aria-hidden="true"></i> Review <span class="countAction">{{ $assigneesCount_Review_type }}</span></a>
+                                        <a href="{{URL::to('/action_completed?group_type=Review')}}" id="Review" class="group_type {{ $task_group == 'Review' ? 'active' : '' }}"><i class="fa fa-check" aria-hidden="true"></i> Review <span class="countAction">{{ $taskGroupCounts['Review'] }}</span></a>
                                     </button>
                                     <button type="button">
-                                        <a href="{{URL::to('/action_completed?group_type=Query')}}" id="Query" class="group_type {{ $task_group == 'Query' ? 'active' : '' }}"><i class="fa fa-question" aria-hidden="true"></i> Query <span class="countAction">{{ $assigneesCount_Query_type }}</span></a>
+                                        <a href="{{URL::to('/action_completed?group_type=Query')}}" id="Query" class="group_type {{ $task_group == 'Query' ? 'active' : '' }}"><i class="fa fa-question" aria-hidden="true"></i> Query <span class="countAction">{{ $taskGroupCounts['Query'] }}</span></a>
                                     </button>
                                     <button type="button">
-                                        <a href="{{URL::to('/action_completed?group_type=Urgent')}}" id="Urgent" class="group_type {{ $task_group == 'Urgent' ? 'active' : '' }}"><i class="fa fa-flag" aria-hidden="true"></i> Urgent <span class="countAction">{{ $assigneesCount_Urgent_type }}</span></a>
+                                        <a href="{{URL::to('/action_completed?group_type=Urgent')}}" id="Urgent" class="group_type {{ $task_group == 'Urgent' ? 'active' : '' }}"><i class="fa fa-flag" aria-hidden="true"></i> Urgent <span class="countAction">{{ $taskGroupCounts['Urgent'] }}</span></a>
                                     </button>
                                     <button type="button">
-                                        <a href="{{URL::to('/action_completed?group_type=Personal Task')}}" id="Personal Task" class="group_type {{ $task_group == 'Personal Task' ? 'active' : '' }}"><i class="fa fa-tasks" aria-hidden="true"></i> Personal Task <span class="countAction">{{ $assigneesCount_Personal_Task_type }}</span></a>
+                                        <a href="{{URL::to('/action_completed?group_type=Personal Task')}}" id="Personal Task" class="group_type {{ $task_group == 'Personal Task' ? 'active' : '' }}"><i class="fa fa-tasks" aria-hidden="true"></i> Personal Task <span class="countAction">{{ $taskGroupCounts['Personal Task'] }}</span></a>
                                     </button>
                                 </div>
                             </div>
@@ -313,11 +294,8 @@
                                                     <td>
                                                         @if(isset($list->description) && $list->description != "")
                                                             @if(strlen($list->description) > 190)
-                                                                <?php
-                                                                    $full_description = $list->description;
-                                                                    $new_string = substr($list->description, 0, 190) . ' <button type="button" class="btn btn-link" data-toggle="popover" title="" data-content="' . $full_description . '">Read more</button>';
-                                                                    echo $new_string;
-                                                                ?>
+                                                                {{ substr($list->description, 0, 190) }}
+                                                                <button type="button" class="btn btn-link" data-toggle="popover" title="" data-content="{{ htmlspecialchars($list->description, ENT_QUOTES, 'UTF-8') }}">Read more</button>
                                                             @else
                                                                 {{ $list->description }}
                                                             @endif
@@ -431,6 +409,7 @@
 @endsection
 
 @push('scripts')
+<link rel="stylesheet" href="{{URL::to('/')}}/css/task-popover-modern.css">
 <script src="{{URL::to('/')}}/js/popover.js"></script>
 <script>
 jQuery(document).ready(function($){

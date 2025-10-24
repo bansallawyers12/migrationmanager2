@@ -14,6 +14,17 @@ class Authenticate extends Middleware
      */
     protected function redirectTo($request)
     {
-        return route('admin.login');
+        // Check if this is an API request
+        if ($request->is('api/*')) {
+            return null; // API requests should not redirect
+        }
+        
+        // Check if this is an email user request
+        if ($request->is('email_users/*')) {
+            return route('email_users.login');
+        }
+        
+        // Default to CRM login (formerly admin.login)
+        return route('crm.login');
     }
 }
