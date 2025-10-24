@@ -460,7 +460,7 @@ $(document).ready(function() {
             `;
             
             $('#eventModalBody').html(modalBody);
-            $('#viewFullDetails').attr('href', '/admin/booking/appointments/' + event.id);
+            $('#viewFullDetails').attr('href', '/booking/appointments/' + event.id);
             $('#eventModal').modal('show');
         }
     });
@@ -492,7 +492,7 @@ $(document).ready(function() {
         button.disabled = true;
         
         $.ajax({
-            url: `/admin/booking/appointments/${appointmentId}/update-status`,
+            url: `/booking/appointments/${appointmentId}/update-status`,
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -548,7 +548,7 @@ $(document).ready(function() {
         select.disabled = true;
         
         $.ajax({
-            url: `/admin/booking/appointments/${appointmentId}/update-consultant`,
+            url: `/booking/appointments/${appointmentId}/update-consultant`,
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')

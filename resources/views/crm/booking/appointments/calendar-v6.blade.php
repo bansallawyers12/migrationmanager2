@@ -336,7 +336,7 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             
             document.getElementById('eventModalBody').innerHTML = modalBody;
-            document.getElementById('viewFullDetails').href = '/admin/booking/appointments/' + event.id;
+            document.getElementById('viewFullDetails').href = '/booking/appointments/' + event.id;
             $('#eventModal').modal('show');
         },
         
@@ -412,7 +412,7 @@ document.addEventListener('DOMContentLoaded', function() {
         button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
         button.disabled = true;
         
-        fetch(`/admin/booking/appointments/${appointmentId}/update-status`, {
+        fetch(`/booking/appointments/${appointmentId}/update-status`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -469,7 +469,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const originalValue = select.value;
         select.disabled = true;
         
-        fetch(`/admin/booking/appointments/${appointmentId}/update-consultant`, {
+        fetch(`/booking/appointments/${appointmentId}/update-consultant`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

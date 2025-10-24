@@ -1548,12 +1548,12 @@
                 var appliid = $(this).attr('data-id');
                 $('.popuploader').show();
                 $.ajax({
-                    url: site_url+'/admin/update_visit_purpose',
+                    url: site_url+'/update_visit_purpose',
                     type:'POST',
                     data:{id: appliid,visit_purpose:visitpurpose},
                     success: function(responses){
                         $.ajax({
-                            url: site_url+'/admin/get-checkin-detail',
+                            url: site_url+'/get-checkin-detail',
                             type:'GET',
                             data:{id: appliid},
                             success: function(res){
@@ -1570,14 +1570,14 @@
                 var appliid = $(this).attr('data-id');
                 $('.popuploader').show();
                 $.ajax({
-                    url: site_url+'/admin/update_visit_comment',
+                    url: site_url+'/update_visit_comment',
                     type:'POST',
                     data:{id: appliid,visit_comment:visitcomment},
                     success: function(responses){
                         // $('.popuploader').hide();
                         $('.visit_comment').val('');
                         $.ajax({
-                            url: site_url+'/admin/get-checkin-detail',
+                            url: site_url+'/get-checkin-detail',
                             type:'GET',
                             data:{id: appliid},
                             success: function(res){
@@ -1593,14 +1593,14 @@
                 var appliid = $(this).attr('data-id');
                 $('.popuploader').show();
                 $.ajax({
-                    url: site_url+'/admin/attend_session',
+                    url: site_url+'/attend_session',
                     type:'POST',
                     data:{id: appliid,waitcountdata: $('#waitcountdata').val()},
                     success: function(response){
                         var obj = $.parseJSON(response);
                         if(obj.status){
                             $.ajax({
-                                url: site_url+'/admin/get-checkin-detail',
+                                url: site_url+'/get-checkin-detail',
                                 type:'GET',
                                 data:{id: appliid},
                                 success: function(res){
@@ -1619,14 +1619,14 @@
                 var appliid = $(this).attr('data-id');
                 $('.popuploader').show();
                 $.ajax({
-                    url: site_url+'/admin/complete_session',
+                    url: site_url+'/complete_session',
                     type:'POST',
                     data:{id: appliid,attendcountdata: $('#attendcountdata').val()},
                     success: function(response){
                         var obj = $.parseJSON(response);
                         if(obj.status){
                             $.ajax({
-                                url: site_url+'/admin/get-checkin-detail',
+                                url: site_url+'/get-checkin-detail',
                                 type:'GET',
                                 data:{id: appliid},
                                 success: function(res){
@@ -1647,7 +1647,7 @@
                 $('.popuploader').show();
                 var appliid = $(this).attr('id');
                 $.ajax({
-                    url: site_url+'/admin/get-checkin-detail',
+                    url: site_url+'/get-checkin-detail',
                     type:'GET',
                     data:{id: appliid},
                     success: function(responses){
@@ -2110,7 +2110,7 @@
 
         $(document).ready(function(){
             document.getElementById('countbell_notification').parentNode.addEventListener('click', function(event){
-            window.location = "/admin/all-notifications";
+            window.location = "/all-notifications";
         })
 
         /*function load_unseen_notification(view = '')  {
@@ -2354,7 +2354,7 @@
             $('#checkindetailmodal').modal('show');
             $('.popuploader').show();
             $.ajax({
-                url: site_url + '/admin/get-checkin-detail',
+                url: site_url + '/get-checkin-detail',
                 type: 'GET',
                 data: {id: checkinId},
                 success: function(response) {

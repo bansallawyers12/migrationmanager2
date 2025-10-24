@@ -874,7 +874,7 @@
 
             loading.classList.add('active');
 
-            fetch('/admin/api/upload', {
+            fetch('/api/upload', {
                 method: 'POST',
                 body: formData,
                 headers: {
@@ -1006,7 +1006,7 @@
 
             // Load email details - commented out temporarily
             /*
-            fetch(`/admin/api/emails/${emailId}`)
+            fetch(`/api/emails/${emailId}`)
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
@@ -1167,7 +1167,7 @@
 
             // API call commented out temporarily to fix 404 error
             /*
-            fetch(`/admin/api/emails/${emailId}`, {
+            fetch(`/api/emails/${emailId}`, {
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')

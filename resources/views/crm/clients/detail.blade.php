@@ -1251,7 +1251,7 @@ $(document).ready(function() {
 </script>
 
 {{-- Sidebar Tabs Management - Dedicated file for sidebar navigation --}}
-<script src="{{URL::asset('js/admin/clients/sidebar-tabs.js')}}"></script>
+<script src="{{URL::asset('js/crm/clients/sidebar-tabs.js')}}"></script>
 
 {{-- Pass Blade variables to JavaScript --}}
 <script>
@@ -1379,12 +1379,12 @@ $(document).ready(function() {
 </script>
 
 {{-- Newly added external JS placeholders for progressive migration --}}
-<script src="{{ URL::asset('js/admin/clients/shared.js') }}" defer></script>
-<script src="{{ URL::asset('js/admin/clients/detail.js') }}" defer></script>
-<script src="{{ URL::asset('js/admin/clients/tabs/application.js') }}" defer></script>
+<script src="{{ URL::asset('js/crm/clients/shared.js') }}" defer></script>
+<script src="{{ URL::asset('js/crm/clients/detail.js') }}" defer></script>
+<script src="{{ URL::asset('js/crm/clients/tabs/application.js') }}" defer></script>
 
 {{-- Main detail page JavaScript --}}
-<script src="{{ URL::asset('js/admin/clients/detail-main.js') }}?v={{ time() }}"></script>
+<script src="{{ URL::asset('js/crm/clients/detail-main.js') }}?v={{ time() }}"></script>
 
 {{-- Sidebar Toggle JavaScript --}}
 <script>

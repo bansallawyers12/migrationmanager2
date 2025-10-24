@@ -519,7 +519,7 @@
             // Create a simple form to submit the request
             const form = document.createElement('form');
             form.method = 'POST';
-            form.action = `/admin/documents/${documentId}/send-signing-link`;
+            form.action = `/documents/${documentId}/send-signing-link`;
             
             // Add CSRF token
             const csrfToken = document.createElement('input');

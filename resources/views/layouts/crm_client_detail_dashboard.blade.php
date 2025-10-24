@@ -546,7 +546,7 @@
             $('.js-data-example-ajaxccsearch').select2({
                 closeOnSelect: true,
                 ajax: {
-                    url: '{{URL::to('/admin/clients/get-allclients')}}',
+                    url: '{{URL::to('/clients/get-allclients')}}',
                     dataType: 'json',
                     processResults: function (data) {
                         // Transforms the top-level key of the response object from 'items' to 'results'
@@ -606,7 +606,7 @@
                     if(s[1] == 'Client'){
                         window.location = '{{URL::to('/clients/detail/')}}/'+s[0]; // redirect
                     }  else{
-                        window.location = '{{URL::to('/admin/leads/history/')}}/'+s[0]; // redirect
+                        window.location = '{{URL::to('/leads/history/')}}/'+s[0]; // redirect
                     }
                 }
                 return false;
@@ -622,12 +622,12 @@
                 var appliid = $(this).attr('data-id');
                 $('.popuploader').show();
                 $.ajax({
-                    url: site_url+'/admin/update_visit_purpose',
+                    url: site_url+'/update_visit_purpose',
                     type:'POST',
                     data:{id: appliid,visit_purpose:visitpurpose},
                     success: function(responses){
                         $.ajax({
-                            url: site_url+'/admin/get-checkin-detail',
+                            url: site_url+'/get-checkin-detail',
                             type:'GET',
                             data:{id: appliid},
                             success: function(res){
@@ -644,14 +644,14 @@
                 var appliid = $(this).attr('data-id');
                 $('.popuploader').show();
                 $.ajax({
-                    url: site_url+'/admin/update_visit_comment',
+                    url: site_url+'/update_visit_comment',
                     type:'POST',
                     data:{id: appliid,visit_comment:visitcomment},
                     success: function(responses){
                         // $('.popuploader').hide();
                         $('.visit_comment').val('');
                         $.ajax({
-                            url: site_url+'/admin/get-checkin-detail',
+                            url: site_url+'/get-checkin-detail',
                             type:'GET',
                             data:{id: appliid},
                             success: function(res){
@@ -667,14 +667,14 @@
                 var appliid = $(this).attr('data-id');
                 $('.popuploader').show();
                 $.ajax({
-                    url: site_url+'/admin/attend_session',
+                    url: site_url+'/attend_session',
                     type:'POST',
                     data:{id: appliid,waitcountdata: $('#waitcountdata').val()},
                     success: function(response){
                         var obj = $.parseJSON(response);
                         if(obj.status){
                             $.ajax({
-                                url: site_url+'/admin/get-checkin-detail',
+                                url: site_url+'/get-checkin-detail',
                                 type:'GET',
                                 data:{id: appliid},
                                 success: function(res){
@@ -693,14 +693,14 @@
                 var appliid = $(this).attr('data-id');
                 $('.popuploader').show();
                 $.ajax({
-                    url: site_url+'/admin/complete_session',
+                    url: site_url+'/complete_session',
                     type:'POST',
                     data:{id: appliid,attendcountdata: $('#attendcountdata').val()},
                     success: function(response){
                         var obj = $.parseJSON(response);
                         if(obj.status){
                             $.ajax({
-                                url: site_url+'/admin/get-checkin-detail',
+                                url: site_url+'/get-checkin-detail',
                                 type:'GET',
                                 data:{id: appliid},
                                 success: function(res){
@@ -721,7 +721,7 @@
                 $('.popuploader').show();
                 var appliid = $(this).attr('id');
                 $.ajax({
-                    url: site_url+'/admin/get-checkin-detail',
+                    url: site_url+'/get-checkin-detail',
                     type:'GET',
                     data:{id: appliid},
                     success: function(responses){
@@ -1125,7 +1125,7 @@
                 closeOnSelect: false,
                 dropdownParent: $('#checkinmodal'),
                 ajax: {
-                    url: '{{URL::to('/admin/clients/get-recipients')}}',
+                    url: '{{URL::to('/clients/get-recipients')}}',
                     dataType: 'json',
                     processResults: function (data) {
                         // Transforms the top-level key of the response object from 'items' to 'results'
@@ -1185,13 +1185,13 @@
         $(document).ready(function()
         {
             document.getElementById('countbell_notification').parentNode.addEventListener('click', function(event){
-                window.location = "/admin/all-notifications";
+                window.location = "/all-notifications";
             });
 
             /*function load_unseen_notification(view = '')
             {
                 $.ajax({
-                    url:"{{URL::to('/admin/fetch-notification')}}",
+                    url:"{{URL::to('/fetch-notification')}}",
                     method:"GET",
                     dataType:"json",
                     success:function(data)
@@ -1210,7 +1210,7 @@
                 load_unseen_notification();
                 var playing = false;
                 $.ajax({
-                    url:"{{URL::to('/admin/fetch-messages')}}",
+                    url:"{{URL::to('/fetch-messages')}}",
                     method:"GET",
                     success:function(data)
                     {
@@ -1242,7 +1242,7 @@
             /*
             function load_InPersonWaitingCount(view = '') {
                 $.ajax({
-                    url:"{{URL::to('/admin/fetch-InPersonWaitingCount')}}",
+                    url:"{{URL::to('/fetch-InPersonWaitingCount')}}",
                     method:"GET",
                     dataType:"json",
                     success:function(data) {
@@ -1256,7 +1256,7 @@
 
             /*function load_TotalActivityCount(view = '') {
                 $.ajax({
-                    url:"{{URL::to('/admin/fetch-TotalActivityCount')}}",
+                    url:"{{URL::to('/fetch-TotalActivityCount')}}",
                     method:"GET",
                     dataType:"json",
                     success:function(data) {
@@ -1277,7 +1277,7 @@
             // Teams-like notification functionality
             function loadOfficeVisitNotifications() {
                 $.ajax({
-                    url: "{{URL::to('/admin/fetch-office-visit-notifications')}}",
+                    url: "{{URL::to('/fetch-office-visit-notifications')}}",
                     method: "GET",
                     dataType: "json",
                     success: function(data) {
@@ -1349,7 +1349,7 @@
                 // Check database status every 5 seconds to see if task is no longer waiting
                 var statusCheckInterval = setInterval(function() {
                     $.ajax({
-                        url: "{{URL::to('/admin/check-checkin-status')}}",
+                        url: "{{URL::to('/check-checkin-status')}}",
                         method: "GET",
                         data: { checkin_id: notification.checkin_id },
                         success: function(response) {
@@ -1373,7 +1373,7 @@
                     
                     // Mark notification as seen
                     $.ajax({
-                        url: "{{URL::to('/admin/mark-notification-seen')}}",
+                        url: "{{URL::to('/mark-notification-seen')}}",
                         method: "POST",
                         data: {
                             notification_id: notificationId,
@@ -1396,7 +1396,7 @@
                 }
                 
                 $.ajax({
-                    url: "{{URL::to('/admin/update-checkin-status')}}",
+                    url: "{{URL::to('/update-checkin-status')}}",
                     method: "POST",
                     data: {
                         checkin_id: checkinId,
@@ -1434,7 +1434,7 @@
                 $('#checkindetailmodal').modal('show');
                 $('.popuploader').show();
                 $.ajax({
-                    url: site_url + '/admin/get-checkin-detail',
+                    url: site_url + '/get-checkin-detail',
                     type: 'GET',
                     data: {id: checkinId},
                     success: function(response) {

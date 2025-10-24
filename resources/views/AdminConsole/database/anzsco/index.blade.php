@@ -142,7 +142,7 @@ $(document).ready(function() {
         var isActive = checkbox.is(':checked');
 
         $.ajax({
-            url: '/admin/anzsco/' + id + '/toggle-status',
+            url: '/adminconsole/anzsco/' + id + '/toggle-status',
             type: 'POST',
             data: {
                 _token: '{{ csrf_token() }}'
@@ -170,7 +170,7 @@ $(document).ready(function() {
 
         if (confirm('Are you sure you want to delete "' + title + '"?')) {
             $.ajax({
-                url: '/admin/anzsco/' + id,
+                url: '/adminconsole/anzsco/' + id,
                 type: 'DELETE',
                 data: {
                     _token: '{{ csrf_token() }}'

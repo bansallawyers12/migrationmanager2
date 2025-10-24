@@ -120,7 +120,7 @@
 		 closeOnSelect: true,
 
 		  ajax: {
-			url: '{{URL::to('/admin/clients/get-allclients')}}',
+			url: '{{URL::to('/clients/get-allclients')}}',
 			dataType: 'json',
 			processResults: function (data) {
 			  // Transforms the top-level key of the response object from 'items' to 'results'
@@ -175,7 +175,7 @@ function formatRepoSelectionmain (repo) {
          if(s[1] == 'Client'){
               window.location = '{{URL::to('/clients/detail/')}}/'+s[0]; // redirect
          }else{
-              window.location = '{{URL::to('/admin/leads/history/')}}/'+s[0]; // redirect
+              window.location = '{{URL::to('/leads/history/')}}/'+s[0]; // redirect
          }
 
           return false;
@@ -191,12 +191,12 @@ $(document).delegate('.opencheckin', 'click', function(){
 		var appliid = $(this).attr('data-id');
 		$('.popuploader').show();
 		$.ajax({
-			url: site_url+'/admin/update_visit_purpose',
+			url: site_url+'/update_visit_purpose',
 			type:'POST',
 			data:{id: appliid,visit_purpose:visitpurpose},
 			success: function(responses){
 				 $.ajax({
-					url: site_url+'/admin/get-checkin-detail',
+					url: site_url+'/get-checkin-detail',
 					type:'GET',
 					data:{id: appliid},
 					success: function(res){
@@ -214,14 +214,14 @@ $(document).delegate('.opencheckin', 'click', function(){
 		var appliid = $(this).attr('data-id');
 		$('.popuploader').show();
 		$.ajax({
-			url: site_url+'/admin/update_visit_comment',
+			url: site_url+'/update_visit_comment',
 			type:'POST',
 			data:{id: appliid,visit_comment:visitcomment},
 			success: function(responses){
 				// $('.popuploader').hide();
 				$('.visit_comment').val('');
 				$.ajax({
-					url: site_url+'/admin/get-checkin-detail',
+					url: site_url+'/get-checkin-detail',
 					type:'GET',
 					data:{id: appliid},
 					success: function(res){
@@ -237,7 +237,7 @@ $(document).delegate('.opencheckin', 'click', function(){
 		var appliid = $(this).attr('data-id');
 		$('.popuploader').show();
 		$.ajax({
-			url: site_url+'/admin/attend_session',
+			url: site_url+'/attend_session',
 			type:'POST',
 			data:{id: appliid,waitcountdata: $('#waitcountdata').val()},
 			success: function(response){
@@ -245,7 +245,7 @@ $(document).delegate('.opencheckin', 'click', function(){
 				 var obj = $.parseJSON(response);
 				if(obj.status){
 					$.ajax({
-					url: site_url+'/admin/get-checkin-detail',
+					url: site_url+'/get-checkin-detail',
 					type:'GET',
 					data:{id: appliid},
 					success: function(res){
@@ -265,7 +265,7 @@ $(document).delegate('.opencheckin', 'click', function(){
 		var appliid = $(this).attr('data-id');
 		$('.popuploader').show();
 		$.ajax({
-			url: site_url+'/admin/complete_session',
+			url: site_url+'/complete_session',
 			type:'POST',
 			data:{id: appliid,attendcountdata: $('#attendcountdata').val()},
 			success: function(response){
@@ -273,7 +273,7 @@ $(document).delegate('.opencheckin', 'click', function(){
 				 var obj = $.parseJSON(response);
 				if(obj.status){
 					$.ajax({
-					url: site_url+'/admin/get-checkin-detail',
+					url: site_url+'/get-checkin-detail',
 					type:'GET',
 					data:{id: appliid},
 					success: function(res){
@@ -293,7 +293,7 @@ $(document).delegate('.opencheckin', 'click', function(){
 		$('.popuploader').show();
 		var appliid = $(this).attr('id');
 		$.ajax({
-				url: site_url+'/admin/get-checkin-detail',
+				url: site_url+'/get-checkin-detail',
 				type:'GET',
 				data:{id: appliid},
 				success: function(responses){
@@ -688,7 +688,7 @@ $(document).delegate('.opencheckin', 'click', function(){
 		 closeOnSelect: false,
 		dropdownParent: $('#checkinmodal'),
 		  ajax: {
-			url: '{{URL::to('/admin/clients/get-recipients')}}',
+			url: '{{URL::to('/clients/get-recipients')}}',
 			dataType: 'json',
 			processResults: function (data) {
 			  // Transforms the top-level key of the response object from 'items' to 'results'
@@ -757,7 +757,7 @@ function formatRepoSelectioncheck (repo) {
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" name="checkinmodalsave" id="checkinmodalsave" action="{{URL::to('/admin/checkin')}}" autocomplete="off" enctype="multipart/form-data">
+				<form method="post" name="checkinmodalsave" id="checkinmodalsave" action="{{URL::to('/checkin')}}" autocomplete="off" enctype="multipart/form-data">
 				@csrf
 
 					<div class="row">

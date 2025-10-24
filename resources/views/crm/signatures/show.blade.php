@@ -1467,7 +1467,7 @@ function showMatch(match, type) {
 
 // Load client matters
 function loadClientMatters(clientId) {
-    fetch(`/admin/api/client-matters/${clientId}`)
+    fetch(`/api/client-matters/${clientId}`)
         .then(response => response.json())
         .then(data => {
             const matterSelect = document.getElementById('matterId');

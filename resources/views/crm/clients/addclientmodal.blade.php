@@ -351,7 +351,7 @@ function populateClientMatters(clientId) {
     select.innerHTML = '<option value="">Select Client Matter</option>';
     
     // Fetch client matters via AJAX
-    fetch(`/admin/get-client-matters/${clientId}`)
+    fetch(`/get-client-matters/${clientId}`)
         .then(response => response.json())
         .then(data => {
             if (data.success && data.matters) {
@@ -396,7 +396,7 @@ document.getElementById('convertActivityToNoteForm').addEventListener('submit', 
     
     const formData = new FormData(this);
     
-    fetch('/admin/convert-activity-to-note', {
+    fetch('/convert-activity-to-note', {
         method: 'POST',
         body: formData,
         headers: {
