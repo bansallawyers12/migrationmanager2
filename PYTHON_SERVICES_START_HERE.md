@@ -1,6 +1,7 @@
 # Python Services - START HERE
 
 > **Welcome!** This is your entry point to the unified Python services documentation.
+> **Last Updated:** October 2025 - Fully integrated with Migration Manager CRM
 
 ---
 
@@ -8,12 +9,14 @@
 
 The **Unified Python Services** is a single FastAPI microservice that handles:
 
-- ✅ PDF Processing (convert to images, merge files)
-- ✅ Email Parsing (.msg files)
-- ✅ Email Analysis (categorization, priority, sentiment)
-- ✅ Email Rendering (enhanced HTML)
+- ✅ PDF Processing (convert to images, merge files, watermark, OCR)
+- ✅ Email Parsing (.msg files from Outlook)
+- ✅ Email Analysis (categorization, priority, sentiment using AI)
+- ✅ Email Rendering (enhanced HTML with inline images)
 
 **One service. One port. Simple.**
+
+> **Note:** This replaces the previous multi-service architecture with a single unified service running on port 5000.
 
 ---
 

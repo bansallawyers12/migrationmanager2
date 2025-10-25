@@ -1,6 +1,13 @@
 @echo off
+REM ============================================================
 REM Migration Manager Python Services - Windows Startup Script
+REM ============================================================
 REM This script starts the unified Python services on Windows
+REM Services included:
+REM   - PDF Processing Service (merge, split, watermark, OCR)
+REM   - Email Service (Outlook integration, .msg parsing)
+REM   - AI Service (OpenAI integration for document analysis)
+REM ============================================================
 
 echo ============================================================
 echo Migration Manager Python Services - Windows Startup
@@ -35,8 +42,9 @@ if not exist "requirements.txt" (
     exit /b 1
 )
 
-REM Install dependencies if needed
+REM Install dependencies if needed (FastAPI, Uvicorn, PDF libraries, etc.)
 echo 📦 Checking dependencies...
+REM Check for key dependencies: FastAPI (web framework), Uvicorn (ASGI server), extract_msg (email parsing)
 python -c "import fastapi, uvicorn, extract_msg" >nul 2>&1
 if %errorlevel% neq 0 (
     echo 📦 Installing dependencies...
