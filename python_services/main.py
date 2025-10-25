@@ -30,6 +30,7 @@ from services.pdf_service import PDFService
 from services.email_parser_service import EmailParserService
 from services.email_analyzer_service import EmailAnalyzerService
 from services.email_renderer_service import EmailRendererService
+from services.docx_converter_service import DocxConverterService
 from utils.logger import setup_logger
 from utils.validators import validate_file_type, validate_file_size
 
@@ -57,6 +58,7 @@ pdf_service = PDFService()
 email_parser = EmailParserService()
 email_analyzer = EmailAnalyzerService()
 email_renderer = EmailRendererService()
+docx_converter = DocxConverterService()
 
 
 # ============================================================================
@@ -81,14 +83,19 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
+    # Check if LibreOffice is available for DOCX conversion
+    libreoffice_available = docx_converter.is_libreoffice_available()
+    
     return {
         "status": "healthy",
         "services": {
             "pdf_service": "ready",
             "email_parser": "ready",
             "email_analyzer": "ready",
-            "email_renderer": "ready"
-        }
+            "email_renderer": "ready",
+            "docx_converter": "ready" if libreoffice_available else "limited"
+        },
+        "libreoffice_available": libreoffice_available
     }
 
 
@@ -141,6 +148,202 @@ async def merge_pdfs(files: list[UploadFile] = File(...)):
     except Exception as e:
         logger.error(f"Error merging PDFs: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/convert_page")
+async def convert_page(request: Request):
+    """Convert a single PDF page to image."""
+    try:
+        data = await request.json()
+        file_path = data.get('file_path')
+        page_number = data.get('page_number', 1)
+        resolution = data.get('resolution', 150)
+        
+        if not file_path:
+            raise HTTPException(status_code=400, detail="file_path is required")
+        
+        logger.info(f"Converting page {page_number} of {file_path}")
+        
+        result = pdf_service.convert_page_to_image(file_path, page_number, resolution)
+        
+        if not result.get('success'):
+            raise HTTPException(status_code=500, detail=result.get('error', 'Conversion failed'))
+        
+        return JSONResponse(content=result)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error converting page: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/pdf_info")
+async def get_pdf_info(request: Request):
+    """Get PDF information (page count, metadata, etc.)."""
+    try:
+        data = await request.json()
+        file_path = data.get('file_path')
+        
+        if not file_path:
+            raise HTTPException(status_code=400, detail="file_path is required")
+        
+        logger.info(f"Getting PDF info for: {file_path}")
+        
+        result = pdf_service.get_pdf_info(file_path)
+        
+        if not result.get('success'):
+            raise HTTPException(status_code=500, detail=result.get('error', 'Failed to get PDF info'))
+        
+        return JSONResponse(content=result)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting PDF info: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/validate_pdf")
+async def validate_pdf(request: Request):
+    """Validate a PDF file."""
+    try:
+        data = await request.json()
+        file_path = data.get('file_path')
+        
+        if not file_path:
+            raise HTTPException(status_code=400, detail="file_path is required")
+        
+        logger.info(f"Validating PDF: {file_path}")
+        
+        result = pdf_service.validate_pdf(file_path)
+        
+        return JSONResponse(content=result)
+        
+    except Exception as e:
+        logger.error(f"Error validating PDF: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/normalize_pdf")
+async def normalize_pdf(request: Request):
+    """Normalize PDF for better compatibility."""
+    try:
+        data = await request.json()
+        input_path = data.get('input_path')
+        output_path = data.get('output_path')
+        
+        if not input_path or not output_path:
+            raise HTTPException(status_code=400, detail="input_path and output_path are required")
+        
+        logger.info(f"Normalizing PDF: {input_path} -> {output_path}")
+        
+        result = pdf_service.normalize_pdf(input_path, output_path)
+        
+        if not result.get('success'):
+            raise HTTPException(status_code=500, detail=result.get('error', 'Normalization failed'))
+        
+        return JSONResponse(content=result)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error normalizing PDF: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/add_signatures")
+async def add_signatures(request: Request):
+    """Add signatures to PDF at specified positions."""
+    try:
+        data = await request.json()
+        input_path = data.get('input_path')
+        output_path = data.get('output_path')
+        signatures = data.get('signatures', [])
+        
+        if not input_path or not output_path:
+            raise HTTPException(status_code=400, detail="input_path and output_path are required")
+        
+        logger.info(f"Adding {len(signatures)} signatures to PDF")
+        
+        result = pdf_service.add_signatures_to_pdf(input_path, output_path, signatures)
+        
+        if not result.get('success'):
+            raise HTTPException(status_code=500, detail=result.get('error', 'Failed to add signatures'))
+        
+        return JSONResponse(content=result)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error adding signatures: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/batch_convert")
+async def batch_convert_pages(request: Request):
+    """Convert multiple PDF pages to images in batch."""
+    try:
+        data = await request.json()
+        file_path = data.get('file_path')
+        pages = data.get('pages', [])
+        resolution = data.get('resolution', 150)
+        
+        if not file_path or not pages:
+            raise HTTPException(status_code=400, detail="file_path and pages are required")
+        
+        logger.info(f"Batch converting {len(pages)} pages")
+        
+        result = pdf_service.batch_convert_pages(file_path, pages, resolution)
+        
+        if not result.get('success'):
+            raise HTTPException(status_code=500, detail=result.get('error', 'Batch conversion failed'))
+        
+        return JSONResponse(content=result)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error batch converting: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# DOCX Converter Endpoints
+# ============================================================================
+
+@app.post("/convert")
+async def convert_docx_to_pdf(file: UploadFile = File(...)):
+    """Convert DOCX/DOC file to PDF."""
+    try:
+        logger.info(f"Converting document: {file.filename}")
+        
+        # Validate file
+        if not validate_file_type(file.filename, ['.doc', '.docx']):
+            raise HTTPException(status_code=400, detail="Invalid file type. Only DOC/DOCX files are allowed.")
+        
+        # Read file content
+        content = await file.read()
+        
+        # Convert to PDF
+        result = docx_converter.convert_to_pdf(content, file.filename)
+        
+        if not result.get('success'):
+            raise HTTPException(status_code=500, detail=result.get('error', 'Conversion failed'))
+        
+        return JSONResponse(content=result)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error converting DOCX to PDF: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/convert-json")
+async def convert_docx_to_pdf_json(file: UploadFile = File(...)):
+    """Convert DOCX/DOC file to PDF (JSON endpoint - alias for /convert)."""
+    return await convert_docx_to_pdf(file)
 
 
 # ============================================================================

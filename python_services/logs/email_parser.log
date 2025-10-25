@@ -38,3 +38,19 @@
 2025-10-25 19:34:26 - services.email_parser_service - INFO - Successfully parsed email: Fw: InfoTrack - EFT Payment Confirmation - w876948
 2025-10-25 19:38:13 - services.email_parser_service - INFO - Parsing .msg file: temp\Fw_ Overdue Account – Action Required for GWW Account 3212470000.msg
 2025-10-25 19:38:14 - services.email_parser_service - INFO - Successfully parsed email: Fw: Overdue Account – Action Required for GWW Account 3212470000
+2025-10-25 19:56:28 - services.email_parser_service - INFO - Parsing .msg file: temp\Fw_ InfoTrack - EFT Payment Confirmation - w876948.msg
+2025-10-25 19:56:28 - services.email_parser_service - INFO - Successfully parsed email: Fw: InfoTrack - EFT Payment Confirmation - w876948
+2025-10-25 19:56:49 - services.email_parser_service - INFO - Parsing .msg file: temp\Fw_ Overdue Account – Action Required for GWW Account 3212470000.msg
+2025-10-25 19:56:49 - services.email_parser_service - INFO - Successfully parsed email: Fw: Overdue Account – Action Required for GWW Account 3212470000
+2025-10-25 20:02:38 - services.email_parser_service - INFO - Parsing .msg file: temp\Change in Circumstances_ Addition of Child in Training Nomination - BCC2025_3366376 - 1525701035 - SMART HOME GROUP PTY LTD _SEC_OFFICIAL_Sensitive_ ACCESS_Personal-Privacy_.msg
+2025-10-25 20:02:39 - services.email_parser_service - INFO - Successfully parsed email: Change in Circumstances: Addition of Child in Training Nomination - BCC2025/3366376 - 1525701035 - SMART HOME GROUP PTY LTD [SEC=OFFICIAL:Sensitive, ACCESS=Personal-Privacy]
+2025-10-25 20:05:43 - services.email_parser_service - INFO - Parsing .msg file: temp\2319215 - Ms Davinder Kaur Ranjeet Singh Nath _SEC_OFFICIAL_Sensitive_ ACCESS_Personal-Privacy_ (1).msg
+2025-10-25 20:05:43 - services.email_parser_service - INFO - Successfully parsed email: 2319215 - Ms Davinder Kaur Ranjeet Singh Nath [SEC=OFFICIAL:Sensitive, ACCESS=Personal-Privacy]
+2025-10-25 20:06:42 - services.email_parser_service - INFO - Parsing .msg file: temp\2319215 - Ms Davinder Kaur Ranjeet Singh Nath _SEC_OFFICIAL_Sensitive_ ACCESS_Personal-Privacy_.msg
+2025-10-25 20:06:42 - services.email_parser_service - INFO - Successfully parsed email: 2319215 - Ms Davinder Kaur Ranjeet Singh Nath [SEC=OFFICIAL:Sensitive, ACCESS=Personal-Privacy]
+2025-10-25 22:53:41 - services.email_parser_service - INFO - Email Parser Service initialized
+2025-10-25 22:53:41 - services.email_parser_service - INFO - Email Parser Service initialized
+2025-10-25 23:02:53 - services.email_parser_service - INFO - Parsing .msg file: temp\2319215 - Ms Davinder Kaur Ranjeet Singh Nath _SEC_OFFICIAL_Sensitive_ ACCESS_Personal-Privacy_ (1).msg
+2025-10-25 23:02:54 - services.email_parser_service - INFO - Successfully parsed email: 2319215 - Ms Davinder Kaur Ranjeet Singh Nath [SEC=OFFICIAL:Sensitive, ACCESS=Personal-Privacy]
+2025-10-25 23:22:46 - services.email_parser_service - INFO - Email Parser Service initialized
+2025-10-25 23:22:46 - services.email_parser_service - INFO - Email Parser Service initialized

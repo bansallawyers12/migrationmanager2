@@ -28,3 +28,28 @@
 2025-10-25 19:34:26 - main - INFO - Analyzing email: Fw: InfoTrack - EFT Payment Confirmation - w876948
 2025-10-25 19:38:13 - main - INFO - Parsing email file: Fw_ Overdue Account – Action Required for GWW Account 3212470000.msg
 2025-10-25 19:38:14 - main - INFO - Analyzing email: Fw: Overdue Account – Action Required for GWW Account 3212470000
+2025-10-25 19:56:28 - main - INFO - Parsing email file: Fw_ InfoTrack - EFT Payment Confirmation - w876948.msg
+2025-10-25 19:56:28 - main - INFO - Analyzing email: Fw: InfoTrack - EFT Payment Confirmation - w876948
+2025-10-25 19:56:49 - main - INFO - Parsing email file: Fw_ Overdue Account – Action Required for GWW Account 3212470000.msg
+2025-10-25 19:56:50 - main - INFO - Analyzing email: Fw: Overdue Account – Action Required for GWW Account 3212470000
+2025-10-25 20:02:38 - main - INFO - Parsing email file: Change in Circumstances_ Addition of Child in Training Nomination - BCC2025_3366376 - 1525701035 - SMART HOME GROUP PTY LTD _SEC_OFFICIAL_Sensitive_ ACCESS_Personal-Privacy_.msg
+2025-10-25 20:02:39 - main - INFO - Analyzing email: Change in Circumstances: Addition of Child in Training Nomination - BCC2025/3366376 - 1525701035 - SMART HOME GROUP PTY LTD [SEC=OFFICIAL:Sensitive, ACCESS=Personal-Privacy]
+2025-10-25 20:05:43 - main - INFO - Parsing email file: 2319215 - Ms Davinder Kaur Ranjeet Singh Nath _SEC_OFFICIAL_Sensitive_ ACCESS_Personal-Privacy_ (1).msg
+2025-10-25 20:05:43 - main - INFO - Analyzing email: 2319215 - Ms Davinder Kaur Ranjeet Singh Nath [SEC=OFFICIAL:Sensitive, ACCESS=Personal-Privacy]
+2025-10-25 20:06:42 - main - INFO - Parsing email file: 2319215 - Ms Davinder Kaur Ranjeet Singh Nath _SEC_OFFICIAL_Sensitive_ ACCESS_Personal-Privacy_.msg
+2025-10-25 20:06:42 - main - INFO - Analyzing email: 2319215 - Ms Davinder Kaur Ranjeet Singh Nath [SEC=OFFICIAL:Sensitive, ACCESS=Personal-Privacy]
+2025-10-25 22:53:41 - __main__ - INFO - Starting Migration Manager Python Services on 127.0.0.1:5000
+2025-10-25 23:02:53 - main - INFO - Parsing email file: 2319215 - Ms Davinder Kaur Ranjeet Singh Nath _SEC_OFFICIAL_Sensitive_ ACCESS_Personal-Privacy_ (1).msg
+2025-10-25 23:02:54 - main - INFO - Analyzing email: 2319215 - Ms Davinder Kaur Ranjeet Singh Nath [SEC=OFFICIAL:Sensitive, ACCESS=Personal-Privacy]
+2025-10-25 23:22:46 - __main__ - INFO - Starting Migration Manager Python Services on 127.0.0.1:5000
+2025-10-25 23:23:03 - main - INFO - Converting page 1 of C:\xampp\htdocs\migrationmanager\storage\app\public\documents\68fcbde60ca18_IMMI Refusal Notification with Decision Record (1).pdf
+2025-10-25 23:23:12 - main - ERROR - Error converting page: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+2025-10-25 23:23:12 - main - ERROR - HTTP 500: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+2025-10-25 23:23:40 - main - INFO - Validating PDF: C:\xampp\htdocs\migrationmanager\storage\app\public\documents\68fcbde60ca18_IMMI Refusal Notification with Decision Record (1).pdf
+2025-10-25 23:23:40 - main - INFO - Getting PDF info for: C:\xampp\htdocs\migrationmanager\storage\app\public\documents\68fcbde60ca18_IMMI Refusal Notification with Decision Record (1).pdf
+2025-10-25 23:23:40 - main - INFO - Converting page 1 of C:\xampp\htdocs\migrationmanager\storage\app\public\documents\68fcbde60ca18_IMMI Refusal Notification with Decision Record (1).pdf
+2025-10-25 23:23:49 - main - INFO - Converting page 1 of C:\xampp\htdocs\migrationmanager\storage\app\public\documents\68fcbde60ca18_IMMI Refusal Notification with Decision Record (1).pdf
+2025-10-25 23:24:00 - main - INFO - Converting page 1 of C:\xampp\htdocs\migrationmanager\storage\app\public\documents\68fcbde60ca18_IMMI Refusal Notification with Decision Record (1).pdf
+2025-10-25 23:24:11 - main - INFO - Converting page 1 of C:\xampp\htdocs\migrationmanager\storage\app\public\documents\68fcbde60ca18_IMMI Refusal Notification with Decision Record (1).pdf
+2025-10-25 23:24:29 - main - INFO - Converting page 1 of C:\xampp\htdocs\migrationmanager\storage\app\public\documents\68fcbde60ca18_IMMI Refusal Notification with Decision Record (1).pdf
+2025-10-25 23:24:44 - main - INFO - Converting page 2 of C:\xampp\htdocs\migrationmanager\storage\app\public\documents\68fcbde60ca18_IMMI Refusal Notification with Decision Record (1).pdf
