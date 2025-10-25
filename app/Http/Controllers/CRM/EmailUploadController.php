@@ -278,7 +278,36 @@ class EmailUploadController extends Controller
                 }
             }
             
+            // NEW: Add Python AI analysis
+            $analysisData = $this->analyzeEmailWithPython($parsedData);
+            if ($analysisData && isset($analysisData['success']) && $analysisData['success']) {
+                $mailReport->python_analysis = $analysisData;
+                $mailReport->category = $analysisData['category'] ?? 'Uncategorized';
+                $mailReport->priority = $analysisData['priority'] ?? 'low';
+                $mailReport->sentiment = $analysisData['sentiment'] ?? 'neutral';
+                $mailReport->language = $analysisData['language'] ?? null;
+                $mailReport->security_issues = $analysisData['security_issues'] ?? null;
+                $mailReport->thread_info = $analysisData['thread_info'] ?? null;
+                $mailReport->processed_at = now();
+            }
+            
+            // NEW: Add metadata
+            $mailReport->message_id = $parsedData['message_id'] ?? null;
+            $mailReport->thread_id = $parsedData['thread_id'] ?? null;
+            $mailReport->received_date = $parsedData['received_date'] ?? now();
+            $mailReport->file_hash = md5_file($file->getRealPath());
+            
             $mailReport->save();
+
+            // NEW: Save attachments
+            if (isset($parsedData['attachments']) && is_array($parsedData['attachments'])) {
+                foreach ($parsedData['attachments'] as $attachmentData) {
+                    $this->saveAttachment($mailReport->id, $attachmentData, $clientUniqueId);
+                }
+            }
+
+            // NEW: Auto-assign labels
+            $this->autoAssignLabels($mailReport, $mailType);
 
             // 5. Update client matter timestamp
             $matterId = $document->client_matter_id;
@@ -382,6 +411,97 @@ class EmailUploadController extends Controller
                 'url' => $this->pythonServiceUrl,
                 'error' => $e->getMessage()
             ];
+        }
+    }
+    
+    /**
+     * Analyze email content with Python AI service
+     * 
+     * @param array $parsedData
+     * @return array|null
+     */
+    protected function analyzeEmailWithPython($parsedData)
+    {
+        try {
+            $response = Http::timeout(30)->post($this->pythonServiceUrl . '/email/analyze', [
+                'subject' => $parsedData['subject'] ?? '',
+                'text_content' => $parsedData['text_content'] ?? '',
+                'html_content' => $parsedData['html_content'] ?? '',
+                'sender_email' => $parsedData['sender_email'] ?? '',
+                'recipients' => $parsedData['recipients'] ?? [],
+            ]);
+
+            if ($response->successful()) {
+                return $response->json();
+            }
+            
+            Log::warning('Python analyzer service unavailable', ['status' => $response->status()]);
+            return null;
+        } catch (\Exception $e) {
+            Log::warning('Python analyzer service error', ['error' => $e->getMessage()]);
+            return null;
+        }
+    }
+
+    /**
+     * Save attachment to database and S3
+     * 
+     * @param int $mailReportId
+     * @param array $attachmentData
+     * @param string $clientUniqueId
+     */
+    protected function saveAttachment($mailReportId, $attachmentData, $clientUniqueId)
+    {
+        try {
+            // Upload attachment to S3 if it has content
+            $s3Path = null;
+            $s3Key = null;
+            
+            if (isset($attachmentData['content']) && !empty($attachmentData['content'])) {
+                $s3Key = $clientUniqueId . '/attachments/' . time() . '_' . $attachmentData['filename'];
+                Storage::disk('s3')->put($s3Key, base64_decode($attachmentData['content']));
+                $s3Path = Storage::disk('s3')->url($s3Key);
+            }
+
+            \App\Models\MailReportAttachment::create([
+                'mail_report_id' => $mailReportId,
+                'filename' => $attachmentData['filename'] ?? 'unknown',
+                'display_name' => $attachmentData['display_name'] ?? ($attachmentData['filename'] ?? 'unknown'),
+                'content_type' => $attachmentData['content_type'] ?? 'application/octet-stream',
+                'file_path' => $s3Path,
+                's3_key' => $s3Key,
+                'file_size' => $attachmentData['file_size'] ?? 0,
+                'content_id' => $attachmentData['content_id'] ?? null,
+                'is_inline' => $attachmentData['is_inline'] ?? false,
+                'extension' => pathinfo($attachmentData['filename'] ?? 'unknown', PATHINFO_EXTENSION),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to save attachment', [
+                'error' => $e->getMessage(),
+                'attachment' => $attachmentData['filename'] ?? 'unknown'
+            ]);
+        }
+    }
+
+    /**
+     * Auto-assign labels based on mail type
+     * 
+     * @param \App\Models\MailReport $mailReport
+     * @param string $mailType
+     */
+    protected function autoAssignLabels($mailReport, $mailType)
+    {
+        try {
+            $labelName = $mailType === 'inbox' ? 'Inbox' : 'Sent';
+            $label = \App\Models\EmailLabel::where('name', $labelName)
+                ->where('type', 'system')
+                ->first();
+            
+            if ($label) {
+                $mailReport->labels()->attach($label->id);
+            }
+        } catch (\Exception $e) {
+            Log::warning('Failed to auto-assign label', ['error' => $e->getMessage()]);
         }
     }
 }

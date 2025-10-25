@@ -1,6 +1,6 @@
 <!-- Email Handling Interface -->
-<div class="email-interface-container">
-    <!-- Top Control Bar (Search & Filters Only) -->
+<div class="email-interface-container" data-client-id="{{ $client->id ?? '' }}">
+    <!-- Top Control Bar (Search & Filters) -->
     <div class="email-control-bar">
         <div class="control-section search-section">
             <label for="emailSearchInput">Search:</label>
@@ -8,23 +8,38 @@
         </div>
         
         <div class="control-section filter-section">
-            <label for="labelFilter">Label:</label>
-            <select id="labelFilter" class="filter-select">
-                <option value="">All labels</option>
+            <label for="mailTypeFilter">Type:</label>
+            <select id="mailTypeFilter" class="filter-select">
                 <option value="inbox">Inbox</option>
                 <option value="sent">Sent</option>
             </select>
             
-            <label for="sortFilter">Sort:</label>
-            <select id="sortFilter" class="filter-select">
-                <option value="date">Date</option>
-                <option value="subject">Subject</option>
-                <option value="sender">Sender</option>
+            <label for="labelFilter">Label:</label>
+            <select id="labelFilter" class="filter-select">
+                <option value="">All Labels</option>
+                <!-- Populated dynamically -->
+            </select>
+            
+            <label for="categoryFilter">Category:</label>
+            <select id="categoryFilter" class="filter-select">
+                <option value="">All Categories</option>
+                <!-- Populated dynamically -->
+            </select>
+            
+            <label for="priorityFilter">Priority:</label>
+            <select id="priorityFilter" class="filter-select">
+                <option value="">All Priorities</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
             </select>
         </div>
         
         <div class="control-section action-section">
-            <button class="apply-btn" id="applyBtn">Apply</button>
+            <button class="create-label-btn" id="createLabelBtn">
+                <i class="fas fa-tag"></i> Create Label
+            </button>
+            <button class="apply-btn" id="applyFiltersBtn">Apply</button>
         </div>
     </div>
 
@@ -87,6 +102,68 @@
             <div class="email-content-view" id="emailContentView" style="display: none;">
                 <!-- Email content will be loaded here -->
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Label Creation Modal -->
+<div id="labelModal" class="label-modal" style="display: none;">
+    <div class="label-modal-content">
+        <div class="label-modal-header">
+            <h3 class="label-modal-title">Create New Label</h3>
+            <button class="label-modal-close" id="closeLabelModal">&times;</button>
+        </div>
+        <div class="label-modal-body">
+            <div class="label-form-group">
+                <label class="label-form-label">Label Name</label>
+                <input type="text" id="labelNameInput" class="label-form-input" placeholder="Enter label name">
+            </div>
+            <div class="label-form-group">
+                <label class="label-form-label">Color</label>
+                <div class="color-picker-container" id="colorPicker">
+                    <div class="color-option" data-color="#3B82F6" style="background: #3B82F6;"></div>
+                    <div class="color-option" data-color="#10B981" style="background: #10B981;"></div>
+                    <div class="color-option" data-color="#EF4444" style="background: #EF4444;"></div>
+                    <div class="color-option" data-color="#F59E0B" style="background: #F59E0B;"></div>
+                    <div class="color-option" data-color="#8B5CF6" style="background: #8B5CF6;"></div>
+                    <div class="color-option" data-color="#EC4899" style="background: #EC4899;"></div>
+                    <div class="color-option" data-color="#14B8A6" style="background: #14B8A6;"></div>
+                    <div class="color-option" data-color="#F97316" style="background: #F97316;"></div>
+                </div>
+                <input type="hidden" id="selectedColor" value="#3B82F6">
+            </div>
+            <div class="label-form-group">
+                <label class="label-form-label">Icon</label>
+                <div class="icon-picker-container" id="iconPicker">
+                    <div class="icon-option" data-icon="fas fa-tag"><i class="fas fa-tag"></i></div>
+                    <div class="icon-option" data-icon="fas fa-star"><i class="fas fa-star"></i></div>
+                    <div class="icon-option" data-icon="fas fa-flag"><i class="fas fa-flag"></i></div>
+                    <div class="icon-option" data-icon="fas fa-bookmark"><i class="fas fa-bookmark"></i></div>
+                    <div class="icon-option" data-icon="fas fa-heart"><i class="fas fa-heart"></i></div>
+                    <div class="icon-option" data-icon="fas fa-bell"><i class="fas fa-bell"></i></div>
+                    <div class="icon-option" data-icon="fas fa-fire"><i class="fas fa-fire"></i></div>
+                    <div class="icon-option" data-icon="fas fa-bolt"><i class="fas fa-bolt"></i></div>
+                </div>
+                <input type="hidden" id="selectedIcon" value="fas fa-tag">
+            </div>
+            <div class="label-form-actions">
+                <button class="label-form-btn label-form-btn-cancel" id="cancelLabelBtn">Cancel</button>
+                <button class="label-form-btn label-form-btn-create" id="saveLabelBtn">Create Label</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Attachment Preview Modal -->
+<div id="attachmentPreviewModal" class="preview-modal" style="display: none;">
+    <div class="preview-modal-overlay" id="previewOverlay"></div>
+    <div class="preview-modal-content">
+        <div class="preview-modal-header">
+            <h3 id="previewFileName">Preview</h3>
+            <button class="preview-close" id="closePreviewBtn">&times;</button>
+        </div>
+        <div class="preview-modal-body">
+            <iframe id="previewFrame" src=""></iframe>
         </div>
     </div>
 </div>

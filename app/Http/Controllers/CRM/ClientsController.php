@@ -8700,13 +8700,17 @@ class ClientsController extends Controller
             $client_id = $request->input('client_id');
             $status = $request->input('status');
             $search = $request->input('search');
+            $label_id = $request->input('label_id'); // NEW
+            $category = $request->input('category'); // NEW
+            $priority = $request->input('priority'); // NEW
 
-            // Base query for inbox mail
+            // Base query for inbox mail - ADD relationships
             $query = \App\Models\MailReport::where('client_id', $client_id)
                 ->where('type', 'client')
                 ->where('mail_type', 1)
                 ->where('conversion_type', 'conversion_email_fetch')
                 ->where('mail_body_type', 'inbox')
+                ->with(['attachments', 'labels']) // NEW: Load relationships
                 ->orderBy('created_at', 'DESC');
 
             // Filter by status (mail_is_read)
@@ -8732,6 +8736,23 @@ class ClientsController extends Controller
                       ->orWhere('from_mail', 'LIKE', "%{$search}%")
                       ->orWhere('to_mail', 'LIKE', "%{$search}%");
                 });
+            }
+
+            // NEW: Filter by label
+            if (!empty($label_id)) {
+                $query->whereHas('labels', function($q) use ($label_id) {
+                    $q->where('email_labels.id', $label_id);
+                });
+            }
+
+            // NEW: Filter by category
+            if (!empty($category)) {
+                $query->where('category', $category);
+            }
+
+            // NEW: Filter by priority
+            if (!empty($priority)) {
+                $query->where('priority', $priority);
             }
 
             // Fetch the emails

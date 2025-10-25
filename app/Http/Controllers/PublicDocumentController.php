@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Document;
 use App\Models\Signer;
-use App\Services\PythonPDFService;
+use App\Services\PythonService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
@@ -420,11 +420,11 @@ class PublicDocumentController extends Controller
                         ->withInput();
                 }
 
-                // ✅ PYTHON PDF SERVICE: Try Python service first (supports ALL PDF compressions)
-                $pythonPdfService = new \App\Services\PythonPDFService();
+                // ✅ PYTHON SERVICE: Try Python service first (supports ALL PDF compressions)
+                $pythonService = app(\App\Services\PythonService::class);
                 $usedPythonService = false;
                 
-                if ($pythonPdfService->isHealthy()) {
+                if ($pythonService->isHealthy()) {
                     Log::info('Attempting to create signed PDF with Python service');
                     
                     // Prepare signatures in Python service format
@@ -471,7 +471,7 @@ class PublicDocumentController extends Controller
                     }
                     
                     // Call Python service to add signatures
-                    $pythonSuccess = $pythonPdfService->addSignaturesToPdf(
+                    $pythonSuccess = $pythonService->addSignaturesToPdf(
                         $tmpPdfPath,
                         $outputTmpPath,
                         $signaturesForPython
@@ -787,11 +787,11 @@ class PublicDocumentController extends Controller
             }
 
             try {
-                // Try Python PDF Service first
-                $pythonPDFService = new \App\Services\PythonPDFService();
+                // Try Python Service first
+                $pythonService = app(\App\Services\PythonService::class);
                 
-                if ($pythonPDFService->isHealthy()) {
-                    $result = $pythonPDFService->convertPageToImage($tmpPdfPath, (int)$page, 72);
+                if ($pythonService->isHealthy()) {
+                    $result = $pythonService->convertPageToImage($tmpPdfPath, (int)$page, 72);
                     
                     if ($result && $result['success']) {
                         $imageData = $result['image_data'];

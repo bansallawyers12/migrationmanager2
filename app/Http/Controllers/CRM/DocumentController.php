@@ -1106,8 +1106,8 @@ class DocumentController extends Controller
             'authenticated' => auth('admin')->check()
         ]);
         
-        // ADD Python PDF Service integration
-        $pdfService = app(\App\Services\PythonPDFService::class);
+        // Use unified Python Service
+        $pythonService = app(\App\Services\PythonService::class);
         
         try {
             $document = Document::findOrFail($id);
@@ -1195,8 +1195,8 @@ class DocumentController extends Controller
             }
 
             // PRIORITIZE PYTHON SERVICE - It's working reliably
-            if ($pdfService->isHealthy()) {
-                $result = $pdfService->convertPageToImage($tmpPdfPath, $page, 150);
+            if ($pythonService->isHealthy()) {
+                $result = $pythonService->convertPageToImage($tmpPdfPath, $page, 150);
                 
                 if ($result && ($result['success'] ?? false)) {
                     // Clean up temp file (only if it was created from S3, not local file)
@@ -1261,7 +1261,7 @@ class DocumentController extends Controller
                     'document_id' => $id,
                     'page' => $page,
                     'error' => $e->getMessage(),
-                    'python_service_healthy' => $pdfService->isHealthy()
+                    'python_service_healthy' => $pythonService->isHealthy()
                 ]);
                 
                 // Return a placeholder image or error response

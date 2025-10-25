@@ -14,9 +14,14 @@
     let lastPage = 1;
     let isLoading = false;
     let isUploading = false;
-    let currentLabel = 'inbox'; // 'inbox' or 'sent'
+    let currentMailType = 'inbox'; // 'inbox' or 'sent' - determines endpoint
+    let currentLabelId = ''; // EmailLabel.id for filtering
+    let currentCategory = ''; // Category filter
+    let currentPriority = ''; // Priority filter
     let currentSearch = '';
     let currentSort = 'date';
+    let availableLabels = []; // Loaded from API
+    let availableCategories = []; // Extracted from emails
 
     // =========================================================================
     // Utility Functions
@@ -26,7 +31,7 @@
      * Get client ID from the DOM
      */
     function getClientId() {
-        const container = document.querySelector('.crm-container');
+        const container = document.querySelector('.email-interface-container');
         if (container && container.dataset.clientId) {
             return container.dataset.clientId;
         }
@@ -460,16 +465,18 @@
         updateLoadingState(true);
 
         try {
-            // Determine endpoint based on label
-            const endpoint = currentLabel === 'sent' 
+            // Determine endpoint based on mail type
+            const endpoint = currentMailType === 'sent' 
                 ? '/clients/filter-sentemails' 
                 : '/clients/filter-emails';
 
             const requestBody = {
                 client_id: clientId,
                 search: currentSearch,
-                status: '', // empty for all
-                type: ''    // empty for all
+                status: '', // Keep for backward compatibility (mail_is_read)
+                label_id: currentLabelId,    // NEW: EmailLabel filter
+                category: currentCategory,    // NEW: Category filter
+                priority: currentPriority     // NEW: Priority filter
             };
 
             console.log('Fetching emails from:', endpoint, requestBody);
@@ -490,6 +497,9 @@
 
             const emails = await response.json();
             console.log('Emails received:', emails);
+
+            // Extract unique categories for filter dropdown
+            extractCategories(emails);
 
             // Apply sorting
             const sortedEmails = sortEmails(emails);
@@ -572,13 +582,45 @@
         const date = formatDate(email.created_at);
         const isRead = email.mail_is_read == 1;
 
+        // NEW: Attachment indicator
+        const hasAttachments = email.attachments && Array.isArray(email.attachments) && email.attachments.length > 0;
+        const attachmentIcon = hasAttachments 
+            ? `<i class="fas fa-paperclip attachment-indicator" title="${email.attachments.length} attachment(s)"></i>`
+            : '';
+
+        // NEW: Priority badge
+        const priority = email.priority || 'low';
+        const priorityBadge = `<span class="priority-badge priority-${priority}">${priority.toUpperCase()}</span>`;
+
+        // NEW: Category badge
+        const categoryBadge = email.category 
+            ? `<span class="category-badge">${email.category}</span>`
+            : '';
+
+        // NEW: Label badges
+        const labelBadges = (email.labels && Array.isArray(email.labels)) 
+            ? email.labels.map(label => 
+                `<span class="label-badge" style="background-color: ${label.color}20; border-color: ${label.color}; color: ${label.color}">
+                    <i class="${label.icon || 'fas fa-tag'}"></i> ${label.name}
+                </span>`
+            ).join('')
+            : '';
+
         div.innerHTML = `
             <div class="email-item-header">
-                <div class="email-subject" style="${!isRead ? 'font-weight: 700;' : ''}">${escapeHtml(subject)}</div>
+                <div class="email-subject" style="${!isRead ? 'font-weight: 700;' : ''}">
+                    ${escapeHtml(subject)}
+                    ${attachmentIcon}
+                </div>
                 <div class="email-date">${date}</div>
             </div>
             <div class="email-sender">From: ${escapeHtml(from)}</div>
             <div class="email-sender" style="font-size: 12px; color: #999;">To: ${escapeHtml(to)}</div>
+            <div class="email-badges">
+                ${priorityBadge}
+                ${categoryBadge}
+                ${labelBadges}
+            </div>
         `;
 
         // Add click handler to view email
@@ -743,6 +785,291 @@
     }
 
     // =========================================================================
+    // Label Management
+    // =========================================================================
+
+    /**
+     * Fetch all labels from API
+     */
+    async function fetchLabels() {
+        try {
+            const response = await fetch('/email-labels', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': getCsrfToken()
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            if (data.success && Array.isArray(data.labels)) {
+                availableLabels = data.labels;
+                populateLabelFilter();
+            }
+        } catch (error) {
+            console.error('Error fetching labels:', error);
+        }
+    }
+
+    /**
+     * Populate label filter dropdown
+     */
+    function populateLabelFilter() {
+        const labelFilter = document.getElementById('labelFilter');
+        if (!labelFilter) return;
+
+        // Clear existing options (except "All Labels")
+        while (labelFilter.options.length > 1) {
+            labelFilter.remove(1);
+        }
+
+        // Add label options
+        availableLabels.forEach(label => {
+            const option = document.createElement('option');
+            option.value = label.id;
+            option.textContent = label.name;
+            labelFilter.appendChild(option);
+        });
+    }
+
+    /**
+     * Create new label
+     */
+    async function createLabel(name, color, icon) {
+        try {
+            const response = await fetch('/email-labels', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': getCsrfToken()
+                },
+                body: JSON.stringify({ name, color, icon })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            if (data.success) {
+                showNotification('Label created successfully', 'success');
+                await fetchLabels(); // Reload labels
+                return data.label;
+            } else {
+                throw new Error(data.message || 'Failed to create label');
+            }
+        } catch (error) {
+            console.error('Error creating label:', error);
+            showNotification('Error creating label: ' + error.message, 'error');
+            return null;
+        }
+    }
+
+    /**
+     * Apply label to email
+     */
+    async function applyLabel(mailReportId, labelId) {
+        try {
+            const response = await fetch('/email-labels/apply', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': getCsrfToken()
+                },
+                body: JSON.stringify({ mail_report_id: mailReportId, label_id: labelId })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            if (data.success) {
+                showNotification('Label applied successfully', 'success');
+                return true;
+            } else {
+                throw new Error(data.message || 'Failed to apply label');
+            }
+        } catch (error) {
+            console.error('Error applying label:', error);
+            showNotification('Error applying label: ' + error.message, 'error');
+            return false;
+        }
+    }
+
+    /**
+     * Remove label from email
+     */
+    async function removeLabel(mailReportId, labelId) {
+        try {
+            const response = await fetch('/email-labels/remove', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': getCsrfToken()
+                },
+                body: JSON.stringify({ mail_report_id: mailReportId, label_id: labelId })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            if (data.success) {
+                showNotification('Label removed successfully', 'success');
+                return true;
+            } else {
+                throw new Error(data.message || 'Failed to remove label');
+            }
+        } catch (error) {
+            console.error('Error removing label:', error);
+            showNotification('Error removing label: ' + error.message, 'error');
+            return false;
+        }
+    }
+
+    // =========================================================================
+    // Attachment Handling
+    // =========================================================================
+
+    /**
+     * Download individual attachment
+     */
+    async function downloadAttachment(attachmentId, filename) {
+        try {
+            const response = await fetch(`/mail-attachments/${attachmentId}/download`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/octet-stream'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+            showNotification(`Downloaded: ${filename}`, 'success');
+        } catch (error) {
+            console.error('Error downloading attachment:', error);
+            showNotification('Error downloading attachment: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * Download all attachments as ZIP
+     */
+    async function downloadAllAttachments(mailReportId, emailSubject) {
+        try {
+            const response = await fetch(`/mail-attachments/email/${mailReportId}/download-all`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/octet-stream'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${emailSubject || 'email'}_attachments.zip`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+            showNotification('Attachments downloaded successfully', 'success');
+        } catch (error) {
+            console.error('Error downloading attachments:', error);
+            showNotification('Error downloading attachments: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * Preview attachment
+     */
+    async function previewAttachment(attachmentId, filename) {
+        try {
+            const previewUrl = `/mail-attachments/${attachmentId}/preview`;
+            const modal = document.getElementById('attachmentPreviewModal');
+            const frame = document.getElementById('previewFrame');
+            const filenameEl = document.getElementById('previewFileName');
+
+            if (modal && frame && filenameEl) {
+                filenameEl.textContent = filename;
+                frame.src = previewUrl;
+                modal.style.display = 'flex';
+            }
+        } catch (error) {
+            console.error('Error previewing attachment:', error);
+            showNotification('Error previewing attachment: ' + error.message, 'error');
+        }
+    }
+
+    // =========================================================================
+    // Category Extraction
+    // =========================================================================
+
+    /**
+     * Extract unique categories from emails and populate filter
+     */
+    function extractCategories(emails) {
+        if (!Array.isArray(emails)) return;
+
+        const categories = new Set();
+        emails.forEach(email => {
+            if (email.category) {
+                categories.add(email.category);
+            }
+        });
+
+        availableCategories = Array.from(categories).sort();
+        populateCategoryFilter();
+    }
+
+    /**
+     * Populate category filter dropdown
+     */
+    function populateCategoryFilter() {
+        const categoryFilter = document.getElementById('categoryFilter');
+        if (!categoryFilter) return;
+
+        // Clear existing options (except "All Categories")
+        while (categoryFilter.options.length > 1) {
+            categoryFilter.remove(1);
+        }
+
+        // Add category options
+        availableCategories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category;
+            option.textContent = category;
+            categoryFilter.appendChild(option);
+        });
+    }
+
+    // =========================================================================
     // Initialization
     // =========================================================================
 
@@ -751,6 +1078,178 @@
         document.addEventListener('DOMContentLoaded', initializePagination);
     } else {
         initializePagination();
+    }
+
+    // Initialize on DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeNewFeatures);
+    } else {
+        initializeNewFeatures();
+    }
+
+    /**
+     * Initialize new filter and modal features
+     */
+    function initializeNewFeatures() {
+        // Fetch labels on load
+        fetchLabels();
+
+        // Mail type filter (Inbox/Sent)
+        const mailTypeFilter = document.getElementById('mailTypeFilter');
+        if (mailTypeFilter) {
+            mailTypeFilter.addEventListener('change', function() {
+                currentMailType = this.value;
+                loadEmailsFromServer();
+            });
+        }
+
+        // Label filter
+        const labelFilter = document.getElementById('labelFilter');
+        if (labelFilter) {
+            labelFilter.addEventListener('change', function() {
+                currentLabelId = this.value;
+            });
+        }
+
+        // Category filter
+        const categoryFilter = document.getElementById('categoryFilter');
+        if (categoryFilter) {
+            categoryFilter.addEventListener('change', function() {
+                currentCategory = this.value;
+            });
+        }
+
+        // Priority filter
+        const priorityFilter = document.getElementById('priorityFilter');
+        if (priorityFilter) {
+            priorityFilter.addEventListener('change', function() {
+                currentPriority = this.value;
+            });
+        }
+
+        // Apply filters button
+        const applyFiltersBtn = document.getElementById('applyFiltersBtn');
+        if (applyFiltersBtn) {
+            applyFiltersBtn.addEventListener('click', function() {
+                loadEmailsFromServer();
+            });
+        }
+
+        // Create label button
+        const createLabelBtn = document.getElementById('createLabelBtn');
+        if (createLabelBtn) {
+            createLabelBtn.addEventListener('click', function() {
+                showLabelModal();
+            });
+        }
+
+        // Label modal close buttons
+        const closeLabelModal = document.getElementById('closeLabelModal');
+        const cancelLabelBtn = document.getElementById('cancelLabelBtn');
+        if (closeLabelModal) {
+            closeLabelModal.addEventListener('click', hideLabelModal);
+        }
+        if (cancelLabelBtn) {
+            cancelLabelBtn.addEventListener('click', hideLabelModal);
+        }
+
+        // Label modal save button
+        const saveLabelBtn = document.getElementById('saveLabelBtn');
+        if (saveLabelBtn) {
+            saveLabelBtn.addEventListener('click', handleLabelCreate);
+        }
+
+        // Color picker
+        const colorPicker = document.getElementById('colorPicker');
+        if (colorPicker) {
+            colorPicker.querySelectorAll('.color-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    colorPicker.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
+                    this.classList.add('selected');
+                    document.getElementById('selectedColor').value = this.dataset.color;
+                });
+            });
+            // Select first color by default
+            const firstColor = colorPicker.querySelector('.color-option');
+            if (firstColor) firstColor.classList.add('selected');
+        }
+
+        // Icon picker
+        const iconPicker = document.getElementById('iconPicker');
+        if (iconPicker) {
+            iconPicker.querySelectorAll('.icon-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    iconPicker.querySelectorAll('.icon-option').forEach(o => o.classList.remove('selected'));
+                    this.classList.add('selected');
+                    document.getElementById('selectedIcon').value = this.dataset.icon;
+                });
+            });
+            // Select first icon by default
+            const firstIcon = iconPicker.querySelector('.icon-option');
+            if (firstIcon) firstIcon.classList.add('selected');
+        }
+
+        // Preview modal close
+        const closePreviewBtn = document.getElementById('closePreviewBtn');
+        const previewOverlay = document.getElementById('previewOverlay');
+        if (closePreviewBtn) {
+            closePreviewBtn.addEventListener('click', hidePreviewModal);
+        }
+        if (previewOverlay) {
+            previewOverlay.addEventListener('click', hidePreviewModal);
+        }
+    }
+
+    /**
+     * Show label creation modal
+     */
+    function showLabelModal() {
+        const modal = document.getElementById('labelModal');
+        if (modal) {
+            document.getElementById('labelNameInput').value = '';
+            modal.style.display = 'flex';
+        }
+    }
+
+    /**
+     * Hide label creation modal
+     */
+    function hideLabelModal() {
+        const modal = document.getElementById('labelModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    /**
+     * Handle label creation
+     */
+    async function handleLabelCreate() {
+        const name = document.getElementById('labelNameInput').value.trim();
+        const color = document.getElementById('selectedColor').value;
+        const icon = document.getElementById('selectedIcon').value;
+
+        if (!name) {
+            showNotification('Please enter a label name', 'error');
+            return;
+        }
+
+        const label = await createLabel(name, color, icon);
+        if (label) {
+            hideLabelModal();
+        }
+    }
+
+    /**
+     * Hide preview modal
+     */
+    function hidePreviewModal() {
+        const modal = document.getElementById('attachmentPreviewModal');
+        const frame = document.getElementById('previewFrame');
+        if (modal && frame) {
+            modal.style.display = 'none';
+            frame.src = ''; // Stop loading
+        }
     }
 
     // Add CSS animations

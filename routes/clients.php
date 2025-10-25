@@ -83,6 +83,21 @@ Route::post('/clients/filter-emails', 'CRM\ClientsController@filterEmails')->nam
 Route::post('/clients/filter-sentemails', 'CRM\ClientsController@filterSentEmails')->name('clients.filter.sentmails');
 Route::post('/mail/enhance', 'CRM\ClientsController@enhanceMessage')->name('mail.enhance');
 
+/*---------- Email Labels Management ----------*/
+Route::prefix('email-labels')->name('email-labels.')->group(function() {
+    Route::get('/', 'CRM\EmailLabelController@index')->name('index');
+    Route::post('/', 'CRM\EmailLabelController@store')->name('store');
+    Route::post('/apply', 'CRM\EmailLabelController@apply')->name('apply');
+    Route::delete('/remove', 'CRM\EmailLabelController@remove')->name('remove');
+});
+
+/*---------- Email Attachments ----------*/
+Route::prefix('mail-attachments')->name('mail-attachments.')->group(function() {
+    Route::get('/{id}/download', 'CRM\MailReportAttachmentController@download')->name('download');
+    Route::get('/{id}/preview', 'CRM\MailReportAttachmentController@preview')->name('preview');
+    Route::get('/email/{mailReportId}/download-all', 'CRM\MailReportAttachmentController@downloadAll')->name('download-all');
+});
+
 /*---------- Client Notes ----------*/
 Route::post('/create-note', [ClientNotesController::class, 'createnote'])->name('clients.createnote');
 Route::post('/update-note-datetime', [ClientNotesController::class, 'updateNoteDatetime'])->name('clients.updateNoteDatetime');

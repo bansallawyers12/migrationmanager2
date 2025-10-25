@@ -1,0 +1,163 @@
+<?php
+
+namespace App\Http\Controllers\CRM;
+
+use App\Http\Controllers\Controller;
+use App\Models\EmailLabel;
+use App\Models\MailReport;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
+
+class EmailLabelController extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware('auth:admin');
+    }
+
+    /**
+     * Get all labels (system + user's custom)
+     */
+    public function index()
+    {
+        try {
+            $labels = EmailLabel::where(function($query) {
+                $query->where('user_id', Auth::id())
+                      ->orWhereNull('user_id'); // System labels
+            })
+            ->active()
+            ->orderBy('type', 'desc') // System first
+            ->orderBy('name')
+            ->get();
+
+            return response()->json([
+                'success' => true,
+                'labels' => $labels
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch labels', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch labels'
+            ], 500);
+        }
+    }
+
+    /**
+     * Create custom label
+     */
+    public function store(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'name' => 'required|string|max:255',
+                'color' => 'required|string|max:7',
+                'icon' => 'nullable|string|max:50',
+                'description' => 'nullable|string|max:500',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $label = EmailLabel::create([
+                'user_id' => Auth::id(),
+                'name' => $request->name,
+                'color' => $request->color,
+                'type' => 'custom',
+                'icon' => $request->icon ?? 'fas fa-tag',
+                'description' => $request->description,
+                'is_active' => true,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Label created successfully',
+                'label' => $label
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to create label', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create label'
+            ], 500);
+        }
+    }
+
+    /**
+     * Apply label to email
+     */
+    public function apply(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'mail_report_id' => 'required|exists:mail_reports,id',
+                'label_id' => 'required|exists:email_labels,id',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $mailReport = MailReport::findOrFail($request->mail_report_id);
+            
+            // Check if already attached
+            if (!$mailReport->labels()->where('email_label_id', $request->label_id)->exists()) {
+                $mailReport->labels()->attach($request->label_id);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Label applied successfully'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to apply label', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to apply label'
+            ], 500);
+        }
+    }
+
+    /**
+     * Remove label from email
+     */
+    public function remove(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'mail_report_id' => 'required|exists:mail_reports,id',
+                'label_id' => 'required|exists:email_labels,id',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $mailReport = MailReport::findOrFail($request->mail_report_id);
+            $mailReport->labels()->detach($request->label_id);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Label removed successfully'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to remove label', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to remove label'
+            ], 500);
+        }
+    }
+}
