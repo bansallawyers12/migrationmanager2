@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::connection('second_db')->create('device_tokens', function (Blueprint $table) {
+        Schema::create('device_tokens', function (Blueprint $table) {
             $table->id();
             $table->unsignedInteger('user_id');
             $table->string('device_token', 500)->unique();
@@ -23,8 +23,8 @@ return new class extends Migration
             $table->timestamp('last_used_at')->nullable();
             $table->timestamps();
 
-            // Foreign key constraint - reference users table in second_db
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            // Foreign key constraint - reference admins table in primary DB
+            $table->foreign('user_id')->references('id')->on('admins')->onDelete('cascade');
             
             // Indexes for better performance
             $table->index(['user_id', 'is_active']);
@@ -37,6 +37,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::connection('second_db')->dropIfExists('device_tokens');
+        Schema::dropIfExists('device_tokens');
     }
 };

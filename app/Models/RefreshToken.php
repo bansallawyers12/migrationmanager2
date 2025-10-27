@@ -11,6 +11,8 @@ class RefreshToken extends Model
 {
     use HasFactory;
 
+    protected $table = 'refresh_tokens';
+
     protected $fillable = [
         'user_id',
         'token',
@@ -54,15 +56,37 @@ class RefreshToken extends Model
      */
     public static function generateToken($userId, $deviceName = null, $expiryDays = 30)
     {
-        $token = Str::random(64);
-        $expiresAt = now()->addDays($expiryDays);
+        // Generate unique token with retry logic
+        $maxAttempts = 5;
+        $attempt = 0;
+        
+        while ($attempt < $maxAttempts) {
+            $token = Str::random(64);
+            $expiresAt = now()->addDays($expiryDays);
 
-        return self::create([
-            'user_id' => $userId,
-            'token' => $token,
-            'device_name' => $deviceName,
-            'expires_at' => $expiresAt,
-        ]);
+            try {
+                return self::create([
+                    'user_id' => $userId,
+                    'token' => $token,
+                    'device_name' => $deviceName,
+                    'expires_at' => $expiresAt,
+                    'is_revoked' => false,
+                ]);
+            } catch (\Illuminate\Database\QueryException $e) {
+                // If it's a unique constraint violation, try again
+                if ($e->getCode() == 23000 || str_contains($e->getMessage(), 'Duplicate entry')) {
+                    $attempt++;
+                    if ($attempt >= $maxAttempts) {
+                        throw new \Exception('Failed to generate unique refresh token after ' . $maxAttempts . ' attempts');
+                    }
+                    continue;
+                }
+                // For other database errors, rethrow
+                throw $e;
+            }
+        }
+        
+        throw new \Exception('Failed to generate refresh token');
     }
 
     /**

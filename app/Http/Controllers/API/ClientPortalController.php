@@ -5,7 +5,6 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use App\Models\DeviceToken;
-use App\Models\RefreshToken;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -60,8 +59,58 @@ class ClientPortalController extends Controller
             $this->handleDeviceToken($admin->id, $request->device_token, $deviceName);
         }
 
-        // Generate refresh token
-        $refreshToken = RefreshToken::generateToken($admin->id, $deviceName);
+        // Generate refresh token using DB query
+        try {
+            $refreshTokenValue = Str::random(64);
+            $expiresAt = Carbon::now()->addDays(30);
+            
+            // Prepare insert data
+            $insertData = [
+                'user_id' => $admin->id,
+                'token' => $refreshTokenValue,
+                'device_name' => $deviceName,
+                'expires_at' => $expiresAt->format('Y-m-d H:i:s'),
+                'is_revoked' => 0,
+                'created_at' => Carbon::now()->format('Y-m-d H:i:s'),
+                'updated_at' => Carbon::now()->format('Y-m-d H:i:s'),
+            ];
+            
+            // Log the data being inserted for debugging
+            Log::info('Attempting to insert refresh token', [
+                'user_id' => $admin->id,
+                'data' => array_merge($insertData, ['token' => substr($refreshTokenValue, 0, 10) . '...'])
+            ]);
+            
+            $refreshTokenId = DB::table('refresh_tokens')->insertGetId($insertData);
+            
+        } catch (\Illuminate\Database\QueryException $e) {
+            $errorDetails = $this->handleRefreshTokenError($e, $admin->id, $insertData ?? [], $refreshTokenValue ?? '');
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to complete login. Please try again.',
+                'error' => 'Token generation failed',
+                'problematic_field' => $errorDetails['field'],
+                'error_details' => config('app.debug') ? $errorDetails : null
+            ], 500);
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to generate refresh token during login (non-database error)', [
+                'user_id' => $admin->id,
+                'error' => $e->getMessage(),
+                'error_code' => $e->getCode(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to complete login. Please try again.',
+                'error' => 'Token generation failed',
+                'error_details' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
 
         // Update last login timestamp (if you have this field)
         $admin->touch();
@@ -70,7 +119,7 @@ class ClientPortalController extends Controller
             'success' => true,
             'data' => [
                 'token' => $token,
-                'refresh_token' => $refreshToken->token,
+                'refresh_token' => $refreshTokenValue,
                 'user' => [
                     'id' => $admin->id,
                     'name' => $admin->first_name . ' ' . $admin->last_name,
@@ -125,8 +174,52 @@ class ClientPortalController extends Controller
             $this->handleDeviceToken($admin->id, $request->device_token, $deviceName);
         }
 
-        // Generate refresh token
-        $refreshToken = RefreshToken::generateToken($admin->id, $deviceName);
+        // Generate refresh token using DB query
+        try {
+            $refreshTokenValue = Str::random(64);
+            $expiresAt = Carbon::now()->addDays(30);
+            
+            // Prepare insert data
+            $insertData = [
+                'user_id' => $admin->id,
+                'token' => $refreshTokenValue,
+                'device_name' => $deviceName,
+                'expires_at' => $expiresAt->format('Y-m-d H:i:s'),
+                'is_revoked' => 0,
+                'created_at' => Carbon::now()->format('Y-m-d H:i:s'),
+                'updated_at' => Carbon::now()->format('Y-m-d H:i:s'),
+            ];
+            
+            $refreshTokenId = DB::table('refresh_tokens')->insertGetId($insertData);
+            
+        } catch (\Illuminate\Database\QueryException $e) {
+            $errorDetails = $this->handleRefreshTokenError($e, $admin->id, $insertData ?? [], $refreshTokenValue ?? '');
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to complete login. Please try again.',
+                'error' => 'Token generation failed',
+                'problematic_field' => $errorDetails['field'],
+                'error_details' => config('app.debug') ? $errorDetails : null
+            ], 500);
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to generate refresh token during admin login (non-database error)', [
+                'user_id' => $admin->id,
+                'error' => $e->getMessage(),
+                'error_code' => $e->getCode(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to complete login. Please try again.',
+                'error' => 'Token generation failed',
+                'error_details' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
 
         // Update last login timestamp
         $admin->touch();
@@ -135,7 +228,7 @@ class ClientPortalController extends Controller
             'success' => true,
             'data' => [
                 'token' => $token,
-                'refresh_token' => $refreshToken->token,
+                'refresh_token' => $refreshTokenValue,
                 'user' => [
                     'id' => $admin->id,
                     'name' => $admin->first_name . ' ' . $admin->last_name,
@@ -158,8 +251,10 @@ class ClientPortalController extends Controller
             // Delete current access token
             $user->currentAccessToken()->delete();
 
-            // Revoke all refresh tokens for this user
-            RefreshToken::where('user_id', $user->id)->update(['is_revoked' => true]);
+            // Revoke all refresh tokens for this user using DB query
+            DB::table('refresh_tokens')
+                ->where('user_id', $user->id)
+                ->update(['is_revoked' => 1, 'updated_at' => Carbon::now()->format('Y-m-d H:i:s')]);
 
             // Optionally deactivate device token (but keep it for potential re-login)
             // DeviceToken::where('user_id', $user->id)->update(['is_active' => false]);
@@ -189,8 +284,10 @@ class ClientPortalController extends Controller
             // Delete all access tokens for the user
             $user->tokens()->delete();
 
-            // Revoke all refresh tokens for the user
-            RefreshToken::where('user_id', $user->id)->update(['is_revoked' => true]);
+            // Revoke all refresh tokens for the user using DB query
+            DB::table('refresh_tokens')
+                ->where('user_id', $user->id)
+                ->update(['is_revoked' => 1, 'updated_at' => Carbon::now()->format('Y-m-d H:i:s')]);
 
             // Deactivate all device tokens for the user
             DeviceToken::where('user_id', $user->id)->update(['is_active' => false]);
@@ -444,23 +541,30 @@ class ClientPortalController extends Controller
             ], 422);
         }
 
-        // Find the refresh token
-        $refreshToken = RefreshToken::where('token', $request->refresh_token)
-                                   ->active()
-                                   ->first();
+        // Find the refresh token using DB query
+        $refreshTokenData = DB::table('refresh_tokens')
+            ->where('token', $request->refresh_token)
+            ->where('is_revoked', false)
+            ->where('expires_at', '>', Carbon::now())
+            ->first();
 
-        if (!$refreshToken) {
+        if (!$refreshTokenData) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid or expired refresh token'
             ], 401);
         }
 
-        $admin = $refreshToken->user;
+        // Get admin user
+        $admin = Admin::find($refreshTokenData->user_id);
 
         // Check if user is still active
         if (!$admin || $admin->role != 7 || $admin->cp_status != 1) {
-            $refreshToken->revoke();
+            // Revoke the token
+            DB::table('refresh_tokens')
+                ->where('id', $refreshTokenData->id)
+                ->update(['is_revoked' => 1, 'updated_at' => Carbon::now()->format('Y-m-d H:i:s')]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'User account is no longer active'
@@ -468,20 +572,66 @@ class ClientPortalController extends Controller
         }
 
         // Revoke old refresh token
-        $refreshToken->revoke();
+        DB::table('refresh_tokens')
+            ->where('id', $refreshTokenData->id)
+            ->update(['is_revoked' => 1, 'updated_at' => Carbon::now()->format('Y-m-d H:i:s')]);
 
         // Create new access token
-        $deviceName = $refreshToken->device_name ?? 'client-portal-app';
+        $deviceName = $refreshTokenData->device_name ?? 'client-portal-app';
         $newAccessToken = $admin->createToken($deviceName)->plainTextToken;
 
-        // Generate new refresh token
-        $newRefreshToken = RefreshToken::generateToken($admin->id, $deviceName);
+        // Generate new refresh token using DB query
+        try {
+            $newRefreshTokenValue = Str::random(64);
+            $expiresAt = Carbon::now()->addDays(30);
+            
+            // Prepare insert data
+            $insertData = [
+                'user_id' => $admin->id,
+                'token' => $newRefreshTokenValue,
+                'device_name' => $deviceName,
+                'expires_at' => $expiresAt->format('Y-m-d H:i:s'),
+                'is_revoked' => 0,
+                'created_at' => Carbon::now()->format('Y-m-d H:i:s'),
+                'updated_at' => Carbon::now()->format('Y-m-d H:i:s'),
+            ];
+            
+            $newRefreshTokenId = DB::table('refresh_tokens')->insertGetId($insertData);
+            
+        } catch (\Illuminate\Database\QueryException $e) {
+            $errorDetails = $this->handleRefreshTokenError($e, $admin->id, $insertData ?? [], $newRefreshTokenValue ?? '');
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to refresh token. Please login again.',
+                'error' => 'Token generation failed',
+                'problematic_field' => $errorDetails['field'],
+                'error_details' => config('app.debug') ? $errorDetails : null
+            ], 500);
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to generate refresh token during token refresh (non-database error)', [
+                'user_id' => $admin->id,
+                'error' => $e->getMessage(),
+                'error_code' => $e->getCode(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to refresh token. Please login again.',
+                'error' => 'Token generation failed',
+                'error_details' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
 
         return response()->json([
             'success' => true,
             'data' => [
                 'token' => $newAccessToken,
-                'refresh_token' => $newRefreshToken->token,
+                'refresh_token' => $newRefreshTokenValue,
                 'user' => [
                     'id' => $admin->id,
                     'name' => $admin->first_name . ' ' . $admin->last_name,
@@ -490,6 +640,59 @@ class ClientPortalController extends Controller
                 ]
             ]
         ], 200);
+    }
+
+    /**
+     * Handle refresh token database errors and return detailed error information
+     */
+    private function handleRefreshTokenError($e, $userId, $insertData, $tokenValue)
+    {
+        $errorMessage = $e->getMessage();
+        $problematicField = null;
+        
+        // Detect which field is causing the issue
+        if (str_contains($errorMessage, 'user_id')) {
+            $problematicField = 'user_id';
+        } elseif (str_contains($errorMessage, 'token')) {
+            $problematicField = 'token';
+        } elseif (str_contains($errorMessage, 'device_name')) {
+            $problematicField = 'device_name';
+        } elseif (str_contains($errorMessage, 'expires_at')) {
+            $problematicField = 'expires_at';
+        } elseif (str_contains($errorMessage, 'is_revoked')) {
+            $problematicField = 'is_revoked';
+        } elseif (str_contains($errorMessage, 'created_at')) {
+            $problematicField = 'created_at';
+        } elseif (str_contains($errorMessage, 'updated_at')) {
+            $problematicField = 'updated_at';
+        } elseif (str_contains($errorMessage, 'Duplicate entry')) {
+            $problematicField = 'token (duplicate)';
+        } elseif (str_contains($errorMessage, 'foreign key constraint')) {
+            $problematicField = 'user_id (foreign key constraint - user may not exist)';
+        } elseif (str_contains($errorMessage, 'cannot be null')) {
+            // Extract field name from error
+            preg_match("/Column '([^']+)' cannot be null/", $errorMessage, $matches);
+            $problematicField = $matches[1] ?? 'unknown field';
+        }
+        
+        Log::error('Failed to generate refresh token', [
+            'user_id' => $userId,
+            'error' => $errorMessage,
+            'problematic_field' => $problematicField,
+            'error_code' => $e->getCode(),
+            'sql_state' => $e->errorInfo[0] ?? null,
+            'driver_code' => $e->errorInfo[1] ?? null,
+            'sql_message' => $e->errorInfo[2] ?? null,
+            'insert_data' => array_merge($insertData, ['token' => substr($tokenValue, 0, 10) . '...']),
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        return [
+            'field' => $problematicField,
+            'message' => $errorMessage,
+            'sql_state' => $e->errorInfo[0] ?? null,
+            'driver_code' => $e->errorInfo[1] ?? null,
+        ];
     }
 
     /**
