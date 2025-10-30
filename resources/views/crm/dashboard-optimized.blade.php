@@ -231,7 +231,7 @@
                                         <h4>No Records Found</h4>
                                         <p>Try adjusting your filters or search criteria.</p>
                                         @if(isset($filters['client_name']) || isset($filters['client_stage']))
-                                            <a href="{{ route('dashboard.test') }}" class="btn btn-primary mt-3">
+                                            <a href="{{ route('dashboard') }}" class="btn btn-primary mt-3">
                                                 <i class="fas fa-times"></i> Clear All Filters
                                             </a>
                                         @endif
