@@ -3637,59 +3637,71 @@ $(document).ready(function() {
 
             
 
-            // Skip redirect during initialization
+        // Skip redirect during initialization
 
-            if (isInitializing) {
+        if (isInitializing) {
 
-                return;
+            return;
 
-            }
-
-
-
-            // Split the URL into segments
-
-            var urlSegments = currentUrl.split('/');
-
-            var baseUrl;
-
-            var clientId = window.ClientDetailConfig.encodeId;
-
-            
-
-            // Build new URL with matter and tab
-
-            baseUrl = '/clients/detail/' + clientId;
+        }
 
 
 
-            var newUrl;
+        // Prevent redirect when "Select Matters" placeholder is selected
 
-            if (selectedMatter != '' && uniqueMatterNo) {
+        if (selectedMatter === '' || selectedMatter === null) {
 
-                // Append the new matter ID and active tab to the base URL
+            console.log('Select Matters placeholder selected - no redirect');
 
-                newUrl = baseUrl + '/' + uniqueMatterNo + '/' + activeTab;
+            return;
 
-            } else {
+        }
 
-                // If no matter is selected, redirect to the base URL with just the tab
 
-                newUrl = baseUrl + '/' + activeTab;
 
-            }
+        // Split the URL into segments
 
-            
+        var urlSegments = currentUrl.split('/');
 
-            // Only redirect if the URL is actually changing to prevent infinite loops
+        var baseUrl;
 
-            if (currentUrl.split('?')[0] !== newUrl && !currentUrl.endsWith(newUrl)) {
+        var clientId = window.ClientDetailConfig.encodeId;
 
-                window.location.href = newUrl;
+        
 
-                return; // Exit early to prevent further execution
+        // Build new URL with matter and tab
 
-            }
+        baseUrl = '/clients/detail/' + clientId;
+
+
+
+        var newUrl;
+
+        if (selectedMatter != '' && uniqueMatterNo) {
+
+            // Append the new matter ID and active tab to the base URL
+
+            newUrl = baseUrl + '/' + uniqueMatterNo + '/' + activeTab;
+
+        } else {
+
+            // If no matter is selected, redirect to the base URL with just the tab
+
+            newUrl = baseUrl + '/' + activeTab;
+
+        }
+
+        
+
+        // Only redirect if the URL is actually changing to prevent infinite loops
+
+        if (currentUrl.split('?')[0] !== newUrl && !currentUrl.endsWith(newUrl)) {
+
+            window.location.href = newUrl;
+
+            return; // Exit early to prevent further execution
+
+        }
 
 
 

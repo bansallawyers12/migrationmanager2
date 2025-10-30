@@ -1352,6 +1352,7 @@ $(document).ready(function() {
             checkHubdocStatus: '{{ url("/clients/checkHubdocStatus") }}',
             updateMailReadBit: '{{ URL::to("/clients/updatemailreadbit") }}',
             listAllMatters: '{{ URL::to("/clients/listAllMattersWRTSelClient") }}',
+            getActivities: '{{ route("clients.activities") }}',
         }
     };
     
@@ -1381,6 +1382,72 @@ $(document).ready(function() {
     }
     @endphp
     window.appointmentData = {!! json_encode($appointmentdata, JSON_FORCE_OBJECT) !!};
+    
+    // Global function to load activities feed
+    window.loadActivities = function() {
+        $.ajax({
+            url: window.ClientDetailConfig.urls.getActivities,
+            type: 'GET',
+            dataType: 'json',
+            data: { id: window.ClientDetailConfig.clientId },
+            success: function(response) {
+                if (response.status && response.data) {
+                    var html = '';
+                    
+                    $.each(response.data, function (k, v) {
+                        // Determine icon based on activity type
+                        var activityType = v.activity_type ?? 'note';
+                        var subjectIcon;
+                        var iconClass = '';
+                        
+                        if (activityType === 'sms') {
+                            subjectIcon = '<i class="fas fa-sms"></i>';
+                            iconClass = 'feed-icon-sms';
+                        } else if (v.subject && v.subject.toLowerCase().includes("document")) {
+                            subjectIcon = '<i class="fas fa-file-alt"></i>';
+                        } else {
+                            subjectIcon = '<i class="fas fa-sticky-note"></i>';
+                        }
+
+                        var subject = v.subject ?? '';
+                        var description = v.message ?? '';
+                        var taskGroup = v.task_group ?? '';
+                        var followupDate = v.followup_date ?? '';
+                        var date = v.date ?? '';
+                        var fullName = v.name ?? '';
+                        var activityTypeClass = activityType ? 'activity-type-' + activityType : '';
+
+                        html += `
+                            <li class="feed-item feed-item--email activity ${activityTypeClass}" id="activity_${v.activity_id}">
+                                <span class="feed-icon ${iconClass}">
+                                    ${subjectIcon}
+                                </span>
+                                <div class="feed-content">
+                                    <p><strong>${fullName} ${subject}</strong></p>
+                                    ${description !== '' ? `<p>${description}</p>` : ''}
+                                    ${taskGroup !== '' ? `<p>${taskGroup}</p>` : ''}
+                                    ${followupDate !== '' ? `<p>${followupDate}</p>` : ''}
+                                    <span class="feed-timestamp">${date}</span>
+                                </div>
+                            </li>
+                        `;
+                    });
+
+                    $('.feed-list').html(html);
+                    
+                    // Adjust Activity Feed height after content update
+                    if (typeof adjustActivityFeedHeight === 'function') {
+                        adjustActivityFeedHeight();
+                    }
+                } else {
+                    console.error('Failed to load activities:', response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error loading activities:', error);
+            }
+        });
+    };
 </script>
 
 {{-- Newly added external JS placeholders for progressive migration --}}

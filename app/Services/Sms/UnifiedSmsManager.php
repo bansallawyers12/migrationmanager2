@@ -245,11 +245,11 @@ class UnifiedSmsManager
     }
 
     /**
-     * Format activity description with SMS details
+     * Format activity description with SMS details (complete message)
      */
     protected function formatActivityDescription($data)
     {
-        $preview = Str::limit($data['message_content'], 100);
+        $messageContent = trim($data['message_content']); // Complete message, not truncated
         $statusBadge = $data['status'] === 'sent' 
             ? '<span class="badge badge-success">Sent</span>' 
             : '<span class="badge badge-danger">Failed</span>';
@@ -266,7 +266,8 @@ class UnifiedSmsManager
         return "
             <div class='sms-activity'>
                 <p><strong>To:</strong> {$data['formatted_phone']} {$statusBadge} {$providerBadge}</p>
-                <p><strong>Message:</strong> {$preview}</p>
+                <p style='margin-bottom: 5px;'><strong>Message:</strong></p>
+                <p style='background: #f8f9fa; padding: 8px; border-radius: 4px; margin: 0; white-space: pre-wrap; word-wrap: break-word;'>{$messageContent}</p>
                 {$errorSection}
             </div>
         ";

@@ -67,10 +67,11 @@ class UserController extends Controller
 			$this->validate($request, [
                 'first_name' => 'required|max:255',
                 'last_name' => 'required|max:255',
-                'email' => 'required|max:255|unique:admins',
+                'email' => 'required|email|max:255|unique:admins',
                 'password' => 'required|max:255|confirmed',
                 'phone' => 'required',
                 'role' => 'required',
+                'office' => 'required',
             ]);
 
             $obj				= 	new Admin;

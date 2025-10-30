@@ -77,17 +77,14 @@ class SignatureService
     protected function sendSigningEmail(Document $document, Signer $signer, array $options = []): void
     {
         try {
-            // Apply email configuration if specified
-            if (isset($options['from_email'])) {
-                $emailConfig = $this->emailConfigService->forAccount($options['from_email']);
-                $this->emailConfigService->applyConfig($emailConfig);
-            } else {
-                // Use default email config
-                $defaultConfig = $this->emailConfigService->getDefaultAccount();
-                if ($defaultConfig) {
-                    $this->emailConfigService->applyConfig($defaultConfig);
-                }
+            // ALWAYS use .env FROM EMAIL credentials for sending emails
+            $envConfig = $this->emailConfigService->getEnvAccount();
+            
+            if (!$envConfig) {
+                throw new \Exception('Email configuration not found in .env file');
             }
+            
+            $this->emailConfigService->applyConfig($envConfig);
 
             $signingUrl = url("/sign/{$document->id}/{$signer->token}");
             
@@ -158,16 +155,14 @@ class SignatureService
                 throw new \Exception('Please wait 24 hours between reminders');
             }
 
-            // Apply email configuration if specified
-            if (isset($options['from_email'])) {
-                $emailConfig = $this->emailConfigService->forAccount($options['from_email']);
-                $this->emailConfigService->applyConfig($emailConfig);
-            } else {
-                $defaultConfig = $this->emailConfigService->getDefaultAccount();
-                if ($defaultConfig) {
-                    $this->emailConfigService->applyConfig($defaultConfig);
-                }
+            // ALWAYS use .env FROM EMAIL credentials for sending emails
+            $envConfig = $this->emailConfigService->getEnvAccount();
+            
+            if (!$envConfig) {
+                throw new \Exception('Email configuration not found in .env file');
             }
+            
+            $this->emailConfigService->applyConfig($envConfig);
 
             $document = $signer->document;
             $signingUrl = url("/sign/{$document->id}/{$signer->token}");

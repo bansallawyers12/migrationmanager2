@@ -263,16 +263,15 @@ class SignatureDashboardController extends Controller
             ];
 
             try {
-                // Apply email configuration if specified
-                if ($request->from_email) {
-                    $emailConfig = app(\App\Services\EmailConfigService::class)->forAccount($request->from_email);
-                    app(\App\Services\EmailConfigService::class)->applyConfig($emailConfig);
-                } else {
-                    $defaultConfig = app(\App\Services\EmailConfigService::class)->getDefaultAccount();
-                    if ($defaultConfig) {
-                        app(\App\Services\EmailConfigService::class)->applyConfig($defaultConfig);
-                    }
+                // ALWAYS use .env FROM EMAIL credentials for sending emails
+                $emailConfigService = app(\App\Services\EmailConfigService::class);
+                $envConfig = $emailConfigService->getEnvAccount();
+                
+                if (!$envConfig) {
+                    throw new \Exception('Email configuration not found in .env file');
                 }
+                
+                $emailConfigService->applyConfig($envConfig);
 
                 // Send email
                 Mail::send($template, $templateData, function ($message) use ($signer, $subject) {
@@ -461,16 +460,15 @@ class SignatureDashboardController extends Controller
                     'dueDate' => $document->due_at ? $document->due_at->format('F j, Y') : null,
                 ];
 
-                // Apply email configuration - use signer's stored config or default
-                if ($signer->from_email) {
-                    $emailConfig = app(\App\Services\EmailConfigService::class)->forAccount($signer->from_email);
-                    app(\App\Services\EmailConfigService::class)->applyConfig($emailConfig);
-                } else {
-                    $defaultConfig = app(\App\Services\EmailConfigService::class)->getDefaultAccount();
-                    if ($defaultConfig) {
-                        app(\App\Services\EmailConfigService::class)->applyConfig($defaultConfig);
-                    }
+                // ALWAYS use .env FROM EMAIL credentials for sending emails
+                $emailConfigService = app(\App\Services\EmailConfigService::class);
+                $envConfig = $emailConfigService->getEnvAccount();
+                
+                if (!$envConfig) {
+                    throw new \Exception('Email configuration not found in .env file');
                 }
+                
+                $emailConfigService->applyConfig($envConfig);
 
                 // Send email
                 Mail::send($template, $templateData, function ($message) use ($signer, $subject) {

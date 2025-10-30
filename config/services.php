@@ -96,4 +96,29 @@ return [
         'secret' => env('RECAPTCHA_SITE_SECRET'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | SMS Service Providers Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for SMS service providers:
+    | - Cellcast: Used for Australian numbers (+61)
+    | - Twilio: Used for international numbers (including India +91)
+    |
+    */
+
+    'cellcast' => [
+        'api_key' => env('CELLCAST_API_KEY'),
+        'base_url' => env('CELLCAST_BASE_URL', 'https://api.cellcast.com.au/v1'),
+        'sender_id' => env('CELLCAST_SENDER_ID', ''),
+        'timeout' => env('CELLCAST_TIMEOUT', 30),
+    ],
+
+    'twilio' => [
+        'account_sid' => env('TWILIO_SID'),
+        'auth_token' => env('TWILIO_TOKEN'),
+        'from' => env('TWILIO_FROM'),
+        'timeout' => env('TWILIO_TIMEOUT', 30),
+    ],
+
 ];

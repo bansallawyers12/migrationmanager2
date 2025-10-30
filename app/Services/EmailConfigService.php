@@ -156,6 +156,37 @@ class EmailConfigService
     }
 
     /**
+     * Get email configuration from .env file only
+     * Use this when you want to force .env credentials regardless of database accounts
+     *
+     * @return array|null
+     */
+    public function getEnvAccount(): ?array
+    {
+        try {
+            if (env('MAIL_FROM_ADDRESS')) {
+                return [
+                    'host' => env('MAIL_HOST', 'smtp.zoho.com'),
+                    'port' => env('MAIL_PORT', 587),
+                    'encryption' => env('MAIL_ENCRYPTION', 'tls'),
+                    'username' => env('MAIL_USERNAME'),
+                    'password' => env('MAIL_PASSWORD'),
+                    'from_address' => env('MAIL_FROM_ADDRESS'),
+                    'from_name' => env('MAIL_FROM_NAME', 'Bansal Migration'),
+                    'timeout' => 30,
+                ];
+            }
+
+            return null;
+        } catch (\Exception $e) {
+            Log::error('Failed to get .env email configuration', [
+                'error' => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
+
+    /**
      * Validate email configuration by attempting connection
      *
      * @param array $config

@@ -1539,6 +1539,19 @@
         $('.main-content').css('margin-left', '0');
         localStorage.setItem('sidebarState', 'hidden');
 
+        // Click to open icon dropdowns (Clients, Appointments, Accounts, etc.)
+        $(document).on('click', '.js-dropdown > .icon-btn', function(e){
+            e.preventDefault();
+            e.stopPropagation();
+            var $menu = $(this).siblings('.icon-dropdown-menu');
+            $('.icon-dropdown-menu').not($menu).removeClass('show');
+            $menu.toggleClass('show');
+        });
+        
+        // Close dropdown menus on outside click
+        $(document).on('click', function(){
+            $('.icon-dropdown-menu').removeClass('show');
+        });
     });
     </script>
     

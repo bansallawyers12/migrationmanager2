@@ -109,7 +109,7 @@
 
                                 <div class="form-group">
 									<label for="role">User Role (Type)</label>
-									<select name="role" id="role" class="form-control" required  autocomplete="new-password">
+									<select name="role" id="role" class="form-control" data-valid="required" autocomplete="new-password">
 										<option value="">Choose One...</option>
 										@if(count(@$usertype) !== 0)
 											@foreach (@$usertype as $ut)
