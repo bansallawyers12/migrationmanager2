@@ -146,6 +146,27 @@
         padding: 15px 12px;
         background: #f8f9fa;
         vertical-align: middle;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+    
+    .document-link {
+        color: #2c3e50;
+        text-decoration: none;
+        transition: color 0.2s ease;
+        cursor: pointer;
+        display: block;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+    
+    .document-link:hover {
+        color: #667eea;
+        text-decoration: none;
+    }
+    
+    .document-link strong {
+        font-weight: 600;
     }
     
     .documents-table tr {
@@ -184,28 +205,6 @@
     .badge-signed {
         background: #28a745;
         color: white;
-    }
-    
-    .badge-priority {
-        padding: 3px 8px;
-        border-radius: 12px;
-        font-size: 11px;
-        font-weight: 500;
-    }
-    
-    .badge-priority.low {
-        background: #d1ecf1;
-        color: #0c5460;
-    }
-    
-    .badge-priority.normal {
-        background: #d4edda;
-        color: #155724;
-    }
-    
-    .badge-priority.high {
-        background: #f8d7da;
-        color: #721c24;
     }
     
     .association-chip {
@@ -257,45 +256,6 @@
     .badge-visible {
         background: #fce4ec;
         color: #c2185b;
-    }
-    
-    .btn-action {
-        padding: 6px 12px;
-        font-size: 12px;
-        border-radius: 5px;
-        margin-right: 5px;
-        border: none;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-    
-    .btn-view {
-        background: #667eea;
-        color: white;
-    }
-    
-    .btn-view:hover {
-        background: #5568d3;
-        color: white;
-    }
-    
-    .btn-remind {
-        background: #ffc107;
-        color: #000;
-    }
-    
-    .btn-remind:hover {
-        background: #e0a800;
-    }
-    
-    .btn-attach {
-        background: #28a745;
-        color: white;
-    }
-    
-    .btn-attach:hover {
-        background: #218838;
-        color: white;
     }
     
     .btn-primary-custom {
@@ -515,14 +475,12 @@
                         <th style="width: 40px;">
                             <input type="checkbox" id="select-all" onchange="toggleSelectAll(this)">
                         </th>
-                        <th>Document</th>
-                        <th>Visibility</th>
-                        <th>Signer</th>
-                        <th>Status</th>
-                        <th>Association</th>
-                        <th>Priority</th>
-                        <th>Created</th>
-                        <th>Actions</th>
+                        <th style="width: 31%;">Document</th>
+                        <th style="width: 10%;">Visibility</th>
+                        <th style="width: 16%;">Signer</th>
+                        <th style="width: 8%;">Status</th>
+                        <th style="width: 19%;">Association</th>
+                        <th style="width: 12%;">Created</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -532,7 +490,9 @@
                             <input type="checkbox" class="doc-checkbox" value="{{ $doc->id }}" onchange="updateBulkActions()">
                         </td>
                         <td>
-                            <strong>{{ $doc->display_title }}</strong>
+                            <a href="{{ route('signatures.show', $doc->id) }}" class="document-link">
+                                <strong>{{ $doc->display_title }}</strong>
+                            </a>
                             @if($doc->is_overdue)
                             <br><span class="overdue-indicator">⚠️ OVERDUE</span>
                             @endif
@@ -572,31 +532,8 @@
                             @endif
                         </td>
                         <td>
-                            <span class="badge-priority {{ $doc->priority }}">
-                                {{ ucfirst($doc->priority) }}
-                            </span>
-                        </td>
-                        <td>
                             {{ $doc->created_at->format('M d, Y') }}<br>
                             <small style="color: #6c757d;">{{ $doc->created_at->diffForHumans() }}</small>
-                        </td>
-                        <td>
-                            <a href="{{ route('signatures.show', $doc->id) }}" class="btn btn-action btn-view">
-                                <i class="fas fa-eye"></i> View
-                            </a>
-                            @if($doc->status === 'sent')
-                            <a href="{{ route('signatures.reminder', $doc->id) }}" 
-                               onclick="event.preventDefault(); document.getElementById('remind-form-{{ $doc->id }}').submit();"
-                               class="btn btn-action btn-remind">
-                                <i class="fas fa-bell"></i> Remind
-                            </a>
-                            <form id="remind-form-{{ $doc->id }}" action="{{ route('signatures.reminder', $doc->id) }}" method="POST" style="display: none;">
-                                @csrf
-                                <input type="hidden" name="signer_id" value="{{ $doc->signers->first()->id ?? '' }}">
-                            </form>
-                            @endif
-                            
-                            {{-- Attach button removed - users can attach from document detail page --}}
                         </td>
                     </tr>
                     @endforeach

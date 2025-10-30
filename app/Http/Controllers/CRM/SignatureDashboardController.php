@@ -233,78 +233,27 @@ class SignatureDashboardController extends Controller
                 }
             }
 
-            // Update document status based on current status
-            if ($document->status === 'draft') {
-                $document->update(['status' => 'sent']);
-            } elseif ($document->status === 'signature_placed') {
-                $document->update(['status' => 'sent']);
-            }
-
-            // Send email to signer
-            $signingUrl = url("/sign/{$document->id}/{$signer->token}");
+            // Do NOT automatically send email or update status
+            // User must manually click "Send for Signature" when ready
             
-            // Determine template
-            $template = $request->email_template ?? 'emails.signature.send';
-            if ($document->document_type === 'agreement') {
-                $template = 'emails.signature.send_agreement';
-            }
-            
-            $subject = $request->email_subject ?? 'Document Signature Request from Bansal Migration';
-            $message = $request->email_message ?? "Please review and sign the attached document.";
-            
-            // Prepare template data
-            $templateData = [
-                'signerName' => $signer->name,
-                'documentTitle' => $document->display_title ?? $document->title,
-                'signingUrl' => $signingUrl,
-                'emailMessage' => $message,
-                'documentType' => $document->document_type ?? 'document',
-                'dueDate' => $document->due_at ? $document->due_at->format('F j, Y') : null,
-            ];
-
-            try {
-                // ALWAYS use .env FROM EMAIL credentials for sending emails
-                $emailConfigService = app(\App\Services\EmailConfigService::class);
-                $envConfig = $emailConfigService->getEnvAccount();
-                
-                if (!$envConfig) {
-                    throw new \Exception('Email configuration not found in .env file');
+            // Build success message
+            $successMessage = "Signer added successfully: {$signer->email}. Click 'Send for Signature' when ready to send the signing link.";
+            if ($request->has('client_matter_id') && $request->client_matter_id) {
+                $matter = \DB::table('client_matters')->where('id', $request->client_matter_id)->first();
+                if ($matter) {
+                    $successMessage .= " Document associated with matter: {$matter->client_unique_matter_no}";
                 }
-                
-                $emailConfigService->applyConfig($envConfig);
-
-                // Send email
-                Mail::send($template, $templateData, function ($message) use ($signer, $subject) {
-                    $message->to($signer->email, $signer->name)
-                           ->subject($subject);
-                });
-
-                $successMessage = "Signer added successfully! Signing link sent to {$signer->email}";
-                if ($request->has('client_matter_id') && $request->client_matter_id) {
-                    $matter = \DB::table('client_matters')->where('id', $request->client_matter_id)->first();
-                    if ($matter) {
-                        $successMessage .= " and document associated with matter: {$matter->client_unique_matter_no}";
-                    }
-                } elseif ($request->has('selected_client_id') && $request->selected_client_id) {
-                    $entity = Admin::find($request->selected_client_id);
-                    if ($entity) {
-                        $entityType = ($entity->type === 'lead') ? 'lead' : 'client';
-                        $folderName = ($entityType === 'lead') ? 'personal documents' : 'general documents';
-                        $successMessage .= " and document associated with {$entityType}: {$entity->first_name} {$entity->last_name} (folder: {$folderName})";
-                    }
+            } elseif ($request->has('selected_client_id') && $request->selected_client_id) {
+                $entity = Admin::find($request->selected_client_id);
+                if ($entity) {
+                    $entityType = ($entity->type === 'lead') ? 'lead' : 'client';
+                    $folderName = ($entityType === 'lead') ? 'personal documents' : 'general documents';
+                    $successMessage .= " Document associated with {$entityType}: {$entity->first_name} {$entity->last_name} (folder: {$folderName})";
                 }
-                
-                return redirect()->route('signatures.show', $document->id)
-                    ->with('success', $successMessage);
-            } catch (\Exception $e) {
-                \Log::error('Failed to send signing email', [
-                    'signer_id' => $signer->id,
-                    'error' => $e->getMessage()
-                ]);
-                
-                return redirect()->route('signatures.show', $document->id)
-                    ->with('error', 'Signer added but failed to send email. You can copy the signing link manually.');
             }
+            
+            return redirect()->route('signatures.show', $document->id)
+                ->with('success', $successMessage);
         } else {
             $request->validate([
                 'file' => 'required|file|mimes:pdf,doc,docx|max:10240',

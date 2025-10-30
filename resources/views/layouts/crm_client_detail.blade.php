@@ -373,17 +373,17 @@
         }
         
         .client-nav-button:hover {
-            background: rgba(52, 152, 219, 0.08);
-            color: #3498db;
+            background: rgba(102, 126, 234, 0.08);
+            color: #667eea;
             transform: translateX(1px);
         }
         
         .client-nav-button.active {
-            background: #ecf0f1;
-            color: #2c3e50;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
             font-weight: 600;
-            box-shadow: 0 1px 3px rgba(52, 73, 94, 0.15);
-            border-left: 3px solid #3498db;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+            border-left: 3px solid #764ba2;
         }
         
         .client-nav-button i {
@@ -395,6 +395,11 @@
         
         .client-nav-button.active i {
             opacity: 1;
+            color: white;
+        }
+        
+        .client-nav-button.active span {
+            color: white;
         }
         
         .client-nav-button span {
