@@ -115,7 +115,7 @@ class ClientEditService
      */
     protected function getQualifications(int $clientId)
     {
-        return ClientQualification::where('client_id', $clientId)->get() ?? [];
+        return ClientQualification::where('client_id', $clientId)->orderByRaw('finish_date IS NULL, finish_date DESC')->get() ?? [];
     }
 
     /**
@@ -123,7 +123,7 @@ class ClientEditService
      */
     protected function getExperiences(int $clientId)
     {
-        return ClientExperience::where('client_id', $clientId)->get() ?? [];
+        return ClientExperience::where('client_id', $clientId)->orderByRaw('job_finish_date IS NULL, job_finish_date DESC')->get() ?? [];
     }
 
     /**

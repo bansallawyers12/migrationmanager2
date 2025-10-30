@@ -319,7 +319,7 @@
 
 
                     <?php
-                    $clientQualification_Info = App\Models\ClientQualification::select('level','name','qual_campus','finish_date')->where('client_id', $fetchedData->id)->orderBy('id','desc')->get();
+                    $clientQualification_Info = App\Models\ClientQualification::select('level','name','qual_campus','finish_date')->where('client_id', $fetchedData->id)->orderByRaw('finish_date IS NULL, finish_date DESC')->get();
                     ?>
                     @if(!empty($clientQualification_Info) && $clientQualification_Info->count() > 0)
                     <div class="card">
@@ -377,7 +377,7 @@
 
 
                     <?php
-                    $clientExperience_Info = App\Models\ClientExperience::select('job_title','job_country','job_start_date','job_finish_date')->where('client_id', $fetchedData->id)->orderBy('id','desc')->get();
+                    $clientExperience_Info = App\Models\ClientExperience::select('job_title','job_country','job_start_date','job_finish_date')->where('client_id', $fetchedData->id)->orderByRaw('job_finish_date IS NULL, job_finish_date DESC')->get();
                     ?>
                     @if(!empty($clientExperience_Info) && $clientExperience_Info->count() > 0)
                     <div class="card">

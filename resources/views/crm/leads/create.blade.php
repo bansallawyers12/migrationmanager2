@@ -94,7 +94,7 @@
                 
                 <!-- Actions in Sidebar -->
                 <div class="sidebar-actions">
-                    <button class="nav-item back-btn" onclick="window.history.back()">
+                    <button class="nav-item back-btn" onclick="window.location.href='{{ route('dashboard') }}'">
                         <i class="fas fa-arrow-left"></i>
                         <span>Back</span>
                     </button>

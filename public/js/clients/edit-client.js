@@ -2385,15 +2385,24 @@ window.saveVisaInfo = function() {
     
     sections.forEach(section => {
         const visaId = section.querySelector('input[name*="visa_id"]')?.value;
-        const visaType = section.querySelector('.visa-type-field').value;
+        const visaTypeSelect = section.querySelector('.visa-type-field');
+        const visaType = visaTypeSelect.value;
         const expiryDate = section.querySelector('.visa-expiry-field').value;
         const grantDate = section.querySelector('.visa-grant-field').value;
         const description = section.querySelector('.visa-description-field').value;
         
         if (visaType || expiryDate || grantDate || description) {
+            // Get visa type name from the selected option at collection time
+            let visaTypeName = 'Not set';
+            if (visaType) {
+                const selectedOption = visaTypeSelect.querySelector(`option[value="${visaType}"]`);
+                visaTypeName = selectedOption ? selectedOption.textContent.trim() : visaType;
+            }
+            
             visas.push({
                 visa_id: visaId || '',
                 visa_type_hidden: visaType,
+                visa_type_name: visaTypeName,
                 visa_expiry_date: expiryDate,
                 visa_grant_date: grantDate,
                 visa_description: description
@@ -2408,12 +2417,13 @@ window.saveVisaInfo = function() {
     saveSectionData('visaInfo', formData, function() {
         // Update summary view on success
         const summaryView = document.getElementById('visaInfoSummary');
-        const summaryGrid = summaryView.querySelector('.summary-grid');
         
         let summaryHTML = `
-            <div class="summary-item">
-                <span class="summary-label">Visa Expiry Verified:</span>
-                <span class="summary-value">${visaExpiryVerified === '1' ? 'Yes' : 'No'}</span>
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <span class="summary-label">Visa Expiry Verified:</span>
+                    <span class="summary-value">${visaExpiryVerified === '1' ? 'Yes' : 'No'}</span>
+                </div>
             </div>
         `;
         
@@ -2435,9 +2445,8 @@ window.saveVisaInfo = function() {
             
             summaryHTML += '<div style="margin-top: 15px;">';
             visas.forEach(visa => {
-                // Get visa type name from the selected option
-                const visaTypeSelect = document.querySelector(`select[name*="visa_type_hidden"][value="${visa.visa_type_hidden}"]`);
-                const visaTypeName = visaTypeSelect ? visaTypeSelect.textContent : (visa.visa_type_hidden || 'Not set');
+                // Use the visa type name we already captured during data collection
+                const visaTypeName = visa.visa_type_name || 'Not set';
                 
                 summaryHTML += `
                     <div class="visa-entry-compact" style="margin-bottom: 12px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #28a745;">
@@ -2467,7 +2476,7 @@ window.saveVisaInfo = function() {
             summaryHTML += '<div class="empty-state" style="margin-top: 15px;"><p>No visa details added yet.</p></div>';
         }
         
-        summaryGrid.innerHTML = summaryHTML;
+        summaryView.innerHTML = summaryHTML;
         
         // Return to summary view
         cancelEdit('visaInfo');
@@ -4837,14 +4846,18 @@ $(document).ready(function() {
  * Go back with refresh to ensure consistent information
  */
 window.goBackWithRefresh = function() {
-    // Check if we came from a client detail page
-    const referrer = document.referrer;
+    // Extract client ID from current URL
     const currentUrl = window.location.href;
     
-    // If we're on an edit page and came from a detail page, refresh the detail page
-    if (referrer && referrer.includes('/clients/detail/') && currentUrl.includes('/clients/edit/')) {
-        // Navigate back and force refresh
-        window.location.href = referrer + (referrer.includes('?') ? '&' : '?') + '_t=' + Date.now();
+    // Check if we're on an edit page
+    if (currentUrl.includes('/clients/edit/')) {
+        // Extract the client ID from the URL
+        const urlParts = currentUrl.split('/');
+        const clientId = urlParts[urlParts.indexOf('edit') + 1];
+        
+        // Redirect to the client detail page
+        const detailUrl = window.location.origin + '/clients/detail/' + clientId;
+        window.location.href = detailUrl + '?_t=' + Date.now();
     } else {
         // Fallback to normal back navigation
         window.history.back();

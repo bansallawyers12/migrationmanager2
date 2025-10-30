@@ -531,15 +531,24 @@
                                         Select assignees <span class='selected-count'></span>
                                     </button>
                                     <div class='dropdown-menu' aria-labelledby='dropdownMenuButton' style='width: 100%;'>
+                                        <div class='dropdown-search-wrapper' style='padding: 8px; border-bottom: 1px solid #e2e8f0;'>
+                                            <input type='text' class='form-control assignee-search-input' placeholder='Search assignees...' style='font-size: 13px; padding: 6px 10px;'>
+                                        </div>
                                         <label class='dropdown-item'><input type='checkbox' id='select-all' /> <strong>Select All</strong></label>
                                         <div style='border-top: 1px solid #e2e8f0; margin: 5px 0;'></div>
-                                        @foreach(\App\Models\Admin::where('role','!=',7)->where('status',1)->orderby('first_name','ASC')->get() as $admin)
-                                            <?php $branchname = \App\Models\Branch::where('id',$admin->office_id)->first(); ?>
-                                            <label class='dropdown-item'>
-                                                <input type='checkbox' class='checkbox-item' value='{{ $admin->id }}'>
-                                                {{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})
-                                            </label>
-                                        @endforeach
+                                        <div class='assignee-list'>
+                                            @foreach(\App\Models\Admin::where('role','!=',7)->where('status',1)->orderby('first_name','ASC')->get() as $admin)
+                                                <?php 
+                                                    $branchname = \App\Models\Branch::where('id',$admin->office_id)->first();
+                                                    $searchText = strtolower($admin->first_name . $admin->last_name . @$branchname->office_name);
+                                                    $searchText = str_replace(' ', '', $searchText);
+                                                ?>
+                                                <label class='dropdown-item assignee-item' data-searchtext='{{ $searchText }}'>
+                                                    <input type='checkbox' class='checkbox-item' value='{{ $admin->id }}'>
+                                                    {{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})
+                                                </label>
+                                            @endforeach
+                                        </div>
                                     </div>
                                 </div>
                                 <select class='d-none' id='rem_cat' name='rem_cat[]' multiple='multiple'>
@@ -952,13 +961,47 @@
 
 .popover .dropdown-multi-select .dropdown-menu {
     width: 100%;
-    max-height: 200px;
-    overflow-y: auto;
+    max-height: 300px;
+    overflow: hidden;
     border: 1px solid #ced4da;
     border-radius: 6px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    padding: 8px;
+    padding: 0;
     margin-top: 2px;
+}
+
+/* Bootstrap manages the show class on dropdown-menu directly */
+.popover .dropdown-multi-select .dropdown-menu:not(.show) {
+    display: none;
+}
+
+.popover .dropdown-multi-select .dropdown-search-wrapper {
+    padding: 8px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8f9fa;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.popover .dropdown-multi-select .assignee-search-input {
+    font-size: 13px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e0;
+    width: 100%;
+}
+
+.popover .dropdown-multi-select .assignee-search-input:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.1);
+    outline: none;
+}
+
+.popover .dropdown-multi-select .assignee-list {
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 8px;
 }
 
 .popover .dropdown-multi-select .dropdown-item {
@@ -968,6 +1011,12 @@
     border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.15s ease;
+}
+
+/* Override display for hidden items - CRITICAL for search to work */
+.popover .dropdown-multi-select .assignee-item[style*="display: none"],
+.popover .dropdown-multi-select .assignee-item.hidden {
+    display: none !important;
 }
 
 .popover .dropdown-multi-select .dropdown-item:hover {
@@ -1218,6 +1267,23 @@ $(function () {
         // Initialize client search select with AJAX after positioning
         setTimeout(function() {
             initializeClientSelect2();
+            
+            // Verify dropdown elements are present
+            var $searchInput = $popover.find('.assignee-search-input');
+            var $assigneeItems = $popover.find('.assignee-item');
+            
+            console.log('=== POPOVER INITIALIZATION ===');
+            console.log('Popover found:', $popover.length);
+            console.log('Search input found:', $searchInput.length);
+            console.log('Assignee items found:', $assigneeItems.length);
+            
+            if ($assigneeItems.length > 0) {
+                console.log('✓ Dropdown structure is correct');
+                console.log('First assignee item text:', $assigneeItems.first().text().trim());
+            } else {
+                console.error('✗ ERROR: Assignee items not found in popover!');
+            }
+            console.log('==============================');
         }, 100);
     });
     

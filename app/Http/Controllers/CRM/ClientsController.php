@@ -4261,8 +4261,8 @@ class ClientsController extends Controller
                 $clientAddresses = ClientAddress::where('client_id', $id)->orderBy('created_at', 'desc')->get();
                 $clientContacts = ClientContact::where('client_id', $id)->get();
                 $emails = ClientEmail::where('client_id', $id)->get() ?? [];
-                $qualifications = ClientQualification::where('client_id', $id)->get() ?? [];
-                $experiences = ClientExperience::where('client_id', $id)->get() ?? [];
+                $qualifications = ClientQualification::where('client_id', $id)->orderByRaw('finish_date IS NULL, finish_date DESC')->get() ?? [];
+                $experiences = ClientExperience::where('client_id', $id)->orderByRaw('job_finish_date IS NULL, job_finish_date DESC')->get() ?? [];
                 $testScores = ClientTestScore::where('client_id', $id)->get() ?? [];
                 $visaCountries = ClientVisaCountry::where('client_id', $id)->get() ?? [];
                 $clientSpouseDetail = ClientSpouseDetail::where('client_id', $id)->get();

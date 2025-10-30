@@ -3,11 +3,6 @@
  * 
  * A reusable component for custom multi-select dropdowns with checkbox functionality.
  * Used in action pages for assignee selection.
- * 
- * Usage:
- * 1. Include this script after jQuery
- * 2. Add HTML structure with classes: .dropdown-multi-select, .dropdown-toggle, .checkbox-item
- * 3. The component will automatically initialize
  */
 
 (function($) {
@@ -15,6 +10,7 @@
 
     // Initialize on document ready
     $(document).ready(function() {
+        console.log('✓ Dropdown multi-select script loaded');
         initDropdownMultiSelect();
     });
 
@@ -22,80 +18,96 @@
      * Initialize dropdown multi-select functionality
      */
     function initDropdownMultiSelect() {
-        // Toggle dropdown menu on button click
-        $(document).on('click', '.dropdown-toggle', function(e) {
-            e.stopPropagation();
-            var $dropdown = $(this).parent('.dropdown-multi-select');
-            
-            // Close other dropdowns
-            $('.dropdown-multi-select').not($dropdown).removeClass('show');
-            
-            // Toggle this dropdown
-            $dropdown.toggleClass('show');
-        });
-
-        // Close the dropdown if clicked outside
-        $(document).on('click', function(e) {
-            if (!$(e.target).closest('.dropdown-multi-select').length) {
-                $('.dropdown-multi-select').removeClass('show');
-            }
-        });
-
+        
         // Prevent dropdown from closing when clicking inside
-        $(document).on('click', '.dropdown-multi-select .dropdown-menu', function(e) {
+        $(document).on('click', '.dropdown-menu', function(e) {
             e.stopPropagation();
         });
 
-        // Handle checkbox click events
+        // Handle checkbox changes
         $(document).on('change', '.checkbox-item', function() {
             updateSelectedValues();
         });
 
-        // Handle "Select All" functionality
+        // Handle "Select All"
         $(document).on('change', '#select-all', function() {
             var isChecked = $(this).is(':checked');
-            $('.checkbox-item').prop('checked', isChecked).trigger('change');
+            $('.assignee-item:visible .checkbox-item').prop('checked', isChecked).trigger('change');
+        });
+
+        // CRITICAL: Search functionality - using direct event binding
+        $(document).on('input', '.assignee-search-input', function(e) {
+            e.stopPropagation();
+            
+            var searchTerm = $(this).val().toLowerCase();
+            console.log('🔍 Searching for:', searchTerm);
+            
+            // Find all assignee items in the document
+            var $items = $('.assignee-item');
+            console.log('Found items:', $items.length);
+            
+            if ($items.length === 0) {
+                console.error('❌ ERROR: No .assignee-item elements found!');
+                return;
+            }
+            
+            var matched = 0;
+            var hidden = 0;
+            
+            $items.each(function() {
+                var $item = $(this);
+                var itemText = $item.text().toLowerCase();
+                
+                if (searchTerm === '' || itemText.indexOf(searchTerm) > -1) {
+                    $item.show().removeClass('hidden');
+                    matched++;
+                } else {
+                    $item.hide().addClass('hidden');
+                    hidden++;
+                }
+            });
+            
+            console.log('✓ Matched:', matched, '| Hidden:', hidden);
+        });
+
+        // Clear search on dropdown open
+        $(document).on('show.bs.dropdown', function() {
+            $('.assignee-search-input').val('');
+            $('.assignee-item').show().removeClass('hidden');
+            console.log('Dropdown opened, search cleared');
+        });
+        
+        // Focus search input after dropdown opens
+        $(document).on('shown.bs.dropdown', function() {
+            setTimeout(function() {
+                $('.assignee-search-input').focus();
+            }, 100);
         });
     }
 
     /**
-     * Update the hidden select input with selected values
+     * Update the hidden select with selected values
      */
     function updateSelectedValues() {
         var selectedValues = [];
-        
-        // Collect selected checkboxes values
         $('.checkbox-item:checked').each(function() {
             selectedValues.push($(this).val());
         });
         
-        // Set the selected values in the hidden select dropdown
         $('#rem_cat').val(selectedValues).trigger('change');
         
-        // Update the display text
-        updateDisplayText(selectedValues.length);
-    }
-
-    /**
-     * Update the dropdown button text to show count
-     * @param {number} count - Number of selected items
-     */
-    function updateDisplayText(count) {
-        var $button = $('.dropdown-toggle');
-        var baseText = $button.data('base-text') || 'Select Assignees';
-        
+        var count = selectedValues.length;
         if (count > 0) {
-            $button.find('.selected-count').text(' (' + count + ' selected)');
+            $('.selected-count').text(' (' + count + ' selected)');
         } else {
-            $button.find('.selected-count').text('');
+            $('.selected-count').text('');
         }
     }
 
-    // Expose functions globally if needed
+    // Expose globally
     window.DropdownMultiSelect = {
         init: initDropdownMultiSelect,
         updateValues: updateSelectedValues
     };
 
 })(jQuery);
-

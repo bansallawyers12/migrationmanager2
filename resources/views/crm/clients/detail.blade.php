@@ -211,7 +211,17 @@ use App\Http\Controllers\Controller;
         <nav class="client-sidebar-nav">
             <?php
             $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
-            if( isset($id1) && $id1 != "" || $matter_cnt >0 )
+            
+            // Valid tab names that should NOT be treated as matter IDs
+            $validTabNames = ['personaldetails', 'noteterm', 'personaldocuments', 'visadocuments', 
+                              'eoiroi', 'accounts', 'conversations', 'emailhandling', 
+                              'formgenerations', 'formgenerationsL', 'application','appointments'];
+            
+            // Check if $id1 is a valid matter ID (not a tab name)
+            $isMatterIdInUrl = isset($id1) && $id1 != "" && !in_array($id1, $validTabNames);
+            
+            // Show client menu if: valid matter ID in URL OR client has any matters
+            if( $isMatterIdInUrl || $matter_cnt > 0 )
             {  //if client unique reference id is present in url
             ?>
                 <button class="client-nav-button active" data-tab="personaldetails">

@@ -1,2 +1,33 @@
 2025-10-25 23:22:46 - services.docx_converter_service - INFO - DOCX Converter initialized - LibreOffice: Not found
 2025-10-25 23:22:46 - services.docx_converter_service - INFO - DOCX Converter initialized - LibreOffice: Not found
+2025-10-27 16:37:52 - services.docx_converter_service - INFO - DOCX Converter initialized - LibreOffice: C:\Program Files\LibreOffice\program\soffice.exe
+2025-10-27 16:37:53 - services.docx_converter_service - INFO - DOCX Converter initialized - LibreOffice: C:\Program Files\LibreOffice\program\soffice.exe
+2025-10-27 16:39:13 - services.docx_converter_service - INFO - DOCX Converter initialized - LibreOffice: C:\Program Files\LibreOffice\program\soffice.exe
+2025-10-27 16:39:13 - services.docx_converter_service - INFO - DOCX Converter initialized - LibreOffice: C:\Program Files\LibreOffice\program\soffice.exe
+2025-10-27 16:39:44 - services.docx_converter_service - WARNING - LibreOffice check failed: Command '['C:\\Program Files\\LibreOffice\\program\\soffice.exe', '--version']' timed out after 10 seconds
+2025-10-27 16:40:14 - services.docx_converter_service - WARNING - LibreOffice check failed: Command '['C:\\Program Files\\LibreOffice\\program\\soffice.exe', '--version']' timed out after 10 seconds
+2025-10-27 16:41:12 - services.docx_converter_service - WARNING - LibreOffice check failed: Command '['C:\\Program Files\\LibreOffice\\program\\soffice.exe', '--version']' timed out after 10 seconds
+2025-10-28 11:15:36 - services.docx_converter_service - INFO - DOCX Converter initialized - LibreOffice: C:\Program Files\LibreOffice\program\soffice.exe
+2025-10-28 11:15:36 - services.docx_converter_service - INFO - DOCX Converter initialized - LibreOffice: C:\Program Files\LibreOffice\program\soffice.exe
+2025-10-28 11:16:45 - services.docx_converter_service - WARNING - LibreOffice check failed: Command '['C:\\Program Files\\LibreOffice\\program\\soffice.exe', '--version']' timed out after 10 seconds
+2025-10-28 11:20:21 - services.docx_converter_service - WARNING - LibreOffice check failed: Command '['C:\\Program Files\\LibreOffice\\program\\soffice.exe', '--version']' timed out after 10 seconds
+2025-10-28 11:23:22 - services.docx_converter_service - WARNING - LibreOffice check failed: Command '['C:\\Program Files\\LibreOffice\\program\\soffice.exe', '--version']' timed out after 10 seconds
+2025-10-28 11:36:28 - services.docx_converter_service - WARNING - LibreOffice check failed: Command '['C:\\Program Files\\LibreOffice\\program\\soffice.exe', '--version']' timed out after 10 seconds
+2025-10-28 11:36:39 - services.docx_converter_service - WARNING - LibreOffice check failed: Command '['C:\\Program Files\\LibreOffice\\program\\soffice.exe', '--version']' timed out after 10 seconds
+2025-10-28 11:36:49 - services.docx_converter_service - WARNING - LibreOffice check failed: Command '['C:\\Program Files\\LibreOffice\\program\\soffice.exe', '--version']' timed out after 10 seconds
+2025-10-28 11:37:05 - services.docx_converter_service - WARNING - LibreOffice check failed: Command '['C:\\Program Files\\LibreOffice\\program\\soffice.exe', '--version']' timed out after 10 seconds
+2025-10-28 11:37:16 - services.docx_converter_service - WARNING - LibreOffice check failed: Command '['C:\\Program Files\\LibreOffice\\program\\soffice.exe', '--version']' timed out after 10 seconds
+2025-10-28 11:37:27 - services.docx_converter_service - WARNING - LibreOffice check failed: Command '['C:\\Program Files\\LibreOffice\\program\\soffice.exe', '--version']' timed out after 10 seconds
+2025-10-28 11:37:37 - services.docx_converter_service - WARNING - LibreOffice check failed: Command '['C:\\Program Files\\LibreOffice\\program\\soffice.exe', '--version']' timed out after 10 seconds
+2025-10-28 11:37:48 - services.docx_converter_service - WARNING - LibreOffice check failed: Command '['C:\\Program Files\\LibreOffice\\program\\soffice.exe', '--version']' timed out after 10 seconds
+2025-10-28 11:37:58 - services.docx_converter_service - WARNING - LibreOffice check failed: Command '['C:\\Program Files\\LibreOffice\\program\\soffice.exe', '--version']' timed out after 10 seconds
+2025-10-28 11:38:09 - services.docx_converter_service - WARNING - LibreOffice check failed: Command '['C:\\Program Files\\LibreOffice\\program\\soffice.exe', '--version']' timed out after 10 seconds
+2025-10-28 11:38:21 - services.docx_converter_service - WARNING - LibreOffice check failed: Command '['C:\\Program Files\\LibreOffice\\program\\soffice.exe', '--version']' timed out after 10 seconds
+2025-10-28 11:38:37 - services.docx_converter_service - WARNING - LibreOffice check failed: Command '['C:\\Program Files\\LibreOffice\\program\\soffice.exe', '--version']' timed out after 10 seconds
+2025-10-28 11:38:47 - services.docx_converter_service - WARNING - LibreOffice check failed: Command '['C:\\Program Files\\LibreOffice\\program\\soffice.exe', '--version']' timed out after 10 seconds
+2025-10-28 11:41:32 - services.docx_converter_service - INFO - DOCX Converter initialized - LibreOffice: C:\Program Files\LibreOffice\program\soffice.exe
+2025-10-28 11:41:32 - services.docx_converter_service - INFO - DOCX Converter initialized - LibreOffice: C:\Program Files\LibreOffice\program\soffice.exe
+2025-10-28 18:49:59 - services.docx_converter_service - INFO - DOCX Converter initialized - LibreOffice: C:\Program Files\LibreOffice\program\soffice.exe
+2025-10-28 18:49:59 - services.docx_converter_service - INFO - DOCX Converter initialized - LibreOffice: C:\Program Files\LibreOffice\program\soffice.exe
+2025-10-29 13:17:45 - services.docx_converter_service - INFO - DOCX Converter initialized - LibreOffice: C:\Program Files\LibreOffice\program\soffice.exe
+2025-10-29 13:17:46 - services.docx_converter_service - INFO - DOCX Converter initialized - LibreOffice: C:\Program Files\LibreOffice\program\soffice.exe

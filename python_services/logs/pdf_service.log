@@ -35,3 +35,167 @@
 2025-10-25 23:24:29 - services.pdf_service - INFO - Successfully converted page 1
 2025-10-25 23:24:44 - services.pdf_service - INFO - Converting page 2 of C:\xampp\htdocs\migrationmanager\storage\app\public\documents\68fcbde60ca18_IMMI Refusal Notification with Decision Record (1).pdf at 150 DPI
 2025-10-25 23:24:44 - services.pdf_service - INFO - Successfully converted page 2
+2025-10-27 16:37:52 - services.pdf_service - INFO - PDF Service initialized
+2025-10-27 16:37:53 - services.pdf_service - INFO - PDF Service initialized
+2025-10-27 16:39:13 - services.pdf_service - INFO - PDF Service initialized
+2025-10-27 16:39:13 - services.pdf_service - INFO - PDF Service initialized
+2025-10-28 11:15:35 - services.pdf_service - INFO - PDF Service initialized
+2025-10-28 11:15:36 - services.pdf_service - INFO - PDF Service initialized
+2025-10-28 11:22:15 - services.pdf_service - INFO - Converting page 1 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\690058b28eaf2_Vipul_National Identity Card_1761194357.pdf at 150 DPI
+2025-10-28 11:22:15 - services.pdf_service - INFO - Successfully converted page 1
+2025-10-28 11:22:52 - services.pdf_service - INFO - Converting page 1 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005a2bcd991_Vipul_National Identity Card_1761194357.pdf at 150 DPI
+2025-10-28 11:22:53 - services.pdf_service - INFO - Successfully converted page 1
+2025-10-28 11:23:22 - services.pdf_service - INFO - Converting page 2 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005a2bcd991_Vipul_National Identity Card_1761194357.pdf at 150 DPI
+2025-10-28 11:23:22 - services.pdf_service - INFO - Successfully converted page 2
+2025-10-28 11:36:54 - services.pdf_service - INFO - Converting page 4 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005a2bcd991_Vipul_National Identity Card_1761194357.pdf at 72 DPI
+2025-10-28 11:36:54 - services.pdf_service - INFO - Successfully converted page 4
+2025-10-28 11:38:26 - services.pdf_service - INFO - Converting page 13 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005a2bcd991_Vipul_National Identity Card_1761194357.pdf at 72 DPI
+2025-10-28 11:38:26 - services.pdf_service - INFO - Successfully converted page 13
+2025-10-28 11:41:32 - services.pdf_service - INFO - PDF Service initialized
+2025-10-28 11:41:32 - services.pdf_service - INFO - PDF Service initialized
+2025-10-28 11:42:19 - services.pdf_service - INFO - Converting page 1 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005a2bcd991_Vipul_National Identity Card_1761194357.pdf at 72 DPI
+2025-10-28 11:42:19 - services.pdf_service - INFO - Successfully converted page 1
+2025-10-28 11:42:20 - services.pdf_service - INFO - Converting page 2 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005a2bcd991_Vipul_National Identity Card_1761194357.pdf at 72 DPI
+2025-10-28 11:42:20 - services.pdf_service - INFO - Successfully converted page 2
+2025-10-28 11:42:21 - services.pdf_service - INFO - Converting page 3 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005a2bcd991_Vipul_National Identity Card_1761194357.pdf at 72 DPI
+2025-10-28 11:42:21 - services.pdf_service - INFO - Successfully converted page 3
+2025-10-28 11:42:23 - services.pdf_service - INFO - Converting page 5 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005a2bcd991_Vipul_National Identity Card_1761194357.pdf at 72 DPI
+2025-10-28 11:42:23 - services.pdf_service - INFO - Successfully converted page 5
+2025-10-28 11:42:24 - services.pdf_service - INFO - Converting page 6 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005a2bcd991_Vipul_National Identity Card_1761194357.pdf at 72 DPI
+2025-10-28 11:42:24 - services.pdf_service - INFO - Successfully converted page 6
+2025-10-28 11:42:25 - services.pdf_service - INFO - Converting page 7 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005a2bcd991_Vipul_National Identity Card_1761194357.pdf at 72 DPI
+2025-10-28 11:42:25 - services.pdf_service - INFO - Successfully converted page 7
+2025-10-28 11:42:26 - services.pdf_service - INFO - Converting page 8 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005a2bcd991_Vipul_National Identity Card_1761194357.pdf at 72 DPI
+2025-10-28 11:42:26 - services.pdf_service - INFO - Successfully converted page 8
+2025-10-28 11:42:27 - services.pdf_service - INFO - Converting page 9 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005a2bcd991_Vipul_National Identity Card_1761194357.pdf at 72 DPI
+2025-10-28 11:42:27 - services.pdf_service - INFO - Successfully converted page 9
+2025-10-28 11:42:29 - services.pdf_service - INFO - Converting page 10 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005a2bcd991_Vipul_National Identity Card_1761194357.pdf at 72 DPI
+2025-10-28 11:42:29 - services.pdf_service - INFO - Successfully converted page 10
+2025-10-28 11:42:30 - services.pdf_service - INFO - Converting page 11 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005a2bcd991_Vipul_National Identity Card_1761194357.pdf at 72 DPI
+2025-10-28 11:42:30 - services.pdf_service - INFO - Successfully converted page 11
+2025-10-28 11:42:31 - services.pdf_service - INFO - Converting page 12 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005a2bcd991_Vipul_National Identity Card_1761194357.pdf at 72 DPI
+2025-10-28 11:42:31 - services.pdf_service - INFO - Successfully converted page 12
+2025-10-28 11:42:33 - services.pdf_service - INFO - Converting page 14 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005a2bcd991_Vipul_National Identity Card_1761194357.pdf at 72 DPI
+2025-10-28 11:42:33 - services.pdf_service - INFO - Successfully converted page 14
+2025-10-28 11:42:34 - services.pdf_service - INFO - Converting page 15 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005a2bcd991_Vipul_National Identity Card_1761194357.pdf at 72 DPI
+2025-10-28 11:42:34 - services.pdf_service - INFO - Successfully converted page 15
+2025-10-28 11:42:35 - services.pdf_service - INFO - Adding 2 signatures to PDF
+2025-10-28 11:42:36 - services.pdf_service - INFO - Signatures added successfully: C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_69005ed31eae8_signed.pdf
+2025-10-28 11:43:59 - services.pdf_service - INFO - Converting page 1 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005f257c56f_Vipul_National Identity Card_1761194357.pdf at 150 DPI
+2025-10-28 11:43:59 - services.pdf_service - INFO - Successfully converted page 1
+2025-10-28 11:44:17 - services.pdf_service - INFO - Converting page 2 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005f257c56f_Vipul_National Identity Card_1761194357.pdf at 150 DPI
+2025-10-28 11:44:18 - services.pdf_service - INFO - Successfully converted page 2
+2025-10-28 11:45:23 - services.pdf_service - INFO - Converting page 1 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005f257c56f_Vipul_National Identity Card_1761194357.pdf at 72 DPI
+2025-10-28 11:45:23 - services.pdf_service - INFO - Successfully converted page 1
+2025-10-28 11:45:24 - services.pdf_service - INFO - Converting page 2 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005f257c56f_Vipul_National Identity Card_1761194357.pdf at 72 DPI
+2025-10-28 11:45:25 - services.pdf_service - INFO - Successfully converted page 2
+2025-10-28 11:45:26 - services.pdf_service - INFO - Converting page 3 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005f257c56f_Vipul_National Identity Card_1761194357.pdf at 72 DPI
+2025-10-28 11:45:26 - services.pdf_service - INFO - Successfully converted page 3
+2025-10-28 11:45:27 - services.pdf_service - INFO - Converting page 4 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005f257c56f_Vipul_National Identity Card_1761194357.pdf at 72 DPI
+2025-10-28 11:45:27 - services.pdf_service - INFO - Successfully converted page 4
+2025-10-28 11:45:28 - services.pdf_service - INFO - Converting page 5 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005f257c56f_Vipul_National Identity Card_1761194357.pdf at 72 DPI
+2025-10-28 11:45:28 - services.pdf_service - INFO - Successfully converted page 5
+2025-10-28 11:45:29 - services.pdf_service - INFO - Converting page 6 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005f257c56f_Vipul_National Identity Card_1761194357.pdf at 72 DPI
+2025-10-28 11:45:29 - services.pdf_service - INFO - Successfully converted page 6
+2025-10-28 11:45:30 - services.pdf_service - INFO - Converting page 7 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005f257c56f_Vipul_National Identity Card_1761194357.pdf at 72 DPI
+2025-10-28 11:45:30 - services.pdf_service - INFO - Successfully converted page 7
+2025-10-28 11:45:31 - services.pdf_service - INFO - Converting page 8 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005f257c56f_Vipul_National Identity Card_1761194357.pdf at 72 DPI
+2025-10-28 11:45:31 - services.pdf_service - INFO - Successfully converted page 8
+2025-10-28 11:45:32 - services.pdf_service - INFO - Converting page 9 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005f257c56f_Vipul_National Identity Card_1761194357.pdf at 72 DPI
+2025-10-28 11:45:32 - services.pdf_service - INFO - Successfully converted page 9
+2025-10-28 11:45:33 - services.pdf_service - INFO - Converting page 10 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005f257c56f_Vipul_National Identity Card_1761194357.pdf at 72 DPI
+2025-10-28 11:45:33 - services.pdf_service - INFO - Successfully converted page 10
+2025-10-28 11:45:34 - services.pdf_service - INFO - Converting page 11 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005f257c56f_Vipul_National Identity Card_1761194357.pdf at 72 DPI
+2025-10-28 11:45:34 - services.pdf_service - INFO - Successfully converted page 11
+2025-10-28 11:45:35 - services.pdf_service - INFO - Converting page 12 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005f257c56f_Vipul_National Identity Card_1761194357.pdf at 72 DPI
+2025-10-28 11:45:35 - services.pdf_service - INFO - Successfully converted page 12
+2025-10-28 11:45:36 - services.pdf_service - INFO - Converting page 13 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005f257c56f_Vipul_National Identity Card_1761194357.pdf at 72 DPI
+2025-10-28 11:45:37 - services.pdf_service - INFO - Successfully converted page 13
+2025-10-28 11:45:38 - services.pdf_service - INFO - Converting page 14 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005f257c56f_Vipul_National Identity Card_1761194357.pdf at 72 DPI
+2025-10-28 11:45:38 - services.pdf_service - INFO - Successfully converted page 14
+2025-10-28 11:45:39 - services.pdf_service - INFO - Converting page 15 of C:\xampp\htdocs\migration_manager_crm\storage\app\public\documents\69005f257c56f_Vipul_National Identity Card_1761194357.pdf at 72 DPI
+2025-10-28 11:45:39 - services.pdf_service - INFO - Successfully converted page 15
+2025-10-28 11:45:52 - services.pdf_service - INFO - Adding 2 signatures to PDF
+2025-10-28 11:45:52 - services.pdf_service - INFO - Signatures added successfully: C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_69005f980abfb_signed.pdf
+2025-10-28 18:49:59 - services.pdf_service - INFO - PDF Service initialized
+2025-10-28 18:49:59 - services.pdf_service - INFO - PDF Service initialized
+2025-10-28 18:53:24 - services.pdf_service - INFO - Converting page 1 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6900c3ca4aac7.pdf at 72 DPI
+2025-10-28 18:53:24 - services.pdf_service - INFO - Successfully converted page 1
+2025-10-28 18:54:39 - services.pdf_service - INFO - Converting page 1 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6900c41669185.pdf at 150 DPI
+2025-10-28 18:54:39 - services.pdf_service - INFO - Successfully converted page 1
+2025-10-28 18:54:56 - services.pdf_service - INFO - Converting page 1 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6900c42757062.pdf at 150 DPI
+2025-10-28 18:54:56 - services.pdf_service - INFO - Successfully converted page 1
+2025-10-28 18:55:44 - services.pdf_service - INFO - Converting page 1 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6900c451d68df.pdf at 150 DPI
+2025-10-28 18:55:44 - services.pdf_service - INFO - Successfully converted page 1
+2025-10-28 18:56:56 - services.pdf_service - INFO - Converting page 2 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6900c49f07b69.pdf at 150 DPI
+2025-10-28 18:56:56 - services.pdf_service - INFO - Successfully converted page 2
+2025-10-28 19:05:16 - services.pdf_service - INFO - Converting page 2 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6900c6929ef3f.pdf at 72 DPI
+2025-10-28 19:05:16 - services.pdf_service - INFO - Successfully converted page 2
+2025-10-28 19:05:19 - services.pdf_service - INFO - Converting page 3 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6900c696156b5.pdf at 72 DPI
+2025-10-28 19:05:19 - services.pdf_service - INFO - Successfully converted page 3
+2025-10-28 19:05:23 - services.pdf_service - INFO - Converting page 4 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6900c699852ad.pdf at 72 DPI
+2025-10-28 19:05:23 - services.pdf_service - INFO - Successfully converted page 4
+2025-10-28 19:05:26 - services.pdf_service - INFO - Converting page 5 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6900c69ccd671.pdf at 72 DPI
+2025-10-28 19:05:26 - services.pdf_service - INFO - Successfully converted page 5
+2025-10-28 19:05:30 - services.pdf_service - INFO - Converting page 6 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6900c6a0d4e1f.pdf at 72 DPI
+2025-10-28 19:05:30 - services.pdf_service - INFO - Successfully converted page 6
+2025-10-28 19:05:34 - services.pdf_service - INFO - Converting page 7 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6900c6a4e4e65.pdf at 72 DPI
+2025-10-28 19:05:34 - services.pdf_service - INFO - Successfully converted page 7
+2025-10-28 19:05:37 - services.pdf_service - INFO - Converting page 8 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6900c6a85e7fa.pdf at 72 DPI
+2025-10-28 19:05:38 - services.pdf_service - INFO - Successfully converted page 8
+2025-10-28 19:05:41 - services.pdf_service - INFO - Converting page 9 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6900c6abafe57.pdf at 72 DPI
+2025-10-28 19:05:41 - services.pdf_service - INFO - Successfully converted page 9
+2025-10-28 19:05:44 - services.pdf_service - INFO - Converting page 10 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6900c6af06bb6.pdf at 72 DPI
+2025-10-28 19:05:44 - services.pdf_service - INFO - Successfully converted page 10
+2025-10-28 19:05:47 - services.pdf_service - INFO - Converting page 11 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6900c6b24bb9b.pdf at 72 DPI
+2025-10-28 19:05:47 - services.pdf_service - INFO - Successfully converted page 11
+2025-10-28 19:05:51 - services.pdf_service - INFO - Converting page 12 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6900c6b596560.pdf at 72 DPI
+2025-10-28 19:05:51 - services.pdf_service - INFO - Successfully converted page 12
+2025-10-28 19:05:54 - services.pdf_service - INFO - Converting page 13 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6900c6b8d4c7b.pdf at 72 DPI
+2025-10-28 19:05:54 - services.pdf_service - INFO - Successfully converted page 13
+2025-10-28 19:05:57 - services.pdf_service - INFO - Converting page 14 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6900c6bc2467a.pdf at 72 DPI
+2025-10-28 19:05:57 - services.pdf_service - INFO - Successfully converted page 14
+2025-10-28 19:06:01 - services.pdf_service - INFO - Converting page 15 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6900c6bf75a4f.pdf at 72 DPI
+2025-10-28 19:06:01 - services.pdf_service - INFO - Successfully converted page 15
+2025-10-28 19:06:05 - services.pdf_service - INFO - Adding 3 signatures to PDF
+2025-10-28 19:06:05 - services.pdf_service - INFO - Signatures added successfully: C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6900c6c4a1f27_signed.pdf
+2025-10-29 13:17:45 - services.pdf_service - INFO - PDF Service initialized
+2025-10-29 13:17:46 - services.pdf_service - INFO - PDF Service initialized
+2025-10-29 13:19:16 - services.pdf_service - INFO - Converting page 1 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6901c6fb8398a.pdf at 150 DPI
+2025-10-29 13:19:17 - services.pdf_service - INFO - Successfully converted page 1
+2025-10-29 13:48:42 - services.pdf_service - INFO - Converting page 1 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6901cde143597.pdf at 150 DPI
+2025-10-29 13:48:42 - services.pdf_service - INFO - Successfully converted page 1
+2025-10-29 13:56:15 - services.pdf_service - INFO - Converting page 1 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6901cfa68eb42.pdf at 150 DPI
+2025-10-29 13:56:15 - services.pdf_service - INFO - Successfully converted page 1
+2025-10-29 13:58:18 - services.pdf_service - INFO - Converting page 1 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6901d0214a7f0.pdf at 72 DPI
+2025-10-29 13:58:18 - services.pdf_service - INFO - Successfully converted page 1
+2025-10-29 13:58:22 - services.pdf_service - INFO - Converting page 2 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6901d024cdadb.pdf at 72 DPI
+2025-10-29 13:58:22 - services.pdf_service - INFO - Successfully converted page 2
+2025-10-29 13:58:25 - services.pdf_service - INFO - Converting page 3 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6901d0281b1b7.pdf at 72 DPI
+2025-10-29 13:58:26 - services.pdf_service - INFO - Successfully converted page 3
+2025-10-29 13:58:29 - services.pdf_service - INFO - Converting page 4 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6901d02bc0d74.pdf at 72 DPI
+2025-10-29 13:58:29 - services.pdf_service - INFO - Successfully converted page 4
+2025-10-29 13:58:32 - services.pdf_service - INFO - Converting page 5 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6901d02f4b155.pdf at 72 DPI
+2025-10-29 13:58:32 - services.pdf_service - INFO - Successfully converted page 5
+2025-10-29 13:58:36 - services.pdf_service - INFO - Converting page 6 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6901d0328c429.pdf at 72 DPI
+2025-10-29 13:58:36 - services.pdf_service - INFO - Successfully converted page 6
+2025-10-29 13:58:39 - services.pdf_service - INFO - Converting page 7 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6901d035ec6af.pdf at 72 DPI
+2025-10-29 13:58:39 - services.pdf_service - INFO - Successfully converted page 7
+2025-10-29 13:58:43 - services.pdf_service - INFO - Converting page 8 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6901d0397a1ed.pdf at 72 DPI
+2025-10-29 13:58:43 - services.pdf_service - INFO - Successfully converted page 8
+2025-10-29 13:58:46 - services.pdf_service - INFO - Converting page 9 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6901d03cdbf6d.pdf at 72 DPI
+2025-10-29 13:58:46 - services.pdf_service - INFO - Successfully converted page 9
+2025-10-29 13:58:49 - services.pdf_service - INFO - Converting page 10 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6901d0402cbf3.pdf at 72 DPI
+2025-10-29 13:58:49 - services.pdf_service - INFO - Successfully converted page 10
+2025-10-29 13:58:53 - services.pdf_service - INFO - Converting page 11 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6901d043a8685.pdf at 72 DPI
+2025-10-29 13:58:53 - services.pdf_service - INFO - Successfully converted page 11
+2025-10-29 13:58:56 - services.pdf_service - INFO - Converting page 12 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6901d0472e3ea.pdf at 72 DPI
+2025-10-29 13:58:56 - services.pdf_service - INFO - Successfully converted page 12
+2025-10-29 13:59:00 - services.pdf_service - INFO - Converting page 13 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6901d04a89ce5.pdf at 72 DPI
+2025-10-29 13:59:00 - services.pdf_service - INFO - Successfully converted page 13
+2025-10-29 13:59:03 - services.pdf_service - INFO - Converting page 14 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6901d04de41b0.pdf at 72 DPI
+2025-10-29 13:59:03 - services.pdf_service - INFO - Successfully converted page 14
+2025-10-29 13:59:06 - services.pdf_service - INFO - Converting page 15 of C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6901d051353d4.pdf at 72 DPI
+2025-10-29 13:59:06 - services.pdf_service - INFO - Successfully converted page 15
+2025-10-29 13:59:10 - services.pdf_service - INFO - Adding 1 signatures to PDF
+2025-10-29 13:59:10 - services.pdf_service - INFO - Signatures added successfully: C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6901d055aa48a_signed.pdf
