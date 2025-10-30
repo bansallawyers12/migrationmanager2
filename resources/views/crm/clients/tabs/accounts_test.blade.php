@@ -9,27 +9,7 @@
     </div>
 
     <div style="margin-bottom: 10px;">
-        <?php
-        //Display reference values
-        $matter__ref_info_arr = array(); // Always a Collection
-        if($id1)
-        { //if client unique reference id is present in url
-            $matter__ref_info_arr = \App\Models\ClientMatter::select('department_reference','other_reference')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
-        }
-        else
-        {
-            $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
-            //dd($matter_cnt);
-            if($matter_cnt >0){
-                $matter__ref_info_arr = \App\Models\ClientMatter::select('department_reference','other_reference')->where('client_id',$fetchedData->id)->where('matter_status',1)->orderBy('id', 'desc')->first();
-            }
-        } //dd($matter__ref_info_arr);
-        ?>
-        <input type="text" id="department_reference_test" name="department_reference" class="department_reference" placeholder="Department Reference" value="<?php if( isset($matter__ref_info_arr) && !empty($matter__ref_info_arr) && $matter__ref_info_arr->department_reference != ''){ echo $matter__ref_info_arr->department_reference;} ?>">
-        <input type="text" id="other_reference_test" name="other_reference" class="other_reference" placeholder="Other Reference" value="<?php if( isset($matter__ref_info_arr) && !empty($matter__ref_info_arr) && $matter__ref_info_arr->other_reference != ''){ echo $matter__ref_info_arr->other_reference;} ?>">
-        <input class="btn btn-primary saveReferenceValue" type="button" name="save" value="Submit" data-test-mode="true">
-
-        <a style="margin-left: 500px;" class="btn btn-primary createreceipt" href="javascript:;" role="button" data-test-mode="true">Create Entry</a>
+        <a class="btn btn-primary createreceipt" href="javascript:;" role="button" data-test-mode="true">Create Entry</a>
         
         <!-- Additional Test Controls -->
         <button class="btn btn-info" id="export-to-excel" style="margin-left: 10px;">

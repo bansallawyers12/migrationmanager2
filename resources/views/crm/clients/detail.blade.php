@@ -298,7 +298,7 @@ use App\Http\Controllers\Controller;
                     <i class="fas fa-calculator"></i>
                     <span>Accounts</span>
                 </button>
-                <button class="client-nav-button" data-tab="accounts-test" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <button class="client-nav-button" data-tab="accounts-test">
                     <i class="fas fa-flask"></i>
                     <span>Accounts-Test</span>
                 </button>

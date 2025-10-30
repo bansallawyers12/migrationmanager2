@@ -77,8 +77,10 @@
         $('.client-nav-button').removeClass('active');
         $('.tab-pane').removeClass('active');
         
-        // Add active class to the clicked button
-        $(`.client-nav-button[data-tab="${tabId}"]`).addClass('active');
+        // Add active class to the clicked button - use exact match with filter to ensure precision
+        $('.client-nav-button').filter(function() {
+            return $(this).data('tab') === tabId;
+        }).addClass('active');
         
         // Show the corresponding tab pane
         const $tabPane = $(`#${tabId}-tab`);
@@ -344,14 +346,24 @@
                 $button.click();
             } else {
                 // Try to find a close match (singular vs plural issue)
+                // BUT exclude hyphenated variations to prevent "accounts" from matching "accounts-test"
                 const availableTabs = [];
                 $('.client-nav-button').each(function() {
                     availableTabs.push($(this).data('tab'));
                 });
                 
-                const closeTabs = availableTabs.filter(t => 
-                    t.startsWith(tabId) || tabId.startsWith(t)
-                );
+                const closeTabs = availableTabs.filter(t => {
+                    // Exact match check first
+                    if (t === tabId) return true;
+                    
+                    // Only allow close matches if neither contains a hyphen
+                    // This prevents "accounts" from matching "accounts-test"
+                    if (t.includes('-') || tabId.includes('-')) {
+                        return false;
+                    }
+                    
+                    return t.startsWith(tabId) || tabId.startsWith(t);
+                });
                 
                 if (closeTabs.length > 0) {
                     $(`.client-nav-button[data-tab="${closeTabs[0]}"]`).click();
