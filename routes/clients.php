@@ -172,6 +172,9 @@ Route::prefix('clients/{client}/eoi-roi')->name('clients.eoi-roi.')->group(funct
 Route::get('/clients/saveaccountreport/{id}', 'CRM\ClientsController@saveaccountreport')->name('clients.saveaccountreport');
 Route::post('/clients/saveaccountreport', 'CRM\ClientsController@saveaccountreport')->name('clients.saveaccountreport.update');
 
+/* Test Route for Python Processing */
+Route::post('/clients/test-python-accounting', 'CRM\ClientsController@testPythonAccounting')->name('clients.test-python-accounting');
+
 Route::get('/clients/saveinvoicereport/{id}', 'CRM\ClientsController@saveinvoicereport')->name('clients.saveinvoicereport');
 Route::post('/clients/saveinvoicereport', 'CRM\ClientsController@saveinvoicereport')->name('clients.saveinvoicereport.update');
 

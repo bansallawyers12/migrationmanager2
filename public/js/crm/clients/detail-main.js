@@ -16095,3 +16095,287 @@ Bansal Immigration`;
 
 
 
+// ============================================
+// SIDEBAR REFERENCES - Chip Style UI
+// ============================================
+
+(function() {
+    'use strict';
+    
+    // Check if reference section exists
+    if (!$('#references-container').length) {
+        return;
+    }
+    
+    // State
+    let isEditing = false;
+    let editingType = null;
+    
+    // Initialize on page load
+    function initializeSidebarReferences() {
+        renderReferences();
+    }
+    
+    // Render reference chips from hidden inputs
+    function renderReferences() {
+        const container = $('#references-container');
+        container.empty();
+        
+        const deptRef = $('#department_reference').val();
+        const otherRef = $('#other_reference').val();
+        
+        let chipCount = 0;
+        
+        // Render department reference
+        if (deptRef && deptRef.trim() !== '') {
+            chipCount++;
+            container.append(createChip('department_reference', deptRef, 'Dept'));
+        }
+        
+        // Render other reference
+        if (otherRef && otherRef.trim() !== '') {
+            chipCount++;
+            container.append(createChip('other_reference', otherRef, 'Other'));
+        }
+        
+        // Show/hide add button
+        if (chipCount >= 2 || isEditing) {
+            $('#btn-add-reference').addClass('hidden');
+        } else {
+            $('#btn-add-reference').removeClass('hidden');
+        }
+    }
+    
+    // Create chip element
+    function createChip(type, value, label) {
+        return $('<div>')
+            .addClass('reference-chip')
+            .attr('data-type', type)
+            .attr('data-value', value)
+            .attr('data-label', label)
+            .attr('title', 'Click to edit • Double-click to delete')
+            .text(value)
+            .on('click', function(e) {
+                if (e.detail === 1) {
+                    // Single click - edit
+                    const self = $(this);
+                    self.data('clickTimer', setTimeout(function() {
+                        editReference(type, value);
+                    }, 250));
+                }
+            })
+            .on('dblclick', function(e) {
+                // Double click - delete
+                clearTimeout($(this).data('clickTimer'));
+                confirmDeleteReference(type, value);
+            });
+    }
+    
+    // Add new reference button click
+    $(document).on('click', '#btn-add-reference', function() {
+        if (isEditing) return;
+        
+        isEditing = true;
+        editingType = null; // New reference
+        
+        // Hide add button
+        $(this).addClass('hidden');
+        
+        // Show input
+        $('#reference-input-container').show();
+        $('#reference-input').val('').focus();
+    });
+    
+    // Edit existing reference
+    function editReference(type, currentValue) {
+        if (isEditing) return;
+        
+        isEditing = true;
+        editingType = type;
+        
+        // Mark chip as being edited
+        $(`.reference-chip[data-type="${type}"]`).addClass('editing');
+        
+        // Hide add button
+        $('#btn-add-reference').addClass('hidden');
+        
+        // Show input with current value
+        $('#reference-input-container').show();
+        $('#reference-input').val(currentValue).focus().select();
+    }
+    
+    // Confirm delete reference
+    function confirmDeleteReference(type, value) {
+        if (isEditing) return;
+        
+        if (!confirm(`Delete reference "${value}"?`)) {
+            return;
+        }
+        
+        // Update hidden input to empty
+        $('#' + type).val('');
+        
+        // Trigger the existing save handler
+        $('.saveReferenceValue').click();
+        
+        // Show success message
+        if (typeof iziToast !== 'undefined') {
+            iziToast.info({
+                title: 'Deleting',
+                message: 'Reference removed',
+                position: 'topRight',
+                timeout: 2000
+            });
+        }
+        
+        // Re-render after a delay (wait for save)
+        setTimeout(function() {
+            renderReferences();
+        }, 500);
+    }
+    
+    // Handle Enter key press in input
+    $(document).on('keypress', '#reference-input', function(e) {
+        if (e.which === 13) { // Enter key
+            e.preventDefault();
+            saveReference();
+        }
+    });
+    
+    // Handle Escape key press
+    $(document).on('keydown', '#reference-input', function(e) {
+        if (e.which === 27) { // Escape key
+            e.preventDefault();
+            cancelInput();
+        }
+    });
+    
+    // Cancel button click
+    $(document).on('click', '.btn-cancel-input', function() {
+        cancelInput();
+    });
+    
+    // Save reference
+    function saveReference() {
+        const value = $('#reference-input').val().trim();
+        
+        // Validation
+        if (!value) {
+            if (typeof iziToast !== 'undefined') {
+                iziToast.warning({
+                    title: 'Warning',
+                    message: 'Please enter a reference value',
+                    position: 'topRight',
+                    timeout: 2000
+                });
+            } else {
+                alert('Please enter a reference value');
+            }
+            $('#reference-input').focus();
+            return;
+        }
+        
+        // Determine which hidden input to update
+        let type = editingType;
+        if (!type) {
+            // New reference - find empty slot
+            const deptRef = $('#department_reference').val();
+            const otherRef = $('#other_reference').val();
+            
+            if (!deptRef || deptRef.trim() === '') {
+                type = 'department_reference';
+            } else if (!otherRef || otherRef.trim() === '') {
+                type = 'other_reference';
+            } else {
+                if (typeof iziToast !== 'undefined') {
+                    iziToast.error({
+                        title: 'Error',
+                        message: 'Maximum 2 references allowed',
+                        position: 'topRight'
+                    });
+                } else {
+                    alert('Maximum 2 references allowed');
+                }
+                cancelInput();
+                return;
+            }
+        }
+        
+        // Update the hidden input (SAME ID AS ORIGINAL)
+        $('#' + type).val(value);
+        
+        // Show saving indicator
+        $('.sidebar-references').addClass('saving');
+        
+        // Trigger the EXISTING save button click
+        $('.saveReferenceValue').click();
+        
+        // Hide saving indicator after delay
+        setTimeout(function() {
+            $('.sidebar-references').removeClass('saving');
+            
+            // Reset state
+            resetInputState();
+            
+            // Re-render chips
+            renderReferences();
+            
+            // Show success (the existing handler might also show this)
+            if (typeof iziToast !== 'undefined') {
+                iziToast.success({
+                    title: 'Saved',
+                    message: 'Reference saved',
+                    position: 'topRight',
+                    timeout: 2000
+                });
+            }
+        }, 800);
+    }
+    
+    // Cancel input
+    function cancelInput() {
+        // Remove editing class from chips
+        $('.reference-chip').removeClass('editing');
+        
+        // Reset state
+        resetInputState();
+        
+        // Re-render to restore add button
+        renderReferences();
+    }
+    
+    // Reset input state
+    function resetInputState() {
+        isEditing = false;
+        editingType = null;
+        $('#reference-input-container').hide();
+        $('#reference-input').val('');
+    }
+    
+    // Listen for matter changes
+    $(document).on('change', '#sel_matter_id_client_detail', function() {
+        // The page will reload or update via existing mechanism
+        // Just reset our UI state
+        cancelInput();
+        
+        // Re-render after matter switch (slight delay for backend update)
+        setTimeout(function() {
+            renderReferences();
+        }, 500);
+    });
+    
+    // Re-render when accounts tab updates references
+    // (in case they're edited elsewhere)
+    $(document).on('click', '.saveReferenceValue', function() {
+        setTimeout(function() {
+            renderReferences();
+        }, 1000);
+    });
+    
+    // Initialize
+    $(document).ready(function() {
+        initializeSidebarReferences();
+    });
+    
+})();
+

@@ -207,6 +207,64 @@ use App\Http\Controllers\Controller;
                 }
                 ?>
             </div>
+            
+            <!-- Matter References Section -->
+            <div class="sidebar-references">
+                <?php
+                // Load reference values - SAME LOGIC AS ACCOUNTS TAB
+                $matter__ref_info_arr = array();
+                if($id1) {
+                    // If client unique reference id is present in url
+                    $matter__ref_info_arr = \App\Models\ClientMatter::select('department_reference','other_reference')
+                        ->where('client_id', $fetchedData->id)
+                        ->where('client_unique_matter_no', $id1)
+                        ->first();
+                } else {
+                    $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id', $fetchedData->id)->where('matter_status', 1)->count();
+                    if($matter_cnt > 0) {
+                        $matter__ref_info_arr = \App\Models\ClientMatter::select('department_reference','other_reference')
+                            ->where('client_id', $fetchedData->id)
+                            ->where('matter_status', 1)
+                            ->orderBy('id', 'desc')
+                            ->first();
+                    }
+                }
+                ?>
+                
+                <!-- Hidden inputs - SAME IDs AS ORIGINAL -->
+                <input type="hidden" 
+                       id="department_reference" 
+                       name="department_reference" 
+                       value="<?php if(isset($matter__ref_info_arr) && !empty($matter__ref_info_arr) && $matter__ref_info_arr->department_reference != ''){ echo $matter__ref_info_arr->department_reference; } ?>">
+                
+                <input type="hidden" 
+                       id="other_reference" 
+                       name="other_reference" 
+                       value="<?php if(isset($matter__ref_info_arr) && !empty($matter__ref_info_arr) && $matter__ref_info_arr->other_reference != ''){ echo $matter__ref_info_arr->other_reference; } ?>">
+                
+                <!-- Reference Chips Container -->
+                <div id="references-container" class="references-chips-container">
+                    <!-- Dynamically generated chips -->
+                </div>
+                
+                <!-- Input Container (hidden by default) -->
+                <div id="reference-input-container" class="reference-input-wrapper" style="display: none;">
+                    <input type="text" 
+                           id="reference-input" 
+                           class="form-control form-control-sm reference-input" 
+                           placeholder="Type and press Enter..."
+                           maxlength="50"
+                           autocomplete="off">
+                    <button class="btn-cancel-input" type="button" title="Cancel (Esc)">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <!-- Add Button -->
+                <button id="btn-add-reference" class="btn-add-reference-chip" type="button">
+                    <i class="fas fa-plus"></i> Add Reference
+                </button>
+            </div>
         </div>
         <nav class="client-sidebar-nav">
             <?php
@@ -239,6 +297,10 @@ use App\Http\Controllers\Controller;
                 <button class="client-nav-button" data-tab="accounts">
                     <i class="fas fa-calculator"></i>
                     <span>Accounts</span>
+                </button>
+                <button class="client-nav-button" data-tab="accounts-test" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <i class="fas fa-flask"></i>
+                    <span>Accounts-Test</span>
                 </button>
                 <button class="client-nav-button" data-tab="conversations">
                     <i class="fas fa-envelope"></i>
@@ -323,6 +385,7 @@ use App\Http\Controllers\Controller;
                 @endif
                 
                 @include('crm.clients.tabs.accounts')
+                @include('crm.clients.tabs.accounts_test')
                 @include('crm.clients.tabs.conversations')
                 @include('crm.clients.tabs.email_handling')
                 @include('crm.clients.tabs.form_generation_client')
