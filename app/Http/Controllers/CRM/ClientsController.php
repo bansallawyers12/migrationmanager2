@@ -5903,19 +5903,26 @@ class ClientsController extends Controller
                 $totalWithdrawAmount = array_sum(array_column($feeTransfers, 'withdraw_amount'));
 
                 // Validate Fee Transfer amount against Current Funds Held
-                // Get the current funds held using the same logic as displayed in UI
-                $latest_balance = DB::table('account_client_receipts')
+                // Calculate balance excluding voided fee transfers
+                $ledger_entries = DB::table('account_client_receipts')
+                    ->select('deposit_amount', 'withdraw_amount', 'void_fee_transfer')
                     ->where('client_id', $requestData['client_id'])
                     ->where('client_matter_id', $requestData['client_matter_id'])
                     ->where('receipt_type', 1)
-                    ->orderBy('id', 'desc')
-                    ->value('balance_amount');
+                    ->get();
                 
-                $currentFundsHeld = is_numeric($latest_balance) ? floatval($latest_balance) : 0;
+                $currentFundsHeld = 0;
+                foreach($ledger_entries as $entry) {
+                    // Skip voided fee transfers
+                    if(isset($entry->void_fee_transfer) && $entry->void_fee_transfer == 1) {
+                        continue;
+                    }
+                    $currentFundsHeld += floatval($entry->deposit_amount) - floatval($entry->withdraw_amount);
+                }
                 
                 if ($totalWithdrawAmount > $currentFundsHeld) {
                     $response['status'] = false;
-                    $response['message'] = 'You cannot transfer the amount greater than of Current Funds Held amount';
+                    $response['message'] = 'You cannot transfer the amount greater than of Current Funds Held amount (Current: $' . number_format($currentFundsHeld, 2) . ')';
                     $response['requestData'] = [];
                     $response['awsUrl'] = "";
                     $response['invoices'] = [];
@@ -6087,19 +6094,26 @@ class ClientsController extends Controller
 
                 // Validate Fee Transfer amount against Current Funds Held (for Fee Transfer without invoice)
                 if ($clientFundLedgerType === 'Fee Transfer' && !$invoiceNo) {
-                    // Get the current funds held using the same logic as displayed in UI
-                    $latest_balance = DB::table('account_client_receipts')
+                    // Calculate balance excluding voided fee transfers
+                    $ledger_entries = DB::table('account_client_receipts')
+                        ->select('deposit_amount', 'withdraw_amount', 'void_fee_transfer')
                         ->where('client_id', $requestData['client_id'])
                         ->where('client_matter_id', $requestData['client_matter_id'])
                         ->where('receipt_type', 1)
-                        ->orderBy('id', 'desc')
-                        ->value('balance_amount');
+                        ->get();
                     
-                    $currentFundsHeld = is_numeric($latest_balance) ? floatval($latest_balance) : 0;
+                    $currentFundsHeld = 0;
+                    foreach($ledger_entries as $entry) {
+                        // Skip voided fee transfers
+                        if(isset($entry->void_fee_transfer) && $entry->void_fee_transfer == 1) {
+                            continue;
+                        }
+                        $currentFundsHeld += floatval($entry->deposit_amount) - floatval($entry->withdraw_amount);
+                    }
                     
                     if ($withdraw > $currentFundsHeld) {
                         $response['status'] = false;
-                        $response['message'] = 'You cannot transfer the amount greater than of Current Funds Held amount';
+                        $response['message'] = 'You cannot transfer the amount greater than of Current Funds Held amount (Current: $' . number_format($currentFundsHeld, 2) . ')';
                         $response['requestData'] = [];
                         $response['awsUrl'] = "";
                         $response['invoices'] = [];
@@ -6625,20 +6639,40 @@ class ClientsController extends Controller
     public function listOfInvoice(Request $request)
 	{
         $requestData 		= 	$request->all();
-        $record_get = DB::table('account_client_receipts')->select('invoice_no')->where('client_matter_id',$requestData['selectedMatter'])->where('client_id',$requestData['client_id'])->where('receipt_type',3)->where('save_type','final')->distinct()->get();
+        // Get only non-voided invoices that are unpaid or partially paid
+        $record_get = DB::table('account_client_receipts')
+            ->select('invoice_no', 'invoice_status', 'balance_amount')
+            ->where('client_matter_id',$requestData['selectedMatter'])
+            ->where('client_id',$requestData['client_id'])
+            ->where('receipt_type',3)
+            ->where('save_type','final')
+            ->where(function($query) {
+                // Only include unpaid (0) or partially paid (2) invoices
+                $query->where('invoice_status', 0)
+                      ->orWhere('invoice_status', 2);
+            })
+            ->where(function($query) {
+                // Exclude voided invoices
+                $query->whereNull('void_invoice')
+                      ->orWhere('void_invoice', 0);
+            })
+            ->distinct()
+            ->get();
         //dd($record_get);
         if(!empty($record_get)) {
             $str = '<option value="">Select</option>';
             foreach($record_get as $key=>$val) {
-                $str .=  '<option value="'.$val->invoice_no.'">'.$val->invoice_no.'</option>';
+                // Show balance amount in dropdown for clarity
+                $balance = number_format($val->balance_amount, 2);
+                $str .=  '<option value="'.$val->invoice_no.'">'.$val->invoice_no.' (Balance: $'.$balance.')</option>';
             }
             $response['record_get'] 	= $str;
             $response['status'] 	= 	true;
             $response['message']	=	'Record is exist';
         }else{
-            $response['record_count'] 	= array();
+            $response['record_get'] 	= '<option value="">No unpaid invoices available</option>';
             $response['status'] 	= 	false;
-            $response['message']	=	'Record is not exist.Please try again';
+            $response['message']	=	'No unpaid invoices found';
         }
         echo json_encode($response);
     }
@@ -6650,6 +6684,10 @@ class ClientsController extends Controller
             ->where('client_matter_id', $requestData['selectedMatter'])
             ->where('client_id', $requestData['client_id'])
             ->where('receipt_type', 1)
+            ->where(function($query) {
+                $query->whereNull('void_fee_transfer')
+                      ->orWhere('void_fee_transfer', 0);
+            })
             ->orderBy('id', 'desc')
             ->value('balance_amount');
         if( is_numeric($latest_balance) ) {
@@ -7135,6 +7173,9 @@ class ClientsController extends Controller
             }
         }
 
+        // Get save type (draft or final)
+        $saveType = isset($requestData['save_type']) ? $requestData['save_type'] : 'final';
+
         // Handle office receipt processing (receipt_type=2 only)
         if (isset($requestData['trans_date'])) {
             $is_record_exist = DB::table('account_client_receipts')->select('receipt_id')->where('receipt_type', 2)->orderBy('receipt_id', 'desc')->first();
@@ -7161,6 +7202,7 @@ class ClientsController extends Controller
                     'description' => $requestData['description'][$i],
                     'deposit_amount' => $requestData['deposit_amount'][$i],
                     'uploaded_doc_id' => $insertedDocId,
+                    'save_type' => $saveType, // Track if draft or final
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
@@ -7230,6 +7272,122 @@ class ClientsController extends Controller
         }
 
         return 'REC-' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+    }
+
+    // Update Office Receipt
+    public function updateOfficeReceipt(Request $request)
+    {
+        $requestData = $request->all();
+        $id = $request->input('id');
+        $saveType = $request->input('save_type', 'final');
+        
+        // Handle document upload if new file is provided
+        $insertedDocId = null;
+        $doctype = isset($request->doctype) ? $request->doctype : '';
+        
+        if ($request->hasfile('document_upload')) {
+            $files = is_array($request->file('document_upload')) ? $request->file('document_upload') : [$request->file('document_upload')];
+            
+            $client_info = \App\Models\Admin::select('client_id')->where('id', $requestData['client_id'])->first();
+            $client_unique_id = !empty($client_info) ? $client_info->client_id : "";
+            
+            foreach ($files as $file) {
+                $size = $file->getSize();
+                $fileName = $file->getClientOriginalName();
+                $nameWithoutExtension = pathinfo($fileName, PATHINFO_FILENAME);
+                $fileExtension = $file->getClientOriginalExtension();
+                $name = time() . $file->getClientOriginalName();
+                $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
+                Storage::disk('s3')->put($filePath, file_get_contents($file));
+                
+                $obj = new \App\Models\Document;
+                $obj->file_name = $nameWithoutExtension;
+                $obj->filetype = $fileExtension;
+                $obj->user_id = Auth::user()->id;
+                $obj->myfile = Storage::disk('s3')->url($filePath);
+                $obj->myfile_key = $name;
+                $obj->client_id = $requestData['client_id'];
+                $obj->type = $request->type;
+                $obj->file_size = $size;
+                $obj->doc_type = $doctype;
+                $obj->save();
+                $insertedDocId = $obj->id;
+            }
+        }
+        
+        // Prepare update data
+        $updateData = [
+            'trans_date' => $request->input('trans_date'),
+            'entry_date' => $request->input('entry_date'),
+            'payment_method' => $request->input('payment_method'),
+            'description' => $request->input('description'),
+            'deposit_amount' => $request->input('deposit_amount'),
+            'invoice_no' => $request->input('invoice_no', ''),
+            'save_type' => $saveType,
+            'updated_at' => now(),
+        ];
+        
+        // Only update document if new one was uploaded
+        if ($insertedDocId !== null) {
+            $updateData['uploaded_doc_id'] = $insertedDocId;
+        }
+        
+        // Update the record
+        $updated = DB::table('account_client_receipts')
+            ->where('id', $id)
+            ->where('receipt_type', 2)
+            ->update($updateData);
+        
+        if ($updated) {
+            // Log activity
+            $receipt = DB::table('account_client_receipts')->where('id', $id)->first();
+            $subject = 'updated office receipt. Reference no- ' . $receipt->trans_no . ' (saved as ' . $saveType . ')';
+            
+            $objs = new \App\Models\ActivitiesLog;
+            $objs->client_id = $requestData['client_id'];
+            $objs->created_by = Auth::user()->id;
+            $objs->description = '';
+            $objs->subject = $subject;
+            $objs->save();
+            
+            return response()->json([
+                'status' => true,
+                'message' => $saveType == 'draft' ? 'Office receipt draft saved successfully' : 'Office receipt finalized successfully',
+            ], 200);
+        }
+        
+        return response()->json([
+            'status' => false,
+            'message' => 'Failed to update office receipt',
+        ], 500);
+    }
+    
+    // Get invoices by matter for dropdown
+    public function getInvoicesByMatter(Request $request)
+    {
+        $matterId = $request->input('client_matter_id');
+        $clientId = $request->input('client_id');
+        
+        $invoices = DB::table('account_client_receipts')
+            ->select('trans_no', 'balance_amount', 'invoice_status', 'description')
+            ->where('client_matter_id', $matterId)
+            ->where('client_id', $clientId)
+            ->where('receipt_type', 3) // Invoices only
+            ->groupBy('receipt_id')
+            ->orderBy('id', 'desc')
+            ->get();
+        
+        // Add status text
+        $invoices = $invoices->map(function($invoice) {
+            $statusMap = ['0' => 'Unpaid', '1' => 'Paid', '2' => 'Partial', '3' => 'Void'];
+            $invoice->status = $statusMap[$invoice->invoice_status] ?? 'Unknown';
+            return $invoice;
+        });
+        
+        return response()->json([
+            'status' => true,
+            'invoices' => $invoices,
+        ], 200);
     }
 
     private function generateInvoiceNo()
@@ -8006,8 +8164,45 @@ class ClientsController extends Controller
                   ->orWhere('partial_paid_amount', '=', $amount);
             });
         }
+
+        // Filter: Hubdoc Status
+        if ($request->has('hubdoc_status') && $request->input('hubdoc_status') !== '') {
+            $hubdocStatus = $request->input('hubdoc_status');
+            if ($hubdocStatus == '1') {
+                // Show only sent to Hubdoc
+                $query->where('hubdoc_sent', '=', 1);
+            } elseif ($hubdocStatus == '0') {
+                // Show only NOT sent to Hubdoc
+                $query->where(function($q) {
+                    $q->whereNull('hubdoc_sent')
+                      ->orWhere('hubdoc_sent', '=', 0);
+                });
+            }
+        }
+
+        // Sorting
+        $sortBy = $request->input('sort_by', 'id');
+        $sortOrder = $request->input('sort_order', 'desc');
+        
+        // Map sort fields to database columns
+        $sortMapping = [
+            'client_id' => 'client_id',
+            'client_matter' => 'client_matter_id',
+            'name' => 'client_id', // Will be sorted by client_id which represents the name relation
+            'reference' => 'trans_no',
+            'trans_date' => 'trans_date',
+            'amount' => 'balance_amount',
+            'hubdoc_status' => 'hubdoc_sent',
+            'voided_by' => 'voided_or_validated_by'
+        ];
+        
+        $sortColumn = isset($sortMapping[$sortBy]) ? $sortMapping[$sortBy] : 'id';
+        $sortOrder = in_array(strtolower($sortOrder), ['asc', 'desc']) ? $sortOrder : 'desc';
+        
+        $query->orderBy($sortColumn, $sortOrder);
+        
         $totalData 	= $query->count();
-        $lists = $query->sortable(['id' => 'desc'])->paginate(2);
+        $lists = $query->paginate(20);
 
         // Dropdown: Client list with receipts
         $clientIds = DB::table('account_client_receipts as acr')
@@ -8029,6 +8224,8 @@ class ClientsController extends Controller
     }
 
     public function void_invoice(Request $request){
+        \Log::info('========== VOID_INVOICE CALLED ==========', ['request' => $request->all()]);
+        
         $response = array(); //dd($request->all());
         if( isset($request->clickedReceiptIds) && !empty($request->clickedReceiptIds) ){
             //Update all selected invoice bit to be 1
@@ -8036,13 +8233,26 @@ class ClientsController extends Controller
             ->where('receipt_type', 3)
             ->whereIn('receipt_id', $request->clickedReceiptIds)
             ->update(['void_invoice' => 1,'voided_or_validated_by' => Auth::user()->id,'invoice_status' => 3]); //invoice_status =3 voided
+            
+            $totalReversalsCreated = 0; // Track total reversals created
+            
             if ($affectedRows > 0) {
 
                 //update all invoices deposit amount to be zero
                 foreach($request->clickedReceiptIds as $clickedKey=>$clickedVal){
 
                     //Save in activity log
-                    $invoice_info = AccountClientReceipt::select('user_id','client_id')->where('receipt_id', $clickedVal)->first();
+                    $invoice_info = AccountClientReceipt::select('user_id','client_id','client_matter_id','invoice_no','trans_no','receipt_id')
+                        ->where('receipt_type', 3)
+                        ->where('receipt_id', $clickedVal)
+                        ->first();
+                    
+                    // DEBUG: Add to log
+                    \Log::info('VOID INVOICE - Got invoice_info', [
+                        'clicked_receipt_id' => $clickedVal,
+                        'invoice_info' => $invoice_info ? $invoice_info->toArray() : 'NULL'
+                    ]);
+                    
                     $client_info = \App\Models\Admin::select('client_id')->where('id', $invoice_info->client_id)->first();
                     $subject = 'voided invoice Sno -'.$clickedVal.' of client-'.$client_info->client_id;
                     $objs = new ActivitiesLog;
@@ -8053,13 +8263,24 @@ class ClientsController extends Controller
                     $objs->save();
 
                     $record_info = DB::table('account_client_receipts')
-                    ->select('id','withdraw_amount','receipt_id','balance_amount')
+                    ->select('id','withdraw_amount','receipt_id','balance_amount','partial_paid_amount')
                     ->where('receipt_type', 3)
                     ->where('receipt_id', $clickedVal)
                     ->where('void_invoice', 1)
                     ->get();
+                    
+                    $invoiceAmount = 0; // Track the invoice amount
+                    
                     if(!empty($record_info)){
                         foreach($record_info as $infoVal){
+                            // Get the invoice amount (withdraw_amount is the invoice total)
+                            // Use partial_paid_amount if available, otherwise use withdraw_amount
+                            $paidAmount = floatval($infoVal->partial_paid_amount ?? 0);
+                            $invoiceTotal = floatval($infoVal->withdraw_amount ?? 0);
+                            
+                            // Use whichever is greater (the actual invoice amount)
+                            $invoiceAmount = max($paidAmount, $invoiceTotal);
+                            
                             DB::table('account_client_receipts')
                             ->where('id',$infoVal->id)
                             ->update(['withdraw_amount_before_void' => $infoVal->balance_amount,'withdraw_amount'=>'0.00','balance_amount'=>'0.00','partial_paid_amount'=>'0.00']);
@@ -8078,6 +8299,165 @@ class ClientsController extends Controller
                             ->update(['withdraw_amount_before_void' => $infoVal1->withdraw_amount,'withdraw_amount'=>'0.00','invoice_status'=>'3']); //void
                         }
                     }
+
+                    // **NEW: REVERSE FEE TRANSFERS - Return money to client funds ledger**
+                    // Find all fee transfers linked to this invoice
+                    // Try multiple methods to find related fee transfers
+                    
+                    \Log::info('Starting fee transfer search', [
+                        'invoice_info' => [
+                            'client_id' => $invoice_info->client_id ?? 'NULL',
+                            'client_matter_id' => $invoice_info->client_matter_id ?? 'NULL',
+                            'invoice_no' => $invoice_info->invoice_no ?? 'NULL',
+                            'trans_no' => $invoice_info->trans_no ?? 'NULL',
+                        ],
+                        'calculated_amount' => $invoiceAmount
+                    ]);
+                    
+                    // Method 1: By invoice number (if stored)
+                    $feeTransfersQuery = DB::table('account_client_receipts')
+                        ->where('receipt_type', 1)
+                        ->where('client_fund_ledger_type', 'Fee Transfer')
+                        ->where('client_id', $invoice_info->client_id);
+                    
+                    if(!empty($invoice_info->client_matter_id)){
+                        $feeTransfersQuery->where('client_matter_id', $invoice_info->client_matter_id);
+                    }
+                    
+                    // Try with invoice_no first
+                    $feeTransfers = $feeTransfersQuery->where('invoice_no', $invoice_info->invoice_no)->get();
+                    
+                    // TEMPORARY DEBUG: Dump what we're searching for
+                    if(count($feeTransfers) == 0){
+                        // Let's see what's in the database
+                        $debugCheck = DB::table('account_client_receipts')
+                            ->select('id','trans_no','invoice_no','client_id','client_matter_id')
+                            ->where('receipt_type', 1)
+                            ->where('client_fund_ledger_type', 'Fee Transfer')
+                            ->where('client_id', $invoice_info->client_id)
+                            ->get();
+                        
+                        \Log::error('Fee transfer NOT found - Debug Info', [
+                            'searching_for' => [
+                                'invoice_no' => $invoice_info->invoice_no,
+                                'client_id' => $invoice_info->client_id,
+                                'client_matter_id' => $invoice_info->client_matter_id,
+                            ],
+                            'all_fee_transfers_for_client' => $debugCheck->toArray()
+                        ]);
+                    }
+                    
+                    // Method 2: If no results, search by invoice amount and NOT already voided
+                    if(count($feeTransfers) == 0){
+                        \Log::info('No fee transfers found by invoice_no, trying by amount and date', [
+                            'invoice_amount' => $invoiceAmount
+                        ]);
+                        
+                        if($invoiceAmount > 0){
+                            $feeTransfersQuery2 = DB::table('account_client_receipts')
+                                ->where('receipt_type', 1)
+                                ->where('client_fund_ledger_type', 'Fee Transfer')
+                                ->where('client_id', $invoice_info->client_id)
+                                ->where('withdraw_amount', $invoiceAmount)
+                                ->where(function($q) {
+                                    $q->whereNull('void_fee_transfer')
+                                      ->orWhere('void_fee_transfer', 0);
+                                })
+                                ->whereRaw("(invoice_no = ? OR invoice_no LIKE ? OR invoice_no IS NULL OR invoice_no = '')", 
+                                    [$invoice_info->invoice_no, '%'.$invoice_info->trans_no.'%']);
+                            
+                            if(!empty($invoice_info->client_matter_id)){
+                                $feeTransfersQuery2->where('client_matter_id', $invoice_info->client_matter_id);
+                            }
+                            
+                            $feeTransfers = $feeTransfersQuery2->get();
+                        }
+                    }
+
+                    // Debug: Log what we found
+                    \Log::info('Void Invoice - Fee Transfer Search Results', [
+                        'search_invoice_no' => $invoice_info->invoice_no,
+                        'invoice_trans_no' => $invoice_info->trans_no,
+                        'client_id' => $invoice_info->client_id,
+                        'client_matter_id' => $invoice_info->client_matter_id,
+                        'calculated_invoice_amount' => $invoiceAmount,
+                        'fee_transfers_found' => count($feeTransfers),
+                        'fee_transfer_details' => $feeTransfers->map(function($ft) {
+                            return [
+                                'id' => $ft->id,
+                                'trans_no' => $ft->trans_no,
+                                'invoice_no' => $ft->invoice_no ?? 'NULL',
+                                'withdraw_amount' => $ft->withdraw_amount
+                            ];
+                        })->toArray()
+                    ]);
+
+                    if(!empty($feeTransfers) && count($feeTransfers) > 0){
+                        foreach($feeTransfers as $feeTransfer){
+                            // Only reverse if there was an actual withdrawal
+                            $withdrawAmount = floatval($feeTransfer->withdraw_amount ?? 0);
+                            if($withdrawAmount > 0){
+                                // **MARK THE ORIGINAL FEE TRANSFER AS VOIDED**
+                                DB::table('account_client_receipts')
+                                    ->where('id', $feeTransfer->id)
+                                    ->update([
+                                        'void_fee_transfer' => 1,
+                                        'voided_at' => now(),
+                                        'voided_by' => Auth::user()->id
+                                    ]);
+                                
+                                $totalReversalsCreated++;
+
+                                // Log the reversal activity
+                                $reversal_subject = 'Voided Fee Transfer ' . $feeTransfer->trans_no . ' for voided invoice ' . $invoice_info->trans_no . ' - Returned $' . number_format($withdrawAmount, 2) . ' to client funds';
+                                $reversal_activity = new ActivitiesLog;
+                                $reversal_activity->client_id = $invoice_info->client_id;
+                                $reversal_activity->created_by = Auth::user()->id;
+                                $reversal_activity->description = 'Fee Transfer voided - Amount no longer withdrawn from client funds';
+                                $reversal_activity->subject = $reversal_subject;
+                                $reversal_activity->save();
+                                
+                                \Log::info('Fee Transfer marked as voided', [
+                                    'fee_transfer_id' => $feeTransfer->id,
+                                    'trans_no' => $feeTransfer->trans_no,
+                                    'amount' => $withdrawAmount
+                                ]);
+                            }
+                        }
+                        
+                        // **RECALCULATE ALL BALANCES FOR THIS CLIENT'S LEDGER**
+                        // Get all non-voided entries ordered by ID
+                        $allEntriesQuery = DB::table('account_client_receipts')
+                            ->where('client_id', $invoice_info->client_id)
+                            ->where('receipt_type', 1)
+                            ->where(function($query) {
+                                $query->whereNull('void_fee_transfer')
+                                      ->orWhere('void_fee_transfer', 0);
+                            })
+                            ->orderBy('id', 'asc');
+                        
+                        if(!empty($invoice_info->client_matter_id)){
+                            $allEntriesQuery->where('client_matter_id', $invoice_info->client_matter_id);
+                        }
+                        
+                        $allEntries = $allEntriesQuery->get();
+                        
+                        // Recalculate running balance
+                        $runningBalance = 0;
+                        foreach($allEntries as $entry){
+                            $runningBalance += floatval($entry->deposit_amount) - floatval($entry->withdraw_amount);
+                            
+                            DB::table('account_client_receipts')
+                                ->where('id', $entry->id)
+                                ->update(['balance_amount' => $runningBalance]);
+                        }
+                        
+                        \Log::info('Client Funds Ledger balances recalculated', [
+                            'client_id' => $invoice_info->client_id,
+                            'final_balance' => $runningBalance,
+                            'entries_processed' => count($allEntries)
+                        ]);
+                    }
                 }
 
                 //Get record For strike line through
@@ -8091,7 +8471,19 @@ class ClientsController extends Controller
                 //dd($record_data);
                 $response['record_data'] = 	$record_data;
                 $response['status'] 	= 	true;
-                $response['message']	=	'Record voided successfully.';
+                $response['reversals_created'] = $totalReversalsCreated;
+                
+                if($totalReversalsCreated > 0){
+                    $response['message'] = 'Invoice voided successfully. ' . $totalReversalsCreated . ' fee transfer(s) voided and balances recalculated.';
+                } else {
+                    $response['message'] = 'Invoice voided successfully. (Note: No fee transfers found to reverse - invoice may not have been paid from client funds)';
+                }
+                
+                // Add debug info
+                $response['debug_info'] = [
+                    'total_reversals' => $totalReversalsCreated,
+                    'voided_receipts' => count($request->clickedReceiptIds)
+                ];
             } else {
                 $response['status'] 	= 	true;
                 $response['message']	=	'No record was updated.';
@@ -8143,6 +8535,29 @@ class ClientsController extends Controller
             $query->where('validate_receipt', '=', $receiptValidate);
         }
 
+        // Sorting
+        $sortBy = $request->input('sort_by', 'id');
+        $sortOrder = $request->input('sort_order', 'desc');
+        
+        // Map sort fields to database columns
+        $sortMapping = [
+            'client_id' => 'client_id',
+            'client_matter' => 'client_matter_id',
+            'name' => 'client_id', // Will be sorted by client_id which represents the name relation
+            'trans_date' => 'trans_date',
+            'type' => 'client_fund_ledger_type',
+            'reference' => 'trans_no',
+            'funds_in' => 'deposit_amount',
+            'funds_out' => 'withdraw_amount',
+            'validate_receipt' => 'validate_receipt',
+            'validated_by' => 'voided_or_validated_by'
+        ];
+        
+        $sortColumn = isset($sortMapping[$sortBy]) ? $sortMapping[$sortBy] : 'id';
+        $sortOrder = in_array(strtolower($sortOrder), ['asc', 'desc']) ? $sortOrder : 'desc';
+        
+        $query->orderBy($sortColumn, $sortOrder);
+
         // Total count for pagination/meta
         $totalData = $query->count();
 
@@ -8151,7 +8566,7 @@ class ClientsController extends Controller
         $perPage = in_array($perPage, [10, 20, 50, 100, 200, 500]) ? $perPage : 20;
 
         // Fetch paginated list
-        $lists = $query->sortable(['id' => 'desc'])->paginate($perPage);
+        $lists = $query->paginate($perPage);
 
         // Dropdown: Client list with receipts
         $clientIds = DB::table('account_client_receipts as acr')
@@ -8205,9 +8620,32 @@ class ClientsController extends Controller
             $validateReceipt = trim($request->input('validate_receipt'));
             $query->where('validate_receipt', '=', $validateReceipt);
         }
+
+        // Sorting
+        $sortBy = $request->input('sort_by', 'id');
+        $sortOrder = $request->input('sort_order', 'desc');
+        
+        // Map sort fields to database columns
+        $sortMapping = [
+            'client_id' => 'client_id',
+            'client_matter' => 'client_matter_id',
+            'name' => 'client_id', // Will be sorted by client_id which represents the name relation
+            'trans_date' => 'trans_date',
+            'reference' => 'trans_no',
+            'invoice_no' => 'invoice_no',
+            'payment_method' => 'payment_method',
+            'amount' => 'deposit_amount',
+            'validate_receipt' => 'validate_receipt',
+            'validated_by' => 'voided_or_validated_by'
+        ];
+        
+        $sortColumn = isset($sortMapping[$sortBy]) ? $sortMapping[$sortBy] : 'id';
+        $sortOrder = in_array(strtolower($sortOrder), ['asc', 'desc']) ? $sortOrder : 'desc';
+        
+        $query->orderBy($sortColumn, $sortOrder);
         
         $totalData 	= $query->count();
-        $lists = $query->sortable(['id' => 'desc'])->paginate(20);
+        $lists = $query->paginate(20);
 
         // Dropdown: Client list with receipts
         $clientIds = DB::table('account_client_receipts as acr')
@@ -8232,8 +8670,32 @@ class ClientsController extends Controller
     public function journalreceiptlist(Request $request)
 	{
 		$query 	= AccountClientReceipt::select('id','receipt_id','client_id','user_id','trans_date','entry_date','trans_no', 'invoice_no','payment_method','validate_receipt','voided_or_validated_by', DB::raw('sum(withdrawal_amount) as total_withdrawal_amount'))->where('receipt_type',4)->groupBy('receipt_id');
+        
+        // Sorting
+        $sortBy = $request->input('sort_by', 'id');
+        $sortOrder = $request->input('sort_order', 'desc');
+        
+        // Map sort fields to database columns
+        $sortMapping = [
+            'receipt_id' => 'receipt_id',
+            'client_id' => 'client_id',
+            'name' => 'client_id', // Will be sorted by client_id which represents the name relation
+            'trans_date' => 'trans_date',
+            'entry_date' => 'entry_date',
+            'trans_no' => 'trans_no',
+            'invoice_no' => 'invoice_no',
+            'amount' => 'total_withdrawal_amount',
+            'validate_receipt' => 'validate_receipt',
+            'validated_by' => 'voided_or_validated_by'
+        ];
+        
+        $sortColumn = isset($sortMapping[$sortBy]) ? $sortMapping[$sortBy] : 'id';
+        $sortOrder = in_array(strtolower($sortOrder), ['asc', 'desc']) ? $sortOrder : 'desc';
+        
+        $query->orderBy($sortColumn, $sortOrder);
+        
         $totalData 	= $query->count();
-        $lists = $query->sortable(['id' => 'desc'])->paginate(20);
+        $lists = $query->paginate(20);
 		return view('crm.clients.journalreceiptlist', compact(['lists', 'totalData']));
     }
 

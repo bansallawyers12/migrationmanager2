@@ -6,7 +6,409 @@
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-datepicker.css') }}">
 <style>
-    /* Page-specific styles can be added here if needed */
+    /* Modern Page Styling */
+    .listing-container {
+        background: #f8fafc;
+        min-height: 100vh;
+    }
+
+    .listing-section {
+        padding-top: 24px !important;
+    }
+
+    /* Modern Card Styling */
+    .listing-container .card {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+        background: white;
+    }
+
+    /* Modern Header with Gradient */
+    .listing-container .card-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 24px 32px;
+        border-bottom: none;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .listing-container .card-header h4 {
+        color: white;
+        font-size: 24px;
+        font-weight: 700;
+        margin: 0;
+        letter-spacing: -0.5px;
+        flex: 1;
+    }
+
+    /* Modern Button Styling */
+    .listing-container .btn {
+        border-radius: 10px;
+        padding: 10px 20px;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .listing-container .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .listing-container .btn:active {
+        transform: translateY(0);
+    }
+
+    .listing-container .btn-theme {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        backdrop-filter: blur(10px);
+    }
+
+    .listing-container .btn-theme:hover {
+        background: rgba(255, 255, 255, 0.3);
+        color: white;
+    }
+
+    .listing-container .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .listing-container .Validate_Receipt {
+        background: white !important;
+        color: #667eea !important;
+        font-weight: 700;
+    }
+
+    .listing-container .Validate_Receipt:hover {
+        background: rgba(255, 255, 255, 0.95) !important;
+    }
+
+    /* Modern Filter Panel */
+    .listing-container .filter_panel {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+        display: none;
+        border: 1px solid #e2e8f0;
+    }
+
+    .listing-container .filter_panel h4 {
+        color: #1e293b;
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #667eea;
+        display: inline-block;
+    }
+
+    /* Modern Form Inputs */
+    .listing-container .form-group label {
+        color: #475569 !important;
+        font-weight: 600;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+
+    .listing-container .form-control {
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 10px 16px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        background: white;
+    }
+
+    .listing-container .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        outline: none;
+    }
+
+    .listing-container .select2-container--default .select2-selection--single {
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        height: 44px;
+        padding: 6px 16px;
+    }
+
+    .listing-container .select2-container--default .select2-selection--single:focus {
+        border-color: #667eea;
+    }
+
+    .listing-container .filter-buttons-container {
+        margin-top: 20px;
+    }
+
+    .listing-container .btn-info {
+        background: linear-gradient(135deg, #00b4db 0%, #0083b0 100%);
+        color: white;
+    }
+
+    /* Modern Table Styling */
+    .listing-container .card-body {
+        padding: 32px;
+    }
+
+    .listing-container .table-responsive {
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 0 0 1px #e2e8f0;
+    }
+
+    .listing-container .table {
+        margin-bottom: 0;
+        font-size: 14px;
+    }
+
+    .listing-container .table thead {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    }
+
+    .listing-container .table thead th {
+        border: none;
+        padding: 16px 20px;
+        font-weight: 700;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #475569;
+        white-space: nowrap;
+    }
+
+    .listing-container .table tbody tr {
+        border-bottom: 1px solid #f1f5f9;
+        transition: all 0.2s ease;
+    }
+
+    .listing-container .table tbody tr:hover {
+        background: #f8fafc;
+        transform: scale(1.001);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .listing-container .table tbody td {
+        padding: 16px 20px;
+        vertical-align: middle;
+        border: none;
+        color: #334155;
+    }
+
+    /* Modern Status Badges */
+    .modern-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .modern-badge.badge-success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    }
+
+    .modern-badge.badge-danger {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    }
+
+    /* Modern Icons */
+    .listing-container .fas.fa-check-circle {
+        color: #10b981;
+        font-size: 16px;
+        margin-right: 6px;
+    }
+
+    /* Modern Checkbox */
+    .listing-container .custom-checkbox .custom-control-input:checked ~ .custom-control-label::before {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-color: #667eea;
+    }
+
+    /* Modern Error/Success Messages */
+    .listing-container .custom-error-msg {
+        border-radius: 12px;
+        margin: 0 32px 20px;
+        padding: 16px 20px;
+        font-weight: 600;
+        display: none;
+    }
+
+    .listing-container .custom-error-msg.alert-success {
+        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+        color: #065f46;
+        border: 2px solid #10b981;
+    }
+
+    /* Modern Pagination */
+    .listing-container .card-footer {
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+        padding: 20px 32px;
+        border-radius: 0 0 16px 16px;
+    }
+
+    .listing-container .pagination {
+        margin: 0;
+    }
+
+    .listing-container .pagination .page-link {
+        border: 2px solid #e2e8f0;
+        color: #667eea;
+        margin: 0 4px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .listing-container .pagination .page-link:hover {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+        transform: translateY(-2px);
+    }
+
+    .listing-container .pagination .page-item.active .page-link {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-color: #667eea;
+    }
+
+    /* No Records State */
+    .listing-container .table tbody td[colspan] {
+        padding: 60px 20px !important;
+        text-align: center;
+        color: #94a3b8;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    /* Amount Styling */
+    .listing-container .table tbody td[id^="deposit_"] {
+        font-weight: 700;
+        color: #059669;
+        font-family: 'Courier New', monospace;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .listing-container .card-header {
+            padding: 20px;
+        }
+
+        .listing-container .card-header h4 {
+            font-size: 20px;
+            width: 100%;
+        }
+
+        .listing-container .card-body {
+            padding: 20px;
+        }
+
+        .listing-container .filter_panel {
+            padding: 20px;
+        }
+
+        .listing-container .table {
+            font-size: 12px;
+        }
+
+        .listing-container .table thead th,
+        .listing-container .table tbody td {
+            padding: 12px 10px;
+        }
+    }
+
+    /* Animation for filter panel */
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .listing-container .filter_panel {
+        animation: slideDown 0.3s ease;
+    }
+
+    /* Sortable Column Headers */
+    .listing-container .sortable-header {
+        cursor: pointer;
+        user-select: none;
+        position: relative;
+        padding-right: 30px !important;
+        transition: all 0.2s ease;
+    }
+
+    .listing-container .sortable-header:hover {
+        background: rgba(102, 126, 234, 0.1);
+        color: #667eea;
+    }
+
+    .listing-container .sort-icon {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: inline-flex;
+        flex-direction: column;
+        gap: 2px;
+        opacity: 0.3;
+        transition: all 0.2s ease;
+    }
+
+    .listing-container .sortable-header:hover .sort-icon {
+        opacity: 0.6;
+    }
+
+    .listing-container .sort-icon i {
+        font-size: 8px;
+        line-height: 1;
+        color: #475569;
+    }
+
+    .listing-container .sortable-header.sort-asc .sort-icon {
+        opacity: 1;
+    }
+
+    .listing-container .sortable-header.sort-asc .sort-icon .fa-caret-up {
+        color: #667eea;
+        font-size: 10px;
+    }
+
+    .listing-container .sortable-header.sort-desc .sort-icon {
+        opacity: 1;
+    }
+
+    .listing-container .sortable-header.sort-desc .sort-icon .fa-caret-down {
+        color: #667eea;
+        font-size: 10px;
+    }
 </style>
 @endsection
 
@@ -109,17 +511,77 @@
                                         </div>
                                     </th>
                                     <!--<th>SNo.</th>-->
-                                    <th>Client Id</th>
-                                     <th>Client Matter</th>
-                                    <th>Name</th>
-                                    <th>Trans. Date</th>
+                                    <th class="sortable-header {{ request('sort_by') == 'client_id' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="client_id">
+                                        Client Id
+                                        <span class="sort-icon">
+                                            <i class="fas fa-caret-up"></i>
+                                            <i class="fas fa-caret-down"></i>
+                                        </span>
+                                    </th>
+                                    <th class="sortable-header {{ request('sort_by') == 'client_matter' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="client_matter">
+                                        Client Matter
+                                        <span class="sort-icon">
+                                            <i class="fas fa-caret-up"></i>
+                                            <i class="fas fa-caret-down"></i>
+                                        </span>
+                                    </th>
+                                    <th class="sortable-header {{ request('sort_by') == 'name' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="name">
+                                        Name
+                                        <span class="sort-icon">
+                                            <i class="fas fa-caret-up"></i>
+                                            <i class="fas fa-caret-down"></i>
+                                        </span>
+                                    </th>
+                                    <th class="sortable-header {{ request('sort_by') == 'trans_date' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="trans_date">
+                                        Trans. Date
+                                        <span class="sort-icon">
+                                            <i class="fas fa-caret-up"></i>
+                                            <i class="fas fa-caret-down"></i>
+                                        </span>
+                                    </th>
                                     <!--<th>Entry Date</th>-->
-                                    <th>Reference</th>
-                                    <th>Invoice No</th>
-                                    <th>Payment Method</th>
-                                    <th>Amount</th>
-                                    <th>Receipt Validate</th>
-                                    <th>Validate By</th>
+                                    <th class="sortable-header {{ request('sort_by') == 'reference' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="reference">
+                                        Reference
+                                        <span class="sort-icon">
+                                            <i class="fas fa-caret-up"></i>
+                                            <i class="fas fa-caret-down"></i>
+                                        </span>
+                                    </th>
+                                    <th class="sortable-header {{ request('sort_by') == 'invoice_no' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="invoice_no">
+                                        Invoice No
+                                        <span class="sort-icon">
+                                            <i class="fas fa-caret-up"></i>
+                                            <i class="fas fa-caret-down"></i>
+                                        </span>
+                                    </th>
+                                    <th class="sortable-header {{ request('sort_by') == 'payment_method' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="payment_method">
+                                        Payment Method
+                                        <span class="sort-icon">
+                                            <i class="fas fa-caret-up"></i>
+                                            <i class="fas fa-caret-down"></i>
+                                        </span>
+                                    </th>
+                                    <th class="sortable-header {{ request('sort_by') == 'amount' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="amount">
+                                        Amount
+                                        <span class="sort-icon">
+                                            <i class="fas fa-caret-up"></i>
+                                            <i class="fas fa-caret-down"></i>
+                                        </span>
+                                    </th>
+                                    <th class="sortable-header {{ request('sort_by') == 'validate_receipt' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="validate_receipt">
+                                        Receipt Validate
+                                        <span class="sort-icon">
+                                            <i class="fas fa-caret-up"></i>
+                                            <i class="fas fa-caret-down"></i>
+                                        </span>
+                                    </th>
+                                    <th class="sortable-header {{ request('sort_by') == 'validated_by' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="validated_by">
+                                        Validate By
+                                        <span class="sort-icon">
+                                            <i class="fas fa-caret-up"></i>
+                                            <i class="fas fa-caret-down"></i>
+                                        </span>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody class="tdata">
@@ -188,7 +650,12 @@
                                             }
                                             ?>
                                             <td id="validate_{{@$list->id}}">
-                                                <span class="{{ $receipt_validate == 'Yes' ? 'text-success' : 'text-danger' }}">
+                                                <span class="modern-badge {{ $receipt_validate == 'Yes' ? 'badge-success' : 'badge-danger' }}">
+                                                    @if($receipt_validate == 'Yes')
+                                                        <i class="fas fa-check"></i>
+                                                    @else
+                                                        <i class="fas fa-times"></i>
+                                                    @endif
                                                     {{ $receipt_validate }}
                                                 </span>
                                             </td>
@@ -198,8 +665,12 @@
                                     @endforeach
                                 @else
                                     <tr>
-                                        <td colspan="11" style="text-align: center; padding: 20px;">
-                                            No Record Found
+                                        <td colspan="11" style="text-align: center; padding: 60px 20px;">
+                                            <div style="opacity: 0.5;">
+                                                <i class="fas fa-inbox" style="font-size: 48px; color: #cbd5e1; margin-bottom: 16px;"></i>
+                                                <div style="font-size: 18px; font-weight: 600; color: #64748b;">No Records Found</div>
+                                                <div style="font-size: 14px; color: #94a3b8; margin-top: 8px;">Try adjusting your filters to find what you're looking for</div>
+                                            </div>
                                         </td>
                                     </tr>
                                 @endif
@@ -308,7 +779,10 @@ jQuery(document).ready(function($){
                         $.each(record_data, function(index, subArray) {
                             //console.log('index=='+index);
                             //console.log('subArray=='+subArray.id);
-                            $('.listing-container #validate_' + subArray.id +' span').removeClass('text-danger').addClass('text-success').text('Yes');
+                            $('.listing-container #validate_' + subArray.id +' span')
+                                .removeClass('badge-danger')
+                                .addClass('modern-badge badge-success')
+                                .html('<i class="fas fa-check"></i> Yes');
                             if(subArray.first_name != ""){
                                 var validateby_full_name = subArray.first_name+" "+subArray.last_name;
                             } else {
@@ -341,6 +815,27 @@ jQuery(document).ready(function($){
         } else {
             $('.listing-container #checkbox-all').prop('checked',false);
         }
+    });
+
+    // Sortable column headers
+    $('.listing-container .sortable-header').on('click', function() {
+        var sortBy = $(this).data('sort');
+        var currentUrl = new URL(window.location.href);
+        var currentSortBy = currentUrl.searchParams.get('sort_by');
+        var currentSortOrder = currentUrl.searchParams.get('sort_order');
+        
+        // Determine new sort order
+        var newSortOrder = 'asc';
+        if (currentSortBy === sortBy && currentSortOrder === 'asc') {
+            newSortOrder = 'desc';
+        }
+        
+        // Set sort parameters
+        currentUrl.searchParams.set('sort_by', sortBy);
+        currentUrl.searchParams.set('sort_order', newSortOrder);
+        
+        // Redirect to new URL
+        window.location.href = currentUrl.toString();
     });
 });
 </script>

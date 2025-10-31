@@ -3,401 +3,352 @@
 
 @section('styles')
 <style>
-    /* Modern Card Design */
+    /* Modern Page Styling */
+    .main-content {
+        background: #f8fafc;
+        min-height: 100vh;
+    }
+
+    .section {
+        padding-top: 24px !important;
+    }
+
+    /* Modern Card Styling */
     .card {
-        background: #fff;
-        border-radius: 12px;
-        box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
-        margin: 20px 0;
         border: none;
+        border-radius: 16px;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+        background: white;
+        margin: 0;
         width: 100%;
     }
 
+    /* Modern Header with Gradient */
     .card-header {
-        background: #fff;
-        padding: 20px 30px;
-        border-bottom: 1px solid #f0f0f0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 24px 32px;
+        border-bottom: none;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        border-radius: 12px 12px 0 0;
+        flex-wrap: wrap;
+        gap: 16px;
     }
 
     .card-header h4 {
-        font-size: 1.25rem;
-        color: #2d3748;
-        font-weight: 600;
+        color: white !important;
+        font-size: 24px !important;
+        font-weight: 700;
         margin: 0;
+        letter-spacing: -0.5px;
+        flex: 1;
     }
 
     .card-body {
-        padding: 30px;
-        background: #fff;
-        border-radius: 0 0 12px 12px;
+        padding: 32px;
+        background: white;
+        border-radius: 0 0 16px 16px;
     }
 
-    /* Table Styling */
+    /* Modern Table Styling */
     .table-responsive {
-        border-radius: 8px;
+        border-radius: 12px;
         overflow: hidden;
-        box-shadow: 0 0 0 1px #f0f0f0;
+        box-shadow: 0 0 0 1px #e2e8f0;
     }
 
     .table {
+        margin-bottom: 0;
+        font-size: 14px;
         width: 100%;
         border-collapse: separate;
         border-spacing: 0;
-        font-size: 0.875rem;
-        margin: 0;
+    }
+
+    .table thead {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
     }
 
     .table thead th {
-        background: #f8fafc;
-        color: #4a5568 !important;
-        font-weight: 600;
+        border: none;
+        padding: 16px 20px;
+        font-weight: 700;
+        font-size: 13px;
         text-transform: uppercase;
-        font-size: 0.75rem;
-        letter-spacing: 0.05em;
-        padding: 16px;
-        border-bottom: 2px solid #edf2f7;
+        letter-spacing: 0.5px;
+        color: #475569 !important;
         white-space: nowrap;
     }
 
+    .table tbody tr {
+        border-bottom: 1px solid #f1f5f9;
+        transition: all 0.2s ease;
+    }
+
+    .table tbody tr:hover {
+        background: #f8fafc;
+        transform: scale(1.001);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
     .table tbody td {
-        padding: 16px;
-        border-bottom: 1px solid #edf2f7;
-        color: #4a5568 !important;
+        padding: 16px 20px;
         vertical-align: middle;
-        transition: all 0.2s;
+        border: none;
+        color: #334155 !important;
     }
 
-    .table tbody tr:hover td {
-        background-color: #f8fafc;
-    }
-
-    .table tbody tr:last-child td {
+    .table tbody tr:last-child {
         border-bottom: none;
     }
 
-    /* Checkbox Styling */
+    /* Modern Checkbox */
     .custom-checkbox .custom-control-input:checked ~ .custom-control-label::before {
-        background-color: #4299e1;
-        border-color: #4299e1;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-color: #667eea;
     }
 
     .custom-control-label::before {
         border-radius: 4px;
-        border: 2px solid #cbd5e0;
+        border: 2px solid #e2e8f0;
     }
 
-    /* Button Styling */
+    /* Modern Button Styling */
     .btn-primary.Validate_Receipt {
-        background: #4299e1;
+        background: white !important;
+        color: #667eea !important;
         border: none;
         padding: 10px 20px;
-        border-radius: 8px;
-        font-weight: 500;
-        display: flex;
+        border-radius: 10px;
+        font-weight: 700;
+        display: inline-flex;
         align-items: center;
         gap: 8px;
-        transition: all 0.2s;
-        color: white;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     .btn-primary.Validate_Receipt:hover {
-        background: #3182ce;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 6px rgba(66, 153, 225, 0.1);
+        background: rgba(255, 255, 255, 0.95) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-primary.Validate_Receipt:active {
+        transform: translateY(0);
     }
 
     .btn-primary.Validate_Receipt i {
-        font-size: 0.875rem;
+        font-size: 14px;
     }
 
-    /* Status Indicators */
-    .text-success, .text-danger {
-        font-weight: 500;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 0.875rem;
+    /* Modern Status Badges */
+    .modern-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
-    .text-success {
-        background-color: #c6f6d5;
-        color: #2f855a !important;
+    .modern-badge.badge-success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
     }
 
-    .text-danger {
-        background-color: #fed7d7;
-        color: #c53030 !important;
+    .modern-badge.badge-danger {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
     }
 
-    /* Pagination Styling */
+    /* Modern Icons */
+    .fas.fa-check-circle {
+        color: #10b981;
+        font-size: 16px;
+        margin-right: 6px;
+    }
+
+    /* Amount Styling */
+    .table tbody td[id^="deposit_"] {
+        font-weight: 700;
+        color: #dc2626;
+        font-family: 'Courier New', monospace;
+    }
+
+    /* Modern Pagination */
     .card-footer {
-        background: transparent;
-        border-top: none;
-        padding: 1rem 1.5rem;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+        padding: 20px 32px;
+        border-radius: 0 0 16px 16px;
     }
 
     .pagination {
+        margin: 0;
         display: flex;
         list-style: none;
         padding: 0;
-        margin: 0;
         justify-content: center;
     }
 
-    .pagination li {
-        margin: 0 3px;
+    .pagination .page-link {
+        border: 2px solid #e2e8f0;
+        color: #667eea;
+        margin: 0 4px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
     }
 
-    .pagination li a,
-    .pagination li span {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 32px;
-        height: 32px;
-        padding: 0 6px;
-        font-size: 14px;
-        color: #666;
-        background: #fff;
-        border: 1px solid #dee2e6;
-        border-radius: 4px;
-        text-decoration: none;
-        transition: all 0.2s;
+    .pagination .page-link:hover {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+        transform: translateY(-2px);
     }
 
-    .pagination li.active span {
-        background-color: #007bff;
-        border-color: #007bff;
-        color: #fff;
+    .pagination .page-item.active .page-link {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-color: #667eea;
     }
 
-    .pagination li.disabled span {
-        color: #ccc;
-        background-color: #fff;
-        border-color: #dee2e6;
-        cursor: not-allowed;
+    /* Sortable Column Headers */
+    .sortable-header {
+        cursor: pointer;
+        user-select: none;
+        position: relative;
+        padding-right: 30px !important;
+        transition: all 0.2s ease;
     }
 
-    .pagination li a:hover:not(.disabled) {
-        background-color: #e9ecef;
-        border-color: #dee2e6;
-        color: #0056b3;
-        text-decoration: none;
+    .sortable-header:hover {
+        background: rgba(102, 126, 234, 0.1);
+        color: #667eea !important;
     }
 
-    /* Next/Previous buttons */
-    .pagination li:first-child,
-    .pagination li:last-child {
-        margin: 0 5px;
+    .sort-icon {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: inline-flex;
+        flex-direction: column;
+        gap: 2px;
+        opacity: 0.3;
+        transition: all 0.2s ease;
     }
 
-    .pagination li:first-child a,
-    .pagination li:last-child a {
-        padding: 0;
-        font-size: 14px;
-        color: #666;
+    .sortable-header:hover .sort-icon {
+        opacity: 0.6;
     }
 
-    .pagination li:first-child a:hover,
-    .pagination li:last-child a:hover {
-        color: #0056b3;
+    .sort-icon i {
+        font-size: 8px;
+        line-height: 1;
+        color: #475569;
     }
 
-    /* Text showing current range */
-    .showing-text {
-        color: #666;
-        font-size: 14px;
-        margin-bottom: 15px;
+    .sortable-header.sort-asc .sort-icon {
+        opacity: 1;
     }
 
-    @media (max-width: 576px) {
-        .pagination li a,
-        .pagination li span {
-            min-width: 30px;
-            height: 30px;
-            font-size: 13px;
-        }
-
-        .pagination li:first-child,
-        .pagination li:last-child {
-            margin: 0 3px;
-        }
+    .sortable-header.sort-asc .sort-icon .fa-caret-up {
+        color: #667eea;
+        font-size: 10px;
     }
 
-    /* Column width adjustments */
-    .table th:nth-child(1) { width: 4%; }
-    .table th:nth-child(2) { width: 8%; }
-    .table th:nth-child(3) { width: 10%; }
-    .table th:nth-child(4) { width: 18%; }
-    .table th:nth-child(5) { width: 10%; }
-    .table th:nth-child(6) { width: 10%; }
-    .table th:nth-child(7) { width: 8%; }
-    .table th:nth-child(8) { width: 12%; }
-    .table th:nth-child(9) { width: 8%; }
-    .table th:nth-child(10) { width: 6%; }
-    .table th:nth-child(11) { width: 6%; }
+    .sortable-header.sort-desc .sort-icon {
+        opacity: 1;
+    }
 
-    /* Empty State */
+    .sortable-header.sort-desc .sort-icon .fa-caret-down {
+        color: #667eea;
+        font-size: 10px;
+    }
+
+    /* No Records State */
+    .table tbody td[colspan] {
+        padding: 60px 20px !important;
+        text-align: center;
+        color: #94a3b8;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
     .empty-state {
         text-align: center;
         padding: 40px 20px;
-        color: #718096;
+        color: #94a3b8;
     }
 
     /* Responsive Design */
-    @media (max-width: 1200px) {
+    @media (max-width: 768px) {
         .card-header {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 15px;
+            padding: 20px;
         }
-        
+
+        .card-header h4 {
+            font-size: 20px !important;
+            width: 100%;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .table {
+            font-size: 12px;
+        }
+
+        .table thead th,
+        .table tbody td {
+            padding: 12px 10px;
+        }
+
         .btn-primary.Validate_Receipt {
             width: 100%;
             justify-content: center;
         }
     }
 
-    /* Loading State */
-    .table tbody tr {
-        transition: opacity 0.3s;
-    }
-
-    .table tbody tr.loading {
-        opacity: 0.5;
-    }
-
-    /* Tooltip */
-    [data-tooltip] {
-        position: relative;
-        cursor: help;
-    }
-
-    [data-tooltip]:before {
-        content: attr(data-tooltip);
-        position: absolute;
-        bottom: 100%;
-        left: 50%;
-        transform: translateX(-50%);
-        padding: 4px 8px;
-        background: #2d3748;
-        color: white;
-        font-size: 12px;
-        border-radius: 4px;
-        white-space: nowrap;
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.2s;
-    }
-
-    [data-tooltip]:hover:before {
-        opacity: 1;
-        visibility: visible;
-    }
-
-    /* Validation Message Styling */
+    /* Modern Error/Success Messages */
     .custom-error-msg {
-        padding: 15px 20px;
-        margin: 0;
+        border-radius: 12px;
+        margin: 0 32px 20px;
+        padding: 16px 20px;
+        font-weight: 600;
         display: none;
     }
 
-    .custom-error-msg.alert {
-        display: block;
-        border-radius: 4px;
-        font-size: 14px;
-        line-height: 1.5;
-        margin-bottom: 15px;
-    }
-
     .custom-error-msg.alert-success {
-        background-color: #d4edda;
-        border: 1px solid #c3e6cb;
-        color: #155724;
+        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+        color: #065f46;
+        border: 2px solid #10b981;
     }
 
     .custom-error-msg.alert-danger {
-        background-color: #f8d7da;
-        border: 1px solid #f5c6cb;
-        color: #721c24;
+        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+        color: #991b1b;
+        border: 2px solid #ef4444;
     }
 
-    .custom-error-msg.alert-warning {
-        background-color: #fff3cd;
-        border: 1px solid #ffeeba;
-        color: #856404;
-    }
-
-    .custom-error-msg.alert-info {
-        background-color: #d1ecf1;
-        border: 1px solid #bee5eb;
-        color: #0c5460;
-    }
-
-    /* Flash Message Styling */
-    .alert {
-        padding: 15px 20px;
-        margin-bottom: 20px;
-        border: 1px solid transparent;
-        border-radius: 4px;
-        font-size: 14px;
-        line-height: 1.5;
-    }
-
-    .alert-success {
-        background-color: #d4edda;
-        border-color: #c3e6cb;
-        color: #155724;
-    }
-
-    .alert-danger {
-        background-color: #f8d7da;
-        border-color: #f5c6cb;
-        color: #721c24;
-    }
-
-    .alert-warning {
-        background-color: #fff3cd;
-        border-color: #ffeeba;
-        color: #856404;
-    }
-
-    .alert-info {
-        background-color: #d1ecf1;
-        border-color: #bee5eb;
-        color: #0c5460;
-    }
-
-    /* Close button for alerts */
-    .alert .close {
-        float: right;
-        font-size: 20px;
-        font-weight: bold;
-        line-height: 1;
-        color: #000;
-        text-shadow: 0 1px 0 #fff;
-        opacity: 0.2;
-        background: transparent;
-        border: 0;
-        padding: 0;
-        cursor: pointer;
-    }
-
-    .alert .close:hover {
-        opacity: 0.5;
-    }
-
-    /* Animation for alerts */
-    .alert {
-        animation: fadeIn 0.3s ease-in;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(-10px); }
-        to { opacity: 1; transform: translateY(0); }
+    /* Animation for filter panel */
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 </style>
 @endsection
@@ -430,16 +381,76 @@
                                             <label for="checkbox-all" class="custom-control-label"></label>
                                         </div>
                                     </th>
-                                    <th>SNo.</th>
-                                    <th>Client Id</th>
-                                    <th>Name</th>
-                                    <th>Trans. Date</th>
-                                    <th>Entry Date</th>
-                                    <th>Trans. No</th>
-                                    <th>Invoice No</th>
-                                    <th>Amount</th>
-                                    <th>Receipt Validate</th>
-                                    <th>Validate By</th>
+                                    <th class="sortable-header {{ request('sort_by') == 'receipt_id' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="receipt_id">
+                                        SNo.
+                                        <span class="sort-icon">
+                                            <i class="fas fa-caret-up"></i>
+                                            <i class="fas fa-caret-down"></i>
+                                        </span>
+                                    </th>
+                                    <th class="sortable-header {{ request('sort_by') == 'client_id' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="client_id">
+                                        Client Id
+                                        <span class="sort-icon">
+                                            <i class="fas fa-caret-up"></i>
+                                            <i class="fas fa-caret-down"></i>
+                                        </span>
+                                    </th>
+                                    <th class="sortable-header {{ request('sort_by') == 'name' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="name">
+                                        Name
+                                        <span class="sort-icon">
+                                            <i class="fas fa-caret-up"></i>
+                                            <i class="fas fa-caret-down"></i>
+                                        </span>
+                                    </th>
+                                    <th class="sortable-header {{ request('sort_by') == 'trans_date' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="trans_date">
+                                        Trans. Date
+                                        <span class="sort-icon">
+                                            <i class="fas fa-caret-up"></i>
+                                            <i class="fas fa-caret-down"></i>
+                                        </span>
+                                    </th>
+                                    <th class="sortable-header {{ request('sort_by') == 'entry_date' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="entry_date">
+                                        Entry Date
+                                        <span class="sort-icon">
+                                            <i class="fas fa-caret-up"></i>
+                                            <i class="fas fa-caret-down"></i>
+                                        </span>
+                                    </th>
+                                    <th class="sortable-header {{ request('sort_by') == 'trans_no' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="trans_no">
+                                        Trans. No
+                                        <span class="sort-icon">
+                                            <i class="fas fa-caret-up"></i>
+                                            <i class="fas fa-caret-down"></i>
+                                        </span>
+                                    </th>
+                                    <th class="sortable-header {{ request('sort_by') == 'invoice_no' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="invoice_no">
+                                        Invoice No
+                                        <span class="sort-icon">
+                                            <i class="fas fa-caret-up"></i>
+                                            <i class="fas fa-caret-down"></i>
+                                        </span>
+                                    </th>
+                                    <th class="sortable-header {{ request('sort_by') == 'amount' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="amount">
+                                        Amount
+                                        <span class="sort-icon">
+                                            <i class="fas fa-caret-up"></i>
+                                            <i class="fas fa-caret-down"></i>
+                                        </span>
+                                    </th>
+                                    <th class="sortable-header {{ request('sort_by') == 'validate_receipt' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="validate_receipt">
+                                        Receipt Validate
+                                        <span class="sort-icon">
+                                            <i class="fas fa-caret-up"></i>
+                                            <i class="fas fa-caret-down"></i>
+                                        </span>
+                                    </th>
+                                    <th class="sortable-header {{ request('sort_by') == 'validated_by' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="validated_by">
+                                        Validate By
+                                        <span class="sort-icon">
+                                            <i class="fas fa-caret-up"></i>
+                                            <i class="fas fa-caret-down"></i>
+                                        </span>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody class="tdata">
@@ -472,7 +483,12 @@
                                             <td><?php echo $list->invoice_no;?></td>
                                             <td id="deposit_{{@$list->id}}"><?php echo "$".$list->total_withdrawal_amount;?></td>
                                             <td id="validate_{{@$list->id}}">
-                                                <span class="{{ $receipt_validate == 'Yes' ? 'text-success' : 'text-danger' }}">
+                                                <span class="modern-badge {{ $receipt_validate == 'Yes' ? 'badge-success' : 'badge-danger' }}">
+                                                    @if($receipt_validate == 'Yes')
+                                                        <i class="fas fa-check"></i>
+                                                    @else
+                                                        <i class="fas fa-times"></i>
+                                                    @endif
                                                     {{ $receipt_validate }}
                                                 </span>
                                             </td>
@@ -482,10 +498,11 @@
                                     @endforeach
                                 @else
                                     <tr>
-                                        <td colspan="11" class="empty-state">
-                                            <div>
-                                                <i class="fas fa-inbox fa-3x mb-3" style="color: #cbd5e0;"></i>
-                                                <p>No records found</p>
+                                        <td colspan="11" style="text-align: center; padding: 60px 20px;">
+                                            <div style="opacity: 0.5;">
+                                                <i class="fas fa-inbox" style="font-size: 48px; color: #cbd5e1; margin-bottom: 16px;"></i>
+                                                <div style="font-size: 18px; font-weight: 600; color: #64748b;">No Records Found</div>
+                                                <div style="font-size: 14px; color: #94a3b8; margin-top: 8px;">Try adjusting your filters to find what you're looking for</div>
                                             </div>
                                         </td>
                                     </tr>
@@ -574,7 +591,10 @@ jQuery(document).ready(function($){
                         $.each(record_data, function(index, subArray) {
                             //console.log('index=='+index);
                             //console.log('subArray=='+subArray.id);
-                            $('#validate_' + subArray.id +' span').removeClass('text-danger').addClass('text-success').text('Yes');
+                            $('#validate_' + subArray.id +' span')
+                                .removeClass('badge-danger')
+                                .addClass('modern-badge badge-success')
+                                .html('<i class="fas fa-check"></i> Yes');
                             if(subArray.first_name != ""){
                                 var validateby_full_name = subArray.first_name+" "+subArray.last_name;
                             } else {
@@ -600,6 +620,27 @@ jQuery(document).ready(function($){
         } else {
             $('#checkbox-all').prop('checked',false);
         }
+    });
+
+    // Sortable column headers
+    $('.sortable-header').on('click', function() {
+        var sortBy = $(this).data('sort');
+        var currentUrl = new URL(window.location.href);
+        var currentSortBy = currentUrl.searchParams.get('sort_by');
+        var currentSortOrder = currentUrl.searchParams.get('sort_order');
+        
+        // Determine new sort order
+        var newSortOrder = 'asc';
+        if (currentSortBy === sortBy && currentSortOrder === 'asc') {
+            newSortOrder = 'desc';
+        }
+        
+        // Set sort parameters
+        currentUrl.searchParams.set('sort_by', sortBy);
+        currentUrl.searchParams.set('sort_order', newSortOrder);
+        
+        // Redirect to new URL
+        window.location.href = currentUrl.toString();
     });
 });
 </script>

@@ -9,38 +9,18 @@
     </div>
 
     <div style="margin-bottom: 10px;">
-        <a class="btn btn-primary createreceipt" href="javascript:;" role="button" data-test-mode="true">Create Entry</a>
-        
-        <!-- Additional Test Controls -->
-        <button class="btn btn-info" id="export-to-excel" style="margin-left: 10px;">
-            <i class="fas fa-file-excel"></i> Export Test Data
-        </button>
-        <button class="btn btn-secondary" id="view-raw-json" style="margin-left: 10px;">
-            <i class="fas fa-code"></i> View Raw Data
-        </button>
-        
-        <!-- Test Controls -->
-        <button class="btn btn-success" id="test-python-processing" style="margin-left: 20px;">
-            <i class="fas fa-flask"></i> Test Python Processing
-        </button>
-    </div>
-
-    <!-- TEST: Performance Metrics Display -->
-    <div class="alert alert-secondary" id="performance-metrics" style="display:none; margin-bottom: 15px;">
-        <h5>⚡ Performance Metrics</h5>
-        <div class="row">
-            <div class="col-md-3">
-                <strong>Processing Time:</strong> <span id="processing-time">-</span>
-            </div>
-            <div class="col-md-3">
-                <strong>Records Processed:</strong> <span id="records-count">-</span>
-            </div>
-            <div class="col-md-3">
-                <strong>Method:</strong> <span id="processing-method">-</span>
-            </div>
-            <div class="col-md-3">
-                <strong>Status:</strong> <span id="processing-status">-</span>
-            </div>
+        <!-- Create Entry Buttons - Split by Receipt Type -->
+        <div style="display: inline-block; margin-right: 20px; padding: 5px; background: #f8f9fa; border-radius: 5px;">
+            <strong style="font-size: 12px; color: #666; margin-right: 10px;">Create Entry:</strong>
+            <a class="btn btn-success createreceipt" href="javascript:;" role="button" data-test-mode="true" data-receipt-type="1" style="margin-right: 5px;">
+                <i class="fas fa-wallet"></i> Client Funds Ledger
+            </a>
+            <a class="btn btn-primary createreceipt" href="javascript:;" role="button" data-test-mode="true" data-receipt-type="2" style="margin-right: 5px;">
+                <i class="fas fa-hand-holding-usd"></i> Direct Office Receipt
+            </a>
+            <a class="btn btn-info createreceipt" href="javascript:;" role="button" data-test-mode="true" data-receipt-type="3">
+                <i class="fas fa-file-invoice-dollar"></i> Invoice
+            </a>
         </div>
     </div>
 
@@ -75,14 +55,25 @@
                         {  //dd('elseee');
                             $client_selected_matter_id = '';
                         }
-                        $latest_balance = DB::table('account_client_receipts')
-                        ->where('client_id', $fetchedData->id)
-                        ->where('client_matter_id', $client_selected_matter_id)
-                        ->where('receipt_type', 1)
-                        ->orderBy('id', 'desc') // or 'created_at', if you have it
-                        ->value('balance_amount');
+                        // Calculate balance from scratch by summing deposits and withdrawals
+                        // Exclude voided fee transfers
+                        $ledger_entries = DB::table('account_client_receipts')
+                            ->select('deposit_amount', 'withdraw_amount', 'void_fee_transfer')
+                            ->where('client_id', $fetchedData->id)
+                            ->where('client_matter_id', $client_selected_matter_id)
+                            ->where('receipt_type', 1)
+                            ->get();
+                        
+                        $calculated_balance = 0;
+                        foreach($ledger_entries as $entry) {
+                            // Skip voided fee transfers
+                            if(isset($entry->void_fee_transfer) && $entry->void_fee_transfer == 1) {
+                                continue;
+                            }
+                            $calculated_balance += floatval($entry->deposit_amount) - floatval($entry->withdraw_amount);
+                        }
                         ?>
-                        {{ is_numeric($latest_balance) ? '$ ' . number_format($latest_balance, 2) : '$ 0.00' }}
+                        {{ '$ ' . number_format($calculated_balance, 2) }}
 
                     </div>
                 </div>
@@ -111,13 +102,12 @@
                 <table class="transaction-table" id="test-client-ledger-table">
                     <thead>
                         <tr>
-                            <th>Date</th>
-                            <th colspan="2">Type</th>
-                            <th>Description</th>
-                            <th>Reference</th>
-                            <th class="currency">Funds In (+)</th>
-                            <th class="currency">Funds Out (-)</th>
-                            <th class="currency">Balance</th>
+                            <th style="text-align: left;">Date</th>
+                            <th colspan="2" style="text-align: left;">Type</th>
+                            <th style="text-align: left;">Description</th>
+                            <th style="text-align: center;">Reference</th>
+                            <th style="text-align: right;">Funds In (+)</th>
+                            <th style="text-align: right;">Funds Out (-)</th>
                         </tr>
                     </thead>
                     <tbody class="productitemList">
@@ -128,24 +118,26 @@
                         {
                             foreach($receipts_lists as $rec_list=>$rec_val)
                             {
-                                $adminR = \App\Models\Admin::select('client_id')->where('id', $rec_val->client_id)->first();
+                            // Add strikethrough class for voided fee transfers
+                            $rowClass = '';
+                            if(isset($rec_val->void_fee_transfer) && $rec_val->void_fee_transfer == 1){
+                                $rowClass = 'strike-through';
+                            }
                             ?>
-                        <tr class="drow_account_ledger ledger-row" data-type="{{$rec_val->client_fund_ledger_type}}" data-matterid="{{$rec_val->client_matter_id}}">
-                            <td>
-                                <span style="display: inline-flex;">
+                        <tr class="drow_account_ledger ledger-row {{$rowClass}}" data-type="{{$rec_val->client_fund_ledger_type}}" data-matterid="{{$rec_val->client_matter_id}}">
+                            <td style="text-align: left; vertical-align: middle;">
+                                <span style="display: inline-flex; align-items: center;">
                                     <?php
                                     if( isset($rec_val->validate_receipt) && $rec_val->validate_receipt == '1' )
                                     { ?>
-                                        <i class="fas fa-check-circle" title="Verified Receipt" style="margin-top: 7px;"></i>
+                                        <i class="fas fa-check-circle" title="Verified Receipt" style="margin-right: 5px; color: #28a745;"></i>
                                     <?php
                                     } ?>
                                     <?php echo $rec_val->trans_date;?>
-
-                                    <?php echo "<br/>" . (!empty($adminR->client_id) ? $adminR->client_id : 'NA'); ?>
                                 </span>
                             </td>
 
-                            <td class="type-cell">
+                            <td class="type-cell" style="text-align: left; vertical-align: middle;">
                                 <?php
                                 if($rec_val->client_fund_ledger_type == 'Deposit' ){
                                     $type_icon = 'fa-arrow-down';
@@ -172,22 +164,7 @@
                                     <?php
                                     }?>
                                 </span>
-                                <?php
-                                if($rec_val->client_fund_ledger_type !== 'Fee Transfer'){?>
-                                    <a title="Edit Entry (Test Mode)" class="link-primary edit-ledger-entry" href="javascript:;"
-                                    data-id="<?php echo $rec_val->id; ?>"
-                                    data-receiptid="<?php echo $rec_val->receipt_id; ?>"
-                                    data-trans-date="<?php echo htmlspecialchars($rec_val->trans_date, ENT_QUOTES, 'UTF-8'); ?>"
-                                    data-entry-date="<?php echo htmlspecialchars($rec_val->entry_date, ENT_QUOTES, 'UTF-8'); ?>"
-                                    data-type="<?php echo htmlspecialchars($rec_val->client_fund_ledger_type, ENT_QUOTES, 'UTF-8'); ?>"
-                                    data-description="<?php echo htmlspecialchars($rec_val->description ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-                                    data-deposit="<?php echo htmlspecialchars($rec_val->deposit_amount ?? 0, ENT_QUOTES, 'UTF-8'); ?>"
-                                    data-withdraw="<?php echo htmlspecialchars($rec_val->withdraw_amount ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
-                                     <i class="fas fa-pencil-alt"></i>
-                                 </a>
-                                <?php
-                                }?>
-
+                                
                                 <?php
                                 if(isset($rec_val->uploaded_doc_id) && $rec_val->uploaded_doc_id != ""){
                                     $client_doc_list = DB::table('documents')->select('myfile')->where('id',$rec_val->uploaded_doc_id)->first();
@@ -196,15 +173,47 @@
                                     <?php
                                     }
                                 } ?>
-                            </td><td></td>
+                            </td>
+                            <td style="text-align: left; vertical-align: middle;"></td>
 
-                            <td class="description"><?php echo $rec_val->description;?></td>
+                            <td class="description" style="text-align: left; vertical-align: middle;"><?php echo $rec_val->description;?></td>
 
-                            <td><a target="_blank" href="{{URL::to('/clients/genClientFundLedgerInvoice')}}/{{$rec_val->id}}" title="View Receipt"><?php echo $rec_val->trans_no;?></a></td>
+                            <td style="text-align: center; vertical-align: middle;">
+                                <div class="dropdown d-inline-block">
+                                    <span class="reference-dropdown-trigger" id="dropdownReceipt{{$rec_val->id}}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <?php echo $rec_val->trans_no;?> <i class="fas fa-caret-down" style="font-size: 11px; opacity: 0.6; margin-left: 3px;"></i>
+                                    </span>
+                                    <div class="dropdown-menu" aria-labelledby="dropdownReceipt{{$rec_val->id}}">
+                                        <a class="dropdown-item" href="{{URL::to('/clients/genClientFundLedgerInvoice')}}/{{$rec_val->id}}" target="_blank">
+                                            <i class="fas fa-eye"></i> View Receipt
+                                        </a>
+                                        <a class="dropdown-item" href="{{URL::to('/clients/genClientFundLedgerInvoice')}}/{{$rec_val->id}}" download>
+                                            <i class="fas fa-download"></i> Download PDF
+                                        </a>
+                                        <?php if($rec_val->client_fund_ledger_type !== 'Fee Transfer'){ ?>
+                                        <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item edit-ledger-entry" href="javascript:;"
+                                            data-id="<?php echo $rec_val->id; ?>"
+                                            data-receiptid="<?php echo $rec_val->receipt_id; ?>"
+                                            data-trans-date="<?php echo htmlspecialchars($rec_val->trans_date, ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-entry-date="<?php echo htmlspecialchars($rec_val->entry_date, ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-type="<?php echo htmlspecialchars($rec_val->client_fund_ledger_type, ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-description="<?php echo htmlspecialchars($rec_val->description ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-deposit="<?php echo htmlspecialchars($rec_val->deposit_amount ?? 0, ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-withdraw="<?php echo htmlspecialchars($rec_val->withdraw_amount ?? 0, ENT_QUOTES, 'UTF-8'); ?>">
+                                            <i class="fas fa-edit"></i> Edit Entry
+                                        </a>
+                                        <?php } ?>
+                                        <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item copy-reference" href="javascript:;" data-reference="<?php echo $rec_val->trans_no;?>">
+                                            <i class="fas fa-copy"></i> Copy Reference
+                                        </a>
+                                    </div>
+                                </div>
+                            </td>
 
-                            <td class="currency text-success">{{ !empty($rec_val->deposit_amount) ? '$ ' . number_format($rec_val->deposit_amount, 2) : '' }}</td>
-                            <td class="currency">{{ !empty($rec_val->withdraw_amount) ? '$ ' . number_format($rec_val->withdraw_amount, 2) : '' }}</td>
-                            <td class="currency balance">{{ !empty($rec_val->balance_amount) ? '$ ' . number_format($rec_val->balance_amount, 2) : '' }}</td>
+                            <td style="text-align: right; vertical-align: middle; color: #28a745; font-weight: 500;">{{ !empty($rec_val->deposit_amount) ? '$ ' . number_format($rec_val->deposit_amount, 2) : '' }}</td>
+                            <td style="text-align: right; vertical-align: middle; font-weight: 500;">{{ !empty($rec_val->withdraw_amount) ? '$ ' . number_format($rec_val->withdraw_amount, 2) : '' }}</td>
                         </tr>
                         <?php
                             } //end foreach
@@ -253,11 +262,11 @@
                 <table class="transaction-table">
                     <thead>
                         <tr>
-                            <th>Inv #</th>
-                            <th>Date</th>
-                            <th>Description</th>
-                            <th class="currency">Amount</th>
-                            <th>Status</th>
+                            <th style="text-align: center;">Inv #</th>
+                            <th style="text-align: left;">Date</th>
+                            <th style="text-align: left;">Description</th>
+                            <th style="text-align: right;">Amount</th>
+                            <th style="text-align: left;">Status</th>
                         </tr>
                     </thead>
                     <tbody class="productitemList_invoice">
@@ -275,21 +284,67 @@
                                 }
                                 ?>
                                 <tr class="drow_account_invoice invoiceTrRow <?php echo $trcls;?>" id="invoiceTrRow_<?php echo $inc_val->id;?>" data-matterid="{{$inc_val->client_matter_id}}">
-                                    <td>
-                                        <?php echo $inc_val->trans_no."<br/>";?>
-                                        <?php
-                                        if($inc_val->save_type == 'draft'){?>
-                                            <a title="Edit Draft Invoice" class="link-primary updatedraftinvoice" href="javascript:;" data-receiptid="<?php echo $inc_val->receipt_id;?>"><i class="fas fa-pencil-alt"></i></a>
-                                        <?php
-                                        }
-                                        else if($inc_val->save_type == 'final') {?>
-                                            <a title="Final Invoice" target="_blank" class="link-primary" href="{{URL::to('/clients/genInvoice')}}/{{$inc_val->receipt_id}}"><i class="fas fa-file-pdf"></i></a>
-                                        <?php
-                                        } ?>
+                                    <td style="text-align: center; vertical-align: middle;">
+                                        <div class="dropdown d-inline-block">
+                                            <span class="reference-dropdown-trigger" id="dropdownInvoice{{$inc_val->id}}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                <?php echo $inc_val->trans_no;?> <i class="fas fa-caret-down" style="font-size: 11px; opacity: 0.6; margin-left: 3px;"></i>
+                                            </span>
+                                            <div class="dropdown-menu" aria-labelledby="dropdownInvoice{{$inc_val->id}}">
+                                                <?php if($inc_val->save_type == 'final') { ?>
+                                                <a class="dropdown-item" href="{{URL::to('/clients/genInvoice')}}/{{$inc_val->receipt_id}}" target="_blank">
+                                                    <i class="fas fa-eye"></i> View Invoice
+                                                </a>
+                                                <a class="dropdown-item" href="{{URL::to('/clients/genInvoice')}}/{{$inc_val->receipt_id}}" download>
+                                                    <i class="fas fa-download"></i> Download PDF
+                                                </a>
+                                                <?php } ?>
+                                                <?php if($inc_val->save_type == 'draft'){ ?>
+                                                <a class="dropdown-item updatedraftinvoice" href="javascript:;" data-receiptid="<?php echo $inc_val->receipt_id;?>">
+                                                    <i class="fas fa-edit"></i> Edit Draft Invoice
+                                                </a>
+                                                <?php } ?>
+                                                <div class="dropdown-divider"></div>
+                                                <a class="dropdown-item copy-reference" href="javascript:;" data-reference="<?php echo $inc_val->trans_no;?>">
+                                                    <i class="fas fa-copy"></i> Copy Invoice #
+                                                </a>
+                                                
+                                                <?php if($inc_val->save_type == 'final') { ?>
+                                                <div class="dropdown-divider"></div>
+                                                <?php 
+                                                // Check if invoice has been sent to Hubdoc
+                                                $hubdoc_sent = DB::table('account_client_receipts')
+                                                    ->where('receipt_type', 3)
+                                                    ->where('receipt_id', $inc_val->receipt_id)
+                                                    ->value('hubdoc_sent');
+                                                
+                                                if($hubdoc_sent) {
+                                                    // Already sent to Hubdoc
+                                                    $hubdoc_sent_at = DB::table('account_client_receipts')
+                                                        ->where('receipt_type', 3)
+                                                        ->where('receipt_id', $inc_val->receipt_id)
+                                                        ->value('hubdoc_sent_at');
+                                                ?>
+                                                    <a class="dropdown-item send-to-hubdoc-btn" href="javascript:;" data-invoice-id="<?php echo $inc_val->receipt_id; ?>" style="color: #28a745;">
+                                                        <i class="fas fa-check"></i> Already Sent to Hubdoc
+                                                    </a>
+                                                    <div class="dropdown-item-text" style="font-size: 11px; color: #666; padding: 0.25rem 1rem;">
+                                                        Sent: <?php echo date('d/m/Y H:i', strtotime($hubdoc_sent_at)); ?>
+                                                    </div>
+                                                    <a class="dropdown-item refresh-hubdoc-status" href="javascript:;" data-invoice-id="<?php echo $inc_val->receipt_id; ?>">
+                                                        <i class="fas fa-sync-alt"></i> Refresh Status
+                                                    </a>
+                                                <?php } else { ?>
+                                                    <a class="dropdown-item send-to-hubdoc-btn" href="javascript:;" data-invoice-id="<?php echo $inc_val->receipt_id; ?>">
+                                                        <i class="fas fa-paper-plane"></i> Send to Hubdoc
+                                                    </a>
+                                                <?php } ?>
+                                                <?php } ?>
+                                            </div>
+                                        </div>
                                     </td>
-                                    <td><?php echo $inc_val->trans_date;?></td>
-                                    <td><?php echo $inc_val->description;?></td>
-                                    <td class="currency">
+                                    <td style="text-align: left; vertical-align: middle;"><?php echo $inc_val->trans_date;?></td>
+                                    <td style="text-align: left; vertical-align: middle;"><?php echo $inc_val->description;?></td>
+                                    <td style="text-align: right; vertical-align: middle; font-weight: 500;">
                                         @if($inc_val->invoice_status == 1 && ($inc_val->balance_amount == 0 || $inc_val->balance_amount == 0.00))
                                             {{ !empty($inc_val->partial_paid_amount) ? '$ ' . number_format($inc_val->partial_paid_amount, 2) : '' }}
                                         @else
@@ -323,7 +378,7 @@
                                         $statusDes = $statusVal[$status];
                                         ?>
 
-                                    <td>
+                                    <td style="text-align: left; vertical-align: middle;">
                                         <span class="status-badge <?php echo $statusClass; ?>">
                                             <?php echo $statusDes; ?>
                                         </span>
@@ -336,6 +391,122 @@
 
                     </tbody>
                 </table>
+
+                <h4 style="margin-top:25px; margin-bottom: 10px; font-weight: 600;">Direct Office Receipts</h4>
+                <table class="transaction-table">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left;">Date</th>
+                            <th colspan="2" style="text-align: left;">Method</th>
+                            <th style="text-align: left;">Description</th>
+                            <th style="text-align: center;">Reference</th>
+                            <th style="text-align: right;">Amount Received</th>
+                        </tr>
+                    </thead>
+                    <tbody class="productitemList_office">
+                        <?php
+                        $receipts_lists_office = DB::table('account_client_receipts')->where('client_matter_id',$client_selected_matter_id)->where('client_id',$fetchedData->id)->where('receipt_type',2)->orderBy('id', 'desc')->get();
+                        //dd($receipts_lists_office);
+                        if(!empty($receipts_lists_office) && count($receipts_lists_office)>0 )
+                        {
+                            foreach($receipts_lists_office as $off_list=>$off_val)
+                            {
+                            ?>
+                            <tr class="drow_account_office" data-matterid="{{$off_val->client_matter_id}}">
+                                <td style="text-align: left; vertical-align: middle;">
+                                    <span style="display: inline-flex; align-items: center;">
+                                        <?php
+                                        if( isset($off_val->validate_receipt) && $off_val->validate_receipt == '1' )
+                                        { ?>
+                                            <i class="fas fa-check-circle" title="Verified Receipt" style="margin-right: 5px; color: #28a745;"></i>
+                                        <?php
+                                        } ?>
+                                        <?php echo $off_val->trans_date;?>
+                                    </span>
+                                    <?php
+                                    if(isset($off_val->uploaded_doc_id) && $off_val->uploaded_doc_id >0){
+                                        $office_doc_list = DB::table('documents')->select('myfile')->where('id',$off_val->uploaded_doc_id)->first();
+                                        if($office_doc_list){ ?>
+                                            <br/>
+                                            <a title="See Attached Document" target="_blank" class="link-primary" href="<?php echo $office_doc_list->myfile;?>"><i class="fas fa-file-pdf"></i> Document</a>
+                                        <?php
+                                        }
+                                    } ?>
+                                </td>
+                                <?php
+                                $payClassMap = [
+                                    'Cash' => 'fa-arrow-down',
+                                    'Bank transfer' => 'fa-arrow-right-from-bracket',
+                                    'EFTPOS' => 'fa-arrow-right-from-bracket',
+                                    'Refund' => 'fa-arrow-right-from-bracket'
+                                ];
+                                ?>
+                                <td class="type-cell" style="text-align: left; vertical-align: middle;">
+                                   <i class="fas  <?php echo $payClassMap[$off_val->payment_method]; ?> type-icon"></i>
+                                   <span>
+                                    {{$off_val->payment_method}}
+                                    
+
+                                    <?php
+                                    if( isset($off_val->extra_amount_receipt) &&  $off_val->extra_amount_receipt == 'exceed' ) {
+
+                                    } else { ?>
+                                        <br/>
+                                        {{ !empty($off_val->invoice_no) ? '('.$off_val->invoice_no.')' : '' }}
+                                    <?php
+                                    }?>
+
+                                   </span>
+                                </td>
+                                <td style="text-align: left; vertical-align: middle;"></td>
+
+                                <td class="description" style="text-align: left; vertical-align: middle;"><?php echo $off_val->description;?></td>
+                                
+                                <td style="text-align: center; vertical-align: middle;">
+                                    <div class="dropdown d-inline-block">
+                                        <span class="reference-dropdown-trigger" id="dropdownOffice{{$off_val->id}}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            <?php echo $off_val->trans_no;?> <i class="fas fa-caret-down" style="font-size: 11px; opacity: 0.6; margin-left: 3px;"></i>
+                                        </span>
+                                        <div class="dropdown-menu" aria-labelledby="dropdownOffice{{$off_val->id}}">
+                                            <?php if(isset($off_val->save_type) && $off_val->save_type == 'final') { ?>
+                                            <a class="dropdown-item" href="{{URL::to('/clients/genofficereceiptInvoice')}}/{{$off_val->id}}" target="_blank">
+                                                <i class="fas fa-eye"></i> View Receipt
+                                            </a>
+                                            <a class="dropdown-item" href="{{URL::to('/clients/genofficereceiptInvoice')}}/{{$off_val->id}}" download>
+                                                <i class="fas fa-download"></i> Download PDF
+                                            </a>
+                                            <?php } ?>
+                                            <?php if(!isset($off_val->save_type) || $off_val->save_type == 'draft') { ?>
+                                            <a class="dropdown-item edit-office-receipt-entry" href="javascript:;"
+                                                data-id="<?php echo $off_val->id; ?>"
+                                                data-receiptid="<?php echo $off_val->receipt_id; ?>"
+                                                data-trans-date="<?php echo htmlspecialchars($off_val->trans_date, ENT_QUOTES, 'UTF-8'); ?>"
+                                                data-entry-date="<?php echo htmlspecialchars($off_val->entry_date, ENT_QUOTES, 'UTF-8'); ?>"
+                                                data-payment-method="<?php echo htmlspecialchars($off_val->payment_method, ENT_QUOTES, 'UTF-8'); ?>"
+                                                data-description="<?php echo htmlspecialchars($off_val->description ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                                                data-deposit="<?php echo htmlspecialchars($off_val->deposit_amount ?? 0, ENT_QUOTES, 'UTF-8'); ?>"
+                                                data-invoice-no="<?php echo htmlspecialchars($off_val->invoice_no ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                                                data-matter-id="<?php echo $off_val->client_matter_id; ?>"
+                                                data-uploaded-doc-id="<?php echo $off_val->uploaded_doc_id ?? ''; ?>">
+                                                <i class="fas fa-edit"></i> Edit Draft Receipt
+                                            </a>
+                                            <?php } ?>
+                                            <div class="dropdown-divider"></div>
+                                            <a class="dropdown-item copy-reference" href="javascript:;" data-reference="<?php echo $off_val->trans_no;?>">
+                                                <i class="fas fa-copy"></i> Copy Reference
+                                            </a>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td style="text-align: right; vertical-align: middle; color: #28a745; font-weight: 500;">{{ !empty($off_val->deposit_amount) ? '$ ' . number_format($off_val->deposit_amount, 2) : '' }}</td>
+                            </tr>
+                        <?php
+                            } //end foreach
+                        }
+                        ?>
+                    </tbody>
+                </table>
             </div>
         </section>
     </div>
@@ -344,89 +515,129 @@
 <!-- Test JavaScript -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Test Python Processing Button
-    document.getElementById('test-python-processing')?.addEventListener('click', function() {
-        const metricsDiv = document.getElementById('performance-metrics');
-        metricsDiv.style.display = 'block';
+    // Improved Create Receipt Button Click Handler
+    // Automatically selects the correct form based on which button was clicked
+    // Using event delegation with higher priority to override the default handler
+    $(document).off('click', '.createreceipt[data-test-mode="true"]').on('click', '.createreceipt[data-test-mode="true"]', function(e) {
+        e.preventDefault();
+        e.stopImmediatePropagation(); // Prevent the default handler from firing
         
-        const startTime = performance.now();
-        document.getElementById('processing-method').textContent = 'PHP/Python Hybrid';
-        document.getElementById('processing-status').textContent = 'Processing...';
+        const receiptType = $(this).data('receipt-type');
+        const $modal = $('#createreceiptmodal');
         
-        // Call the test endpoint
-        $.ajax({
-            url: "{{ route('clients.test-python-accounting') }}",
-            type: 'POST',
-            data: {
-                _token: '{{ csrf_token() }}',
-                client_id: '{{ $fetchedData->id }}',
-                matter_id: '{{ $client_selected_matter_id ?? "" }}',
-                processing_type: 'analytics'
-            },
-            success: function(response) {
-                const endTime = performance.now();
-                const totalTime = (endTime - startTime).toFixed(2);
-                
-                document.getElementById('processing-time').textContent = response.data.processing_time_ms + ' ms (Backend) + ' + totalTime + ' ms (Total)';
-                document.getElementById('records-count').textContent = response.data.records_count;
-                document.getElementById('processing-method').textContent = response.data.python_service_available ? 'Python Service' : 'PHP (Test Mode)';
-                document.getElementById('processing-status').textContent = '✓ Complete';
-                
-                // Show detailed results
-                let message = '✅ Test Completed Successfully!\n\n';
-                message += '📊 Results:\n';
-                message += '- Backend Processing: ' + response.data.processing_time_ms + ' ms\n';
-                message += '- Total Time: ' + totalTime + ' ms\n';
-                message += '- Records Processed: ' + response.data.records_count + '\n';
-                message += '- Method: ' + (response.data.python_service_available ? 'Python Service' : 'PHP') + '\n\n';
-                message += '💡 ' + response.note;
-                
-                alert(message);
-            },
-            error: function(xhr, status, error) {
-                document.getElementById('processing-status').textContent = '❌ Error';
-                alert('Error during processing:\n' + (xhr.responseJSON?.message || error));
+        console.log('🎯 Test Mode Button Clicked - Receipt Type:', receiptType);
+        
+        // Hide the radio button selection section (not needed since button already indicates type)
+        $modal.find('.form-group:has(input[name="receipt_type"])').hide();
+        
+        // Update modal title based on receipt type
+        const modalTitles = {
+            '1': '<i class="fas fa-wallet" style="color: #28a745;"></i> Create Client Funds Ledger Entry',
+            '2': '<i class="fas fa-hand-holding-usd" style="color: #007bff;"></i> Create Direct Office Receipt',
+            '3': '<i class="fas fa-file-invoice-dollar" style="color: #17a2b8;"></i> Create Invoice'
+        };
+        
+        $modal.find('.modal-title').html(modalTitles[receiptType] || 'Create Receipt');
+        
+        // First, explicitly hide ALL forms to prevent double display
+        $('#client_receipt_form, #invoice_receipt_form, #office_receipt_form').hide();
+        console.log('🧹 All forms hidden');
+        
+        // Get the selected matter ID
+        let selectedMatter;
+        if ($('.general_matter_checkbox_client_detail').is(':checked')) {
+            selectedMatter = $('.general_matter_checkbox_client_detail').val();
+        } else {
+            selectedMatter = $('#sel_matter_id_client_detail').val();
+        }
+        console.log('📁 Selected Matter ID:', selectedMatter);
+        
+        // Select the appropriate radio button and trigger change event
+        // The change handler in detail-main.js will hide all forms and show the correct one
+        if (receiptType == '1') {
+            // Client Funds Ledger
+            console.log('📝 Selecting Client Funds Ledger Form');
+            
+            // Set the matter ID for client ledger
+            $('#client_matter_id_ledger').val(selectedMatter);
+            console.log('📁 Set client_matter_id_ledger to:', selectedMatter);
+            
+            $('input[name="receipt_type"][value="client_receipt"]').prop('checked', true).trigger('change');
+        } else if (receiptType == '2') {
+            // Direct Office Receipt
+            console.log('📝 Selecting Direct Office Receipt Form');
+            
+            // Set the matter ID for office receipt
+            $('#client_matter_id_office').val(selectedMatter);
+            console.log('📁 Set client_matter_id_office to:', selectedMatter);
+            
+            $('input[name="receipt_type"][value="office_receipt"]').prop('checked', true).trigger('change');
+        } else if (receiptType == '3') {
+            // Invoice
+            console.log('📝 Selecting Invoice Form');
+            
+            // CRITICAL: Set function_type to "add" for new invoices
+            $('#function_type').val('add');
+            console.log('✏️ Set function_type to: add');
+            
+            // Set the matter ID
+            $('#client_matter_id_invoice').val(selectedMatter);
+            console.log('📁 Set client_matter_id_invoice to:', selectedMatter);
+            
+            $('input[name="receipt_type"][value="invoice_receipt"]').prop('checked', true).trigger('change');
+        }
+        
+        // Ensure only the correct form is visible after a brief delay
+        setTimeout(function() {
+            // Hide all forms again
+            $('#client_receipt_form, #invoice_receipt_form, #office_receipt_form').hide();
+            
+            // Show only the selected form
+            const formIdMap = { '1': 'client_receipt_form', '2': 'office_receipt_form', '3': 'invoice_receipt_form' };
+            const formId = formIdMap[receiptType];
+            if (formId) {
+                $('#' + formId).show();
+                console.log('✅ Showing only:', formId);
             }
-        });
+            
+            // Re-ensure critical fields are set (in case change event cleared them)
+            if (receiptType == '3') {
+                $('#function_type').val('add');
+                $('#client_matter_id_invoice').val(selectedMatter);
+                console.log('🔄 Re-verified invoice form settings');
+            } else if (receiptType == '1') {
+                $('#client_matter_id_ledger').val(selectedMatter);
+                console.log('🔄 Re-verified ledger form settings');
+            } else if (receiptType == '2') {
+                $('#client_matter_id_office').val(selectedMatter);
+                console.log('🔄 Re-verified office receipt form settings');
+            }
+        }, 100);
+        
+        // Add a badge to indicate test mode
+        if ($(this).data('test-mode')) {
+            $modal.find('.modal-header').prepend('<span class="badge badge-warning" style="margin-right: 10px;">🧪 TEST MODE</span>');
+        }
+        
+        // Open the modal
+        $modal.modal('show');
+        
+        // Log for debugging
+        console.log('✅ Modal opened successfully');
     });
     
-    // Export to Excel functionality
-    document.getElementById('export-to-excel')?.addEventListener('click', function() {
-        const clientId = '{{ $fetchedData->id }}';
-        const matterId = '{{ $client_selected_matter_id ?? "" }}';
+    // Reset modal when closed (cleanup for next use)
+    $('#createreceiptmodal').on('hidden.bs.modal', function() {
+        // Show radio buttons again (in case user opens from a different page)
+        $(this).find('.form-group:has(input[name="receipt_type"])').show();
         
-        // TODO: Implement Excel export via Python service
-        alert('🔄 Export to Excel\n\nThis will be implemented to:\n- Export all accounting data to Excel\n- Use Python pandas for fast processing\n- Include charts and summaries\n\nComing soon!');
-    });
-    
-    // View Raw JSON functionality
-    document.getElementById('view-raw-json')?.addEventListener('click', function() {
-        $.ajax({
-            url: "{{ route('clients.test-python-accounting') }}",
-            type: 'POST',
-            data: {
-                _token: '{{ csrf_token() }}',
-                client_id: '{{ $fetchedData->id }}',
-                matter_id: '{{ $client_selected_matter_id ?? "" }}',
-                processing_type: 'raw_data'
-            },
-            success: function(response) {
-                // Create a modal to show JSON
-                const jsonStr = JSON.stringify(response, null, 2);
-                const modal = $('<div class="modal fade" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content">' +
-                    '<div class="modal-header"><h5 class="modal-title">Raw Accounting Data (JSON)</h5>' +
-                    '<button type="button" class="close" data-dismiss="modal">&times;</button></div>' +
-                    '<div class="modal-body"><pre style="max-height: 500px; overflow-y: auto; background: #f5f5f5; padding: 15px; border-radius: 5px;">' + 
-                    jsonStr + '</pre></div>' +
-                    '<div class="modal-footer">' +
-                    '<button class="btn btn-secondary" onclick="navigator.clipboard.writeText(\'' + jsonStr.replace(/'/g, "\\'") + '\')">Copy JSON</button>' +
-                    '<button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>' +
-                    '</div></div></div></div>');
-                $('body').append(modal);
-                modal.modal('show');
-                modal.on('hidden.bs.modal', function() { modal.remove(); });
-            }
-        });
+        // Remove test mode badge
+        $(this).find('.badge-warning').remove();
+        
+        // Reset modal title to default
+        $(this).find('.modal-title').html('Create Receipt');
+        
+        console.log('✅ Modal reset for next use');
     });
     
     // Filter functionality
@@ -462,20 +673,220 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
+    // Copy Reference Functionality
+    $(document).on('click', '.copy-reference', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const reference = $(this).data('reference');
+        const $item = $(this);
+        const originalHtml = $item.html();
+        
+        // Modern clipboard API
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(reference).then(() => {
+                // Show success feedback
+                $item.html('<i class="fas fa-check"></i> Copied!');
+                $item.css({'background-color': '#d4edda', 'color': '#155724'});
+                
+                // Reset after 1.5 seconds
+                setTimeout(() => {
+                    $item.html(originalHtml);
+                    $item.css({'background-color': '', 'color': ''});
+                }, 1500);
+                
+                console.log('✅ Copied to clipboard:', reference);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                $item.html('<i class="fas fa-times"></i> Failed');
+                $item.css({'background-color': '#f8d7da', 'color': '#721c24'});
+                setTimeout(() => {
+                    $item.html(originalHtml);
+                    $item.css({'background-color': '', 'color': ''});
+                }, 1500);
+            });
+        } else {
+            // Fallback for older browsers
+            const $temp = $('<textarea>');
+            $('body').append($temp);
+            $temp.val(reference).select();
+            
+            try {
+                document.execCommand('copy');
+                $temp.remove();
+                
+                // Show success feedback
+                $item.html('<i class="fas fa-check"></i> Copied!');
+                $item.css({'background-color': '#d4edda', 'color': '#155724'});
+                
+                setTimeout(() => {
+                    $item.html(originalHtml);
+                    $item.css({'background-color': '', 'color': ''});
+                }, 1500);
+                
+                console.log('✅ Copied to clipboard (fallback):', reference);
+            } catch(err) {
+                $temp.remove();
+                $item.html('<i class="fas fa-times"></i> Failed');
+                $item.css({'background-color': '#f8d7da', 'color': '#721c24'});
+                setTimeout(() => {
+                    $item.html(originalHtml);
+                    $item.css({'background-color': '', 'color': ''});
+                }, 1500);
+            }
+        }
+    });
+    
+    // Edit Office Receipt Entry Handler
+    $(document).on('click', '.edit-office-receipt-entry', function(e) {
+        e.preventDefault();
+        
+        var $row = $(this).closest('tr');
+        var id = $(this).data('id');
+        var receiptId = $(this).data('receiptid');
+        var transDate = $(this).data('trans-date');
+        var entryDate = $(this).data('entry-date');
+        var paymentMethod = $(this).data('payment-method');
+        var description = $(this).data('description');
+        var deposit = $(this).data('deposit');
+        var invoiceNo = $(this).data('invoice-no');
+        var matterId = $(this).data('matter-id');
+        var uploadedDocId = $(this).data('uploaded-doc-id');
+        
+        console.log('✏️ Editing Office Receipt:', {id, receiptId, transDate, paymentMethod, deposit, invoiceNo});
+        
+        // Populate modal fields
+        $('#editOfficeReceiptForm input[name="id"]').val(id);
+        $('#edit_office_receipt_id').val(receiptId);
+        $('#edit_office_client_matter_id').val(matterId);
+        $('#edit_office_trans_date').val(transDate);
+        $('#edit_office_entry_date').val(entryDate);
+        $('#edit_office_payment_method').val(paymentMethod);
+        $('#edit_office_deposit_amount').val(deposit);
+        $('#edit_office_description').val(description);
+        
+        // Initialize datepickers
+        $('#edit_office_trans_date, #edit_office_entry_date').datepicker({
+            format: 'dd/mm/yyyy',
+            autoclose: true,
+            todayHighlight: true
+        });
+        
+        // Load invoices for the matter and select the current one
+        loadInvoicesForEdit(matterId, invoiceNo);
+        
+        // Show current document if exists
+        if(uploadedDocId && uploadedDocId != '') {
+            $('#current_document_display').html('<p class="text-info"><i class="fas fa-file-pdf"></i> Document attached (ID: ' + uploadedDocId + ')</p>');
+        } else {
+            $('#current_document_display').html('');
+        }
+        
+        // Show modal
+        $('#editOfficeReceiptModal').modal('show');
+    });
+    
+    // Function to load invoices for the edit modal
+    function loadInvoicesForEdit(matterId, selectedInvoice) {
+        $.ajax({
+            url: '{{ route("clients.getInvoicesByMatter") }}',
+            type: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                client_matter_id: matterId,
+                client_id: '{{ $fetchedData->id }}'
+            },
+            success: function(response) {
+                var $select = $('#edit_office_invoice_no');
+                $select.empty();
+                $select.append('<option value="">Select Invoice (Optional)</option>');
+                
+                if(response.invoices && response.invoices.length > 0) {
+                    response.invoices.forEach(function(invoice) {
+                        var selected = (invoice.trans_no == selectedInvoice) ? 'selected' : '';
+                        $select.append('<option value="' + invoice.trans_no + '" ' + selected + '>' + 
+                            invoice.trans_no + ' - $' + parseFloat(invoice.balance_amount).toFixed(2) + 
+                            ' (' + invoice.status + ')</option>');
+                    });
+                }
+                
+                console.log('✅ Loaded invoices for matter:', matterId);
+            },
+            error: function(xhr) {
+                console.error('Failed to load invoices:', xhr);
+                $('#edit_office_invoice_no').html('<option value="">No invoices available</option>');
+            }
+        });
+    }
+    
+    // Update Office Receipt - Save as Draft
+    $('#updateOfficeReceiptDraftBtn').on('click', function() {
+        updateOfficeReceipt('draft');
+    });
+    
+    // Update Office Receipt - Save and Finalize
+    $('#updateOfficeReceiptFinalBtn').on('click', function() {
+        updateOfficeReceipt('final');
+    });
+    
+    function updateOfficeReceipt(saveType) {
+        var form = $('#editOfficeReceiptForm')[0];
+        var formData = new FormData(form);
+        formData.append('save_type', saveType);
+        formData.append('_token', '{{ csrf_token() }}');
+        
+        console.log('💾 Updating office receipt as:', saveType);
+        
+        $.ajax({
+            type: 'POST',
+            url: '{{ route("clients.updateOfficeReceipt") }}',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.status) {
+                    $('#editOfficeReceiptModal').modal('hide');
+                    
+                    // Show success message
+                    alert(response.message || 'Office receipt updated successfully!');
+                    
+                    // Reload page to show updated data
+                    localStorage.setItem('activeTab', 'accounts-test');
+                    location.reload();
+                } else {
+                    alert('Error: ' + (response.message || 'Failed to update office receipt'));
+                }
+            },
+            error: function(xhr, status, error) {
+                alert('An error occurred while updating. Please try again.');
+                console.error('AJAX error:', status, error, xhr.responseText);
+            }
+        });
+    }
+    
+    // Document upload handlers for edit modal
+    $('.add-document-btn-edit').on('click', function(e) {
+        e.preventDefault();
+        $('.docofficereceiptupload_edit').click();
+    });
+    
+    $('.docofficereceiptupload_edit').on('change', function() {
+        var fileName = $(this).val().split('\\').pop();
+        if(fileName) {
+            $('.file-selection-hint-edit').text('Selected: ' + fileName);
+        }
+    });
+    
     // Ensure all existing functionality works on this test page
     console.log('🧪 Accounts Test Page loaded - Full Read/Write access enabled');
     console.log('📊 Client ID: {{ $fetchedData->id }}');
     console.log('📁 Matter ID: {{ $client_selected_matter_id ?? "N/A" }}');
-    console.log('✅ All existing modals and forms will work with this page');
+    console.log('✅ All modals and forms are functional');
+    console.log('✅ Office Receipt Edit functionality enabled');
 });
 
-// Make sure this test page works with all existing modal popups
-// The existing JavaScript from the main page will handle:
-// - Create Entry modal
-// - Edit Entry modal  
-// - Save functions
-// - All AJAX calls
-// These all use class selectors, so they'll work on this test page too!
+// All existing modal popups and forms work seamlessly with this test page
+// They use class selectors, so all functionality is preserved
 </script>
 
 <style>
@@ -497,22 +908,74 @@ document.addEventListener('DOMContentLoaded', function() {
     box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.4);
 }
 
-/* Performance metrics styling */
-#performance-metrics {
-    animation: slideIn 0.3s ease-out;
+/* Reference Dropdown Trigger - Clean Text Style */
+.reference-dropdown-trigger {
+    cursor: pointer;
+    color: #495057;
+    font-weight: 500;
+    font-size: 13px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: inline-block;
+    position: relative;
 }
 
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.reference-dropdown-trigger:hover {
+    background-color: #f8f9fa;
+    color: #007bff;
+}
+
+/* Dropdown Menu Styling */
+.transaction-table .dropdown-menu {
+    min-width: 200px;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    padding: 6px 0;
+    margin-top: 2px;
+    font-size: 13px;
+}
+
+/* Dropdown Items */
+.transaction-table .dropdown-item {
+    padding: 8px 16px;
+    color: #495057;
+    transition: all 0.15s ease;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.transaction-table .dropdown-item:hover {
+    background-color: #f1f3f5;
+    color: #007bff;
+    padding-left: 20px;
+}
+
+.transaction-table .dropdown-item:active {
+    background-color: #e9ecef;
+    color: #0056b3;
+}
+
+.transaction-table .dropdown-item i {
+    width: 18px;
+    margin-right: 10px;
+    text-align: center;
+    font-size: 13px;
+    color: #6c757d;
+}
+
+.transaction-table .dropdown-item:hover i {
+    color: #007bff;
+}
+
+/* Dropdown Divider */
+.transaction-table .dropdown-divider {
+    margin: 4px 0;
+    border-top: 1px solid #e9ecef;
 }
 </style>
 
 </div>
-
+<!-- End Accounts Test Tab -->

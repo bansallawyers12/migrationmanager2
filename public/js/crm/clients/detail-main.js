@@ -4572,6 +4572,9 @@ $(document).ready(function() {
             if (ledgerType === 'Fee Transfer') {
 
                 $invoiceInput.show().attr('data-valid', 'required');
+                
+                // **FIX: Call listOfInvoice() to populate the dropdown**
+                listOfInvoice();
 
             } else {
 

@@ -36,14 +36,25 @@
                         {  //dd('elseee');
                             $client_selected_matter_id = '';
                         }
-                        $latest_balance = DB::table('account_client_receipts')
-                        ->where('client_id', $fetchedData->id)
-                        ->where('client_matter_id', $client_selected_matter_id)
-                        ->where('receipt_type', 1)
-                        ->orderBy('id', 'desc') // or 'created_at', if you have it
-                        ->value('balance_amount');
+                        // Calculate balance from scratch by summing deposits and withdrawals
+                        // Exclude voided fee transfers
+                        $ledger_entries = DB::table('account_client_receipts')
+                            ->select('deposit_amount', 'withdraw_amount', 'void_fee_transfer')
+                            ->where('client_id', $fetchedData->id)
+                            ->where('client_matter_id', $client_selected_matter_id)
+                            ->where('receipt_type', 1)
+                            ->get();
+                        
+                        $calculated_balance = 0;
+                        foreach($ledger_entries as $entry) {
+                            // Skip voided fee transfers
+                            if(isset($entry->void_fee_transfer) && $entry->void_fee_transfer == 1) {
+                                continue;
+                            }
+                            $calculated_balance += floatval($entry->deposit_amount) - floatval($entry->withdraw_amount);
+                        }
                         ?>
-                        {{ is_numeric($latest_balance) ? '$ ' . number_format($latest_balance, 2) : '$ 0.00' }}
+                        {{ '$ ' . number_format($calculated_balance, 2) }}
 
                     </div>
                 </div>
@@ -71,8 +82,13 @@
                             foreach($receipts_lists as $rec_list=>$rec_val)
                             {
                                 $adminR = \App\Models\Admin::select('client_id')->where('id', $rec_val->client_id)->first();
+                                // Add strikethrough class for voided fee transfers
+                                $rowClass = '';
+                                if(isset($rec_val->void_fee_transfer) && $rec_val->void_fee_transfer == 1){
+                                    $rowClass = 'strike-through';
+                                }
                             ?>
-                        <tr class="drow_account_ledger" data-matterid="{{$rec_val->client_matter_id}}">
+                        <tr class="drow_account_ledger {{$rowClass}}" data-matterid="{{$rec_val->client_matter_id}}">
                             <td>
                                 <span style="display: inline-flex;">
                                     <?php

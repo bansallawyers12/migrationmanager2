@@ -260,6 +260,7 @@
 					<input type="hidden" name="loggedin_userid" value="{{@Auth::user()->id}}">
 					<input type="hidden" name="receipt_type" value="2">
                     <input type="hidden" name="client_matter_id" id="client_matter_id_office" value="">
+                    <input type="hidden" name="save_type" class="save_type_office" value="">
 					<div class="row">
 						<div class="col-3 col-md-3 col-lg-3">
 							<div class="form-group">
@@ -348,7 +349,8 @@
                                 <input class="docofficereceiptupload"  type="file" name="document_upload[]"/>
                             </div>
 
-                            <button onclick="customValidate('office_receipt_form')" type="button" class="btn btn-primary" style="margin: 0px !important;">Save Report</button>
+                            <button onclick="customValidate('office_receipt_form','draft')" type="button" class="btn btn-secondary" style="margin: 0px !important;"><i class="fas fa-save"></i> Save Draft</button>
+                            <button onclick="customValidate('office_receipt_form','final')" type="button" class="btn btn-primary" style="margin: 0px !important;"><i class="fas fa-check"></i> Save and Finalize</button>
 							<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
 						</div>
                     </div>

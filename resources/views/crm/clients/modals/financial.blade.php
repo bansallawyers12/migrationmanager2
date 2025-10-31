@@ -270,6 +270,104 @@
     </div>
 </div>
 
+<!-- Edit Office Receipt Entry Modal -->
+<div class="modal fade" id="editOfficeReceiptModal" tabindex="-1" role="dialog" aria-labelledby="editOfficeReceiptModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editOfficeReceiptModalLabel"><i class="fas fa-hand-holding-usd"></i> Edit Direct Office Receipt</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="editOfficeReceiptForm">
+                    <input type="hidden" name="id">
+                    <input type="hidden" name="receipt_id" id="edit_office_receipt_id">
+                    <input type="hidden" name="client_id" value="{{$fetchedData->id}}">
+                    <input type="hidden" name="client_matter_id" id="edit_office_client_matter_id">
+                    <input type="hidden" name="receipt_type" value="2">
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="edit_office_trans_date">Transaction Date <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control datepicker" name="trans_date" id="edit_office_trans_date" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="edit_office_entry_date">Entry Date <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control datepicker" name="entry_date" id="edit_office_entry_date" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="edit_office_payment_method">Payment Method <span class="text-danger">*</span></label>
+                                <select class="form-control" name="payment_method" id="edit_office_payment_method" required>
+                                    <option value="">Select Method</option>
+                                    <option value="Cash">Cash</option>
+                                    <option value="Bank transfer">Bank Transfer</option>
+                                    <option value="EFTPOS">EFTPOS</option>
+                                    <option value="Refund">Refund</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="edit_office_deposit_amount">Amount Received <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" name="deposit_amount" id="edit_office_deposit_amount" step="0.01" value="0.00" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="edit_office_invoice_no">Invoice Number (Optional)</label>
+                                <select class="form-control" name="invoice_no" id="edit_office_invoice_no">
+                                    <option value="">Select Invoice (Optional)</option>
+                                </select>
+                                <small class="form-text text-muted">Attach this payment to an invoice</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="edit_office_description">Description</label>
+                                <textarea class="form-control" name="description" id="edit_office_description" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="upload_office_receipt_document_edit" style="display:inline-block;">
+                                <input type="hidden" name="type" value="client">
+                                <input type="hidden" name="doctype" value="office_receipt">
+                                <span class="file-selection-hint-edit" style="margin-left: 10px; color: #34395e;"></span>
+                                <a href="javascript:;" class="btn btn-info add-document-btn-edit"><i class="fa fa-plus"></i> Add/Update Document</a>
+                                <input class="docofficereceiptupload_edit" type="file" name="document_upload[]"/>
+                            </div>
+                            <div id="current_document_display" class="mt-2"></div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" id="updateOfficeReceiptDraftBtn"><i class="fas fa-save"></i> Save as Draft</button>
+                <button type="button" class="btn btn-primary" id="updateOfficeReceiptFinalBtn"><i class="fas fa-check"></i> Save and Finalize</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Cost Assignment Form -->
 <div class="modal fade custom_modal" id="costAssignmentCreateFormModel" tabindex="-1" role="dialog" aria-labelledby="costAssignmentModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-lg">
