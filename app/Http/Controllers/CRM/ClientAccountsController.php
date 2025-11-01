@@ -66,7 +66,7 @@ class ClientAccountsController extends Controller
      * - getInfoByReceiptId() - Get receipt information by ID
      * - getTopReceiptValInDB() - Get top receipt value
      * - getTopInvoiceNoFromDB() - Get top invoice number
-     * - genClientFundLedgerInvoice() - Generate client fund ledger invoice
+     * - genClientFundReceipt() - Generate client fund receipt
      * - genofficereceiptInvoice() - Generate office receipt invoice
      * - updateClientFundsLedger() - Update client funds ledger
      * - getInvoiceAmount() - Get invoice amount

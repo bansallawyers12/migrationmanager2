@@ -159,7 +159,7 @@
                             <td class="description"><?php echo $rec_val->description;?></td>
 
                             <!--<td><a href="#" title="View Receipt ".<?php //echo $rec_val->trans_no;?>><?php //echo $rec_val->trans_no;?></a></td>-->
-                            <td><a target="_blank" href="{{URL::to('/clients/genClientFundLedgerInvoice')}}/{{$rec_val->id}}" title="View Receipt"><?php echo $rec_val->trans_no;?></a></td>
+                            <td><a target="_blank" href="{{URL::to('/clients/genClientFundReceipt')}}/{{$rec_val->id}}" title="View Receipt"><?php echo $rec_val->trans_no;?></a></td>
 
                             <td class="currency text-success">{{ !empty($rec_val->deposit_amount) ? '$ ' . number_format($rec_val->deposit_amount, 2) : '' }}</td>
                             <td class="currency">{{ !empty($rec_val->withdraw_amount) ? '$ ' . number_format($rec_val->withdraw_amount, 2) : '' }}</td>
@@ -425,7 +425,7 @@
 
                                 <td class="description"><?php echo $off_val->description;?></td>
                                 <!--<td><a href="#" title="View Receipt {{--$off_val->trans_no--}}"><?php //echo $off_val->trans_no;?></a></td>-->
-                                <td><a target="_blank" href="{{URL::to('/clients/genofficereceiptInvoice')}}/{{$off_val->id}}" title="View Receipt"><?php echo $off_val->trans_no;?></a></td>
+                                <td><a target="_blank" href="{{URL::to('/clients/genOfficeReceipt')}}/{{$off_val->id}}" title="View Receipt"><?php echo $off_val->trans_no;?></a></td>
 
                                 <td class="currency text-success">{{ !empty($off_val->deposit_amount) ? '$ ' . number_format($off_val->deposit_amount, 2) : '' }}</td>
                             </tr>

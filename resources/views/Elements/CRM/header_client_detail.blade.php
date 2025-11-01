@@ -82,6 +82,7 @@
                     <a class="dropdown-item" href="{{route('clients.clientreceiptlist')}}"><i class="fas fa-receipt mr-2"></i> Client Receipts</a>
                     <a class="dropdown-item" href="{{route('clients.invoicelist')}}"><i class="fas fa-file-invoice-dollar mr-2"></i> Invoice Lists</a>
                     <a class="dropdown-item" href="{{route('clients.officereceiptlist')}}"><i class="fas fa-building mr-2"></i> Office Receipts</a>
+                    <a class="dropdown-item" href="{{route('clients.journalreceiptlist')}}"><i class="fas fa-book mr-2"></i> Journal Receipts</a>
                 </div>
             </div>
         </div>

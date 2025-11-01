@@ -6583,6 +6583,27 @@ class ClientsController extends Controller
                         ->where('receipt_type', $requestData['receipt_type'])
                         ->first();
 
+                    // Delete cached PDF since invoice was updated
+                    if ($existingClientReceipt && !empty($existingClientReceipt->pdf_document_id)) {
+                        $pdfDoc = DB::table('documents')->where('id', $existingClientReceipt->pdf_document_id)->first();
+                        if ($pdfDoc && !empty($pdfDoc->myfile_key)) {
+                            // Delete from S3
+                            $client_unique_id = DB::table('admins')->where('id', $existingClientReceipt->client_id)->value('client_id');
+                            if ($client_unique_id) {
+                                $s3Path = $client_unique_id . '/invoices/' . $pdfDoc->myfile_key;
+                                try {
+                                    Storage::disk('s3')->delete($s3Path);
+                                } catch (\Exception $e) {
+                                    Log::warning('Failed to delete PDF from S3: ' . $e->getMessage(), ['path' => $s3Path]);
+                                }
+                            }
+                        }
+                        // Delete document record
+                        DB::table('documents')->where('id', $existingClientReceipt->pdf_document_id)->delete();
+                        // Clear PDF reference in lastEntryData
+                        $lastEntryData['pdf_document_id'] = null;
+                    }
+
                     if ($existingClientReceipt) {
                         // Update existing record
                         DB::table('account_client_receipts')
@@ -7339,8 +7360,31 @@ class ClientsController extends Controller
             ->update($updateData);
         
         if ($updated) {
-            // Log activity
+            // Delete cached PDF since office receipt was updated
             $receipt = DB::table('account_client_receipts')->where('id', $id)->first();
+            if ($receipt && !empty($receipt->pdf_document_id)) {
+                $pdfDoc = DB::table('documents')->where('id', $receipt->pdf_document_id)->first();
+                if ($pdfDoc && !empty($pdfDoc->myfile_key)) {
+                    // Delete from S3
+                    $client_unique_id = DB::table('admins')->where('id', $receipt->client_id)->value('client_id');
+                    if ($client_unique_id) {
+                        $s3Path = $client_unique_id . '/office_receipts/' . $pdfDoc->myfile_key;
+                        try {
+                            Storage::disk('s3')->delete($s3Path);
+                        } catch (\Exception $e) {
+                            Log::warning('Failed to delete PDF from S3: ' . $e->getMessage(), ['path' => $s3Path]);
+                        }
+                    }
+                }
+                // Delete document record
+                DB::table('documents')->where('id', $receipt->pdf_document_id)->delete();
+                // Clear PDF reference
+                DB::table('account_client_receipts')
+                    ->where('id', $id)
+                    ->update(['pdf_document_id' => null]);
+            }
+            
+            // Log activity
             $subject = 'updated office receipt. Reference no- ' . $receipt->trans_no . ' (saved as ' . $saveType . ')';
             
             $objs = new \App\Models\ActivitiesLog;
@@ -7544,6 +7588,43 @@ class ClientsController extends Controller
     public function genInvoice(Request $request, $id){
         $record_get = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$id)->get();
         //dd($record_get);
+        
+        // Validate invoice exists
+        if ($record_get->isEmpty()) {
+            abort(404, 'Invoice not found');
+        }
+
+        // Get receipt_id entry from account_client_receipts to check for cached PDF
+        $receipt_entry = DB::table('account_client_receipts')
+            ->where('receipt_id', $id)
+            ->where('receipt_type', 3)
+            ->first();
+
+        // ============= START CACHING LOGIC =============
+        
+        // Check if PDF already exists in AWS
+        if ($receipt_entry && !empty($receipt_entry->pdf_document_id)) {
+            $existingPdf = DB::table('documents')
+                ->where('id', $receipt_entry->pdf_document_id)
+                ->first();
+            
+            if ($existingPdf && !empty($existingPdf->myfile)) {
+                // PDF exists in AWS, return it
+                if ($request->has('download')) {
+                    // Force download with proper headers
+                    $headers = [
+                        'Content-Type' => 'application/pdf',
+                        'Content-Disposition' => 'attachment; filename="' . $existingPdf->file_name . '"',
+                    ];
+                    return redirect()->away($existingPdf->myfile)->withHeaders($headers);
+                } else {
+                    // Stream in browser
+                    return redirect()->away($existingPdf->myfile);
+                }
+            }
+        }
+        
+        // ============= PDF DATA PREPARATION =============
 
         $record_get_Professional_Fee_cnt = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Professional Fee')->count();
         //dd($record_get_Professional_Fee_cnt);
@@ -7620,9 +7701,40 @@ class ClientsController extends Controller
         ->sum('balance_amount');
 
         $clientname = DB::table('admins')->where('id',$record_get[0]->client_id)->first();
+        
+        // Validate client exists
+        if (!$clientname) {
+            abort(404, 'Client not found for this invoice');
+        }
+        
+        // Get client's current address from client_addresses table
+        $clientAddress = DB::table('client_addresses')
+            ->where('client_id', $record_get[0]->client_id)
+            ->where('is_current', 1)
+            ->first();
+        
+        // If no current address, get the most recent one
+        if (!$clientAddress) {
+            $clientAddress = DB::table('client_addresses')
+                ->where('client_id', $record_get[0]->client_id)
+                ->orderBy('created_at', 'desc')
+                ->first();
+        }
+        
+        // Merge address data into clientname object
+        if ($clientAddress) {
+            $clientname->address = $clientAddress->address_line_1 ?? $clientAddress->address ?? '';
+            if (!empty($clientAddress->address_line_2)) {
+                $clientname->address .= (!empty($clientname->address) ? ', ' : '') . $clientAddress->address_line_2;
+            }
+            $clientname->city = $clientAddress->suburb ?? $clientAddress->city ?? '';
+            $clientname->state = $clientAddress->state ?? '';
+            $clientname->zip = $clientAddress->zip ?? '';
+            $clientname->country = $clientAddress->country ?? '';
+        }
 
         //Get payment method
-        if( !empty($record_get) && $record_get[0]->invoice_no != '') {
+        if( $record_get->count() > 0 && $record_get[0]->invoice_no != '') {
             $invoice_payment_method = '';
             $office_receipt = DB::table('account_client_receipts')->select('payment_method')->where('receipt_type',2)->where('invoice_no',$record_get[0]->invoice_no)->first();
             if($office_receipt){
@@ -7640,8 +7752,11 @@ class ClientsController extends Controller
         }
 
         //Get client matter
-        if( !empty($record_get) && $record_get[0]->client_matter_id != '') {
+        if( $record_get->count() > 0 && !empty($record_get[0]->client_matter_id)) {
             $client_matter_no = '';
+            $client_matter_name = '';
+            $client_matter_display = '';
+            
             $client_info = DB::table('admins')->select('client_id')->where('id',$record_get[0]->client_id)->first();
             if($client_info){
                 $client_unique_id = $client_info->client_id; //dd($client_unique_id);
@@ -7649,50 +7764,158 @@ class ClientsController extends Controller
                 $client_unique_id = '';
             }
 
-            $matter_info = DB::table('client_matters')->select('client_unique_matter_no')->where('id',$record_get[0]->client_matter_id)->first();
+            $matter_info = DB::table('client_matters')
+                ->join('matters', 'matters.id', '=', 'client_matters.sel_matter_id')
+                ->select('client_matters.client_unique_matter_no', 'matters.title as matter_name', 'matters.nick_name')
+                ->where('client_matters.id', $record_get[0]->client_matter_id)
+                ->first();
+            
             if($matter_info){
                 $client_unique_matter_no = $matter_info->client_unique_matter_no;
                 $client_matter_no = $client_unique_id.'-'.$client_unique_matter_no;
+                
+                // Use full title (matter_name)
+                $client_matter_name = $matter_info->matter_name ?? '';
+                
+                // Create display string with both name and number
+                if (!empty($client_matter_name)) {
+                    $client_matter_display = $client_matter_name . ' (' . $client_matter_no . ')';
+                } else {
+                    $client_matter_display = $client_matter_no;
+                }
             } else {
                 $client_unique_matter_no = '';
                 $client_matter_no = '';
+                $client_matter_display = '';
             }
         } else {
             $client_unique_matter_no = '';
             $client_matter_no = '';
+            $client_matter_display = '';
         }
 
-        $pdf = PDF::setOptions([
-			'isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true,
-			'logOutputFile' => storage_path('logs/log.htm'),
-			'tempDir' => storage_path('logs/')
-		])->loadView('emails.geninvoice',compact(
-            ['record_get',
-            'record_get_Professional_Fee_cnt',
-            'record_get_Department_Charges_cnt',
-            'record_get_Surcharge_cnt',
-            'record_get_Disbursements_cnt',
-            'record_get_Other_Cost_cnt',
-            'record_get_Discount_cnt',
+        try {
+            // Generate PDF if it doesn't exist or was deleted
+            $pdf = PDF::setOptions([
+                'isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true,
+                'logOutputFile' => storage_path('logs/log.htm'),
+                'tempDir' => storage_path('logs/')
+            ])->loadView('emails.geninvoice',compact(
+                ['record_get',
+                'record_get_Professional_Fee_cnt',
+                'record_get_Department_Charges_cnt',
+                'record_get_Surcharge_cnt',
+                'record_get_Disbursements_cnt',
+                'record_get_Other_Cost_cnt',
+                'record_get_Discount_cnt',
 
-            'record_get_Professional_Fee',
-            'record_get_Department_Charges',
-            'record_get_Surcharge',
-            'record_get_Disbursements',
-            'record_get_Other_Cost',
-            'record_get_Discount',
+                'record_get_Professional_Fee',
+                'record_get_Department_Charges',
+                'record_get_Surcharge',
+                'record_get_Disbursements',
+                'record_get_Other_Cost',
+                'record_get_Discount',
 
-            'total_Gross_Amount',
-            'total_Invoice_Amount',
-            'total_GST_amount',
-            'total_Pending_amount',
+                'total_Gross_Amount',
+                'total_Invoice_Amount',
+                'total_GST_amount',
+                'total_Pending_amount',
 
-            'clientname',
-            'invoice_payment_method',
-            'client_matter_no'
-        ]));
-		//
-		return $pdf->stream('Invoice.pdf');
+                'clientname',
+                'invoice_payment_method',
+                'client_matter_no',
+                'client_matter_display'
+            ]));
+            
+            // Save PDF to AWS S3
+            $pdfContent = $pdf->output();
+            $fileName = 'Invoice-' . ($record_get[0]->invoice_no ?? $id) . '.pdf';
+            $client_unique_id = $clientname->client_id ?? 'unknown';
+            $docType = 'invoices'; // Category for S3 storage
+            $s3FileName = time() . '_' . uniqid() . '_' . $fileName;
+            $filePath = $client_unique_id . '/' . $docType . '/' . $s3FileName;
+            
+            // Upload to S3
+            Storage::disk('s3')->put($filePath, $pdfContent);
+            $s3Url = Storage::disk('s3')->url($filePath);
+            
+            // Get authenticated user ID
+            $userId = Auth::check() ? Auth::user()->id : 1;
+            
+            // Save document reference in database
+            $document = new \App\Models\Document;
+            $document->file_name = $fileName;
+            $document->filetype = 'pdf';
+            $document->user_id = $userId;
+            $document->myfile = $s3Url;
+            $document->myfile_key = $s3FileName;
+            $document->client_id = $record_get[0]->client_id;
+            $document->type = 'invoice'; // Document type identifier
+            $document->doc_type = $docType;
+            $document->file_size = strlen($pdfContent);
+            $document->save();
+            
+            // Update account_client_receipts with PDF document ID
+            DB::table('account_client_receipts')
+                ->where('receipt_id', $id)
+                ->where('receipt_type', 3)
+                ->update(['pdf_document_id' => $document->id]);
+            
+            // Return appropriate response
+            if ($request->has('download')) {
+                // Force download
+                $headers = [
+                    'Content-Type' => 'application/pdf',
+                    'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+                ];
+                return redirect()->away($s3Url)->withHeaders($headers);
+            } else {
+                // Stream in browser
+                return redirect()->away($s3Url);
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('PDF Generation/Upload Error: ' . $e->getMessage(), [
+                'invoice_id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Fall back to direct PDF generation
+            $pdf = PDF::setOptions([
+                'isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true,
+                'logOutputFile' => storage_path('logs/log.htm'),
+                'tempDir' => storage_path('logs/')
+            ])->loadView('emails.geninvoice',compact(
+                ['record_get',
+                'record_get_Professional_Fee_cnt',
+                'record_get_Department_Charges_cnt',
+                'record_get_Surcharge_cnt',
+                'record_get_Disbursements_cnt',
+                'record_get_Other_Cost_cnt',
+                'record_get_Discount_cnt',
+
+                'record_get_Professional_Fee',
+                'record_get_Department_Charges',
+                'record_get_Surcharge',
+                'record_get_Disbursements',
+                'record_get_Other_Cost',
+                'record_get_Discount',
+
+                'total_Gross_Amount',
+                'total_Invoice_Amount',
+                'total_GST_amount',
+                'total_Pending_amount',
+
+                'clientname',
+                'invoice_payment_method',
+                'client_matter_no',
+                'client_matter_display'
+            ]));
+            
+            return $pdf->stream('Invoice-' . ($record_get[0]->invoice_no ?? $id) . '.pdf');
+        }
+        
+        // ============= END CACHING LOGIC =============
 	}
 
     public function uploadclientreceiptdocument(Request $request){ // dd($request->all());
@@ -8669,7 +8892,7 @@ class ClientsController extends Controller
 
     public function journalreceiptlist(Request $request)
 	{
-		$query 	= AccountClientReceipt::select('id','receipt_id','client_id','user_id','trans_date','entry_date','trans_no', 'invoice_no','payment_method','validate_receipt','voided_or_validated_by', DB::raw('sum(withdrawal_amount) as total_withdrawal_amount'))->where('receipt_type',4)->groupBy('receipt_id');
+		$query 	= AccountClientReceipt::select('id','receipt_id','client_id','user_id','trans_date','entry_date','trans_no', 'invoice_no','payment_method','validate_receipt','voided_or_validated_by', DB::raw('sum(withdraw_amount) as total_withdrawal_amount'))->where('receipt_type',4)->groupBy('receipt_id');
         
         // Sorting
         $sortBy = $request->input('sort_by', 'id');
@@ -9370,14 +9593,54 @@ class ClientsController extends Controller
 		}
 	}
 
-    public function genClientFundLedgerInvoice(Request $request, $id){
+    public function genClientFundReceipt(Request $request, $id){
         $record_get = DB::table('account_client_receipts')->where('receipt_type',1)->where('id',$id)->first();
         //dd($record_get);
+        
+        // Validate receipt exists
+        if (!$record_get) {
+            abort(404, 'Receipt not found');
+        }
+        
         $clientname = DB::table('admins')->where('id',$record_get->client_id)->first();
+        
+        // Validate client exists
+        if (!$clientname) {
+            abort(404, 'Client not found');
+        }
+        
+        // Get client's current address from client_addresses table
+        $clientAddress = DB::table('client_addresses')
+            ->where('client_id', $record_get->client_id)
+            ->where('is_current', 1)
+            ->first();
+        
+        // If no current address, get the most recent one
+        if (!$clientAddress) {
+            $clientAddress = DB::table('client_addresses')
+                ->where('client_id', $record_get->client_id)
+                ->orderBy('created_at', 'desc')
+                ->first();
+        }
+        
+        // Merge address data into clientname object
+        if ($clientAddress) {
+            $clientname->address = $clientAddress->address_line_1 ?? $clientAddress->address ?? '';
+            if (!empty($clientAddress->address_line_2)) {
+                $clientname->address .= (!empty($clientname->address) ? ', ' : '') . $clientAddress->address_line_2;
+            }
+            $clientname->city = $clientAddress->suburb ?? $clientAddress->city ?? '';
+            $clientname->state = $clientAddress->state ?? '';
+            $clientname->zip = $clientAddress->zip ?? '';
+            $clientname->country = $clientAddress->country ?? '';
+        }
 
         //Get client matter
         if( !empty($record_get) && $record_get->client_id != '') {
             $client_matter_no = '';
+            $client_matter_name = '';
+            $client_matter_display = '';
+            
             $client_info = DB::table('admins')->select('client_id')->where('id',$record_get->client_id)->first();
             if($client_info){
                 $client_unique_id = $client_info->client_id; //dd($client_unique_id);
@@ -9385,35 +9648,196 @@ class ClientsController extends Controller
                 $client_unique_id = '';
             }
 
-            $matter_info = DB::table('client_matters')->select('client_unique_matter_no')->where('client_id',$record_get->client_id)->first();
+            $matter_info = DB::table('client_matters')
+                ->join('matters', 'matters.id', '=', 'client_matters.sel_matter_id')
+                ->select('client_matters.client_unique_matter_no', 'matters.title as matter_name', 'matters.nick_name')
+                ->where('client_matters.client_id', $record_get->client_id)
+                ->first();
+            
             if($matter_info){
                 $client_unique_matter_no = $matter_info->client_unique_matter_no;
                 $client_matter_no = $client_unique_id.'-'.$client_unique_matter_no;
+                
+                // Use full title (matter_name)
+                $client_matter_name = $matter_info->matter_name ?? '';
+                
+                // Create display string with both name and number
+                if (!empty($client_matter_name)) {
+                    $client_matter_display = $client_matter_name . ' (' . $client_matter_no . ')';
+                } else {
+                    $client_matter_display = $client_matter_no;
+                }
             } else {
                 $client_unique_matter_no = '';
                 $client_matter_no = '';
+                $client_matter_display = '';
             }
         } else {
             $client_matter_no = '';
+            $client_matter_display = '';
         }
 
-        $pdf = PDF::setOptions([
-			'isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true,
-			'logOutputFile' => storage_path('logs/log.htm'),
-			'tempDir' => storage_path('logs/')
-		])->loadView('emails.genclientfundledgerinvoice',compact(['record_get','clientname','client_matter_no']));
-		//
-		return $pdf->stream('Invoice.pdf');
+        // Check if PDF already exists in AWS
+        if (!empty($record_get->pdf_document_id)) {
+            $existingPdf = DB::table('documents')
+                ->where('id', $record_get->pdf_document_id)
+                ->first();
+            
+            if ($existingPdf && !empty($existingPdf->myfile)) {
+                // PDF exists in AWS, return it
+                if ($request->has('download')) {
+                    // Force download with proper headers
+                    $headers = [
+                        'Content-Type' => 'application/pdf',
+                        'Content-Disposition' => 'attachment; filename="' . $existingPdf->file_name . '"',
+                    ];
+                    return redirect()->away($existingPdf->myfile)->withHeaders($headers);
+                } else {
+                    // Stream in browser
+                    return redirect()->away($existingPdf->myfile);
+                }
+            }
+        }
+        
+        try {
+            // Generate PDF if it doesn't exist or was deleted
+            $pdf = PDF::setOptions([
+                'isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true,
+                'logOutputFile' => storage_path('logs/log.htm'),
+                'tempDir' => storage_path('logs/')
+            ])->loadView('emails.genclientfundreceipt',compact(['record_get','clientname','client_matter_no','client_matter_display']));
+            
+            // Save PDF to AWS S3
+            $pdfContent = $pdf->output();
+            $fileName = 'Receipt-' . ($record_get->trans_no ?? $id) . '.pdf';
+            $client_unique_id = $clientname->client_id ?? 'unknown';
+            $docType = 'receipts';
+            $s3FileName = time() . '_' . uniqid() . '_' . $fileName;
+            $filePath = $client_unique_id . '/' . $docType . '/' . $s3FileName;
+            
+            // Upload to S3
+            Storage::disk('s3')->put($filePath, $pdfContent);
+            $s3Url = Storage::disk('s3')->url($filePath);
+            
+            // Get authenticated user ID
+            $userId = Auth::check() ? Auth::user()->id : 1;
+            
+            // Save document reference in database
+            $document = new \App\Models\Document;
+            $document->file_name = $fileName;
+            $document->filetype = 'pdf';
+            $document->user_id = $userId;
+            $document->myfile = $s3Url;
+            $document->myfile_key = $s3FileName;
+            $document->client_id = $record_get->client_id;
+            $document->type = 'client_fund_receipt';
+            $document->doc_type = $docType;
+            $document->file_size = strlen($pdfContent);
+            $document->save();
+            
+            // Update account_client_receipts with PDF document ID
+            DB::table('account_client_receipts')
+                ->where('id', $id)
+                ->update(['pdf_document_id' => $document->id]);
+            
+            // Return appropriate response
+            if ($request->has('download')) {
+                // Force download
+                $headers = [
+                    'Content-Type' => 'application/pdf',
+                    'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+                ];
+                return redirect()->away($s3Url)->withHeaders($headers);
+            } else {
+                // Stream in browser
+                return redirect()->away($s3Url);
+            }
+            
+        } catch (\Exception $e) {
+            \Log::error('PDF Generation/Upload Error: ' . $e->getMessage(), [
+                'receipt_id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Fall back to direct PDF generation
+            return $pdf->stream('Receipt-' . ($record_get->trans_no ?? $id) . '.pdf');
+        }
 	}
 
     public function genofficereceiptInvoice(Request $request, $id){
         $record_get = DB::table('account_client_receipts')->where('receipt_type',2)->where('id',$id)->first();
         //dd($record_get);
+        
+        // Validate receipt exists
+        if (!$record_get) {
+            abort(404, 'Receipt not found');
+        }
+        
+        // ============= START CACHING LOGIC =============
+        
+        // Check if PDF already exists in AWS
+        if (!empty($record_get->pdf_document_id)) {
+            $existingPdf = DB::table('documents')
+                ->where('id', $record_get->pdf_document_id)
+                ->first();
+            
+            if ($existingPdf && !empty($existingPdf->myfile)) {
+                // PDF exists in AWS, return it
+                if ($request->has('download')) {
+                    // Force download with proper headers
+                    $headers = [
+                        'Content-Type' => 'application/pdf',
+                        'Content-Disposition' => 'attachment; filename="' . $existingPdf->file_name . '"',
+                    ];
+                    return redirect()->away($existingPdf->myfile)->withHeaders($headers);
+                } else {
+                    // Stream in browser
+                    return redirect()->away($existingPdf->myfile);
+                }
+            }
+        }
+        
+        // ============= PDF DATA PREPARATION =============
+        
         $clientname = DB::table('admins')->where('id',$record_get->client_id)->first();
+        
+        // Validate client exists
+        if (!$clientname) {
+            abort(404, 'Client not found');
+        }
+        
+        // Get client's current address from client_addresses table
+        $clientAddress = DB::table('client_addresses')
+            ->where('client_id', $record_get->client_id)
+            ->where('is_current', 1)
+            ->first();
+        
+        // If no current address, get the most recent one
+        if (!$clientAddress) {
+            $clientAddress = DB::table('client_addresses')
+                ->where('client_id', $record_get->client_id)
+                ->orderBy('created_at', 'desc')
+                ->first();
+        }
+        
+        // Merge address data into clientname object
+        if ($clientAddress) {
+            $clientname->address = $clientAddress->address_line_1 ?? $clientAddress->address ?? '';
+            if (!empty($clientAddress->address_line_2)) {
+                $clientname->address .= (!empty($clientname->address) ? ', ' : '') . $clientAddress->address_line_2;
+            }
+            $clientname->city = $clientAddress->suburb ?? $clientAddress->city ?? '';
+            $clientname->state = $clientAddress->state ?? '';
+            $clientname->zip = $clientAddress->zip ?? '';
+            $clientname->country = $clientAddress->country ?? '';
+        }
 
         //Get client matter
-        if( !empty($record_get) && $record_get->client_id != '') {
+        if( !empty($record_get) && !empty($record_get->client_matter_id)) {
             $client_matter_no = '';
+            $client_matter_name = '';
+            $client_matter_display = '';
+            
             $client_info = DB::table('admins')->select('client_id')->where('id',$record_get->client_id)->first();
             if($client_info){
                 $client_unique_id = $client_info->client_id; //dd($client_unique_id);
@@ -9421,25 +9845,106 @@ class ClientsController extends Controller
                 $client_unique_id = '';
             }
 
-            $matter_info = DB::table('client_matters')->select('client_unique_matter_no')->where('client_id',$record_get->client_id)->first();
+            $matter_info = DB::table('client_matters')
+                ->join('matters', 'matters.id', '=', 'client_matters.sel_matter_id')
+                ->select('client_matters.client_unique_matter_no', 'matters.title as matter_name', 'matters.nick_name')
+                ->where('client_matters.id', $record_get->client_matter_id)
+                ->first();
+            
             if($matter_info){
                 $client_unique_matter_no = $matter_info->client_unique_matter_no;
                 $client_matter_no = $client_unique_id.'-'.$client_unique_matter_no;
+                
+                // Use full title (matter_name)
+                $client_matter_name = $matter_info->matter_name ?? '';
+                
+                // Create display string with both name and number
+                if (!empty($client_matter_name)) {
+                    $client_matter_display = $client_matter_name . ' (' . $client_matter_no . ')';
+                } else {
+                    $client_matter_display = $client_matter_no;
+                }
             } else {
                 $client_unique_matter_no = '';
                 $client_matter_no = '';
+                $client_matter_display = '';
             }
         } else {
             $client_matter_no = '';
+            $client_matter_display = '';
         }
 
-        $pdf = PDF::setOptions([
-			'isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true,
-			'logOutputFile' => storage_path('logs/log.htm'),
-			'tempDir' => storage_path('logs/')
-		])->loadView('emails.genofficereceiptinvoice',compact(['record_get','clientname','client_matter_no']));
-		//
-		return $pdf->stream('Invoice.pdf');
+        try {
+            // Generate PDF if it doesn't exist or was deleted
+            $pdf = PDF::setOptions([
+                'isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true,
+                'logOutputFile' => storage_path('logs/log.htm'),
+                'tempDir' => storage_path('logs/')
+            ])->loadView('emails.genofficereceipt',compact(['record_get','clientname','client_matter_no','client_matter_display']));
+            
+            // Save PDF to AWS S3
+            $pdfContent = $pdf->output();
+            $fileName = 'Office-Receipt-' . ($record_get->trans_no ?? $id) . '.pdf';
+            $client_unique_id = $clientname->client_id ?? 'unknown';
+            $docType = 'office_receipts'; // Category for S3 storage
+            $s3FileName = time() . '_' . uniqid() . '_' . $fileName;
+            $filePath = $client_unique_id . '/' . $docType . '/' . $s3FileName;
+            
+            // Upload to S3
+            Storage::disk('s3')->put($filePath, $pdfContent);
+            $s3Url = Storage::disk('s3')->url($filePath);
+            
+            // Get authenticated user ID
+            $userId = Auth::check() ? Auth::user()->id : 1;
+            
+            // Save document reference in database
+            $document = new \App\Models\Document;
+            $document->file_name = $fileName;
+            $document->filetype = 'pdf';
+            $document->user_id = $userId;
+            $document->myfile = $s3Url;
+            $document->myfile_key = $s3FileName;
+            $document->client_id = $record_get->client_id;
+            $document->type = 'office_receipt'; // Document type identifier
+            $document->doc_type = $docType;
+            $document->file_size = strlen($pdfContent);
+            $document->save();
+            
+            // Update account_client_receipts with PDF document ID
+            DB::table('account_client_receipts')
+                ->where('id', $id)
+                ->update(['pdf_document_id' => $document->id]);
+            
+            // Return appropriate response
+            if ($request->has('download')) {
+                // Force download
+                $headers = [
+                    'Content-Type' => 'application/pdf',
+                    'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+                ];
+                return redirect()->away($s3Url)->withHeaders($headers);
+            } else {
+                // Stream in browser
+                return redirect()->away($s3Url);
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('PDF Generation/Upload Error: ' . $e->getMessage(), [
+                'office_receipt_id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Fall back to direct PDF generation
+            $pdf = PDF::setOptions([
+                'isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true,
+                'logOutputFile' => storage_path('logs/log.htm'),
+                'tempDir' => storage_path('logs/')
+            ])->loadView('emails.genofficereceipt',compact(['record_get','clientname','client_matter_no','client_matter_display']));
+            
+            return $pdf->stream('Office-Receipt-' . ($record_get->trans_no ?? $id) . '.pdf');
+        }
+        
+        // ============= END CACHING LOGIC =============
 	}
 
     /*public function updateClientFundsLedger(Request $request)
@@ -9527,6 +10032,29 @@ class ClientsController extends Controller
             ]);
 
         if ($updated) {
+            // Delete cached PDF since receipt was updated
+            if (!empty($entry->pdf_document_id)) {
+                $pdfDoc = DB::table('documents')->where('id', $entry->pdf_document_id)->first();
+                if ($pdfDoc && !empty($pdfDoc->myfile_key)) {
+                    // Delete from S3
+                    $client_unique_id = DB::table('admins')->where('id', $entry->client_id)->value('client_id');
+                    if ($client_unique_id) {
+                        $s3Path = $client_unique_id . '/receipts/' . $pdfDoc->myfile_key;
+                        try {
+                            Storage::disk('s3')->delete($s3Path);
+                        } catch (\Exception $e) {
+                            Log::warning('Failed to delete PDF from S3: ' . $e->getMessage(), ['path' => $s3Path]);
+                        }
+                    }
+                }
+                // Delete document record
+                DB::table('documents')->where('id', $entry->pdf_document_id)->delete();
+                // Clear PDF reference
+                DB::table('account_client_receipts')
+                    ->where('id', $id)
+                    ->update(['pdf_document_id' => null]);
+            }
+            
             // Recalculate balances for all entries
             $entries = DB::table('account_client_receipts')
                 ->where('client_id', $entry->client_id)
@@ -11084,7 +11612,8 @@ class ClientsController extends Controller
 
                 'clientname',
                 'invoice_payment_method',
-                'client_matter_no'
+                'client_matter_no',
+                'client_matter_display'
             ]));
 
             // Save PDF to temporary file

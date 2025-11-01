@@ -184,10 +184,10 @@
                                         <?php echo $rec_val->trans_no;?> <i class="fas fa-caret-down" style="font-size: 11px; opacity: 0.6; margin-left: 3px;"></i>
                                     </span>
                                     <div class="dropdown-menu" aria-labelledby="dropdownReceipt{{$rec_val->id}}">
-                                        <a class="dropdown-item" href="{{URL::to('/clients/genClientFundLedgerInvoice')}}/{{$rec_val->id}}" target="_blank">
+                                        <a class="dropdown-item" href="{{URL::to('/clients/genClientFundReceipt')}}/{{$rec_val->id}}" target="_blank">
                                             <i class="fas fa-eye"></i> View Receipt
                                         </a>
-                                        <a class="dropdown-item" href="{{URL::to('/clients/genClientFundLedgerInvoice')}}/{{$rec_val->id}}" download>
+                                        <a class="dropdown-item" href="{{URL::to('/clients/genClientFundReceipt')}}/{{$rec_val->id}}?download=1">
                                             <i class="fas fa-download"></i> Download PDF
                                         </a>
                                         <?php if($rec_val->client_fund_ledger_type !== 'Fee Transfer'){ ?>
@@ -294,7 +294,7 @@
                                                 <a class="dropdown-item" href="{{URL::to('/clients/genInvoice')}}/{{$inc_val->receipt_id}}" target="_blank">
                                                     <i class="fas fa-eye"></i> View Invoice
                                                 </a>
-                                                <a class="dropdown-item" href="{{URL::to('/clients/genInvoice')}}/{{$inc_val->receipt_id}}" download>
+                                                <a class="dropdown-item" href="{{URL::to('/clients/genInvoice')}}/{{$inc_val->receipt_id}}?download=1">
                                                     <i class="fas fa-download"></i> Download PDF
                                                 </a>
                                                 <?php } ?>
@@ -469,10 +469,10 @@
                                         </span>
                                         <div class="dropdown-menu" aria-labelledby="dropdownOffice{{$off_val->id}}">
                                             <?php if(isset($off_val->save_type) && $off_val->save_type == 'final') { ?>
-                                            <a class="dropdown-item" href="{{URL::to('/clients/genofficereceiptInvoice')}}/{{$off_val->id}}" target="_blank">
+                                            <a class="dropdown-item" href="{{URL::to('/clients/genOfficeReceipt')}}/{{$off_val->id}}" target="_blank">
                                                 <i class="fas fa-eye"></i> View Receipt
                                             </a>
-                                            <a class="dropdown-item" href="{{URL::to('/clients/genofficereceiptInvoice')}}/{{$off_val->id}}" download>
+                                            <a class="dropdown-item" href="{{URL::to('/clients/genOfficeReceipt')}}/{{$off_val->id}}?download=1">
                                                 <i class="fas fa-download"></i> Download PDF
                                             </a>
                                             <?php } ?>

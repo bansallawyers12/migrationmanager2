@@ -206,8 +206,8 @@ Route::get('/clients/journalreceiptlist', 'CRM\ClientsController@journalreceiptl
 Route::post('/validate_receipt','CRM\ClientsController@validate_receipt')->name('client.validate_receipt');
 Route::post('/delete_receipt','CRM\ClientsController@delete_receipt');
 
-Route::get('/clients/genClientFundLedgerInvoice/{id}', 'CRM\ClientsController@genClientFundLedgerInvoice');
-Route::get('/clients/genofficereceiptInvoice/{id}', 'CRM\ClientsController@genofficereceiptInvoice');
+Route::get('/clients/genClientFundReceipt/{id}', 'CRM\ClientsController@genClientFundReceipt');
+Route::get('/clients/genOfficeReceipt/{id}', 'CRM\ClientsController@genofficereceiptInvoice');
 Route::post('/update-client-funds-ledger', 'CRM\ClientsController@updateClientFundsLedger')->name('clients.update-client-funds-ledger');
 Route::post('/update-office-receipt', 'CRM\ClientsController@updateOfficeReceipt')->name('clients.updateOfficeReceipt');
 Route::post('/get-invoices-by-matter', 'CRM\ClientsController@getInvoicesByMatter')->name('clients.getInvoicesByMatter');

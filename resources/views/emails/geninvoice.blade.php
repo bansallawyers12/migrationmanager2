@@ -1,429 +1,474 @@
 <!doctype html>
 <html>
-	<head>
-		<style>
-			body{font-family: 'Open Sans', sans-serif;margin:0px;}
-			.inv_table{vertical-align: top;}
-			.invoice_table table{border-collapse: collapse;}
-			.inv_table table thead{background:#eee;}
-			.inv_table table thead tr th{padding:10px;text-align:left;}
-			.inv_table table tbody tr td{padding:8px;}
-			.inv_table table thead tr th, .inv_table table tbody tr td{font-size:14px;line-height: 18px;vertical-align: top;}
-			.inv_table table tbody tr.total_val td{background:#ccc;padding: 20px 10px;}
-		</style>
-	</head>
-	<body>
-	<?php
-	$admin = \App\Models\Admin::where('role',1)->first();
-	?>
-		<div class="invoice_table" style="padding: 10px;">
-			<table width="100%" border="0">
-				<tbody>
-					<tr>
-						<td style="text-align: left;">
-							<img width="80" style="height:auto;display:block;" src="{{URL::to('img/')}}/logo.png" alt="Logo"/>
-							<p style="font-size: 15px;line-height: 21px;color: #333;font-weight: normal;">
-								BANSAL IMMIGRATION<br/>
-								Level 8,278 Collins Street<br/>
-								Melbourne VIC 3000<br/>
-								E-mail: invoice@bansalimmigration.com.au<br/>
-								Phone: 03 96021330
-							</p>
-						</td>
-						<td style="text-align: right;">
-							<h2 style="color:#3abaf4">Tax Invoice</h2>
-							<p style="font-size: 15px;line-height: 21px;color: #333;font-weight: normal;margin: 10px 0px 0px;">
-								<b>ABN 70 958 120 428 </b><br/>
-								<b>ISSUED:</b> {{ $record_get[0]->trans_date }}<br/>
-                                <b>DUE:</b> {{ \Carbon\Carbon::createFromFormat('d/m/Y', $record_get[0]->trans_date)->addDays(15)->format('d/m/Y') }}<br/>
-								<b>INVOICE NO:</b> {{$record_get[0]->invoice_no}}
-							</p>
-						</td>
-					</tr>
-					<tr>
-						<td colspan="3"></td>
-					</tr>
-					<tr>
-						<td colspan="3"></td>
-					</tr>
-					<tr>
-						<td colspan="3"></td>
-					</tr>
-					<tr>
-						<td colspan="2">
-							<span style="font-size: 18px;line-height: 21px;color: #000;margin: 20px 0px 0px;display:block;"><b>Bill To:</b></span>
-							<p style="font-size: 13px;line-height: 16px;color: #000;font-weight: normal;margin: 0px 0px 5px;">
-								{{@$clientname->first_name}} {{@$clientname->last_name}}<br/>
-								{{$clientname->address}}<br/>
-								{{$clientname->state}} {{$clientname->city}} {{$clientname->zip}}<br/>
-								{{$clientname->country}}
-							</p>
-						</td>
-					</tr>
-					<td colspan="3" style="padding:10px;"></td>
-					<tr>
-						<td colspan="3">Matter: {{ $client_matter_no }}</td>
-					</tr>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: 'Helvetica Neue', 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #333;
+            line-height: 1.4;
+        }
+        .invoice_table {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 8px;
+        }
+        .header-section {
+            border-bottom: 3px solid #3abaf4;
+            padding-bottom: 10px;
+            margin-bottom: 12px;
+        }
+        .company-info {
+            font-size: 13px;
+            line-height: 1.6;
+            color: #555;
+            margin-top: 8px;
+        }
+        .company-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        .document-title {
+            font-size: 26px;
+            font-weight: 700;
+            color: #3abaf4;
+            margin: 0 0 10px 0;
+            letter-spacing: -0.5px;
+        }
+        .document-info {
+            font-size: 13px;
+            line-height: 1.7;
+            color: #555;
+        }
+        .document-info b {
+            color: #333;
+            font-weight: 600;
+        }
+        .section-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #333;
+            margin: 10px 0 8px 0;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .bill-to-section {
+            background: #f9f9f9;
+            padding: 10px 12px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .bill-to-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .bill-to-content {
+            font-size: 13px;
+            line-height: 1.5;
+            color: #555;
+        }
+        .matter-info {
+            font-size: 13px;
+            color: #555;
+            margin: 8px 0;
+        }
+        .ledger-table-wrapper {
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .ledger-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .ledger-table thead {
+            background: #3abaf4;
+        }
+        .ledger-table thead th {
+            padding: 10px 8px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 700;
+            color: #ffffff !important;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .ledger-table tbody tr {
+            border-bottom: 1px solid #eee;
+        }
+        .ledger-table tbody td {
+            padding: 9px 8px;
+            font-size: 12px;
+            color: #555;
+        }
+        .ledger-table thead th:last-child,
+        .ledger-table tbody td:last-child,
+        .ledger-table thead th:nth-child(3),
+        .ledger-table tbody td:nth-child(3) {
+            text-align: right;
+        }
+        .totals-section {
+            margin: 12px 0;
+            padding: 10px 12px;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+        .totals-row {
+            display: table;
+            width: 100%;
+            padding: 3px 0;
+            font-size: 13px;
+        }
+        .totals-label {
+            display: table-cell;
+            text-align: right;
+            padding-right: 15px;
+            color: #555;
+            font-weight: 600;
+        }
+        .totals-value {
+            display: table-cell;
+            text-align: right;
+            width: 150px;
+            color: #333;
+            font-weight: 700;
+        }
+        .payment-instructions {
+            padding: 10px 12px;
+            background: #f0f8ff;
+            border-left: 4px solid #3abaf4;
+            margin-top: 12px;
+            font-size: 12px;
+            color: #555;
+            line-height: 1.6;
+        }
+        .payment-instructions p {
+            margin: 5px 0;
+        }
+        .bank-details {
+            background: #fff;
+            padding: 8px 10px;
+            border-radius: 4px;
+            margin-top: 8px;
+            font-size: 12px;
+            line-height: 1.7;
+        }
+        .payment-method-highlight {
+            color: #333;
+            font-weight: 700;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    @php
+        $logoPath = public_path('img/logo.png');
+        $logoData = '';
+        if(file_exists($logoPath)) {
+            $logoData = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
+        }
+    @endphp
+    
+    <div class="invoice_table">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+            <tr class="header-section">
+                <td style="text-align: left; width: 50%; vertical-align: top;">
+                    @if($logoData)
+                        <img width="85" style="height:auto;display:block;margin-bottom:10px;" src="{{$logoData}}" alt="Logo"/>
+                    @else
+                        <div style="width:85px;height:55px;background:#3abaf4;display:block;margin-bottom:10px;"></div>
+                    @endif
+                    <div class="company-name">BANSAL IMMIGRATION</div>
+                    <div class="company-info">
+                        Level 8, 278 Collins Street<br/>
+                        Melbourne VIC 3000<br/>
+                        E-mail: invoice@bansalimmigration.com.au<br/>
+                        Phone: 03 96021330
+                    </div>
+                </td>
+                <td style="text-align: right; width: 50%; vertical-align: top;">
+                    <h1 class="document-title">Tax Invoice</h1>
+                    <div class="document-info">
+                        <b>ABN</b> 70 958 120 428<br/>
+                        <b>Invoice Date:</b> {{$record_get[0]->trans_date}}<br/>
+                        <b>Due Date:</b> {{ \Carbon\Carbon::createFromFormat('d/m/Y', $record_get[0]->trans_date)->addDays(15)->format('d/m/Y') }}<br/>
+                        <b>Invoice No:</b> {{$record_get[0]->invoice_no}}
+                    </div>
+                </td>
+            </tr>
+        </table>
 
-					<?php
-					if($record_get_Professional_Fee_cnt >0 )
-					{ ?>
-						<tr>
-							<td colspan="3"><h4>Professional Fee</h4></td>
-						</tr>
-						<tr>
-							<td class="inv_table" colspan="3">
-								<table width="100%" border="1">
-									<tbody>
-										<tr>
-											<td style="padding:0px;">
-												<table width="100%" border="0">
-													<thead>
-														<tr>
-															<th>Date</th>
-															<th>Description</th>
-															<th>Unit Price</th>
-															<th>Gst Incl.</th>
-															<th>Amount</th>
-														</tr>
-													</thead>
-													<tbody>
-														<?php
-														if( !empty($record_get_Professional_Fee) ) {
-                                                            foreach($record_get_Professional_Fee as $Professional_Fee) {
-                                                            ?>
-                                                                <tr>
-                                                                    <td>{{@$Professional_Fee->trans_date}}</td>
-                                                                    <td>{{@$Professional_Fee->description}}</td>
-                                                                    <td>
-                                                                        ${{ @$Professional_Fee->gst_included === 'Yes'
-                                                                            ? number_format((float) @$Professional_Fee->withdraw_amount - ((float) @$Professional_Fee->withdraw_amount / 11), 2)
-                                                                            : number_format((float) @$Professional_Fee->withdraw_amount, 2)
-                                                                        }}
-                                                                    </td>
-                                                                    <td>{{@$Professional_Fee->gst_included}}</td>
-                                                                    <td>${{number_format((float) @$Professional_Fee->withdraw_amount, 2)}}</td>
-                                                                </tr>
-                                                            <?php
-                                                            }
-														} ?>
-													</tbody>
-												</table>
-											</td>
-										</tr>
-									</tbody>
-								</table>
-							</td>
-						</tr>
-					<?php
-					} ?>
-					<?php
-					if($record_get_Department_Charges_cnt >0 )
-					{ ?>
-						<tr>
-							<td colspan="3"><h4>Department Charges</h4></td>
-						</tr>
-						<tr>
-							<td class="inv_table" colspan="3">
-								<table width="100%" border="1">
-									<tbody>
-										<tr>
-											<td style="padding:0px;">
-												<table width="100%" border="0">
-													<thead>
-														<tr>
-															<th>Date</th>
-															<th>Description</th>
-															<th>Unit Price</th>
-															<th>Gst Incl.</th>
-															<th>Amount</th>
-														</tr>
-													</thead>
-													<tbody>
-														<?php
-														if( !empty($record_get_Department_Charges) ) {
-                                                            foreach($record_get_Department_Charges as $Department_Charges) {
-                                                            ?>
-                                                                <tr>
-                                                                    <td>{{@$Department_Charges->trans_date}}</td>
-                                                                    <td>{{@$Department_Charges->description}}</td>
-                                                                    <td>
-                                                                        ${{ @$Department_Charges->gst_included === 'Yes'
-                                                                            ? number_format((float) @$Department_Charges->withdraw_amount - ((float) @$Department_Charges->withdraw_amount / 11), 2)
-                                                                            : number_format((float) @$Department_Charges->withdraw_amount, 2)
-                                                                        }}
-                                                                    </td>
-                                                                    <td>{{@$Department_Charges->gst_included}}</td>
-                                                                    <td>${{number_format((float) @$Department_Charges->withdraw_amount, 2)}}</td>
-                                                                </tr>
-                                                            <?php
-                                                            }
-														} ?>
-													</tbody>
-												</table>
-											</td>
-										</tr>
-									</tbody>
-								</table>
-							</td>
-						</tr>
-					<?php
-					} ?>
-					<?php
-					if($record_get_Surcharge_cnt >0 )
-					{ ?>
-						<tr>
-							<td colspan="3"><h4>Surcharge</h4></td>
-						</tr>
-						<tr>
-							<td class="inv_table" colspan="3">
-								<table width="100%" border="1">
-									<tbody>
-										<tr>
-											<td style="padding:0px;">
-												<table width="100%" border="0">
-													<thead>
-														<tr>
-															<th>Date</th>
-															<th>Description</th>
-															<th>Unit Price</th>
-															<th>Gst Incl.</th>
-															<th>Amount</th>
-														</tr>
-													</thead>
-													<tbody>
-														<?php
-														if( !empty($record_get_Surcharge) ) {
-                                                            foreach($record_get_Surcharge as $surcharge) {
-                                                            ?>
-                                                                <tr>
-                                                                    <td>{{@$surcharge->trans_date}}</td>
-                                                                    <td>{{@$surcharge->description}}</td>
-                                                                    <td>
-                                                                        ${{ @$surcharge->gst_included === 'Yes'
-                                                                            ? number_format((float) @$surcharge->withdraw_amount - ((float) @$surcharge->withdraw_amount / 11), 2)
-                                                                            : number_format((float) @$surcharge->withdraw_amount, 2)
-                                                                        }}
-                                                                    </td>
-                                                                    <td>{{@$surcharge->gst_included}}</td>
-                                                                    <td>${{number_format((float) @$surcharge->withdraw_amount, 2)}}</td>
-                                                                </tr>
-                                                            <?php
-                                                            }
-														} ?>
-													</tbody>
-												</table>
-											</td>
-										</tr>
-									</tbody>
-								</table>
-							</td>
-						</tr>
-					<?php
-					} ?>
-					<?php
-					if($record_get_Disbursements_cnt >0 )
-					{ ?>
-						<tr>
-							<td colspan="3"><h4>Disbursements</h4></td>
-						</tr>
-						<tr>
-							<td class="inv_table" colspan="3">
-								<table width="100%" border="1">
-									<tbody>
-										<tr>
-											<td style="padding:0px;">
-												<table width="100%" border="0">
-													<thead>
-                                                        <tr>
-														    <th>Date</th>
-															<th>Description</th>
-															<th>Unit Price</th>
-															<th>Gst Incl.</th>
-															<th>Amount</th>
-                                                        </tr>
-													</thead>
-													<tbody>
-														<?php
-														if( !empty($record_get_Disbursements) ) {
-                                                            foreach($record_get_Disbursements as $disbursements) {
-                                                            ?>
-                                                                <tr>
-                                                                    <td>{{@$disbursements->trans_date}}</td>
-                                                                    <td>{{@$disbursements->description}}</td>
-                                                                    <td>
-                                                                        ${{ @$disbursements->gst_included === 'Yes'
-                                                                            ? number_format((float) @$disbursements->withdraw_amount - ((float) @$disbursements->withdraw_amount / 11), 2)
-                                                                            : number_format((float) @$disbursements->withdraw_amount, 2)
-                                                                        }}
-                                                                    </td>
-                                                                    <td>{{@$disbursements->gst_included}}</td>
-                                                                    <td>${{number_format((float) @$disbursements->withdraw_amount, 2)}}</td>
-                                                                </tr>
-                                                            <?php
-                                                            }
-														} ?>
-													</tbody>
-												</table>
-											</td>
-										</tr>
-									</tbody>
-								</table>
-							</td>
-						</tr>
-					<?php
-					} ?>
+        <div class="bill-to-section">
+            <div class="bill-to-label">Bill To:</div>
+            <div class="bill-to-content">
+                <strong>{{@$clientname->first_name}} {{@$clientname->last_name}}</strong><br/>
+                @if(!empty($clientname->address))
+                    {{$clientname->address}}@if(!empty($clientname->city) || !empty($clientname->state) || !empty($clientname->zip) || !empty($clientname->country)), @endif
+                @endif
+                @php
+                    $addressParts = array_filter([
+                        $clientname->city ?? '',
+                        $clientname->state ?? '',
+                        $clientname->zip ?? '',
+                        $clientname->country ?? ''
+                    ]);
+                @endphp
+                @if(!empty($addressParts))
+                    {{ implode(' ', $addressParts) }}
+                @endif
+            </div>
+        </div>
 
-					<?php
-					if($record_get_Other_Cost_cnt >0 )
-					{ ?>
-						<tr>
-							<td colspan="3"><h4>Other Cost</h4></td>
-						</tr>
-						<tr>
-							<td class="inv_table" colspan="3">
-								<table width="100%" border="1">
-									<tbody>
-										<tr>
-											<td style="padding:0px;">
-												<table width="100%" border="0">
-													<thead>
-														<tr>
-														    <th>Date</th>
-															<th>Description</th>
-															<th>Unit Price</th>
-															<th>Gst Incl.</th>
-															<th>Amount</th>
-                                                        </tr>
-													</thead>
-													<tbody>
-														<?php
-														if( !empty($record_get_Other_Cost) ) {
-                                                            foreach($record_get_Other_Cost as $other_Cost) {
-                                                            ?>
-                                                                <tr>
-                                                                    <td>{{@$other_Cost->trans_date}}</td>
-                                                                    <td>{{@$other_Cost->description}}</td>
-                                                                    <td>
-                                                                        ${{ @$other_Cost->gst_included === 'Yes'
-                                                                            ? number_format((float) @$other_Cost->withdraw_amount - ((float) @$other_Cost->withdraw_amount / 11), 2)
-                                                                            : number_format((float) @$other_Cost->withdraw_amount, 2)
-                                                                        }}
-                                                                    </td>
-                                                                    <td>{{@$other_Cost->gst_included}}</td>
-                                                                    <td>${{number_format((float) @$other_Cost->withdraw_amount, 2)}}</td>
-                                                                </tr>
-                                                            <?php
-                                                            }
-														} ?>
-													</tbody>
-												</table>
-											</td>
-										</tr>
-									</tbody>
-								</table>
-							</td>
-						</tr>
-					<?php
-					} ?>
+        <div class="matter-info">
+            <strong>Matter:</strong> {{ $client_matter_display ?? $client_matter_no ?? 'N/A' }}
+        </div>
 
-                    <?php
-					if($record_get_Discount_cnt >0 )
-					{ ?>
-						<tr>
-							<td colspan="3"><h4>Discount</h4></td>
-						</tr>
-						<tr>
-							<td class="inv_table" colspan="3">
-								<table width="100%" border="1">
-									<tbody>
-										<tr>
-											<td style="padding:0px;">
-												<table width="100%" border="0">
-													<thead>
-														<tr>
-														    <th>Date</th>
-															<th>Description</th>
-															<th>Unit Price</th>
-															<th>Gst Incl.</th>
-															<th>Amount</th>
-                                                        </tr>
-													</thead>
-													<tbody>
-														<?php
-														if( !empty($record_get_Discount) ) {
-                                                            foreach($record_get_Discount as $Discount) {
-                                                            ?>
-                                                                <tr>
-                                                                    <td>{{@$Discount->trans_date}}</td>
-                                                                    <td>{{@$Discount->description}}</td>
-                                                                    <td>
-                                                                        ${{ @$Discount->gst_included === 'Yes'
-                                                                            ? number_format((float) @$Discount->withdraw_amount - ((float) @$Discount->withdraw_amount / 11), 2)
-                                                                            : number_format((float) @$Discount->withdraw_amount, 2)
-                                                                        }}
-                                                                    </td>
-                                                                    <td>{{@$Discount->gst_included}}</td>
-                                                                    <td>${{number_format((float) @$Discount->withdraw_amount, 2)}}</td>
-                                                                </tr>
-                                                            <?php
-                                                            }
-														} ?>
-													</tbody>
-												</table>
-											</td>
-										</tr>
-									</tbody>
-								</table>
-							</td>
-						</tr>
-					<?php
-					} ?>
-					<tr><td colspan="3"></td></tr>
-					<tr><td colspan="3"></td></tr>
-					<tr><td colspan="3"></td></tr>
-					<tr>
-						<td class="inv_table" colspan="3">
-							<table width="100%" border="0">
-								<tfoot>
-									<tr>
-										<td colspan="56" style="text-align:right;">Gross Amount:</td>
-										<td style="text-align:right;padding-right:25px;">${{number_format($total_Gross_Amount,2)}}</td>
-									</tr>
-									<tr>
-										<td colspan="56" style="text-align:right;">GST:</td>
-										<td style="text-align:right;padding-right:25px;">${{number_format($total_GST_amount,2)}}</td>
-									</tr>
-									<tr>
-										<td colspan="56" style="text-align:right;">Total Invoice Amount:</td>
-										<td style="text-align:right;padding-right:25px;">${{number_format($total_Invoice_Amount,2)}}</td>
-									</tr>
-									<tr>
-										<td colspan="56" style="text-align:right;">Total Pending Amount:</td>
-										<td style="text-align:right;padding-right:25px;">${{number_format($total_Pending_amount,2)}}</td>
-									</tr>
-								</tfoot>
-							</table>
-						</td>
-					</tr>
-					<tr><td colspan="3"></td></tr>
-					<tr>
-						<td colspan="3">
-							<div style="padding: 20px 0; font-size: 14px; line-height: 18px; color: #000;">
-								<p><b>Payment Method: {{ $invoice_payment_method }}</b></p>
-								<p>IF you wish to make payment by Direct Debit, use the following details in your Electronic Funds Transfer. Please remember to quote your MATTER NO {{ $client_matter_no }} and advise us by email when you have made the transfer:</p>
-								<p>For Electronic Funds Transfer, our bank account details are as follows:</p>
-								<p>
-									Account Name: Bansal Immigration<br/>
-									BSB: 083419<br/>
-									Account Number: 362421793<br/>
-									Swift Code: ____________________
-								</p>
-							</div>
-						</td>
-					</tr>
-				</tbody>
-			</table>
-		</div>
-	</body>
+        @if($record_get_Professional_Fee_cnt > 0)
+            <h4 class="section-title">Professional Fee</h4>
+            <div class="ledger-table-wrapper">
+                <table class="ledger-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Unit Price</th>
+                            <th>GST Incl.</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if(!empty($record_get_Professional_Fee))
+                            @foreach($record_get_Professional_Fee as $fee)
+                                <tr>
+                                    <td>{{@$fee->trans_date}}</td>
+                                    <td>{{@$fee->description}}</td>
+                                    <td style="text-align:right;">
+                                        ${{ @$fee->gst_included === 'Yes'
+                                            ? number_format((float) @$fee->withdraw_amount - ((float) @$fee->withdraw_amount / 11), 2)
+                                            : number_format((float) @$fee->withdraw_amount, 2)
+                                        }}
+                                    </td>
+                                    <td>{{@$fee->gst_included}}</td>
+                                    <td style="text-align:right;">${{number_format((float) @$fee->withdraw_amount, 2)}}</td>
+                                </tr>
+                            @endforeach
+                        @endif
+                    </tbody>
+                </table>
+            </div>
+        @endif
+
+        @if($record_get_Department_Charges_cnt > 0)
+            <h4 class="section-title">Department Charges</h4>
+            <div class="ledger-table-wrapper">
+                <table class="ledger-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Unit Price</th>
+                            <th>GST Incl.</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if(!empty($record_get_Department_Charges))
+                            @foreach($record_get_Department_Charges as $charge)
+                                <tr>
+                                    <td>{{@$charge->trans_date}}</td>
+                                    <td>{{@$charge->description}}</td>
+                                    <td style="text-align:right;">
+                                        ${{ @$charge->gst_included === 'Yes'
+                                            ? number_format((float) @$charge->withdraw_amount - ((float) @$charge->withdraw_amount / 11), 2)
+                                            : number_format((float) @$charge->withdraw_amount, 2)
+                                        }}
+                                    </td>
+                                    <td>{{@$charge->gst_included}}</td>
+                                    <td style="text-align:right;">${{number_format((float) @$charge->withdraw_amount, 2)}}</td>
+                                </tr>
+                            @endforeach
+                        @endif
+                    </tbody>
+                </table>
+            </div>
+        @endif
+
+        @if($record_get_Surcharge_cnt > 0)
+            <h4 class="section-title">Surcharge</h4>
+            <div class="ledger-table-wrapper">
+                <table class="ledger-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Unit Price</th>
+                            <th>GST Incl.</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if(!empty($record_get_Surcharge))
+                            @foreach($record_get_Surcharge as $surcharge)
+                                <tr>
+                                    <td>{{@$surcharge->trans_date}}</td>
+                                    <td>{{@$surcharge->description}}</td>
+                                    <td style="text-align:right;">
+                                        ${{ @$surcharge->gst_included === 'Yes'
+                                            ? number_format((float) @$surcharge->withdraw_amount - ((float) @$surcharge->withdraw_amount / 11), 2)
+                                            : number_format((float) @$surcharge->withdraw_amount, 2)
+                                        }}
+                                    </td>
+                                    <td>{{@$surcharge->gst_included}}</td>
+                                    <td style="text-align:right;">${{number_format((float) @$surcharge->withdraw_amount, 2)}}</td>
+                                </tr>
+                            @endforeach
+                        @endif
+                    </tbody>
+                </table>
+            </div>
+        @endif
+
+        @if($record_get_Disbursements_cnt > 0)
+            <h4 class="section-title">Disbursements</h4>
+            <div class="ledger-table-wrapper">
+                <table class="ledger-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Unit Price</th>
+                            <th>GST Incl.</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if(!empty($record_get_Disbursements))
+                            @foreach($record_get_Disbursements as $disbursement)
+                                <tr>
+                                    <td>{{@$disbursement->trans_date}}</td>
+                                    <td>{{@$disbursement->description}}</td>
+                                    <td style="text-align:right;">
+                                        ${{ @$disbursement->gst_included === 'Yes'
+                                            ? number_format((float) @$disbursement->withdraw_amount - ((float) @$disbursement->withdraw_amount / 11), 2)
+                                            : number_format((float) @$disbursement->withdraw_amount, 2)
+                                        }}
+                                    </td>
+                                    <td>{{@$disbursement->gst_included}}</td>
+                                    <td style="text-align:right;">${{number_format((float) @$disbursement->withdraw_amount, 2)}}</td>
+                                </tr>
+                            @endforeach
+                        @endif
+                    </tbody>
+                </table>
+            </div>
+        @endif
+
+        @if($record_get_Other_Cost_cnt > 0)
+            <h4 class="section-title">Other Cost</h4>
+            <div class="ledger-table-wrapper">
+                <table class="ledger-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Unit Price</th>
+                            <th>GST Incl.</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if(!empty($record_get_Other_Cost))
+                            @foreach($record_get_Other_Cost as $cost)
+                                <tr>
+                                    <td>{{@$cost->trans_date}}</td>
+                                    <td>{{@$cost->description}}</td>
+                                    <td style="text-align:right;">
+                                        ${{ @$cost->gst_included === 'Yes'
+                                            ? number_format((float) @$cost->withdraw_amount - ((float) @$cost->withdraw_amount / 11), 2)
+                                            : number_format((float) @$cost->withdraw_amount, 2)
+                                        }}
+                                    </td>
+                                    <td>{{@$cost->gst_included}}</td>
+                                    <td style="text-align:right;">${{number_format((float) @$cost->withdraw_amount, 2)}}</td>
+                                </tr>
+                            @endforeach
+                        @endif
+                    </tbody>
+                </table>
+            </div>
+        @endif
+
+        @if($record_get_Discount_cnt > 0)
+            <h4 class="section-title">Discount</h4>
+            <div class="ledger-table-wrapper">
+                <table class="ledger-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Unit Price</th>
+                            <th>GST Incl.</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if(!empty($record_get_Discount))
+                            @foreach($record_get_Discount as $discount)
+                                <tr>
+                                    <td>{{@$discount->trans_date}}</td>
+                                    <td>{{@$discount->description}}</td>
+                                    <td style="text-align:right;">
+                                        ${{ @$discount->gst_included === 'Yes'
+                                            ? number_format((float) @$discount->withdraw_amount - ((float) @$discount->withdraw_amount / 11), 2)
+                                            : number_format((float) @$discount->withdraw_amount, 2)
+                                        }}
+                                    </td>
+                                    <td>{{@$discount->gst_included}}</td>
+                                    <td style="text-align:right;">${{number_format((float) @$discount->withdraw_amount, 2)}}</td>
+                                </tr>
+                            @endforeach
+                        @endif
+                    </tbody>
+                </table>
+            </div>
+        @endif
+
+        <div class="totals-section">
+            <div class="totals-row">
+                <span class="totals-label">Gross Amount:</span>
+                <span class="totals-value">${{number_format($total_Gross_Amount, 2)}}</span>
+            </div>
+            <div class="totals-row">
+                <span class="totals-label">GST:</span>
+                <span class="totals-value">${{number_format($total_GST_amount, 2)}}</span>
+            </div>
+            <div class="totals-row">
+                <span class="totals-label">Total Invoice Amount:</span>
+                <span class="totals-value">${{number_format($total_Invoice_Amount, 2)}}</span>
+            </div>
+            <div class="totals-row">
+                <span class="totals-label">Total Pending Amount:</span>
+                <span class="totals-value">${{number_format($total_Pending_amount, 2)}}</span>
+            </div>
+        </div>
+
+        <div class="payment-instructions">
+            <p class="payment-method-highlight">Payment Method: {{ $invoice_payment_method }}</p>
+            <p>If you wish to make payment by Direct Debit, use the following details in your Electronic Funds Transfer. Please remember to quote your MATTER NO <strong>{{ $client_matter_display ?? $client_matter_no }}</strong> and advise us by email when you have made the transfer.</p>
+            <div class="bank-details">
+                <strong>Account Name:</strong> Bansal Immigration<br/>
+                <strong>BSB:</strong> 083419<br/>
+                <strong>Account Number:</strong> 362421793<br/>
+                <strong>Swift Code:</strong> ____________________
+            </div>
+        </div>
+    </div>
+</body>
 </html>
