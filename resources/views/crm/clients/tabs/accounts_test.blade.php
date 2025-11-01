@@ -190,6 +190,19 @@
                                         <a class="dropdown-item" href="{{URL::to('/clients/genClientFundReceipt')}}/{{$rec_val->id}}?download=1">
                                             <i class="fas fa-download"></i> Download PDF
                                         </a>
+                                        <div class="dropdown-divider"></div>
+                                        <?php if(!empty($rec_val->uploaded_doc_id)) { 
+                                            $uploadedDoc = \App\Models\Document::find($rec_val->uploaded_doc_id);
+                                            if($uploadedDoc && !empty($uploadedDoc->myfile)) { ?>
+                                        <a class="dropdown-item" href="<?php echo $uploadedDoc->myfile; ?>" target="_blank">
+                                            <i class="fas fa-file-alt"></i> View Uploaded Receipt
+                                        </a>
+                                        <?php } } ?>
+                                        <a class="dropdown-item upload-clientreceipt-doc" href="javascript:;" 
+                                            data-receipt-id="<?php echo $rec_val->id; ?>" 
+                                            data-client-id="<?php echo $fetchedData->id; ?>">
+                                            <i class="fas fa-upload"></i> <?php echo !empty($rec_val->uploaded_doc_id) ? 'Replace' : 'Upload'; ?> Receipt Document
+                                        </a>
                                         <?php if($rec_val->client_fund_ledger_type !== 'Fee Transfer'){ ?>
                                         <div class="dropdown-divider"></div>
                                         <a class="dropdown-item edit-ledger-entry" href="javascript:;"
@@ -476,7 +489,21 @@
                                                 <i class="fas fa-download"></i> Download PDF
                                             </a>
                                             <?php } ?>
+                                            <div class="dropdown-divider"></div>
+                                            <?php if(!empty($off_val->uploaded_doc_id)) { 
+                                                $uploadedDoc = \App\Models\Document::find($off_val->uploaded_doc_id);
+                                                if($uploadedDoc && !empty($uploadedDoc->myfile)) { ?>
+                                            <a class="dropdown-item" href="<?php echo $uploadedDoc->myfile; ?>" target="_blank">
+                                                <i class="fas fa-file-alt"></i> View Uploaded Receipt
+                                            </a>
+                                            <?php } } ?>
+                                            <a class="dropdown-item upload-officereceipt-doc" href="javascript:;" 
+                                                data-receipt-id="<?php echo $off_val->id; ?>" 
+                                                data-client-id="<?php echo $fetchedData->id; ?>">
+                                                <i class="fas fa-upload"></i> <?php echo !empty($off_val->uploaded_doc_id) ? 'Replace' : 'Upload'; ?> Receipt Document
+                                            </a>
                                             <?php if(!isset($off_val->save_type) || $off_val->save_type == 'draft') { ?>
+                                            <div class="dropdown-divider"></div>
                                             <a class="dropdown-item edit-office-receipt-entry" href="javascript:;"
                                                 data-id="<?php echo $off_val->id; ?>"
                                                 data-receiptid="<?php echo $off_val->receipt_id; ?>"
@@ -976,6 +1003,145 @@ document.addEventListener('DOMContentLoaded', function() {
     border-top: 1px solid #e9ecef;
 }
 </style>
+
+<!-- Upload Receipt Document Modal -->
+<div class="modal fade" id="uploadReceiptDocModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-upload"></i> Upload Receipt Document
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form id="uploadReceiptDocForm" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <input type="hidden" id="upload_receipt_id" name="receipt_id">
+                    <input type="hidden" id="upload_client_id" name="clientid">
+                    <input type="hidden" id="upload_receipt_type" name="receipt_type">
+                    <input type="hidden" name="doctype" value="receipt_uploads">
+                    <input type="hidden" name="type" value="client">
+                    
+                    <div class="form-group">
+                        <label>Select Receipt Document <span class="text-danger">*</span></label>
+                        <input type="file" class="form-control" name="document_upload" id="receipt_document_upload" required 
+                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                        <small class="text-muted">Accepted formats: PDF, JPG, PNG, DOC, DOCX</small>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> This document will be attached to the selected receipt entry for verification purposes.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload"></i> Upload Document
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Upload Client Receipt Document
+    $(document).on('click', '.upload-clientreceipt-doc', function() {
+        let receiptId = $(this).data('receipt-id');
+        let clientId = $(this).data('client-id');
+        
+        $('#upload_receipt_id').val(receiptId);
+        $('#upload_client_id').val(clientId);
+        $('#upload_receipt_type').val('client');
+        $('#uploadReceiptDocModal').modal('show');
+    });
+    
+    // Upload Office Receipt Document
+    $(document).on('click', '.upload-officereceipt-doc', function() {
+        let receiptId = $(this).data('receipt-id');
+        let clientId = $(this).data('client-id');
+        
+        $('#upload_receipt_id').val(receiptId);
+        $('#upload_client_id').val(clientId);
+        $('#upload_receipt_type').val('office');
+        $('#uploadReceiptDocModal').modal('show');
+    });
+    
+    // Upload Journal Receipt Document
+    $(document).on('click', '.upload-journalreceipt-doc', function() {
+        let receiptId = $(this).data('receipt-id');
+        let clientId = $(this).data('client-id');
+        
+        $('#upload_receipt_id').val(receiptId);
+        $('#upload_client_id').val(clientId);
+        $('#upload_receipt_type').val('journal');
+        $('#uploadReceiptDocModal').modal('show');
+    });
+    
+    // Handle form submission
+    $('#uploadReceiptDocForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        let receiptType = $('#upload_receipt_type').val();
+        let formData = new FormData(this);
+        let uploadUrl = '';
+        
+        // Determine the correct endpoint
+        if (receiptType === 'client') {
+            uploadUrl = '{{ route("clients.uploadclientreceiptdocument") }}';
+        } else if (receiptType === 'office') {
+            uploadUrl = '{{ route("clients.uploadofficereceiptdocument") }}';
+        } else if (receiptType === 'journal') {
+            uploadUrl = '{{ route("clients.uploadjournalreceiptdocument") }}';
+        }
+        
+        // Show loading state
+        let submitBtn = $(this).find('button[type="submit"]');
+        let originalText = submitBtn.html();
+        submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Uploading...');
+        
+        $.ajax({
+            url: uploadUrl,
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                if (response.status) {
+                    toastr.success(response.message || 'Document uploaded successfully');
+                    $('#uploadReceiptDocModal').modal('hide');
+                    $('#uploadReceiptDocForm')[0].reset();
+                    
+                    // Reload the page to show the uploaded document
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    toastr.error(response.message || 'Failed to upload document');
+                }
+            },
+            error: function(xhr) {
+                console.error('Upload error:', xhr);
+                toastr.error('An error occurred while uploading the document');
+            },
+            complete: function() {
+                submitBtn.prop('disabled', false).html(originalText);
+            }
+        });
+    });
+    
+    // Reset form when modal is closed
+    $('#uploadReceiptDocModal').on('hidden.bs.modal', function() {
+        $('#uploadReceiptDocForm')[0].reset();
+    });
+});
+</script>
 
 </div>
 <!-- End Accounts Test Tab -->

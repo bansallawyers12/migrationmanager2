@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CRM\ClientsController;
+use App\Http\Controllers\CRM\ClientAccountsController;
 use App\Http\Controllers\CRM\ClientEoiRoiController;
 use App\Http\Controllers\CRM\Clients\ClientNotesController;
 use App\Http\Controllers\CRM\Clients\ClientDocumentsController;
@@ -169,49 +170,54 @@ Route::prefix('clients/{client}/eoi-roi')->name('clients.eoi-roi.')->group(funct
 });
 
 /*---------- Client Invoices & Receipts ----------*/
-Route::get('/clients/saveaccountreport/{id}', 'CRM\ClientsController@saveaccountreport')->name('clients.saveaccountreport');
-Route::post('/clients/saveaccountreport', 'CRM\ClientsController@saveaccountreport')->name('clients.saveaccountreport.update');
+Route::get('/clients/saveaccountreport/{id}', 'CRM\ClientAccountsController@saveaccountreport')->name('clients.saveaccountreport');
+Route::post('/clients/saveaccountreport', 'CRM\ClientAccountsController@saveaccountreport')->name('clients.saveaccountreport.update');
 
 /* Test Route for Python Processing */
 Route::post('/clients/test-python-accounting', 'CRM\ClientsController@testPythonAccounting')->name('clients.test-python-accounting');
 
-Route::get('/clients/saveinvoicereport/{id}', 'CRM\ClientsController@saveinvoicereport')->name('clients.saveinvoicereport');
-Route::post('/clients/saveinvoicereport', 'CRM\ClientsController@saveinvoicereport')->name('clients.saveinvoicereport.update');
+Route::get('/clients/saveinvoicereport/{id}', 'CRM\ClientAccountsController@saveinvoicereport')->name('clients.saveinvoicereport');
+Route::post('/clients/saveinvoicereport', 'CRM\ClientAccountsController@saveinvoicereport')->name('clients.saveinvoicereport.update');
 
-Route::get('/clients/saveadjustinvoicereport/{id}', 'CRM\ClientsController@saveadjustinvoicereport')->name('clients.saveadjustinvoicereport');
-Route::post('/clients/saveadjustinvoicereport', 'CRM\ClientsController@saveadjustinvoicereport')->name('clients.saveadjustinvoicereport.update');
+Route::get('/clients/saveadjustinvoicereport/{id}', 'CRM\ClientAccountsController@saveadjustinvoicereport')->name('clients.saveadjustinvoicereport');
+Route::post('/clients/saveadjustinvoicereport', 'CRM\ClientAccountsController@saveadjustinvoicereport')->name('clients.saveadjustinvoicereport.update');
 
-Route::get('/clients/saveofficereport/{id}', 'CRM\ClientsController@saveofficereport')->name('clients.saveofficereport');
-Route::post('/clients/saveofficereport', 'CRM\ClientsController@saveofficereport')->name('clients.saveofficereport.update');
+Route::get('/clients/saveofficereport/{id}', 'CRM\ClientAccountsController@saveofficereport')->name('clients.saveofficereport');
+Route::post('/clients/saveofficereport', 'CRM\ClientAccountsController@saveofficereport')->name('clients.saveofficereport.update');
 
-Route::get('/clients/savejournalreport/{id}', 'CRM\ClientsController@savejournalreport')->name('clients.savejournalreport');
-Route::post('/clients/savejournalreport', 'CRM\ClientsController@savejournalreport')->name('clients.savejournalreport.update');
+Route::get('/clients/savejournalreport/{id}', 'CRM\ClientAccountsController@savejournalreport')->name('clients.savejournalreport');
+Route::post('/clients/savejournalreport', 'CRM\ClientAccountsController@savejournalreport')->name('clients.savejournalreport.update');
 
-Route::post('/clients/isAnyInvoiceNoExistInDB', 'CRM\ClientsController@isAnyInvoiceNoExistInDB')->name('clients.isAnyInvoiceNoExistInDB');
-Route::post('/clients/listOfInvoice', 'CRM\ClientsController@listOfInvoice')->name('clients.listOfInvoice');
-Route::post('/clients/getTopReceiptValInDB', 'CRM\ClientsController@getTopReceiptValInDB')->name('clients.getTopReceiptValInDB');
-Route::post('/clients/getInfoByReceiptId', 'CRM\ClientsController@getInfoByReceiptId')->name('clients.getInfoByReceiptId');
-Route::get('/clients/genInvoice/{id}', 'CRM\ClientsController@genInvoice');
-Route::post('/clients/sendToHubdoc/{id}', 'CRM\ClientsController@sendToHubdoc')->name('clients.sendToHubdoc');
-Route::get('/clients/checkHubdocStatus/{id}', 'CRM\ClientsController@checkHubdocStatus')->name('clients.checkHubdocStatus');
-Route::get('/clients/printPreview/{id}', 'CRM\ClientsController@printPreview');
-Route::post('/clients/getTopInvoiceNoFromDB', 'CRM\ClientsController@getTopInvoiceNoFromDB')->name('clients.getTopInvoiceNoFromDB');
-Route::post('/clients/clientLedgerBalanceAmount', 'CRM\ClientsController@clientLedgerBalanceAmount')->name('clients.clientLedgerBalanceAmount');
+Route::post('/clients/isAnyInvoiceNoExistInDB', 'CRM\ClientAccountsController@isAnyInvoiceNoExistInDB')->name('clients.isAnyInvoiceNoExistInDB');
+Route::post('/clients/listOfInvoice', 'CRM\ClientAccountsController@listOfInvoice')->name('clients.listOfInvoice');
+Route::post('/clients/getTopReceiptValInDB', 'CRM\ClientAccountsController@getTopReceiptValInDB')->name('clients.getTopReceiptValInDB');
+Route::post('/clients/getInfoByReceiptId', 'CRM\ClientAccountsController@getInfoByReceiptId')->name('clients.getInfoByReceiptId');
+Route::get('/clients/genInvoice/{id}', 'CRM\ClientAccountsController@genInvoice');
+Route::post('/clients/sendToHubdoc/{id}', 'CRM\ClientAccountsController@sendToHubdoc')->name('clients.sendToHubdoc');
+Route::get('/clients/checkHubdocStatus/{id}', 'CRM\ClientAccountsController@checkHubdocStatus')->name('clients.checkHubdocStatus');
+Route::get('/clients/printPreview/{id}', 'CRM\ClientAccountsController@printPreview');
+Route::post('/clients/getTopInvoiceNoFromDB', 'CRM\ClientAccountsController@getTopInvoiceNoFromDB')->name('clients.getTopInvoiceNoFromDB');
+Route::post('/clients/clientLedgerBalanceAmount', 'CRM\ClientAccountsController@clientLedgerBalanceAmount')->name('clients.clientLedgerBalanceAmount');
 
-Route::get('/clients/invoicelist', 'CRM\ClientsController@invoicelist')->name('clients.invoicelist');
-Route::post('/void_invoice','CRM\ClientsController@void_invoice')->name('client.void_invoice');
-Route::get('/clients/clientreceiptlist', 'CRM\ClientsController@clientreceiptlist')->name('clients.clientreceiptlist');
-Route::get('/clients/officereceiptlist', 'CRM\ClientsController@officereceiptlist')->name('clients.officereceiptlist');
-Route::get('/clients/journalreceiptlist', 'CRM\ClientsController@journalreceiptlist')->name('clients.journalreceiptlist');
-Route::post('/validate_receipt','CRM\ClientsController@validate_receipt')->name('client.validate_receipt');
-Route::post('/delete_receipt','CRM\ClientsController@delete_receipt');
+Route::get('/clients/invoicelist', 'CRM\ClientAccountsController@invoicelist')->name('clients.invoicelist');
+Route::post('/void_invoice','CRM\ClientAccountsController@void_invoice')->name('client.void_invoice');
+Route::get('/clients/clientreceiptlist', 'CRM\ClientAccountsController@clientreceiptlist')->name('clients.clientreceiptlist');
+Route::get('/clients/officereceiptlist', 'CRM\ClientAccountsController@officereceiptlist')->name('clients.officereceiptlist');
+Route::get('/clients/journalreceiptlist', 'CRM\ClientAccountsController@journalreceiptlist')->name('clients.journalreceiptlist');
+Route::post('/validate_receipt','CRM\ClientAccountsController@validate_receipt')->name('client.validate_receipt');
+Route::post('/delete_receipt','CRM\ClientAccountsController@delete_receipt');
 
-Route::get('/clients/genClientFundReceipt/{id}', 'CRM\ClientsController@genClientFundReceipt');
-Route::get('/clients/genOfficeReceipt/{id}', 'CRM\ClientsController@genofficereceiptInvoice');
-Route::post('/update-client-funds-ledger', 'CRM\ClientsController@updateClientFundsLedger')->name('clients.update-client-funds-ledger');
-Route::post('/update-office-receipt', 'CRM\ClientsController@updateOfficeReceipt')->name('clients.updateOfficeReceipt');
-Route::post('/get-invoices-by-matter', 'CRM\ClientsController@getInvoicesByMatter')->name('clients.getInvoicesByMatter');
-Route::post('/clients/invoiceamount', 'CRM\ClientsController@getInvoiceAmount')->name('clients.invoiceamount');
+Route::get('/clients/genClientFundReceipt/{id}', 'CRM\ClientAccountsController@genClientFundReceipt');
+Route::get('/clients/genOfficeReceipt/{id}', 'CRM\ClientAccountsController@genofficereceiptInvoice');
+Route::post('/update-client-funds-ledger', 'CRM\ClientAccountsController@updateClientFundsLedger')->name('clients.update-client-funds-ledger');
+Route::post('/update-office-receipt', 'CRM\ClientAccountsController@updateOfficeReceipt')->name('clients.updateOfficeReceipt');
+Route::post('/get-invoices-by-matter', 'CRM\ClientAccountsController@getInvoicesByMatter')->name('clients.getInvoicesByMatter');
+Route::post('/clients/invoiceamount', 'CRM\ClientAccountsController@getInvoiceAmount')->name('clients.invoiceamount');
+
+// Receipt document uploads
+Route::post('/clients/upload-clientreceipt-document', 'CRM\ClientAccountsController@uploadclientreceiptdocument')->name('clients.uploadclientreceiptdocument');
+Route::post('/clients/upload-officereceipt-document', 'CRM\ClientAccountsController@uploadofficereceiptdocument')->name('clients.uploadofficereceiptdocument');
+Route::post('/clients/upload-journalreceipt-document', 'CRM\ClientAccountsController@uploadjournalreceiptdocument')->name('clients.uploadjournalreceiptdocument');
 
 /*---------- Client Personal Details & Address ----------*/
 Route::post('/clients/update-address', [ClientPersonalDetailsController::class, 'updateAddress'])->name('clients.updateAddress');
