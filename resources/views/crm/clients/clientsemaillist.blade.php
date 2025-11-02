@@ -241,13 +241,13 @@
                                 <?php $i=0; ?>
                                     @foreach (@$lists as $list)
                                         <tr id="id_{{@$list->id}}">
-                                            <td class="tdCls">{{ @$list->client_id == "" ? config('constants.empty') : str_limit(@$list->client_id, '50', '...') }}</td>
-                                            <td class="tdCls"><a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->id)) )}}">{{ @$list->first_name == "" ? config('constants.empty') : str_limit(@$list->first_name, '50', '...') }} {{ @$list->last_name == "" ? config('constants.empty') : str_limit(@$list->last_name, '50', '...') }}</a></td>
+                                            <td class="tdCls">{{ @$list->client_id == "" ? config('constants.empty') : Str::limit(@$list->client_id, '50', '...') }}</td>
+                                            <td class="tdCls"><a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->id)) )}}">{{ @$list->first_name == "" ? config('constants.empty') : Str::limit(@$list->first_name, '50', '...') }} {{ @$list->last_name == "" ? config('constants.empty') : Str::limit(@$list->last_name, '50', '...') }}</a></td>
                                             <td class="tdCls">
-                                                <a href="mailto:{{ @$list->email }}">{{ @$list->email == "" ? config('constants.empty') : str_limit(@$list->email, '50', '...') }}</a>
+                                                <a href="mailto:{{ @$list->email }}">{{ @$list->email == "" ? config('constants.empty') : Str::limit(@$list->email, '50', '...') }}</a>
                                             </td>
-                                            <td class="tdCls">{{ @$list->phone == "" ? config('constants.empty') : str_limit(@$list->phone, '50', '...') }}</td>
-                                            <td class="tdCls">{{ @$list->type == "" ? config('constants.empty') : str_limit(@$list->type, '50', '...') }}</td>
+                                            <td class="tdCls">{{ @$list->phone == "" ? config('constants.empty') : Str::limit(@$list->phone, '50', '...') }}</td>
+                                            <td class="tdCls">{{ @$list->type == "" ? config('constants.empty') : Str::limit(@$list->type, '50', '...') }}</td>
                                             <td class="tdCls">{{date('d/m/Y', strtotime($list->created_at))}}</td>
                                             @if(Auth::user()->role == 1)
                                             <td class="tdCls">

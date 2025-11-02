@@ -92,7 +92,7 @@
 								
 									<tr id="id_{{@$list->id}}">
 										
-										<td>{{ @$list->name == "" ? config('constants.empty') : str_limit(@$list->name, '50', '...') }}</td> 	
+										<td>{{ @$list->name == "" ? config('constants.empty') : Str::limit(@$list->name, '50', '...') }}</td> 	
 										
 										<td>
 											<span style="background-color:{{$list->color}};width: 40px;display: inline-block;">&nbsp;</span>						  

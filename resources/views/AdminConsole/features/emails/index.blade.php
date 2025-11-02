@@ -50,8 +50,8 @@
 									?>
 									<tr id="id_{{@$list->id}}">
 										
-										<td>{{ @$list->email == "" ? config('constants.empty') : str_limit(@$list->email, '50', '...') }}</td> 	
-										<td>{{ @$username == "" ? config('constants.empty') : str_limit(rtrim(@$username,', '), '50', '...') }}</td> 	
+										<td>{{ @$list->email == "" ? config('constants.empty') : Str::limit(@$list->email, '50', '...') }}</td> 	
+										<td>{{ @$username == "" ? config('constants.empty') : Str::limit(rtrim(@$username,', '), '50', '...') }}</td> 	
 										<td>
 										<?php
 										if($list->status == 1){ echo '<span class=" text-success">Active</span>'; }else{

@@ -36,9 +36,9 @@
 										@if(@$totalData !== 0)
 										@foreach (@$lists as $list)	
 										<tr id="id_{{@$list->id}}"> 
-											<td>{{ @$list->id == "" ? config('constants.empty') : str_limit(@$list->id, '50', '...') }}</td> 
-											<td>{{ @$list->title == "" ? config('constants.empty') : str_limit(@$list->title, '50', '...') }}</td>
-											<td>{{ @$list->subject == "" ? config('constants.empty') : str_limit(@$list->subject, '50', '...') }}</td>
+											<td>{{ @$list->id == "" ? config('constants.empty') : Str::limit(@$list->id, '50', '...') }}</td> 
+											<td>{{ @$list->title == "" ? config('constants.empty') : Str::limit(@$list->title, '50', '...') }}</td>
+											<td>{{ @$list->subject == "" ? config('constants.empty') : Str::limit(@$list->subject, '50', '...') }}</td>
 											<td>
 												<div class="dropdown d-inline">
 													<button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>

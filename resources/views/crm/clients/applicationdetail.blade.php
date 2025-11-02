@@ -169,7 +169,7 @@ $workflow = \App\Models\Workflow::where('id', $fetchData->workflow)->first();
 						?>
 						<?php
 							$workflowstagess = \App\Models\WorkflowStage::where('name', $fetchData->stage)->where('w_id', $fetchData->workflow)->first();
-							$stagearray = array();
+							$stagearray = [];
 							if($workflowstagess){
 								$prevdata = \App\Models\WorkflowStage::where('id', '<', @$workflowstagess->id)->where('w_id', $fetchData->workflow)->orderBy('id','Desc')->get();
 								foreach($prevdata as $pre){

@@ -43,8 +43,8 @@
                         <li>
                             <div class="task-details">
                                 <span class="client-name">
-                                    {{ $note_client && $note_client->first_name ? str_limit($note_client->first_name, '50', '...') : config('constants.empty') }} {{ $note_client && $note_client->last_name ? str_limit($note_client->last_name, '50', '...') : config('constants.empty') }}
-                                    (<a href="{{ $note_client ? URL::to('/clients/detail/'.base64_encode(convert_uuencode($note_client->id))) : '#' }}">{{ $note_client && $note_client->client_id ? str_limit($note_client->client_id, '50', '...') : config('constants.empty') }}</a>)
+                                    {{ $note_client && $note_client->first_name ? Str::limit($note_client->first_name, '50', '...') : config('constants.empty') }} {{ $note_client && $note_client->last_name ? Str::limit($note_client->last_name, '50', '...') : config('constants.empty') }}
+                                    (<a href="{{ $note_client ? URL::to('/clients/detail/'.base64_encode(convert_uuencode($note_client->id))) : '#' }}">{{ $note_client && $note_client->client_id ? Str::limit($note_client->client_id, '50', '...') : config('constants.empty') }}</a>)
                                 </span>
                                 <span class="task-desc">
                                     <?php echo preg_replace('/<\/?p>/', '', $note->description ); ?>
@@ -79,8 +79,8 @@
                         <li>
                             <div class="case-details">
                                 <span class="client-name">
-                                    {{ $client_attention && $client_attention->first_name ? str_limit($client_attention->first_name, '50', '...') : config('constants.empty') }} {{ $client_attention && $client_attention->last_name ? str_limit($client_attention->last_name, '50', '...') : config('constants.empty') }}
-                                    (<a href="{{ $client_attention ? URL::to('/clients/detail/'.base64_encode(convert_uuencode($client_attention->id)).'/'.$attention->client_unique_matter_no) : '#' }}">{{ $client_attention && $client_attention->client_id ? str_limit($client_attention->client_id, '50', '...') : config('constants.empty') }}</a>)
+                                    {{ $client_attention && $client_attention->first_name ? Str::limit($client_attention->first_name, '50', '...') : config('constants.empty') }} {{ $client_attention && $client_attention->last_name ? Str::limit($client_attention->last_name, '50', '...') : config('constants.empty') }}
+                                    (<a href="{{ $client_attention ? URL::to('/clients/detail/'.base64_encode(convert_uuencode($client_attention->id)).'/'.$attention->client_unique_matter_no) : '#' }}">{{ $client_attention && $client_attention->client_id ? Str::limit($client_attention->client_id, '50', '...') : config('constants.empty') }}</a>)
                                 </span>
                                 <span class="case-info">
                                 <?php
@@ -262,12 +262,12 @@
                             <a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$item->client_id)).'/'.$item->client_unique_matter_no )}}">{{ $matter_name}} ({{$item->client_unique_matter_no }}) </a>
                             <span class="totalEmailCntToClientMatter">{{$total_email_assign_cnt}}</span>
                         </td>
-                        <td class="col-client_id"><a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$item->client_id)) )}}">{{ $client_info && $client_info->client_id ? str_limit($client_info->client_id, '50', '...') : config('constants.empty') }}</a></td>
-                        <td class="col-client_name">{{ $client_info && $client_info->first_name ? str_limit($client_info->first_name, '50', '...') : config('constants.empty') }} {{ $client_info && $client_info->last_name ? str_limit($client_info->last_name, '50', '...') : config('constants.empty') }}</td>
-                        <td class="col-dob">{{ @$item->dob == "" ? config('constants.empty') : (strtotime(@$item->dob) ? date('d/m/Y', strtotime(@$item->dob)) : str_limit(@$item->dob, '50', '...')) }}</td>
-                        <td class="col-migration_agent">{{ $mig_agent_info && $mig_agent_info->first_name ? str_limit($mig_agent_info->first_name, '50', '...') : config('constants.empty') }} {{ $mig_agent_info && $mig_agent_info->last_name ? str_limit($mig_agent_info->last_name, '50', '...') : config('constants.empty') }}</td>
-                        <td class="col-person_responsible">{{ $person_responsible && $person_responsible->first_name ? str_limit($person_responsible->first_name, '50', '...') : config('constants.empty') }} {{ $person_responsible && $person_responsible->last_name ? str_limit($person_responsible->last_name, '50', '...') : config('constants.empty') }}</td>
-                        <td class="col-person_assisting">{{ $person_assisting && $person_assisting->first_name ? str_limit($person_assisting->first_name, '50', '...') : config('constants.empty') }} {{ $person_assisting && $person_assisting->last_name ? str_limit($person_assisting->last_name, '50', '...') : config('constants.empty') }}</td>
+                        <td class="col-client_id"><a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$item->client_id)) )}}">{{ $client_info && $client_info->client_id ? Str::limit($client_info->client_id, '50', '...') : config('constants.empty') }}</a></td>
+                        <td class="col-client_name">{{ $client_info && $client_info->first_name ? Str::limit($client_info->first_name, '50', '...') : config('constants.empty') }} {{ $client_info && $client_info->last_name ? Str::limit($client_info->last_name, '50', '...') : config('constants.empty') }}</td>
+                        <td class="col-dob">{{ @$item->dob == "" ? config('constants.empty') : (strtotime(@$item->dob) ? date('d/m/Y', strtotime(@$item->dob)) : Str::limit(@$item->dob, '50', '...')) }}</td>
+                        <td class="col-migration_agent">{{ $mig_agent_info && $mig_agent_info->first_name ? Str::limit($mig_agent_info->first_name, '50', '...') : config('constants.empty') }} {{ $mig_agent_info && $mig_agent_info->last_name ? Str::limit($mig_agent_info->last_name, '50', '...') : config('constants.empty') }}</td>
+                        <td class="col-person_responsible">{{ $person_responsible && $person_responsible->first_name ? Str::limit($person_responsible->first_name, '50', '...') : config('constants.empty') }} {{ $person_responsible && $person_responsible->last_name ? Str::limit($person_responsible->last_name, '50', '...') : config('constants.empty') }}</td>
+                        <td class="col-person_assisting">{{ $person_assisting && $person_assisting->first_name ? Str::limit($person_assisting->first_name, '50', '...') : config('constants.empty') }} {{ $person_assisting && $person_assisting->last_name ? Str::limit($person_assisting->last_name, '50', '...') : config('constants.empty') }}</td>
                         <td class="col-stage">
                             <select class="form-select stageCls" id="stage_<?php echo $item->id;?>" style="height: 30px;border-color: #e0e0e0;">
                                 @foreach(\App\Models\WorkflowStage::where('id','!=','')->orderby('id','ASC')->get() as $stage)

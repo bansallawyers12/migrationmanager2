@@ -41,8 +41,8 @@
 								@foreach (@$lists as $list)
 									<tr id="id_{{@$list->id}}">
 										
-										<td>{{ @$list->name == "" ? config('constants.empty') : str_limit(@$list->name, '50', '...') }}</td> 	
-										<td>{{ @$list->subject == "" ? config('constants.empty') : str_limit(@$list->subject, '50', '...') }}</td> 	
+										<td>{{ @$list->name == "" ? config('constants.empty') : Str::limit(@$list->name, '50', '...') }}</td> 	
+										<td>{{ @$list->subject == "" ? config('constants.empty') : Str::limit(@$list->subject, '50', '...') }}</td> 	
 										<td>
 											<div class="dropdown d-inline">
 												<button class="btn btn-primary dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>

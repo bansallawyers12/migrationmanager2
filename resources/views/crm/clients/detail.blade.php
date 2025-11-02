@@ -212,7 +212,7 @@ use App\Http\Controllers\Controller;
             <div class="sidebar-references">
                 <?php
                 // Load reference values - SAME LOGIC AS ACCOUNTS TAB
-                $matter__ref_info_arr = array();
+                $matter__ref_info_arr = [];
                 if($id1) {
                     // If client unique reference id is present in url
                     $matter__ref_info_arr = \App\Models\ClientMatter::select('department_reference','other_reference')
@@ -1058,7 +1058,7 @@ use App\Http\Controllers\Controller;
 							<div class="form-group">
 								<label for="super_agent">Tags <span class="span_req">*</span></label>
 								<select data-valid="required" multiple class="tagsselec form-control super_tag" id="tag" name="tag[]" data-tags="true">
-								<?php $r = array();
+								<?php $r = [];
 								if($fetchedData->tagname != ''){
 									$r = explode(',', $fetchedData->tagname);
 								}
@@ -1431,7 +1431,7 @@ $(document).ready(function() {
     
     // Appointment data for the appointments tab
     @php
-    $appointmentdata = array();
+    $appointmentdata = [];
     $appointmentlists = \App\Models\Appointment::where('client_id', $fetchedData->id)
         ->where('related_to', 'client')
         ->orderby('created_at', 'DESC')

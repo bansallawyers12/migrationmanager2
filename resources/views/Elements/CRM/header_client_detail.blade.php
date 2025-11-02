@@ -105,7 +105,7 @@
                 @if(Auth::user() && Auth::user()->profile_img == '')
                     <img alt="user image" src="{{ asset('img/user.png') }}" class="user-img-radious-style">
                 @else
-                    <img alt="{{Auth::user() ? str_limit(Auth::user()->first_name.' '.Auth::user()->last_name, 150, '...') : 'User'}}" src="{{ asset('img/user.png') }}" class="user-img-radious-style"/>
+                    <img alt="{{Auth::user() ? Str::limit(Auth::user()->first_name.' '.Auth::user()->last_name, 150, '...') : 'User'}}" src="{{ asset('img/user.png') }}" class="user-img-radious-style"/>
                 @endif
             </a>
             <div class="profile-menu" id="profile-menu">

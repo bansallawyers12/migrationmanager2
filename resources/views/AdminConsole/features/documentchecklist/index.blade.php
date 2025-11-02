@@ -51,7 +51,7 @@
 												<label for="checkbox-{{$i}}" class="custom-control-label">&nbsp;</label>--}}
 											</div>
 										</td>-->
-										<td>{{ @$list->name == "" ? config('constants.empty') : str_limit(@$list->name, '50', '...') }}</td>
+										<td>{{ @$list->name == "" ? config('constants.empty') : Str::limit(@$list->name, '50', '...') }}</td>
 										<td>
                                             <?php
                                             if( isset($list->doc_type) && $list->doc_type !="" ){

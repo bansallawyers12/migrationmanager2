@@ -40,8 +40,8 @@
 								<tbody class="tdata">	
 								@foreach (@$lists as $list)
 									<tr id="id_{{@$list->id}}">
-										<td>{{ @$list->name == "" ? config('constants.empty') : str_limit(@$list->name, '50', '...') }}</td> 	
-										<td>{{ @$list->subject == "" ? config('constants.empty') : str_limit(@$list->subject, '50', '...') }}</td> 	
+										<td>{{ @$list->name == "" ? config('constants.empty') : Str::limit(@$list->name, '50', '...') }}</td> 	
+										<td>{{ @$list->subject == "" ? config('constants.empty') : Str::limit(@$list->subject, '50', '...') }}</td> 	
 										<td>{{ @$list->created_at ? date('d M Y', strtotime(@$list->created_at)) : config('constants.empty') }}</td>
 										<td>
 											<div class="dropdown d-inline">

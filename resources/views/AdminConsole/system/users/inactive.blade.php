@@ -61,7 +61,7 @@
 													<td><a href="{{route('adminconsole.system.offices.view', @$b->id)}}">{{@$b->office_name}}</a></td>
 
 
-													<td>{{ @$list->usertype->name == "" ? config('constants.empty') : str_limit(@$list->usertype->name, '50', '...') }}</td>
+													<td>{{ @$list->usertype->name == "" ? config('constants.empty') : Str::limit(@$list->usertype->name, '50', '...') }}</td>
 													<td>
 													    <div class="custom-switches">
 									<label class="">

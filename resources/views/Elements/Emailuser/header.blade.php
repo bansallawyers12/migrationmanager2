@@ -88,12 +88,12 @@
 				@if(@Auth::user()->profile_img == '')
 				<img alt="user image" src="{{ asset('/img/user.png') }}" class="user-img-radious-style">
 				@else
-				<img  alt="{{str_limit(Auth::user()->first_name.' '.Auth::user()->last_name, 150, '...')}}" src="{{URL::to('/img/profile_imgs')}}/{{@Auth::user()->profile_img}}" class="user-img-radious-style"/>
+				<img  alt="{{Str::limit(Auth::user()->first_name.' '.Auth::user()->last_name, 150, '...')}}" src="{{URL::to('/img/profile_imgs')}}/{{@Auth::user()->profile_img}}" class="user-img-radious-style"/>
 				@endif
 				<span class="d-sm-none d-lg-inline-block"></span>
 			</a>
             <div class="dropdown-menu dropdown-menu-right pullDown">
-				<div class="dropdown-title">{{str_limit(Auth::user()->first_name.' '.Auth::user()->last_name, 150, '...')}}</div>
+				<div class="dropdown-title">{{Str::limit(Auth::user()->first_name.' '.Auth::user()->last_name, 150, '...')}}</div>
 				<a href="{{route('my_profile')}}" class="dropdown-item has-icon">
 					<i class="far fa-user"></i> Profile
 				</a>

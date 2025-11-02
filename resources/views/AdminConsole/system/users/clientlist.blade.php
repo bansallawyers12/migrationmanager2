@@ -32,10 +32,10 @@
 									@if(@$totalData !== 0)
 									@foreach (@$lists as $list)	
 									<tr id="id_{{@$list->id}}"> 
-										<td>{{ @$list->company_name == "" ? config('constants.empty') : str_limit(@$list->company_name, '50', '...') }}</td> 
-										<td>{{ @$list->first_name == "" ? config('constants.empty') : str_limit(@$list->first_name, '50', '...') }} {{ @$list->last_name == "" ? config('constants.empty') : str_limit(@$list->last_name, '50', '...') }}</td> 
-										<td>{{ @$list->email == "" ? config('constants.empty') : str_limit(@$list->email, '50', '...') }}</td> 
-										<td>{{ @$list->phone == "" ? config('constants.empty') : str_limit(@$list->phone, '50', '...') }}</td>
+										<td>{{ @$list->company_name == "" ? config('constants.empty') : Str::limit(@$list->company_name, '50', '...') }}</td> 
+										<td>{{ @$list->first_name == "" ? config('constants.empty') : Str::limit(@$list->first_name, '50', '...') }} {{ @$list->last_name == "" ? config('constants.empty') : Str::limit(@$list->last_name, '50', '...') }}</td> 
+										<td>{{ @$list->email == "" ? config('constants.empty') : Str::limit(@$list->email, '50', '...') }}</td> 
+										<td>{{ @$list->phone == "" ? config('constants.empty') : Str::limit(@$list->phone, '50', '...') }}</td>
 										<td>
 											<label class="custom-switch">
 												<input type="checkbox" name="is_active" class="custom-switch-input" data-id="{{@$list->id}}"  data-status="{{@$list->status}}" data-col="status" data-table="admins" name="option" {{ (@$list->status == 1 ? 'checked' : '')}}>

@@ -108,7 +108,7 @@
 									?>
 									<tbody class="tdata">
 										<tr id="id_{{@$list->id}}">
-											<td style="white-space: initial;"><a href="{{URL::to('clients/detail/')}}/{{base64_encode(convert_uuencode(@$clientdetail->id))}}?tab=application&appid={{@$list->id}}">{{ @$list->id == "" ? config('constants.empty') : str_limit(@$list->id, '50', '...') }}</a></td>
+											<td style="white-space: initial;"><a href="{{URL::to('clients/detail/')}}/{{base64_encode(convert_uuencode(@$clientdetail->id))}}?tab=application&appid={{@$list->id}}">{{ @$list->id == "" ? config('constants.empty') : Str::limit(@$list->id, '50', '...') }}</a></td>
 											<td style="white-space: initial;"><a href="{{URL::to('clients/detail/')}}/{{base64_encode(convert_uuencode(@$clientdetail->id))}}?tab=application">{{@$clientdetail->first_name}} {{@$clientdetail->last_name}}</a><!--<br/>-->{{--@$clientdetail->email--}}</td>
 
 											{{--<td>@$clientdetail->phone }}</td> --}}
@@ -119,7 +119,7 @@
 											<td style="white-space: initial;">{{$PartnerBranch->name ?? 'N/P'}}</td>
 
 											<td style="white-space: initial;"><?php echo @$workflow->name; ?></td>
-											<td style="white-space: initial;">{{ @$list->stage == "" ? config('constants.empty') : str_limit(@$list->stage, '50', '...') }}</td>
+											<td style="white-space: initial;">{{ @$list->stage == "" ? config('constants.empty') : Str::limit(@$list->stage, '50', '...') }}</td>
 
 											<td style="white-space: initial;">{{$PartnerBranch->name ?? 'N/P'}}</td>
 											<td><?php if($list->status == 0){ ?>
@@ -132,7 +132,7 @@
                                             <?php
                                             } ?></td>
 
-											<!--<td>{{ @$list->created_at == "" ? config('constants.empty') : str_limit(@$list->created_at , '50', '...') }}</td>-->
+											<!--<td>{{ @$list->created_at == "" ? config('constants.empty') : Str::limit(@$list->created_at , '50', '...') }}</td>-->
 											<td style="white-space: initial;">{{ @$list->created_at == "" ? config('constants.empty') : date('d/m/Y', strtotime($list->created_at))  }}</td>
 
                                             <td>

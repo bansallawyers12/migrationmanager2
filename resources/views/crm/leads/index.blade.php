@@ -246,8 +246,8 @@
                                         </td>
                                         <td style="white-space: initial;">
                                             <a href="{{ route('clients.detail', base64_encode(convert_uuencode(@$list->id))) }}">
-                                                {{ @$list->first_name == "" ? config('constants.empty') : str_limit(@$list->first_name, '50', '...') }}
-                                                {{ @$list->last_name == "" ? config('constants.empty') : str_limit(@$list->last_name, '50', '...') }}
+                                                {{ @$list->first_name == "" ? config('constants.empty') : Str::limit(@$list->first_name, '50', '...') }}
+                                                {{ @$list->last_name == "" ? config('constants.empty') : Str::limit(@$list->last_name, '50', '...') }}
                                             </a>
 
                                         </td>

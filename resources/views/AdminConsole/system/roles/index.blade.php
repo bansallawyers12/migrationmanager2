@@ -46,8 +46,8 @@
 									$module_access = (array) $newarray;								
 								?>
 									<tr id="id_{{@$list->id}}"> 
-										<td>{{ @$list->name == "" ? config('constants.empty') : str_limit(@$list->name, '50', '...') }}</td> 
-										<td>{{ @$list->description == "" ? config('constants.empty') : str_limit(@$list->description, '50', '...') }}</td> 
+										<td>{{ @$list->name == "" ? config('constants.empty') : Str::limit(@$list->name, '50', '...') }}</td> 
+										<td>{{ @$list->description == "" ? config('constants.empty') : Str::limit(@$list->description, '50', '...') }}</td> 
 										<td><?php echo count($module_access); ?></td> 
 										<td>
 											<div class="dropdown d-inline">

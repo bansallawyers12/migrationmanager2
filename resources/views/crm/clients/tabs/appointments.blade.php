@@ -8,7 +8,7 @@
                         <div class="col-md-5 appointment_grid_list">
                             <?php
                             $rr=0;
-                            $appointmentdata = array();
+                            $appointmentdata = [];
                             $appointmentlists = \App\Models\Appointment::where('client_id', $fetchedData->id)->where('related_to', 'client')->orderby('created_at', 'DESC')->get();
 
                             $appointmentlistslast = \App\Models\Appointment::where('client_id', $fetchedData->id)->where('related_to', 'client')->orderby('created_at', 'DESC')->first();

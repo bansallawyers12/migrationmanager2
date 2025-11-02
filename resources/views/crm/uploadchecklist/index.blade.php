@@ -126,7 +126,7 @@
 																} ?>
 																<td>{{$matterName}}</td> 	
 															@endif
-															<td>{{ @$list->name == "" ? config('constants.empty') : str_limit(@$list->name, '50', '...') }}</td> 	
+															<td>{{ @$list->name == "" ? config('constants.empty') : Str::limit(@$list->name, '50', '...') }}</td> 	
 															<td>
 																<a href="{{URL::to('/public/checklists/'.$list->file)}}">File</a>							  
 															</td>

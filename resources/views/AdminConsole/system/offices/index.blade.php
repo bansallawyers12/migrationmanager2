@@ -42,12 +42,12 @@
 									@foreach (@$lists as $list)
 									<tbody class="tdata">	
 										<tr id="id_{{@$list->id}}">
-											<td><a href="{{route('adminconsole.system.offices.view', $list->id)}}">{{ @$list->office_name == "" ? config('constants.empty') : str_limit(@$list->office_name, '50', '...') }}</a></td> 
-											<td>{{ @$list->city == "" ? config('constants.empty') : str_limit(@$list->city, '50', '...') }}</td> 
-											<td>{{ @$list->country == "" ? config('constants.empty') : str_limit(@$list->country, '50', '...') }}</td> 
-											<td>{{ @$list->mobile == "" ? config('constants.empty') : str_limit(@$list->mobile, '50', '...') }}</td> 
-											<td>{{ @$list->phone == "" ? config('constants.empty') : str_limit(@$list->phone, '50', '...') }}</td> 
-											<td>{{ @$list->contact_person == "" ? config('constants.empty') : str_limit(@$list->contact_person, '50', '...') }}</td> 	
+											<td><a href="{{route('adminconsole.system.offices.view', $list->id)}}">{{ @$list->office_name == "" ? config('constants.empty') : Str::limit(@$list->office_name, '50', '...') }}</a></td> 
+											<td>{{ @$list->city == "" ? config('constants.empty') : Str::limit(@$list->city, '50', '...') }}</td> 
+											<td>{{ @$list->country == "" ? config('constants.empty') : Str::limit(@$list->country, '50', '...') }}</td> 
+											<td>{{ @$list->mobile == "" ? config('constants.empty') : Str::limit(@$list->mobile, '50', '...') }}</td> 
+											<td>{{ @$list->phone == "" ? config('constants.empty') : Str::limit(@$list->phone, '50', '...') }}</td> 
+											<td>{{ @$list->contact_person == "" ? config('constants.empty') : Str::limit(@$list->contact_person, '50', '...') }}</td> 	
 											<td>
 												<div class="dropdown d-inline">
 													<button class="btn btn-primary dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>

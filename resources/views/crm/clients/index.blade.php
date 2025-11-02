@@ -290,9 +290,9 @@
                                                 ? URL::to('/clients/detail/'.$encodedId.'/'.$latestMatter->client_unique_matter_no )
                                                 : URL::to('/clients/detail/'.$encodedId);
                                             ?>
-                                            <td style="white-space: initial;"><a href="{{ $clientDetailUrl }}">{{ @$list->first_name == "" ? config('constants.empty') : str_limit(@$list->first_name, '50', '...') }} {{ @$list->last_name == "" ? config('constants.empty') : str_limit(@$list->last_name, '50', '...') }} </a><br/></td>
+                                            <td style="white-space: initial;"><a href="{{ $clientDetailUrl }}">{{ @$list->first_name == "" ? config('constants.empty') : Str::limit(@$list->first_name, '50', '...') }} {{ @$list->last_name == "" ? config('constants.empty') : Str::limit(@$list->last_name, '50', '...') }} </a><br/></td>
                                             <td style="white-space: initial;"><?php echo @$list->rating; ?></td>
-                                            <td style="white-space: initial;">{{ @$list->client_id == "" ? config('constants.empty') : str_limit(@$list->client_id, '50', '...') }}</td>
+                                            <td style="white-space: initial;">{{ @$list->client_id == "" ? config('constants.empty') : Str::limit(@$list->client_id, '50', '...') }}</td>
                                             <td><span class="ag-label--circular" style="color: #6777ef" >In Progress</span></td>
                                             <td style="white-space: initial;">{{date('d/m/Y', strtotime($list->created_at))}}</td>
                                             <td style="white-space: initial;">

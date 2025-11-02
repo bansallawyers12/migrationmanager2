@@ -75,7 +75,7 @@
                                     if( \App\Models\Admin::where('id', $fetchedData->id)->exists()){
                                         $clientEmails = \App\Models\Admin::select('email','email_type')->where('id', $fetchedData->id)->get();
                                     } else {
-                                        $clientEmails = array();
+                                        $clientEmails = [];
                                     }
                                 } //dd($clientEmails);
                                 if( !empty($clientEmails) && count($clientEmails)>0 ){
@@ -117,7 +117,7 @@
                                     if( \App\Models\Admin::where('id', $fetchedData->id)->exists()){
                                         $clientContacts = \App\Models\Admin::select('phone','country_code','contact_type')->where('id', $fetchedData->id)->get();
                                     } else {
-                                        $clientContacts = array();
+                                        $clientContacts = [];
                                     }
                                 } //dd($clientContacts);
                                 if( !empty($clientContacts) && count($clientContacts)>0 ){
@@ -563,7 +563,7 @@
                     if($matter_cnt >0)
                     {
                         //Display reference values
-                        $matter_dis_ref_info_arr = array(); // Always a Collection
+                        $matter_dis_ref_info_arr = []; // Always a Collection
                         if($id1)
                         { //if client unique reference id is present in url
                             $matter_dis_ref_info_arr = \App\Models\ClientMatter::select('department_reference','other_reference')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
@@ -626,7 +626,7 @@
 
                             <?php
                             //Display reference values
-                            $matter_dis_ref_info_arr = array(); // Always a Collection
+                            $matter_dis_ref_info_arr = []; // Always a Collection
                             if($id1)
                             { //if client unique reference id is present in url
                                 $matter_dis_ref_info_arr = \App\Models\ClientMatter::select('sel_migration_agent','sel_person_responsible','sel_person_assisting')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();

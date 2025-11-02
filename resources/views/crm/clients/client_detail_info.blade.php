@@ -3975,7 +3975,7 @@
                                 <div class="form-group">
                                     <label for="tags_label">Tags/Label </label>
                                     <?php
-                                    $explodee = array();
+                                    $explodee = [];
                                     if($fetchedData->tagname != ''){
                                         $explodee = explode(',', $fetchedData->tagname);
                                     }

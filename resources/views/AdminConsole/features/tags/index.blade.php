@@ -43,7 +43,7 @@
 								@foreach (@$lists as $list)
 									<tr id="id_{{@$list->id}}">
 										
-										<td>{{ @$list->name == "" ? config('constants.empty') : str_limit(@$list->name, '50', '...') }}</td> 	
+										<td>{{ @$list->name == "" ? config('constants.empty') : Str::limit(@$list->name, '50', '...') }}</td> 	
 										<td>{{@$list->createddetail->first_name}}</td> 	
 										<td>{{@$list->updateddetail->first_name}}</td> 	
 										<td>@if($list->created_at != '') {{date('Y-m-d', strtotime($list->created_at))}} @else - @endif</td> 	
