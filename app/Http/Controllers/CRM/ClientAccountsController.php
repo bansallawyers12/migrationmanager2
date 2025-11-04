@@ -14,6 +14,7 @@ use App\Models\ActivitiesLog;
 use App\Models\clientServiceTaken;
 use App\Models\AccountClientReceipt;
 use App\Mail\HubdocInvoiceMail;
+use App\Services\FinancialStatsService;
 use Auth;
 use PDF;
 use Carbon\Carbon;
@@ -36,6 +37,106 @@ class ClientAccountsController extends Controller
     public function __construct()
     {
         $this->middleware('auth:admin');
+    }
+
+    /**
+     * Apply enhanced date filtering to query
+     * Supports quick presets, custom date range, and financial year
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  \Illuminate\Http\Request  $request
+     * @return void
+     */
+    private function applyDateFilters($query, Request $request)
+    {
+        $dateFilterType = $request->input('date_filter_type');
+        $fromDate = $request->input('from_date');
+        $toDate = $request->input('to_date');
+        $financialYear = $request->input('financial_year');
+
+        // Helper function to convert dd/mm/yyyy to Y-m-d
+        $convertDate = function($dateStr) {
+            if (empty($dateStr)) return null;
+            $parts = explode('/', $dateStr);
+            if (count($parts) == 3) {
+                return $parts[2] . '-' . $parts[1] . '-' . $parts[0]; // Y-m-d
+            }
+            return null;
+        };
+
+        if ($dateFilterType && $dateFilterType !== 'custom' && $dateFilterType !== 'financial_year') {
+            // Quick Filter Presets
+            $now = \Carbon\Carbon::now();
+            $startDate = null;
+            $endDate = null;
+
+            switch ($dateFilterType) {
+                case 'today':
+                    $startDate = $now->copy()->startOfDay();
+                    $endDate = $now->copy()->endOfDay();
+                    break;
+                
+                case 'this_week':
+                    $startDate = $now->copy()->startOfWeek();
+                    $endDate = $now->copy()->endOfWeek();
+                    break;
+                
+                case 'this_month':
+                    $startDate = $now->copy()->startOfMonth();
+                    $endDate = $now->copy()->endOfMonth();
+                    break;
+                
+                case 'this_quarter':
+                    $startDate = $now->copy()->startOfQuarter();
+                    $endDate = $now->copy()->endOfQuarter();
+                    break;
+                
+                case 'this_year':
+                    $startDate = $now->copy()->startOfYear();
+                    $endDate = $now->copy()->endOfYear();
+                    break;
+                
+                case 'last_month':
+                    $startDate = $now->copy()->subMonth()->startOfMonth();
+                    $endDate = $now->copy()->subMonth()->endOfMonth();
+                    break;
+                
+                case 'last_quarter':
+                    $startDate = $now->copy()->subQuarter()->startOfQuarter();
+                    $endDate = $now->copy()->subQuarter()->endOfQuarter();
+                    break;
+                
+                case 'last_year':
+                    $startDate = $now->copy()->subYear()->startOfYear();
+                    $endDate = $now->copy()->subYear()->endOfYear();
+                    break;
+            }
+
+            if ($startDate && $endDate) {
+                $query->whereBetween('trans_date', [
+                    $startDate->format('Y-m-d'),
+                    $endDate->format('Y-m-d')
+                ]);
+            }
+        } 
+        elseif ($fromDate && $toDate) {
+            // Custom Date Range
+            $from = $convertDate($fromDate);
+            $to = $convertDate($toDate);
+            
+            if ($from && $to) {
+                $query->whereBetween('trans_date', [$from, $to]);
+            }
+        }
+        elseif ($financialYear) {
+            // Financial Year (e.g., "2023-2024" means July 1, 2023 to June 30, 2024)
+            $years = explode('-', $financialYear);
+            if (count($years) == 2) {
+                $fyStart = $years[0] . '-07-01'; // July 1st
+                $fyEnd = $years[1] . '-06-30';   // June 30th
+                $query->whereBetween('trans_date', [$fyStart, $fyEnd]);
+            }
+        }
     }
 
     /**
@@ -1232,17 +1333,32 @@ class ClientAccountsController extends Controller
           }
       }
       
-      // Prepare update data
-      $updateData = [
-          'trans_date' => $request->input('trans_date'),
-          'entry_date' => $request->input('entry_date'),
-          'payment_method' => $request->input('payment_method'),
-          'description' => $request->input('description'),
-          'deposit_amount' => $request->input('deposit_amount'),
-          'invoice_no' => $request->input('invoice_no', ''),
-          'save_type' => $saveType,
-          'updated_at' => now(),
-      ];
+      // Prepare update data - PARTIAL UPDATE SUPPORT (only update provided fields)
+      $updateData = [];
+      
+      // Only add fields that are provided in the request
+      if ($request->has('trans_date')) {
+          $updateData['trans_date'] = $request->input('trans_date');
+      }
+      if ($request->has('entry_date')) {
+          $updateData['entry_date'] = $request->input('entry_date');
+      }
+      if ($request->has('payment_method')) {
+          $updateData['payment_method'] = $request->input('payment_method');
+      }
+      if ($request->has('description')) {
+          $updateData['description'] = $request->input('description');
+      }
+      if ($request->has('deposit_amount')) {
+          $updateData['deposit_amount'] = $request->input('deposit_amount');
+      }
+      if ($request->has('invoice_no')) {
+          $updateData['invoice_no'] = $request->input('invoice_no', '');
+      }
+      
+      // Always update these fields
+      $updateData['save_type'] = $saveType;
+      $updateData['updated_at'] = now();
       
       // Only update document if new one was uploaded
       if ($insertedDocId !== null) {
@@ -2465,13 +2581,8 @@ class ClientAccountsController extends Controller
           $query->where('client_matter_id', '=', $request->input('client_matter_id'));
       }
 
-      // Filter: Transaction Date
-      if ($request->has('trans_date')) {
-          $transDate = trim($request->input('trans_date'));
-          if ($transDate != '') {
-           $query->where('trans_date', 'LIKE', '%' . $transDate . '%');
-          }
-      }
+      // Enhanced Date Filtering
+      $this->applyDateFilters($query, $request);
 
       // Filter: Amount
       if ($request->has('amount') && trim($request->input('amount')) != '') {
@@ -2823,13 +2934,8 @@ class ClientAccountsController extends Controller
           $query->where('client_matter_id', '=', $request->input('client_matter_id'));
       }
 
-      // Filter: Transaction Date
-      if ($request->has('trans_date')) {
-          $transDate = trim($request->input('trans_date'));
-          if ($transDate != '') {
-           $query->where('trans_date', 'LIKE', '%' . $transDate . '%');
-          }
-      }
+      // Enhanced Date Filtering
+      $this->applyDateFilters($query, $request);
 
       // Filter: Type
       if ($request->has('client_fund_ledger_type') && trim($request->input('client_fund_ledger_type')) != '') {
@@ -2917,13 +3023,8 @@ class ClientAccountsController extends Controller
           $query->where('client_matter_id', '=', $request->input('client_matter_id'));
       }
 
-      // Filter: Transaction Date
-      if ($request->has('trans_date')) {
-          $transDate = trim($request->input('trans_date'));
-          if ($transDate != '') {
-           $query->where('trans_date', 'LIKE', '%' . $transDate . '%');
-          }
-      }
+      // Enhanced Date Filtering
+      $this->applyDateFilters($query, $request);
 
       // Filter: Amount
       if ($request->has('amount') && trim($request->input('amount')) != '') {
@@ -2987,6 +3088,9 @@ class ClientAccountsController extends Controller
   {
       $query     = AccountClientReceipt::select('id','receipt_id','client_id','user_id','trans_date','entry_date','trans_no', 'invoice_no','payment_method','validate_receipt','voided_or_validated_by', DB::raw('sum(withdraw_amount) as total_withdrawal_amount'))->where('receipt_type',4)->groupBy('receipt_id');
       
+      // Enhanced Date Filtering
+      $this->applyDateFilters($query, $request);
+      
       // Sorting
       $sortBy = $request->input('sort_by', 'id');
       $sortOrder = $request->input('sort_order', 'desc');
@@ -3015,19 +3119,84 @@ class ClientAccountsController extends Controller
       return view('crm.clients.journalreceiptlist', compact(['lists', 'totalData']));
   }
 
+  /**
+   * Analytics Dashboard
+   * 
+   * Display comprehensive financial statistics and analytics
+   */
+  public function analyticsDashboard(Request $request)
+  {
+      $statsService = new FinancialStatsService();
+      
+      // Get date range from request or default to current month
+      $startDate = $request->has('start_date') 
+          ? Carbon::parse($request->input('start_date')) 
+          : Carbon::now()->startOfMonth();
+      
+      $endDate = $request->has('end_date') 
+          ? Carbon::parse($request->input('end_date')) 
+          : Carbon::now()->endOfMonth();
+      
+      // Get receipt_type filter (null = all, 1-4 = specific type)
+      $receiptType = $request->has('receipt_type') && $request->input('receipt_type') !== ''
+          ? (int)$request->input('receipt_type')
+          : null;
+      
+      // Get all statistics
+      $dashboardStats = $statsService->getDashboardStats([
+          'start_date' => $startDate,
+          'end_date' => $endDate,
+          'receipt_type' => $receiptType,
+      ]);
+      
+      // Get payment method breakdown
+      $paymentMethods = $statsService->getPaymentMethodBreakdown($startDate, $endDate);
+      
+      return view('crm.clients.analytics-dashboard', compact([
+          'dashboardStats',
+          'paymentMethods',
+          'startDate',
+          'endDate',
+          'receiptType',
+      ]));
+  }
+
   public function validate_receipt(Request $request){
-      $response = array();
-      if( isset($request->clickedReceiptIds) && !empty($request->clickedReceiptIds) ){
+      try {
+          $response = array();
+          
+          // Validate input
+          if( !isset($request->clickedReceiptIds) || empty($request->clickedReceiptIds) ){
+              $response['status'] = false;
+              $response['message'] = 'No receipts selected.';
+              return response()->json($response, 400);
+          }
+          
+          if( !isset($request->receipt_type) ){
+              $response['status'] = false;
+              $response['message'] = 'Receipt type is required.';
+              return response()->json($response, 400);
+          }
+          
           //Update all selected receipt bit to be 1
           $affectedRows = DB::table('account_client_receipts')
           ->where('receipt_type', $request->receipt_type)
           ->whereIn('id', $request->clickedReceiptIds)
           ->update(['validate_receipt' => 1,'voided_or_validated_by' => Auth::user()->id]);
+          
           if ($affectedRows > 0) {
-
            foreach($request->clickedReceiptIds as $ReceiptVal){
                $receipt_info = AccountClientReceipt::select('user_id','client_id','trans_date')->where('id', $ReceiptVal)->first();
+               
+               if(!$receipt_info){
+                   continue; // Skip if receipt not found
+               }
+               
                $client_info = \App\Models\Admin::select('client_id')->where('id', $receipt_info->client_id)->first();
+               
+               if(!$client_info){
+                   continue; // Skip if client not found
+               }
 
                if($request->receipt_type == 1){
                    $subject = 'validated client receipt no -'.$ReceiptVal.' of client-'.$client_info->client_id;
@@ -3035,7 +3204,10 @@ class ClientAccountsController extends Controller
                    $subject = 'validated office receipt no -'.$ReceiptVal.' of client-'.$client_info->client_id;
                } else if($request->receipt_type == 4){
                    $subject = 'validated journal receipt no -'.$ReceiptVal.' of client-'.$client_info->client_id;
+               } else {
+                   $subject = 'validated receipt no -'.$ReceiptVal;
                }
+               
                $objs = new ActivitiesLog;
                $objs->client_id = $receipt_info->client_id;
                $objs->created_by = Auth::user()->id;
@@ -3052,16 +3224,30 @@ class ClientAccountsController extends Controller
            ->whereIn('account_client_receipts.id', $request->clickedReceiptIds)
            ->where('account_client_receipts.validate_receipt', 1)
            ->get();
-           $response['record_data'] =     $record_data;
-           $response['status']     =     true;
-           $response['message']    =    'Receipt validated successfully.';
+           
+           $response['record_data'] = $record_data;
+           $response['status'] = true;
+           $response['message'] = 'Receipt validated successfully.';
           } else {
-           $response['status']     =     true;
-           $response['message']    =    'No record was updated.';
-           $response['clickedIds'] =     array();
+           $response['status'] = false;
+           $response['message'] = 'No records were updated. Receipts may already be validated.';
+           $response['clickedIds'] = array();
           }
+          
+          return response()->json($response);
+          
+      } catch (\Exception $e) {
+          \Log::error('Error validating receipt: ' . $e->getMessage(), [
+              'receipt_ids' => $request->clickedReceiptIds ?? null,
+              'receipt_type' => $request->receipt_type ?? null,
+              'trace' => $e->getTraceAsString()
+          ]);
+          
+          return response()->json([
+              'status' => false,
+              'message' => 'An error occurred while validating receipt: ' . $e->getMessage()
+          ], 500);
       }
-        return response()->json($response);
   }
 
   //Delete Receipt by Super admin - Celesty

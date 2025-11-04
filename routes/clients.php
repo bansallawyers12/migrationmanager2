@@ -199,6 +199,7 @@ Route::get('/clients/printPreview/{id}', 'CRM\ClientAccountsController@printPrev
 Route::post('/clients/getTopInvoiceNoFromDB', 'CRM\ClientAccountsController@getTopInvoiceNoFromDB')->name('clients.getTopInvoiceNoFromDB');
 Route::post('/clients/clientLedgerBalanceAmount', 'CRM\ClientAccountsController@clientLedgerBalanceAmount')->name('clients.clientLedgerBalanceAmount');
 
+Route::get('/clients/analytics-dashboard', 'CRM\ClientAccountsController@analyticsDashboard')->name('clients.analytics-dashboard');
 Route::get('/clients/invoicelist', 'CRM\ClientAccountsController@invoicelist')->name('clients.invoicelist');
 Route::post('/void_invoice','CRM\ClientAccountsController@void_invoice')->name('client.void_invoice');
 Route::get('/clients/clientreceiptlist', 'CRM\ClientAccountsController@clientreceiptlist')->name('clients.clientreceiptlist');

@@ -350,6 +350,96 @@
             transform: translateY(0);
         }
     }
+
+    /* Filter Panel Styles */
+    .filter_panel {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+        display: none;
+        border: 1px solid #e2e8f0;
+    }
+
+    .filter_panel h4 {
+        color: #1e293b;
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #667eea;
+        display: inline-block;
+    }
+
+    .filter_panel {
+        animation: slideDown 0.3s ease;
+    }
+
+    /* Modern Form Inputs */
+    .form-group label {
+        color: #475569 !important;
+        font-weight: 600;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+
+    .form-control {
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 10px 16px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        background: white;
+    }
+
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        outline: none;
+    }
+
+    /* Modern Button Styling */
+    .btn {
+        border-radius: 10px;
+        padding: 10px 20px;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-info {
+        background: linear-gradient(135deg, #00b4db 0%, #0083b0 100%);
+        color: white;
+    }
+
+    .btn-theme {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        backdrop-filter: blur(10px);
+    }
+
+    .filter-buttons-container {
+        margin-top: 20px;
+    }
+
+    @include('crm.clients.partials.enhanced-date-filter-styles')
 </style>
 @endsection
 
@@ -364,13 +454,53 @@
                 </div>
                 <div class="card-header">
                     <h4 style="color: #4a5568 !important;">All Journal Receipt List</h4>
-                    <button class="btn btn-primary Validate_Receipt" style="background-color: #394eea !important;">
-                        <i class="fas fa-check-circle"></i>
-                        Validate Receipt
-                    </button>
+                    <div class="d-flex align-items-center">
+                        <a href="{{ route('clients.analytics-dashboard') }}" class="btn btn-theme btn-theme-sm mr-2" title="View Financial Analytics Dashboard"><i class="fas fa-chart-line"></i> Analytics</a>
+                        <a href="javascript:;" style="background: #394eea;color: white;" class="btn btn-theme btn-theme-sm filter_btn mr-2"><i class="fas fa-filter"></i> Filter</a>
+                        <button class="btn btn-primary Validate_Receipt" style="background-color: #394eea !important;">
+                            <i class="fas fa-check-circle"></i>
+                            Validate Receipt
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="card-body">
+                    <!-- Enhanced Date Filter Panel -->
+                    <div class="filter_panel">
+                        <h4>
+                            Search By Details
+                            @if(request()->hasAny(['date_filter_type', 'from_date', 'to_date', 'financial_year']))
+                                <span class="active-filters-badge">
+                                    <i class="fas fa-filter"></i>
+                                    {{ collect([request('date_filter_type'), request('from_date'), request('to_date'), request('financial_year')])->filter()->count() }} Active
+                                </span>
+                            @endif
+                        </h4>
+                        <form action="{{URL::to('/clients/journalreceiptlist')}}" method="get" id="filterForm">
+                            <!-- Enhanced Date Filter -->
+                            @include('crm.clients.partials.enhanced-date-filter')
+
+                            <!-- Action Buttons -->
+                            <div class="row">
+                                <div class="col-md-12 text-center">
+                                    <div class="filter-buttons-container">
+                                        <button type="submit" class="btn btn-primary btn-theme-lg mr-3">
+                                            <i class="fas fa-search"></i> Search
+                                        </button>
+                                        <a class="btn btn-info" href="{{URL::to('/clients/journalreceiptlist')}}">
+                                            <i class="fas fa-redo"></i> Reset All
+                                        </a>
+                                        @if(request()->hasAny(['date_filter_type', 'from_date', 'to_date', 'financial_year']))
+                                            <button type="button" class="clear-filter-btn ml-2" id="clearDateFilters">
+                                                <i class="fas fa-times-circle"></i> Clear Date Filters
+                                            </button>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
                     <div class="table-responsive">
                         <table class="table">
                             <thead>
@@ -522,8 +652,18 @@
 </div>
 @endsection
 @push('scripts')
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/css/bootstrap-datepicker.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/js/bootstrap-datepicker.min.js"></script>
 <script>
 jQuery(document).ready(function($){
+    // Filter button toggle
+    $('.filter_btn').on('click', function(){
+        $('.filter_panel').slideToggle();
+    });
+
+    // Enhanced Date Filter Scripts
+    @include('crm.clients.partials.enhanced-date-filter-scripts')
+
     $("[data-checkboxes]").each(function () {
         var me = $(this),
         group = me.data('checkboxes'),
@@ -573,22 +713,46 @@ jQuery(document).ready(function($){
 
     //validate receipt
     $(document).delegate('.Validate_Receipt', 'click', function(){
+        console.log('Validate Receipt clicked');
+        console.log('clickedReceiptIds:', clickedReceiptIds);
 
         if ( clickedReceiptIds.length > 0)
         {
 
             var mergeStr = "Are you sure want to validate these receipt?";
             if (confirm(mergeStr)) {
+                console.log('Starting AJAX request...');
+                console.log('URL:', "{{URL::to('/')}}/validate_receipt");
+                console.log('Data:', {clickedReceiptIds:clickedReceiptIds, receipt_type:4});
+                
                 $.ajax({
                     type:'post',
                     url:"{{URL::to('/')}}/validate_receipt",
                     headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
                     data: {clickedReceiptIds:clickedReceiptIds,receipt_type:4},
+                    dataType: 'json',
+                    beforeSend: function() {
+                        console.log('AJAX request being sent...');
+                    },
                     success: function(response){
-                        var obj = $.parseJSON(response);
+                        console.log('AJAX Success! Response:', response);
+                        console.log('Response type:', typeof response);
+                        
+                        // Parse response if it's a string (fallback for older jQuery versions)
+                        var obj = (typeof response === 'string') ? $.parseJSON(response) : response;
+                        console.log('Parsed object:', obj);
+                        
+                        if(!obj.status) {
+                            alert('Error: ' + obj.message);
+                            return;
+                        }
+                        
                         //location.reload(true);
                         var record_data = obj.record_data;
+                        console.log('Record data:', record_data);
+                        
                         $.each(record_data, function(index, subArray) {
+                            console.log('Processing record:', subArray);
                             //console.log('index=='+index);
                             //console.log('subArray=='+subArray.id);
                             $('#validate_' + subArray.id +' span')
@@ -605,6 +769,43 @@ jQuery(document).ready(function($){
                         $('.custom-error-msg').text(obj.message);
                         $('.custom-error-msg').show();
                         $('.custom-error-msg').addClass('alert alert-success');
+                        
+                        // Clear checkboxes after successful validation
+                        clickedReceiptIds = [];
+                        $('.cb-element').prop('checked', false);
+                        $('#checkbox-all').prop('checked', false);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('=== AJAX ERROR ===');
+                        console.error('Status:', status);
+                        console.error('Error:', error);
+                        console.error('XHR Status:', xhr.status);
+                        console.error('XHR Status Text:', xhr.statusText);
+                        console.error('Response Text:', xhr.responseText);
+                        console.error('Response JSON:', xhr.responseJSON);
+                        console.error('==================');
+                        
+                        var errorMessage = 'Unknown error occurred';
+                        if(xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        } else if(xhr.responseText) {
+                            // Check if it's HTML
+                            if(xhr.responseText.trim().startsWith('<')) {
+                                console.error('Server returned HTML instead of JSON!');
+                                console.error('First 500 chars:', xhr.responseText.substring(0, 500));
+                                errorMessage = 'Server returned an HTML page instead of JSON. This usually means:\n' +
+                                              '1. The route is not found (404)\n' +
+                                              '2. Authentication failed (redirected to login)\n' +
+                                              '3. Server error (500)\n\n' +
+                                              'Check the console for the full HTML response.';
+                            } else {
+                                errorMessage = 'Server returned: ' + xhr.responseText.substring(0, 200);
+                            }
+                        } else {
+                            errorMessage = error || 'Unknown error';
+                        }
+                        
+                        alert('Error validating receipt: ' + errorMessage + '\n\nPlease check the browser console (F12) for more details.');
                     }
                 });
             }

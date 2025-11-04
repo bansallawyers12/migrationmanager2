@@ -435,6 +435,8 @@
     .listing-container .filter_panel {
         animation: slideDown 0.3s ease;
     }
+
+    @include('crm.clients.partials.enhanced-date-filter-styles')
 </style>
 @endsection
 
@@ -452,6 +454,7 @@
                         <h4 style="margin-bottom: 0; flex-shrink: 0;">All Clients Receipt List</h4>
                         
                         <div class="d-flex align-items-center" style="margin-left: auto;">
+                            <a href="{{ route('clients.analytics-dashboard') }}" class="btn btn-theme btn-theme-sm" title="View Financial Analytics Dashboard" style="margin-right: 10px;"><i class="fas fa-chart-line"></i> Analytics</a>
                             <select name="per_page" id="per_page" class="form-control" style="width: auto; min-width: 80px; border-radius: 0; border: 1px solid #ddd; padding: 6px 12px; margin-right: 10px;">
                                 <option value="10" {{ $perPage == 10 ? 'selected' : '' }}>10</option>
                                 <option value="20" {{ $perPage == 20 ? 'selected' : '' }}>20</option>
@@ -480,8 +483,16 @@
 
                 <div class="card-body">
                     <div class="filter_panel">
-                        <h4 style="margin-top: 0; margin-bottom: 8px;">Search By Details</h4>
-                        <form action="{{URL::to('/clients/clientreceiptlist')}}" method="get">
+                        <h4 style="margin-top: 0; margin-bottom: 8px;">
+                            Search By Details
+                            @if(request()->hasAny(['client_id', 'client_matter_id', 'amount', 'client_fund_ledger_type', 'receipt_validate', 'date_filter_type', 'from_date', 'to_date', 'financial_year']))
+                                <span class="active-filters-badge">
+                                    <i class="fas fa-filter"></i>
+                                    {{ collect([request('client_id'), request('client_matter_id'), request('amount'), request('client_fund_ledger_type'), request('receipt_validate'), request('date_filter_type'), request('from_date'), request('to_date'), request('financial_year')])->filter()->count() }} Active
+                                </span>
+                            @endif
+                        </h4>
+                        <form action="{{URL::to('/clients/clientreceiptlist')}}" method="get" id="filterForm">
                             <div class="row d-flex align-items-end">
                                 <div class="col-md-2">
                                     <div class="form-group">
@@ -517,12 +528,6 @@
                                 </div>
                                 <div class="col-md-2">
                                     <div class="form-group">
-                                        <label for="trans_date" class="col-form-label" style="color:#000;">Date</label>
-                                        <input type="text" name="trans_date" value="{{ old('trans_date', Request::get('trans_date')) }}" class="form-control" data-valid="" autocomplete="off" placeholder="Date" id="trans_date" style="width: 100%;">
-                                    </div>
-                                </div>
-                                <div class="col-md-2">
-                                    <div class="form-group">
                                         <label for="client_fund_ledger_type" class="col-form-label" style="color:#000;">Type</label>
                                         <select class="form-control" name="client_fund_ledger_type" style="width: 100%;">
                                             <option value="">Select</option>
@@ -543,13 +548,26 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label class="col-form-label" style="color: transparent;">&nbsp;</label>
-                                        <div class="d-flex">
-                                            <button type="submit" class="btn btn-primary btn-theme-lg mr-3">Search</button>
-                                            <a class="btn btn-info" href="{{URL::to('/clients/clientreceiptlist')}}">Reset</a>
-                                        </div>
+                            </div>
+
+                            <!-- Enhanced Date Filter -->
+                            @include('crm.clients.partials.enhanced-date-filter')
+
+                            <!-- Action Buttons -->
+                            <div class="row">
+                                <div class="col-md-12 text-center">
+                                    <div class="filter-buttons-container" style="margin-top: 20px;">
+                                        <button type="submit" class="btn btn-primary btn-theme-lg mr-3">
+                                            <i class="fas fa-search"></i> Search
+                                        </button>
+                                        <a class="btn btn-info" href="{{URL::to('/clients/clientreceiptlist')}}">
+                                            <i class="fas fa-redo"></i> Reset All
+                                        </a>
+                                        @if(request()->hasAny(['client_id', 'client_matter_id', 'amount', 'client_fund_ledger_type', 'receipt_validate', 'date_filter_type', 'from_date', 'to_date', 'financial_year']))
+                                            <button type="button" class="clear-filter-btn ml-2" id="clearDateFilters">
+                                                <i class="fas fa-times-circle"></i> Clear Date Filters
+                                            </button>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -688,17 +706,7 @@
                                             <td>{{ $client_id_display }}</td>
                                             <td>{{ $client_matter_display }}</td>
                                             <td>{{ $client_full_name }}</td>
-                                            <td id="verified_{{@$list->id}}">
-                                                <?php
-                                                if( $receipt_validate == 'Yes' )
-                                                { ?>
-                                                <span style="display: inline-flex;">
-                                                    <i class="fas fa-check-circle" title="Verified Receipt" style="margin-top: 4px;"></i>
-                                                </span>
-                                                <?php
-                                                } ?>
-                                                {{ $trans_date }}
-                                            </td>
+                                            <td>{{ $trans_date }}</td>
                                             <td>{{ $client_fund_ledger_type }} {{$invoice_no }}</td>
                                             <td>{{ $Reference }}</td>
                                             <td id="deposit_{{@$list->id}}">{{ is_numeric($total_fund_in_amount) ? '$'.number_format((float)$total_fund_in_amount, 2) : '-' }}</td>
@@ -747,6 +755,8 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/css/bootstrap-datepicker.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/js/bootstrap-datepicker.min.js"></script>
 <script>
+console.log('=== CLIENT RECEIPT LIST JS LOADED - Version 2.0 ===');
+console.log('Timestamp:', new Date().toISOString());
 jQuery(document).ready(function($){
     // Check if any filter has a value and keep panel open
     function checkFilterValues() {
@@ -803,11 +813,8 @@ jQuery(document).ready(function($){
         $('.select2-dropdown').css('z-index', '9999');
     });
 
-    $('.listing-container #trans_date').datepicker({
-        format: 'dd/mm/yyyy',
-        autoclose: true,
-        todayHighlight: true
-    });
+    // Enhanced Date Filter Scripts
+    @include('crm.clients.partials.enhanced-date-filter-scripts')
 
     $('.listing-container [data-checkboxes]').each(function () {
         var me = $(this),
@@ -866,20 +873,45 @@ jQuery(document).ready(function($){
 
     //validate receipt
     $(document).delegate('.listing-container .Validate_Receipt', 'click', function(){
+        console.log('Validate Receipt clicked');
+        console.log('clickedReceiptIds:', clickedReceiptIds);
+        
         if ( clickedReceiptIds.length > 0)
         {
             var mergeStr = "Are you sure want to validate these receipt?";
             if (confirm(mergeStr)) {
+                console.log('Starting AJAX request...');
+                console.log('URL:', "{{URL::to('/')}}/validate_receipt");
+                console.log('Data:', {clickedReceiptIds:clickedReceiptIds, receipt_type:1});
+                
                 $.ajax({
                     type:'post',
                     url:"{{URL::to('/')}}/validate_receipt",
                     headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
                     data: {clickedReceiptIds:clickedReceiptIds,receipt_type:1},
+                    dataType: 'json',
+                    beforeSend: function() {
+                        console.log('AJAX request being sent...');
+                    },
                     success: function(response){
-                        var obj = $.parseJSON(response);
+                        console.log('AJAX Success! Response:', response);
+                        console.log('Response type:', typeof response);
+                        
+                        // Parse response if it's a string (fallback for older jQuery versions)
+                        var obj = (typeof response === 'string') ? $.parseJSON(response) : response;
+                        console.log('Parsed object:', obj);
+                        
+                        if(!obj.status) {
+                            alert('Error: ' + obj.message);
+                            return;
+                        }
+                        
                         //location.reload(true);
                         var record_data = obj.record_data;
+                        console.log('Record data:', record_data);
+                        
                         $.each(record_data, function(index, subArray) {
+                            console.log('Processing record:', subArray);
                             //console.log('index=='+index);
                             //console.log('subArray=='+subArray.id);
                             $('.listing-container #validate_' + subArray.id +' span')
@@ -892,17 +924,48 @@ jQuery(document).ready(function($){
                                 var validateby_full_name = "-";
                             }
                             $('.listing-container #validateby_'+subArray.id).text(validateby_full_name);
-
-                            // Add check-circle icon to verified cell
-                            $('.listing-container #verified_' + subArray.id).html(
-                                '<span style="display: inline-flex;">' +
-                                '<i class="fas fa-check-circle" title="Verified Receipt" style="margin-top: 4px; margin-right: 5px;"></i>' +
-                                '</span>' + subArray.trans_date
-                            );
                         });
                         $('.listing-container .custom-error-msg').text(obj.message);
                         $('.listing-container .custom-error-msg').show();
                         $('.listing-container .custom-error-msg').addClass('alert alert-success');
+                        
+                        // Clear checkboxes after successful validation
+                        clickedReceiptIds = [];
+                        $('.listing-container .cb-element').prop('checked', false);
+                        $('.listing-container #checkbox-all').prop('checked', false);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('=== AJAX ERROR ===');
+                        console.error('Status:', status);
+                        console.error('Error:', error);
+                        console.error('XHR Status:', xhr.status);
+                        console.error('XHR Status Text:', xhr.statusText);
+                        console.error('Response Text:', xhr.responseText);
+                        console.error('Response JSON:', xhr.responseJSON);
+                        console.error('==================');
+                        
+                        var errorMessage = 'Unknown error occurred';
+                        if(xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                            console.log('Using JSON error message:', errorMessage);
+                        } else if(xhr.responseText) {
+                            // Check if it's HTML
+                            if(xhr.responseText.trim().startsWith('<')) {
+                                console.error('Server returned HTML instead of JSON!');
+                                console.error('First 500 chars:', xhr.responseText.substring(0, 500));
+                                errorMessage = 'Server returned an HTML page instead of JSON. This usually means:\n' +
+                                              '1. The route is not found (404)\n' +
+                                              '2. Authentication failed (redirected to login)\n' +
+                                              '3. Server error (500)\n\n' +
+                                              'Check the console for the full HTML response.';
+                            } else {
+                                errorMessage = 'Server returned: ' + xhr.responseText.substring(0, 200);
+                            }
+                        } else {
+                            errorMessage = error || 'Unknown error';
+                        }
+                        
+                        alert('Error validating receipt: ' + errorMessage + '\n\nPlease check the browser console (F12) for more details.');
                     }
                 });
             }
@@ -928,8 +991,10 @@ jQuery(document).ready(function($){
                 url: "{{URL::to('/')}}/delete_receipt",
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
                 data: { receiptId: clickedReceiptIds[0], receipt_type: 1 },
+                dataType: 'json',
                 success: function(response) {
-                    var obj = $.parseJSON(response);
+                    // Parse response if it's a string (fallback for older jQuery versions)
+                    var obj = (typeof response === 'string') ? $.parseJSON(response) : response;
                     if (obj.status) {
                         $('.listing-container #id_' + clickedReceiptIds[0]).remove();
                         clickedReceiptIds = [];

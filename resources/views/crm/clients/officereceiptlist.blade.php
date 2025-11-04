@@ -409,6 +409,8 @@
         color: #667eea;
         font-size: 10px;
     }
+
+    @include('crm.clients.partials.enhanced-date-filter-styles')
 </style>
 @endsection
 
@@ -424,6 +426,7 @@
                 <div class="card-header">
                     <h4>All Offices Receipt List</h4>
                     <div class="d-flex align-items-center">
+                        <a href="{{ route('clients.analytics-dashboard') }}" class="btn btn-theme btn-theme-sm mr-2" title="View Financial Analytics Dashboard"><i class="fas fa-chart-line"></i> Analytics</a>
                         <a href="javascript:;" style="background: #394eea;color: white;"  class="btn btn-theme btn-theme-sm filter_btn mr-2"><i class="fas fa-filter"></i> Filter</a>
                     </div>
 
@@ -436,12 +439,22 @@
                 <div class="card-body">
 
                     <div class="filter_panel">
-                        <h4>Search By Details</h4>
-                        <form action="{{URL::to('/clients/officereceiptlist')}}" method="get">
+                        <h4>
+                            Search By Details
+                            @if(request()->hasAny(['client_id', 'client_matter_id', 'amount', 'validate_receipt', 'date_filter_type', 'from_date', 'to_date', 'financial_year']))
+                                <span class="active-filters-badge">
+                                    <i class="fas fa-filter"></i>
+                                    {{ collect([request('client_id'), request('client_matter_id'), request('amount'), request('validate_receipt'), request('date_filter_type'), request('from_date'), request('to_date'), request('financial_year')])->filter()->count() }} Active
+                                </span>
+                            @endif
+                        </h4>
+                        <form action="{{URL::to('/clients/officereceiptlist')}}" method="get" id="filterForm">
                             <div class="row">
                                 <div class="col-md-3">
                                     <div class="form-group">
-                                        <label for="client_id" class="col-form-label" style="color:#4a5568 !important;">Client ID</label>
+                                        <label for="client_id" class="col-form-label" style="color:#4a5568 !important;">
+                                            <i class="fas fa-user"></i> Client ID
+                                        </label>
                                         <select name="client_id" id="client_id" class="form-control select2">
                                             <option value="">Select Client</option>
                                             @foreach($clientIds as $client)
@@ -454,7 +467,9 @@
                                 </div>
                                 <div class="col-md-3">
                                     <div class="form-group">
-                                        <label for="client_matter_id" class="col-form-label" style="color:#4a5568 !important;">Client Matter ID</label>
+                                        <label for="client_matter_id" class="col-form-label" style="color:#4a5568 !important;">
+                                            <i class="fas fa-briefcase"></i> Client Matter ID
+                                        </label>
                                         <select name="client_matter_id" id="client_matter_id" class="form-control select2">
                                             <option value="">Select Matter</option>
                                             @foreach($matterIds as $matter)
@@ -466,21 +481,19 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-2">
+                                <div class="col-md-3">
                                     <div class="form-group">
-                                        <label for="trans_date" class="col-form-label" style="color:#000;">Date</label>
-                                        <input type="text" name="trans_date" value="{{ old('trans_date', Request::get('trans_date')) }}" class="form-control" data-valid="" autocomplete="off" placeholder="Date" id="trans_date">
-                                    </div>
-                                </div>
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label for="amount" class="col-form-label" style="color:#4a5568 !important;">Amount</label>
+                                        <label for="amount" class="col-form-label" style="color:#4a5568 !important;">
+                                            <i class="fas fa-dollar-sign"></i> Amount
+                                        </label>
                                         <input type="text" name="amount" value="{{ old('amount', Request::get('amount')) }}" class="form-control" placeholder="Amount" id="amount">
                                     </div>
                                 </div>
-                                <div class="col-md-2">
+                                <div class="col-md-3">
                                     <div class="form-group">
-                                        <label for="validate_receipt" class="col-form-label" style="color:#4a5568 !important;">Validate Receipt</label>
+                                        <label for="validate_receipt" class="col-form-label" style="color:#4a5568 !important;">
+                                            <i class="fas fa-check-circle"></i> Validate Receipt
+                                        </label>
                                         <select name="validate_receipt" id="validate_receipt" class="form-control">
                                             <option value="">Select Type</option>
                                             <option value="1" {{ request('validate_receipt') == '1' ? 'selected' : '' }}>Yes</option>
@@ -489,11 +502,25 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Enhanced Date Filter -->
+                            @include('crm.clients.partials.enhanced-date-filter')
+
+                            <!-- Action Buttons -->
                             <div class="row">
                                 <div class="col-md-12 text-center">
                                     <div class="filter-buttons-container">
-                                        <button type="submit" class="btn btn-primary btn-theme-lg mr-3">Search</button>
-                                        <a class="btn btn-info" href="{{URL::to('/clients/officereceiptlist')}}">Reset</a>
+                                        <button type="submit" class="btn btn-primary btn-theme-lg mr-3">
+                                            <i class="fas fa-search"></i> Search
+                                        </button>
+                                        <a class="btn btn-info" href="{{URL::to('/clients/officereceiptlist')}}">
+                                            <i class="fas fa-redo"></i> Reset All
+                                        </a>
+                                        @if(request()->hasAny(['client_id', 'client_matter_id', 'amount', 'validate_receipt', 'date_filter_type', 'from_date', 'to_date', 'financial_year']))
+                                            <button type="button" class="clear-filter-btn ml-2" id="clearDateFilters">
+                                                <i class="fas fa-times-circle"></i> Clear Date Filters
+                                            </button>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -627,17 +654,7 @@
                                             <td>{{ $client_id_display }}</td>
                                              <td>{{ $client_matter_display }}</td>
                                             <td>{{ $client_full_name }}</td>
-                                            <td id="verified_{{@$list->id}}">
-                                                <?php
-                                                if( $receipt_validate == 'Yes' )
-                                                { ?>
-                                                <span style="display: inline-flex;">
-                                                    <i class="fas fa-check-circle" title="Verified Receipt" style="margin-top: 4px;"></i>
-                                                </span>
-                                                <?php
-                                                } ?>
-                                                {{ $trans_date }}
-                                            </td>
+                                            <td>{{ $trans_date }}</td>
                                             <td>{{ $Reference }}</td>
                                             <td>{{ $invoice_no }}</td>
                                             <td>{{ $payment_method }}</td>
@@ -708,11 +725,8 @@ jQuery(document).ready(function($){
         $('.select2-dropdown').css('z-index', '9999');
     });
 
-    $('.listing-container #trans_date').datepicker({
-        format: 'dd/mm/yyyy',
-        autoclose: true,
-        todayHighlight: true
-    });
+    // Enhanced Date Filter Scripts
+    @include('crm.clients.partials.enhanced-date-filter-scripts')
 
     $('.listing-container [data-checkboxes]').each(function () {
         var me = $(this),
@@ -763,20 +777,45 @@ jQuery(document).ready(function($){
 
     //validate receipt
     $(document).delegate('.listing-container .Validate_Receipt', 'click', function(){
+        console.log('Validate Receipt clicked');
+        console.log('clickedReceiptIds:', clickedReceiptIds);
+        
         if ( clickedReceiptIds.length > 0)
         {
             var mergeStr = "Are you sure want to validate these receipt?";
             if (confirm(mergeStr)) {
+                console.log('Starting AJAX request...');
+                console.log('URL:', "{{URL::to('/')}}/validate_receipt");
+                console.log('Data:', {clickedReceiptIds:clickedReceiptIds, receipt_type:2});
+                
                 $.ajax({
                     type:'post',
                     url:"{{URL::to('/')}}/validate_receipt",
                     headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
                     data: {clickedReceiptIds:clickedReceiptIds,receipt_type:2},
+                    dataType: 'json',
+                    beforeSend: function() {
+                        console.log('AJAX request being sent...');
+                    },
                     success: function(response){
-                        var obj = $.parseJSON(response);
+                        console.log('AJAX Success! Response:', response);
+                        console.log('Response type:', typeof response);
+                        
+                        // Parse response if it's a string (fallback for older jQuery versions)
+                        var obj = (typeof response === 'string') ? $.parseJSON(response) : response;
+                        console.log('Parsed object:', obj);
+                        
+                        if(!obj.status) {
+                            alert('Error: ' + obj.message);
+                            return;
+                        }
+                        
                         //location.reload(true);
                         var record_data = obj.record_data;
+                        console.log('Record data:', record_data);
+                        
                         $.each(record_data, function(index, subArray) {
+                            console.log('Processing record:', subArray);
                             //console.log('index=='+index);
                             //console.log('subArray=='+subArray.id);
                             $('.listing-container #validate_' + subArray.id +' span')
@@ -789,17 +828,36 @@ jQuery(document).ready(function($){
                                 var validateby_full_name = "-";
                             }
                             $('.listing-container #validateby_'+subArray.id).text(validateby_full_name);
-
-                            // Add check-circle icon to verified cell
-                            $('.listing-container #verified_' + subArray.id).html(
-                                '<span style="display: inline-flex;">' +
-                                '<i class="fas fa-check-circle" title="Verified Receipt" style="margin-top: 4px; margin-right: 5px;"></i>' +
-                                '</span>' + subArray.trans_date
-                            );
                         });
                         $('.listing-container .custom-error-msg').text(obj.message);
                         $('.listing-container .custom-error-msg').show();
                         $('.listing-container .custom-error-msg').addClass('alert alert-success');
+                        
+                        // Clear checkboxes after successful validation
+                        clickedReceiptIds = [];
+                        $('.listing-container .cb-element').prop('checked', false);
+                        $('.listing-container #checkbox-all').prop('checked', false);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('=== AJAX ERROR ===');
+                        console.error('Status:', status);
+                        console.error('Error:', error);
+                        console.error('XHR Status:', xhr.status);
+                        console.error('XHR Status Text:', xhr.statusText);
+                        console.error('Response Text:', xhr.responseText);
+                        console.error('Response JSON:', xhr.responseJSON);
+                        console.error('==================');
+                        
+                        var errorMessage = 'Unknown error occurred';
+                        if(xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        } else if(xhr.responseText) {
+                            errorMessage = 'Server returned: ' + xhr.responseText.substring(0, 200);
+                        } else {
+                            errorMessage = error || 'Unknown error';
+                        }
+                        
+                        alert('Error validating receipt: ' + errorMessage + '\n\nPlease check the browser console (F12) for more details.');
                     }
                 });
             }

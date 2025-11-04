@@ -115,6 +115,167 @@
         display: inline-block;
     }
 
+    /* Date Filter Section */
+    .date-filter-section {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-top: 20px;
+        border: 2px solid #e2e8f0;
+    }
+
+    .date-filter-section h5 {
+        color: #1e293b;
+        font-size: 14px;
+        font-weight: 700;
+        margin-bottom: 16px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .date-filter-section h5 i {
+        color: #667eea;
+        font-size: 16px;
+    }
+
+    /* Quick Filter Chips */
+    .quick-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .quick-filter-chip {
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 20px;
+        padding: 8px 18px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #64748b;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .quick-filter-chip:hover {
+        border-color: #667eea;
+        color: #667eea;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    }
+
+    .quick-filter-chip.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-color: #667eea;
+        color: white;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .quick-filter-chip i {
+        font-size: 12px;
+    }
+
+    /* Date Range Inputs */
+    .date-range-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+    }
+
+    .date-range-wrapper .form-group {
+        margin-bottom: 0;
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .date-range-arrow {
+        color: #94a3b8;
+        font-size: 18px;
+        font-weight: 700;
+        margin: 0 8px;
+    }
+
+    /* Financial Year Selector */
+    .fy-selector {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .fy-selector label {
+        margin-bottom: 0 !important;
+        white-space: nowrap;
+    }
+
+    .fy-selector .form-control {
+        max-width: 250px;
+    }
+
+    /* Active Filter Badge */
+    .active-filters-badge {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 4px 12px;
+        font-size: 12px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-left: 8px;
+    }
+
+    /* Clear Filters Button */
+    .clear-filter-btn {
+        background: transparent;
+        border: 2px solid #ef4444;
+        color: #ef4444;
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .clear-filter-btn:hover {
+        background: #ef4444;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .divider-text {
+        color: #94a3b8;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin: 16px 0 12px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .divider-text::before,
+    .divider-text::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: #e2e8f0;
+    }
+
     /* Modern Form Inputs */
     .listing-container .form-group label {
         color: #475569 !important;
@@ -216,29 +377,46 @@
         background: #fee2e2 !important;
     }
 
-    /* Modern Hubdoc Status Badges */
-    .hubdoc-badge {
-        display: inline-flex;
+    /* Hubdoc Status Checkbox */
+    .hubdoc-status-check {
+        display: flex;
         align-items: center;
-        gap: 6px;
-        padding: 6px 14px;
-        border-radius: 20px;
-        font-weight: 600;
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+        justify-content: center;
+        width: 100%;
     }
 
-    .hubdoc-badge.badge-success {
+    .hubdoc-tick {
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+
+    .hubdoc-tick.sent {
         background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         color: white;
-        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
     }
 
-    .hubdoc-badge.badge-secondary {
-        background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
-        color: white;
-        box-shadow: 0 2px 8px rgba(107, 114, 128, 0.3);
+    .hubdoc-tick.not-sent {
+        background: #e2e8f0;
+        color: #94a3b8;
+    }
+
+    .hubdoc-tick:hover {
+        transform: scale(1.1);
+    }
+
+    .hubdoc-sent-time {
+        font-size: 10px;
+        color: #94a3b8;
+        margin-top: 4px;
+        display: block;
+        text-align: center;
     }
 
     .badge {
@@ -423,6 +601,209 @@
     .listing-container .filter_panel {
         animation: slideDown 0.3s ease;
     }
+
+    /* Aging Analysis Styles */
+    .aging-summary-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 20px;
+        margin-bottom: 24px;
+        padding: 0 32px;
+    }
+
+    .aging-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border-left: 4px solid;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+    }
+
+    .aging-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+    }
+
+    .aging-card.active {
+        border-left-width: 6px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px);
+    }
+
+    .aging-card.active::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.03);
+        pointer-events: none;
+    }
+
+    .aging-card.current {
+        border-left-color: #10b981;
+        background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+    }
+
+    .aging-card.warning {
+        border-left-color: #f59e0b;
+        background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%);
+    }
+
+    .aging-card.urgent {
+        border-left-color: #f97316;
+        background: linear-gradient(135deg, #ffffff 0%, #fff7ed 100%);
+    }
+
+    .aging-card.critical {
+        border-left-color: #ef4444;
+        background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%);
+    }
+
+    .aging-card-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .aging-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+    }
+
+    .aging-card.current .aging-icon {
+        background: #d1fae5;
+        color: #059669;
+    }
+
+    .aging-card.warning .aging-icon {
+        background: #fef3c7;
+        color: #d97706;
+    }
+
+    .aging-card.urgent .aging-icon {
+        background: #fed7aa;
+        color: #ea580c;
+    }
+
+    .aging-card.critical .aging-icon {
+        background: #fecaca;
+        color: #dc2626;
+    }
+
+    .aging-card-title {
+        flex: 1;
+    }
+
+    .aging-card-title h5 {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #64748b;
+    }
+
+    .aging-card-title p {
+        margin: 2px 0 0 0;
+        font-size: 11px;
+        color: #94a3b8;
+    }
+
+    .aging-amount {
+        font-size: 28px;
+        font-weight: 700;
+        font-family: 'Courier New', monospace;
+        margin-bottom: 8px;
+    }
+
+    .aging-card.current .aging-amount {
+        color: #059669;
+    }
+
+    .aging-card.warning .aging-amount {
+        color: #d97706;
+    }
+
+    .aging-card.urgent .aging-amount {
+        color: #ea580c;
+    }
+
+    .aging-card.critical .aging-amount {
+        color: #dc2626;
+    }
+
+    .aging-count {
+        font-size: 13px;
+        color: #64748b;
+        font-weight: 600;
+    }
+
+    /* Aging Badge in Table */
+    .aging-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+    }
+
+    .aging-badge.badge-current {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    }
+
+    .aging-badge.badge-warning {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+    }
+
+    .aging-badge.badge-urgent {
+        background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(249, 115, 22, 0.3);
+    }
+
+    .aging-badge.badge-critical {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+        animation: pulse-critical 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-critical {
+        0%, 100% {
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+        }
+        50% {
+            box-shadow: 0 4px 16px rgba(239, 68, 68, 0.5);
+        }
+    }
+
+    .aging-days {
+        font-size: 10px;
+        opacity: 0.9;
+        display: block;
+        margin-top: 2px;
+    }
 </style>
 @endsection
 
@@ -439,6 +820,7 @@
                     <h4>All Clients Invoice List</h4>
 
                     <div class="d-flex align-items-center">
+                        <a href="{{ route('clients.analytics-dashboard') }}" class="btn btn-theme btn-theme-sm mr-2" title="View Financial Analytics Dashboard"><i class="fas fa-chart-line"></i> Analytics</a>
                         <a href="javascript:;" style="background: #394eea;color: white;"  class="btn btn-theme btn-theme-sm filter_btn mr-2"><i class="fas fa-filter"></i> Filter</a>
                     </div>
 
@@ -449,13 +831,134 @@
                 </div>
 
                 <div class="card-body">
+                    <!-- Aging Analysis Summary Dashboard -->
+                    <?php
+                    // Calculate aging analysis
+                    $agingSummary = [
+                        'current' => ['count' => 0, 'amount' => 0],
+                        'warning' => ['count' => 0, 'amount' => 0],
+                        'urgent' => ['count' => 0, 'amount' => 0],
+                        'critical' => ['count' => 0, 'amount' => 0]
+                    ];
+
+                    foreach ($lists as $invoice) {
+                        if ($invoice->void_invoice == 1) continue; // Skip voided invoices
+                        
+                        $transDate = strtotime($invoice->trans_date);
+                        $today = strtotime(date('Y-m-d'));
+                        $daysOld = floor(($today - $transDate) / (60 * 60 * 24));
+                        
+                        // Determine amount
+                        if ($invoice->invoice_status == 1 && ($invoice->balance_amount == 0 || $invoice->balance_amount == 0.00)) {
+                            $amount = !empty($invoice->partial_paid_amount) ? $invoice->partial_paid_amount : 0;
+                        } else {
+                            $amount = !empty($invoice->balance_amount) ? ($invoice->payment_type == 'Discount' ? abs($invoice->balance_amount) : $invoice->balance_amount) : 0;
+                        }
+                        
+                        if ($daysOld <= 30) {
+                            $agingSummary['current']['count']++;
+                            $agingSummary['current']['amount'] += $amount;
+                        } elseif ($daysOld <= 60) {
+                            $agingSummary['warning']['count']++;
+                            $agingSummary['warning']['amount'] += $amount;
+                        } elseif ($daysOld <= 90) {
+                            $agingSummary['urgent']['count']++;
+                            $agingSummary['urgent']['amount'] += $amount;
+                        } else {
+                            $agingSummary['critical']['count']++;
+                            $agingSummary['critical']['amount'] += $amount;
+                        }
+                    }
+                    ?>
+
+                    <div class="aging-summary-container">
+                        <!-- Current (0-30 days) -->
+                        <div class="aging-card current {{ request('aging_category') == 'current' ? 'active' : '' }}" 
+                             data-aging-filter="current"
+                             title="Click to filter Current invoices (0-30 days)">
+                            <div class="aging-card-header">
+                                <div class="aging-icon">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <div class="aging-card-title">
+                                    <h5>Current</h5>
+                                    <p>0-30 days</p>
+                                </div>
+                            </div>
+                            <div class="aging-amount">${{ number_format($agingSummary['current']['amount'], 2) }}</div>
+                            <div class="aging-count">{{ $agingSummary['current']['count'] }} {{ $agingSummary['current']['count'] == 1 ? 'invoice' : 'invoices' }}</div>
+                        </div>
+
+                        <!-- Warning (30-60 days) -->
+                        <div class="aging-card warning {{ request('aging_category') == 'warning' ? 'active' : '' }}" 
+                             data-aging-filter="warning"
+                             title="Click to filter Warning invoices (30-60 days overdue)">
+                            <div class="aging-card-header">
+                                <div class="aging-icon">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                                <div class="aging-card-title">
+                                    <h5>Warning</h5>
+                                    <p>30-60 days overdue</p>
+                                </div>
+                            </div>
+                            <div class="aging-amount">${{ number_format($agingSummary['warning']['amount'], 2) }}</div>
+                            <div class="aging-count">{{ $agingSummary['warning']['count'] }} {{ $agingSummary['warning']['count'] == 1 ? 'invoice' : 'invoices' }}</div>
+                        </div>
+
+                        <!-- Urgent (60-90 days) -->
+                        <div class="aging-card urgent {{ request('aging_category') == 'urgent' ? 'active' : '' }}" 
+                             data-aging-filter="urgent"
+                             title="Click to filter Urgent invoices (60-90 days overdue)">
+                            <div class="aging-card-header">
+                                <div class="aging-icon">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                </div>
+                                <div class="aging-card-title">
+                                    <h5>Urgent</h5>
+                                    <p>60-90 days overdue</p>
+                                </div>
+                            </div>
+                            <div class="aging-amount">${{ number_format($agingSummary['urgent']['amount'], 2) }}</div>
+                            <div class="aging-count">{{ $agingSummary['urgent']['count'] }} {{ $agingSummary['urgent']['count'] == 1 ? 'invoice' : 'invoices' }}</div>
+                        </div>
+
+                        <!-- Critical (90+ days) -->
+                        <div class="aging-card critical {{ request('aging_category') == 'critical' ? 'active' : '' }}" 
+                             data-aging-filter="critical"
+                             title="Click to filter Critical invoices (90+ days overdue)">
+                            <div class="aging-card-header">
+                                <div class="aging-icon">
+                                    <i class="fas fa-times-circle"></i>
+                                </div>
+                                <div class="aging-card-title">
+                                    <h5>Critical</h5>
+                                    <p>90+ days overdue</p>
+                                </div>
+                            </div>
+                            <div class="aging-amount">${{ number_format($agingSummary['critical']['amount'], 2) }}</div>
+                            <div class="aging-count">{{ $agingSummary['critical']['count'] }} {{ $agingSummary['critical']['count'] == 1 ? 'invoice' : 'invoices' }}</div>
+                        </div>
+                    </div>
+
                     <div class="filter_panel">
-                        <h4>Search By Details</h4>
-                        <form action="{{URL::to('/clients/invoicelist')}}" method="get">
+                        <h4>
+                            Search By Details
+                            @if(request()->hasAny(['client_id', 'client_matter_id', 'amount', 'hubdoc_status', 'aging_category', 'date_filter_type', 'from_date', 'to_date', 'financial_year']))
+                                <span class="active-filters-badge">
+                                    <i class="fas fa-filter"></i>
+                                    {{ collect([request('client_id'), request('client_matter_id'), request('amount'), request('hubdoc_status'), request('aging_category'), request('date_filter_type'), request('from_date'), request('to_date'), request('financial_year')])->filter()->count() }} Active
+                                </span>
+                            @endif
+                        </h4>
+                        <form action="{{URL::to('/clients/invoicelist')}}" method="get" id="filterForm">
+                            <!-- Basic Filters -->
                             <div class="row">
                                 <div class="col-md-3">
                                     <div class="form-group">
-                                        <label for="client_id" class="col-form-label" style="color:#4a5568 !important;">Client ID</label>
+                                        <label for="client_id" class="col-form-label" style="color:#4a5568 !important;">
+                                            <i class="fas fa-user"></i> Client ID
+                                        </label>
                                         <select name="client_id" id="client_id" class="form-control select2">
                                             <option value="">Select Client</option>
                                             @foreach($clientIds as $client)
@@ -469,7 +972,9 @@
 
                                 <div class="col-md-3">
                                     <div class="form-group">
-                                        <label for="client_matter_id" class="col-form-label" style="color:#4a5568 !important;">Client Matter ID</label>
+                                        <label for="client_matter_id" class="col-form-label" style="color:#4a5568 !important;">
+                                            <i class="fas fa-briefcase"></i> Client Matter ID
+                                        </label>
                                         <select name="client_matter_id" id="client_matter_id" class="form-control select2">
                                             <option value="">Select Matter</option>
                                             @foreach($matterIds as $matter)
@@ -483,23 +988,18 @@
 
                                 <div class="col-md-3">
                                     <div class="form-group">
-                                        <label for="trans_date" class="col-form-label" style="color:#000;">Date</label>
-                                        <input type="text" name="trans_date" value="{{ old('trans_date', Request::get('trans_date')) }}" class="form-control" data-valid="" autocomplete="off" placeholder="Date" id="trans_date">
+                                        <label for="amount" class="col-form-label" style="color:#4a5568 !important;">
+                                            <i class="fas fa-dollar-sign"></i> Amount
+                                        </label>
+                                        <input type="number" name="amount" id="amount" value="{{ old('amount', Request::get('amount')) }}" class="form-control" placeholder="Enter amount" step="0.01" min="0">
                                     </div>
                                 </div>
 
                                 <div class="col-md-3">
                                     <div class="form-group">
-                                        <label for="amount" class="col-form-label" style="color:#4a5568 !important;">Amount</label>
-                                        <input type="number" name="amount" id="amount" value="{{ old('amount', Request::get('amount')) }}" class="form-control" placeholder="Enter amount" step="0.01" min="0">
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label for="hubdoc_status" class="col-form-label" style="color:#4a5568 !important;">Hubdoc Status</label>
+                                        <label for="hubdoc_status" class="col-form-label" style="color:#4a5568 !important;">
+                                            <i class="fas fa-cloud-upload-alt"></i> Hubdoc Status
+                                        </label>
                                         <select name="hubdoc_status" id="hubdoc_status" class="form-control">
                                             <option value="">All Invoices</option>
                                             <option value="1" {{ request('hubdoc_status') == '1' ? 'selected' : '' }}>Sent to Hubdoc</option>
@@ -508,12 +1008,125 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Aging Analysis Filter -->
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label for="aging_category" class="col-form-label" style="color:#4a5568 !important;">
+                                            <i class="fas fa-clock"></i> Aging Category
+                                        </label>
+                                        <select name="aging_category" id="aging_category" class="form-control">
+                                            <option value="">All Aging Categories</option>
+                                            <option value="current" {{ request('aging_category') == 'current' ? 'selected' : '' }}>🟢 Current (0-30 days)</option>
+                                            <option value="warning" {{ request('aging_category') == 'warning' ? 'selected' : '' }}>🟡 Warning (30-60 days overdue)</option>
+                                            <option value="urgent" {{ request('aging_category') == 'urgent' ? 'selected' : '' }}>🟠 Urgent (60-90 days overdue)</option>
+                                            <option value="critical" {{ request('aging_category') == 'critical' ? 'selected' : '' }}>🔴 Critical (90+ days overdue)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Enhanced Date Filter Section -->
+                            <div class="date-filter-section">
+                                <h5><i class="fas fa-calendar-alt"></i> Date Filter</h5>
+                                
+                                <!-- Hidden field to track filter type -->
+                                <input type="hidden" name="date_filter_type" id="date_filter_type" value="{{ request('date_filter_type', '') }}">
+                                
+                                <!-- Quick Filter Chips -->
+                                <div class="quick-filters">
+                                    <span class="quick-filter-chip {{ request('date_filter_type') == 'today' ? 'active' : '' }}" data-filter="today">
+                                        <i class="fas fa-calendar-day"></i> Today
+                                    </span>
+                                    <span class="quick-filter-chip {{ request('date_filter_type') == 'this_week' ? 'active' : '' }}" data-filter="this_week">
+                                        <i class="fas fa-calendar-week"></i> This Week
+                                    </span>
+                                    <span class="quick-filter-chip {{ request('date_filter_type') == 'this_month' ? 'active' : '' }}" data-filter="this_month">
+                                        <i class="fas fa-calendar"></i> This Month
+                                    </span>
+                                    <span class="quick-filter-chip {{ request('date_filter_type') == 'this_quarter' ? 'active' : '' }}" data-filter="this_quarter">
+                                        <i class="fas fa-calendar-check"></i> This Quarter
+                                    </span>
+                                    <span class="quick-filter-chip {{ request('date_filter_type') == 'this_year' ? 'active' : '' }}" data-filter="this_year">
+                                        <i class="fas fa-calendar-alt"></i> This Year
+                                    </span>
+                                    <span class="quick-filter-chip {{ request('date_filter_type') == 'last_month' ? 'active' : '' }}" data-filter="last_month">
+                                        <i class="fas fa-calendar-minus"></i> Last Month
+                                    </span>
+                                    <span class="quick-filter-chip {{ request('date_filter_type') == 'last_quarter' ? 'active' : '' }}" data-filter="last_quarter">
+                                        <i class="fas fa-calendar-minus"></i> Last Quarter
+                                    </span>
+                                    <span class="quick-filter-chip {{ request('date_filter_type') == 'last_year' ? 'active' : '' }}" data-filter="last_year">
+                                        <i class="fas fa-calendar-minus"></i> Last Year
+                                    </span>
+                                </div>
+
+                                <div class="divider-text">Or Custom Range</div>
+
+                                <!-- Custom Date Range -->
+                                <div class="date-range-wrapper">
+                                    <div class="form-group">
+                                        <label for="from_date" class="col-form-label" style="color:#4a5568 !important;">
+                                            <i class="fas fa-calendar-plus"></i> From Date
+                                        </label>
+                                        <input type="text" name="from_date" id="from_date" value="{{ old('from_date', Request::get('from_date')) }}" class="form-control datepicker" autocomplete="off" placeholder="Select start date">
+                                    </div>
+                                    
+                                    <span class="date-range-arrow">→</span>
+                                    
+                                    <div class="form-group">
+                                        <label for="to_date" class="col-form-label" style="color:#4a5568 !important;">
+                                            <i class="fas fa-calendar-check"></i> To Date
+                                        </label>
+                                        <input type="text" name="to_date" id="to_date" value="{{ old('to_date', Request::get('to_date')) }}" class="form-control datepicker" autocomplete="off" placeholder="Select end date">
+                                    </div>
+                                </div>
+
+                                <div class="divider-text">Or Financial Year</div>
+
+                                <!-- Financial Year Selector -->
+                                <div class="fy-selector">
+                                    <label for="financial_year" class="col-form-label" style="color:#4a5568 !important;">
+                                        <i class="fas fa-chart-line"></i> Financial Year:
+                                    </label>
+                                    <select name="financial_year" id="financial_year" class="form-control">
+                                        <option value="">Select Financial Year</option>
+                                        <?php
+                                        $currentYear = date('Y');
+                                        $currentMonth = date('n');
+                                        // Australian FY starts in July
+                                        $startYear = ($currentMonth >= 7) ? $currentYear : $currentYear - 1;
+                                        
+                                        // Generate last 5 FY and next 2 FY
+                                        for ($i = 2; $i >= -5; $i--) {
+                                            $fyStart = $startYear - $i;
+                                            $fyEnd = $fyStart + 1;
+                                            $fyValue = $fyStart . '-' . $fyEnd;
+                                            $fyLabel = 'FY ' . $fyStart . '-' . substr($fyEnd, -2);
+                                            $selected = request('financial_year') == $fyValue ? 'selected' : '';
+                                            echo "<option value=\"{$fyValue}\" {$selected}>{$fyLabel}</option>";
+                                        }
+                                        ?>
+                                    </select>
+                                </div>
+                            </div>
                             
+                            <!-- Action Buttons -->
                             <div class="row">
                                 <div class="col-md-12 text-center">
                                     <div class="filter-buttons-container">
-                                        <button type="submit" class="btn btn-primary btn-theme-lg mr-3">Search</button>
-                                        <a class="btn btn-info" href="{{URL::to('/clients/invoicelist')}}">Reset</a>
+                                        <button type="submit" class="btn btn-primary btn-theme-lg mr-3">
+                                            <i class="fas fa-search"></i> Search
+                                        </button>
+                                        <a class="btn btn-info" href="{{URL::to('/clients/invoicelist')}}">
+                                            <i class="fas fa-redo"></i> Reset All
+                                        </a>
+                                        @if(request()->hasAny(['client_id', 'client_matter_id', 'amount', 'hubdoc_status', 'aging_category', 'date_filter_type', 'from_date', 'to_date', 'financial_year']))
+                                            <button type="button" class="clear-filter-btn ml-2" id="clearDateFilters">
+                                                <i class="fas fa-times-circle"></i> Clear Date Filters
+                                            </button>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -572,8 +1185,15 @@
                                             <i class="fas fa-caret-down"></i>
                                         </span>
                                     </th>
-                                    <th class="sortable-header {{ request('sort_by') == 'hubdoc_status' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="hubdoc_status">
-                                        Hubdoc Status
+                                    <th class="sortable-header {{ request('sort_by') == 'hubdoc_status' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="hubdoc_status" style="text-align: center;">
+                                        <i class="fas fa-cloud-upload-alt" style="color: #667eea; margin-right: 4px;"></i>Hubdoc
+                                        <span class="sort-icon">
+                                            <i class="fas fa-caret-up"></i>
+                                            <i class="fas fa-caret-down"></i>
+                                        </span>
+                                    </th>
+                                    <th class="sortable-header {{ request('sort_by') == 'aging' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="aging">
+                                        Aging Status
                                         <span class="sort-icon">
                                             <i class="fas fa-caret-up"></i>
                                             <i class="fas fa-caret-down"></i>
@@ -639,25 +1259,56 @@
                                                 @endif
                                             </td>
                                             <td>
+                                                <div class="hubdoc-status-check">
+                                                    <div title="<?php echo (isset($list->hubdoc_sent) && $list->hubdoc_sent == 1) ? 'Sent to Hubdoc' . (isset($list->hubdoc_sent_at) ? ' on ' . date('d/m/Y H:i', strtotime($list->hubdoc_sent_at)) : '') : 'Not sent to Hubdoc'; ?>">
+                                                        <?php
+                                                        if(isset($list->hubdoc_sent) && $list->hubdoc_sent == 1) {
+                                                            ?>
+                                                            <div class="hubdoc-tick sent">
+                                                                <i class="fas fa-check"></i>
+                                                            </div>
+                                                            <?php
+                                                        } else {
+                                                            ?>
+                                                            <div class="hubdoc-tick not-sent">
+                                                                <i class="fas fa-minus"></i>
+                                                            </div>
+                                                            <?php
+                                                        }
+                                                        ?>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
                                                 <?php
-                                                // Check if invoice has been sent to Hubdoc
-                                                if(isset($list->hubdoc_sent) && $list->hubdoc_sent == 1) {
-                                                    $hubdoc_sent_at = $list->hubdoc_sent_at ?? null;
-                                                    ?>
-                                                    <span class="hubdoc-badge badge-success">
-                                                        <i class="fas fa-check"></i> Sent
-                                                    </span>
-                                                    <?php if($hubdoc_sent_at) { ?>
-                                                        <br>
-                                                        <small style="font-size: 10px; color: #94a3b8; margin-top: 4px; display: block;">
-                                                            <?php echo date('d/m/Y H:i', strtotime($hubdoc_sent_at)); ?>
-                                                        </small>
-                                                    <?php } ?>
-                                                <?php } else { ?>
-                                                    <span class="hubdoc-badge badge-secondary">
-                                                        <i class="fas fa-times"></i> Not Sent
-                                                    </span>
-                                                <?php } ?>
+                                                // Calculate aging status
+                                                $transDate = strtotime($list->trans_date);
+                                                $today = strtotime(date('Y-m-d'));
+                                                $daysOld = floor(($today - $transDate) / (60 * 60 * 24));
+                                                
+                                                if ($daysOld <= 30) {
+                                                    $agingClass = 'badge-current';
+                                                    $agingLabel = 'Current';
+                                                    $agingIcon = 'fa-check-circle';
+                                                } elseif ($daysOld <= 60) {
+                                                    $agingClass = 'badge-warning';
+                                                    $agingLabel = 'Warning';
+                                                    $agingIcon = 'fa-exclamation-triangle';
+                                                } elseif ($daysOld <= 90) {
+                                                    $agingClass = 'badge-urgent';
+                                                    $agingLabel = 'Urgent';
+                                                    $agingIcon = 'fa-exclamation-circle';
+                                                } else {
+                                                    $agingClass = 'badge-critical';
+                                                    $agingLabel = 'Critical';
+                                                    $agingIcon = 'fa-times-circle';
+                                                }
+                                                ?>
+                                                <span class="aging-badge <?php echo $agingClass; ?>">
+                                                    <i class="fas <?php echo $agingIcon; ?>"></i>
+                                                    <?php echo $agingLabel; ?>
+                                                    <span class="aging-days"><?php echo $daysOld; ?> days</span>
+                                                </span>
                                             </td>
                                             <td id="voidedby_{{@$list->id}}"><?php echo $validate_by_full_name;?></td>
                                         </tr>
@@ -665,7 +1316,7 @@
                                     @endforeach
                                 @else
                                     <tr>
-                                        <td colspan="9" style="text-align: center; padding: 60px 20px;">
+                                        <td colspan="10" style="text-align: center; padding: 60px 20px;">
                                             <div style="opacity: 0.5;">
                                                 <i class="fas fa-inbox" style="font-size: 48px; color: #cbd5e1; margin-bottom: 16px;"></i>
                                                 <div style="font-size: 18px; font-weight: 600; color: #64748b;">No Records Found</div>
@@ -697,12 +1348,116 @@ jQuery(document).ready(function($){
 		$('.listing-container .filter_panel').slideToggle();
 	});
 
-   
-    $('#trans_date').datepicker({
+    // Aging Card Click Handlers - Filter by aging category with toggle (Option A)
+    $('.aging-card').on('click', function() {
+        var agingCategory = $(this).data('aging-filter');
+        var currentUrl = new URL(window.location.href);
+        var currentAgingFilter = currentUrl.searchParams.get('aging_category');
+        
+        // Toggle behavior: If clicking the same category, remove the filter
+        if (currentAgingFilter === agingCategory) {
+            currentUrl.searchParams.delete('aging_category');
+        } else {
+            // Otherwise, set the new aging category filter
+            currentUrl.searchParams.set('aging_category', agingCategory);
+        }
+        
+        // Reset to page 1 when filtering changes
+        currentUrl.searchParams.delete('page');
+        
+        // Redirect to filtered URL
+        window.location.href = currentUrl.toString();
+    });
+
+    // Initialize datepickers for custom date range
+    $('.datepicker').datepicker({
         format: 'dd/mm/yyyy',
         autoclose: true,
         todayHighlight: true
     });
+
+    // Quick Filter Chips Functionality
+    $('.quick-filter-chip').on('click', function() {
+        var filterType = $(this).data('filter');
+        
+        // Remove active class from all chips
+        $('.quick-filter-chip').removeClass('active');
+        
+        // Add active class to clicked chip
+        $(this).addClass('active');
+        
+        // Set the hidden input value
+        $('#date_filter_type').val(filterType);
+        
+        // Clear custom date fields and financial year when using quick filters
+        $('#from_date').val('');
+        $('#to_date').val('');
+        $('#financial_year').val('');
+        
+        // Auto-submit form
+        $('#filterForm').submit();
+    });
+
+    // Custom Date Range - Clear quick filters and FY when dates are entered
+    $('#from_date, #to_date').on('change', function() {
+        if ($('#from_date').val() || $('#to_date').val()) {
+            $('.quick-filter-chip').removeClass('active');
+            $('#date_filter_type').val('custom');
+            $('#financial_year').val('');
+        }
+    });
+
+    // Financial Year - Clear other date filters when FY is selected
+    $('#financial_year').on('change', function() {
+        if ($(this).val()) {
+            $('.quick-filter-chip').removeClass('active');
+            $('#date_filter_type').val('financial_year');
+            $('#from_date').val('');
+            $('#to_date').val('');
+        }
+    });
+
+    // Clear Date Filters Button
+    $('#clearDateFilters').on('click', function() {
+        $('.quick-filter-chip').removeClass('active');
+        $('#date_filter_type').val('');
+        $('#from_date').val('');
+        $('#to_date').val('');
+        $('#financial_year').val('');
+        $('#filterForm').submit();
+    });
+
+    // Validation before form submit
+    $('#filterForm').on('submit', function(e) {
+        var fromDate = $('#from_date').val();
+        var toDate = $('#to_date').val();
+        
+        // If one custom date is filled, both should be filled
+        if ((fromDate && !toDate) || (!fromDate && toDate)) {
+            e.preventDefault();
+            alert('Please select both From Date and To Date for custom range filtering.');
+            return false;
+        }
+        
+        // Validate date order if both are filled
+        if (fromDate && toDate) {
+            var from = parseDate(fromDate);
+            var to = parseDate(toDate);
+            
+            if (from > to) {
+                e.preventDefault();
+                alert('From Date cannot be later than To Date.');
+                return false;
+            }
+        }
+    });
+
+    // Helper function to parse dd/mm/yyyy format
+    function parseDate(dateStr) {
+        var parts = dateStr.split('/');
+        // month is 0-based in JavaScript Date
+        return new Date(parts[2], parts[1] - 1, parts[0]);
+    }
 
     $("[data-checkboxes]").each(function () {
         var me = $(this),
@@ -763,7 +1518,8 @@ jQuery(document).ready(function($){
                     headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
                     data: {clickedReceiptIds:clickedReceiptIds},
                     success: function(response){
-                        var obj = $.parseJSON(response);
+                        // Parse response if it's a string (fallback for older jQuery versions)
+                        var obj = (typeof response === 'string') ? $.parseJSON(response) : response;
                         //location.reload(true);
                         
                         if(obj.status){

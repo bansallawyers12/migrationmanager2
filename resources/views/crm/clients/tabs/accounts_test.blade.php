@@ -333,8 +333,17 @@
                                 } else {
                                     $trcls = '';
                                 }
+                                
+                                // Make unpaid/partial invoices drop zones for drag & drop allocation
+                                $isDropZone = in_array($inc_val->invoice_status, [0, 2]) && $inc_val->void_invoice != 1;
+                                $dropZoneClass = $isDropZone ? 'invoice-drop-zone' : '';
                                 ?>
-                                <tr class="drow_account_invoice invoiceTrRow <?php echo $trcls;?>" id="invoiceTrRow_<?php echo $inc_val->id;?>" data-matterid="{{$inc_val->client_matter_id}}">
+                                <tr class="drow_account_invoice invoiceTrRow <?php echo $trcls;?> <?php echo $dropZoneClass;?>" 
+                                    id="invoiceTrRow_<?php echo $inc_val->id;?>" 
+                                    data-matterid="{{$inc_val->client_matter_id}}"
+                                    data-invoice-no="{{$inc_val->trans_no}}"
+                                    data-invoice-balance="{{$inc_val->balance_amount}}"
+                                    data-invoice-status="{{$inc_val->invoice_status}}">
                                     <td style="text-align: center; vertical-align: middle;">
                                         <div class="dropdown d-inline-block">
                                             <span class="reference-dropdown-trigger" id="dropdownInvoice{{$inc_val->id}}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -433,6 +442,22 @@
                                         <span class="status-badge <?php echo $statusClass; ?>">
                                             <?php echo $statusDes; ?>
                                         </span>
+                                        
+                                        <?php 
+                                        // Quick Receipt Button - Show for unpaid (0) and partial (2) invoices only
+                                        if($inc_val->save_type == 'final' && in_array($inc_val->invoice_status, [0, 2]) && $inc_val->void_invoice != 1) { 
+                                            $invoiceBalance = floatval($inc_val->balance_amount);
+                                        ?>
+                                        <br/>
+                                        <button type="button" class="btn btn-sm btn-success quick-receipt-btn" 
+                                                data-invoice-no="<?php echo $inc_val->trans_no; ?>"
+                                                data-invoice-balance="<?php echo $invoiceBalance; ?>"
+                                                data-invoice-description="<?php echo htmlspecialchars($inc_val->description ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                                                data-matter-id="<?php echo $inc_val->client_matter_id; ?>"
+                                                style="margin-top: 5px; font-size: 11px; padding: 3px 10px;">
+                                            <i class="fas fa-money-bill-wave"></i> Quick Receipt
+                                        </button>
+                                        <?php } ?>
                                     </td>
                                 </tr>
                         <?php
@@ -456,14 +481,30 @@
                     </thead>
                     <tbody class="productitemList_office">
                         <?php
-                        $receipts_lists_office = DB::table('account_client_receipts')->where('client_matter_id',$client_selected_matter_id)->where('client_id',$fetchedData->id)->where('receipt_type',2)->orderBy('id', 'desc')->get();
+                        // Sort office receipts: unallocated (no invoice_no) at the top, then by ID descending
+                        $receipts_lists_office = DB::table('account_client_receipts')
+                            ->where('client_matter_id',$client_selected_matter_id)
+                            ->where('client_id',$fetchedData->id)
+                            ->where('receipt_type',2)
+                            ->orderByRaw('CASE WHEN invoice_no IS NULL OR invoice_no = "" THEN 0 ELSE 1 END')
+                            ->orderBy('id', 'desc')
+                            ->get();
                         //dd($receipts_lists_office);
                         if(!empty($receipts_lists_office) && count($receipts_lists_office)>0 )
                         {
                             foreach($receipts_lists_office as $off_list=>$off_val)
                             {
+                            // Determine if this receipt is unallocated (not linked to an invoice)
+                            $isUnallocated = empty($off_val->invoice_no);
+                            $unallocatedClass = $isUnallocated ? 'unallocated-receipt' : '';
+                            $draggableAttr = $isUnallocated ? 'draggable="true"' : '';
                             ?>
-                            <tr class="drow_account_office" data-matterid="{{$off_val->client_matter_id}}">
+                            <tr class="drow_account_office {{$unallocatedClass}}" 
+                                data-matterid="{{$off_val->client_matter_id}}"
+                                {{$draggableAttr}}
+                                data-receipt-id="{{$off_val->id}}"
+                                data-receipt-amount="{{$off_val->deposit_amount}}"
+                                data-receipt-no="{{$off_val->trans_no}}">
                                 <td style="text-align: left; vertical-align: middle;">
                                     <span style="display: inline-flex; align-items: center;">
                                         <?php
@@ -595,11 +636,37 @@
                                             <a class="dropdown-item copy-reference" href="javascript:;" data-reference="<?php echo $off_val->trans_no;?>">
                                                 <i class="fas fa-copy"></i> Copy Reference
                                             </a>
+                                            
+                                            <?php 
+                                            // Quick Allocate button for unallocated receipts
+                                            if(empty($off_val->invoice_no)) { 
+                                            ?>
+                                            <div class="dropdown-divider"></div>
+                                            <a class="dropdown-item quick-allocate-receipt" href="javascript:;"
+                                                data-receipt-id="<?php echo $off_val->id; ?>"
+                                                data-receipt-amount="<?php echo $off_val->deposit_amount; ?>"
+                                                data-matter-id="<?php echo $off_val->client_matter_id; ?>"
+                                                data-client-id="<?php echo $fetchedData->id; ?>"
+                                                style="color: #ff6b6b; font-weight: 600;">
+                                                <i class="fas fa-link"></i> Quick Allocate to Invoice
+                                            </a>
+                                            <?php } ?>
                                         </div>
                                     </div>
                                 </td>
 
-                                <td style="text-align: right; vertical-align: middle; color: #28a745; font-weight: 500;">{{ !empty($off_val->deposit_amount) ? '$ ' . number_format($off_val->deposit_amount, 2) : '' }}</td>
+                                <td style="text-align: right; vertical-align: middle; color: #28a745; font-weight: 500;">
+                                    {{ !empty($off_val->deposit_amount) ? '$ ' . number_format($off_val->deposit_amount, 2) : '' }}
+                                    <?php 
+                                    // Visual indicator for unallocated receipts
+                                    if(empty($off_val->invoice_no)) { 
+                                    ?>
+                                    <br/>
+                                    <small style="color: #dc3545; font-weight: 600;">
+                                        <i class="fas fa-exclamation-circle"></i> Unallocated
+                                    </small>
+                                    <?php } ?>
+                                </td>
                             </tr>
                         <?php
                             } //end foreach
@@ -937,12 +1004,620 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    // ================================================================
+    // QUICK RECEIPT BUTTON - Pre-populate office receipt from invoice
+    // ================================================================
+    $(document).on('click', '.quick-receipt-btn', function(e) {
+        e.preventDefault();
+        
+        const invoiceNo = $(this).data('invoice-no');
+        const invoiceBalance = $(this).data('invoice-balance');
+        const invoiceDescription = $(this).data('invoice-description');
+        const matterId = $(this).data('matter-id');
+        
+        console.log('💵 Quick Receipt clicked for:', {invoiceNo, invoiceBalance, matterId});
+        
+        // Open the create receipt modal
+        const $modal = $('#createreceiptmodal');
+        
+        // Select "Direct Office Receipt" radio button
+        $('input[name="receipt_type"][value="office_receipt"]').prop('checked', true).trigger('change');
+        
+        // Update modal title
+        $modal.find('.modal-title').html('<i class="fas fa-money-bill-wave" style="color: #28a745;"></i> Quick Receipt for ' + invoiceNo);
+        
+        // Wait a moment for the form to show, then populate fields
+        setTimeout(function() {
+            // Set matter ID
+            $('#client_matter_id_office').val(matterId);
+            
+            // Set today's date for both transaction date and entry date
+            const today = new Date();
+            const dateStr = ('0' + today.getDate()).slice(-2) + '/' + 
+                           ('0' + (today.getMonth() + 1)).slice(-2) + '/' + 
+                           today.getFullYear();
+            
+            // Find the first row in office receipt form
+            const $firstRow = $('#office_receipt_form .productitem_office tr.clonedrow_office').first();
+            
+            // Populate transaction date
+            $firstRow.find('input[name="trans_date[]"]').val(dateStr);
+            
+            // Populate entry date
+            $firstRow.find('input[name="entry_date[]"]').val(dateStr);
+            
+            // Set amount
+            $firstRow.find('input[name="deposit_amount[]"]').val(invoiceBalance.toFixed(2));
+            
+            // Set description
+            $firstRow.find('input[name="description[]"]').val('Payment for ' + invoiceNo + ' - ' + invoiceDescription);
+            
+            // Load invoices and pre-select this invoice
+            $.ajax({
+                url: '{{ route("clients.getInvoicesByMatter") }}',
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    client_matter_id: matterId,
+                    client_id: '{{ $fetchedData->id }}'
+                },
+                success: function(response) {
+                    const $invoiceDropdown = $firstRow.find('select.invoice_no_cls');
+                    $invoiceDropdown.empty();
+                    $invoiceDropdown.append('<option value="">Select Invoice (Optional)</option>');
+                    
+                    if(response.invoices && response.invoices.length > 0) {
+                        response.invoices.forEach(function(invoice) {
+                            const selected = (invoice.trans_no === invoiceNo) ? 'selected' : '';
+                            $invoiceDropdown.append(
+                                '<option value="' + invoice.trans_no + '" ' + selected + '>' + 
+                                invoice.trans_no + ' - $' + parseFloat(invoice.balance_amount).toFixed(2) + 
+                                ' (' + invoice.status + ')</option>'
+                            );
+                        });
+                        
+                        console.log('✅ Invoice pre-selected:', invoiceNo);
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Failed to load invoices:', xhr);
+                }
+            });
+            
+            // Focus on payment method dropdown (the only required field left)
+            $firstRow.find('select[name="payment_method[]"]').focus();
+            
+            console.log('✅ Quick Receipt form pre-populated');
+        }, 300);
+        
+        // Add a badge to indicate this is from Quick Receipt
+        $modal.find('.modal-header').prepend('<span class="badge badge-success" style="margin-right: 10px;"><i class="fas fa-bolt"></i> QUICK RECEIPT</span>');
+        
+        // Open the modal
+        $modal.modal('show');
+    });
+    
+    // Remove Quick Receipt badge when modal closes
+    $('#createreceiptmodal').on('hidden.bs.modal', function() {
+        $(this).find('.badge-success').remove();
+        $(this).find('.modal-title').html('Create Receipt');
+    });
+    
+    // ================================================================
+    // CLIPBOARD PASTE FUNCTIONALITY
+    // ================================================================
+    let detectedClipboardAmount = null;
+    
+    // Function to extract amount from clipboard text
+    function extractAmount(text) {
+        if (!text) return null;
+        
+        // Remove currency symbols and commas
+        text = text.replace(/[$,]/g, '').trim();
+        
+        // Try to find a number (with optional decimal)
+        const match = text.match(/\d+\.?\d*/);
+        if (match) {
+            const amount = parseFloat(match[0]);
+            return isNaN(amount) ? null : amount;
+        }
+        return null;
+    }
+    
+    // Try to read clipboard when modal opens
+    $('#createreceiptmodal').on('shown.bs.modal', function() {
+        // Modern Clipboard API
+        if (navigator.clipboard && navigator.clipboard.readText) {
+            navigator.clipboard.readText()
+                .then(text => {
+                    const amount = extractAmount(text);
+                    if (amount && amount > 0) {
+                        detectedClipboardAmount = amount;
+                        $('.clipboard-preview').text('($' + amount.toFixed(2) + ' detected)');
+                        $('.paste-clipboard-btn').addClass('btn-outline-success').removeClass('btn-outline-primary');
+                        console.log('📋 Clipboard amount detected:', amount);
+                    } else {
+                        detectedClipboardAmount = null;
+                        $('.clipboard-preview').text('');
+                    }
+                })
+                .catch(err => {
+                    // Clipboard access denied or not available
+                    console.log('Clipboard access not available');
+                    detectedClipboardAmount = null;
+                });
+        }
+    });
+    
+    // Handle clipboard paste button click
+    $(document).on('click', '.paste-clipboard-btn', function(e) {
+        e.preventDefault();
+        
+        if (detectedClipboardAmount && detectedClipboardAmount > 0) {
+            // Find the active amount input in the visible receipt form
+            const $activeForm = $('#office_receipt_form:visible');
+            if ($activeForm.length > 0) {
+                const $amountInput = $activeForm.find('input[name="deposit_amount[]"]').first();
+                $amountInput.val(detectedClipboardAmount.toFixed(2));
+                $amountInput.focus();
+                
+                // Visual feedback
+                $amountInput.css('background-color', '#d4edda');
+                setTimeout(() => {
+                    $amountInput.css('background-color', '');
+                }, 1000);
+                
+                console.log('✅ Amount pasted:', detectedClipboardAmount);
+            }
+        } else {
+            // Try to read clipboard again
+            if (navigator.clipboard && navigator.clipboard.readText) {
+                navigator.clipboard.readText()
+                    .then(text => {
+                        const amount = extractAmount(text);
+                        if (amount && amount > 0) {
+                            const $activeForm = $('#office_receipt_form:visible');
+                            if ($activeForm.length > 0) {
+                                const $amountInput = $activeForm.find('input[name="deposit_amount[]"]').first();
+                                $amountInput.val(amount.toFixed(2));
+                                $amountInput.focus();
+                                console.log('✅ Amount pasted:', amount);
+                            }
+                        } else {
+                            alert('No valid amount found in clipboard. Please copy a number first.');
+                        }
+                    })
+                    .catch(err => {
+                        alert('Could not access clipboard. Please paste manually using Ctrl+V.');
+                    });
+            } else {
+                alert('Clipboard API not available in your browser. Please paste manually.');
+            }
+        }
+    });
+    
+    // ================================================================
+    // REPEAT LAST ENTRY FUNCTIONALITY
+    // ================================================================
+    let lastOfficeReceiptEntry = null;
+    
+    // Store last entry when office receipt is successfully saved
+    $(document).on('submit', '#office_receipt_form', function() {
+        // Capture form data before submission
+        const $firstRow = $(this).find('.productitem_office tr.clonedrow_office').first();
+        
+        lastOfficeReceiptEntry = {
+            payment_method: $firstRow.find('select[name="payment_method[]"]').val(),
+            description: $firstRow.find('input[name="description[]"]').val(),
+            deposit_amount: $firstRow.find('input[name="deposit_amount[]"]').val()
+        };
+        
+        // Store in localStorage for persistence
+        localStorage.setItem('lastOfficeReceiptEntry', JSON.stringify(lastOfficeReceiptEntry));
+        console.log('💾 Last entry stored:', lastOfficeReceiptEntry);
+    });
+    
+    // Load last entry from localStorage on page load
+    if (localStorage.getItem('lastOfficeReceiptEntry')) {
+        try {
+            lastOfficeReceiptEntry = JSON.parse(localStorage.getItem('lastOfficeReceiptEntry'));
+            console.log('📥 Last entry loaded from storage');
+        } catch(e) {
+            lastOfficeReceiptEntry = null;
+        }
+    }
+    
+    // Handle repeat last entry button click
+    $(document).on('click', '.repeat-last-entry-btn', function(e) {
+        e.preventDefault();
+        
+        if (!lastOfficeReceiptEntry) {
+            alert('No previous office receipt entry found. Create one first, then use this feature.');
+            return;
+        }
+        
+        // Find the active office receipt form
+        const $activeForm = $('#office_receipt_form:visible');
+        if ($activeForm.length === 0) {
+            alert('Please select "Direct Office Receipt" first.');
+            return;
+        }
+        
+        const $firstRow = $activeForm.find('.productitem_office tr.clonedrow_office').first();
+        
+        // Set today's date
+        const today = new Date();
+        const dateStr = ('0' + today.getDate()).slice(-2) + '/' + 
+                       ('0' + (today.getMonth() + 1)).slice(-2) + '/' + 
+                       today.getFullYear();
+        
+        $firstRow.find('input[name="trans_date[]"]').val(dateStr);
+        $firstRow.find('input[name="entry_date[]"]').val(dateStr);
+        
+        // Populate from last entry
+        $firstRow.find('select[name="payment_method[]"]').val(lastOfficeReceiptEntry.payment_method);
+        $firstRow.find('input[name="description[]"]').val(lastOfficeReceiptEntry.description);
+        $firstRow.find('input[name="deposit_amount[]"]').val(lastOfficeReceiptEntry.deposit_amount);
+        
+        // Visual feedback
+        $firstRow.find('input, select').each(function() {
+            $(this).css('background-color', '#d4edda');
+        });
+        setTimeout(() => {
+            $firstRow.find('input, select').css('background-color', '');
+        }, 1000);
+        
+        console.log('✅ Last entry repeated');
+        
+        // Focus on amount field for easy adjustment
+        $firstRow.find('input[name="deposit_amount[]"]').focus().select();
+    });
+    
+    // ================================================================
+    // QUICK ALLOCATE - Smart invoice allocation for unallocated receipts
+    // ================================================================
+    $(document).on('click', '.quick-allocate-receipt', function(e) {
+        e.preventDefault();
+        
+        const receiptId = $(this).data('receipt-id');
+        const receiptAmount = parseFloat($(this).data('receipt-amount'));
+        const matterId = $(this).data('matter-id');
+        const clientId = $(this).data('client-id');
+        
+        console.log('🔗 Quick Allocate clicked:', {receiptId, receiptAmount, matterId});
+        
+        // Show loading
+        const $btn = $(this);
+        const originalHtml = $btn.html();
+        $btn.html('<i class="fas fa-spinner fa-spin"></i> Finding matches...');
+        
+        // Fetch unpaid/partial invoices for this matter
+        $.ajax({
+            url: '{{ route("clients.getInvoicesByMatter") }}',
+            type: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                client_matter_id: matterId,
+                client_id: clientId
+            },
+            success: function(response) {
+                $btn.html(originalHtml);
+                
+                if (!response.invoices || response.invoices.length === 0) {
+                    alert('No unpaid invoices found for this matter.');
+                    return;
+                }
+                
+                // Smart matching logic
+                let exactMatch = null;
+                let closeMatches = [];
+                let otherInvoices = [];
+                
+                response.invoices.forEach(function(invoice) {
+                    const invBalance = parseFloat(invoice.balance_amount);
+                    const difference = Math.abs(invBalance - receiptAmount);
+                    const percentDiff = (difference / receiptAmount) * 100;
+                    
+                    if (difference < 0.01) {
+                        // Exact match (within 1 cent)
+                        exactMatch = invoice;
+                    } else if (percentDiff <= 10) {
+                        // Within 10%
+                        closeMatches.push(invoice);
+                    } else {
+                        otherInvoices.push(invoice);
+                    }
+                });
+                
+                // Build suggestion modal
+                showAllocationModal(receiptId, receiptAmount, exactMatch, closeMatches, otherInvoices);
+            },
+            error: function(xhr) {
+                $btn.html(originalHtml);
+                console.error('Failed to load invoices:', xhr);
+                alert('Error loading invoices. Please try again.');
+            }
+        });
+    });
+    
+    function showAllocationModal(receiptId, receiptAmount, exactMatch, closeMatches, otherInvoices) {
+        let modalHtml = '<div class="modal fade" id="quickAllocateModal" tabindex="-1" role="dialog">' +
+            '<div class="modal-dialog modal-lg" role="document">' +
+            '<div class="modal-content">' +
+            '<div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">' +
+            '<h5 class="modal-title"><i class="fas fa-magic"></i> Smart Invoice Allocation</h5>' +
+            '<button type="button" class="close" data-dismiss="modal" style="color: white;">' +
+            '<span>&times;</span>' +
+            '</button>' +
+            '</div>' +
+            '<div class="modal-body">' +
+            '<div class="alert alert-info">' +
+            '<i class="fas fa-info-circle"></i> Receipt Amount: <strong>$' + receiptAmount.toFixed(2) + '</strong>' +
+            '</div>';
+        
+        if (exactMatch) {
+            modalHtml += '<div class="alert alert-success" style="border-left: 4px solid #28a745;">' +
+                '<h6><i class="fas fa-bullseye"></i> <strong>Exact Match Found!</strong></h6>' +
+                '<p style="margin-bottom: 10px;">' +
+                exactMatch.trans_no + ' - $' + parseFloat(exactMatch.balance_amount).toFixed(2) + 
+                ' (' + exactMatch.status + ')' +
+                '</p>' +
+                '<button class="btn btn-success allocate-to-invoice-btn" ' +
+                'data-receipt-id="' + receiptId + '" ' +
+                'data-invoice-no="' + exactMatch.trans_no + '">' +
+                '<i class="fas fa-check"></i> Allocate to ' + exactMatch.trans_no +
+                '</button>' +
+                '</div>';
+        }
+        
+        if (closeMatches.length > 0) {
+            modalHtml += '<div style="margin-top: 20px;">' +
+                '<h6><i class="fas fa-star"></i> Close Matches:</h6>' +
+                '<div class="list-group">';
+            
+            closeMatches.forEach(function(invoice) {
+                modalHtml += '<div class="list-group-item">' +
+                    '<div class="d-flex justify-content-between align-items-center">' +
+                    '<div>' +
+                    '<strong>' + invoice.trans_no + '</strong> - ' +
+                    '$' + parseFloat(invoice.balance_amount).toFixed(2) + 
+                    ' (' + invoice.status + ')' +
+                    '<br/><small class="text-muted">' + invoice.description + '</small>' +
+                    '</div>' +
+                    '<button class="btn btn-sm btn-primary allocate-to-invoice-btn" ' +
+                    'data-receipt-id="' + receiptId + '" ' +
+                    'data-invoice-no="' + invoice.trans_no + '">' +
+                    '<i class="fas fa-link"></i> Allocate' +
+                    '</button>' +
+                    '</div>' +
+                    '</div>';
+            });
+            
+            modalHtml += '</div></div>';
+        }
+        
+        if (otherInvoices.length > 0) {
+            modalHtml += '<div style="margin-top: 20px;">' +
+                '<h6><i class="fas fa-list"></i> Other Unpaid Invoices:</h6>' +
+                '<div class="list-group" style="max-height: 300px; overflow-y: auto;">';
+            
+            otherInvoices.forEach(function(invoice) {
+                modalHtml += '<div class="list-group-item">' +
+                    '<div class="d-flex justify-content-between align-items-center">' +
+                    '<div>' +
+                    '<strong>' + invoice.trans_no + '</strong> - ' +
+                    '$' + parseFloat(invoice.balance_amount).toFixed(2) + 
+                    ' (' + invoice.status + ')' +
+                    '</div>' +
+                    '<button class="btn btn-sm btn-outline-primary allocate-to-invoice-btn" ' +
+                    'data-receipt-id="' + receiptId + '" ' +
+                    'data-invoice-no="' + invoice.trans_no + '">' +
+                    '<i class="fas fa-link"></i> Allocate' +
+                    '</button>' +
+                    '</div>' +
+                    '</div>';
+            });
+            
+            modalHtml += '</div></div>';
+        }
+        
+        modalHtml += '</div>' +
+            '<div class="modal-footer">' +
+            '<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>' +
+            '</div>' +
+            '</div>' +
+            '</div>' +
+            '</div>';
+        
+        // Remove existing modal if any
+        $('#quickAllocateModal').remove();
+        
+        // Add to body and show
+        $('body').append(modalHtml);
+        $('#quickAllocateModal').modal('show');
+    }
+    
+    // Handle allocation button click in modal
+    $(document).on('click', '.allocate-to-invoice-btn', function(e) {
+        e.preventDefault();
+        
+        const receiptId = $(this).data('receipt-id');
+        const invoiceNo = $(this).data('invoice-no');
+        
+        const $btn = $(this);
+        const originalHtml = $btn.html();
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Allocating...');
+        
+        // Update the receipt with the invoice number
+        $.ajax({
+            url: '{{ route("clients.updateOfficeReceipt") }}',
+            type: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                id: receiptId,
+                invoice_no: invoiceNo,
+                save_type: 'final'
+            },
+            success: function(response) {
+                if (response.status) {
+                    $('#quickAllocateModal').modal('hide');
+                    
+                    // Show success message
+                    alert('✅ Receipt successfully allocated to ' + invoiceNo + '!');
+                    
+                    // Reload page to show updated allocation
+                    localStorage.setItem('activeTab', 'accounts-test');
+                    location.reload();
+                } else {
+                    $btn.prop('disabled', false).html(originalHtml);
+                    alert('Error: ' + (response.message || 'Failed to allocate receipt'));
+                }
+            },
+            error: function(xhr) {
+                $btn.prop('disabled', false).html(originalHtml);
+                console.error('Allocation error:', xhr);
+                alert('An error occurred while allocating. Please try again.');
+            }
+        });
+    });
+    
+    // ================================================================
+    // DRAG & DROP ALLOCATION - Visual drag-and-drop receipt allocation
+    // ================================================================
+    let draggedReceipt = null;
+    
+    // Handle drag start on unallocated receipts
+    $(document).on('dragstart', 'tr.unallocated-receipt[draggable="true"]', function(e) {
+        draggedReceipt = {
+            id: $(this).data('receipt-id'),
+            amount: $(this).data('receipt-amount'),
+            receiptNo: $(this).data('receipt-no')
+        };
+        
+        $(this).css('opacity', '0.5');
+        
+        // Set drag data
+        e.originalEvent.dataTransfer.effectAllowed = 'move';
+        e.originalEvent.dataTransfer.setData('text/html', $(this).html());
+        
+        // Add visual feedback to drop zones
+        $('.invoice-drop-zone').addClass('drag-active');
+        
+        console.log('🎯 Dragging receipt:', draggedReceipt);
+    });
+    
+    // Handle drag end
+    $(document).on('dragend', 'tr.unallocated-receipt[draggable="true"]', function(e) {
+        $(this).css('opacity', '1');
+        $('.invoice-drop-zone').removeClass('drag-active drag-over');
+    });
+    
+    // Handle drag over invoice rows
+    $(document).on('dragover', 'tr.invoice-drop-zone', function(e) {
+        e.preventDefault();
+        e.originalEvent.dataTransfer.dropEffect = 'move';
+        
+        $(this).addClass('drag-over');
+        
+        return false;
+    });
+    
+    // Handle drag leave
+    $(document).on('dragleave', 'tr.invoice-drop-zone', function(e) {
+        $(this).removeClass('drag-over');
+    });
+    
+    // Handle drop on invoice
+    $(document).on('drop', 'tr.invoice-drop-zone', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        $(this).removeClass('drag-over');
+        $('.invoice-drop-zone').removeClass('drag-active');
+        
+        if (!draggedReceipt) return false;
+        
+        const invoiceNo = $(this).data('invoice-no');
+        const invoiceBalance = parseFloat($(this).data('invoice-balance'));
+        const receiptAmount = parseFloat(draggedReceipt.amount);
+        
+        console.log('💧 Dropped on invoice:', invoiceNo);
+        
+        // Show confirmation with amount info
+        const amountMatch = Math.abs(invoiceBalance - receiptAmount) < 0.01;
+        const matchText = amountMatch ? '✓ EXACT MATCH' : '(Partial payment)';
+        const confirmMsg = `Allocate ${draggedReceipt.receiptNo} ($${receiptAmount.toFixed(2)}) to ${invoiceNo} ($${invoiceBalance.toFixed(2)})?\n\n${matchText}`;
+        
+        if (confirm(confirmMsg)) {
+            // Perform allocation
+            allocateReceiptToInvoice(draggedReceipt.id, invoiceNo);
+        }
+        
+        draggedReceipt = null;
+        return false;
+    });
+    
+    function allocateReceiptToInvoice(receiptId, invoiceNo) {
+        console.log('🔗 Allocating receipt', receiptId, 'to', invoiceNo);
+        
+        // Show loading indicator
+        const $loadingDiv = $('<div class="allocation-loading">' +
+            '<div class="spinner-border text-primary" role="status"></div>' +
+            '<p>Allocating receipt to ' + invoiceNo + '...</p>' +
+            '</div>');
+        $('body').append($loadingDiv);
+        
+        $.ajax({
+            url: '{{ route("clients.updateOfficeReceipt") }}',
+            type: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                id: receiptId,
+                invoice_no: invoiceNo,
+                save_type: 'final'
+            },
+            success: function(response) {
+                $loadingDiv.remove();
+                
+                if (response.status) {
+                    // Show success animation
+                    const $successDiv = $('<div class="allocation-success">' +
+                        '<div class="success-checkmark">' +
+                        '<i class="fas fa-check-circle"></i>' +
+                        '</div>' +
+                        '<p>✅ Receipt successfully allocated to ' + invoiceNo + '!</p>' +
+                        '</div>');
+                    $('body').append($successDiv);
+                    
+                    setTimeout(function() {
+                        $successDiv.fadeOut(function() {
+                            $(this).remove();
+                            // Reload page
+                            localStorage.setItem('activeTab', 'accounts-test');
+                            location.reload();
+                        });
+                    }, 1500);
+                } else {
+                    alert('Error: ' + (response.message || 'Failed to allocate receipt'));
+                }
+            },
+            error: function(xhr) {
+                $loadingDiv.remove();
+                console.error('Allocation error:', xhr);
+                alert('An error occurred while allocating. Please try again.');
+            }
+        });
+    }
+    
     // Ensure all existing functionality works on this test page
     console.log('🧪 Accounts Test Page loaded - Full Read/Write access enabled');
     console.log('📊 Client ID: {{ $fetchedData->id }}');
     console.log('📁 Matter ID: {{ $client_selected_matter_id ?? "N/A" }}');
     console.log('✅ All modals and forms are functional');
     console.log('✅ Office Receipt Edit functionality enabled');
+    console.log('✅ Quick Receipt functionality enabled');
+    console.log('✅ Quick Allocate functionality enabled');
+    console.log('✅ Drag & Drop Allocation enabled');
 });
 
 // All existing modal popups and forms work seamlessly with this test page
@@ -1034,6 +1709,184 @@ document.addEventListener('DOMContentLoaded', function() {
 .transaction-table .dropdown-divider {
     margin: 4px 0;
     border-top: 1px solid #e9ecef;
+}
+
+/* Unallocated Office Receipt - Red Background */
+.unallocated-receipt {
+    background-color: #ffe6e6 !important;
+    border-left: 4px solid #dc3545 !important;
+}
+
+.unallocated-receipt:hover {
+    background-color: #ffcccc !important;
+}
+
+/* Add a visual indicator to unallocated receipts */
+.unallocated-receipt td {
+    color: #721c24;
+}
+
+.unallocated-receipt td .reference-dropdown-trigger {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+/* ================================================================
+   DRAG & DROP STYLES
+   ================================================================ */
+
+/* Draggable unallocated receipts */
+tr.unallocated-receipt[draggable="true"] {
+    cursor: move;
+    user-select: none;
+}
+
+tr.unallocated-receipt[draggable="true"]:hover {
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+    transform: translateY(-1px);
+    transition: all 0.2s;
+}
+
+/* Invoice drop zones */
+tr.invoice-drop-zone {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+/* Active drop zones (when dragging) */
+tr.invoice-drop-zone.drag-active {
+    background-color: #e8f4f8 !important;
+    border-left: 4px solid #667eea !important;
+}
+
+tr.invoice-drop-zone.drag-active::before {
+    content: "💧 Drop here to allocate";
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #667eea;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    z-index: 10;
+    pointer-events: none;
+}
+
+/* Hover effect when dragging over */
+tr.invoice-drop-zone.drag-over {
+    background-color: #d1e7dd !important;
+    border-left: 6px solid #28a745 !important;
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+tr.invoice-drop-zone.drag-over::before {
+    content: "✓ Release to allocate";
+    background: #28a745;
+}
+
+/* Loading overlay */
+.allocation-loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.allocation-loading .spinner-border {
+    width: 4rem;
+    height: 4rem;
+    border-width: 0.4rem;
+}
+
+.allocation-loading p {
+    color: white;
+    font-size: 18px;
+    font-weight: 600;
+    margin-top: 20px;
+}
+
+/* Success overlay */
+.allocation-success {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(40, 167, 69, 0.95);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.allocation-success .success-checkmark {
+    font-size: 100px;
+    color: white;
+    animation: scaleIn 0.5s ease-out;
+}
+
+.allocation-success p {
+    color: white;
+    font-size: 24px;
+    font-weight: 600;
+    margin-top: 20px;
+    animation: fadeInUp 0.5s ease-out 0.3s both;
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Drag cursor indicator */
+tr.unallocated-receipt[draggable="true"]::after {
+    content: "🖱️ Drag to invoice";
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #ff6b6b;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 15px;
+    font-size: 10px;
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+}
+
+tr.unallocated-receipt[draggable="true"]:hover::after {
+    opacity: 1;
 }
 </style>
 

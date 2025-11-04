@@ -274,6 +274,27 @@
 
                         <div class="col-12 col-md-12 col-lg-12">
 							<div class="form-group">
+                                <!-- Quick Actions Toolbar -->
+                                <div class="quick-actions-toolbar" style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
+                                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                                        <span style="font-weight: 600; color: #667eea;">
+                                            <i class="fas fa-bolt"></i> Quick Actions:
+                                        </span>
+                                        <button type="button" class="btn btn-sm btn-outline-primary paste-clipboard-btn" 
+                                                title="Paste amount from clipboard">
+                                            <i class="fas fa-clipboard"></i> Paste from Clipboard
+                                            <span class="clipboard-preview" style="margin-left: 5px; font-weight: bold; color: #28a745;"></span>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-info repeat-last-entry-btn"
+                                                title="Repeat last office receipt entry">
+                                            <i class="fas fa-redo"></i> Repeat Last Entry
+                                        </button>
+                                        <small class="text-muted" style="margin-left: auto;">
+                                            <i class="fas fa-info-circle"></i> Use these shortcuts to speed up data entry
+                                        </small>
+                                    </div>
+                                </div>
+
                                 <table border="1" style="margin-bottom:0rem !important;" class="table text_wrap table-striped table-hover table-md vertical_align">
                                     <thead>
                                         <tr>

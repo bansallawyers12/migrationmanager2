@@ -308,6 +308,23 @@
                                         <span class="status-badge <?php echo $statusClass; ?>">
                                             <?php echo $statusDes; ?>
                                         </span>
+                                        
+                                        <?php 
+                                        // Quick Receipt Button - Show for unpaid (0) and partial (2) invoices only
+                                        if($inc_val->save_type == 'final' && in_array($inc_val->invoice_status, [0, 2]) && $inc_val->void_invoice != 1) { 
+                                            $invoiceBalance = floatval($inc_val->balance_amount);
+                                        ?>
+                                        <br/>
+                                        <button type="button" class="btn btn-sm btn-success quick-receipt-btn" 
+                                                data-invoice-no="<?php echo $inc_val->trans_no; ?>"
+                                                data-invoice-balance="<?php echo $invoiceBalance; ?>"
+                                                data-invoice-description="<?php echo htmlspecialchars($inc_val->description ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                                                data-matter-id="<?php echo $inc_val->client_matter_id; ?>"
+                                                style="margin-top: 5px; margin-bottom: 5px; font-size: 11px; padding: 3px 10px;">
+                                            <i class="fas fa-money-bill-wave"></i> Quick Receipt
+                                        </button>
+                                        <?php } ?>
+                                        
                                             <?php if($inc_val->save_type == 'final') { ?>
                                             <br>
                                             <?php 
@@ -370,14 +387,24 @@
                     </thead>
                     <tbody class="productitemList_office">
                         <?php
-                        $receipts_lists_office = DB::table('account_client_receipts')->where('client_matter_id',$client_selected_matter_id)->where('client_id',$fetchedData->id)->where('receipt_type',2)->orderBy('id', 'desc')->get();
+                        // Sort office receipts: unallocated (no invoice_no) at the top, then by ID descending
+                        $receipts_lists_office = DB::table('account_client_receipts')
+                            ->where('client_matter_id',$client_selected_matter_id)
+                            ->where('client_id',$fetchedData->id)
+                            ->where('receipt_type',2)
+                            ->orderByRaw('CASE WHEN invoice_no IS NULL OR invoice_no = "" THEN 0 ELSE 1 END')
+                            ->orderBy('id', 'desc')
+                            ->get();
                         //dd($receipts_lists_office);
                         if(!empty($receipts_lists_office) && count($receipts_lists_office)>0 )
                         {
                             foreach($receipts_lists_office as $off_list=>$off_val)
                             {
+                            // Determine if this receipt is unallocated (not linked to an invoice)
+                            $isUnallocated = empty($off_val->invoice_no);
+                            $unallocatedClass = $isUnallocated ? 'unallocated-receipt' : '';
                             ?>
-                            <tr class="drow_account_office" data-matterid="{{$off_val->client_matter_id}}">
+                            <tr class="drow_account_office {{$unallocatedClass}}" data-matterid="{{$off_val->client_matter_id}}">
                                 <td>
                                     <span style="display: inline-flex;">
                                         <?php
@@ -440,3 +467,133 @@
     </div>
 </div>
 </div>
+
+<style>
+/* Unallocated Office Receipt - Red Background */
+.unallocated-receipt {
+    background-color: #ffe6e6 !important;
+    border-left: 4px solid #dc3545 !important;
+}
+
+.unallocated-receipt:hover {
+    background-color: #ffcccc !important;
+}
+
+/* Add a visual indicator to unallocated receipts */
+.unallocated-receipt td {
+    color: #721c24;
+}
+
+.unallocated-receipt td a {
+    color: #dc3545;
+    font-weight: 600;
+}
+</style>
+
+<script>
+jQuery(document).ready(function($) {
+    // ================================================================
+    // QUICK RECEIPT BUTTON - Pre-populate office receipt from invoice
+    // ================================================================
+    $(document).on('click', '.quick-receipt-btn', function(e) {
+        e.preventDefault();
+        
+        const invoiceNo = $(this).data('invoice-no');
+        const invoiceBalance = $(this).data('invoice-balance');
+        const invoiceDescription = $(this).data('invoice-description');
+        const matterId = $(this).data('matter-id');
+        
+        console.log('💵 Quick Receipt clicked for:', {invoiceNo, invoiceBalance, matterId});
+        
+        // Open the create receipt modal
+        const $modal = $('#createreceiptmodal');
+        
+        // Select "Direct Office Receipt" radio button
+        $('input[name="receipt_type"][value="office_receipt"]').prop('checked', true).trigger('change');
+        
+        // Update modal title
+        $modal.find('.modal-title').html('<i class="fas fa-money-bill-wave" style="color: #28a745;"></i> Quick Receipt for ' + invoiceNo);
+        
+        // Wait a moment for the form to show, then populate fields
+        setTimeout(function() {
+            // Set matter ID
+            $('#client_matter_id_office').val(matterId);
+            
+            // Set today's date for both transaction date and entry date
+            const today = new Date();
+            const dateStr = ('0' + today.getDate()).slice(-2) + '/' + 
+                           ('0' + (today.getMonth() + 1)).slice(-2) + '/' + 
+                           today.getFullYear();
+            
+            // Find the first row in office receipt form
+            const $firstRow = $('#office_receipt_form .productitem_office tr.clonedrow_office').first();
+            
+            // Populate transaction date
+            $firstRow.find('input[name="trans_date[]"]').val(dateStr);
+            
+            // Populate entry date
+            $firstRow.find('input[name="entry_date[]"]').val(dateStr);
+            
+            // Set amount
+            $firstRow.find('input[name="deposit_amount[]"]').val(invoiceBalance.toFixed(2));
+            
+            // Set description
+            $firstRow.find('input[name="description[]"]').val('Payment for ' + invoiceNo + ' - ' + invoiceDescription);
+            
+            // Load invoices and pre-select this invoice
+            $.ajax({
+                url: window.ClientDetailConfig.urls.base + '/clients/getInvoicesByMatter',
+                method: 'POST',
+                datatype: 'json',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                data: {
+                    client_matter_id: matterId,
+                    client_id: $('#client_id_hidden').val()
+                },
+                success: function(response) {
+                    const $invoiceDropdown = $firstRow.find('select.invoice_no_cls');
+                    $invoiceDropdown.empty();
+                    $invoiceDropdown.append('<option value="">Select Invoice (Optional)</option>');
+                    
+                    if(response.invoices && response.invoices.length > 0) {
+                        response.invoices.forEach(function(invoice) {
+                            const selected = (invoice.trans_no === invoiceNo) ? 'selected' : '';
+                            $invoiceDropdown.append(
+                                '<option value="' + invoice.trans_no + '" ' + selected + '>' + 
+                                invoice.trans_no + ' - $' + parseFloat(invoice.balance_amount).toFixed(2) + 
+                                ' (' + invoice.status + ')</option>'
+                            );
+                        });
+                        
+                        console.log('✅ Invoice pre-selected:', invoiceNo);
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Failed to load invoices:', xhr);
+                }
+            });
+            
+            // Focus on payment method dropdown (the only required field left)
+            $firstRow.find('select[name="payment_method[]"]').focus();
+            
+            console.log('✅ Quick Receipt form pre-populated');
+        }, 300);
+        
+        // Add a badge to indicate this is from Quick Receipt
+        $modal.find('.modal-header').prepend('<span class="badge badge-success" style="margin-right: 10px;"><i class="fas fa-bolt"></i> QUICK RECEIPT</span>');
+        
+        // Open the modal
+        $modal.modal('show');
+    });
+    
+    // Remove Quick Receipt badge when modal closes
+    $('#createreceiptmodal').on('hidden.bs.modal', function() {
+        $(this).find('.badge-success').remove();
+        $(this).find('.modal-title').html('Create Receipt');
+    });
+    
+    console.log('✅ Quick Receipt functionality enabled');
+});
+</script>
