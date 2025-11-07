@@ -1311,7 +1311,7 @@
 
         
 
-        $.ajax({
+		$.ajax({
 
             type:'post',
 
@@ -1319,13 +1319,13 @@
 
             sync:true,
 
-            data: { client_id:client_id, selectedMatter:selectedMatter},
+			data: { client_id:client_id, selectedMatter:selectedMatter},
 
-            success: function(response){
+			success: function(response){
 
-                var obj = $.parseJSON(response);
+				var obj = (typeof response === 'string') ? $.parseJSON(response) : response;
 
-                $('.invoice_no_cls').html(obj.record_get);
+				$('.invoice_no_cls').html(obj.record_get);
 
             }
 

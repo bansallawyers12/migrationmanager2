@@ -195,8 +195,24 @@ class ClientAccountsController extends Controller
             $is_record_exist = DB::table('account_client_receipts')->select('receipt_id')->where('receipt_type', 1)->orderBy('receipt_id', 'desc')->first();
             $receipt_id = !$is_record_exist ? 1 : $is_record_exist->receipt_id + 1;
    
-            $finalArr = [];
-            $running_balance = floatval($requestData['client_ledger_balance_amount']);
+			$finalArr = [];
+			$ledgerBalanceQuery = DB::table('account_client_receipts')
+				->select('deposit_amount', 'withdraw_amount', 'void_fee_transfer')
+				->where('client_id', $requestData['client_id'])
+				->where('receipt_type', 1);
+
+			if (!empty($requestData['client_matter_id'])) {
+				$ledgerBalanceQuery->where('client_matter_id', $requestData['client_matter_id']);
+			}
+
+			$existingLedgerEntries = $ledgerBalanceQuery->get();
+			$running_balance = 0;
+			foreach ($existingLedgerEntries as $existingEntry) {
+				if (isset($existingEntry->void_fee_transfer) && $existingEntry->void_fee_transfer == 1) {
+					continue;
+				}
+				$running_balance += floatval($existingEntry->deposit_amount) - floatval($existingEntry->withdraw_amount);
+			}
             $saved = false;
    
             // Group entries by invoice_no for Fee Transfer
@@ -233,15 +249,17 @@ class ClientAccountsController extends Controller
                     ->get();
                 
                 $currentFundsHeld = 0;
-                foreach($ledger_entries as $entry) {
-                    // Skip voided fee transfers
-                    if(isset($entry->void_fee_transfer) && $entry->void_fee_transfer == 1) {
-                        continue;
-                    }
-                    $currentFundsHeld += floatval($entry->deposit_amount) - floatval($entry->withdraw_amount);
-                }
-                
-                if ($totalWithdrawAmount > $currentFundsHeld) {
+			foreach($ledger_entries as $entry) {
+				// Skip voided fee transfers
+				if(isset($entry->void_fee_transfer) && $entry->void_fee_transfer == 1) {
+					continue;
+				}
+				$currentFundsHeld += floatval($entry->deposit_amount) - floatval($entry->withdraw_amount);
+			}
+			$currentFundsHeld = round($currentFundsHeld, 2);
+			$totalWithdrawAmount = round($totalWithdrawAmount, 2);
+			
+			if ($totalWithdrawAmount > $currentFundsHeld) {
                     $response['status'] = false;
                     $response['message'] = 'You cannot transfer the amount greater than of Current Funds Held amount (Current: $' . number_format($currentFundsHeld, 2) . ')';
                     $response['requestData'] = [];
@@ -424,15 +442,17 @@ class ClientAccountsController extends Controller
                         ->get();
                     
                     $currentFundsHeld = 0;
-                    foreach($ledger_entries as $entry) {
-                        // Skip voided fee transfers
-                        if(isset($entry->void_fee_transfer) && $entry->void_fee_transfer == 1) {
-                            continue;
-                        }
-                        $currentFundsHeld += floatval($entry->deposit_amount) - floatval($entry->withdraw_amount);
-                    }
-                    
-                    if ($withdraw > $currentFundsHeld) {
+			foreach($ledger_entries as $entry) {
+				// Skip voided fee transfers
+				if(isset($entry->void_fee_transfer) && $entry->void_fee_transfer == 1) {
+					continue;
+				}
+				$currentFundsHeld += floatval($entry->deposit_amount) - floatval($entry->withdraw_amount);
+			}
+			$currentFundsHeld = round($currentFundsHeld, 2);
+			$withdraw = round($withdraw, 2);
+			
+			if ($withdraw > $currentFundsHeld) {
                         $response['status'] = false;
                         $response['message'] = 'You cannot transfer the amount greater than of Current Funds Held amount (Current: $' . number_format($currentFundsHeld, 2) . ')';
                         $response['requestData'] = [];
@@ -513,7 +533,7 @@ class ClientAccountsController extends Controller
         }
    
         return response()->json($response, 200);
-       }
+    }
    
     private function createTransactionNumber($clientFundLedgerType)
     {

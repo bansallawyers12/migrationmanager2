@@ -742,7 +742,7 @@ function customValidate(formName, savetype = '')
 						var myform = document.getElementById('invoice_receipt_form');
 						var fd = new FormData(myform);
 						fd.append('save_type', savetype);
-						$.ajax({
+							$.ajax({
 							type:'post',
 							url:$("form[name="+formName+"]").attr('action'),
 							processData: false,
@@ -750,7 +750,16 @@ function customValidate(formName, savetype = '')
 							data: fd,
 							success: function(response){
 								$('.popuploader').hide();
-								var obj = $.parseJSON(response);
+								var obj = response;
+								if (typeof response === 'string') {
+									try {
+										obj = $.parseJSON(response);
+									} catch (error) {
+										console.error('Invalid JSON response for invoice_receipt_form:', response, error);
+										alert('Unexpected response received while creating the invoice.');
+										return;
+									}
+								}
                                 alert('Invoice No - '+ obj.invoice_no + ' is generated');
 								$('#createreceiptmodal').modal('hide');
                                 localStorage.setItem('activeTab', 'accounts');
