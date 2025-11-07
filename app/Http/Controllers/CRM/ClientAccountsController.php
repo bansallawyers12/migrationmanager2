@@ -1372,8 +1372,73 @@ class ClientAccountsController extends Controller
           ->update($updateData);
       
       if ($updated) {
-          // Delete cached PDF since office receipt was updated
+          // Get the updated receipt
           $receipt = DB::table('account_client_receipts')->where('id', $id)->first();
+          
+          // If invoice_no was updated, recalculate invoice payment status
+          if ($request->has('invoice_no') && !empty($request->input('invoice_no'))) {
+              $invoiceNo = $request->input('invoice_no');
+              
+              // Get the invoice
+              $invoice = DB::table('account_client_receipts')
+                  ->where('receipt_type', 3)
+                  ->where('trans_no', $invoiceNo)
+                  ->where('client_id', $receipt->client_id)
+                  ->first();
+              
+              if ($invoice) {
+                  // Calculate total payments for this invoice
+                  $totalPaid = DB::table('account_client_receipts')
+                      ->where('receipt_type', 2)
+                      ->where('invoice_no', $invoiceNo)
+                      ->where('client_id', $receipt->client_id)
+                      ->where('save_type', 'final')
+                      ->sum('deposit_amount');
+                  
+                  $invoiceAmount = floatval($invoice->withdraw_amount);
+                  $newBalance = $invoiceAmount - $totalPaid;
+                  
+                  // Determine new status: 0=Unpaid, 1=Paid, 2=Partial
+                  if ($newBalance <= 0) {
+                      $newStatus = 1; // Paid
+                  } elseif ($totalPaid > 0) {
+                      $newStatus = 2; // Partial
+                  } else {
+                      $newStatus = 0; // Unpaid
+                  }
+                  
+                  // Update invoice status and balance
+                  DB::table('account_client_receipts')
+                      ->where('receipt_type', 3)
+                      ->where('trans_no', $invoiceNo)
+                      ->where('client_id', $receipt->client_id)
+                      ->update([
+                          'invoice_status' => $newStatus,
+                          'partial_paid_amount' => $totalPaid,
+                          'balance_amount' => max(0, $newBalance),
+                          'updated_at' => now(),
+                      ]);
+                  
+                  // Also update in account_all_invoice_receipts if it exists
+                  DB::table('account_all_invoice_receipts')
+                      ->where('receipt_type', 3)
+                      ->where('invoice_no', $invoiceNo)
+                      ->where('client_id', $receipt->client_id)
+                      ->update([
+                          'invoice_status' => $newStatus,
+                          'updated_at' => now(),
+                      ]);
+                  
+                  Log::info('Invoice status updated after receipt allocation', [
+                      'invoice_no' => $invoiceNo,
+                      'total_paid' => $totalPaid,
+                      'new_balance' => $newBalance,
+                      'new_status' => $newStatus
+                  ]);
+              }
+          }
+          
+          // Delete cached PDF since office receipt was updated
           if ($receipt && !empty($receipt->pdf_document_id)) {
            $pdfDoc = DB::table('documents')->where('id', $receipt->pdf_document_id)->first();
            if ($pdfDoc && !empty($pdfDoc->myfile_key)) {
@@ -1447,29 +1512,412 @@ class ClientAccountsController extends Controller
   // Get invoices by matter for dropdown
   public function getInvoicesByMatter(Request $request)
   {
-      $matterId = $request->input('client_matter_id');
-      $clientId = $request->input('client_id');
-      
-      $invoices = DB::table('account_client_receipts')
-          ->select('trans_no', 'balance_amount', 'invoice_status', 'description')
-          ->where('client_matter_id', $matterId)
-          ->where('client_id', $clientId)
-          ->where('receipt_type', 3) // Invoices only
-          ->groupBy('receipt_id')
-          ->orderBy('id', 'desc')
-          ->get();
-      
-      // Add status text
-      $invoices = $invoices->map(function($invoice) {
-          $statusMap = ['0' => 'Unpaid', '1' => 'Paid', '2' => 'Partial', '3' => 'Void'];
-          $invoice->status = $statusMap[$invoice->invoice_status] ?? 'Unknown';
-          return $invoice;
-      });
-      
-      return response()->json([
-          'status' => true,
-          'invoices' => $invoices,
-      ], 200);
+      try {
+          $matterId = $request->input('client_matter_id');
+          $clientId = $request->input('client_id');
+          
+          Log::info('getInvoicesByMatter called', [
+              'client_id' => $clientId,
+              'matter_id' => $matterId
+          ]);
+          
+          if (empty($clientId)) {
+              return response()->json([
+                  'status' => false,
+                  'message' => 'Client ID is required',
+                  'invoices' => [],
+              ], 400);
+          }
+          
+          $baseQuery = DB::table('account_client_receipts')
+              ->select(
+                  'trans_no',
+                  DB::raw('MAX(COALESCE(balance_amount, withdraw_amount, 0)) as balance_amount'),
+                  DB::raw('MAX(COALESCE(invoice_status, 0)) as invoice_status'),
+                  DB::raw('MAX(description) as description'),
+                  DB::raw('MAX(trans_date) as latest_trans_date')
+              )
+              ->where('client_id', $clientId)
+              ->where('receipt_type', 3)
+              ->where(function ($query) {
+                  $query->whereIn('invoice_status', [0, 2])
+                        ->orWhereNull('invoice_status');
+              })
+              ->groupBy('trans_no');
+
+          if (!empty($matterId)) {
+              $baseQuery->where('client_matter_id', $matterId);
+          } else {
+              $baseQuery->whereNull('client_matter_id');
+          }
+
+          $invoices = (clone $baseQuery)
+              ->orderByDesc('latest_trans_date')
+              ->get();
+
+          Log::info('First query returned ' . $invoices->count() . ' invoices');
+
+          // Fallback: if no invoices are found for the matter, fetch all unpaid/partial invoices for the client
+          if ($invoices->isEmpty() && !empty($matterId)) {
+              Log::info('No invoices for matter, fetching all client invoices');
+              $invoices = DB::table('account_client_receipts')
+                  ->select(
+                      'trans_no',
+                      DB::raw('MAX(COALESCE(balance_amount, withdraw_amount, 0)) as balance_amount'),
+                      DB::raw('MAX(COALESCE(invoice_status, 0)) as invoice_status'),
+                      DB::raw('MAX(description) as description'),
+                      DB::raw('MAX(trans_date) as latest_trans_date')
+                  )
+                  ->where('client_id', $clientId)
+                  ->where('receipt_type', 3)
+                  ->where(function ($query) {
+                      $query->whereIn('invoice_status', [0, 2])
+                            ->orWhereNull('invoice_status');
+                  })
+                  ->groupBy('trans_no')
+                  ->orderByDesc('latest_trans_date')
+                  ->get();
+                  
+              Log::info('Fallback query returned ' . $invoices->count() . ' invoices');
+          }
+          
+          // Add status text
+          $invoices = $invoices->map(function($invoice) {
+              $statusMap = ['0' => 'Unpaid', '1' => 'Paid', '2' => 'Partial', '3' => 'Void'];
+              $invoice->status = $statusMap[$invoice->invoice_status] ?? 'Unknown';
+              return $invoice;
+          });
+          
+          return response()->json([
+              'status' => true,
+              'invoices' => $invoices,
+              'count' => $invoices->count(),
+          ], 200);
+          
+      } catch (\Exception $e) {
+          Log::error('getInvoicesByMatter error: ' . $e->getMessage(), [
+              'trace' => $e->getTraceAsString()
+          ]);
+          
+          return response()->json([
+              'status' => false,
+              'message' => 'Database error: ' . $e->getMessage(),
+              'invoices' => [],
+          ], 500);
+      }
+  }
+
+  // Update Client Fund Ledger Entry (for allocating deposits to invoices)
+  public function updateClientFundLedger(Request $request)
+  {
+      try {
+          $id = $request->input('id');
+          $invoiceNo = $request->input('invoice_no');
+          $clientId = $request->input('client_id');
+          
+          Log::info('updateClientFundLedger called', [
+              'id' => $id,
+              'invoice_no' => $invoiceNo,
+              'client_id' => $clientId
+          ]);
+          
+          // Get the deposit ledger entry
+          $depositEntry = DB::table('account_client_receipts')
+              ->where('id', $id)
+              ->where('receipt_type', 1)
+              ->where('client_id', $clientId)
+              ->first();
+          
+          if (!$depositEntry) {
+              return response()->json([
+                  'status' => false,
+                  'message' => 'Deposit entry not found',
+              ], 404);
+          }
+          
+          // Check if this is a re-allocation (deposit already has an invoice_no)
+          $oldInvoiceNo = $depositEntry->invoice_no;
+          $isReallocation = !empty($oldInvoiceNo) && $oldInvoiceNo != $invoiceNo;
+          
+          if ($isReallocation) {
+              // Void the old fee transfer linked to the old invoice
+              DB::table('account_client_receipts')
+                  ->where('receipt_type', 1)
+                  ->where('client_fund_ledger_type', 'Fee Transfer')
+                  ->where('invoice_no', $oldInvoiceNo)
+                  ->where('client_id', $clientId)
+                  ->where('receipt_id', $depositEntry->receipt_id)
+                  ->update([
+                      'void_fee_transfer' => 1,
+                      'updated_at' => now(),
+                  ]);
+              
+              // Get the old invoice and update its status
+              $oldInvoice = DB::table('account_client_receipts')
+                  ->where('receipt_type', 3)
+                  ->where('trans_no', $oldInvoiceNo)
+                  ->where('client_id', $clientId)
+                  ->first();
+              
+              if ($oldInvoice) {
+                  // Recalculate old invoice status
+                  $totalPaidOfficeOld = DB::table('account_client_receipts')
+                      ->where('receipt_type', 2)
+                      ->where('invoice_no', $oldInvoiceNo)
+                      ->where('client_id', $clientId)
+                      ->where('save_type', 'final')
+                      ->sum('deposit_amount');
+                  
+                  $totalPaidFeeTransferOld = DB::table('account_client_receipts')
+                      ->where('receipt_type', 1)
+                      ->where('client_fund_ledger_type', 'Fee Transfer')
+                      ->where('invoice_no', $oldInvoiceNo)
+                      ->where('client_id', $clientId)
+                      ->where(function($q) {
+                          $q->whereNull('void_fee_transfer')
+                            ->orWhere('void_fee_transfer', 0);
+                      })
+                      ->sum('withdraw_amount');
+                  
+                  $totalPaidOld = $totalPaidOfficeOld + $totalPaidFeeTransferOld;
+                  $invoiceAmountOld = floatval($oldInvoice->withdraw_amount);
+                  $newBalanceOld = $invoiceAmountOld - $totalPaidOld;
+                  
+                  $newStatusOld = 0; // Unpaid
+                  if ($newBalanceOld <= 0) {
+                      $newStatusOld = 1; // Paid
+                  } elseif ($totalPaidOld > 0) {
+                      $newStatusOld = 2; // Partial
+                  }
+                  
+                  DB::table('account_client_receipts')
+                      ->where('receipt_type', 3)
+                      ->where('trans_no', $oldInvoiceNo)
+                      ->where('client_id', $clientId)
+                      ->update([
+                          'invoice_status' => $newStatusOld,
+                          'partial_paid_amount' => $totalPaidOld,
+                          'balance_amount' => max(0, $newBalanceOld),
+                          'updated_at' => now(),
+                      ]);
+                  
+                  Log::info('Old invoice status updated after re-allocation', [
+                      'old_invoice_no' => $oldInvoiceNo,
+                      'new_status' => $newStatusOld,
+                      'new_balance' => $newBalanceOld
+                  ]);
+              }
+          }
+          
+          // Update the deposit entry with new invoice number
+          DB::table('account_client_receipts')
+              ->where('id', $id)
+              ->update([
+                  'invoice_no' => $invoiceNo,
+                  'updated_at' => now(),
+              ]);
+          
+          // Check if a Fee Transfer already exists for this deposit
+          $existingFeeTransfer = DB::table('account_client_receipts')
+              ->where('receipt_type', 1)
+              ->where('client_fund_ledger_type', 'Fee Transfer')
+              ->where('invoice_no', $invoiceNo)
+              ->where('client_id', $clientId)
+              ->where('receipt_id', $depositEntry->receipt_id)
+              ->first();
+          
+          if (!$existingFeeTransfer) {
+              // Create a Fee Transfer entry (withdrawal from client funds to pay the invoice)
+              $depositAmount = floatval($depositEntry->deposit_amount);
+              
+              // Calculate current balance for this client/matter
+              $ledger_entries = DB::table('account_client_receipts')
+                  ->select('deposit_amount', 'withdraw_amount', 'void_fee_transfer')
+                  ->where('client_id', $clientId)
+                  ->where('client_matter_id', $depositEntry->client_matter_id)
+                  ->where('receipt_type', 1)
+                  ->orderBy('id', 'asc')
+                  ->get();
+              
+              $running_balance = 0;
+              foreach($ledger_entries as $entry) {
+                  // Skip voided fee transfers
+                  if(isset($entry->void_fee_transfer) && $entry->void_fee_transfer == 1) {
+                      continue;
+                  }
+                  $running_balance += floatval($entry->deposit_amount) - floatval($entry->withdraw_amount);
+              }
+              
+              // Check if there are sufficient funds
+              if ($depositAmount > $running_balance) {
+                  return response()->json([
+                      'status' => false,
+                      'message' => 'Insufficient funds in client account. Available: $' . number_format($running_balance, 2),
+                  ], 400);
+              }
+              
+              // Generate transaction number for Fee Transfer
+              $trans_no = $this->createTransactionNumber('Fee Transfer');
+              
+              // Calculate new running balance after withdrawal
+              $new_balance = $running_balance - $depositAmount;
+              
+              // Insert Fee Transfer entry
+              DB::table('account_client_receipts')->insert([
+                  'user_id' => Auth::user()->id,
+                  'client_id' => $clientId,
+                  'client_matter_id' => $depositEntry->client_matter_id,
+                  'receipt_id' => $depositEntry->receipt_id,
+                  'receipt_type' => 1, // Client fund ledger
+                  'trans_date' => $depositEntry->trans_date,
+                  'entry_date' => $depositEntry->entry_date,
+                  'invoice_no' => $invoiceNo,
+                  'trans_no' => $trans_no,
+                  'client_fund_ledger_type' => 'Fee Transfer',
+                  'description' => 'Fee transfer to invoice ' . $invoiceNo,
+                  'deposit_amount' => 0,
+                  'withdraw_amount' => $depositAmount,
+                  'balance_amount' => $new_balance,
+                  'created_at' => now(),
+                  'updated_at' => now(),
+              ]);
+              
+              Log::info('Fee Transfer created', [
+                  'trans_no' => $trans_no,
+                  'amount' => $depositAmount,
+                  'invoice_no' => $invoiceNo
+              ]);
+          }
+          
+          // Get the invoice
+          $invoice = DB::table('account_client_receipts')
+              ->where('receipt_type', 3)
+              ->where('trans_no', $invoiceNo)
+              ->where('client_id', $clientId)
+              ->first();
+          
+          if ($invoice) {
+              // Calculate total payments for this invoice (from office receipts, ledger deposits, and fee transfers)
+              $totalPaidOffice = DB::table('account_client_receipts')
+                  ->where('receipt_type', 2)
+                  ->where('invoice_no', $invoiceNo)
+                  ->where('client_id', $clientId)
+                  ->where('save_type', 'final')
+                  ->sum('deposit_amount');
+              
+              // Sum fee transfers for this invoice
+              $totalPaidFeeTransfer = DB::table('account_client_receipts')
+                  ->where('receipt_type', 1)
+                  ->where('client_fund_ledger_type', 'Fee Transfer')
+                  ->where('invoice_no', $invoiceNo)
+                  ->where('client_id', $clientId)
+                  ->where(function($q) {
+                      $q->whereNull('void_fee_transfer')
+                        ->orWhere('void_fee_transfer', 0);
+                  })
+                  ->sum('withdraw_amount');
+              
+              $totalPaid = $totalPaidOffice + $totalPaidFeeTransfer;
+              
+              $invoiceAmount = floatval($invoice->withdraw_amount);
+              $newBalance = $invoiceAmount - $totalPaid;
+              
+              // Determine new status: 0=Unpaid, 1=Paid, 2=Partial
+              if ($newBalance <= 0) {
+                  $newStatus = 1; // Paid
+              } elseif ($totalPaid > 0) {
+                  $newStatus = 2; // Partial
+              } else {
+                  $newStatus = 0; // Unpaid
+              }
+              
+              // Update invoice status and balance
+              DB::table('account_client_receipts')
+                  ->where('receipt_type', 3)
+                  ->where('trans_no', $invoiceNo)
+                  ->where('client_id', $clientId)
+                  ->update([
+                      'invoice_status' => $newStatus,
+                      'partial_paid_amount' => $totalPaid,
+                      'balance_amount' => max(0, $newBalance),
+                      'updated_at' => now(),
+                  ]);
+              
+              // Also update in account_all_invoice_receipts if it exists
+              DB::table('account_all_invoice_receipts')
+                  ->where('receipt_type', 3)
+                  ->where('invoice_no', $invoiceNo)
+                  ->where('client_id', $clientId)
+                  ->update([
+                      'invoice_status' => $newStatus,
+                      'updated_at' => now(),
+                  ]);
+              
+              Log::info('Invoice status updated after ledger allocation', [
+                  'invoice_no' => $invoiceNo,
+                  'total_paid' => $totalPaid,
+                  'new_balance' => $newBalance,
+                  'new_status' => $newStatus
+              ]);
+          }
+          
+          // Log activity
+          $userName = Auth::user()->first_name . ' ' . Auth::user()->last_name;
+          $formattedAmount = '$' . number_format(floatval($depositEntry->deposit_amount), 2);
+          $transDate = date('d/m/Y', strtotime($depositEntry->trans_date));
+          
+          if ($isReallocation) {
+              $subject = "Client Fund Deposit Re-allocated - {$formattedAmount} (Ref: {$depositEntry->trans_no})";
+              
+              $description = "<div class='activity-detail'>";
+              $description .= "<p><strong>{$userName}</strong> re-allocated a client fund deposit:</p>";
+              $description .= "<ul>";
+              $description .= "<li><strong>Deposit Reference:</strong> {$depositEntry->trans_no}</li>";
+              $description .= "<li><strong>Amount:</strong> {$formattedAmount}</li>";
+              $description .= "<li><strong>Transaction Date:</strong> {$transDate}</li>";
+              $description .= "<li><strong>Old Invoice:</strong> {$oldInvoiceNo} (Fee Transfer voided)</li>";
+              $description .= "<li><strong>New Invoice:</strong> {$invoiceNo}</li>";
+              $description .= "<li><strong>New Fee Transfer Created:</strong> Yes</li>";
+              $description .= "</ul>";
+              $description .= "</div>";
+          } else {
+              $subject = "Client Fund Deposit Allocated - {$formattedAmount} (Ref: {$depositEntry->trans_no})";
+              
+              $description = "<div class='activity-detail'>";
+              $description .= "<p><strong>{$userName}</strong> allocated a client fund deposit to an invoice:</p>";
+              $description .= "<ul>";
+              $description .= "<li><strong>Deposit Reference:</strong> {$depositEntry->trans_no}</li>";
+              $description .= "<li><strong>Amount:</strong> {$formattedAmount}</li>";
+              $description .= "<li><strong>Transaction Date:</strong> {$transDate}</li>";
+              $description .= "<li><strong>Allocated to Invoice:</strong> {$invoiceNo}</li>";
+              $description .= "<li><strong>Fee Transfer Created:</strong> Yes</li>";
+              $description .= "</ul>";
+              $description .= "</div>";
+          }
+          
+          $objs = new \App\Models\ActivitiesLog;
+          $objs->client_id = $clientId;
+          $objs->created_by = Auth::user()->id;
+          $objs->description = $description;
+          $objs->subject = $subject;
+          $objs->activity_type = 'financial';
+          $objs->save();
+          
+          return response()->json([
+              'status' => true,
+              'message' => 'Client fund deposit allocated and fee transfer created successfully',
+          ], 200);
+          
+      } catch (\Exception $e) {
+          Log::error('updateClientFundLedger error: ' . $e->getMessage(), [
+              'trace' => $e->getTraceAsString()
+          ]);
+          
+          return response()->json([
+              'status' => false,
+              'message' => 'Database error: ' . $e->getMessage(),
+          ], 500);
+      }
   }
 
   private function generateInvoiceNo()

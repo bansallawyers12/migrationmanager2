@@ -498,6 +498,34 @@ padding: 5px 10px;width:100%;background-color: #fdfdff;}
 .logsdata .logsitem .logs_comment{margin:8px 0px 0px;}
 .logsdata .logsitem .logs_comment p{font-size: 13px;line-height: 18px;color: #666;margin:0px;}
 
+.quick-actions-toolbar {
+  background-color: #eef2ff !important;
+  border-left-color: #4a63f1 !important;
+}
+
+.quick-actions-toolbar .quick-actions-label,
+.quick-actions-toolbar .text-primary,
+.quick-actions-toolbar span,
+.quick-actions-toolbar small,
+.quick-actions-toolbar .text-muted {
+  color: #1f2a44 !important;
+}
+
+.quick-actions-toolbar .btn-outline-primary,
+.quick-actions-toolbar .btn-outline-info {
+  background-color: #e6ecff;
+  color: #1f2a44;
+  border-color: #4a63f1;
+}
+
+.quick-actions-toolbar .btn-outline-primary:hover,
+.quick-actions-toolbar .btn-outline-primary:focus,
+.quick-actions-toolbar .btn-outline-info:hover,
+.quick-actions-toolbar .btn-outline-info:focus {
+  background-color: #4a63f1;
+  color: #fff;
+}
+
 .search_form .search_field{margin-top:29px;}
 .search_form .search_field input[type="text"]{width: calc(100% - 95px);display: inline-block;}
 .service_list{background: #f4f4f4;padding: 10px 10px;}

@@ -1358,6 +1358,7 @@ $(document).ready(function() {
             getTopReceiptVal: '{{ URL::to("/clients/getTopReceiptValInDB") }}',
             listOfInvoice: '{{ URL::to("/clients/listOfInvoice") }}',
             clientLedgerBalance: '{{ URL::to("/clients/clientLedgerBalanceAmount") }}',
+            getInvoicesByMatter: '{{ URL::to("/get-invoices-by-matter") }}',
             loadApplicationInsertUpdate: '{{ URL::to("/load-application-insert-update-data") }}',
             getApplicationDetail: '{{ URL::to("/getapplicationdetail") }}',
             updateIntake: '{{ URL::to("/application/updateintake") }}',

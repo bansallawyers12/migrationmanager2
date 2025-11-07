@@ -213,6 +213,7 @@ Route::get('/clients/genOfficeReceipt/{id}', 'CRM\ClientAccountsController@genof
 Route::post('/update-client-funds-ledger', 'CRM\ClientAccountsController@updateClientFundsLedger')->name('clients.update-client-funds-ledger');
 Route::post('/update-office-receipt', 'CRM\ClientAccountsController@updateOfficeReceipt')->name('clients.updateOfficeReceipt');
 Route::post('/get-invoices-by-matter', 'CRM\ClientAccountsController@getInvoicesByMatter')->name('clients.getInvoicesByMatter');
+Route::post('/update-client-fund-ledger', 'CRM\ClientAccountsController@updateClientFundLedger')->name('clients.updateClientFundLedger');
 Route::post('/clients/invoiceamount', 'CRM\ClientAccountsController@getInvoiceAmount')->name('clients.invoiceamount');
 
 // Receipt document uploads

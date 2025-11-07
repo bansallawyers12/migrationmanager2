@@ -1081,47 +1081,63 @@
 
             radio.addEventListener('change', function () {
 
+                const $modal = $('#createreceiptmodal');
+                const isQuickReceiptMode = $modal.length && $modal.data('quick-receipt-mode');
+
                 forms.forEach(form => form.style.display = 'none');
 
-                const selected = this.value; //alert(selected);
+                const selected = this.value;
 
-                document.getElementById(selected + '_form').style.display = 'block';
+                if (!isQuickReceiptMode) {
+                    // Clear all forms before showing selected one (prevents data leakage between forms)
+                    document.querySelectorAll('.form-type').forEach(form => {
+                        // Clear input fields, but preserve hidden system fields (client_id, matter_id, etc)
+                        form.querySelectorAll('input[type="text"], textarea').forEach(field => {
+                            if (!field.name.includes('client_id') &&
+                                !field.name.includes('matter_id') &&
+                                !field.name.includes('loggedin_userid') &&
+                                !field.name.includes('receipt_type') &&
+                                !field.name.includes('client')) {
+                                field.value = '';
+                            }
+                        });
+                        // Clear select dropdowns except migration agent
+                        form.querySelectorAll('select').forEach(field => {
+                            if (!field.id || !field.id.includes('agent_id')) {
+                                field.selectedIndex = 0;
+                            }
+                        });
+                    });
+                }
 
-                //var selectedMatter = $('#sel_matter_id_client_detail').val();
+                const targetForm = document.getElementById(selected + '_form');
+                if (targetForm) {
+                    targetForm.style.display = 'block';
+                }
 
                 let selectedMatter;
 
                 if ($('.general_matter_checkbox_client_detail').is(':checked')) {
 
-                    // If checkbox is checked, get its value
-
                     selectedMatter = $('.general_matter_checkbox_client_detail').val();
-
-                    //console.log('Checkbox is checked, selected value:', selectedMatter);
 
                 } else {
 
-                    // If checkbox is not checked, get the value from the dropdown
-
                     selectedMatter = $('#sel_matter_id_client_detail').val();
-
-                    //console.log('Checkbox is not checked, selected dropdown value:', selectedMatter);
 
                 }
 
-                //console.log('selectedMatter==='+selectedMatter);
-
                 if(selected == 'office_receipt'){
 
-                    listOfInvoice();
+                    if (!isQuickReceiptMode) {
+                        listOfInvoice();
+                    }
 
                     $('#client_matter_id_office').val(selectedMatter);
 
                 }
 
                 else if(selected == 'invoice_receipt'){
-
-                    //alert('function_type=='+ $('#function_type').val() )
 
                     if($('#function_type').val() == '' || $('#function_type').val() == 'add' ) {
 
@@ -1137,9 +1153,10 @@
 
                 else if(selected == 'client_receipt'){
 
-                    listOfInvoice();
-
-                    clientLedgerBalanceAmount(selectedMatter);
+                    if (!isQuickReceiptMode) {
+                        listOfInvoice();
+                        clientLedgerBalanceAmount(selectedMatter);
+                    }
 
                     $('#client_matter_id_ledger').val(selectedMatter);
 
@@ -1323,15 +1340,118 @@
 
             success: function(response){
 
-                var obj = $.parseJSON(response);
+                // FIX 4: Add JSON parsing error handling
+                try {
+                    var obj = response;
+                    if (typeof response === 'string') {
+                        obj = $.parseJSON(response);
+                    }
 
-                $('.invoice_no_cls').html(obj.record_get);
+                    if (!obj || typeof obj !== 'object') {
+                        throw new Error('Invalid response structure');
+                    }
 
+                    // FIX: Scope invoice dropdown population to relevant forms only
+                    // Populate office form (always needs invoice dropdown)
+                    $('#office_receipt_form .invoice_no_cls').html(obj.record_get || '<option value="">No invoices found</option>');
+                    
+                    // Populate client ledger form (for fee transfers)
+                    $('#client_receipt_form .invoice_no_cls').html(obj.record_get || '<option value="">No invoices found</option>');
+                    
+                    // Don't populate invoice form - it doesn't have this dropdown
+                } catch(e) {
+                    console.error('❌ Failed to parse JSON response from listOfInvoice:', e);
+                    console.error('Response received:', response);
+                    $('#office_receipt_form .invoice_no_cls').html('<option value="">Error loading invoices</option>');
+                    $('#client_receipt_form .invoice_no_cls').html('<option value="">Error loading invoices</option>');
+                }
+
+            },
+            
+            error: function(xhr, status, error) {
+                console.error('❌ AJAX error in listOfInvoice:');
+                console.error('Status:', status);
+                console.error('Error:', error);
+                console.error('Response:', xhr.responseText);
+                console.error('Status Code:', xhr.status);
+                $('#office_receipt_form .invoice_no_cls').html('<option value="">Failed to load invoices</option>');
+                $('#client_receipt_form .invoice_no_cls').html('<option value="">Failed to load invoices</option>');
             }
 
         });
 
     }
+
+
+    // Helpers for Quick Receipt workflow
+    window.loadInvoicesForQuickReceipt = function(matterId, preSelectInvoice) {
+        return $.ajax({
+            type: 'POST',
+            url: window.ClientDetailConfig.urls.getInvoicesByMatter,
+            data: {
+                client_matter_id: matterId,
+                client_id: window.ClientDetailConfig.clientId,
+                _token: window.ClientDetailConfig.csrfToken
+            }
+        }).done(function(response) {
+            const $dropdown = $('#office_receipt_form .productitem_office tr.clonedrow_office').first().find('select.invoice_no_cls');
+            if (!$dropdown.length) {
+                return;
+            }
+
+            $dropdown.empty();
+            $dropdown.append('<option value="">Select Invoice (Optional)</option>');
+
+            if (response && Array.isArray(response.invoices) && response.invoices.length > 0) {
+                response.invoices.forEach(function(invoice) {
+                    const selected = invoice.trans_no === preSelectInvoice ? 'selected' : '';
+                    $dropdown.append(
+                        '<option value="' + invoice.trans_no + '" ' + selected + '>' +
+                        invoice.trans_no + ' - $' + parseFloat(invoice.balance_amount || 0).toFixed(2) +
+                        ' (' + (invoice.status || '') + ')</option>'
+                    );
+                });
+            }
+        }).fail(function(xhr) {
+            console.error('❌ Failed to load invoices for Quick Receipt:', xhr);
+            $('#office_receipt_form .productitem_office tr.clonedrow_office').first().find('select.invoice_no_cls')
+                .html('<option value="">Error loading invoices</option>');
+        });
+    };
+
+
+    window.populateQuickReceiptOfficeForm = function(invoiceData) {
+        const $modal = $('#createreceiptmodal');
+        if (!$modal.length || !$modal.data('quick-receipt-mode')) {
+            return;
+        }
+
+        $('#client_matter_id_office').val(invoiceData.matterId);
+
+        const today = new Date();
+        const dateStr = ('0' + today.getDate()).slice(-2) + '/' + ('0' + (today.getMonth() + 1)).slice(-2) + '/' + today.getFullYear();
+
+        const $firstRow = $('#office_receipt_form .productitem_office tr.clonedrow_office').first();
+        if (!$firstRow.length) {
+            return;
+        }
+
+        $firstRow.find('input[name="trans_date[]"]').val(dateStr);
+        $firstRow.find('input[name="entry_date[]"]').val(dateStr);
+        $firstRow.find('input[name="deposit_amount[]"]').val(parseFloat(invoiceData.balance || 0).toFixed(2));
+        $firstRow.find('input[name="description[]"]').val('Payment for ' + invoiceData.invoiceNo + ' - ' + (invoiceData.description || ''));
+
+        window.loadInvoicesForQuickReceipt(invoiceData.matterId, invoiceData.invoiceNo)
+            .always(function() {
+                const $modalRef = $('#createreceiptmodal');
+                if ($modalRef.data('quick-receipt-mode')) {
+                    $firstRow.find('select[name="payment_method[]"]').focus();
+                    // Quick Receipt initialization complete; allow normal behaviour again
+                    $modalRef.removeData('quick-receipt-mode');
+                    $modalRef.removeData('quick-receipt-invoice-data');
+                }
+            });
+    };
 
 
 
@@ -12518,7 +12638,7 @@ Bansal Immigration`;
 
         //Account Tab Receipt Popup
 
-        $(document).delegate('.createreceipt', 'click', function(){
+        $(document).delegate('.createreceipt:not([data-test-mode="true"])', 'click', function(){
 
             $('#createreceiptmodal').modal('show');
 
@@ -12527,6 +12647,10 @@ Bansal Immigration`;
             // Wait for the modal to be fully shown to check for the visible form
 
             $('#createreceiptmodal').on('shown.bs.modal', function() {
+
+                if ($(this).data('quick-receipt-mode')) {
+                    return;
+                }
 
                 // Find the visible form inside the modal
 

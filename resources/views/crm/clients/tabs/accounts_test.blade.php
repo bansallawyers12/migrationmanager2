@@ -259,6 +259,35 @@
                                         <a class="dropdown-item copy-reference" href="javascript:;" data-reference="<?php echo $rec_val->trans_no;?>">
                                             <i class="fas fa-copy"></i> Copy Reference
                                         </a>
+                                        
+                                        <?php 
+                                        // Quick Allocate button for Deposits (to allocate to invoices)
+                                        if($rec_val->client_fund_ledger_type == 'Deposit') { 
+                                            $isAllocated = !empty($rec_val->invoice_no);
+                                        ?>
+                                        <div class="dropdown-divider"></div>
+                                        <?php if($isAllocated) { ?>
+                                        <a class="dropdown-item" href="javascript:;" style="color: #28a745; cursor: default;" onclick="return false;">
+                                            <i class="fas fa-check-circle"></i> Already Allocated to <?php echo $rec_val->invoice_no; ?>
+                                        </a>
+                                        <a class="dropdown-item quick-allocate-ledger" href="javascript:;"
+                                            data-receipt-id="<?php echo $rec_val->id; ?>"
+                                            data-receipt-amount="<?php echo $rec_val->deposit_amount; ?>"
+                                            data-matter-id="<?php echo $rec_val->client_matter_id; ?>"
+                                            data-client-id="<?php echo $fetchedData->id; ?>"
+                                            style="padding-left: 2rem;">
+                                            <i class="fas fa-sync-alt"></i> Re-allocate to Different Invoice
+                                        </a>
+                                        <?php } else { ?>
+                                        <a class="dropdown-item quick-allocate-ledger" href="javascript:;"
+                                            data-receipt-id="<?php echo $rec_val->id; ?>"
+                                            data-receipt-amount="<?php echo $rec_val->deposit_amount; ?>"
+                                            data-matter-id="<?php echo $rec_val->client_matter_id; ?>"
+                                            data-client-id="<?php echo $fetchedData->id; ?>">
+                                            <i class="fas fa-magic"></i> Quick Allocate to Invoice
+                                        </a>
+                                        <?php } ?>
+                                        <?php } ?>
                                     </div>
                                 </div>
                             </td>
@@ -442,22 +471,6 @@
                                         <span class="status-badge <?php echo $statusClass; ?>">
                                             <?php echo $statusDes; ?>
                                         </span>
-                                        
-                                        <?php 
-                                        // Quick Receipt Button - Show for unpaid (0) and partial (2) invoices only
-                                        if($inc_val->save_type == 'final' && in_array($inc_val->invoice_status, [0, 2]) && $inc_val->void_invoice != 1) { 
-                                            $invoiceBalance = floatval($inc_val->balance_amount);
-                                        ?>
-                                        <br/>
-                                        <button type="button" class="btn btn-sm btn-success quick-receipt-btn" 
-                                                data-invoice-no="<?php echo $inc_val->trans_no; ?>"
-                                                data-invoice-balance="<?php echo $invoiceBalance; ?>"
-                                                data-invoice-description="<?php echo htmlspecialchars($inc_val->description ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-                                                data-matter-id="<?php echo $inc_val->client_matter_id; ?>"
-                                                style="margin-top: 5px; font-size: 11px; padding: 3px 10px;">
-                                            <i class="fas fa-money-bill-wave"></i> Quick Receipt
-                                        </button>
-                                        <?php } ?>
                                     </td>
                                 </tr>
                         <?php
@@ -684,10 +697,11 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Improved Create Receipt Button Click Handler
     // Automatically selects the correct form based on which button was clicked
-    // Using event delegation with higher priority to override the default handler
-    $(document).off('click', '.createreceipt[data-test-mode="true"]').on('click', '.createreceipt[data-test-mode="true"]', function(e) {
+    // SOLUTION 4: Use namespaced event with higher priority to prevent conflicts
+    $(document).off('click.testmode', '.createreceipt[data-test-mode="true"]').on('click.testmode', '.createreceipt[data-test-mode="true"]', function(e) {
         e.preventDefault();
-        e.stopImmediatePropagation(); // Prevent the default handler from firing
+        e.stopPropagation();
+        e.stopImmediatePropagation(); // Prevent other handlers from firing
         
         const receiptType = $(this).data('receipt-type');
         const $modal = $('#createreceiptmodal');
@@ -739,6 +753,9 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('📁 Set client_matter_id_office to:', selectedMatter);
             
             $('input[name="receipt_type"][value="office_receipt"]').prop('checked', true).trigger('change');
+            
+            // Load invoices for the invoice dropdown
+            loadInvoicesForOfficeReceipt(selectedMatter);
         } else if (receiptType == '3') {
             // Invoice
             console.log('📝 Selecting Invoice Form');
@@ -786,6 +803,19 @@ document.addEventListener('DOMContentLoaded', function() {
             $modal.find('.modal-header').prepend('<span class="badge badge-warning" style="margin-right: 10px;">🧪 TEST MODE</span>');
         }
         
+        // FIX 1: Ensure modal element exists and Bootstrap modal is available
+        if ($modal.length === 0) {
+            console.error('❌ Modal element #createreceiptmodal not found in DOM');
+            alert('Error: Receipt modal not found. Please refresh the page.');
+            return;
+        }
+        
+        if (typeof $modal.modal !== 'function') {
+            console.error('❌ Bootstrap modal plugin not loaded');
+            alert('Error: Modal plugin not available. Please refresh the page.');
+            return;
+        }
+        
         // Open the modal
         $modal.modal('show');
         
@@ -807,38 +837,54 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('✅ Modal reset for next use');
     });
     
-    // Filter functionality
-    document.getElementById('apply-filters')?.addEventListener('click', function() {
-        const showDeposits = document.getElementById('filter-deposits').checked;
-        const showTransfers = document.getElementById('filter-transfers').checked;
-        const showRefunds = document.getElementById('filter-refunds').checked;
-        
-        const rows = document.querySelectorAll('.ledger-row');
-        
-        rows.forEach(row => {
-            const type = row.getAttribute('data-type');
-            let show = true;
+    // FIX 3: Filter functionality with guards for getElementById
+    const applyFiltersBtn = document.getElementById('apply-filters');
+    if (applyFiltersBtn) {
+        applyFiltersBtn.addEventListener('click', function() {
+            const depositsEl = document.getElementById('filter-deposits');
+            const transfersEl = document.getElementById('filter-transfers');
+            const refundsEl = document.getElementById('filter-refunds');
             
-            if (showDeposits || showTransfers || showRefunds) {
-                show = false;
-                if (showDeposits && type === 'Deposit') show = true;
-                if (showTransfers && type === 'Fee Transfer') show = true;
-                if (showRefunds && type === 'Refund') show = true;
-            }
+            // Guard against missing elements
+            const showDeposits = depositsEl ? depositsEl.checked : false;
+            const showTransfers = transfersEl ? transfersEl.checked : false;
+            const showRefunds = refundsEl ? refundsEl.checked : false;
             
-            row.style.display = show ? '' : 'none';
+            const rows = document.querySelectorAll('.ledger-row');
+            
+            rows.forEach(row => {
+                const type = row.getAttribute('data-type');
+                let show = true;
+                
+                if (showDeposits || showTransfers || showRefunds) {
+                    show = false;
+                    if (showDeposits && type === 'Deposit') show = true;
+                    if (showTransfers && type === 'Fee Transfer') show = true;
+                    if (showRefunds && type === 'Refund') show = true;
+                }
+                
+                row.style.display = show ? '' : 'none';
+            });
         });
-    });
+    }
     
-    document.getElementById('reset-filters')?.addEventListener('click', function() {
-        document.getElementById('filter-deposits').checked = false;
-        document.getElementById('filter-transfers').checked = false;
-        document.getElementById('filter-refunds').checked = false;
-        
-        document.querySelectorAll('.ledger-row').forEach(row => {
-            row.style.display = '';
+    const resetFiltersBtn = document.getElementById('reset-filters');
+    if (resetFiltersBtn) {
+        resetFiltersBtn.addEventListener('click', function() {
+            const depositsEl = document.getElementById('filter-deposits');
+            const transfersEl = document.getElementById('filter-transfers');
+            const refundsEl = document.getElementById('filter-refunds');
+            
+            // Guard against missing elements
+            if (depositsEl) depositsEl.checked = false;
+            if (transfersEl) transfersEl.checked = false;
+            if (refundsEl) refundsEl.checked = false;
+            
+            document.querySelectorAll('.ledger-row').forEach(row => {
+                row.style.display = '';
+            });
         });
-    });
+    }
     
     // Copy Reference Functionality
     $(document).on('click', '.copy-reference', function(e) {
@@ -946,6 +992,45 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Function to load invoices for the CREATE office receipt form
+    function loadInvoicesForOfficeReceipt(matterId) {
+        console.log('📋 Loading invoices for office receipt form, matter:', matterId);
+        
+        $.ajax({
+            url: '{{ route("clients.getInvoicesByMatter") }}',
+            type: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                client_matter_id: matterId,
+                client_id: '{{ $fetchedData->id }}'
+            },
+            success: function(response) {
+                console.log('✅ Invoices loaded:', response);
+                
+                var $select = $('#office_receipt_form').find('select[name="invoice_no[]"]');
+                $select.empty();
+                $select.append('<option value="">Select Invoice (Optional)</option>');
+                
+                if(response.status && response.invoices && response.invoices.length > 0) {
+                    response.invoices.forEach(function(invoice) {
+                        $select.append('<option value="' + invoice.trans_no + '">' + 
+                            invoice.trans_no + ' - $' + parseFloat(invoice.balance_amount).toFixed(2) + 
+                            ' (' + invoice.status + ')</option>');
+                    });
+                    console.log('✅ Populated ' + response.invoices.length + ' invoices in dropdown');
+                } else {
+                    console.log('ℹ️ No unpaid invoices found for this matter');
+                }
+            },
+            error: function(xhr) {
+                console.error('❌ Failed to load invoices:', xhr);
+                console.error('Response:', xhr.responseText);
+                var $select = $('#office_receipt_form').find('select[name="invoice_no[]"]');
+                $select.html('<option value="">Error loading invoices</option>');
+            }
+        });
+    }
+    
     // Update Office Receipt - Save as Draft
     $('#updateOfficeReceiptDraftBtn').on('click', function() {
         updateOfficeReceipt('draft');
@@ -1007,91 +1092,66 @@ document.addEventListener('DOMContentLoaded', function() {
     // ================================================================
     // QUICK RECEIPT BUTTON - Pre-populate office receipt from invoice
     // ================================================================
-    $(document).on('click', '.quick-receipt-btn', function(e) {
+    // FIX: Add tab visibility check to prevent duplicate handlers
+    $(document).on('click', '.quick-receipt-btn:not(.createreceipt)', function(e) {
+        // Only handle if accounts-test tab is active
+        const isTestTabActive = $('#accounts-test-tab').hasClass('active') || $('#accounts-test-tab').is(':visible');
+        const isAccountsTabActive = $('#accounts-tab').hasClass('active') || $('#accounts-tab').is(':visible');
+        
+        // If we're in accounts-test tab, handle it here
+        // If we're in regular accounts tab, let that handler deal with it
+        if (isAccountsTabActive && !isTestTabActive) {
+            return; // Let accounts.blade.php handler handle it
+        }
+        
         e.preventDefault();
+        e.stopPropagation();
         
-        const invoiceNo = $(this).data('invoice-no');
-        const invoiceBalance = $(this).data('invoice-balance');
-        const invoiceDescription = $(this).data('invoice-description');
-        const matterId = $(this).data('matter-id');
+        const invoiceData = {
+            invoiceNo: $(this).data('invoice-no'),
+            balance: parseFloat($(this).data('invoice-balance')) || 0,
+            description: $(this).data('invoice-description') || '',
+            matterId: $(this).data('matter-id')
+        };
         
-        console.log('💵 Quick Receipt clicked for:', {invoiceNo, invoiceBalance, matterId});
+        console.log('💵 Quick Receipt clicked for:', invoiceData);
         
         // Open the create receipt modal
         const $modal = $('#createreceiptmodal');
+        
+        // Enable Quick Receipt mode to prevent form clearing
+        $modal.data('quick-receipt-mode', true);
+        $modal.data('quick-receipt-invoice-data', invoiceData);
+        
+        // FIX: Hide invoice option - Quick Receipt is only for payments, not creating invoices
+        $modal.find('input[name="receipt_type"][value="invoice_receipt"]').closest('label').hide();
         
         // Select "Direct Office Receipt" radio button
         $('input[name="receipt_type"][value="office_receipt"]').prop('checked', true).trigger('change');
         
         // Update modal title
-        $modal.find('.modal-title').html('<i class="fas fa-money-bill-wave" style="color: #28a745;"></i> Quick Receipt for ' + invoiceNo);
+        $modal.find('.modal-title').html('<i class="fas fa-money-bill-wave" style="color: #28a745;"></i> Quick Receipt for ' + invoiceData.invoiceNo);
         
-        // Wait a moment for the form to show, then populate fields
-        setTimeout(function() {
-            // Set matter ID
-            $('#client_matter_id_office').val(matterId);
-            
-            // Set today's date for both transaction date and entry date
-            const today = new Date();
-            const dateStr = ('0' + today.getDate()).slice(-2) + '/' + 
-                           ('0' + (today.getMonth() + 1)).slice(-2) + '/' + 
-                           today.getFullYear();
-            
-            // Find the first row in office receipt form
-            const $firstRow = $('#office_receipt_form .productitem_office tr.clonedrow_office').first();
-            
-            // Populate transaction date
-            $firstRow.find('input[name="trans_date[]"]').val(dateStr);
-            
-            // Populate entry date
-            $firstRow.find('input[name="entry_date[]"]').val(dateStr);
-            
-            // Set amount
-            $firstRow.find('input[name="deposit_amount[]"]').val(invoiceBalance.toFixed(2));
-            
-            // Set description
-            $firstRow.find('input[name="description[]"]').val('Payment for ' + invoiceNo + ' - ' + invoiceDescription);
-            
-            // Load invoices and pre-select this invoice
-            $.ajax({
-                url: '{{ route("clients.getInvoicesByMatter") }}',
-                type: 'POST',
-                data: {
-                    _token: '{{ csrf_token() }}',
-                    client_matter_id: matterId,
-                    client_id: '{{ $fetchedData->id }}'
-                },
-                success: function(response) {
-                    const $invoiceDropdown = $firstRow.find('select.invoice_no_cls');
-                    $invoiceDropdown.empty();
-                    $invoiceDropdown.append('<option value="">Select Invoice (Optional)</option>');
-                    
-                    if(response.invoices && response.invoices.length > 0) {
-                        response.invoices.forEach(function(invoice) {
-                            const selected = (invoice.trans_no === invoiceNo) ? 'selected' : '';
-                            $invoiceDropdown.append(
-                                '<option value="' + invoice.trans_no + '" ' + selected + '>' + 
-                                invoice.trans_no + ' - $' + parseFloat(invoice.balance_amount).toFixed(2) + 
-                                ' (' + invoice.status + ')</option>'
-                            );
-                        });
-                        
-                        console.log('✅ Invoice pre-selected:', invoiceNo);
-                    }
-                },
-                error: function(xhr) {
-                    console.error('Failed to load invoices:', xhr);
-                }
-            });
-            
-            // Focus on payment method dropdown (the only required field left)
-            $firstRow.find('select[name="payment_method[]"]').focus();
-            
-            console.log('✅ Quick Receipt form pre-populated');
-        }, 300);
+        // Wait briefly for the form to render, then populate fields
+        if (typeof window.populateQuickReceiptOfficeForm === 'function') {
+            setTimeout(function() {
+                window.populateQuickReceiptOfficeForm(invoiceData);
+            }, 100);
+        } else {
+            console.error('populateQuickReceiptOfficeForm is not available');
+        }
         
         // Add a badge to indicate this is from Quick Receipt
+        // FIX: Remove ALL existing badges first to prevent duplication
+        $modal.find('.modal-header .badge').remove();
         $modal.find('.modal-header').prepend('<span class="badge badge-success" style="margin-right: 10px;"><i class="fas fa-bolt"></i> QUICK RECEIPT</span>');
+        
+        // SOLUTION 5: Validate modal is available before opening
+        if (typeof $modal.modal !== 'function') {
+            console.error('❌ Bootstrap modal not available');
+            alert('Error: Modal plugin not loaded. Please refresh the page.');
+            return;
+        }
         
         // Open the modal
         $modal.modal('show');
@@ -1101,6 +1161,13 @@ document.addEventListener('DOMContentLoaded', function() {
     $('#createreceiptmodal').on('hidden.bs.modal', function() {
         $(this).find('.badge-success').remove();
         $(this).find('.modal-title').html('Create Receipt');
+        
+        // FIX: Restore invoice option when modal closes (in case it was hidden by Quick Receipt)
+        $(this).find('input[name="receipt_type"][value="invoice_receipt"]').closest('label').show();
+
+        // Clear Quick Receipt state
+        $(this).removeData('quick-receipt-mode');
+        $(this).removeData('quick-receipt-invoice-data');
     });
     
     // ================================================================
@@ -1276,22 +1343,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // ================================================================
     // QUICK ALLOCATE - Smart invoice allocation for unallocated receipts
     // ================================================================
-    $(document).on('click', '.quick-allocate-receipt', function(e) {
-        e.preventDefault();
-        
-        const receiptId = $(this).data('receipt-id');
-        const receiptAmount = parseFloat($(this).data('receipt-amount'));
-        const matterId = $(this).data('matter-id');
-        const clientId = $(this).data('client-id');
-        
-        console.log('🔗 Quick Allocate clicked:', {receiptId, receiptAmount, matterId});
-        
-        // Show loading
-        const $btn = $(this);
+    function handleQuickAllocateClick(button) {
+        const $btn = $(button);
+        const receiptId = $btn.data('receipt-id');
+        const receiptAmount = parseFloat($btn.data('receipt-amount'));
+        const matterId = $btn.data('matter-id');
+        const clientId = $btn.data('client-id');
+
+        console.log('🔗 Quick Allocate clicked:', {receiptId, receiptAmount, matterId, clientId});
+
         const originalHtml = $btn.html();
         $btn.html('<i class="fas fa-spinner fa-spin"></i> Finding matches...');
-        
-        // Fetch unpaid/partial invoices for this matter
+
         $.ajax({
             url: '{{ route("clients.getInvoicesByMatter") }}',
             type: 'POST',
@@ -1301,41 +1364,359 @@ document.addEventListener('DOMContentLoaded', function() {
                 client_id: clientId
             },
             success: function(response) {
+                console.log('✅ Response received:', response);
                 $btn.html(originalHtml);
-                
-                if (!response.invoices || response.invoices.length === 0) {
-                    alert('No unpaid invoices found for this matter.');
+
+                if (!response.status) {
+                    alert('Error: ' + (response.message || 'Failed to fetch invoices'));
                     return;
                 }
-                
-                // Smart matching logic
+
+                if (!response.invoices || response.invoices.length === 0) {
+                    alert('No unpaid invoices found for this client/matter.');
+                    return;
+                }
+
+                console.log('📋 Invoices found:', response.invoices.length);
+
                 let exactMatch = null;
                 let closeMatches = [];
                 let otherInvoices = [];
-                
+
                 response.invoices.forEach(function(invoice) {
                     const invBalance = parseFloat(invoice.balance_amount);
                     const difference = Math.abs(invBalance - receiptAmount);
-                    const percentDiff = (difference / receiptAmount) * 100;
-                    
+                    const percentDiff = (difference / (receiptAmount || 1)) * 100;
+
+                    console.log('Invoice:', invoice.trans_no, 'Balance:', invBalance, 'Diff:', difference, 'Percent:', percentDiff);
+
                     if (difference < 0.01) {
-                        // Exact match (within 1 cent)
                         exactMatch = invoice;
                     } else if (percentDiff <= 10) {
-                        // Within 10%
                         closeMatches.push(invoice);
                     } else {
                         otherInvoices.push(invoice);
                     }
                 });
-                
-                // Build suggestion modal
+
                 showAllocationModal(receiptId, receiptAmount, exactMatch, closeMatches, otherInvoices);
             },
             error: function(xhr) {
                 $btn.html(originalHtml);
-                console.error('Failed to load invoices:', xhr);
-                alert('Error loading invoices. Please try again.');
+                console.error('❌ AJAX Error:', xhr);
+                console.error('Status:', xhr.status);
+                console.error('Response:', xhr.responseText);
+
+                let errorMsg = 'Error loading invoices. ';
+                if (xhr.status === 500) {
+                    errorMsg += 'Server error (500). Check browser console for details.';
+                } else if (xhr.status === 404) {
+                    errorMsg += 'Route not found (404).';
+                } else if (xhr.status === 419) {
+                    errorMsg += 'CSRF token expired. Please refresh the page.';
+                } else {
+                    errorMsg += 'Status: ' + xhr.status;
+                }
+
+                alert(errorMsg);
+            }
+        });
+    }
+
+    // Use capture phase to intercept click before Bootstrap dropdown stops propagation
+    document.addEventListener('click', function(event) {
+        const target = event.target.closest('.quick-allocate-receipt');
+        if (!target) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        if (event.stopImmediatePropagation) {
+            event.stopImmediatePropagation();
+        }
+
+        handleQuickAllocateClick(target);
+    }, true);
+    
+    // ================================================================
+    // QUICK ALLOCATE FOR CLIENT FUND LEDGER - Same system for deposits
+    // ================================================================
+    function handleQuickAllocateLedgerClick(button) {
+        const $btn = $(button);
+        const receiptId = $btn.data('receipt-id');
+        const receiptAmount = parseFloat($btn.data('receipt-amount'));
+        const matterId = $btn.data('matter-id');
+        const clientId = $btn.data('client-id');
+
+        console.log('🔗 Quick Allocate Ledger clicked:', {receiptId, receiptAmount, matterId, clientId});
+
+        const originalHtml = $btn.html();
+        $btn.html('<i class="fas fa-spinner fa-spin"></i> Finding matches...');
+
+        $.ajax({
+            url: '{{ route("clients.getInvoicesByMatter") }}',
+            type: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                client_matter_id: matterId,
+                client_id: clientId
+            },
+            success: function(response) {
+                console.log('✅ Response received:', response);
+                $btn.html(originalHtml);
+
+                if (!response.status) {
+                    alert('Error: ' + (response.message || 'Failed to fetch invoices'));
+                    return;
+                }
+
+                if (!response.invoices || response.invoices.length === 0) {
+                    alert('No unpaid invoices found for this client/matter.');
+                    return;
+                }
+
+                console.log('📋 Invoices found:', response.invoices.length);
+
+                let exactMatch = null;
+                let closeMatches = [];
+                let otherInvoices = [];
+
+                response.invoices.forEach(function(invoice) {
+                    const invBalance = parseFloat(invoice.balance_amount);
+                    const difference = Math.abs(invBalance - receiptAmount);
+                    const percentDiff = (difference / (receiptAmount || 1)) * 100;
+
+                    console.log('Invoice:', invoice.trans_no, 'Balance:', invBalance, 'Diff:', difference, 'Percent:', percentDiff);
+
+                    if (difference < 0.01) {
+                        exactMatch = invoice;
+                    } else if (percentDiff <= 10) {
+                        closeMatches.push(invoice);
+                    } else {
+                        otherInvoices.push(invoice);
+                    }
+                });
+
+                showLedgerAllocationModal(receiptId, receiptAmount, exactMatch, closeMatches, otherInvoices);
+            },
+            error: function(xhr) {
+                $btn.html(originalHtml);
+                console.error('❌ AJAX Error:', xhr);
+                console.error('Status:', xhr.status);
+                console.error('Response:', xhr.responseText);
+
+                let errorMsg = 'Error loading invoices. ';
+                if (xhr.status === 500) {
+                    errorMsg += 'Server error (500). Check browser console for details.';
+                } else if (xhr.status === 404) {
+                    errorMsg += 'Route not found (404).';
+                } else if (xhr.status === 419) {
+                    errorMsg += 'CSRF token expired. Please refresh the page.';
+                } else {
+                    errorMsg += 'Status: ' + xhr.status;
+                }
+
+                alert(errorMsg);
+            }
+        });
+    }
+
+    // Capture phase listener for client fund ledger quick allocate
+    document.addEventListener('click', function(event) {
+        const target = event.target.closest('.quick-allocate-ledger');
+        if (!target) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        if (event.stopImmediatePropagation) {
+            event.stopImmediatePropagation();
+        }
+
+        // Check if this is a re-allocation (button text contains "Re-allocate")
+        const isReallocation = target.textContent.includes('Re-allocate');
+        
+        if (isReallocation) {
+            // Show confirmation dialog
+            if (!confirm('⚠️ This deposit is already allocated to an invoice.\n\nRe-allocating will:\n• Remove the existing Fee Transfer\n• Create a new Fee Transfer for the new invoice\n• Update both invoice statuses\n\nAre you sure you want to re-allocate?')) {
+                return;
+            }
+        }
+
+        handleQuickAllocateLedgerClick(target);
+    }, true);
+    
+    function showLedgerAllocationModal(receiptId, receiptAmount, exactMatch, closeMatches, otherInvoices) {
+        let modalHtml = '<div class="modal fade" id="quickAllocateLedgerModal" tabindex="-1" role="dialog">' +
+            '<div class="modal-dialog modal-lg" role="document">' +
+            '<div class="modal-content">' +
+            '<div class="modal-header" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white;">' +
+            '<h5 class="modal-title"><i class="fas fa-magic"></i> Allocate Deposit to Invoice</h5>' +
+            '<button type="button" class="close" data-dismiss="modal" style="color: white;">' +
+            '<span>&times;</span>' +
+            '</button>' +
+            '</div>' +
+            '<div class="modal-body">' +
+            '<div class="alert alert-info">' +
+            '<i class="fas fa-info-circle"></i> Deposit Amount: <strong>$' + receiptAmount.toFixed(2) + '</strong>' +
+            '</div>';
+        
+        if (exactMatch) {
+            modalHtml += '<div class="alert alert-success" style="border-left: 4px solid #28a745;">' +
+                '<h6><i class="fas fa-bullseye"></i> <strong>Exact Match Found!</strong></h6>' +
+                '<p style="margin-bottom: 10px;">' +
+                exactMatch.trans_no + ' - $' + parseFloat(exactMatch.balance_amount).toFixed(2) + 
+                ' (' + exactMatch.status + ')' +
+                '</p>' +
+                '<button class="btn btn-success allocate-ledger-to-invoice-btn" ' +
+                'data-receipt-id="' + receiptId + '" ' +
+                'data-invoice-no="' + exactMatch.trans_no + '">' +
+                '<i class="fas fa-check"></i> Allocate to ' + exactMatch.trans_no +
+                '</button>' +
+                '</div>';
+        }
+        
+        if (closeMatches.length > 0) {
+            modalHtml += '<div style="margin-top: 20px;">' +
+                '<h6><i class="fas fa-star"></i> Close Matches:</h6>' +
+                '<div class="list-group">';
+            
+            closeMatches.forEach(function(invoice) {
+                const invBalance = parseFloat(invoice.balance_amount);
+                const difference = Math.abs(invBalance - receiptAmount);
+                const diffText = difference > 0 ? ' (diff: $' + difference.toFixed(2) + ')' : '';
+                
+                modalHtml += '<div class="list-group-item">' +
+                    '<div class="d-flex justify-content-between align-items-center">' +
+                    '<div>' +
+                    '<strong>' + invoice.trans_no + '</strong> - ' +
+                    '$' + invBalance.toFixed(2) + 
+                    ' (' + invoice.status + ')' + diffText +
+                    '<br/><small class="text-muted">' + invoice.description + '</small>' +
+                    '</div>' +
+                    '<button class="btn btn-sm btn-primary allocate-ledger-to-invoice-btn" ' +
+                    'data-receipt-id="' + receiptId + '" ' +
+                    'data-invoice-no="' + invoice.trans_no + '">' +
+                    '<i class="fas fa-link"></i> Allocate' +
+                    '</button>' +
+                    '</div>' +
+                    '</div>';
+            });
+            
+            modalHtml += '</div></div>';
+        }
+        
+        if (otherInvoices.length > 0) {
+            modalHtml += '<div style="margin-top: 20px;">' +
+                '<h6><i class="fas fa-list"></i> Other Unpaid Invoices:</h6>' +
+                '<div class="list-group" style="max-height: 300px; overflow-y: auto;">';
+            
+            otherInvoices.forEach(function(invoice) {
+                const invBalance = parseFloat(invoice.balance_amount);
+                const difference = Math.abs(invBalance - receiptAmount);
+                const diffText = difference > 0 ? ' (diff: $' + difference.toFixed(2) + ')' : '';
+                
+                modalHtml += '<div class="list-group-item">' +
+                    '<div class="d-flex justify-content-between align-items-center">' +
+                    '<div>' +
+                    '<strong>' + invoice.trans_no + '</strong> - ' +
+                    '$' + invBalance.toFixed(2) + 
+                    ' (' + invoice.status + ')' + diffText +
+                    '</div>' +
+                    '<button class="btn btn-sm btn-primary allocate-ledger-to-invoice-btn" ' +
+                    'data-receipt-id="' + receiptId + '" ' +
+                    'data-invoice-no="' + invoice.trans_no + '">' +
+                    '<i class="fas fa-link"></i> Allocate' +
+                    '</button>' +
+                    '</div>' +
+                    '</div>';
+            });
+            
+            modalHtml += '</div></div>';
+        }
+        
+        // If no invoices in any category, show a message
+        if (!exactMatch && closeMatches.length === 0 && otherInvoices.length === 0) {
+            modalHtml += '<div class="alert alert-warning">' +
+                '<i class="fas fa-exclamation-triangle"></i> No unpaid invoices found for this client/matter.' +
+                '</div>';
+        }
+        
+        modalHtml += '</div>' +
+            '<div class="modal-footer">' +
+            '<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>' +
+            '</div>' +
+            '</div>' +
+            '</div>' +
+            '</div>';
+        
+        // Remove existing modal if any
+        $('#quickAllocateLedgerModal').remove();
+        
+        // Add to body and show
+        $('body').append(modalHtml);
+        $('#quickAllocateLedgerModal').modal('show');
+    }
+    
+    // Handle allocation button click in ledger modal
+    $(document).on('click', '.allocate-ledger-to-invoice-btn', function(e) {
+        e.preventDefault();
+        
+        const receiptId = $(this).data('receipt-id');
+        const invoiceNo = $(this).data('invoice-no');
+        
+        const $btn = $(this);
+        const originalHtml = $btn.html();
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Allocating...');
+        
+        console.log('🔗 Allocating ledger entry:', receiptId, 'to invoice:', invoiceNo);
+        
+        // Update the ledger entry with the invoice number
+        $.ajax({
+            url: '{{ route("clients.updateClientFundLedger") }}',
+            type: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                id: receiptId,
+                client_id: '{{ $fetchedData->id }}',
+                invoice_no: invoiceNo
+            },
+            success: function(response) {
+                console.log('✅ Allocation response:', response);
+                if (response.status) {
+                    $('#quickAllocateLedgerModal').modal('hide');
+                    
+                    // Show success message
+                    alert('✅ Deposit successfully allocated to ' + invoiceNo + '!');
+                    
+                    // Reload page to show updated allocation
+                    localStorage.setItem('activeTab', 'accounts-test');
+                    location.reload();
+                } else {
+                    $btn.prop('disabled', false).html(originalHtml);
+                    alert('Error: ' + (response.message || 'Failed to allocate deposit'));
+                }
+            },
+            error: function(xhr) {
+                $btn.prop('disabled', false).html(originalHtml);
+                console.error('❌ Allocation error:', xhr);
+                console.error('Status:', xhr.status);
+                console.error('Response:', xhr.responseText);
+                
+                let errorMsg = 'An error occurred while allocating. ';
+                if (xhr.status === 500) {
+                    errorMsg += 'Server error (500). Check browser console for details.';
+                } else if (xhr.status === 404) {
+                    errorMsg += 'Route not found (404).';
+                } else if (xhr.status === 419) {
+                    errorMsg += 'CSRF token expired. Please refresh the page.';
+                } else {
+                    errorMsg += 'Status: ' + xhr.status;
+                }
+                
+                alert(errorMsg);
             }
         });
     });
@@ -1402,14 +1783,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 '<div class="list-group" style="max-height: 300px; overflow-y: auto;">';
             
             otherInvoices.forEach(function(invoice) {
+                const invBalance = parseFloat(invoice.balance_amount);
+                const difference = Math.abs(invBalance - receiptAmount);
+                const diffText = difference > 0 ? ' (diff: $' + difference.toFixed(2) + ')' : '';
+                
                 modalHtml += '<div class="list-group-item">' +
                     '<div class="d-flex justify-content-between align-items-center">' +
                     '<div>' +
                     '<strong>' + invoice.trans_no + '</strong> - ' +
-                    '$' + parseFloat(invoice.balance_amount).toFixed(2) + 
-                    ' (' + invoice.status + ')' +
+                    '$' + invBalance.toFixed(2) + 
+                    ' (' + invoice.status + ')' + diffText +
                     '</div>' +
-                    '<button class="btn btn-sm btn-outline-primary allocate-to-invoice-btn" ' +
+                    '<button class="btn btn-sm btn-primary allocate-to-invoice-btn" ' +
                     'data-receipt-id="' + receiptId + '" ' +
                     'data-invoice-no="' + invoice.trans_no + '">' +
                     '<i class="fas fa-link"></i> Allocate' +
@@ -1419,6 +1804,13 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             modalHtml += '</div></div>';
+        }
+        
+        // If no invoices in any category, show a message
+        if (!exactMatch && closeMatches.length === 0 && otherInvoices.length === 0) {
+            modalHtml += '<div class="alert alert-warning">' +
+                '<i class="fas fa-exclamation-triangle"></i> No unpaid invoices found for this client/matter.' +
+                '</div>';
         }
         
         modalHtml += '</div>' +
@@ -1448,6 +1840,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const originalHtml = $btn.html();
         $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Allocating...');
         
+        console.log('🔗 Allocating receipt:', receiptId, 'to invoice:', invoiceNo);
+        
         // Update the receipt with the invoice number
         $.ajax({
             url: '{{ route("clients.updateOfficeReceipt") }}',
@@ -1455,10 +1849,12 @@ document.addEventListener('DOMContentLoaded', function() {
             data: {
                 _token: '{{ csrf_token() }}',
                 id: receiptId,
+                client_id: '{{ $fetchedData->id }}',  // Include client_id for activity log
                 invoice_no: invoiceNo,
                 save_type: 'final'
             },
             success: function(response) {
+                console.log('✅ Allocation response:', response);
                 if (response.status) {
                     $('#quickAllocateModal').modal('hide');
                     
@@ -1475,8 +1871,22 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             error: function(xhr) {
                 $btn.prop('disabled', false).html(originalHtml);
-                console.error('Allocation error:', xhr);
-                alert('An error occurred while allocating. Please try again.');
+                console.error('❌ Allocation error:', xhr);
+                console.error('Status:', xhr.status);
+                console.error('Response:', xhr.responseText);
+                
+                let errorMsg = 'An error occurred while allocating. ';
+                if (xhr.status === 500) {
+                    errorMsg += 'Server error (500). Check browser console for details.';
+                } else if (xhr.status === 404) {
+                    errorMsg += 'Route not found (404).';
+                } else if (xhr.status === 419) {
+                    errorMsg += 'CSRF token expired. Please refresh the page.';
+                } else {
+                    errorMsg += 'Status: ' + xhr.status;
+                }
+                
+                alert(errorMsg);
             }
         });
     });

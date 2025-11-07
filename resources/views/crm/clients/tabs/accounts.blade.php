@@ -498,90 +498,43 @@ jQuery(document).ready(function($) {
     $(document).on('click', '.quick-receipt-btn', function(e) {
         e.preventDefault();
         
-        const invoiceNo = $(this).data('invoice-no');
-        const invoiceBalance = $(this).data('invoice-balance');
-        const invoiceDescription = $(this).data('invoice-description');
-        const matterId = $(this).data('matter-id');
+        const invoiceData = {
+            invoiceNo: $(this).data('invoice-no'),
+            balance: parseFloat($(this).data('invoice-balance')) || 0,
+            description: $(this).data('invoice-description') || '',
+            matterId: $(this).data('matter-id')
+        };
         
-        console.log('💵 Quick Receipt clicked for:', {invoiceNo, invoiceBalance, matterId});
+        console.log('💵 Quick Receipt clicked for:', invoiceData);
         
         // Open the create receipt modal
         const $modal = $('#createreceiptmodal');
+        
+        // Enable Quick Receipt mode to prevent form clearing
+        $modal.data('quick-receipt-mode', true);
+        $modal.data('quick-receipt-invoice-data', invoiceData);
+        
+        // FIX: Hide invoice option - Quick Receipt is only for payments, not creating invoices
+        $modal.find('input[name="receipt_type"][value="invoice_receipt"]').closest('label').hide();
         
         // Select "Direct Office Receipt" radio button
         $('input[name="receipt_type"][value="office_receipt"]').prop('checked', true).trigger('change');
         
         // Update modal title
-        $modal.find('.modal-title').html('<i class="fas fa-money-bill-wave" style="color: #28a745;"></i> Quick Receipt for ' + invoiceNo);
+        $modal.find('.modal-title').html('<i class="fas fa-money-bill-wave" style="color: #28a745;"></i> Quick Receipt for ' + invoiceData.invoiceNo);
         
         // Wait a moment for the form to show, then populate fields
-        setTimeout(function() {
-            // Set matter ID
-            $('#client_matter_id_office').val(matterId);
-            
-            // Set today's date for both transaction date and entry date
-            const today = new Date();
-            const dateStr = ('0' + today.getDate()).slice(-2) + '/' + 
-                           ('0' + (today.getMonth() + 1)).slice(-2) + '/' + 
-                           today.getFullYear();
-            
-            // Find the first row in office receipt form
-            const $firstRow = $('#office_receipt_form .productitem_office tr.clonedrow_office').first();
-            
-            // Populate transaction date
-            $firstRow.find('input[name="trans_date[]"]').val(dateStr);
-            
-            // Populate entry date
-            $firstRow.find('input[name="entry_date[]"]').val(dateStr);
-            
-            // Set amount
-            $firstRow.find('input[name="deposit_amount[]"]').val(invoiceBalance.toFixed(2));
-            
-            // Set description
-            $firstRow.find('input[name="description[]"]').val('Payment for ' + invoiceNo + ' - ' + invoiceDescription);
-            
-            // Load invoices and pre-select this invoice
-            $.ajax({
-                url: window.ClientDetailConfig.urls.base + '/clients/getInvoicesByMatter',
-                method: 'POST',
-                datatype: 'json',
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                },
-                data: {
-                    client_matter_id: matterId,
-                    client_id: $('#client_id_hidden').val()
-                },
-                success: function(response) {
-                    const $invoiceDropdown = $firstRow.find('select.invoice_no_cls');
-                    $invoiceDropdown.empty();
-                    $invoiceDropdown.append('<option value="">Select Invoice (Optional)</option>');
-                    
-                    if(response.invoices && response.invoices.length > 0) {
-                        response.invoices.forEach(function(invoice) {
-                            const selected = (invoice.trans_no === invoiceNo) ? 'selected' : '';
-                            $invoiceDropdown.append(
-                                '<option value="' + invoice.trans_no + '" ' + selected + '>' + 
-                                invoice.trans_no + ' - $' + parseFloat(invoice.balance_amount).toFixed(2) + 
-                                ' (' + invoice.status + ')</option>'
-                            );
-                        });
-                        
-                        console.log('✅ Invoice pre-selected:', invoiceNo);
-                    }
-                },
-                error: function(xhr) {
-                    console.error('Failed to load invoices:', xhr);
-                }
-            });
-            
-            // Focus on payment method dropdown (the only required field left)
-            $firstRow.find('select[name="payment_method[]"]').focus();
-            
-            console.log('✅ Quick Receipt form pre-populated');
-        }, 300);
+        if (typeof window.populateQuickReceiptOfficeForm === 'function') {
+            setTimeout(function() {
+                window.populateQuickReceiptOfficeForm(invoiceData);
+            }, 100);
+        } else {
+            console.error('populateQuickReceiptOfficeForm is not available');
+        }
         
         // Add a badge to indicate this is from Quick Receipt
+        // FIX: Remove ALL existing badges first to prevent duplication
+        $modal.find('.modal-header .badge').remove();
         $modal.find('.modal-header').prepend('<span class="badge badge-success" style="margin-right: 10px;"><i class="fas fa-bolt"></i> QUICK RECEIPT</span>');
         
         // Open the modal
@@ -592,6 +545,13 @@ jQuery(document).ready(function($) {
     $('#createreceiptmodal').on('hidden.bs.modal', function() {
         $(this).find('.badge-success').remove();
         $(this).find('.modal-title').html('Create Receipt');
+        
+        // FIX: Restore invoice option when modal closes (in case it was hidden by Quick Receipt)
+        $(this).find('input[name="receipt_type"][value="invoice_receipt"]').closest('label').show();
+
+        // Clear Quick Receipt state
+        $(this).removeData('quick-receipt-mode');
+        $(this).removeData('quick-receipt-invoice-data');
     });
     
     console.log('✅ Quick Receipt functionality enabled');
