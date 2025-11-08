@@ -279,15 +279,18 @@ function manualSync() {
         return;
     }
     
-    // Show loading
-    Swal.fire({
-        title: 'Syncing...',
-        text: 'Fetching appointments from Bansal website',
-        allowOutsideClick: false,
-        didOpen: () => {
-            Swal.showLoading();
-        }
-    });
+    const hasSweetAlert = typeof Swal !== 'undefined';
+    
+    if (hasSweetAlert) {
+        Swal.fire({
+            title: 'Syncing...',
+            text: 'Fetching appointments from Bansal website',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+    }
 
     $.ajax({
         url: '{{ route("booking.sync.manual") }}',
@@ -296,27 +299,44 @@ function manualSync() {
             _token: '{{ csrf_token() }}'
         },
         success: function(response) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Sync Completed!',
-                html: `
-                    <p>Fetched: ${response.stats.fetched}</p>
-                    <p>New: ${response.stats.new}</p>
-                    <p>Updated: ${response.stats.updated}</p>
-                    <p>Failed: ${response.stats.failed}</p>
-                `,
-                confirmButtonText: 'OK'
-            }).then(() => {
+            if (hasSweetAlert) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Sync Completed!',
+                    html: `
+                        <p>Fetched: ${response.stats.fetched}</p>
+                        <p>New: ${response.stats.new}</p>
+                        <p>Updated: ${response.stats.updated}</p>
+                        <p>Failed: ${response.stats.failed}</p>
+                    `,
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    window.location.reload();
+                });
+            } else {
+                alert(
+                    'Sync completed!\n' +
+                    'Fetched: ' + response.stats.fetched + '\n' +
+                    'New: ' + response.stats.new + '\n' +
+                    'Updated: ' + response.stats.updated + '\n' +
+                    'Failed: ' + response.stats.failed
+                );
                 window.location.reload();
-            });
+            }
         },
         error: function(xhr) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Sync Failed',
-                text: xhr.responseJSON?.message || 'An error occurred during sync',
-                confirmButtonText: 'OK'
-            });
+            const message = xhr.responseJSON?.message || 'An error occurred during sync';
+            
+            if (hasSweetAlert) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Sync Failed',
+                    text: message,
+                    confirmButtonText: 'OK'
+                });
+            } else {
+                alert('Sync failed: ' + message);
+            }
         }
     });
 }

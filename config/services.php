@@ -121,4 +121,10 @@ return [
         'timeout' => env('TWILIO_TIMEOUT', 30),
     ],
 
+    'bansal_api' => [
+        'url' => env('BANSAL_API_BASE_URL', 'https://staging.bansalimmigration.com.au/api/crm'),
+        'token' => env('BANSAL_API_TOKEN'),
+        'timeout' => env('BANSAL_API_TIMEOUT', 30),
+    ],
+
 ];
