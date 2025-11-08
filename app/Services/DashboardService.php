@@ -78,30 +78,30 @@ class DashboardService
     }
 
     /**
-     * Get notes data with proper relationships
-     * Ordered by urgency: overdue first, then by deadline date
+     * Get all action tasks (notes with folloup = 1) for the user
+     * Shows tasks with deadlines first (ordered by urgency), then tasks without deadlines
      */
     private function getNotesData($user)
     {
         $query = Note::with(['client:id,first_name,last_name,client_id', 'assignedUser:id,first_name,last_name'])
-            ->whereNotNull('note_deadline')
-            ->where('status', '!=', 1);
+            ->where('type', 'client')
+            ->where('folloup', 1)
+            ->whereNotNull('client_id')
+            ->whereNotNull('unique_group_id')
+            ->where('status', '!=', 1)
+            ->whereHas('client'); // Ensure client relationship exists
 
-        // Admin sees notes assigned to them OR unassigned notes
+        // Admin sees ALL actions (no assigned_to filter) - matching action page behavior
         // Other roles only see notes assigned to them
-        if ($user->role == 1) {
-            $query->where(function($q) use ($user) {
-                $q->where('assigned_to', $user->id)
-                  ->orWhereNull('assigned_to')
-                  ->orWhere('assigned_to', 0);
-            });
-        } else {
+        if ($user->role != 1) {
             $query->where('assigned_to', $user->id);
         }
 
-        // Order by deadline ASC to show most urgent (earliest deadlines) first
-        return $query->orderBy('note_deadline', 'ASC')
-            ->limit(20) // Limit to 20 most urgent notes
+        // Order: Tasks with deadlines first (by deadline ASC), then tasks without deadlines (by created_at DESC)
+        return $query->orderByRaw('CASE WHEN note_deadline IS NOT NULL THEN 0 ELSE 1 END')
+            ->orderBy('note_deadline', 'ASC')
+            ->orderBy('created_at', 'DESC')
+            ->limit(6) // Show only 6 most recent/urgent actions
             ->get();
     }
 
@@ -234,20 +234,18 @@ class DashboardService
     }
 
     /**
-     * Get note deadline count
+     * Get note deadline count (all action tasks count)
      */
     private function getNoteDeadlineCount($user): int
     {
-        $query = Note::whereNotNull('note_deadline')->where('status', '!=', 1);
+        $query = Note::where('type', 'client')
+            ->where('folloup', 1)
+            ->whereNotNull('client_id')
+            ->whereNotNull('unique_group_id')
+            ->where('status', '!=', 1);
 
-        // Admin sees notes assigned to them OR unassigned notes
-        if ($user->role == 1) {
-            $query->where(function($q) use ($user) {
-                $q->where('assigned_to', $user->id)
-                  ->orWhereNull('assigned_to')
-                  ->orWhere('assigned_to', 0);
-            });
-        } else {
+        // Admin sees ALL actions (no assigned_to filter) - matching action page behavior
+        if ($user->role != 1) {
             $query->where('assigned_to', $user->id);
         }
 

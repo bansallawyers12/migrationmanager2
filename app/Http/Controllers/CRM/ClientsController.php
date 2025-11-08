@@ -7829,6 +7829,7 @@ class ClientsController extends Controller
             $followup->title = @$requestData['remindersubject'] ?? 'Lead assigned to ' . $assigneeName;
 
             $followup->folloup = 1;
+            $followup->type = 'client';
             $followup->task_group = @$requestData['task_group'];
             $followup->assigned_to = $assigneeId;
 

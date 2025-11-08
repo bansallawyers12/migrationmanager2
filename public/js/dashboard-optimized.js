@@ -303,3 +303,239 @@ function showNotification(message, type = 'info') {
         alert(message);
     }
 }
+
+// ====================
+// Microsoft To Do Style Task Functions
+// ====================
+
+// Open Task Detail Panel
+window.openTaskDetail = function(taskId) {
+    const taskItem = $(`[data-task-id="${taskId}"]`);
+    if (!taskItem.length) return;
+    
+    const panel = $('#taskDetailPanel');
+    const data = taskItem.data();
+    
+    // Populate panel with task data
+    $('#taskDetailTitle').text(stripHtml(data.description));
+    $('#taskDetailClientName').text(data.clientName);
+    $('#taskDetailClientCode').text(`(${data.clientCode})`);
+    $('#taskDetailClientLink').attr('href', `/clients/detail/${btoa(data.clientId)}`);
+    
+    // Handle deadline display
+    if (data.deadline) {
+        $('#taskDetailDueDate').text(formatDate(data.deadline));
+        $('#taskDetailDueDate').removeClass('overdue today tomorrow this-week upcoming no-deadline')
+            .addClass(data.urgency);
+    } else {
+        $('#taskDetailDueDate').text('No deadline set');
+        $('#taskDetailDueDate').removeClass('overdue today tomorrow this-week upcoming')
+            .addClass('no-deadline');
+    }
+    
+    $('#taskDetailAssigned').text(data.assignedTo);
+    $('#taskDetailDescription').html(data.description);
+    
+    // Set checkbox state
+    $('#taskDetailComplete').prop('checked', false);
+    
+    // Store task info in panel
+    panel.data('taskId', taskId);
+    panel.data('uniqueGroupId', data.uniqueGroupId);
+    panel.data('noteId', taskId);
+    panel.data('description', data.description);
+    panel.data('deadline', data.deadlineFormatted || '');
+    
+    // Show panel
+    panel.addClass('active');
+};
+
+// Close Task Detail Panel
+window.closeTaskDetail = function() {
+    $('#taskDetailPanel').removeClass('active');
+};
+
+// Handle Task Complete from Checkbox
+window.handleTaskComplete = function(taskId, uniqueGroupId) {
+    if (confirm('Mark this action as complete?')) {
+        completeTask(taskId, uniqueGroupId);
+    }
+};
+
+// Complete Task from Detail Panel
+window.completeTaskFromDetail = function() {
+    const panel = $('#taskDetailPanel');
+    const taskId = panel.data('taskId');
+    const uniqueGroupId = panel.data('uniqueGroupId');
+    
+    if (confirm('Mark this action as complete?')) {
+        completeTask(taskId, uniqueGroupId);
+    }
+};
+
+// Complete Task Function
+function completeTask(taskId, uniqueGroupId) {
+    if (!taskId || !uniqueGroupId) {
+        showNotification('Invalid action data', 'error');
+        return;
+    }
+    
+    $('.popuploader').show();
+    
+    $.ajax({
+        type: 'POST',
+        url: window.dashboardRoutes.updateTaskCompleted,
+        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+        data: { id: taskId, unique_group_id: uniqueGroupId },
+        success: function(response) {
+            $('.popuploader').hide();
+            if (response.success) {
+                // Close detail panel
+                closeTaskDetail();
+                
+                // Animate task removal
+                const taskItem = $(`[data-task-id="${taskId}"]`);
+                taskItem.css('opacity', '0.5');
+                setTimeout(() => {
+                    taskItem.fadeOut(300, function() {
+                        $(this).remove();
+                        updateTaskCount();
+                    });
+                }, 200);
+                
+                showNotification('Action completed successfully!', 'success');
+            } else {
+                showNotification(response.message || 'Failed to complete action', 'error');
+            }
+        },
+        error: function(xhr, status, error) {
+            $('.popuploader').hide();
+            console.error('Error completing action:', error);
+            showNotification('An error occurred while completing the action', 'error');
+        }
+    });
+}
+
+// Open Extend Modal from Task Item
+window.openExtendModal = function(taskId) {
+    const taskItem = $(`[data-task-id="${taskId}"]`);
+    if (!taskItem.length) return;
+    
+    const data = taskItem.data();
+    
+    $('#note_id').val(taskId);
+    $('#unique_group_id').val(data.uniqueGroupId);
+    $('#assignnote').val(stripHtml(data.description));
+    $('#note_deadline').val(data.deadlineFormatted || '');
+    
+    $('#extend_note_popup').modal('show');
+};
+
+// Open Add Deadline Modal for tasks without deadlines
+window.openAddDeadlineModal = function(taskId) {
+    openExtendModal(taskId); // Reuse the same modal
+};
+
+// Extend Task from Detail Panel
+window.extendTaskFromDetail = function() {
+    const panel = $('#taskDetailPanel');
+    const taskId = panel.data('taskId');
+    const uniqueGroupId = panel.data('uniqueGroupId');
+    const description = panel.data('description');
+    const deadline = panel.data('deadline');
+    
+    $('#note_id').val(taskId);
+    $('#unique_group_id').val(uniqueGroupId);
+    $('#assignnote').val(stripHtml(description));
+    $('#note_deadline').val(deadline);
+    
+    // Close detail panel and open modal
+    closeTaskDetail();
+    $('#extend_note_popup').modal('show');
+};
+
+// Open Extend Modal from Task Item
+window.openExtendModal = function(taskId) {
+    const taskItem = $(`[data-task-id="${taskId}"]`);
+    if (!taskItem.length) return;
+    
+    const data = taskItem.data();
+    const description = stripHtml(data.description);
+    const deadline = data.deadlineFormatted || formatDate(data.deadline);
+    
+    // Populate modal
+    $('#note_id').val(taskId);
+    $('#unique_group_id').val(data.uniqueGroupId);
+    $('#assignnote').val(description);
+    $('#note_deadline').val(deadline);
+    
+    // Close detail panel and open modal
+    closeTaskDetail();
+    $('#extend_note_popup').modal('show');
+};
+
+// Update Task Count
+function updateTaskCount() {
+    const count = $('.todo-task-item').length;
+    $('.todo-count-badge').text(count);
+    
+    // Show empty state if no tasks
+    if (count === 0) {
+        $('.todo-task-list').hide();
+        if ($('.todo-empty-state').length === 0) {
+            $('.todo-task-list-container').html(`
+                <div class="todo-empty-state">
+                    <div class="todo-empty-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h4>All caught up!</h4>
+                    <p>You have no tasks at the moment.</p>
+                    <button class="todo-empty-add-btn" onclick="openCreateTaskModal()">
+                        <i class="fas fa-plus"></i>
+                        Add a task
+                    </button>
+                </div>
+            `);
+        }
+    }
+}
+
+// Helper Functions
+function stripHtml(html) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || '';
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // Reset time to compare dates only
+    date.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    tomorrow.setHours(0, 0, 0, 0);
+    
+    if (date.getTime() === today.getTime()) {
+        return 'Today';
+    } else if (date.getTime() === tomorrow.getTime()) {
+        return 'Tomorrow';
+    } else {
+        const options = { weekday: 'short', month: 'short', day: 'numeric' };
+        return date.toLocaleDateString('en-US', options);
+    }
+}
+
+// Close panel on ESC key
+$(document).on('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeTaskDetail();
+    }
+});
+
+// Prevent checkbox label from opening detail
+$(document).on('click', '.task-detail-checkbox', function(e) {
+    e.stopPropagation();
+});
