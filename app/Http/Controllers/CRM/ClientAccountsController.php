@@ -2039,12 +2039,13 @@ class ClientAccountsController extends Controller
 
           $finalArr = array();
           for($i=0; $i<count($requestData['trans_date']); $i++){
+           $withdrawAmount = isset($requestData['withdraw_amount'][$i]) ? $requestData['withdraw_amount'][$i] : 0;
            $finalArr[$i]['trans_date'] = $requestData['trans_date'][$i];
            $finalArr[$i]['entry_date'] = $requestData['entry_date'][$i];
            $finalArr[$i]['trans_no'] = $requestData['trans_no'][$i];
            $finalArr[$i]['invoice_no'] = $requestData['invoice_no'][$i];
            $finalArr[$i]['description'] = $requestData['description'][$i];
-           $finalArr[$i]['withdrawal_amount'] = $requestData['withdrawal_amount'][$i];
+           $finalArr[$i]['withdrawal_amount'] = $withdrawAmount;
 
            $saved    = DB::table('account_client_receipts')->insert([
                'user_id' => $requestData['loggedin_userid'],
@@ -2057,7 +2058,7 @@ class ClientAccountsController extends Controller
                'trans_no' => $requestData['trans_no'][$i],
                'invoice_no' => $requestData['invoice_no'][$i],
                'description' => $requestData['description'][$i],
-               'withdrawal_amount' => $requestData['withdrawal_amount'][$i],
+               'withdraw_amount' => $withdrawAmount,
                'uploaded_doc_id'=> $insertedDocId
            ]);
           }
@@ -2067,7 +2068,7 @@ class ClientAccountsController extends Controller
           $response['status']     =     true;
           $response['requestData']     = $finalArr;
           //Get total withdrawl amount
-          $db_total_withdrawal_amount = DB::table('account_client_receipts')->where('client_id',$requestData['client_id'])->where('receipt_type',4)->sum('withdrawal_amount');
+          $db_total_withdrawal_amount = DB::table('account_client_receipts')->where('client_id',$requestData['client_id'])->where('receipt_type',4)->sum('withdraw_amount');
           $response['db_total_withdrawal_amount']     = $db_total_withdrawal_amount;
 
           if($doc_saved){
@@ -3097,8 +3098,14 @@ class ClientAccountsController extends Controller
       
       $query->orderBy($sortColumn, $sortOrder);
       
-      $totalData     = $query->count();
-      $lists = $query->paginate(20);
+     $totalData     = $query->count();
+
+     // Handle items per page selection (defaults to 20 and only allow whitelisted values)
+     $allowedPerPage = [10, 20, 50, 100, 200, 500];
+     $perPageRequest = (int) $request->get('per_page', 20);
+     $perPage = in_array($perPageRequest, $allowedPerPage, true) ? $perPageRequest : 20;
+
+     $lists = $query->paginate($perPage);
 
       // Dropdown: Client list with receipts
       $clientIds = DB::table('account_client_receipts as acr')
@@ -3116,7 +3123,7 @@ class ClientAccountsController extends Controller
           ->distinct()
           ->orderBy('admins.client_id', 'asc')
           ->get();
-      return view('crm.clients.invoicelist', compact(['lists', 'totalData', 'clientIds', 'matterIds']));
+     return view('crm.clients.invoicelist', compact(['lists', 'totalData', 'clientIds', 'matterIds', 'perPage']));
   }
 
   public function void_invoice(Request $request){
@@ -3529,8 +3536,14 @@ class ClientAccountsController extends Controller
       
       $query->orderBy($sortColumn, $sortOrder);
       
-      $totalData     = $query->count();
-      $lists = $query->paginate(20);
+     $totalData     = $query->count();
+
+     // Handle items per page selection (defaults to 20 and only allow whitelisted values)
+     $allowedPerPage = [10, 20, 50, 100, 200, 500];
+     $perPageRequest = (int) $request->get('per_page', 20);
+     $perPage = in_array($perPageRequest, $allowedPerPage, true) ? $perPageRequest : 20;
+
+     $lists = $query->paginate($perPage);
 
       // Dropdown: Client list with receipts
       $clientIds = DB::table('account_client_receipts as acr')
@@ -3549,7 +3562,7 @@ class ClientAccountsController extends Controller
           ->orderBy('admins.client_id', 'asc')
           ->get();
 
-      return view('crm.clients.officereceiptlist', compact(['lists', 'totalData', 'clientIds', 'matterIds']));
+     return view('crm.clients.officereceiptlist', compact(['lists', 'totalData', 'clientIds', 'matterIds', 'perPage']));
   }
 
   public function journalreceiptlist(Request $request)
@@ -3596,6 +3609,9 @@ class ClientAccountsController extends Controller
   {
       $statsService = new FinancialStatsService();
       
+      // Get quick_select parameter
+      $quickSelect = $request->input('quick_select', '');
+      
       // Get date range from request or default to current month
       $startDate = $request->has('start_date') 
           ? Carbon::parse($request->input('start_date')) 
@@ -3626,6 +3642,7 @@ class ClientAccountsController extends Controller
           'startDate',
           'endDate',
           'receiptType',
+          'quickSelect',
       ]));
   }
 
@@ -4659,8 +4676,8 @@ public function getInvoiceAmount(Request $request)
              'file_name' => $pdfFileName
          ];
 
-         // Send email to Hubdoc
-         Mail::to(env('HUBDOC_EMAIL', 'easyvisa.1ae4@app.hubdoc.com'))->send(new HubdocInvoiceMail($invoiceData));
+        // Send email to Hubdoc
+        Mail::to(env('HUBDOC_EMAIL', 'bansalcrm11@gmail.com'))->send(new HubdocInvoiceMail($invoiceData));
 
          // Mark invoice as sent to Hubdoc
          $updateResult = DB::table('account_client_receipts')

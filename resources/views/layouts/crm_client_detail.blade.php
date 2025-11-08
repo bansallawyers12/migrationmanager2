@@ -8,7 +8,7 @@
     <meta name="author" content="">
     <meta name="keyword" content="CRM">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>CRM | Client Details</title>
+    <title>CRM | @yield('title', 'Client Details')</title>
     <link rel="icon" type="image/png" href="{{asset('img/favicon.png')}}">
     <link rel="stylesheet" href="{{asset('css/app.min.css')}}">
     <link rel="stylesheet" href="{{asset('css/iziToast.min.css')}}">

@@ -46,6 +46,23 @@
         flex: 1;
     }
 
+    .listing-container .per-page-select {
+        border: 2px solid rgba(255, 255, 255, 0.3) !important;
+        border-radius: 10px !important;
+        background: rgba(255, 255, 255, 0.2) !important;
+        color: white !important;
+        font-weight: 600 !important;
+        padding: 8px 12px !important;
+        min-width: 80px;
+        width: auto;
+        backdrop-filter: blur(10px);
+    }
+
+    .listing-container .per-page-select option {
+        background: #667eea;
+        color: white;
+    }
+
     /* Modern Button Styling */
     .listing-container .btn {
         border-radius: 10px;
@@ -424,16 +441,26 @@
                 <div class="custom-error-msg">
                 </div>
                 <div class="card-header">
-                    <h4>All Offices Receipt List</h4>
-                    <div class="d-flex align-items-center">
-                        <a href="{{ route('clients.analytics-dashboard') }}" class="btn btn-theme btn-theme-sm mr-2" title="View Financial Analytics Dashboard"><i class="fas fa-chart-line"></i> Analytics</a>
-                        <a href="javascript:;" style="background: #394eea;color: white;"  class="btn btn-theme btn-theme-sm filter_btn mr-2"><i class="fas fa-filter"></i> Filter</a>
+                    <div class="d-flex justify-content-between align-items-center w-100 flex-wrap" style="gap: 12px;">
+                        <h4 class="mb-0" style="flex: 1 1 auto;">All Offices Receipt List</h4>
+                        <div class="d-flex align-items-center flex-wrap" style="gap: 10px;">
+                            <a href="{{ route('clients.analytics-dashboard') }}" class="btn btn-theme btn-theme-sm" title="View Financial Analytics Dashboard"><i class="fas fa-chart-line"></i> Analytics</a>
+                            <label for="per_page" class="sr-only">Items per page</label>
+                            <select name="per_page" id="per_page" class="form-control per-page-select">
+                                <option value="10" {{ $perPage == 10 ? 'selected' : '' }}>10</option>
+                                <option value="20" {{ $perPage == 20 ? 'selected' : '' }}>20</option>
+                                <option value="50" {{ $perPage == 50 ? 'selected' : '' }}>50</option>
+                                <option value="100" {{ $perPage == 100 ? 'selected' : '' }}>100</option>
+                                <option value="200" {{ $perPage == 200 ? 'selected' : '' }}>200</option>
+                                <option value="500" {{ $perPage == 500 ? 'selected' : '' }}>500</option>
+                            </select>
+                            <a href="javascript:;" style="background: #394eea;color: white;"  class="btn btn-theme btn-theme-sm filter_btn"><i class="fas fa-filter"></i> Filter</a>
+                            <button class="btn btn-primary Validate_Receipt" style="background-color: #394eea !important;">
+                                <i class="fas fa-check-circle"></i>
+                                Validate Receipt
+                            </button>
+                        </div>
                     </div>
-
-                    <button class="btn btn-primary Validate_Receipt" style="background-color: #394eea !important;">
-                        <i class="fas fa-check-circle"></i>
-                        Validate Receipt
-                    </button>
                 </div>
 
                 <div class="card-body">
@@ -713,6 +740,15 @@ jQuery(document).ready(function($){
      $('.listing-container .filter_btn').on('click', function(){
 		$('.listing-container .filter_panel').slideToggle();
 	});
+
+    // Handle records per page dropdown change
+    $('#per_page').on('change', function() {
+        var perPage = $(this).val();
+        var currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set('per_page', perPage);
+        currentUrl.searchParams.delete('page');
+        window.location.href = currentUrl.toString();
+    });
 
     // Initialize Select2 for searchable dropdowns
     $('.listing-container .select2').select2({

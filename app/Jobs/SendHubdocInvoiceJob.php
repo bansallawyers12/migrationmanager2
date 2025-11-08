@@ -190,7 +190,7 @@ class SendHubdocInvoiceJob implements ShouldQueue
             ];
 
             // Send email to Hubdoc
-            Mail::to(env('HUBDOC_EMAIL', 'easyvisa.1ae4@app.hubdoc.com'))->send(new \App\Mail\HubdocInvoiceMail($invoiceData));
+            Mail::to(env('HUBDOC_EMAIL', 'bansalcrm11@gmail.com'))->send(new \App\Mail\HubdocInvoiceMail($invoiceData));
 
             // Mark invoice as sent to Hubdoc
             $updateResult = DB::table('account_client_receipts')

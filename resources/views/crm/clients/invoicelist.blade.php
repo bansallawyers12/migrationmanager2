@@ -46,6 +46,23 @@
         flex: 1;
     }
 
+    .listing-container .per-page-select {
+        border: 2px solid rgba(255, 255, 255, 0.3) !important;
+        border-radius: 10px !important;
+        background: rgba(255, 255, 255, 0.2) !important;
+        color: white !important;
+        font-weight: 600 !important;
+        padding: 8px 12px !important;
+        min-width: 80px;
+        width: auto;
+        backdrop-filter: blur(10px);
+    }
+
+    .listing-container .per-page-select option {
+        background: #667eea;
+        color: white;
+    }
+
     /* Modern Button Styling */
     .listing-container .btn {
         border-radius: 10px;
@@ -789,6 +806,18 @@
         animation: pulse-critical 2s ease-in-out infinite;
     }
 
+    .aging-badge.badge-paid {
+        background: linear-gradient(135deg, #34d399 0%, #059669 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+    }
+
+    .aging-badge.badge-void {
+        background: linear-gradient(135deg, #cbd5f5 0%, #64748b 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(100, 116, 139, 0.25);
+    }
+
     @keyframes pulse-critical {
         0%, 100% {
             box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
@@ -817,17 +846,27 @@
                 <div class="custom-error-msg">
                 </div>
                 <div class="card-header">
-                    <h4>All Clients Invoice List</h4>
+                    <div class="d-flex justify-content-between align-items-center w-100 flex-wrap" style="gap: 12px;">
+                        <h4 class="mb-0" style="flex: 1 1 auto;">All Clients Invoice List</h4>
 
-                    <div class="d-flex align-items-center">
-                        <a href="{{ route('clients.analytics-dashboard') }}" class="btn btn-theme btn-theme-sm mr-2" title="View Financial Analytics Dashboard"><i class="fas fa-chart-line"></i> Analytics</a>
-                        <a href="javascript:;" style="background: #394eea;color: white;"  class="btn btn-theme btn-theme-sm filter_btn mr-2"><i class="fas fa-filter"></i> Filter</a>
+                        <div class="d-flex align-items-center flex-wrap" style="gap: 10px;">
+                            <a href="{{ route('clients.analytics-dashboard') }}" class="btn btn-theme btn-theme-sm" title="View Financial Analytics Dashboard"><i class="fas fa-chart-line"></i> Analytics</a>
+                            <label for="per_page" class="sr-only">Items per page</label>
+                            <select name="per_page" id="per_page" class="form-control per-page-select">
+                                <option value="10" {{ $perPage == 10 ? 'selected' : '' }}>10</option>
+                                <option value="20" {{ $perPage == 20 ? 'selected' : '' }}>20</option>
+                                <option value="50" {{ $perPage == 50 ? 'selected' : '' }}>50</option>
+                                <option value="100" {{ $perPage == 100 ? 'selected' : '' }}>100</option>
+                                <option value="200" {{ $perPage == 200 ? 'selected' : '' }}>200</option>
+                                <option value="500" {{ $perPage == 500 ? 'selected' : '' }}>500</option>
+                            </select>
+                            <a href="javascript:;" style="background: #394eea;color: white;"  class="btn btn-theme btn-theme-sm filter_btn"><i class="fas fa-filter"></i> Filter</a>
+                            <button class="btn btn-primary is_checked_client_void_invoice" style="background-color: #394eea !important;">
+                                <i class="fas fa-check-circle"></i>
+                                Void Invoice
+                            </button>
+                        </div>
                     </div>
-
-                    <button class="btn btn-primary is_checked_client_void_invoice" style="background-color: #394eea !important;">
-                        <i class="fas fa-check-circle"></i>
-                        Void Invoice
-                    </button>
                 </div>
 
                 <div class="card-body">
@@ -843,17 +882,19 @@
 
                     foreach ($lists as $invoice) {
                         if ($invoice->void_invoice == 1) continue; // Skip voided invoices
-                        
-                        $transDate = strtotime($invoice->trans_date);
-                        $today = strtotime(date('Y-m-d'));
-                        $daysOld = floor(($today - $transDate) / (60 * 60 * 24));
-                        
-                        // Determine amount
-                        if ($invoice->invoice_status == 1 && ($invoice->balance_amount == 0 || $invoice->balance_amount == 0.00)) {
-                            $amount = !empty($invoice->partial_paid_amount) ? $invoice->partial_paid_amount : 0;
-                        } else {
-                            $amount = !empty($invoice->balance_amount) ? ($invoice->payment_type == 'Discount' ? abs($invoice->balance_amount) : $invoice->balance_amount) : 0;
+                        $balanceAmount = isset($invoice->balance_amount) ? floatval($invoice->balance_amount) : 0;
+                        if (isset($invoice->payment_type) && $invoice->payment_type === 'Discount') {
+                            $balanceAmount = abs($balanceAmount);
                         }
+                        $isPaidInvoice = ($invoice->invoice_status == 1) || ($balanceAmount <= 0);
+                        if ($isPaidInvoice) continue; // Skip fully paid invoices
+
+                        $transDate = !empty($invoice->trans_date) ? strtotime($invoice->trans_date) : false;
+                        $today = strtotime(date('Y-m-d'));
+                        $daysOld = $transDate ? floor(($today - $transDate) / (60 * 60 * 24)) : 0;
+                        
+                        // Outstanding amount for aging buckets
+                        $amount = $balanceAmount > 0 ? $balanceAmount : 0;
                         
                         if ($daysOld <= 30) {
                             $agingSummary['current']['count']++;
@@ -1282,32 +1323,54 @@
                                             <td>
                                                 <?php
                                                 // Calculate aging status
-                                                $transDate = strtotime($list->trans_date);
+                                                $transDate = !empty($list->trans_date) ? strtotime($list->trans_date) : false;
                                                 $today = strtotime(date('Y-m-d'));
-                                                $daysOld = floor(($today - $transDate) / (60 * 60 * 24));
-                                                
-                                                if ($daysOld <= 30) {
-                                                    $agingClass = 'badge-current';
-                                                    $agingLabel = 'Current';
+                                                $daysOld = $transDate ? floor(($today - $transDate) / (60 * 60 * 24)) : 0;
+
+                                                $balanceAmount = isset($list->balance_amount) ? floatval($list->balance_amount) : 0;
+                                                if (isset($list->payment_type) && $list->payment_type === 'Discount') {
+                                                    $balanceAmount = abs($balanceAmount);
+                                                }
+
+                                                $isPaidInvoice = ($list->invoice_status == 1) || ($balanceAmount <= 0);
+
+                                                if ($list->void_invoice == 1) {
+                                                    $agingClass = 'badge-void';
+                                                    $agingLabel = 'Voided';
+                                                    $agingIcon = 'fa-ban';
+                                                    $agingDays = null;
+                                                } elseif ($isPaidInvoice) {
+                                                    $agingClass = 'badge-paid';
+                                                    $agingLabel = 'Paid';
                                                     $agingIcon = 'fa-check-circle';
-                                                } elseif ($daysOld <= 60) {
-                                                    $agingClass = 'badge-warning';
-                                                    $agingLabel = 'Warning';
-                                                    $agingIcon = 'fa-exclamation-triangle';
-                                                } elseif ($daysOld <= 90) {
-                                                    $agingClass = 'badge-urgent';
-                                                    $agingLabel = 'Urgent';
-                                                    $agingIcon = 'fa-exclamation-circle';
+                                                    $agingDays = null;
                                                 } else {
-                                                    $agingClass = 'badge-critical';
-                                                    $agingLabel = 'Critical';
-                                                    $agingIcon = 'fa-times-circle';
+                                                    if ($daysOld <= 30) {
+                                                        $agingClass = 'badge-current';
+                                                        $agingLabel = 'Current';
+                                                        $agingIcon = 'fa-check-circle';
+                                                    } elseif ($daysOld <= 60) {
+                                                        $agingClass = 'badge-warning';
+                                                        $agingLabel = 'Warning';
+                                                        $agingIcon = 'fa-exclamation-triangle';
+                                                    } elseif ($daysOld <= 90) {
+                                                        $agingClass = 'badge-urgent';
+                                                        $agingLabel = 'Urgent';
+                                                        $agingIcon = 'fa-exclamation-circle';
+                                                    } else {
+                                                        $agingClass = 'badge-critical';
+                                                        $agingLabel = 'Critical';
+                                                        $agingIcon = 'fa-times-circle';
+                                                    }
+                                                    $agingDays = $daysOld . ' days';
                                                 }
                                                 ?>
                                                 <span class="aging-badge <?php echo $agingClass; ?>">
                                                     <i class="fas <?php echo $agingIcon; ?>"></i>
                                                     <?php echo $agingLabel; ?>
-                                                    <span class="aging-days"><?php echo $daysOld; ?> days</span>
+                                                    <?php if (!empty($agingDays)) { ?>
+                                                        <span class="aging-days"><?php echo $agingDays; ?></span>
+                                                    <?php } ?>
                                                 </span>
                                             </td>
                                             <td id="voidedby_{{@$list->id}}"><?php echo $validate_by_full_name;?></td>
@@ -1347,6 +1410,15 @@ jQuery(document).ready(function($){
      $('.listing-container .filter_btn').on('click', function(){
 		$('.listing-container .filter_panel').slideToggle();
 	});
+
+    // Handle records per page dropdown change
+    $('#per_page').on('change', function() {
+        var perPage = $(this).val();
+        var currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set('per_page', perPage);
+        currentUrl.searchParams.delete('page');
+        window.location.href = currentUrl.toString();
+    });
 
     // Aging Card Click Handlers - Filter by aging category with toggle (Option A)
     $('.aging-card').on('click', function() {

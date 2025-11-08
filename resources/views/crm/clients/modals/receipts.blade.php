@@ -855,7 +855,7 @@
 
                                             <td>
                                                 <span class="currencyinput" style="display: inline-block;color: #34395e;">$</span>
-                                                <input data-valid="required" style="display: inline-block;" class="form-control total_withdrawal_amount_office" name="withdrawal_amount[]" type="text" value="" />
+                                                <input data-valid="required" style="display: inline-block;" class="form-control total_withdrawal_amount_office" name="withdraw_amount[]" type="text" value="" />
                                             </td>
 
                                             <td>
@@ -980,7 +980,7 @@
 
                                             <td>
                                                 <span class="currencyinput" style="display: inline-block;color: #34395e;">$</span>
-                                                <input data-valid="required" style="display: inline-block;" class="form-control total_withdrawal_amount_journal" name="withdrawal_amount[]" type="text" value="" />
+                                                <input data-valid="required" style="display: inline-block;" class="form-control total_withdrawal_amount_journal" name="withdraw_amount[]" type="text" value="" />
                                             </td>
 
 					                        <td>

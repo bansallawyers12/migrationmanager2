@@ -629,7 +629,10 @@
                                                 data-matter-id="<?php echo $off_val->client_matter_id; ?>">
                                                 <i class="fas fa-upload"></i> <?php echo !empty($off_val->uploaded_doc_id) ? 'Replace' : 'Upload'; ?> Receipt Document
                                             </a>
-                                            <?php if(!isset($off_val->save_type) || $off_val->save_type == 'draft') { ?>
+                                            <?php
+                                            $currentUserRole = Auth::check() ? Auth::user()->role : null;
+                                            $canEditReceipt = ($currentUserRole == 1) || !isset($off_val->save_type) || $off_val->save_type == 'draft';
+                                            if($canEditReceipt) { ?>
                                             <div class="dropdown-divider"></div>
                                             <a class="dropdown-item edit-office-receipt-entry" href="javascript:;"
                                                 data-id="<?php echo $off_val->id; ?>"
@@ -641,8 +644,9 @@
                                                 data-deposit="<?php echo htmlspecialchars($off_val->deposit_amount ?? 0, ENT_QUOTES, 'UTF-8'); ?>"
                                                 data-invoice-no="<?php echo htmlspecialchars($off_val->invoice_no ?? '', ENT_QUOTES, 'UTF-8'); ?>"
                                                 data-matter-id="<?php echo $off_val->client_matter_id; ?>"
-                                                data-uploaded-doc-id="<?php echo $off_val->uploaded_doc_id ?? ''; ?>">
-                                                <i class="fas fa-edit"></i> Edit Draft Receipt
+                                                data-uploaded-doc-id="<?php echo $off_val->uploaded_doc_id ?? ''; ?>"
+                                                data-save-type="<?php echo htmlspecialchars($off_val->save_type ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                                                <i class="fas fa-edit"></i> <?php echo ($currentUserRole == 1 && isset($off_val->save_type) && $off_val->save_type == 'final') ? 'Edit Receipt' : 'Edit Draft Receipt'; ?>
                                             </a>
                                             <?php } ?>
                                             <div class="dropdown-divider"></div>
@@ -958,39 +962,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // This code moved to attachEditOfficeReceiptHandlers() function above
     });
     */
-    
-    // Function to load invoices for the edit modal
-    function loadInvoicesForEdit(matterId, selectedInvoice) {
-        $.ajax({
-            url: '{{ route("clients.getInvoicesByMatter") }}',
-            type: 'POST',
-            data: {
-                _token: '{{ csrf_token() }}',
-                client_matter_id: matterId,
-                client_id: '{{ $fetchedData->id }}'
-            },
-            success: function(response) {
-                var $select = $('#edit_office_invoice_no');
-                $select.empty();
-                $select.append('<option value="">Select Invoice (Optional)</option>');
-                
-                if(response.invoices && response.invoices.length > 0) {
-                    response.invoices.forEach(function(invoice) {
-                        var selected = (invoice.trans_no == selectedInvoice) ? 'selected' : '';
-                        $select.append('<option value="' + invoice.trans_no + '" ' + selected + '>' + 
-                            invoice.trans_no + ' - $' + parseFloat(invoice.balance_amount).toFixed(2) + 
-                            ' (' + invoice.status + ')</option>');
-                    });
-                }
-                
-                console.log('✅ Loaded invoices for matter:', matterId);
-            },
-            error: function(xhr) {
-                console.error('Failed to load invoices:', xhr);
-                $('#edit_office_invoice_no').html('<option value="">No invoices available</option>');
-            }
-        });
-    }
     
     // Function to load invoices for the CREATE office receipt form
     function loadInvoicesForOfficeReceipt(matterId) {
@@ -2417,6 +2388,41 @@ $(document).ready(function() {
         $('#editLedgerModal').appendTo('body');
         console.log('✅ Edit Ledger Modal moved to body level');
     }
+    
+    // Function to load invoices for the edit modal
+    const loadInvoicesForEdit = function(matterId, selectedInvoice) {
+        $.ajax({
+            url: '{{ route("clients.getInvoicesByMatter") }}',
+            type: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                client_matter_id: matterId,
+                client_id: '{{ $fetchedData->id }}'
+            },
+            success: function(response) {
+                var $select = $('#edit_office_invoice_no');
+                $select.empty();
+                $select.append('<option value="">Select Invoice (Optional)</option>');
+                
+                if(response.invoices && response.invoices.length > 0) {
+                    response.invoices.forEach(function(invoice) {
+                        var selected = (invoice.trans_no == selectedInvoice) ? 'selected' : '';
+                        $select.append('<option value="' + invoice.trans_no + '" ' + selected + '>' + 
+                            invoice.trans_no + ' - $' + parseFloat(invoice.balance_amount).toFixed(2) + 
+                            ' (' + invoice.status + ')</option>');
+                    });
+                }
+                
+                console.log('✅ Loaded invoices for matter:', matterId);
+            },
+            error: function(xhr) {
+                console.error('Failed to load invoices:', xhr);
+                $('#edit_office_invoice_no').html('<option value="">No invoices available</option>');
+            }
+        });
+    };
+    
+    window.loadInvoicesForEdit = loadInvoicesForEdit;
     
     // Function to attach edit office receipt handlers
     function attachEditOfficeReceiptHandlers() {
