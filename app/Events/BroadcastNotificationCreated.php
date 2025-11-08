@@ -23,7 +23,9 @@ class BroadcastNotificationCreated implements ShouldBroadcastNow
      * @param  string  $message
      * @param  string|null  $title
      * @param  int  $senderId
-     * @param  array<int,int>  $recipientIds
+     * @param  array<int,int>  $channelRecipientIds
+     * @param  array<int,int>  $payloadRecipientIds
+     * @param  int  $recipientCount
      * @param  string  $scope
      * @param  \Illuminate\Support\Carbon  $sentAt
      */
@@ -33,7 +35,9 @@ class BroadcastNotificationCreated implements ShouldBroadcastNow
         public ?string $title,
         public int $senderId,
         public string $senderName,
-        public array $recipientIds,
+        public array $channelRecipientIds,
+        public array $payloadRecipientIds,
+        public int $recipientCount,
         public string $scope,
         public Carbon $sentAt
     ) {
@@ -52,7 +56,7 @@ class BroadcastNotificationCreated implements ShouldBroadcastNow
             $channels[] = new Channel('broadcasts');
         }
 
-        foreach ($this->recipientIds as $recipientId) {
+        foreach ($this->channelRecipientIds as $recipientId) {
             $channels[] = new PrivateChannel("user.{$recipientId}");
         }
 
@@ -74,16 +78,22 @@ class BroadcastNotificationCreated implements ShouldBroadcastNow
      */
     public function broadcastWith(): array
     {
-        return [
+        $payload = [
             'batch_uuid' => $this->batchUuid,
             'message' => $this->message,
             'title' => $this->title,
             'sender_id' => $this->senderId,
             'sender_name' => $this->senderName,
-            'recipient_ids' => $this->recipientIds,
+            'recipient_count' => $this->recipientCount,
             'scope' => $this->scope,
             'sent_at' => $this->sentAt->toIso8601String(),
         ];
+
+        if (!empty($this->payloadRecipientIds)) {
+            $payload['recipient_ids'] = $this->payloadRecipientIds;
+        }
+
+        return $payload;
     }
 }
 

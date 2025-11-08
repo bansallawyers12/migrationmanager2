@@ -7,7 +7,7 @@
         <div class="section-header d-flex justify-content-between align-items-center flex-wrap gap-2">
             <div>
                 <h1 class="mb-0">Broadcast Notifications</h1>
-                <p class="mb-0 text-muted">Send announcements and monitor read receipts in real time.</p>
+                <p class="mb-0 broadcast-subtitle">Send announcements and monitor read receipts in real time.</p>
             </div>
             <div class="d-flex gap-2">
                 <button type="button" class="btn btn-outline-secondary" id="broadcast-refresh-history">
@@ -548,5 +548,13 @@
         loadActiveUsers();
     })();
 </script>
+@endpush
+
+@push('styles')
+<style>
+    .broadcast-subtitle {
+        color: #4a5568;
+    }
+</style>
 @endpush
 

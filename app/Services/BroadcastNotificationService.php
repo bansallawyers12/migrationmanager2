@@ -61,13 +61,19 @@ class BroadcastNotificationService
 
         DB::table('notifications')->insert($notificationRows->all());
 
+        $recipientCount = $recipientIds->count();
+        $recipientIdsForChannels = $recipientIds->all();
+        $recipientIdsForPayload = $recipientCount <= 50 ? $recipientIdsForChannels : [];
+
         broadcast(new BroadcastNotificationCreated(
             batchUuid: $batchUuid,
             message: $messageBody,
             title: $title,
             senderId: (int) $sender->id,
             senderName: $senderName,
-            recipientIds: $recipientIds->all(),
+            channelRecipientIds: $recipientIdsForChannels,
+            payloadRecipientIds: $recipientIdsForPayload,
+            recipientCount: $recipientCount,
             scope: $scope,
             sentAt: $sentAt
         ));
