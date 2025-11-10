@@ -1139,6 +1139,7 @@ class ClientDocumentsController extends Controller
         $existsForNullClient = VisaDocumentType::where('title', $categoryTitle)
             ->where('status', 1)
             ->whereNull('client_matter_id')
+            ->whereNull('client_id')
             ->exists();
 
         if ($existsForNullClient) {
