@@ -285,7 +285,13 @@
                                     @endif
                                 </td>
                                 <td class="col-client_id">
-                                    <a href="{{ route('clients.detail', base64_encode(convert_uuencode($matter->client_id))) }}" class="client-id-link">
+                                    @php
+                                        $clientDetailParams = [base64_encode(convert_uuencode($matter->client_id))];
+                                        if(!empty($matter->client_unique_matter_no)) {
+                                            $clientDetailParams[] = $matter->client_unique_matter_no;
+                                        }
+                                    @endphp
+                                    <a href="{{ route('clients.detail', $clientDetailParams) }}" class="client-id-link">
                                         {{ $matter->client->client_id ?: config('constants.empty') }}
                                     </a>
                                 </td>

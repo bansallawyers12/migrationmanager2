@@ -1,5 +1,19 @@
 @extends('layouts.crm_client_detail_dashboard')
 
+@php
+    $latestMatterRefNo = null;
+    if (isset($fetchedData) && $fetchedData->type === 'client') {
+        $latestMatter = \App\Models\ClientMatter::where('client_id', $fetchedData->id)
+            ->where('matter_status', 1)
+            ->orderByDesc('id')
+            ->first();
+
+        if ($latestMatter) {
+            $latestMatterRefNo = $latestMatter->client_unique_matter_no;
+        }
+    }
+@endphp
+
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/address-autocomplete.css') }}">
     <link rel="stylesheet" href="{{asset('css/client-forms.css')}}">
@@ -87,6 +101,8 @@
                 
                 // Current client ID for excluding from search results
                 window.currentClientId = '{{ $fetchedData->id }}';
+                window.currentClientType = @json($fetchedData->type);
+                window.latestClientMatterRef = @json($latestMatterRefNo);
             </script>
 
             <!-- Main Content Area -->

@@ -262,7 +262,15 @@
                             <a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$item->client_id)).'/'.$item->client_unique_matter_no )}}">{{ $matter_name}} ({{$item->client_unique_matter_no }}) </a>
                             <span class="totalEmailCntToClientMatter">{{$total_email_assign_cnt}}</span>
                         </td>
-                        <td class="col-client_id"><a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$item->client_id)) )}}">{{ $client_info && $client_info->client_id ? Str::limit($client_info->client_id, '50', '...') : config('constants.empty') }}</a></td>
+                        <td class="col-client_id">
+                            @php
+                                $clientDetailUrl = '/clients/detail/'.base64_encode(convert_uuencode(@$item->client_id));
+                                if(!empty($item->client_unique_matter_no)) {
+                                    $clientDetailUrl .= '/'.$item->client_unique_matter_no;
+                                }
+                            @endphp
+                            <a href="{{ URL::to($clientDetailUrl) }}">{{ $client_info && $client_info->client_id ? Str::limit($client_info->client_id, '50', '...') : config('constants.empty') }}</a>
+                        </td>
                         <td class="col-client_name">{{ $client_info && $client_info->first_name ? Str::limit($client_info->first_name, '50', '...') : config('constants.empty') }} {{ $client_info && $client_info->last_name ? Str::limit($client_info->last_name, '50', '...') : config('constants.empty') }}</td>
                         <td class="col-dob">{{ @$item->dob == "" ? config('constants.empty') : (strtotime(@$item->dob) ? date('d/m/Y', strtotime(@$item->dob)) : Str::limit(@$item->dob, '50', '...')) }}</td>
                         <td class="col-migration_agent">{{ $mig_agent_info && $mig_agent_info->first_name ? Str::limit($mig_agent_info->first_name, '50', '...') : config('constants.empty') }} {{ $mig_agent_info && $mig_agent_info->last_name ? Str::limit($mig_agent_info->last_name, '50', '...') : config('constants.empty') }}</td>

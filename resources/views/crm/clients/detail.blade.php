@@ -76,7 +76,7 @@ use App\Http\Controllers\Controller;
                 $assign_info_arr = \App\Models\Admin::select('type')->where('id',@$fetchedData->id)->first();
                 ?>
                 @if($assign_info_arr->type == 'client')
-                    <?php
+                    <?php 
                     if($id1)
                     {
                         //if client_unique_matter_no is present in url
@@ -86,7 +86,7 @@ use App\Http\Controllers\Controller;
                         ->where('client_matters.client_unique_matter_no',$id1)
                         ->where('client_matters.matter_status',1)
                         ->whereNotNull('client_matters.sel_matter_id')
-                        ->count();
+                        ->count();  
                         if( $matter_cnt >0 )
                         {
                             // Fetch all matters, but we'll sort them in Blade to prioritize the URL matter
@@ -111,21 +111,57 @@ use App\Http\Controllers\Controller;
                                 return 0; // Maintain original order for other matters
                             });
                             ?>
-                        <select name="matter_id" id="sel_matter_id_client_detail" class="form-control select2 visa-dropdown" data-valid="required">
-                            <option value="">Select Matters</option>
-                            @foreach($matter_list_arr as $matterlist)
-                                @php
-                                    // If sel_matter_id is 1 or title is null, use "General Matter"
-                                    $matterName = 'General Matter';
-                                    if ($matterlist->sel_matter_id != 1 && !empty($matterlist->title)) {
-                                        $matterName = $matterlist->title;
-                                    }
-                                @endphp
-                                <option value="{{$matterlist->id}}" {{ $matterlist->id == $latestClientMatterId ? 'selected' : '' }} data-clientuniquematterno="{{@$matterlist->client_unique_matter_no}}">{{$matterName}}({{@$matterlist->client_unique_matter_no}})</option>
-                            @endforeach
-                        </select>
-                    <?php
-                        }
+                            <select name="matter_id" id="sel_matter_id_client_detail" class="form-control select2 visa-dropdown" data-valid="required">
+                                <option value="">Select Matters</option>
+                                @foreach($matter_list_arr as $matterlist)
+                                    @php
+                                        // If sel_matter_id is 1 or title is null, use "General Matter"
+                                        $matterName = 'General Matter';
+                                        if ($matterlist->sel_matter_id != 1 && !empty($matterlist->title)) {
+                                            $matterName = $matterlist->title;
+                                        }
+                                    @endphp
+                                    <option value="{{$matterlist->id}}" {{ $matterlist->id == $latestClientMatterId ? 'selected' : '' }} data-clientuniquematterno="{{@$matterlist->client_unique_matter_no}}">{{$matterName}}({{@$matterlist->client_unique_matter_no}})</option>
+                                @endforeach
+                            </select>
+                        <?php
+                        }  
+                        else 
+                        {
+                            $matter_cnt = DB::table('client_matters')
+                            ->select('client_matters.id')
+                            ->where('client_matters.client_id',@$fetchedData->id)
+                            ->where('client_matters.matter_status',1)
+                            ->whereNotNull('client_matters.sel_matter_id')
+                            ->count();
+                            if( $matter_cnt >0 )
+                            {
+                                $matter_list_arr = DB::table('client_matters')
+                                ->leftJoin('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
+                                ->select('client_matters.id','client_matters.client_unique_matter_no','matters.title','client_matters.sel_matter_id')
+                                ->where('client_matters.client_id',@$fetchedData->id)
+                                ->where('client_matters.matter_status',1)
+                                ->orderBy('client_matters.created_at', 'desc')
+                                ->get();
+                                $latestClientMatter = \App\Models\ClientMatter::where('client_id',$fetchedData->id)->where('matter_status',1)->latest()->first();
+                                $latestClientMatterId = $latestClientMatter ? $latestClientMatter->id : null;
+                                ?>
+                                <select name="matter_id" id="sel_matter_id_client_detail" class="form-control select2 visa-dropdown" data-valid="required">
+                                    <option value="">Select Matters</option>
+                                    @foreach($matter_list_arr as $matterlist)
+                                        @php
+                                            // If sel_matter_id is 1 or title is null, use "General Matter"
+                                            $matterName = 'General Matter';
+                                            if ($matterlist->sel_matter_id != 1 && !empty($matterlist->title)) {
+                                                $matterName = $matterlist->title;
+                                            }
+                                        @endphp
+                                        <option value="{{$matterlist->id}}" {{ $matterlist->id == $latestClientMatterId ? 'selected' : '' }} data-clientuniquematterno="{{@$matterlist->client_unique_matter_no}}">{{$matterName}}({{@$matterlist->client_unique_matter_no}})</option>
+                                    @endforeach
+                                </select>
+                            <?php
+                            }
+                        } 
                     }
                     else
                     {
@@ -147,20 +183,20 @@ use App\Http\Controllers\Controller;
                             $latestClientMatter = \App\Models\ClientMatter::where('client_id',$fetchedData->id)->where('matter_status',1)->latest()->first();
                             $latestClientMatterId = $latestClientMatter ? $latestClientMatter->id : null;
                             ?>
-                        <select name="matter_id" id="sel_matter_id_client_detail" class="form-control select2 visa-dropdown" data-valid="required">
-                            <option value="">Select Matters</option>
-                            @foreach($matter_list_arr as $matterlist)
-                                @php
-                                    // If sel_matter_id is 1 or title is null, use "General Matter"
-                                    $matterName = 'General Matter';
-                                    if ($matterlist->sel_matter_id != 1 && !empty($matterlist->title)) {
-                                        $matterName = $matterlist->title;
-                                    }
-                                @endphp
-                                <option value="{{$matterlist->id}}" {{ $matterlist->id == $latestClientMatterId ? 'selected' : '' }} data-clientuniquematterno="{{@$matterlist->client_unique_matter_no}}">{{$matterName}}({{@$matterlist->client_unique_matter_no}})</option>
-                            @endforeach
-                        </select>
-                    <?php
+                            <select name="matter_id" id="sel_matter_id_client_detail" class="form-control select2 visa-dropdown" data-valid="required">
+                                <option value="">Select Matters</option>
+                                @foreach($matter_list_arr as $matterlist)
+                                    @php
+                                        // If sel_matter_id is 1 or title is null, use "General Matter"
+                                        $matterName = 'General Matter';
+                                        if ($matterlist->sel_matter_id != 1 && !empty($matterlist->title)) {
+                                            $matterName = $matterlist->title;
+                                        }
+                                    @endphp
+                                    <option value="{{$matterlist->id}}" {{ $matterlist->id == $latestClientMatterId ? 'selected' : '' }} data-clientuniquematterno="{{@$matterlist->client_unique_matter_no}}">{{$matterName}}({{@$matterlist->client_unique_matter_no}})</option>
+                                @endforeach
+                            </select>
+                        <?php
                         }
                     }
                     ?>

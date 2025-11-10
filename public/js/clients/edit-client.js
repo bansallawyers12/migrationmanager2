@@ -4854,10 +4854,22 @@ window.goBackWithRefresh = function() {
         // Extract the client ID from the URL
         const urlParts = currentUrl.split('/');
         const clientId = urlParts[urlParts.indexOf('edit') + 1];
-        
+
+        const typeInput = document.querySelector('#editClientForm input[name="type"]');
+        const clientType = (typeInput ? typeInput.value : window.currentClientType || '').toLowerCase();
+        let detailPath = '/clients/detail/' + clientId;
+
+        if (clientType === 'client') {
+            const latestMatterRef = window.latestClientMatterRef || null;
+            if (latestMatterRef) {
+                detailPath += '/' + encodeURIComponent(latestMatterRef);
+            }
+        }
+
         // Redirect to the client detail page
-        const detailUrl = window.location.origin + '/clients/detail/' + clientId;
-        window.location.href = detailUrl + '?_t=' + Date.now();
+        const detailUrl = window.location.origin + detailPath;
+        //window.location.href = detailUrl + '?_t=' + Date.now();
+        window.location.href = detailUrl;
     } else {
         // Fallback to normal back navigation
         window.history.back();
