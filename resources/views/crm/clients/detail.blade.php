@@ -344,9 +344,9 @@ use App\Http\Controllers\Controller;
                     <i class="fas fa-calculator"></i>
                     <span>Accounts</span>
                 </button>
-                <button class="client-nav-button" data-tab="accounts-test">
-                    <i class="fas fa-flask"></i>
-                    <span>Accounts-Test</span>
+                <button class="client-nav-button" data-tab="account">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    <span>Account</span>
                 </button>
                 <button class="client-nav-button" data-tab="conversations">
                     <i class="fas fa-envelope"></i>
@@ -431,7 +431,7 @@ use App\Http\Controllers\Controller;
                 @endif
                 
                 @include('crm.clients.tabs.accounts')
-                @include('crm.clients.tabs.accounts_test')
+                @include('crm.clients.tabs.account')
                 @include('crm.clients.tabs.conversations')
                 @include('crm.clients.tabs.email_handling')
                 @include('crm.clients.tabs.form_generation_client')

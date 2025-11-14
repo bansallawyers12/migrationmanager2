@@ -1,10 +1,10 @@
-           <!-- Accounts Test Tab -->
-           <div class="tab-pane" id="accounts-test-tab">
+           <!-- Account Tab -->
+           <div class="tab-pane" id="account-tab">
 <?php use Illuminate\Support\Facades\Storage; ?>
 
 <div class="card full-width">
     <div class="alert alert-warning">
-        <strong>🧪 ACCOUNTS TEST PAGE - Local Development Mode</strong>
+        <strong>🧪 ACCOUNT PAGE - Local Development Mode</strong>
         <p><i class="fas fa-exclamation-triangle"></i> This page has FULL READ/WRITE access to the database. Safe for local testing.</p>
         <small>All changes made here will affect the actual database tables (account_client_receipts, etc.)</small>
     </div>
@@ -1034,7 +1034,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     alert(response.message || 'Office receipt updated successfully!');
                     
                     // Reload page to show updated data
-                    localStorage.setItem('activeTab', 'accounts-test');
+                    localStorage.setItem('activeTab', 'account');
                     location.reload();
                 } else {
                     alert('Error: ' + (response.message || 'Failed to update office receipt'));
@@ -1065,11 +1065,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // ================================================================
     // FIX: Add tab visibility check to prevent duplicate handlers
     $(document).on('click', '.quick-receipt-btn:not(.createreceipt)', function(e) {
-        // Only handle if accounts-test tab is active
-        const isTestTabActive = $('#accounts-test-tab').hasClass('active') || $('#accounts-test-tab').is(':visible');
+        // Only handle if account tab is active
+        const isTestTabActive = $('#account-tab').hasClass('active') || $('#account-tab').is(':visible');
         const isAccountsTabActive = $('#accounts-tab').hasClass('active') || $('#accounts-tab').is(':visible');
         
-        // If we're in accounts-test tab, handle it here
+        // If we're in account tab, handle it here
         // If we're in regular accounts tab, let that handler deal with it
         if (isAccountsTabActive && !isTestTabActive) {
             return; // Let accounts.blade.php handler handle it
@@ -1663,7 +1663,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     alert('✅ Deposit successfully allocated to ' + invoiceNo + '!');
                     
                     // Reload page to show updated allocation
-                    localStorage.setItem('activeTab', 'accounts-test');
+                    localStorage.setItem('activeTab', 'account');
                     location.reload();
                 } else {
                     $btn.prop('disabled', false).html(originalHtml);
@@ -1833,7 +1833,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     alert('✅ Receipt successfully allocated to ' + invoiceNo + '!');
                     
                     // Reload page to show updated allocation
-                    localStorage.setItem('activeTab', 'accounts-test');
+                    localStorage.setItem('activeTab', 'account');
                     location.reload();
                 } else {
                     $btn.prop('disabled', false).html(originalHtml);
@@ -1974,7 +1974,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         $successDiv.fadeOut(function() {
                             $(this).remove();
                             // Reload page
-                            localStorage.setItem('activeTab', 'accounts-test');
+                            localStorage.setItem('activeTab', 'account');
                             location.reload();
                         });
                     }, 1500);
@@ -1991,7 +1991,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Ensure all existing functionality works on this test page
-    console.log('🧪 Accounts Test Page loaded - Full Read/Write access enabled');
+    console.log('🧪 Account Page loaded - Full Read/Write access enabled');
     console.log('📊 Client ID: {{ $fetchedData->id }}');
     console.log('📁 Matter ID: {{ $client_selected_matter_id ?? "N/A" }}');
     console.log('✅ All modals and forms are functional');
@@ -2006,16 +2006,16 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
-/* Test page specific styles */
-#accounts-test-tab .transaction-table tbody tr {
+/* Account page specific styles */
+#account-tab .transaction-table tbody tr {
     transition: background-color 0.3s;
 }
 
-#accounts-test-tab .transaction-table tbody tr:hover {
+#account-tab .transaction-table tbody tr:hover {
     background-color: #f0f8ff !important;
 }
 
-#accounts-test-tab .alert-warning {
+#account-tab .alert-warning {
     border-left: 4px solid #ffc107;
 }
 
@@ -2565,4 +2565,4 @@ $(document).ready(function() {
 </script>
 
 </div>
-<!-- End Accounts Test Tab -->
+<!-- End Account Tab -->

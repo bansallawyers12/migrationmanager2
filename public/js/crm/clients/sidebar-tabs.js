@@ -337,7 +337,12 @@
      * Activate initial tab from URL or default
      */
     function activateInitialTab(activeTabFromUrl) {
-        const tabId = activeTabFromUrl || 'personaldetails';
+        let tabId = activeTabFromUrl || 'personaldetails';
+        
+        // Legacy support: redirect deprecated "accounts-test" slug to the new "account" tab
+        if (tabId === 'accounts-test') {
+            tabId = 'account';
+        }
         
         if (tabId !== 'personaldetails') {
             // Trigger click on the button for non-default tabs
@@ -346,7 +351,7 @@
                 $button.click();
             } else {
                 // Try to find a close match (singular vs plural issue)
-                // BUT exclude hyphenated variations to prevent "accounts" from matching "accounts-test"
+                // BUT exclude hyphenated variations inherited from legacy tabs
                 const availableTabs = [];
                 $('.client-nav-button').each(function() {
                     availableTabs.push($(this).data('tab'));
@@ -357,7 +362,7 @@
                     if (t === tabId) return true;
                     
                     // Only allow close matches if neither contains a hyphen
-                    // This prevents "accounts" from matching "accounts-test"
+                    // This avoids legacy tab slugs from hijacking current tabs
                     if (t.includes('-') || tabId.includes('-')) {
                         return false;
                     }

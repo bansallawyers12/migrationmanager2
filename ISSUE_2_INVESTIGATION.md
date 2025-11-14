@@ -242,7 +242,7 @@ The code fixes are in place. The actual 404 error is likely due to:
 
 ## Files Modified
 
-1. ✅ `resources/views/crm/clients/tabs/accounts_test.blade.php` - Modal validation + getElementById guards
+1. ✅ `resources/views/crm/clients/tabs/account.blade.php` - Modal validation + getElementById guards
 2. ✅ `public/js/crm/clients/detail-main.js` - JSON parse error handling + AJAX error logging
 
 ---
