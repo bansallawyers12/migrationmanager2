@@ -308,7 +308,7 @@ use App\Http\Controllers\Controller;
             
             // Valid tab names that should NOT be treated as matter IDs
             $validTabNames = ['personaldetails', 'noteterm', 'personaldocuments', 'visadocuments', 
-                              'eoiroi', 'accounts', 'conversations', 'emailhandling', 
+                              'eoiroi', 'conversations', 'emailhandling', 
                               'formgenerations', 'formgenerationsL', 'application','appointments'];
             
             // Check if $id1 is a valid matter ID (not a tab name)
@@ -340,10 +340,6 @@ use App\Http\Controllers\Controller;
                     <span>EOI / ROI</span>
                 </button>
                 @endif
-                <button class="client-nav-button" data-tab="accounts">
-                    <i class="fas fa-calculator"></i>
-                    <span>Accounts</span>
-                </button>
                 <button class="client-nav-button" data-tab="account">
                     <i class="fas fa-file-invoice-dollar"></i>
                     <span>Account</span>
@@ -430,7 +426,6 @@ use App\Http\Controllers\Controller;
                     @include('crm.clients.tabs.eoi_roi')
                 @endif
                 
-                @include('crm.clients.tabs.accounts')
                 @include('crm.clients.tabs.account')
                 @include('crm.clients.tabs.conversations')
                 @include('crm.clients.tabs.email_handling')

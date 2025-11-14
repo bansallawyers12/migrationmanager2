@@ -1065,16 +1065,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // ================================================================
     // FIX: Add tab visibility check to prevent duplicate handlers
     $(document).on('click', '.quick-receipt-btn:not(.createreceipt)', function(e) {
-        // Only handle if account tab is active
-        const isTestTabActive = $('#account-tab').hasClass('active') || $('#account-tab').is(':visible');
-        const isAccountsTabActive = $('#accounts-tab').hasClass('active') || $('#accounts-tab').is(':visible');
-        
-        // If we're in account tab, handle it here
-        // If we're in regular accounts tab, let that handler deal with it
-        if (isAccountsTabActive && !isTestTabActive) {
-            return; // Let accounts.blade.php handler handle it
+        // Only handle if the account tab is active/visible
+        const isAccountTabActive = $('#account-tab').hasClass('active') || $('#account-tab').is(':visible');
+
+        if (!isAccountTabActive) {
+            return;
         }
-        
+
         e.preventDefault();
         e.stopPropagation();
         

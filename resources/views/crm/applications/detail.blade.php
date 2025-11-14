@@ -179,9 +179,6 @@
 									<a class="nav-link" data-toggle="tab" id="quotations-tab" href="#quotations" role="tab" aria-controls="quotations" aria-selected="false">Quotations</a>
 								</li>
 								<li class="nav-item">
-									<a class="nav-link" data-toggle="tab" id="accounts-tab" href="#accounts" role="tab" aria-controls="accounts" aria-selected="false">Accounts</a>
-								</li>
-								<li class="nav-item">
 									<a class="nav-link" data-toggle="tab" id="conversations-tab" href="#conversations" role="tab" aria-controls="conversations" aria-selected="false">Conversations</a>
 								</li>
 								<li class="nav-item">
@@ -1125,44 +1122,6 @@
 																<a class="dropdown-item has-icon" href="#">Send Email</a>
 																<a class="dropdown-item has-icon" href="#"><i class="far fa-mail"></i> Decline</a>
 																<a class="dropdown-item has-icon" href="javascript:;" onclick="deleteAction(1, 'quotations')">Archive</a>
-															</div>
-														</div>								  
-													</td>
-												</tr>
-											</tbody>
-										</table>
-									</div>
-								</div>
-								<div class="tab-pane fade" id="accounts" role="tabpanel" aria-labelledby="accounts-tab">
-									<div class="table-responsive"> 
-										<table class="table text_wrap">
-											<thead>
-												<tr>
-													<th>Invoice No.</th>
-													<th>Issue Date</th>
-													<th>Service</th>
-													<th>Invoice Amount</th>
-													<th>Discount Given</th>
-													<th>Income Shared</th>
-													<th>Status</th>
-													<th></th>
-												</tr> 
-											</thead>
-											<tbody class="tdata">	
-												<tr id="id_1">
-													<td>3</td>
-													<td>2022-06-03<span title="General" class="ui label uppercase">General</span></td>
-													<td>Us Education F1</td>
-													<td>AUD 1000.00</td>	
-													<td>-</td>
-													<td>-</td>
-													<td><span class="ag-label--circular" style="color: #6777ef" >Paid</span></td> 
-													<td>
-														<div class="dropdown d-inline">
-															<button class="btn btn-primary dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
-															<div class="dropdown-menu">
-																<a class="dropdown-item has-icon" href="#">Send Email</a>
-																<a class="dropdown-item has-icon" href="#"><i class="far fa-mail"></i> View</a>
 															</div>
 														</div>								  
 													</td>
