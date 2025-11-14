@@ -37,28 +37,50 @@ from utils.validators import validate_file_type, validate_file_size
 # Setup logging
 logger = setup_logger(__name__)
 
-# Initialize FastAPI app
-app = FastAPI(
-    title="Migration Manager Python Services",
-    description="Unified Python services for PDF processing, email parsing, and document conversion",
-    version="1.0.0"
-)
+# Global service instances (initialized by create_app)
+pdf_service = None
+email_parser = None
+email_analyzer = None
+email_renderer = None
+docx_converter = None
 
-# CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Configure based on your needs
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
-# Initialize services
-pdf_service = PDFService()
-email_parser = EmailParserService()
-email_analyzer = EmailAnalyzerService()
-email_renderer = EmailRendererService()
-docx_converter = DocxConverterService()
+def create_app() -> FastAPI:
+    """
+    Factory function to create and configure the FastAPI application.
+    This prevents double initialization when uvicorn reloads the module.
+    """
+    global pdf_service, email_parser, email_analyzer, email_renderer, docx_converter
+    
+    # Initialize FastAPI app
+    app = FastAPI(
+        title="Migration Manager Python Services",
+        description="Unified Python services for PDF processing, email parsing, and document conversion",
+        version="1.0.0"
+    )
+
+    # CORS middleware
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],  # Configure based on your needs
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    # Initialize services (only once via factory)
+    pdf_service = PDFService()
+    email_parser = EmailParserService()
+    email_analyzer = EmailAnalyzerService()
+    email_renderer = EmailRendererService()
+    docx_converter = DocxConverterService()
+    
+    return app
+
+
+# Create app instance
+# This will be called once by module import, and routes will be registered
+app = create_app()
 
 
 # ============================================================================
@@ -86,6 +108,39 @@ async def health_check():
     # Check if LibreOffice is available for DOCX conversion
     libreoffice_available = docx_converter.is_libreoffice_available()
     
+    # Determine converter status and method
+    converter_status = "unavailable"
+    converter_method = None
+    converter_message = None
+    
+    if docx_converter.conversion_method == 'disabled':
+        converter_status = "disabled"
+        converter_message = "DOCX conversion is disabled"
+    elif libreoffice_available:
+        converter_status = "ready"
+        converter_method = "libreoffice"
+    elif docx_converter.conversion_method == 'libreoffice':
+        converter_status = "unavailable"
+        converter_message = "LibreOffice not found"
+    elif docx_converter.conversion_method == 'docx2pdf':
+        from services.docx_converter_service import DOCX2PDF_AVAILABLE
+        if DOCX2PDF_AVAILABLE:
+            converter_status = "ready"
+            converter_method = "docx2pdf"
+            converter_message = "Using docx2pdf (requires Microsoft Word)"
+        else:
+            converter_status = "unavailable"
+            converter_message = "docx2pdf not available"
+    else:  # auto mode
+        from services.docx_converter_service import DOCX2PDF_AVAILABLE
+        if DOCX2PDF_AVAILABLE:
+            converter_status = "limited"
+            converter_method = "docx2pdf"
+            converter_message = "LibreOffice not found, using docx2pdf fallback"
+        else:
+            converter_status = "unavailable"
+            converter_message = "No conversion method available"
+    
     return {
         "status": "healthy",
         "services": {
@@ -93,9 +148,15 @@ async def health_check():
             "email_parser": "ready",
             "email_analyzer": "ready",
             "email_renderer": "ready",
-            "docx_converter": "ready" if libreoffice_available else "limited"
+            "docx_converter": converter_status
         },
-        "libreoffice_available": libreoffice_available
+        "docx_converter_details": {
+            "status": converter_status,
+            "method": converter_method,
+            "message": converter_message,
+            "libreoffice_path": docx_converter.libreoffice_path,
+            "configured_method": docx_converter.conversion_method
+        }
     }
 
 
@@ -527,8 +588,10 @@ if __name__ == "__main__":
     
     logger.info(f"Starting Migration Manager Python Services on {args.host}:{args.port}")
     
+    # Pass app object directly to prevent double initialization
+    # Note: reload mode will still cause re-imports, but that's expected behavior
     uvicorn.run(
-        "main:app",
+        app,
         host=args.host,
         port=args.port,
         reload=args.reload,

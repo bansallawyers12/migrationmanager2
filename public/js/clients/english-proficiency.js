@@ -55,18 +55,19 @@ function isValidDateFormat(dateString) {
  * Main function to detect English proficiency level based on test type and scores
  * @param {string} testType - The type of English test (IELTS, PTE, TOEFL, etc.)
  * @param {object} scores - Object containing listening, reading, writing, speaking, overall scores
+ * @param {string|null} testDate - Test date in dd/mm/yyyy format (optional)
  * @returns {object|null} - Proficiency level object with level, color, and points
  */
-function detectEnglishProficiencyLevel(testType, scores) {
+function detectEnglishProficiencyLevel(testType, scores, testDate = null) {
     const { listening, reading, writing, speaking, overall } = scores;
     
     // Determine if test was taken before or after 7 August 2025
     // This is the CRITICAL DATE when English language test requirements changed
-    const testDate = document.querySelector(`input[name*="test_date"]`).value;
-    const isAfterAug2025 = testDate && new Date(testDate.split('/').reverse().join('-')) >= new Date('2025-08-07');
-    
-    // Validate test date format and provide feedback
-    if (testDate && !isValidDateFormat(testDate)) {
+    let isAfterAug2025 = false;
+    if (testDate && isValidDateFormat(testDate)) {
+        const parsed = new Date(testDate.split('/').reverse().join('-'));
+        isAfterAug2025 = parsed >= new Date('2025-08-07');
+    } else if (testDate) {
         console.warn('Invalid test date format. Expected dd/mm/yyyy format.');
     }
     
@@ -700,6 +701,14 @@ function calculateExistingTestScoreLevels() {
     const calculationBoxes = document.querySelectorAll('.english-level-calculation-box');
     
     calculationBoxes.forEach((box, index) => {
+        const displayElement = document.getElementById(`proficiency-level-${index}`);
+        if (!displayElement) {
+            return;
+        }
+        
+        const storedLevel = box.getAttribute('data-proficiency-level');
+        const storedPoints = box.getAttribute('data-proficiency-points');
+        
         const testType = box.getAttribute('data-test-type');
         const listening = box.getAttribute('data-listening');
         const reading = box.getAttribute('data-reading');
@@ -708,23 +717,22 @@ function calculateExistingTestScoreLevels() {
         const overall = box.getAttribute('data-overall');
         const testDate = box.getAttribute('data-test-date');
         
-        // Check if all required data is available
-        if (!testType || !listening || !reading || !writing || !speaking || !overall) {
-            const displayElement = document.getElementById(`proficiency-level-${index}`);
-            if (displayElement) {
-                displayElement.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Incomplete Data';
-                displayElement.style.backgroundColor = '#f8d7da';
-                displayElement.style.color = '#721c24';
-                displayElement.style.border = '1px solid #f5c6cb';
-            }
+        const hasAllScores = testType && listening && reading && writing && speaking && overall;
+        
+        if (!hasAllScores) {
+            showIncompleteData(displayElement, storedLevel, storedPoints);
+            return;
+        }
+        
+        if (storedLevel && storedPoints !== null && storedPoints !== '') {
+            showStoredProficiency(displayElement, storedLevel, storedPoints);
             return;
         }
         
         const scores = { listening, reading, writing, speaking, overall };
-        const proficiencyLevel = detectEnglishProficiencyLevel(testType, scores);
+        const proficiencyLevel = detectEnglishProficiencyLevel(testType, scores, testDate);
         
-        const displayElement = document.getElementById(`proficiency-level-${index}`);
-        if (displayElement && proficiencyLevel) {
+        if (proficiencyLevel) {
             displayElement.innerHTML = `
                 <i class="fas fa-language"></i> ${proficiencyLevel.level}
                 ${proficiencyLevel.points > 0 ? ` <span style="font-size: 0.8em; opacity: 0.8;">(+${proficiencyLevel.points} points)</span>` : ''}
@@ -732,11 +740,65 @@ function calculateExistingTestScoreLevels() {
             displayElement.style.backgroundColor = `${proficiencyLevel.color}15`;
             displayElement.style.color = proficiencyLevel.color;
             displayElement.style.border = `2px solid ${proficiencyLevel.color}`;
-        } else if (displayElement) {
+        } else {
             displayElement.innerHTML = '<i class="fas fa-question-circle"></i> Unable to Calculate';
             displayElement.style.backgroundColor = '#f8d7da';
             displayElement.style.color = '#721c24';
             displayElement.style.border = '1px solid #f5c6cb';
         }
     });
+}
+
+/**
+ * Display stored proficiency level/points pulled from backend
+ */
+function showStoredProficiency(displayElement, level, points) {
+    const numericPoints = parseInt(points, 10);
+    const color = getColorForLevel(level);
+    
+    displayElement.innerHTML = `
+        <i class="fas fa-language"></i> ${level}
+        ${numericPoints > 0 ? ` <span style="font-size: 0.8em; opacity: 0.8;">(+${numericPoints} points)</span>` : ''}
+    `;
+    displayElement.style.backgroundColor = `${color}15`;
+    displayElement.style.color = color;
+    displayElement.style.border = `2px solid ${color}`;
+}
+
+/**
+ * Display incomplete data warning
+ */
+function showIncompleteData(displayElement, storedLevel = null, storedPoints = null) {
+    const hasStored = storedLevel && storedPoints !== null && storedPoints !== '';
+    const numericPoints = hasStored ? parseInt(storedPoints, 10) : 0;
+    const storedInfo = hasStored
+        ? `<div style="margin-top: 4px; font-size: 0.85em; color: #495057;">
+                Stored level: ${storedLevel}
+                ${numericPoints > 0 ? `(+${numericPoints} points)` : '(0 points)'}
+           </div>`
+        : '';
+    
+    displayElement.innerHTML = `
+        <div><i class="fas fa-exclamation-triangle"></i> Incomplete Data</div>
+        ${storedInfo}
+    `;
+    displayElement.style.backgroundColor = '#f8d7da';
+    displayElement.style.color = '#721c24';
+    displayElement.style.border = '1px solid #f5c6cb';
+}
+
+/**
+ * Map English levels to consistent colors (matches backend usage)
+ */
+function getColorForLevel(level) {
+    const map = {
+        'Superior English': '#28a745',
+        'Proficient English': '#007bff',
+        'Competent English': '#17a2b8',
+        'Vocational English': '#ffc107',
+        'Functional English': '#fd7e14',
+        'Below Functional English': '#dc3545'
+    };
+    
+    return map[level] || '#6c757d';
 }

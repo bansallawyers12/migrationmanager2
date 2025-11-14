@@ -195,8 +195,34 @@ class PointsService
             ];
         }
 
-        // Get best valid test based on stored proficiency points
-        $bestTest = $validTests->sortByDesc(function ($test) {
+        $completeTests = $validTests->filter(function ($test) {
+            return $this->hasCompleteEnglishScores($test);
+        });
+
+        if ($completeTests->isEmpty()) {
+            $bestIncomplete = $validTests->sortByDesc(function ($test) {
+                return $test->proficiency_points ?? 0;
+            })->first();
+
+            if ($bestIncomplete) {
+                $detail = 'Incomplete English data';
+                if ($bestIncomplete->proficiency_level) {
+                    $detail .= ' (last recorded: ' . $bestIncomplete->proficiency_level . ')';
+                }
+
+                return [
+                    'detail' => $detail,
+                    'points' => self::ENGLISH_COMPETENT,
+                    'level' => 'incomplete',
+                    'warning' => true,
+                    'stored_level' => $bestIncomplete->proficiency_level,
+                    'stored_points' => $bestIncomplete->proficiency_points,
+                ];
+            }
+        }
+
+        // Get best valid test based on stored proficiency points (only complete tests)
+        $bestTest = $completeTests->sortByDesc(function ($test) {
             return $test->proficiency_points ?? 0;
         })->first();
 
@@ -748,6 +774,27 @@ class PointsService
         }
         
         return Carbon::today();
+    }
+
+    /**
+     * Determine if an English test record has all component scores populated
+     */
+    protected function hasCompleteEnglishScores($test): bool
+    {
+        if (!$test) {
+            return false;
+        }
+
+        $fields = ['listening', 'reading', 'writing', 'speaking', 'overall_score'];
+
+        foreach ($fields as $field) {
+            $value = $field === 'overall_score' ? $test->overall_score : $test->{$field};
+            if ($value === null || $value === '') {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
 

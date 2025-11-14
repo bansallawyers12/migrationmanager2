@@ -199,3 +199,8 @@
 2025-10-29 13:59:06 - services.pdf_service - INFO - Successfully converted page 15
 2025-10-29 13:59:10 - services.pdf_service - INFO - Adding 1 signatures to PDF
 2025-10-29 13:59:10 - services.pdf_service - INFO - Signatures added successfully: C:\xampp\htdocs\migration_manager_crm\storage\app\tmp_6901d055aa48a_signed.pdf
+2025-11-15 09:55:19 - services.pdf_service - INFO - PDF Service initialized
+2025-11-15 09:55:19 - services.pdf_service - INFO - PDF Service initialized
+2025-11-15 10:05:59 - services.pdf_service - INFO - PDF Service initialized
+2025-11-15 10:05:59 - services.pdf_service - INFO - PDF Service initialized
+2025-11-15 10:09:19 - services.pdf_service - INFO - PDF Service initialized

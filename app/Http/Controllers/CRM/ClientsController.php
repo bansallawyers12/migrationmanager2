@@ -3064,7 +3064,9 @@ class ClientsController extends Controller
             }
 
             // Test Score Handling
+            $testScoresChanged = false;
             if (isset($requestData['test_type_hidden']) && is_array($requestData['test_type_hidden'])) {
+                $testScoresChanged = true;
                 // Delete existing test scores for the client to start fresh
                 if (ClientTestScore::where('client_id', $obj->id)->exists()) {
                     ClientTestScore::where('client_id', $obj->id)->delete();
@@ -3121,6 +3123,17 @@ class ClientsController extends Controller
                             'test_reference_no' => $test_reference_no
                         ]);
                     }
+                }
+            }
+
+            if ($testScoresChanged) {
+                try {
+                    (new \App\Services\PointsService())->clearCache($obj->id);
+                } catch (\Throwable $th) {
+                    \Log::warning('Failed to clear points cache after test score update', [
+                        'client_id' => $obj->id,
+                        'error' => $th->getMessage(),
+                    ]);
                 }
             }
 

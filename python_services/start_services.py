@@ -24,19 +24,32 @@ def check_python_version():
 
 def check_dependencies():
     """Check if required dependencies are installed."""
-    required_packages = [
-        'fastapi', 'uvicorn', 'pydantic', 'extract_msg', 'beautifulsoup4'
-    ]
+    # Map pip package names to their actual import names
+    PACKAGE_IMPORT_MAP = {
+        'beautifulsoup4': 'bs4',
+        'extract-msg': 'extract_msg',
+        'PyPDF2': 'PyPDF2',
+        'PyMuPDF': 'fitz'
+    }
+    
+    # Required packages (pip names for display, import names for checking)
+    required_packages = {
+        'fastapi': 'fastapi',
+        'uvicorn': 'uvicorn',
+        'pydantic': 'pydantic',
+        'extract-msg': 'extract_msg',
+        'beautifulsoup4': 'bs4'
+    }
     
     missing_packages = []
     
-    for package in required_packages:
+    for package_name, import_name in required_packages.items():
         try:
-            __import__(package)
-            print(f"✅ {package}")
+            __import__(import_name)
+            print(f"✅ {package_name}")
         except ImportError:
-            missing_packages.append(package)
-            print(f"❌ {package} - Missing")
+            missing_packages.append(package_name)
+            print(f"❌ {package_name} - Missing")
     
     if missing_packages:
         print(f"\n❌ Missing packages: {', '.join(missing_packages)}")

@@ -31,3 +31,14 @@
 2025-10-28 18:49:59 - services.docx_converter_service - INFO - DOCX Converter initialized - LibreOffice: C:\Program Files\LibreOffice\program\soffice.exe
 2025-10-29 13:17:45 - services.docx_converter_service - INFO - DOCX Converter initialized - LibreOffice: C:\Program Files\LibreOffice\program\soffice.exe
 2025-10-29 13:17:46 - services.docx_converter_service - INFO - DOCX Converter initialized - LibreOffice: C:\Program Files\LibreOffice\program\soffice.exe
+2025-11-15 09:55:19 - services.docx_converter_service - INFO - DOCX Converter initialized - LibreOffice: Not found
+2025-11-15 09:55:19 - services.docx_converter_service - INFO - DOCX Converter initialized - LibreOffice: Not found
+2025-11-15 10:05:59 - services.docx_converter_service - WARNING - ⚠️  DOCX Converter initialized - LibreOffice: Not found
+2025-11-15 10:05:59 - services.docx_converter_service - WARNING -   Fallback: docx2pdf (requires Microsoft Word)
+2025-11-15 10:05:59 - services.docx_converter_service - WARNING -   Conversion method: auto
+2025-11-15 10:05:59 - services.docx_converter_service - WARNING - ⚠️  DOCX Converter initialized - LibreOffice: Not found
+2025-11-15 10:05:59 - services.docx_converter_service - WARNING -   Fallback: docx2pdf (requires Microsoft Word)
+2025-11-15 10:05:59 - services.docx_converter_service - WARNING -   Conversion method: auto
+2025-11-15 10:09:19 - services.docx_converter_service - WARNING - ⚠️  DOCX Converter initialized - LibreOffice: Not found
+2025-11-15 10:09:19 - services.docx_converter_service - WARNING -   Fallback: docx2pdf (requires Microsoft Word)
+2025-11-15 10:09:19 - services.docx_converter_service - WARNING -   Conversion method: auto
