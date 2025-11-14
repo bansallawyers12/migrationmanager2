@@ -439,6 +439,81 @@
 			]
 		},
 		{
+			"name": "Stripe - Create PaymentIntent",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"description": "Requires authenticated client token"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"amount\": 2000,\n    \"currency\": \"usd\",\n    \"description\": \"Consultation fee\",\n    \"metadata\": {\n        \"order_id\": \"CRM-1001\"\n    }\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/payments/create-payment-intent",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"payments",
+						"create-payment-intent"
+					]
+				},
+				"description": "Create a Stripe PaymentIntent via POST /api/payments/create-payment-intent to obtain the client_secret for frontend payment confirmation."
+			},
+			"response": [
+				{
+					"name": "201 Created",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"amount\": 2000,\n    \"currency\": \"usd\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/payments/create-payment-intent",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"payments",
+								"create-payment-intent"
+							]
+						}
+					},
+					"status": "Created",
+					"code": 201,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"id\": \"pi_3NExample\",\n    \"status\": \"requires_payment_method\",\n    \"client_secret\": \"pi_3NExample_secret_123\",\n    \"amount\": 2000,\n    \"currency\": \"usd\"\n}"
+				}
+			]
+		},
+		{
 			"name": "5. Forgot Password",
 			"request": {
 				"method": "POST",

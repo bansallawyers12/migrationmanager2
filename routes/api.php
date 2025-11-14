@@ -2,6 +2,8 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\ServiceAccountController;
 use App\Http\Controllers\API\BroadcastNotificationController;
 use App\Http\Controllers\API\ClientPortalController;
@@ -70,6 +72,81 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/messages/{id}/read', [ClientPortalMessageController::class, 'markAsRead']);
     Route::get('/messages/{id}', [ClientPortalMessageController::class, 'getMessageDetails']);
 
+    Route::post('/payments/create-payment-intent', function (Request $request) {
+        $validated = $request->validate([
+            'amount' => ['required', 'integer', 'min:50'],
+            'currency' => ['sometimes', 'string', 'size:3'],
+            'customer' => ['sometimes', 'string'],
+            'description' => ['sometimes', 'string', 'max:255'],
+            'metadata' => ['sometimes', 'array'],
+            'receipt_email' => ['sometimes', 'email'],
+            'automatic_payment_methods.enabled' => ['sometimes', 'boolean'],
+        ]);
+
+        try {
+            $stripeSecret = config('services.stripe.secret');
+
+            if (!$stripeSecret) {
+                return response()->json([
+                    'message' => 'Stripe secret key is not configured.',
+                ], 500);
+            }
+
+            $stripe = new \Stripe\StripeClient($stripeSecret);
+
+            $payload = [
+                'amount' => $validated['amount'],
+                'currency' => strtolower($validated['currency'] ?? 'usd'),
+                'automatic_payment_methods' => [
+                    'enabled' => data_get($validated, 'automatic_payment_methods.enabled', true),
+                ],
+            ];
+
+            if (isset($validated['customer'])) {
+                $payload['customer'] = $validated['customer'];
+            }
+
+            if (isset($validated['description'])) {
+                $payload['description'] = $validated['description'];
+            }
+
+            if (isset($validated['metadata'])) {
+                $payload['metadata'] = $validated['metadata'];
+            }
+
+            if (isset($validated['receipt_email'])) {
+                $payload['receipt_email'] = $validated['receipt_email'];
+            }
+
+            $paymentIntent = $stripe->paymentIntents->create($payload);
+
+            return response()->json([
+                'id' => $paymentIntent->id,
+                'status' => $paymentIntent->status,
+                'client_secret' => $paymentIntent->client_secret,
+                'amount' => $paymentIntent->amount,
+                'currency' => $paymentIntent->currency,
+            ], 201);
+        } catch (\Stripe\Exception\ApiErrorException $exception) {
+            Log::error('Stripe PaymentIntent creation failed', [
+                'message' => $exception->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Unable to create payment intent.',
+                'error' => $exception->getMessage(),
+            ], 400);
+        } catch (\Throwable $exception) {
+            Log::error('Unexpected error creating PaymentIntent', [
+                'message' => $exception->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'An unexpected error occurred.',
+            ], 500);
+        }
+    });
+
     // Broadcast notifications
     Route::get('/notifications/broadcasts/unread', [BroadcastNotificationController::class, 'unread']);
     Route::post('/notifications/broadcasts', [BroadcastNotificationController::class, 'store']);
@@ -100,12 +177,12 @@ Route::post('/broadcasting/auth', function (Request $request) {
         $user = \Laravel\Sanctum\PersonalAccessToken::findToken($token)?->tokenable;
         
         if (!$user) {
-            \Log::error('Invalid token provided for channel auth', ['token' => substr($token, 0, 10) . '...']);
+            Log::error('Invalid token provided for channel auth', ['token' => substr($token, 0, 10) . '...']);
             return response()->json(['error' => 'Invalid token'], 401);
         }
         
         // Log the request details for debugging
-        \Log::info('Broadcasting auth request', [
+        Log::info('Broadcasting auth request', [
             'content_type' => $request->header('Content-Type'),
             'socket_id' => $socketId,
             'channel_name' => $channelName,
@@ -120,13 +197,13 @@ Route::post('/broadcasting/auth', function (Request $request) {
         
         // Validate channel name format and authorization
         if (!preg_match('/^private-(user|matter)\.\d+$/', $channelName)) {
-            \Log::warning('Invalid channel format', ['user_id' => $user->id, 'channel' => $channelName]);
+            Log::warning('Invalid channel format', ['user_id' => $user->id, 'channel' => $channelName]);
             return response()->json(['error' => 'Invalid channel format'], 403);
         }
         
         // Ensure we have required parameters
         if (!$socketId || !$channelName) {
-            \Log::warning('Missing required parameters', [
+            Log::warning('Missing required parameters', [
                 'socket_id' => $socketId,
                 'channel_name' => $channelName,
                 'user_id' => $user->id
@@ -138,7 +215,7 @@ Route::post('/broadcasting/auth', function (Request $request) {
         if (str_starts_with($channelName, 'private-user.')) {
             $requestedUserId = (int) substr($channelName, 13); // Remove 'private-user.'
             if ($user->id !== $requestedUserId) {
-                \Log::warning('User cannot access another user\'s channel', [
+                Log::warning('User cannot access another user\'s channel', [
                     'user_id' => $user->id, 
                     'requested_user_id' => $requestedUserId,
                     'channel' => $channelName
@@ -161,7 +238,7 @@ Route::post('/broadcasting/auth', function (Request $request) {
             $isSuperAdmin = $user->role == 1;
             
             if (!$isAssociated && !$isSuperAdmin) {
-                \Log::warning('User cannot access matter channel', [
+                Log::warning('User cannot access matter channel', [
                     'user_id' => $user->id, 
                     'matter_id' => $matterId,
                     'channel' => $channelName
@@ -170,7 +247,7 @@ Route::post('/broadcasting/auth', function (Request $request) {
             }
         }
         
-        \Log::info('Channel auth successful', ['user_id' => $user->id, 'channel' => $channelName]);
+        Log::info('Channel auth successful', ['user_id' => $user->id, 'channel' => $channelName]);
 
         // Generate auth response using Pusher Cloud
         $pusher = new \Pusher\Pusher(
@@ -191,7 +268,7 @@ Route::post('/broadcasting/auth', function (Request $request) {
         ]);
         
     } catch (\Exception $e) {
-        \Log::error('Broadcasting auth error: ' . $e->getMessage(), [
+        Log::error('Broadcasting auth error: ' . $e->getMessage(), [
             'trace' => $e->getTraceAsString(),
             'request_data' => [
                 'socket_id' => $request->input('socket_id'),

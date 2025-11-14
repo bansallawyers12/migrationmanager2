@@ -10983,11 +10983,11 @@ Bansal Immigration`;
 
 
 
-        $(document).on('click', '#application-tab', function () { 
+        /*$(document).on('click', '#application-tab', function () { 
 
             $('.popuploader').show();
 
-            /*$.ajax({
+            $.ajax({
 
                 url: site_url+'/get-application-lists',
 
@@ -11005,9 +11005,9 @@ Bansal Immigration`;
 
                 }
 
-            });*/
+            });
 
-        });
+        });*/
 
 
 

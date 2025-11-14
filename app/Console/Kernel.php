@@ -86,12 +86,12 @@ class Kernel extends ConsoleKernel
             ->appendOutputTo(storage_path('logs/signature-archive.log'));
         
         // Signature Management - Send auto-reminders daily at 10 AM
-        $schedule->command('signatures:send-auto-reminders --days=7')
+        /*$schedule->command('signatures:send-auto-reminders --days=7')
             ->daily()
             ->at('10:00')
             ->timezone('Australia/Melbourne')
             ->withoutOverlapping(30)
-            ->appendOutputTo(storage_path('logs/signature-auto-reminders.log'));
+            ->appendOutputTo(storage_path('logs/signature-auto-reminders.log'));*/
     }
 
     /**

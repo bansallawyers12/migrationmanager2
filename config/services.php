@@ -127,4 +127,8 @@ return [
         'timeout' => env('BANSAL_API_TIMEOUT', 30),
     ],
 
+    'stripe' => [
+        'secret' => env('STRIPE_SECRET'),
+    ],
+
 ];
