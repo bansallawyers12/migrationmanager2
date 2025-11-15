@@ -6237,17 +6237,16 @@ class ClientsController extends Controller
         }
     }
 
-    //Filter Inbox emails
+    // Filter Inbox emails
     public function filterEmails(Request $request)
     {
         try {
             $client_id = $request->input('client_id');
-            $client_matter_id = $request->input('client_matter_id'); // NEW: Filter by matter
+            $client_matter_id = $request->input('client_matter_id');
             $status = $request->input('status');
             $search = $request->input('search');
             $label_id = $request->input('label_id');
 
-            // Validate that matter ID is provided
             if (!$client_matter_id) {
                 return response()->json([
                     'status' => 'error',
@@ -6255,33 +6254,27 @@ class ClientsController extends Controller
                 ], 400);
             }
 
-            // Base query for inbox mail - FILTER BY MATTER ID instead of client_id
             $query = \App\Models\MailReport::where('client_matter_id', $client_matter_id)
                 ->where('type', 'client')
                 ->where('mail_type', 1)
                 ->where('conversion_type', 'conversion_email_fetch')
                 ->where('mail_body_type', 'inbox')
-                ->with(['labels', 'attachments']) // Load labels and attachments relationships
+                ->with(['labels', 'attachments'])
                 ->orderBy('created_at', 'DESC');
 
-            // Filter by status (mail_is_read)
-            if ($status !== '') {
-                if($status == 1) {
-                    // Status = 1: Only fetch emails where mail_is_read = 1
-                    $query->where('mail_is_read', $status);
-                } else if ($status == 2) {
-                    // Status = 2: Fetch emails where mail_is_read is either 0 or NULL
+            if ($status !== null && $status !== '') {
+                if ($status == 1) {
+                    $query->where('mail_is_read', 1);
+                } elseif ($status == 2) {
                     $query->where(function ($q) {
                         $q->where('mail_is_read', 0)
                           ->orWhereNull('mail_is_read');
                     });
                 }
-                // If $status is neither '1' nor '2' (e.g., empty or invalid), do nothing
             }
 
-            // Search in subject, message, from_mail, or to_email
-            if ($search !== '') {
-                $query->where(function($q) use ($search) {
+            if ($search !== null && $search !== '') {
+                $query->where(function ($q) use ($search) {
                     $q->where('subject', 'LIKE', "%{$search}%")
                       ->orWhere('message', 'LIKE', "%{$search}%")
                       ->orWhere('from_mail', 'LIKE', "%{$search}%")
@@ -6289,52 +6282,39 @@ class ClientsController extends Controller
                 });
             }
 
-            // NEW: Filter by label
             if (!empty($label_id)) {
-                $query->whereHas('labels', function($q) use ($label_id) {
+                $query->whereHas('labels', function ($q) use ($label_id) {
                     $q->where('email_labels.id', $label_id);
                 });
             }
 
-            // Fetch the emails
             $emails = $query->get();
-
-            // Base URL for AWS S3
             $url = 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/';
 
-            // Map the emails to include the preview URL
             $emails = $emails->map(function ($email) use ($url, $client_id) {
-                // Fetch the associated document (DocInfo) for this email
-                // Assuming there's a Document model with a relationship or query to fetch DocInfo
                 $DocInfo = \App\Models\Document::select('id','doc_type','myfile','myfile_key','mail_type')
-                    ->where('id', $email->uploaded_doc_id) // Adjust this based on your actual relationship or query
+                    ->where('id', $email->uploaded_doc_id)
                     ->first();
 
                 $AdminInfo = \App\Models\Admin::select('client_id')->where('id',$email->client_id)->first();
-                // Compute the preview URL based on the PHP logic
+
                 $previewUrl = '';
                 if ($DocInfo) {
-                    if (isset($DocInfo->myfile_key) && $DocInfo->myfile_key != "") {
-                        // New file upload
+                    if (!empty($DocInfo->myfile_key)) {
                         $previewUrl = $DocInfo->myfile;
                     } else {
-                        // Old file upload
                         $previewUrl = $url . $AdminInfo->client_id . '/' . ($DocInfo->doc_type ?? 'mail') . '/' . ($DocInfo->mail_type ?? 'inbox') . '/' . $DocInfo->myfile;
                     }
                 }
 
-                // Add the preview URL to the email object
                 $email->preview_url = $previewUrl;
                 return $email;
             });
 
-            // Ensure the response is valid JSON
             return response()->json($emails, 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         } catch (\Exception $e) {
-            // Log the error for debugging
             \Log::error('Error in filterEmails: ' . $e->getMessage());
 
-            // Return an error response
             return response()->json([
                 'status' => 'error',
                 'message' => 'An error occurred while fetching emails: ' . $e->getMessage(),
@@ -6342,7 +6322,7 @@ class ClientsController extends Controller
         }
     }
 
-    //Filter Sent emails
+        //Filter Sent emails
     public function filterSentEmails(Request $request)
     {
         try
