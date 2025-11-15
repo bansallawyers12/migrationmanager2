@@ -346,7 +346,7 @@ use App\Http\Controllers\Controller;
                 </button>
                 <button class="client-nav-button" data-tab="emailhandling">
                     <i class="fas fa-inbox"></i>
-                    <span>Email Handling</span>
+                    <span>Emails</span>
                 </button>
                 <button class="client-nav-button" data-tab="formgenerations">
                     <i class="fas fa-file-alt"></i>

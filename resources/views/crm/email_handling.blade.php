@@ -1,4 +1,4 @@
-<!-- Email Handling Interface -->
+<!-- Emails Interface -->
 @php
     // Support both $client and $fetchedData variable names
     $clientData = $client ?? $fetchedData ?? null;
@@ -179,7 +179,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Email handling interface loaded');
+    console.log('Emails interface loaded');
     
     // Debug: Check if elements exist
     const fileInput = document.getElementById('emailFileInput');

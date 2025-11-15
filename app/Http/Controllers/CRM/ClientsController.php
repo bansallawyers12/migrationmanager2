@@ -2517,7 +2517,7 @@ class ClientsController extends Controller
                 }
             }
 
-            // Initialize variables for email handling
+            // Initialize variables for emails
             $emailModified = false;
             $modifiedEmail = null;
 

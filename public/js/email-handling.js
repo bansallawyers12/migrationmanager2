@@ -1,5 +1,5 @@
 /**
- * Email Handling Module for CRM Client Email Tab
+ * Emails Module for CRM Client Email Tab
  * Handles upload, search, and display of .msg email files
  * Adapted from email-viewer app to work with migration manager backend
  */
@@ -30,7 +30,7 @@
     function getClientId() {
         const container = document.querySelector('.email-interface-container');
         if (!container) {
-            console.warn('Email interface container not found - this page may not support email handling');
+            console.warn('Email interface container not found - this page may not support emails');
             return null;
         }
         
@@ -48,7 +48,7 @@
     function getMatterId() {
         const container = document.querySelector('.email-interface-container');
         if (!container) {
-            console.warn('Email interface container not found - this page may not support email handling');
+            console.warn('Email interface container not found - this page may not support emails');
             return null;
         }
         
@@ -262,7 +262,7 @@
         const uploadProgress = document.getElementById('upload-progress');
 
         if (!fileInput || !uploadArea || !fileStatus) {
-            console.warn('Upload elements not found - skipping email upload initialization (page may not have email handling UI)');
+            console.warn('Upload elements not found - skipping email upload initialization (page may not have emails UI)');
             return;
         }
 
@@ -1509,7 +1509,7 @@
     `;
     document.head.appendChild(style);
 
-    console.log('Email handling module loaded');
+    console.log('Emails module loaded');
 
 })();
 
