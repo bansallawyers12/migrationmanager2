@@ -66,11 +66,6 @@ Route::post('/exception', [\App\Http\Controllers\ExceptionController::class, 'in
 // Auth::routes(); // Disabled - Using custom admin login at /admin and API login at /api/login instead
 
 /*--------------------------------------------------
-| SECTION: Email Manager Routes
-|--------------------------------------------------*/
-include_once 'emailUser.php';
-
-/*--------------------------------------------------
 | SECTION: Admin Console Routes
 |--------------------------------------------------*/
 require __DIR__ . '/adminconsole.php';

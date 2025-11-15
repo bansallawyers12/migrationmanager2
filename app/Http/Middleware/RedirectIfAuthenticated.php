@@ -23,14 +23,9 @@ class RedirectIfAuthenticated
 					return redirect()->route('dashboard');
 				}
 				break;
-            case 'email_users' :
-                    if (Auth::guard($guard)->check()) {
-                        return redirect()->route('email_users.dashboard');
-                    }
-                    break;
 				default:
 					if (Auth::guard($guard)->check()) {
-						return redirect()->route('dashboard.index');
+						return redirect()->route('dashboard');
 					}
 					break;
 			}

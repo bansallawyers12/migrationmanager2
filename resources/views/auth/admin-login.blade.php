@@ -68,11 +68,6 @@
 						Don't have an account? <a href="{{--URL::to('/register')--}}">Create One</a>
 					</div>-->
 
-                    <div class="mt-5 text-muted text-center">
-                        <h5 style="color: #6777ef;">Email Manager</h5>
-						<!--<a href="{{--URL::to('/email_users/register')--}}">Register Here</a><br/>-->
-                        <a href="{{URL::to('/email_users/login')}}">Login</a>
-					</div>
                 </div>
 			</div>
 		</div>

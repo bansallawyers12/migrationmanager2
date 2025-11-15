@@ -87,7 +87,6 @@ The system uses multiple authentication guards for different user types:
     'web' => ['driver' => 'session', 'provider' => 'users'],
     'admin' => ['driver' => 'session', 'provider' => 'admins'],
     'agents' => ['driver' => 'session', 'provider' => 'agents'],
-    'email_users' => ['driver' => 'session', 'provider' => 'email_users'],
 ]
 ```
 
@@ -105,13 +104,7 @@ The system uses multiple authentication guards for different user types:
 - **Key Features**: Client viewing, basic operations
 - **Authentication**: `auth:agents` middleware
 
-#### 3. Email Users (`App\Models\EmailUser`)
-- **Primary Role**: Email management specialists
-- **Access**: Email-related functions only
-- **Key Features**: Email templates, bulk email sending
-- **Authentication**: `auth:email_users` middleware
-
-#### 4. Regular Users (`App\User`)
+#### 3. Regular Users (`App\User`)
 - **Primary Role**: Frontend users (clients)
 - **Access**: Limited frontend access
 - **Key Features**: Profile management, document signing
@@ -278,9 +271,6 @@ admins (id, role, first_name, last_name, email, password, client_id, status, cre
 
 -- Agent users
 agents (id, name, email, password, status, created_at, updated_at)
-
--- Email users
-email_users (id, user_type, email, password, status, created_at, updated_at)
 
 -- Regular users
 users (id, name, email, password, created_at, updated_at)
@@ -450,7 +440,6 @@ $request->validate([
 // Different guards for different user types
 Auth::guard('admin')->check()
 Auth::guard('agents')->check()
-Auth::guard('email_users')->check()
 ```
 
 #### Password Security
