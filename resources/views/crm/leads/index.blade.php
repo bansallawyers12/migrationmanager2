@@ -168,7 +168,138 @@
     .listing-container .action_toggle .dropdown-toggle:hover i {
         color: white;
     }
+
+    .listing-container .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .listing-container .card-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .listing-container .per-page-select {
+        border: 1px solid white !important;
+        border-radius: 8px !important;
+        background: white !important;
+        color: #667eea !important;
+        font-weight: 600 !important;
+        padding: 8px 16px !important;
+        min-width: 110px;
+        width: auto !important;
+        flex: 0 0 auto;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .listing-container .per-page-select:focus {
+        outline: none;
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    }
+
+    .listing-container .per-page-select option {
+        background: white;
+        color: #667eea;
+    }
+
+    .listing-container .filter_panel {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+        display: none;
+        border: 1px solid #e2e8f0;
+    }
+
+    .listing-container .filter_panel h4 {
+        color: #1e293b;
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .active-filters-badge {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 4px 12px;
+        font-size: 12px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .clear-filter-btn {
+        background: transparent;
+        border: 2px solid #ef4444;
+        color: #ef4444;
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .clear-filter-btn:hover {
+        background: #ef4444;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .status-badge.open {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+    }
+
+    .status-badge.closed {
+        background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+        color: white;
+    }
+
+    .status-badge.converted {
+        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+        color: white;
+    }
+
+    .sortable-header a {
+        color: inherit;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .sortable-header i {
+        color: #94a3b8;
+    }
 </style>
+@include('crm.clients.partials.enhanced-date-filter-styles')
 @endsection
 
 @section('content')
@@ -183,8 +314,21 @@
                 <div class="card-header">
                     <h4>All Leads</h4>
 
-                    <div class="d-flex align-items-center">
+                    <div class="card-header-actions">
+                        <a href="{{ route('clients.insights', ['section' => 'leads']) }}" class="btn btn-theme btn-theme-sm" title="Lead Insights">
+                            <i class="fas fa-chart-line"></i> Insights
+                        </a>
                         <a href="{{route('leads.create')}}" class="btn btn-primary">Create Lead</a>
+                        <select name="per_page" id="per_page" class="form-control per-page-select">
+                            @foreach([10, 20, 50, 100, 200] as $option)
+                                <option value="{{ $option }}" {{ ($perPage ?? 20) == $option ? 'selected' : '' }}>
+                                    {{ $option }} / page
+                                </option>
+                            @endforeach
+                        </select>
+                        <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn">
+                            <i class="fas fa-filter"></i> Filter
+                        </a>
                     </div>
                 </div>
 
@@ -212,6 +356,176 @@
                         </li>
                     </ul>
 
+                    @php
+                        $leadFilters = collect([
+                            'client_id' => request('client_id'),
+                            'name' => request('name'),
+                            'email' => request('email'),
+                            'phone' => request('phone'),
+                            'service' => request('service'),
+                            'status_filter' => request('status_filter'),
+                            'lead_quality' => request('lead_quality'),
+                            'quick_date_range' => request('quick_date_range'),
+                            'from_date' => request('from_date'),
+                            'to_date' => request('to_date'),
+                            'date_filter_field' => request('date_filter_field') !== 'created_at' ? request('date_filter_field') : null,
+                        ]);
+                        $activeLeadFilters = $leadFilters->filter(function ($value) {
+                            return $value !== null && $value !== '';
+                        })->count();
+                        $qualityList = ($qualityOptions ?? collect())->filter()->values();
+                        if ($qualityList->isEmpty()) {
+                            $qualityList = collect([5, 4, 3, 2, 1]);
+                        }
+                        $statusList = ($statusOptions ?? collect())->filter()->values();
+                        $fallbackStatuses = collect(['New', 'In Progress', 'Converted', 'Closed', 'Lost']);
+                    @endphp
+
+                    <div class="filter_panel">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap">
+                            <h4>
+                                Search By Details
+                                @if($activeLeadFilters > 0)
+                                    <span class="active-filters-badge">
+                                        <i class="fas fa-filter"></i> {{ $activeLeadFilters }} Active
+                                    </span>
+                                @endif
+                            </h4>
+                            @if($activeLeadFilters > 0)
+                                <button type="button" class="clear-filter-btn" id="clearLeadFilters">
+                                    <i class="fas fa-undo"></i> Clear Filters
+                                </button>
+                            @endif
+                        </div>
+                        <form action="{{URL::to('/leads')}}" method="get" id="leadFilterForm">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="client_id">Client ID</label>
+                                        <input type="text" name="client_id" id="client_id" value="{{ request('client_id') }}" class="form-control" placeholder="Client ID">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="name">Name</label>
+                                        <input type="text" name="name" id="name" value="{{ request('name') }}" class="form-control" placeholder="Lead name">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="email">Email</label>
+                                        <input type="text" name="email" id="email" value="{{ request('email') }}" class="form-control" placeholder="Lead email">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="phone">Phone</label>
+                                        <input type="text" name="phone" id="phone" value="{{ request('phone') }}" class="form-control" placeholder="Lead phone">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="service">Service</label>
+                                        <input type="text" name="service" id="service" value="{{ request('service') }}" class="form-control" placeholder="Interested service">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="status_filter">Status</label>
+                                        <select name="status_filter" id="status_filter" class="form-control">
+                                            <option value="">All Statuses</option>
+                                            @if(($statusList ?? collect())->isNotEmpty())
+                                                @foreach($statusList as $status)
+                                                    <option value="{{ $status }}" {{ request('status_filter') == $status ? 'selected' : '' }}>
+                                                        {{ ucfirst($status) }}
+                                                    </option>
+                                                @endforeach
+                                            @else
+                                                @foreach($fallbackStatuses as $status)
+                                                    <option value="{{ \Illuminate\Support\Str::slug($status, '_') }}" {{ request('status_filter') == \Illuminate\Support\Str::slug($status, '_') ? 'selected' : '' }}>
+                                                        {{ $status }}
+                                                    </option>
+                                                @endforeach
+                                            @endif
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="lead_quality">Lead Quality</label>
+                                        <select name="lead_quality" id="lead_quality" class="form-control">
+                                            <option value="">All Levels</option>
+                                            @foreach($qualityList as $quality)
+                                                <option value="{{ $quality }}" {{ request('lead_quality') == $quality ? 'selected' : '' }}>
+                                                    {{ is_numeric($quality) ? $quality . ' Star' : ucfirst($quality) }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="date_filter_field">Date Field</label>
+                                        <select name="date_filter_field" id="date_filter_field" class="form-control">
+                                            <option value="created_at" {{ request('date_filter_field', 'created_at') === 'created_at' ? 'selected' : '' }}>Created Date</option>
+                                            <option value="updated_at" {{ request('date_filter_field') === 'updated_at' ? 'selected' : '' }}>Last Updated</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="date-filter-section mt-2">
+                                <input type="hidden" name="quick_date_range" id="lead_quick_date_range" value="{{ request('quick_date_range') }}">
+                                @php
+                                    $quickFilters = [
+                                        'today' => 'Today',
+                                        'this_week' => 'This Week',
+                                        'this_month' => 'This Month',
+                                        'last_month' => 'Last Month',
+                                        'last_30_days' => 'Last 30 Days',
+                                        'last_90_days' => 'Last 90 Days',
+                                        'this_year' => 'This Year',
+                                        'last_year' => 'Last Year',
+                                    ];
+                                @endphp
+                                <div class="quick-filters">
+                                    @foreach($quickFilters as $key => $label)
+                                        <span class="quick-filter-chip lead-quick-filter {{ request('quick_date_range') === $key ? 'active' : '' }}" data-filter="{{ $key }}">
+                                            <i class="fas fa-calendar"></i> {{ $label }}
+                                        </span>
+                                    @endforeach
+                                </div>
+                                <div class="divider-text">Or Custom Range</div>
+                                <div class="date-range-wrapper">
+                                    <div class="form-group">
+                                        <label for="lead_from_date">From Date</label>
+                                        <input type="date" name="from_date" id="lead_from_date" value="{{ request('from_date') }}" class="form-control">
+                                    </div>
+                                    <span class="date-range-arrow">→</span>
+                                    <div class="form-group">
+                                        <label for="lead_to_date">To Date</label>
+                                        <input type="date" name="to_date" id="lead_to_date" value="{{ request('to_date') }}" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mt-3">
+                                <div class="col-md-12 text-center">
+                                    <div class="filter-buttons-container">
+                                        <button type="submit" class="btn btn-primary btn-theme-lg mr-3">Apply Filters</button>
+                                        <a class="btn btn-info" href="{{URL::to('/leads')}}">Reset</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
                     <div class="table-responsive">
                         <table class="table">
                             <thead>
@@ -222,11 +536,11 @@
                                             <label for="checkbox-all" class="custom-control-label">&nbsp;</label>
                                         </div>
                                     </th>
-                                    <th>Name</th>
+                                    <th class="sortable-header">@sortablelink('first_name', 'Name')</th>
                                     <th>Info</th>
-                                    <th>Contact Date</th>
-                                    <th>Level & Status</th>
-                                    <th>Status</th>
+                                    <th class="sortable-header">@sortablelink('created_at', 'Contact Date')</th>
+                                    <th class="sortable-header">@sortablelink('lead_quality', 'Level & Status')</th>
+                                    <th class="sortable-header">@sortablelink('status', 'Status')</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -254,7 +568,15 @@
                                         <td><i class="fa fa-mobile"></i> {{@$list->phone}} <br/> <i class="fa fa-envelope"></i> {{@$list->email}}</td>
                                         <td>{{@$list->service}} <br/> {{date('d/m/Y h:i:s a', strtotime($list->created_at))}}</td>
                                         <td><div class="lead_stars"><i class="fa fa-star"></i><span>{{@$list->lead_quality}}</span></div></td>
-                                        <td>{{@$list->status}}</td>
+                                        <td>
+                                            @php
+                                                $statusValue = @$list->status ?: config('constants.empty');
+                                                $statusSlug = \Illuminate\Support\Str::slug(strtolower($statusValue), '_');
+                                            @endphp
+                                            <span class="status-badge {{ $statusSlug }}">
+                                                <i class="fas fa-circle"></i> {{ $statusValue }}
+                                            </span>
+                                        </td>
                                         <td>
                                             <div class="dropdown action_toggle">
                                                 <a class="dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i data-feather="more-vertical"></i></a>
@@ -328,6 +650,28 @@
 @push('scripts')
 <script>
     jQuery(document).ready(function($){
+        $('#per_page').on('change', function(){
+            var currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set('per_page', $(this).val());
+            currentUrl.searchParams.delete('page');
+            window.location.href = currentUrl.toString();
+        });
+
+        $('.lead-quick-filter').on('click', function(){
+            var filter = $(this).data('filter');
+            $('#lead_quick_date_range').val(filter);
+            $('#lead_from_date, #lead_to_date').val('');
+            $('#leadFilterForm').submit();
+        });
+
+        $('#lead_from_date, #lead_to_date').on('change', function(){
+            $('#lead_quick_date_range').val('');
+        });
+
+        $('#clearLeadFilters').on('click', function(){
+            window.location.href = "{{ URL::to('/leads') }}";
+        });
+
         $('.listing-container .filter_btn').on('click', function(){
             $('.listing-container .filter_panel').slideToggle();
         });

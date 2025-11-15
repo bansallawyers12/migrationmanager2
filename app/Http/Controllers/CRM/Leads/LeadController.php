@@ -41,6 +41,9 @@ class LeadController extends Controller
         $roles = \App\Models\UserRole::find(Auth::user()->role);
         $module_access = (array) json_decode($roles->module_access ?? '[]');
         
+        $statusOptions = collect();
+        $qualityOptions = collect();
+        $perPage = 20;
         if (array_key_exists('20', $module_access)) {
             // Using Lead model - automatically filters by role=7, type='lead', and is_deleted=null
             $query = Lead::where('is_archived', 0);
@@ -71,13 +74,150 @@ class LeadController extends Controller
                 });
             });
 
-            $lists = $query->sortable(['id' => 'desc'])->paginate(20);
+            $query->when($request->filled('service'), function ($q) use ($request) {
+                return $q->where('service', 'LIKE', '%' . $request->input('service') . '%');
+            });
+
+            $query->when($request->filled('lead_quality'), function ($q) use ($request) {
+                return $q->where('lead_quality', $request->input('lead_quality'));
+            });
+
+            $query->when($request->filled('status_filter'), function ($q) use ($request) {
+                return $q->where('status', $request->input('status_filter'));
+            });
+
+            if ($request->filled('quick_date_range') || $request->filled('from_date') || $request->filled('to_date')) {
+                [$startDate, $endDate] = $this->resolveLeadDateRange($request);
+                $dateColumn = $request->input('date_filter_field', 'created_at');
+
+                if ($startDate && $endDate && in_array($dateColumn, ['created_at', 'updated_at'], true)) {
+                    $query->whereBetween($dateColumn, [$startDate, $endDate]);
+                }
+            }
+
+            $allowedPerPage = [10, 20, 50, 100, 200];
+            $perPage = (int) $request->get('per_page', 20);
+            if (!in_array($perPage, $allowedPerPage, true)) {
+                $perPage = 20;
+            }
+
+            $statusOptions = Lead::select('status')
+                ->distinct()
+                ->whereNotNull('status')
+                ->orderBy('status')
+                ->pluck('status');
+
+            $qualityOptions = Lead::select('lead_quality')
+                ->distinct()
+                ->whereNotNull('lead_quality')
+                ->orderBy('lead_quality')
+                ->pluck('lead_quality');
+
+            $lists = $query->sortable(['id' => 'desc'])
+                ->paginate($perPage)
+                ->appends($request->except('page'));
         } else {
-            $lists = Lead::whereRaw('1 = 0')->sortable(['id' => 'desc'])->paginate(20);
+            $lists = Lead::whereRaw('1 = 0')->sortable(['id' => 'desc'])->paginate($perPage);
             $totalData = 0;
         }
         
-        return view('crm.leads.index', compact('lists', 'totalData'));
+        return view('crm.leads.index', compact('lists', 'totalData', 'perPage', 'statusOptions', 'qualityOptions'));
+    }
+
+    /**
+     * Resolve quick or manual date range for filtering leads.
+     */
+    protected function resolveLeadDateRange(Request $request): array
+    {
+        $quickRange = $request->input('quick_date_range');
+        if (!empty($quickRange)) {
+            $range = $this->getLeadQuickDateRangeBounds($quickRange);
+            if ($range[0] && $range[1]) {
+                return $range;
+            }
+        }
+
+        $from = $this->parseLeadDate($request->input('from_date'));
+        $to = $this->parseLeadDate($request->input('to_date'), true);
+
+        if ($from || $to) {
+            $start = $from ?? Carbon::now()->subYears(20)->startOfDay();
+            $end = $to ?? Carbon::now()->endOfDay();
+
+            return [$start, $end];
+        }
+
+        return [null, null];
+    }
+
+    /**
+     * Map quick filter keys to Carbon ranges.
+     */
+    protected function getLeadQuickDateRangeBounds(string $range): array
+    {
+        $now = Carbon::now();
+
+        switch ($range) {
+            case 'today':
+                $start = $now->copy()->startOfDay();
+                $end = $now->copy()->endOfDay();
+                break;
+            case 'this_week':
+                $start = $now->copy()->startOfWeek();
+                $end = $now->copy()->endOfWeek();
+                break;
+            case 'this_month':
+                $start = $now->copy()->startOfMonth();
+                $end = $now->copy()->endOfMonth();
+                break;
+            case 'last_month':
+                $start = $now->copy()->subMonth()->startOfMonth();
+                $end = $now->copy()->subMonth()->endOfMonth();
+                break;
+            case 'last_30_days':
+                $start = $now->copy()->subDays(30)->startOfDay();
+                $end = $now->copy()->endOfDay();
+                break;
+            case 'last_90_days':
+                $start = $now->copy()->subDays(90)->startOfDay();
+                $end = $now->copy()->endOfDay();
+                break;
+            case 'this_year':
+                $start = $now->copy()->startOfYear();
+                $end = $now->copy()->endOfYear();
+                break;
+            case 'last_year':
+                $start = $now->copy()->subYear()->startOfYear();
+                $end = $now->copy()->subYear()->endOfYear();
+                break;
+            default:
+                return [null, null];
+        }
+
+        return [$start, $end];
+    }
+
+    /**
+     * Parse incoming date strings supporting multiple formats.
+     */
+    protected function parseLeadDate(?string $value, bool $endOfDay = false): ?Carbon
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        $formats = ['d/m/Y', 'Y-m-d'];
+
+        foreach ($formats as $format) {
+            try {
+                $date = Carbon::createFromFormat($format, $value);
+                return $endOfDay ? $date->endOfDay() : $date->startOfDay();
+            } catch (\Throwable $th) {
+                continue;
+            }
+        }
+
+        return null;
     }
 
     /**

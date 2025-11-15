@@ -164,10 +164,114 @@
     .listing-container .dropdown {
         overflow: visible !important;
     }
+
+    .listing-container .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .listing-container .card-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .listing-container .per-page-select {
+        border: 1px solid white !important;
+        border-radius: 8px !important;
+        background: white !important;
+        color: #667eea !important;
+        font-weight: 600 !important;
+        padding: 8px 16px !important;
+        min-width: 110px;
+        width: auto !important;
+        flex: 0 0 auto;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .listing-container .per-page-select:focus {
+        outline: none;
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    }
+
+    .listing-container .per-page-select option {
+        background: white;
+        color: #667eea;
+    }
+
+    .listing-container .filter_panel {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+        display: none;
+        border: 1px solid #e2e8f0;
+    }
+
+    .listing-container .filter_panel h4 {
+        color: #1e293b;
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .active-filters-badge {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 4px 12px;
+        font-size: 12px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .clear-filter-btn {
+        background: transparent;
+        border: 2px solid #ef4444;
+        color: #ef4444;
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .clear-filter-btn:hover {
+        background: #ef4444;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .sortable-header a {
+        color: inherit;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .sortable-header i {
+        color: #94a3b8;
+    }
     .thCls,.tdCls {
         white-space: initial !important;
     }
 </style>
+@include('crm.clients.partials.enhanced-date-filter-styles')
 @endsection
 
 @section('content')
@@ -181,21 +285,64 @@
                 </div>
                 <div class="card-header">
                     <h4>All Clients Matters</h4>
-                    <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn"><i class="fas fa-filter"></i> Filter</a>
+                    <div class="card-header-actions">
+                        <a href="{{ route('clients.insights', ['section' => 'matters']) }}" class="btn btn-theme btn-theme-sm" title="Matter Insights">
+                            <i class="fas fa-chart-line"></i> Insights
+                        </a>
+                        <select name="per_page" id="per_page" class="form-control per-page-select">
+                            @foreach([10, 20, 50, 100, 200] as $option)
+                                <option value="{{ $option }}" {{ ($perPage ?? 20) == $option ? 'selected' : '' }}>
+                                    {{ $option }} / page
+                                </option>
+                            @endforeach
+                        </select>
+                        <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn"><i class="fas fa-filter"></i> Filter</a>
+                    </div>
                 </div>
                 
                 <div class="card-body">
+                    @php
+                        $matterFilters = collect([
+                            'sel_matter_id' => request('sel_matter_id'),
+                            'client_id' => request('client_id'),
+                            'name' => request('name'),
+                            'sel_migration_agent' => request('sel_migration_agent'),
+                            'sel_person_responsible' => request('sel_person_responsible'),
+                            'sel_person_assisting' => request('sel_person_assisting'),
+                            'quick_date_range' => request('quick_date_range'),
+                            'from_date' => request('from_date'),
+                            'to_date' => request('to_date'),
+                            'date_filter_field' => request('date_filter_field') !== 'created_at' ? request('date_filter_field') : null,
+                        ]);
+                        $activeMatterFilters = $matterFilters->filter(function ($value) {
+                            return $value !== null && $value !== '';
+                        })->count();
+                    @endphp
                     <div class="filter_panel">
-                        <h4>Search By Details</h4>
-                        <form action="{{URL::to('/clientsmatterslist')}}" method="get">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap">
+                            <h4>
+                                Search By Details
+                                @if($activeMatterFilters > 0)
+                                    <span class="active-filters-badge">
+                                        <i class="fas fa-filter"></i> {{ $activeMatterFilters }} Active
+                                    </span>
+                                @endif
+                            </h4>
+                            @if($activeMatterFilters > 0)
+                                <button type="button" class="clear-filter-btn" id="clearMatterFilters">
+                                    <i class="fas fa-undo"></i> Clear Filters
+                                </button>
+                            @endif
+                        </div>
+                        <form action="{{URL::to('/clientsmatterslist')}}" method="get" id="matterFilterForm">
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="matter" class="col-form-label" style="color:#4a5568 !important;">Matter</label>
-                                        <select class="form-control" name="sel_matter_id">
+                                        <label for="sel_matter_id" class="col-form-label" style="color:#4a5568 !important;">Matter</label>
+                                        <select class="form-control" name="sel_matter_id" id="sel_matter_id">
                                             <option value="">Select Matter</option>
                                             @foreach(\App\Models\Matter::orderBy('title', 'asc')->get() as $matter)
-                                            <option value="{{ $matter->id }}" {{ request('sel_matter_id') == $matter->id ? 'selected' : '' }}>{{ $matter->title }}</option>
+                                                <option value="{{ $matter->id }}" {{ request('sel_matter_id') == $matter->id ? 'selected' : '' }}>{{ $matter->title }}</option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -203,15 +350,103 @@
 
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="pnr" class="col-form-label" style="color:#4a5568 !important;">Client ID</label>
-                                        <input type="text" name="client_id" value="{{ Request::get('client_id') }}" class="form-control" data-valid="" autocomplete="off" placeholder="Client ID" id="client_id">
+                                        <label for="client_id" class="col-form-label" style="color:#4a5568 !important;">Client ID</label>
+                                        <input type="text" name="client_id" value="{{ request('client_id') }}" class="form-control" autocomplete="off" placeholder="Client ID" id="client_id">
                                     </div>
                                 </div>
 
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="company_name" class="col-form-label" style="color:#4a5568 !important;">Client Name</label>
-                                        <input type="text" name="name" value="{{ Request::get('name') }}" class="form-control agent_company_name" data-valid="" autocomplete="off" placeholder="Name" id="name">
+                                        <label for="name" class="col-form-label" style="color:#4a5568 !important;">Client Name</label>
+                                        <input type="text" name="name" value="{{ request('name') }}" class="form-control agent_company_name" autocomplete="off" placeholder="Name" id="name">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="sel_migration_agent" class="col-form-label" style="color:#4a5568 !important;">Migration Agent</label>
+                                        <select class="form-control" name="sel_migration_agent" id="sel_migration_agent">
+                                            <option value="">All Agents</option>
+                                            @foreach(($teamMembers ?? collect()) as $member)
+                                                <option value="{{ $member->id }}" {{ request('sel_migration_agent') == $member->id ? 'selected' : '' }}>
+                                                    {{ $member->first_name }} {{ $member->last_name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="sel_person_responsible" class="col-form-label" style="color:#4a5568 !important;">Person Responsible</label>
+                                        <select class="form-control" name="sel_person_responsible" id="sel_person_responsible">
+                                            <option value="">All</option>
+                                            @foreach(($teamMembers ?? collect()) as $member)
+                                                <option value="{{ $member->id }}" {{ request('sel_person_responsible') == $member->id ? 'selected' : '' }}>
+                                                    {{ $member->first_name }} {{ $member->last_name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="sel_person_assisting" class="col-form-label" style="color:#4a5568 !important;">Person Assisting</label>
+                                        <select class="form-control" name="sel_person_assisting" id="sel_person_assisting">
+                                            <option value="">All</option>
+                                            @foreach(($teamMembers ?? collect()) as $member)
+                                                <option value="{{ $member->id }}" {{ request('sel_person_assisting') == $member->id ? 'selected' : '' }}>
+                                                    {{ $member->first_name }} {{ $member->last_name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="date-filter-section mt-3">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="date_filter_field" class="col-form-label" style="color:#4a5568 !important;">Date Field</label>
+                                            <select name="date_filter_field" id="date_filter_field" class="form-control">
+                                                <option value="created_at" {{ request('date_filter_field', 'created_at') === 'created_at' ? 'selected' : '' }}>Created Date</option>
+                                                <option value="updated_at" {{ request('date_filter_field') === 'updated_at' ? 'selected' : '' }}>Last Updated</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="quick_date_range" id="matter_quick_date_range" value="{{ request('quick_date_range') }}">
+                                @php
+                                    $quickFilters = [
+                                        'today' => 'Today',
+                                        'this_week' => 'This Week',
+                                        'this_month' => 'This Month',
+                                        'last_month' => 'Last Month',
+                                        'last_30_days' => 'Last 30 Days',
+                                        'last_90_days' => 'Last 90 Days',
+                                        'this_year' => 'This Year',
+                                        'last_year' => 'Last Year',
+                                    ];
+                                @endphp
+                                <div class="quick-filters">
+                                    @foreach($quickFilters as $key => $label)
+                                        <span class="quick-filter-chip matter-quick-filter {{ request('quick_date_range') === $key ? 'active' : '' }}" data-filter="{{ $key }}">
+                                            <i class="fas fa-calendar"></i> {{ $label }}
+                                        </span>
+                                    @endforeach
+                                </div>
+                                <div class="divider-text">Or Custom Range</div>
+                                <div class="date-range-wrapper">
+                                    <div class="form-group">
+                                        <label for="from_date" class="col-form-label" style="color:#4a5568 !important;">From Date</label>
+                                        <input type="date" name="from_date" id="from_date" value="{{ request('from_date') }}" class="form-control" placeholder="Start date">
+                                    </div>
+                                    <span class="date-range-arrow">→</span>
+                                    <div class="form-group">
+                                        <label for="to_date" class="col-form-label" style="color:#4a5568 !important;">To Date</label>
+                                        <input type="date" name="to_date" id="to_date" value="{{ request('to_date') }}" class="form-control" placeholder="End date">
                                     </div>
                                 </div>
                             </div>
@@ -226,18 +461,59 @@
                             </div>
                         </form>
                     </div>
+                    @php
+                        $currentSort = request('sort', 'cm.id');
+                        $currentDirection = request('direction', 'desc');
+                        $nextDirection = function ($column) use ($currentSort, $currentDirection) {
+                            return ($currentSort === $column && $currentDirection === 'asc') ? 'desc' : 'asc';
+                        };
+                        $buildSortUrl = function ($column) use ($nextDirection) {
+                            $query = request()->except('page');
+                            $query['sort'] = $column;
+                            $query['direction'] = $nextDirection($column);
+                            return request()->url() . '?' . http_build_query($query);
+                        };
+                        $sortIcon = function ($column) use ($currentSort, $currentDirection) {
+                            if ($currentSort !== $column) {
+                                return '<i class="fas fa-sort text-muted"></i>';
+                            }
+                            return $currentDirection === 'asc'
+                                ? '<i class="fas fa-sort-up"></i>'
+                                : '<i class="fas fa-sort-down"></i>';
+                        };
+                    @endphp
                     <div class="table-responsive">
                         <table class="table">
                             <thead>
                                 <tr>
-                                    <th class="thCls">Matter</th>
-                                    <th class="thCls">Client ID</th>
-                                    <th class="thCls">Client Name</th>
-                                    <th class="thCls">DOB</th>
+                                    <th class="thCls sortable-header">
+                                        <a href="{{ $buildSortUrl('ma.title') }}">
+                                            Matter {!! $sortIcon('ma.title') !!}
+                                        </a>
+                                    </th>
+                                    <th class="thCls sortable-header">
+                                        <a href="{{ $buildSortUrl('ad.client_id') }}">
+                                            Client ID {!! $sortIcon('ad.client_id') !!}
+                                        </a>
+                                    </th>
+                                    <th class="thCls sortable-header">
+                                        <a href="{{ $buildSortUrl('ad.first_name') }}">
+                                            Client Name {!! $sortIcon('ad.first_name') !!}
+                                        </a>
+                                    </th>
+                                    <th class="thCls sortable-header">
+                                        <a href="{{ $buildSortUrl('ad.dob') }}">
+                                            DOB {!! $sortIcon('ad.dob') !!}
+                                        </a>
+                                    </th>
                                     <th class="thCls">Migration Agent</th>
                                     <th class="thCls">Person Responsible</th>
                                     <th class="thCls">Person Assisting</th>
-                                    <th class="thCls">Created At</th>
+                                    <th class="thCls sortable-header">
+                                        <a href="{{ $buildSortUrl('cm.created_at') }}">
+                                            Created At {!! $sortIcon('cm.created_at') !!}
+                                        </a>
+                                    </th>
                                     @if(Auth::user()->role == 1)
                                     <th class="thCls">Action</th>
                                     @endif
@@ -298,6 +574,28 @@
 @push('scripts')
 <script>
 jQuery(document).ready(function($){
+    $('#per_page').on('change', function(){
+        var currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set('per_page', $(this).val());
+        currentUrl.searchParams.delete('page');
+        window.location.href = currentUrl.toString();
+    });
+
+    $('.matter-quick-filter').on('click', function(){
+        var filter = $(this).data('filter');
+        $('#matter_quick_date_range').val(filter);
+        $('#from_date, #to_date').val('');
+        $('#matterFilterForm').submit();
+    });
+
+    $('#from_date, #to_date').on('change', function(){
+        $('#matter_quick_date_range').val('');
+    });
+
+    $('#clearMatterFilters').on('click', function(){
+        window.location.href = "{{ URL::to('/clientsmatterslist') }}";
+    });
+
     $('.listing-container .filter_btn').on('click', function(){
         $('.listing-container .filter_panel').slideToggle();
     });

@@ -154,7 +154,157 @@
     .listing-container .dropdown {
         overflow: visible !important;
     }
+
+    .listing-container .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .listing-container .card-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .listing-container .per-page-select {
+        border: 1px solid white !important;
+        border-radius: 8px !important;
+        background: white !important;
+        color: #667eea !important;
+        font-weight: 600 !important;
+        padding: 8px 16px !important;
+        min-width: 110px;
+        width: auto !important;
+        flex: 0 0 auto;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .listing-container .per-page-select:focus {
+        outline: none;
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    }
+
+    .listing-container .per-page-select option {
+        background: white;
+        color: #667eea;
+    }
+
+    .listing-container .filter_panel {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+        display: none;
+        border: 1px solid #e2e8f0;
+    }
+
+    .listing-container .filter_panel h4 {
+        color: #1e293b;
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .active-filters-badge {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 4px 12px;
+        font-size: 12px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .clear-filter-btn {
+        background: transparent;
+        border: 2px solid #ef4444;
+        color: #ef4444;
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .clear-filter-btn:hover {
+        background: #ef4444;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .listing-container .form-group label {
+        color: #475569 !important;
+        font-weight: 600;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+
+    .listing-container .form-control {
+        border: 2px solid #e2e8f0 !important;
+        border-radius: 10px !important;
+        padding: 10px 16px !important;
+        font-size: 14px !important;
+        transition: all 0.3s ease;
+        background: white !important;
+        height: auto !important;
+    }
+
+    .listing-container .form-control:focus {
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .status-badge.active {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    }
+
+    .status-badge.inactive {
+        background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    }
+
+    .sortable-header {
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
+    }
+
+    .sortable-header i {
+        margin-left: 6px;
+    }
 </style>
+@include('crm.clients.partials.enhanced-date-filter-styles')
 @endsection
 
 @section('content')
@@ -169,8 +319,20 @@
                 <div class="card-header">
                     <h4>All Clients</h4>
 
-                    <div class="d-flex align-items-center">
-                        <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn mr-2"><i class="fas fa-filter"></i> Filter</a>
+                    <div class="card-header-actions">
+                        <a href="{{ route('clients.insights', ['section' => 'clients']) }}" class="btn btn-theme btn-theme-sm" title="View Insights">
+                            <i class="fas fa-chart-line"></i> Insights
+                        </a>
+                        <select name="per_page" id="per_page" class="form-control per-page-select">
+                            @foreach([10, 20, 50, 100, 200] as $option)
+                                <option value="{{ $option }}" {{ ($perPage ?? 20) == $option ? 'selected' : '' }}>
+                                    {{ $option }} / page
+                                </option>
+                            @endforeach
+                        </select>
+                        <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn">
+                            <i class="fas fa-filter"></i> Filter
+                        </a>
                     </div>
                 </div>
 
@@ -199,49 +361,152 @@
                         </li>
                     </ul>
 
-                    <div class="filter_panel"><h4>Search By Details</h4>
-                        <form action="{{URL::to('/clients')}}" method="get">
+                    @php
+                        $trackedFilters = collect([
+                            'client_id' => request('client_id'),
+                            'name' => request('name'),
+                            'email' => request('email'),
+                            'phone' => request('phone'),
+                            'type' => request('type'),
+                            'status' => request('status'),
+                            'rating' => request('rating'),
+                            'quick_date_range' => request('quick_date_range'),
+                            'from_date' => request('from_date'),
+                            'to_date' => request('to_date'),
+                            'date_filter_field' => request('date_filter_field') !== 'created_at' ? request('date_filter_field') : null,
+                        ]);
+                        $activeFilterCount = $trackedFilters->filter(function ($value) {
+                            return $value !== null && $value !== '';
+                        })->count();
+                    @endphp
+                    <div class="filter_panel">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap">
+                            <h4>
+                                Search By Details
+                                @if($activeFilterCount > 0)
+                                    <span class="active-filters-badge">
+                                        <i class="fas fa-filter"></i> {{ $activeFilterCount }} Active
+                                    </span>
+                                @endif
+                            </h4>
+                            @if($activeFilterCount > 0)
+                                <button type="button" class="clear-filter-btn" id="clearFilters">
+                                    <i class="fas fa-undo"></i> Clear Filters
+                                </button>
+                            @endif
+                        </div>
+                        <form action="{{URL::to('/clients')}}" method="get" id="filterForm">
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="client_id" class="col-form-label" style="color:#4a5568 !important;">Client ID</label>
-                                        <input type="text" name="client_id" value="{{ old('client_id', Request::get('client_id')) }}" class="form-control" data-valid="" autocomplete="off" placeholder="Client ID" id="client_id">
+                                        <label for="client_id">Client ID</label>
+                                        <input type="text" name="client_id" value="{{ request('client_id') }}" class="form-control" autocomplete="off" placeholder="Client ID" id="client_id">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="name" class="col-form-label" style="color:#4a5568 !important;">Name</label>
-                                        <input type="text" name="name" value="{{ old('name', Request::get('name')) }}" class="form-control agent_company_name" data-valid="" autocomplete="off" placeholder="Name" id="name">
+                                        <label for="name">Name</label>
+                                        <input type="text" name="name" value="{{ request('name') }}" class="form-control agent_company_name" autocomplete="off" placeholder="Name" id="name">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="email" class="col-form-label" style="color:#4a5568 !important;">Email</label>
-                                        <input type="text" name="email" value="{{ old('email', Request::get('email')) }}" class="form-control" data-valid="" autocomplete="off" placeholder="Email" id="email">
+                                        <label for="email">Email</label>
+                                        <input type="text" name="email" value="{{ request('email') }}" class="form-control" autocomplete="off" placeholder="Email" id="email">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="phone">Phone</label>
+                                        <input type="text" name="phone" value="{{ request('phone') }}" class="form-control" autocomplete="off" placeholder="Phone" id="phone">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="phone" class="col-form-label" style="color:#000;">Phone</label>
-                                        <input type="text" name="phone" value="{{ old('phone', Request::get('phone')) }}" class="form-control" data-valid="" autocomplete="off" placeholder="Phone" id="phone">
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="type" class="col-form-label" style="color:#000;">Type</label>
-                                        <select class="form-control" name="type">
-                                            <option value="">Select</option>
+                                        <label for="type">Record Type</label>
+                                        <select class="form-control" name="type" id="type">
+                                            <option value="">All Types</option>
                                             <option value="client" {{ request('type') == 'client' ? 'selected' : '' }}>Client</option>
                                             <option value="lead" {{ request('type') == 'lead' ? 'selected' : '' }}>Lead</option>
                                         </select>
                                     </div>
                                 </div>
-
+                                <div class="col-md-2">
+                                    <div class="form-group">
+                                        <label for="status">Status</label>
+                                        <select class="form-control" name="status" id="status">
+                                            <option value="">Any</option>
+                                            <option value="1" {{ request('status') === '1' ? 'selected' : '' }}>Active</option>
+                                            <option value="0" {{ request('status') === '0' ? 'selected' : '' }}>Inactive</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="form-group">
+                                        <label for="rating">Rating</label>
+                                        <select class="form-control" name="rating" id="rating">
+                                            <option value="">Any</option>
+                                            @for($i = 1; $i <= 5; $i++)
+                                                <option value="{{ $i }}" {{ request('rating') == $i ? 'selected' : '' }}>{{ $i }} Star{{ $i > 1 ? 's' : '' }}</option>
+                                            @endfor
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="row">
+
+                            <div class="date-filter-section mt-3">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="date_filter_field"><i class="fas fa-calendar-alt"></i> Date Field</label>
+                                            <select name="date_filter_field" id="date_filter_field" class="form-control">
+                                                <option value="created_at" {{ request('date_filter_field', 'created_at') === 'created_at' ? 'selected' : '' }}>Created Date</option>
+                                                <option value="updated_at" {{ request('date_filter_field') === 'updated_at' ? 'selected' : '' }}>Last Updated</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="quick_date_range" id="quick_date_range" value="{{ request('quick_date_range') }}">
+                                <div class="quick-filters">
+                                    @php
+                                        $quickFilters = [
+                                            'today' => 'Today',
+                                            'this_week' => 'This Week',
+                                            'this_month' => 'This Month',
+                                            'last_month' => 'Last Month',
+                                            'last_30_days' => 'Last 30 Days',
+                                            'last_90_days' => 'Last 90 Days',
+                                            'this_year' => 'This Year',
+                                            'last_year' => 'Last Year',
+                                        ];
+                                    @endphp
+                                    @foreach($quickFilters as $key => $label)
+                                        <span class="quick-filter-chip {{ request('quick_date_range') === $key ? 'active' : '' }}" data-filter="{{ $key }}">
+                                            <i class="fas fa-calendar"></i> {{ $label }}
+                                        </span>
+                                    @endforeach
+                                </div>
+
+                                <div class="divider-text">Or Custom Range</div>
+                                <div class="date-range-wrapper">
+                                    <div class="form-group">
+                                        <label for="from_date">From Date</label>
+                                        <input type="date" name="from_date" id="from_date" value="{{ request('from_date') }}" class="form-control" placeholder="Start date">
+                                    </div>
+                                    <span class="date-range-arrow">→</span>
+                                    <div class="form-group">
+                                        <label for="to_date">To Date</label>
+                                        <input type="date" name="to_date" id="to_date" value="{{ request('to_date') }}" class="form-control" placeholder="End date">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mt-4">
                                 <div class="col-md-12 text-center">
                                     <div class="filter-buttons-container">
-                                        <button type="submit" class="btn btn-primary btn-theme-lg mr-3">Search</button>
+                                        <button type="submit" class="btn btn-primary btn-theme-lg mr-3">Apply Filters</button>
                                         <a class="btn btn-info" href="{{URL::to('/clients')}}">Reset</a>
                                     </div>
                                 </div>
@@ -259,11 +524,11 @@
                                             <label for="checkbox-all" class="custom-control-label">&nbsp;</label>
                                         </div>
                                     </th>
-                                    <th>Name</th>
-                                    <th>Rating</th>
-                                    <th>Client ID</th>
-                                    <th>Status</th>
-                                    <th>Last Updated</th>
+                                    <th class="sortable-header">@sortablelink('first_name', 'Name')</th>
+                                    <th class="sortable-header">@sortablelink('rating', 'Rating')</th>
+                                    <th class="sortable-header">@sortablelink('client_id', 'Client ID')</th>
+                                    <th class="sortable-header">@sortablelink('status', 'Status')</th>
+                                    <th class="sortable-header">@sortablelink('updated_at', 'Last Updated')</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -293,8 +558,21 @@
                                             <td style="white-space: initial;"><a href="{{ $clientDetailUrl }}">{{ @$list->first_name == "" ? config('constants.empty') : Str::limit(@$list->first_name, '50', '...') }} {{ @$list->last_name == "" ? config('constants.empty') : Str::limit(@$list->last_name, '50', '...') }} </a><br/></td>
                                             <td style="white-space: initial;"><?php echo @$list->rating; ?></td>
                                             <td style="white-space: initial;">{{ @$list->client_id == "" ? config('constants.empty') : Str::limit(@$list->client_id, '50', '...') }}</td>
-                                            <td><span class="ag-label--circular" style="color: #6777ef" >In Progress</span></td>
-                                            <td style="white-space: initial;">{{date('d/m/Y', strtotime($list->created_at))}}</td>
+                                            <td>
+                                                @php
+                                                    $isActiveClient = (string) @$list->status === '1';
+                                                @endphp
+                                                <span class="status-badge {{ $isActiveClient ? 'active' : 'inactive' }}">
+                                                    <i class="fas fa-circle"></i> {{ $isActiveClient ? 'Active' : 'Inactive' }}
+                                                </span>
+                                            </td>
+                                            <td style="white-space: initial;">
+                                                @if(!empty($list->updated_at))
+                                                    {{ \Carbon\Carbon::parse($list->updated_at)->format('d/m/Y') }}
+                                                @else
+                                                    {{ config('constants.empty') }}
+                                                @endif
+                                            </td>
                                             <td style="white-space: initial;">
                                                 <div class="dropdown d-inline">
                                                     <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -444,6 +722,28 @@
 @push('scripts')
 <script>
 jQuery(document).ready(function($){
+    $('#per_page').on('change', function(){
+        var currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set('per_page', $(this).val());
+        currentUrl.searchParams.delete('page');
+        window.location.href = currentUrl.toString();
+    });
+
+    $('.quick-filter-chip').on('click', function(){
+        var filter = $(this).data('filter');
+        $('#quick_date_range').val(filter);
+        $('#from_date, #to_date').val('');
+        $('#filterForm').submit();
+    });
+
+    $('#from_date, #to_date').on('change', function(){
+        $('#quick_date_range').val('');
+    });
+
+    $('#clearFilters').on('click', function(){
+        window.location.href = "{{ URL::to('/clients') }}";
+    });
+
 	$('.listing-container .filter_btn').on('click', function(){
 		$('.listing-container .filter_panel').slideToggle();
 	});

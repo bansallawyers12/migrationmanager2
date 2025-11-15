@@ -65,7 +65,17 @@ class Admin extends Authenticatable
         'password', 'remember_token', 'cp_random_code'
     ];
 
-	public $sortable = ['id', 'first_name', 'last_name', 'email', 'created_at', 'updated_at'];
+	public $sortable = [
+        'id',
+        'client_id',
+        'first_name',
+        'last_name',
+        'email',
+        'rating',
+        'status',
+        'created_at',
+        'updated_at'
+    ];
 
 	public function countryData()
     {

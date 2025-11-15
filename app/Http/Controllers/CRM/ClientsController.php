@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 use App\Models\Admin;
+use App\Models\Lead;
 use App\Models\ActivitiesLog;
 use App\Models\ServiceFeeOption;
 use App\Models\ServiceFeeOptionType;
@@ -115,20 +116,34 @@ class ClientsController extends Controller
             
             // Apply filters using trait
             $query = $this->applyClientFilters($query, $request);
+
+            $allowedPerPage = [10, 20, 50, 100, 200];
+            $perPage = (int) $request->get('per_page', 20);
+            if (!in_array($perPage, $allowedPerPage, true)) {
+                $perPage = 20;
+            }
             
-            $lists = $query->sortable(['id' => 'desc'])->paginate(20);
+            $lists = $query->sortable(['id' => 'desc'])
+                ->paginate($perPage)
+                ->appends($request->except('page'));
 		} else {
 		    $query = $this->getEmptyClientQuery();
-		    $lists = $query->sortable(['id' => 'desc'])->paginate(20);
+            $allowedPerPage = [10, 20, 50, 100, 200];
+            $perPage = (int) $request->get('per_page', 20);
+            if (!in_array($perPage, $allowedPerPage, true)) {
+                $perPage = 20;
+            }
+		    $lists = $query->sortable(['id' => 'desc'])->paginate($perPage);
 		    $totalData = 0;
 		}
 		
-		return view('crm.clients.index', compact(['lists', 'totalData']));
+		return view('crm.clients.index', compact(['lists', 'totalData', 'perPage']));
     }
 
     public function clientsmatterslist(Request $request)
     {
         // Check authorization using trait
+        $teamMembers = collect();
         if ($this->hasModuleAccess('20')) {
             $sortField = $request->get('sort', 'cm.id');
             $sortDirection = $request->get('direction', 'desc');
@@ -169,8 +184,47 @@ class ClientsController extends Controller
                     });
                 }
             }
-            //$lists = $query->toSql(); dd($lists);
-            $lists = $query->paginate(20);
+
+            if ($request->filled('sel_migration_agent')) {
+                $query->where('cm.sel_migration_agent', '=', $request->input('sel_migration_agent'));
+            }
+
+            if ($request->filled('sel_person_responsible')) {
+                $query->where('cm.sel_person_responsible', '=', $request->input('sel_person_responsible'));
+            }
+
+            if ($request->filled('sel_person_assisting')) {
+                $query->where('cm.sel_person_assisting', '=', $request->input('sel_person_assisting'));
+            }
+
+            if (
+                $request->filled('quick_date_range') ||
+                $request->filled('from_date') ||
+                $request->filled('to_date')
+            ) {
+                [$startDate, $endDate] = $this->resolveClientDateRange($request);
+                $dateField = $request->input('date_filter_field', 'created_at') === 'updated_at'
+                    ? 'cm.updated_at'
+                    : 'cm.created_at';
+
+                if ($startDate && $endDate) {
+                    $query->whereBetween($dateField, [$startDate, $endDate]);
+                }
+            }
+
+            $allowedPerPage = [10, 20, 50, 100, 200];
+            $perPage = (int) $request->get('per_page', 20);
+            if (!in_array($perPage, $allowedPerPage, true)) {
+                $perPage = 20;
+            }
+
+            $teamMembers = Admin::where('role', '!=', '7')
+                ->whereNull('is_deleted')
+                ->orderBy('first_name', 'asc')
+                ->select('id', 'first_name', 'last_name')
+                ->get();
+
+            $lists = $query->paginate($perPage)->appends($request->except('page'));
         } else {
             $sortField = $request->get('sort', 'cm.id');
             $sortDirection = $request->get('direction', 'desc');
@@ -184,11 +238,146 @@ class ClientsController extends Controller
             ->where('ad.role', '=', '7')
             ->whereNull('ad.is_deleted')
             ->orderBy($sortField, $sortDirection);
+            $allowedPerPage = [10, 20, 50, 100, 200];
+            $perPage = (int) $request->get('per_page', 20);
+            if (!in_array($perPage, $allowedPerPage, true)) {
+                $perPage = 20;
+            }
             $totalData = 0;
-            $lists = $query->paginate(20);
+            $lists = $query->paginate($perPage);
         }
         //dd( $lists);
-        return view('crm.clients.clientsmatterslist', compact(['lists', 'totalData']));
+        return view('crm.clients.clientsmatterslist', compact(['lists', 'totalData', 'teamMembers', 'perPage']));
+    }
+
+    public function insights(Request $request)
+    {
+        $section = $request->input('section', 'clients');
+        $now = Carbon::now();
+
+        // Client metrics
+        $clientBaseQuery = $this->getBaseClientQuery();
+        $clientStats = [
+            'total' => (clone $clientBaseQuery)->count(),
+            'new30' => (clone $clientBaseQuery)->where('created_at', '>=', $now->copy()->subDays(30))->count(),
+            'inactive' => (clone $clientBaseQuery)->where('status', 0)->count(),
+            'archived' => Admin::where('is_archived', 1)
+                ->where('role', 7)
+                ->where('type', 'client')
+                ->whereNull('is_deleted')
+                ->count(),
+        ];
+
+        $clientStatusBreakdown = (clone $clientBaseQuery)
+            ->select('status', DB::raw('COUNT(*) as total'))
+            ->groupBy('status')
+            ->get()
+            ->map(function ($row) {
+                $row->label = ((int) $row->status === 1) ? 'Active' : 'Inactive';
+                return $row;
+            });
+
+        $clientMonthlyGrowth = (clone $clientBaseQuery)
+            ->select(
+                DB::raw("DATE_FORMAT(created_at, '%Y-%m') as sort_key"),
+                DB::raw("DATE_FORMAT(created_at, '%b %Y') as label"),
+                DB::raw('COUNT(*) as total')
+            )
+            ->where('created_at', '>=', $now->copy()->subMonths(5)->startOfMonth())
+            ->groupBy('sort_key', 'label')
+            ->orderBy('sort_key')
+            ->get();
+
+        $recentClients = (clone $clientBaseQuery)
+            ->orderByDesc('created_at')
+            ->limit(5)
+            ->get(['id', 'first_name', 'last_name', 'client_id', 'created_at', 'status']);
+
+        // Matter metrics
+        $matterBase = DB::table('client_matters as cm')->where('cm.matter_status', 1);
+        $matterStats = [
+            'total' => (clone $matterBase)->count(),
+            'new30' => (clone $matterBase)->where('cm.created_at', '>=', $now->copy()->subDays(30))->count(),
+            'assigned' => (clone $matterBase)->whereNotNull('cm.sel_migration_agent')->count(),
+        ];
+
+        $mattersByAgent = DB::table('client_matters as cm')
+            ->leftJoin('admins as agent', 'agent.id', '=', 'cm.sel_migration_agent')
+            ->select(
+                DB::raw("COALESCE(CONCAT(agent.first_name, ' ', agent.last_name), 'Unassigned') as agent_name"),
+                DB::raw('COUNT(*) as total')
+            )
+            ->groupBy('agent_name')
+            ->orderByDesc('total')
+            ->limit(5)
+            ->get();
+
+        $recentMatters = DB::table('client_matters as cm')
+            ->join('admins as client', 'client.id', '=', 'cm.client_id')
+            ->leftJoin('admins as agent', 'agent.id', '=', 'cm.sel_migration_agent')
+            ->select(
+                'cm.client_unique_matter_no',
+                'cm.created_at',
+                'client.first_name as client_first_name',
+                'client.last_name as client_last_name',
+                'agent.first_name as agent_first_name',
+                'agent.last_name as agent_last_name'
+            )
+            ->orderByDesc('cm.created_at')
+            ->limit(5)
+            ->get();
+
+        // Lead metrics
+        $leadBase = Lead::query();
+        $leadStats = [
+            'total' => (clone $leadBase)->count(),
+            'new30' => (clone $leadBase)->where('created_at', '>=', $now->copy()->subDays(30))->count(),
+            'assigned' => (clone $leadBase)->whereNotNull('assignee')->count(),
+        ];
+
+        $leadsByStatus = (clone $leadBase)
+            ->select('status', DB::raw('COUNT(*) as total'))
+            ->groupBy('status')
+            ->orderByDesc('total')
+            ->get();
+
+        $leadsByQuality = (clone $leadBase)
+            ->select('lead_quality', DB::raw('COUNT(*) as total'))
+            ->groupBy('lead_quality')
+            ->orderByDesc('total')
+            ->get();
+
+        $leadMonthlyGrowth = (clone $leadBase)
+            ->select(
+                DB::raw("DATE_FORMAT(created_at, '%Y-%m') as sort_key"),
+                DB::raw("DATE_FORMAT(created_at, '%b %Y') as label"),
+                DB::raw('COUNT(*) as total')
+            )
+            ->where('created_at', '>=', $now->copy()->subMonths(5)->startOfMonth())
+            ->groupBy('sort_key', 'label')
+            ->orderBy('sort_key')
+            ->get();
+
+        $recentLeads = (clone $leadBase)
+            ->orderByDesc('created_at')
+            ->limit(5)
+            ->get(['first_name', 'last_name', 'service', 'status', 'lead_quality', 'created_at']);
+
+        return view('crm.clients.insights', [
+            'section' => $section,
+            'clientStats' => $clientStats,
+            'clientStatusBreakdown' => $clientStatusBreakdown,
+            'clientMonthlyGrowth' => $clientMonthlyGrowth,
+            'recentClients' => $recentClients,
+            'matterStats' => $matterStats,
+            'mattersByAgent' => $mattersByAgent,
+            'recentMatters' => $recentMatters,
+            'leadStats' => $leadStats,
+            'leadsByStatus' => $leadsByStatus,
+            'leadsByQuality' => $leadsByQuality,
+            'leadMonthlyGrowth' => $leadMonthlyGrowth,
+            'recentLeads' => $recentLeads,
+        ]);
     }
 
     public function clientsemaillist(Request $request)
