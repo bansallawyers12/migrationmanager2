@@ -7,165 +7,39 @@
 <link rel="stylesheet" href="{{ asset('css/listing-datepicker.css') }}">
 <style>
     /* Page-specific styles for leads index page */
-    /* Professional Action Button Design */
-    .listing-container .action_toggle .dropdown-toggle {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-        border: 1px solid #667eea !important;
-        min-width: 40px;
-        max-width: 45px;
-        height: 35px;
-        padding: 6px 8px;
-        font-size: 13px;
-        font-weight: 500;
-        color: white !important;
-        border-radius: 6px;
-        box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
-        transition: all 0.3s ease;
-        position: relative;
+    
+    /* Edit Icon Button Styling */
+    .btn-edit-icon {
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 8px;
+        color: white !important;
         text-decoration: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
     }
-    
-    .listing-container .action_toggle .dropdown-toggle:hover {
-        background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%) !important;
-        border-color: #5a6fd8 !important;
+
+    .btn-edit-icon:hover {
+        background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+        transform: translateY(-2px);
         box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
-        transform: translateY(-1px);
         color: white !important;
         text-decoration: none;
     }
-    
-    .listing-container .action_toggle .dropdown-toggle:focus {
+
+    .btn-edit-icon:focus {
         outline: none;
         box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
         color: white !important;
-        text-decoration: none;
     }
-    
-    .listing-container .action_toggle .dropdown-toggle::after {
-        content: '';
-        display: inline-block;
-        margin-left: 4px;
-        vertical-align: middle;
-        border-top: 4px solid;
-        border-right: 4px solid transparent;
-        border-bottom: 0;
-        border-left: 4px solid transparent;
-        transition: transform 0.2s ease;
-    }
-    
-    .listing-container .action_toggle .dropdown-toggle.show::after {
-        transform: rotate(180deg);
-    }
-    
-    /* Enhanced Dropdown Menu */
-    .listing-container .action_toggle .dropdown-menu {
-        position: absolute !important;
-        top: 100% !important;
-        right: 0 !important;
-        left: auto !important;
-        float: none !important;
-        min-width: 160px;
-        padding: 8px 0;
-        margin: 4px 0 0;
+
+    .btn-edit-icon i {
         font-size: 14px;
-        text-align: left;
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-        border: 1px solid rgba(102, 126, 234, 0.2);
-        border-radius: 8px;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-        background-clip: padding-box;
-        z-index: 9999 !important;
-        transform: none !important;
-        max-height: none !important;
-        overflow: visible !important;
-        backdrop-filter: blur(10px);
-    }
-    
-    .listing-container .action_toggle .dropdown-menu.show {
-        display: block !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-    }
-    
-    /* Dropdown Items Styling */
-    .listing-container .action_toggle .dropdown-item {
-        display: block;
-        width: 100%;
-        padding: 10px 20px;
-        clear: both;
-        font-weight: 500;
-        color: #495057;
-        text-align: inherit;
-        white-space: nowrap;
-        background-color: transparent;
-        border: 0;
-        text-decoration: none;
-        transition: all 0.2s ease;
-        border-radius: 4px;
-        margin: 2px 8px;
-        width: calc(100% - 16px);
-    }
-    
-    .listing-container .action_toggle .dropdown-item:hover {
-        color: #667eea;
-        text-decoration: none;
-        background: linear-gradient(135deg, #f8f9ff 0%, #e8ecff 100%);
-        transform: translateX(2px);
-        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
-    }
-    
-    .listing-container .action_toggle .dropdown-item:active {
-        background: linear-gradient(135deg, #e8ecff 0%, #d8e0ff 100%);
-        transform: translateX(1px);
-    }
-    
-    .listing-container .action_toggle .dropdown-item.has-icon {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    
-    .listing-container .action_toggle .dropdown-item.has-icon i {
-        width: 16px;
-        text-align: center;
-    }
-    
-    /* Ensure all dropdown items are visible */
-    .listing-container .action_toggle .dropdown-menu .dropdown-item {
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        height: auto !important;
-        min-height: 32px !important;
-        line-height: 1.5 !important;
-    }
-    
-    /* Remove any potential overflow restrictions */
-    .listing-container .table td {
-        overflow: visible !important;
-    }
-    
-    .listing-container .action_toggle {
-        overflow: visible !important;
-        position: relative;
-        display: inline-block;
-    }
-    
-    /* Ensure dropdown container doesn't clip content */
-    .listing-container .dropdown {
-        overflow: visible !important;
-    }
-    
-    /* Icon styling for the action button */
-    .listing-container .action_toggle .dropdown-toggle i {
-        font-size: 14px;
-        color: white;
-    }
-    
-    .listing-container .action_toggle .dropdown-toggle:hover i {
         color: white;
     }
 
@@ -578,14 +452,9 @@
                                             </span>
                                         </td>
                                         <td>
-                                            <div class="dropdown action_toggle">
-                                                <a class="dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i data-feather="more-vertical"></i></a>
-                                                <div class="dropdown-menu">
-                                                    <a class="dropdown-item has-icon" href="{{route('clients.edit', base64_encode(convert_uuencode(@$list->id)))}}">
-                                                        <i class="fa fa-edit"></i> Edit
-                                                    </a>
-                                                </div>
-                                            </div>
+                                            <a href="{{route('clients.edit', base64_encode(convert_uuencode(@$list->id)))}}" class="btn-edit-icon" title="Edit Lead">
+                                                <i class="fa fa-edit"></i>
+                                            </a>
                                         </td>
                                     </tr>
                                     <?php $i++; ?>
