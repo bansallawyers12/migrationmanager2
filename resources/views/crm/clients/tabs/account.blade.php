@@ -1690,15 +1690,26 @@ document.addEventListener('DOMContentLoaded', function() {
             '</div>';
         
         if (exactMatch) {
+            const invBalance = parseFloat(exactMatch.balance_amount);
+            const excessAmount = receiptAmount - invBalance;
+            const isOverpayment = excessAmount > 0.01;
+            const warningHtml = isOverpayment ? 
+                '<div class="alert alert-warning mt-2" style="border-left: 4px solid #ffc107;">' +
+                '<i class="fas fa-exclamation-triangle"></i> <strong>Note:</strong> Receipt amount ($' + receiptAmount.toFixed(2) + ') exceeds invoice balance ($' + invBalance.toFixed(2) + '). ' +
+                'A residual receipt of $' + excessAmount.toFixed(2) + ' will be created.' +
+                '</div>' : '';
+            
             modalHtml += '<div class="alert alert-success" style="border-left: 4px solid #28a745;">' +
                 '<h6><i class="fas fa-bullseye"></i> <strong>Exact Match Found!</strong></h6>' +
                 '<p style="margin-bottom: 10px;">' +
-                exactMatch.trans_no + ' - $' + parseFloat(exactMatch.balance_amount).toFixed(2) + 
+                exactMatch.trans_no + ' - $' + invBalance.toFixed(2) + 
                 ' (' + exactMatch.status + ')' +
                 '</p>' +
+                warningHtml +
                 '<button class="btn btn-success allocate-to-invoice-btn" ' +
                 'data-receipt-id="' + receiptId + '" ' +
-                'data-invoice-no="' + exactMatch.trans_no + '">' +
+                'data-invoice-no="' + exactMatch.trans_no + '" ' +
+                'data-invoice-balance="' + invBalance + '">' +
                 '<i class="fas fa-check"></i> Allocate to ' + exactMatch.trans_no +
                 '</button>' +
                 '</div>';
@@ -1710,17 +1721,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 '<div class="list-group">';
             
             closeMatches.forEach(function(invoice) {
+                const invBalance = parseFloat(invoice.balance_amount);
+                const excessAmount = receiptAmount - invBalance;
+                const isOverpayment = excessAmount > 0.01;
+                const warningIcon = isOverpayment ? ' <i class="fas fa-exclamation-triangle text-warning" title="Receipt exceeds invoice amount - will create residual receipt"></i>' : '';
+                
                 modalHtml += '<div class="list-group-item">' +
                     '<div class="d-flex justify-content-between align-items-center">' +
                     '<div>' +
                     '<strong>' + invoice.trans_no + '</strong> - ' +
-                    '$' + parseFloat(invoice.balance_amount).toFixed(2) + 
-                    ' (' + invoice.status + ')' +
+                    '$' + invBalance.toFixed(2) + 
+                    ' (' + invoice.status + ')' + warningIcon +
                     '<br/><small class="text-muted">' + invoice.description + '</small>' +
+                    (isOverpayment ? '<br/><small class="text-warning"><i class="fas fa-info-circle"></i> Excess: $' + excessAmount.toFixed(2) + ' will create residual receipt</small>' : '') +
                     '</div>' +
                     '<button class="btn btn-sm btn-primary allocate-to-invoice-btn" ' +
                     'data-receipt-id="' + receiptId + '" ' +
-                    'data-invoice-no="' + invoice.trans_no + '">' +
+                    'data-invoice-no="' + invoice.trans_no + '" ' +
+                    'data-invoice-balance="' + invBalance + '">' +
                     '<i class="fas fa-link"></i> Allocate' +
                     '</button>' +
                     '</div>' +
@@ -1738,18 +1756,23 @@ document.addEventListener('DOMContentLoaded', function() {
             otherInvoices.forEach(function(invoice) {
                 const invBalance = parseFloat(invoice.balance_amount);
                 const difference = Math.abs(invBalance - receiptAmount);
+                const excessAmount = receiptAmount - invBalance;
+                const isOverpayment = excessAmount > 0.01;
                 const diffText = difference > 0 ? ' (diff: $' + difference.toFixed(2) + ')' : '';
+                const warningIcon = isOverpayment ? ' <i class="fas fa-exclamation-triangle text-warning" title="Receipt exceeds invoice amount - will create residual receipt"></i>' : '';
                 
                 modalHtml += '<div class="list-group-item">' +
                     '<div class="d-flex justify-content-between align-items-center">' +
                     '<div>' +
                     '<strong>' + invoice.trans_no + '</strong> - ' +
                     '$' + invBalance.toFixed(2) + 
-                    ' (' + invoice.status + ')' + diffText +
+                    ' (' + invoice.status + ')' + diffText + warningIcon +
+                    (isOverpayment ? '<br/><small class="text-warning"><i class="fas fa-info-circle"></i> Excess: $' + excessAmount.toFixed(2) + ' will create residual receipt</small>' : '') +
                     '</div>' +
                     '<button class="btn btn-sm btn-primary allocate-to-invoice-btn" ' +
                     'data-receipt-id="' + receiptId + '" ' +
-                    'data-invoice-no="' + invoice.trans_no + '">' +
+                    'data-invoice-no="' + invoice.trans_no + '" ' +
+                    'data-invoice-balance="' + invBalance + '">' +
                     '<i class="fas fa-link"></i> Allocate' +
                     '</button>' +
                     '</div>' +
@@ -1788,6 +1811,37 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const receiptId = $(this).data('receipt-id');
         const invoiceNo = $(this).data('invoice-no');
+        const receiptAmount = parseFloat($(this).closest('.modal').find('.alert-info strong').text().replace('$', '').replace(',', ''));
+        
+        // Get invoice balance from the modal content
+        const $invoiceRow = $(this).closest('.list-group-item, .alert');
+        let invoiceBalance = 0;
+        const invoiceText = $invoiceRow.text();
+        const balanceMatch = invoiceText.match(/\$([\d,]+\.?\d*)/);
+        if (balanceMatch) {
+            invoiceBalance = parseFloat(balanceMatch[1].replace(',', ''));
+        }
+        
+        // Check if receipt amount exceeds invoice balance
+        const excessAmount = receiptAmount - invoiceBalance;
+        const isOverpayment = excessAmount > 0.01; // Allow for small rounding differences
+        
+        // Show warning if overpayment
+        if (isOverpayment) {
+            const confirmMsg = `⚠️ WARNING: Receipt amount exceeds invoice balance!\n\n` +
+                            `Receipt Amount: $${receiptAmount.toFixed(2)}\n` +
+                            `Invoice Balance: $${invoiceBalance.toFixed(2)}\n` +
+                            `Excess: $${excessAmount.toFixed(2)}\n\n` +
+                            `Applying this allocation will:\n` +
+                            `• Allocate $${invoiceBalance.toFixed(2)} to ${invoiceNo}\n` +
+                            `• Create a new residual receipt of $${excessAmount.toFixed(2)}\n` +
+                            `• The residual receipt will be available for allocation to other invoices\n\n` +
+                            `Do you want to proceed?`;
+            
+            if (!confirm(confirmMsg)) {
+                return false;
+            }
+        }
         
         const $btn = $(this);
         const originalHtml = $btn.html();
@@ -1906,10 +1960,28 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log('💧 Dropped on invoice:', invoiceNo);
         
+        // Check if receipt amount exceeds invoice balance
+        const excessAmount = receiptAmount - invoiceBalance;
+        const isOverpayment = excessAmount > 0.01; // Allow for small rounding differences
+        
         // Show confirmation with amount info
-        const amountMatch = Math.abs(invoiceBalance - receiptAmount) < 0.01;
-        const matchText = amountMatch ? '✓ EXACT MATCH' : '(Partial payment)';
-        const confirmMsg = `Allocate ${draggedReceipt.receiptNo} ($${receiptAmount.toFixed(2)}) to ${invoiceNo} ($${invoiceBalance.toFixed(2)})?\n\n${matchText}`;
+        let confirmMsg = '';
+        if (isOverpayment) {
+            // Warning for overpayment - will create residual receipt
+            confirmMsg = `⚠️ WARNING: Receipt amount exceeds invoice balance!\n\n` +
+                        `Receipt: ${draggedReceipt.receiptNo} - $${receiptAmount.toFixed(2)}\n` +
+                        `Invoice: ${invoiceNo} - $${invoiceBalance.toFixed(2)}\n` +
+                        `Excess: $${excessAmount.toFixed(2)}\n\n` +
+                        `Applying this allocation will:\n` +
+                        `• Allocate $${invoiceBalance.toFixed(2)} to ${invoiceNo}\n` +
+                        `• Create a new residual receipt of $${excessAmount.toFixed(2)}\n` +
+                        `• The residual receipt will be available for allocation to other invoices\n\n` +
+                        `Do you want to proceed?`;
+        } else {
+            const amountMatch = Math.abs(invoiceBalance - receiptAmount) < 0.01;
+            const matchText = amountMatch ? '✓ EXACT MATCH' : '(Partial payment)';
+            confirmMsg = `Allocate ${draggedReceipt.receiptNo} ($${receiptAmount.toFixed(2)}) to ${invoiceNo} ($${invoiceBalance.toFixed(2)})?\n\n${matchText}`;
+        }
         
         if (confirm(confirmMsg)) {
             // Perform allocation

@@ -1385,6 +1385,9 @@ class ClientAccountsController extends Controller
           $updateData['uploaded_doc_id'] = $insertedDocId;
       }
       
+      // Get the original receipt data BEFORE updating (needed for overpayment check)
+      $originalReceipt = DB::table('account_client_receipts')->where('id', $id)->first();
+      
       // Update the record
       $updated = DB::table('account_client_receipts')
           ->where('id', $id)
@@ -1407,7 +1410,65 @@ class ClientAccountsController extends Controller
                   ->first();
               
               if ($invoice) {
-                  // Calculate total payments for this invoice
+                  // Use original receipt amount (before any updates)
+                  $receiptAmount = floatval($originalReceipt->deposit_amount);
+                  $invoiceAmount = floatval($invoice->withdraw_amount);
+                  $invoiceBalance = floatval($invoice->balance_amount ?? $invoiceAmount);
+                  
+                  // Check if receipt amount exceeds invoice balance (overpayment)
+                  $excessAmount = $receiptAmount - $invoiceBalance;
+                  $isOverpayment = $excessAmount > 0.01; // Allow for small rounding differences
+                  
+                  if ($isOverpayment) {
+                      // Split the receipt: allocate only invoice amount, create residual receipt
+                      $amountToAllocate = $invoiceBalance;
+                      
+                      // Update original receipt to allocate only the invoice amount
+                      DB::table('account_client_receipts')
+                          ->where('id', $id)
+                          ->update([
+                              'deposit_amount' => $amountToAllocate,
+                              'updated_at' => now(),
+                          ]);
+                      
+                      // Create residual receipt for the excess amount
+                      $residualTransNo = $this->generateTransNo();
+                      $residualReceiptId = DB::table('account_client_receipts')->insertGetId([
+                          'user_id' => $originalReceipt->user_id,
+                          'client_id' => $originalReceipt->client_id,
+                          'client_matter_id' => $originalReceipt->client_matter_id,
+                          'receipt_id' => $originalReceipt->receipt_id,
+                          'receipt_type' => 2, // Office receipt
+                          'trans_date' => $originalReceipt->trans_date,
+                          'entry_date' => $originalReceipt->entry_date ?? $originalReceipt->trans_date,
+                          'trans_no' => $residualTransNo,
+                          'invoice_no' => null, // Unallocated
+                          'payment_method' => $originalReceipt->payment_method,
+                          'description' => 'Residual from ' . $originalReceipt->trans_no . ' - Applied to ' . $invoiceNo,
+                          'deposit_amount' => $excessAmount,
+                          'withdraw_amount' => 0,
+                          'balance_amount' => 0,
+                          'save_type' => $saveType,
+                          'extra_amount_receipt' => 'residual',
+                          'created_at' => now(),
+                          'updated_at' => now(),
+                      ]);
+                      
+                      Log::info('Residual receipt created', [
+                          'original_receipt_id' => $id,
+                          'original_receipt_no' => $originalReceipt->trans_no,
+                          'residual_receipt_id' => $residualReceiptId,
+                          'residual_receipt_no' => $residualTransNo,
+                          'excess_amount' => $excessAmount,
+                          'allocated_amount' => $amountToAllocate,
+                          'invoice_no' => $invoiceNo
+                      ]);
+                      
+                      // Refresh receipt data after update
+                      $receipt = DB::table('account_client_receipts')->where('id', $id)->first();
+                  }
+                  
+                  // Calculate total payments for this invoice (after potential split)
                   $totalPaid = DB::table('account_client_receipts')
                       ->where('receipt_type', 2)
                       ->where('invoice_no', $invoiceNo)
@@ -1415,7 +1476,6 @@ class ClientAccountsController extends Controller
                       ->where('save_type', 'final')
                       ->sum('deposit_amount');
                   
-                  $invoiceAmount = floatval($invoice->withdraw_amount);
                   $newBalance = $invoiceAmount - $totalPaid;
                   
                   // Determine new status: 0=Unpaid, 1=Paid, 2=Partial
@@ -1453,7 +1513,8 @@ class ClientAccountsController extends Controller
                       'invoice_no' => $invoiceNo,
                       'total_paid' => $totalPaid,
                       'new_balance' => $newBalance,
-                      'new_status' => $newStatus
+                      'new_status' => $newStatus,
+                      'residual_created' => $isOverpayment
                   ]);
               }
           }
