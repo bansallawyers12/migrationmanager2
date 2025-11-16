@@ -889,6 +889,25 @@ class CRMUtilityController extends Controller
                                 }
                             }
                         }
+                        else if($requestData['table'] == 'email_labels'){
+                            $label = DB::table($requestData['table'])->where('id', $requestData['id'])->first();
+                            if($label && $label->type == 'system'){
+                                $message = 'System labels cannot be deleted.';
+                            } else {
+                                $isexist = DB::table($requestData['table'])->where('id', $requestData['id'])->exists();
+                                if($isexist){
+                                    $response = DB::table($requestData['table'])->where('id', @$requestData['id'])->delete();
+                                    if($response) {
+                                        $status = 1;
+                                        $message = 'Record has been deleted successfully.';
+                                    } else {
+                                        $message = config('constants.server_error');
+                                    }
+                                }else{
+                                    $message = 'ID does not exist, please check it once again.';
+                                }
+                            }
+                        }
                         else{
                             $response	=	DB::table($requestData['table'])->where('id', @$requestData['id'])->delete();
                             if($response) {
