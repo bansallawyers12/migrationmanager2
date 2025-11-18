@@ -1,8 +1,8 @@
 /**
- * Real-time Chat Implementation with Laravel Reverb
+ * Real-time Chat Implementation with Pusher
  * 
  * This file provides a complete WebSocket integration for real-time chat
- * between web frontend and mobile app using Laravel Reverb.
+ * between web frontend and mobile app using Pusher Cloud Service.
  * 
  * Features:
  * - Real-time message sending and receiving
@@ -20,24 +20,25 @@ import Pusher from 'pusher-js';
 window.Pusher = Pusher;
 
 /**
- * Initialize Laravel Echo with Reverb
+ * Initialize Laravel Echo with Pusher
  * 
  * Configuration:
- * - broadcaster: 'reverb' (uses Pusher protocol)
- * - wsHost: Your Laravel server host
- * - wsPort: Reverb WebSocket port (default: 8080)
- * - forceTLS: false for local, true for production with HTTPS
+ * - broadcaster: 'pusher' (uses Pusher Cloud)
+ * - key: Pusher App Key (from your Pusher dashboard)
+ * - cluster: Pusher cluster (e.g., 'ap2', 'us2', 'eu')
+ * - forceTLS: true (always use secure connection with Pusher Cloud)
  * - authEndpoint: Laravel Sanctum/Passport authentication endpoint
  */
 class RealtimeChat {
     constructor(config = {}) {
         this.config = {
-            wsHost: config.wsHost || window.location.hostname,
-            wsPort: config.wsPort || 8080,
-            forceTLS: config.forceTLS || false,
+            pusherKey: config.pusherKey || import.meta.env.VITE_PUSHER_APP_KEY,
+            pusherCluster: config.pusherCluster || import.meta.env.VITE_PUSHER_APP_CLUSTER || 'ap2',
+            forceTLS: config.forceTLS !== undefined ? config.forceTLS : true,
             apiBaseUrl: config.apiBaseUrl || '/api',
             authToken: config.authToken || null,
             userId: config.userId || null,
+            enableLogging: config.enableLogging || false,
             ...config
         };
 
@@ -55,19 +56,21 @@ class RealtimeChat {
     }
 
     /**
-     * Initialize Echo instance with Reverb configuration
+     * Initialize Echo instance with Pusher configuration
      */
     initialize() {
         try {
+            if (!this.config.pusherKey) {
+                throw new Error('Pusher App Key is required. Please set VITE_PUSHER_APP_KEY in your .env file');
+            }
+
             this.echo = new Echo({
-                broadcaster: 'reverb',
-                key: this.config.reverbKey || import.meta.env.VITE_REVERB_APP_KEY,
-                wsHost: this.config.wsHost,
-                wsPort: this.config.wsPort,
-                wssPort: this.config.wsPort,
+                broadcaster: 'pusher',
+                key: this.config.pusherKey,
+                cluster: this.config.pusherCluster,
                 forceTLS: this.config.forceTLS,
+                encrypted: true,
                 enabledTransports: ['ws', 'wss'],
-                disableStats: true,
                 authEndpoint: `${this.config.apiBaseUrl}/broadcasting/auth`,
                 auth: {
                     headers: {
@@ -77,7 +80,13 @@ class RealtimeChat {
                 }
             });
 
-            console.log('✅ Laravel Echo initialized with Reverb');
+            // Enable Pusher logging if configured
+            if (this.config.enableLogging) {
+                Pusher.logToConsole = true;
+            }
+
+            console.log('✅ Laravel Echo initialized with Pusher');
+            console.log(`🌍 Connected to cluster: ${this.config.pusherCluster}`);
             this.triggerListeners('onConnectionEstablished');
         } catch (error) {
             console.error('❌ Failed to initialize Echo:', error);
@@ -288,7 +297,7 @@ class RealtimeChat {
     disconnect() {
         if (this.echo) {
             this.echo.disconnect();
-            console.log('🔌 Disconnected from Reverb');
+            console.log('🔌 Disconnected from Pusher');
         }
     }
 
@@ -312,9 +321,9 @@ import RealtimeChat from './realtime-chat';
 
 // Initialize the chat client
 const chat = new RealtimeChat({
-    wsHost: 'your-server.com',
-    wsPort: 8080,
-    forceTLS: false,
+    pusherKey: 'your-pusher-key',
+    pusherCluster: 'ap2',
+    forceTLS: true,
     authToken: 'your-bearer-token',
     userId: 123
 });
