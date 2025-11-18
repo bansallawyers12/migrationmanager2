@@ -190,6 +190,7 @@ class EmailConfigService
     /**
      * Get Zepto email account configuration for signature facility
      * This method is used exclusively for document signature emails
+     * SMTP settings are read from .env file, email address and signature from database
      *
      * @return array Email configuration with signature
      * @throws \Exception If Zepto account not found or not active
@@ -197,31 +198,55 @@ class EmailConfigService
     public function getZeptoAccount(): array
     {
         try {
-            // Option 1: Search by email pattern containing 'zepto' (case-insensitive)
+            // Get email address from .env or search database
+            $zeptoEmail = env('ZEPTO_EMAIL', 'signature@bansalimmigration.com.au');
+            
+            // Try to find email account in database (for email address and signature)
             $emailConfig = Email::where('status', true)
-                ->where('email', 'like', '%zepto%')
+                ->where('email', $zeptoEmail)
                 ->first();
             
-            // Option 2: If not found by pattern, try to get a specific email
-            // You can replace this with your actual Zepto email address
+            // If not found, try pattern search
             if (!$emailConfig) {
-                // Fallback: Try specific email address (update this with your Zepto email)
-                $zeptoEmail = env('ZEPTO_EMAIL', 'signatures@yourdomain.com');
                 $emailConfig = Email::where('status', true)
-                    ->where('email', $zeptoEmail)
+                    ->where('email', 'like', '%zepto%')
+                    ->orWhere('email', 'like', '%signature%')
                     ->first();
             }
             
-            if (!$emailConfig) {
-                throw new \Exception('Zepto email account not configured or not active. Please add a Zepto email account in Admin Console.');
+            // Get SMTP settings from .env file
+            $smtpHost = env('ZEPTO_SMTP_HOST', 'smtp.zeptomail.com');
+            $smtpPort = env('ZEPTO_SMTP_PORT', 587);
+            $smtpEncryption = env('ZEPTO_SMTP_ENCRYPTION', 'tls');
+            $smtpUsername = env('ZEPTO_SMTP_USERNAME', 'emailapikey');
+            $smtpPassword = env('ZEPTO_SMTP_PASSWORD');
+            $fromAddress = env('ZEPTO_EMAIL', $emailConfig->email ?? 'signature@bansalimmigration.com.au');
+            $fromName = env('ZEPTO_FROM_NAME', $emailConfig->display_name ?? 'Bansal Migration');
+            
+            // Validate required .env settings
+            if (empty($smtpPassword)) {
+                throw new \Exception('ZEPTO_SMTP_PASSWORD is not set in .env file');
             }
             
-            return $this->buildConfig($emailConfig);
+            // Build config array with .env SMTP settings
+            $config = [
+                'host' => $smtpHost,
+                'port' => (int) $smtpPort,
+                'encryption' => $smtpEncryption,
+                'username' => $smtpUsername,
+                'password' => $smtpPassword,
+                'from_address' => $fromAddress,
+                'from_name' => $fromName,
+                'email_signature' => $emailConfig->email_signature ?? '',
+                'timeout' => 30,
+            ];
+            
+            return $config;
         } catch (\Exception $e) {
             Log::error('Failed to retrieve Zepto email account', [
                 'error' => $e->getMessage()
             ]);
-            throw new \Exception("Zepto email account not found: {$e->getMessage()}");
+            throw new \Exception("Zepto email account configuration error: {$e->getMessage()}");
         }
     }
 

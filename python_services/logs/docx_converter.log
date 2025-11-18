@@ -4,3 +4,6 @@
 2025-11-16 22:00:55 - services.docx_converter_service - WARNING - ⚠️  DOCX Converter initialized - LibreOffice: Not found
 2025-11-16 22:00:55 - services.docx_converter_service - WARNING -   Fallback: docx2pdf (requires Microsoft Word)
 2025-11-16 22:00:55 - services.docx_converter_service - WARNING -   Conversion method: auto
+2025-11-18 16:26:27 - services.docx_converter_service - WARNING - ⚠️  DOCX Converter initialized - LibreOffice: Not found
+2025-11-18 16:26:27 - services.docx_converter_service - WARNING -   Fallback: docx2pdf (requires Microsoft Word)
+2025-11-18 16:26:27 - services.docx_converter_service - WARNING -   Conversion method: auto
