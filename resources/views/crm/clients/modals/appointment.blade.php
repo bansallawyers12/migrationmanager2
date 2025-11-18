@@ -166,7 +166,7 @@
                                         <option value="">Select</option>
                                         <option value="phone"> Phone</option>
                                         <option value="in_person">In person</option>
-                                        <option value="zoom_google_meeting" style="display: none;">Zoom / Google Meeting</option>
+                                        <option value="video_call" id="video_call_option" style="display: none;">Video Call</option>
                                     </select>
                                 </div>
 
@@ -973,8 +973,44 @@ function selectService(serviceId) {
 	}
 }
 
+// Function to toggle Video Call option visibility based on service selection
+function toggleVideoCallOption(serviceId) {
+	const videoCallOption = document.getElementById('video_call_option');
+	const appointmentDetailsSelect = document.querySelector('.appointment_item');
+	
+	if (videoCallOption && appointmentDetailsSelect) {
+		// Service ID 1 = Free Consultation - hide Video Call
+		// Service ID 2 = Comprehensive Migration Advice - show Video Call
+		// Service ID 3 = Overseas Applicant Enquiry - show Video Call
+		if (serviceId == '1') {
+			// Hide Video Call option for Free Consultation
+			videoCallOption.style.display = 'none';
+			// If Video Call is currently selected, reset to empty
+			if (appointmentDetailsSelect.value === 'video_call') {
+				appointmentDetailsSelect.value = '';
+			}
+		} else if (serviceId == '2' || serviceId == '3') {
+			// Show Video Call option for Comprehensive Migration Advice and Overseas Applicant Enquiry
+			videoCallOption.style.display = 'block';
+		}
+	}
+}
+
 // Auto-select radio when card is clicked using event delegation
 document.addEventListener('DOMContentLoaded', function() {
+	// Initialize Video Call option as hidden when modal opens
+	$(document).on('shown.bs.modal', '#create_appoint', function() {
+		const videoCallOption = document.getElementById('video_call_option');
+		if (videoCallOption) {
+			videoCallOption.style.display = 'none';
+		}
+		// Reset appointment details dropdown
+		const appointmentDetailsSelect = document.querySelector('.appointment_item');
+		if (appointmentDetailsSelect) {
+			appointmentDetailsSelect.value = '';
+		}
+	});
+	
 	// Use event delegation to handle clicks on service cards
 	document.addEventListener('click', function(e) {
 		if (e.target.closest('.service-card-compact')) {
@@ -996,6 +1032,9 @@ document.addEventListener('DOMContentLoaded', function() {
 				radio.checked = true;
 				document.getElementById('service_id').value = radio.value;
 			}
+				
+				// Toggle Video Call option visibility based on service
+				toggleVideoCallOption(serviceId);
 				
 				// Show appointment details section
 				if (typeof $ !== 'undefined') {
@@ -1022,6 +1061,9 @@ document.addEventListener('DOMContentLoaded', function() {
 		
 		if (e.target.classList.contains('services_item')) {
 			if (e.target.checked) {
+				const serviceId = e.target.value;
+				// Toggle Video Call option visibility based on service
+				toggleVideoCallOption(serviceId);
 				document.getElementById('appointment_details').style.display = 'block';
 			}
 		}

@@ -196,6 +196,14 @@ class HomeController extends Controller
 	    }
     }
 
+    /**
+     * Get disabled date/time - COMMENTED OUT FOR FUTURE USE
+     * This function has been replaced by AppointmentsController::getDisabledDateTime()
+     * which uses the Bansal API REST endpoint.
+     * 
+     * @deprecated Use AppointmentsController::getDisabledDateTime() instead
+     */
+    /*
     public function getdisableddatetime(Request $request)
     {
 		$requestData = $request->all(); //dd($requestData);
@@ -412,8 +420,17 @@ class HomeController extends Controller
 		    return json_encode(array('success'=>true, 'disabledtimeslotes' =>$disabledtimeslotes));
 	    }
     }
+    */
 
 
+    /**
+     * Get date/time backend - COMMENTED OUT FOR FUTURE USE
+     * This function has been replaced by AppointmentsController::getDateTimeBackend()
+     * which uses the Bansal API REST endpoint.
+     * 
+     * @deprecated Use AppointmentsController::getDateTimeBackend() instead
+     */
+    /*
     public function getdatetimebackend(Request $request)
     {   //dd($request->all());
         $enquiry_item = $request->enquiry_item;
@@ -550,6 +567,7 @@ class HomeController extends Controller
 		 return json_encode(array('success'=>false, 'duration' =>0));
 	   }
     }
+    */
 
 
 }

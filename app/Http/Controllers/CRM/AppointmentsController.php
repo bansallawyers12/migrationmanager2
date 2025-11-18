@@ -836,6 +836,7 @@ public function update_apppointment_comment(Request $request){
             'amount' => $amountFormatted,
             'duration_minutes' => $serviceDuration,
             'source' => 'crm',
+            'slot_overwrite' => $request->slot_overwrite_hidden,	
         ];
 
         try {
@@ -924,6 +925,7 @@ public function update_apppointment_comment(Request $request){
             }
         } 
 
+       
         $bookingAttributes = [
             'bansal_appointment_id' => $bansalAppointmentId,
             'order_hash' => $apiAppointmentData['order_hash'] ?? null,
@@ -1833,5 +1835,221 @@ public function update_apppointment_comment(Request $request){
 		echo json_encode($response);
 	}
 
+	/**
+	 * Get date/time backend configuration using Bansal API REST endpoint.
+	 * 
+	 * Maps CRM input parameters to Bansal API format:
+	 * - id (1 = consultation, 2 = paid-consultation, 3 = overseas-enquiry) -> specific_service
+	 * - enquiry_item (1-8) -> service_type (permanent-residency, temporary-residency, etc.)
+	 * - inperson_address (1 = adelaide, 2 = melbourne) -> location
+	 * - slot_overwrite (0 or 1) -> slot_overwrite (if 1, disabledatesarray will be blank)
+	 * 
+	 * @param Request $request
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function getDateTimeBackend(Request $request)
+	{
+		try {
+			// Get input parameters
+			$serviceId = $request->input('id'); // 1 = consultation, 2 = paid-consultation, 3 = overseas-enquiry
+			$enquiryItem = $request->input('enquiry_item'); // 1-8 (nature of enquiry ID)
+			$inpersonAddress = $request->input('inperson_address'); // 1 = adelaide, 2 = melbourne
+			$slotOverwrite = $request->input('slot_overwrite', 0); // Default to 0
+
+			// Validate required parameters
+			if (empty($serviceId) || empty($enquiryItem) || empty($inpersonAddress)) {
+				return response()->json([
+					'success' => false,
+					'message' => 'Missing required parameters: id, enquiry_item, and inperson_address are required.',
+					'duration' => 0
+				], 400);
+			}
+
+			// Map service ID to specific_service
+			$specificServiceMap = [
+				1 => 'consultation',
+				2 => 'paid-consultation',
+				3 => 'overseas-enquiry',
+			];
+			$specificService = $specificServiceMap[$serviceId] ?? 'consultation';
+
+			// Map enquiry_item (nature of enquiry ID) to service_type
+			$natureTitles = [
+				1 => 'permanent-residency',
+				2 => 'temporary-residency',
+				3 => 'jrp-skill-assessment',
+				4 => 'tourist-visa',
+				5 => 'education-visa',
+				6 => 'complex-matters',
+				7 => 'visa-cancellation',
+				8 => 'international-migration',
+			];
+			$serviceType = $natureTitles[$enquiryItem] ?? 'permanent-residency';
+
+			// Map inperson_address to location
+			$locationMap = [
+				1 => 'adelaide',
+				2 => 'melbourne',
+			];
+			$location = $locationMap[$inpersonAddress] ?? 'melbourne';
+
+			// Call Bansal API
+			$apiResponse = $this->bansalApiClient->getDateTimeBackend(
+				$specificService,
+				$serviceType,
+				$location,
+				(int) $slotOverwrite
+			);
+
+			// Return response in the same format as the old function for backward compatibility
+			// Using json_encode() like the old function to return a JSON string (not a JSON response)
+			// This ensures jQuery doesn't auto-parse it, allowing JSON.parse() in frontend to work
+			return json_encode([
+				'success' => true,
+				'duration' => $apiResponse['data']['duration'] ?? $apiResponse['duration'] ?? 0,
+				'weeks' => $apiResponse['data']['weeks'] ?? $apiResponse['weeks'] ?? [],
+				'start_time' => $apiResponse['data']['start_time'] ?? $apiResponse['start_time'] ?? '',
+				'end_time' => $apiResponse['data']['end_time'] ?? $apiResponse['end_time'] ?? '',
+				'disabledatesarray' => $apiResponse['data']['disabledatesarray'] ?? $apiResponse['disabledatesarray'] ?? [],
+			]);
+
+		} catch (Exception $e) {
+			Log::error('getDateTimeBackend error', [
+				'error' => $e->getMessage(),
+				'request' => $request->all(),
+			]);
+
+			// Return JSON string like the old function did for errors
+			return json_encode([
+				'success' => false,
+				'message' => $e->getMessage() ?: 'Unable to fetch date/time backend configuration. Please try again.',
+				'duration' => 0
+			]);
+		}
+	}
+
+	/**
+	 * Get disabled date/time slots using Bansal API REST endpoint.
+	 * 
+	 * Maps CRM input parameters to Bansal API format:
+	 * - service_id (1 = Free/consultation, 2 = Paid Migration advice/paid-consultation, 3 = Paid Overseas/overseas-enquiry) -> specific_service
+	 * - sel_date (dd/mm/yyyy) -> sel_date
+	 * - enquiry_item (1-8) -> service_type (permanent-residency, temporary-residency, etc.)
+	 * - inperson_address (1 = adelaide, 2 = melbourne) -> location
+	 * - slot_overwrite (0 or 1) -> slot_overwrite (if 1, disabledtimeslotes will be blank)
+	 * 
+	 * @param Request $request
+	 * @return string JSON string (for backward compatibility with frontend JSON.parse())
+	 */
+	public function getDisabledDateTime(Request $request)
+	{
+		try {
+			// Get input parameters
+			$serviceId = $request->input('service_id'); // 1 = Free, 2 = Paid Migration advice, 3 = Paid Overseas
+			$selectedDate = $request->input('sel_date'); // Format: dd/mm/yyyy
+			$enquiryItem = $request->input('enquiry_item'); // 1-8 (nature of enquiry ID)
+			$inpersonAddress = $request->input('inperson_address'); // 1 = adelaide, 2 = melbourne
+			$slotOverwrite = $request->input('slot_overwrite', 0); // Default to 0
+
+			// Validate required parameters
+			if (empty($serviceId) || empty($selectedDate) || empty($enquiryItem) || empty($inpersonAddress)) {
+				return json_encode([
+					'success' => false,
+					'message' => 'Missing required parameters: service_id, sel_date, enquiry_item, and inperson_address are required.',
+					'disabledtimeslotes' => []
+				]);
+			}
+
+			// Map service ID to specific_service
+			$specificServiceMap = [
+				1 => 'consultation', // Free
+				2 => 'paid-consultation', // Paid Migration advice
+				3 => 'overseas-enquiry', // Paid Overseas
+			];
+			$specificService = $specificServiceMap[$serviceId] ?? 'consultation';
+
+			// Map enquiry_item (nature of enquiry ID) to service_type
+			$natureTitles = [
+				1 => 'permanent-residency',
+				2 => 'temporary-residency',
+				3 => 'jrp-skill-assessment',
+				4 => 'tourist-visa',
+				5 => 'education-visa',
+				6 => 'complex-matters',
+				7 => 'visa-cancellation',
+				8 => 'international-migration',
+			];
+			$serviceType = $natureTitles[$enquiryItem] ?? 'permanent-residency';
+
+			// Map inperson_address to location
+			$locationMap = [
+				1 => 'adelaide',
+				2 => 'melbourne',
+			];
+			$location = $locationMap[$inpersonAddress] ?? 'melbourne';
+
+			// Call Bansal API
+			$apiResponse = $this->bansalApiClient->getDisabledDateTime(
+				$specificService,
+				$serviceType,
+				$location,
+				$selectedDate,
+				(int) $slotOverwrite
+			);
+
+			// Get disabled time slots from API response
+			$disabledTimeSlots = $apiResponse['data']['disabledtimeslotes'] ?? $apiResponse['disabledtimeslotes'] ?? [];
+			
+			// Convert time format from 24-hour (HH:mm) to 12-hour (g:i A) format to match old function
+			// Old function returned: date('g:i A', strtotime($list->time)) which gives "3:20 PM" format
+			$convertedDisabledSlots = [];
+			foreach ($disabledTimeSlots as $timeSlot) {
+				// Handle different possible formats from API
+				if (is_string($timeSlot)) {
+					// Try to parse 24-hour format (HH:mm or H:mm)
+					if (preg_match('/^(\d{1,2}):(\d{2})$/', $timeSlot, $matches)) {
+						$hour = (int)$matches[1];
+						$minute = (int)$matches[2];
+						
+						// Create a Carbon/DateTime object to convert to 12-hour format
+						try {
+							$timeObj = Carbon::createFromTime($hour, $minute, 0);
+							$convertedDisabledSlots[] = $timeObj->format('g:i A'); // "3:20 PM" format
+						} catch (Exception $e) {
+							// If conversion fails, keep original format
+							$convertedDisabledSlots[] = $timeSlot;
+						}
+					} else {
+						// Already in correct format or unknown format, keep as is
+						$convertedDisabledSlots[] = $timeSlot;
+					}
+				} else {
+					// Not a string, keep as is
+					$convertedDisabledSlots[] = $timeSlot;
+				}
+			}
+
+			// Return response in the same format as the old function for backward compatibility
+			// Using json_encode() like the old function to return a JSON string (not a JSON response)
+			// This ensures jQuery doesn't auto-parse it, allowing JSON.parse() in frontend to work
+			return json_encode([
+				'success' => true,
+				'disabledtimeslotes' => $convertedDisabledSlots,
+			]);
+
+		} catch (Exception $e) {
+			Log::error('getDisabledDateTime error', [
+				'error' => $e->getMessage(),
+				'request' => $request->all(),
+			]);
+
+			// Return JSON string like the old function did for errors
+			return json_encode([
+				'success' => false,
+				'message' => $e->getMessage() ?: 'Unable to fetch disabled date/time slots. Please try again.',
+				'disabledtimeslotes' => []
+			]);
+		}
+	}
 
 }

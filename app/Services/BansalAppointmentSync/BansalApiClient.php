@@ -273,5 +273,150 @@ class BansalApiClient
             throw $e;
         }
     }
+
+    /**
+     * Get date/time backend configuration from Bansal API.
+     * 
+     * @param string $specificService Service type: 'consultation', 'paid-consultation', 'overseas-enquiry'
+     * @param string $serviceType Enquiry type: 'permanent-residency', 'temporary-residency', etc.
+     * @param string $location Location: 'adelaide' or 'melbourne'
+     * @param int $slotOverwrite If 1, disabledatesarray will be blank (allows booking on blocked dates)
+     * @return array API response with duration, weeks, start_time, end_time, disabledatesarray
+     */
+    public function getDateTimeBackend(string $specificService, string $serviceType, string $location, int $slotOverwrite = 0): array
+    {
+        $payload = [
+            'specific_service' => $specificService,
+            'service_type' => $serviceType,
+            'location' => $location,
+            'slot_overwrite' => $slotOverwrite,
+        ];
+
+        try {
+            $response = $this->client()->post("{$this->baseUrl}/appointments/get-datetime-backend", $payload);
+            $data = $response->json();
+
+            if (!($data['success'] ?? false)) {
+                $message = $data['message'] ?? 'Unable to fetch date/time backend configuration. Please try again.';
+
+                Log::warning('Bansal API getDateTimeBackend returned unsuccessful response', [
+                    'method' => 'getDateTimeBackend',
+                    'payload' => $payload,
+                    'response' => $data,
+                ]);
+
+                throw new Exception($message);
+            }
+
+            return $data;
+        } catch (RequestException $e) {
+            $response = $e->response;
+            $responseBody = $response?->json();
+            $message = null;
+
+            if (is_array($responseBody)) {
+                $message = $responseBody['message']
+                    ?? ($responseBody['error']['message'] ?? null);
+            }
+
+            $message = $message ?: $response?->body() ?: $e->getMessage();
+
+            Log::warning('Bansal API Client Request Error', [
+                'method' => 'getDateTimeBackend',
+                'payload' => $payload,
+                'status' => $response?->status(),
+                'body' => $response?->body(),
+                'error' => $message,
+            ]);
+
+            throw new Exception($message, $e->getCode(), $e);
+        } catch (Exception $e) {
+            Log::error('Bansal API Client Error', [
+                'method' => 'getDateTimeBackend',
+                'specific_service' => $specificService,
+                'service_type' => $serviceType,
+                'location' => $location,
+                'slot_overwrite' => $slotOverwrite,
+                'error_type' => get_class($e),
+                'error' => $e->getMessage(),
+            ]);
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Get disabled date/time slots from Bansal API.
+     * 
+     * @param string $specificService Service type: 'consultation', 'paid-consultation', 'overseas-enquiry'
+     * @param string $serviceType Enquiry type: 'permanent-residency', 'temporary-residency', etc.
+     * @param string $location Location: 'adelaide' or 'melbourne'
+     * @param string $selectedDate Selected date in dd/mm/yyyy format
+     * @param int $slotOverwrite If 1, disabledtimeslotes will be blank (allows booking on blocked slots)
+     * @return array API response with disabledtimeslotes array
+     */
+    public function getDisabledDateTime(string $specificService, string $serviceType, string $location, string $selectedDate, int $slotOverwrite = 0): array
+    {
+        $payload = [
+            'specific_service' => $specificService,
+            'service_type' => $serviceType,
+            'location' => $location,
+            'sel_date' => $selectedDate,
+            'slot_overwrite' => $slotOverwrite,
+        ];
+
+        try {
+            $response = $this->client()->post("{$this->baseUrl}/appointments/get-disabled-datetime", $payload);
+            $data = $response->json();
+
+            if (!($data['success'] ?? false)) {
+                $message = $data['message'] ?? 'Unable to fetch disabled date/time slots. Please try again.';
+
+                Log::warning('Bansal API getDisabledDateTime returned unsuccessful response', [
+                    'method' => 'getDisabledDateTime',
+                    'payload' => $payload,
+                    'response' => $data,
+                ]);
+
+                throw new Exception($message);
+            }
+
+            return $data;
+        } catch (RequestException $e) {
+            $response = $e->response;
+            $responseBody = $response?->json();
+            $message = null;
+
+            if (is_array($responseBody)) {
+                $message = $responseBody['message']
+                    ?? ($responseBody['error']['message'] ?? null);
+            }
+
+            $message = $message ?: $response?->body() ?: $e->getMessage();
+
+            Log::warning('Bansal API Client Request Error', [
+                'method' => 'getDisabledDateTime',
+                'payload' => $payload,
+                'status' => $response?->status(),
+                'body' => $response?->body(),
+                'error' => $message,
+            ]);
+
+            throw new Exception($message, $e->getCode(), $e);
+        } catch (Exception $e) {
+            Log::error('Bansal API Client Error', [
+                'method' => 'getDisabledDateTime',
+                'specific_service' => $specificService,
+                'service_type' => $serviceType,
+                'location' => $location,
+                'selected_date' => $selectedDate,
+                'slot_overwrite' => $slotOverwrite,
+                'error_type' => get_class($e),
+                'error' => $e->getMessage(),
+            ]);
+
+            throw $e;
+        }
+    }
 }
 

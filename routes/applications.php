@@ -131,8 +131,10 @@ Route::get('/get-assigne-detail', [AppointmentsController::class, 'assignedetail
 Route::get('/change_assignee', [AppointmentsController::class, 'change_assignee']);
 
 /*---------- Appointment Scheduling Backend ----------*/
-Route::post('/getdatetimebackend', [HomeController::class, 'getdatetimebackend'])->name('getdatetimebackend');
-Route::post('/getdisableddatetime', [HomeController::class, 'getdisableddatetime'])->name('getdisableddatetime');
+// Route::post('/getdatetimebackend', [HomeController::class, 'getdatetimebackend'])->name('getdatetimebackend'); // Commented out - now using AppointmentsController
+Route::post('/getdatetimebackend', [AppointmentsController::class, 'getDateTimeBackend'])->name('getdatetimebackend');
+// Route::post('/getdisableddatetime', [HomeController::class, 'getdisableddatetime'])->name('getdisableddatetime'); // Commented out - now using AppointmentsController
+Route::post('/getdisableddatetime', [AppointmentsController::class, 'getDisabledDateTime'])->name('getdisableddatetime');
 
 /*
 |--------------------------------------------------------------------------

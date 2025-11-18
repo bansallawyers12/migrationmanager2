@@ -247,7 +247,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             consultant: apt.consultant?.name || 'Not Assigned',
                             is_paid: apt.is_paid,
                             payment_status: apt.is_paid ? 'Paid' : 'Free',
-                            final_amount: apt.final_amount
+                            final_amount: apt.final_amount,
+                            duration_minutes: apt.duration_minutes || 15,
+                            appointment_datetime: apt.appointment_datetime
                         }
                     };
                 });
@@ -269,6 +271,35 @@ document.addEventListener('DOMContentLoaded', function() {
             const event = info.event;
             const props = event.extendedProps;
             
+            // Format date/time in Australia/Melbourne timezone
+            // The ISO datetime string from API is in UTC, we need to convert to Melbourne time
+            // Melbourne is UTC+10 (AEST) or UTC+11 (AEDT) - we'll use a fixed offset approach
+            const originalDateTime = props.appointment_datetime || event.startStr;
+            // Parse the ISO string and create a Date object (JavaScript Date parses ISO as UTC)
+            const utcDate = new Date(originalDateTime);
+            // Melbourne timezone offset: UTC+11 (AEDT) or UTC+10 (AEST)
+            // For simplicity, we'll use the browser's Intl API which handles DST automatically
+            const formattedDate = utcDate.toLocaleString('en-AU', {
+                timeZone: 'Australia/Melbourne',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+            
+            // Calculate duration - use end time if available, otherwise use duration_minutes
+            let duration = props.duration_minutes || 15;
+            if (event.end) {
+                const startTime = event.start.getTime();
+                const endTime = event.end.getTime();
+                const diffMinutes = Math.round((endTime - startTime) / (1000 * 60));
+                if (diffMinutes > 0 && diffMinutes < 1440) { // Valid duration (less than 24 hours)
+                    duration = diffMinutes;
+                }
+            }
+            
             const modalBody = `
                 <div class="appointment-details">
                     <div class="row">
@@ -277,8 +308,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             <p><strong>Email:</strong> ${props.client_email}</p>
                             <p><strong>Phone:</strong> ${props.client_phone}</p>
                             <p><strong>Service:</strong> ${props.service_type}</p>
-                            <p><strong>Date & Time:</strong> ${moment(event.start).format('DD MMM YYYY, hh:mm A')}</p>
-                            <p><strong>Duration:</strong> ${moment(event.end).diff(moment(event.start), 'minutes')} minutes</p>
+                            <p><strong>Date & Time:</strong> ${formattedDate}</p>
+                            <p><strong>Duration:</strong> ${duration} minutes</p>
                         </div>
                         <div class="col-md-6">
                             <p><strong>Location:</strong> ${props.location}</p>
@@ -357,9 +388,20 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Error handler
         eventDidMount: function(info) {
-            // Add tooltip
+            // Add tooltip - format time in Australia/Melbourne timezone
+            // Use the original ISO datetime string from extendedProps
+            const props = info.event.extendedProps;
+            const originalDateTime = props.appointment_datetime || info.event.startStr;
+            // Parse the ISO string as UTC and convert to Melbourne timezone
+            const utcDate = new Date(originalDateTime);
+            const formattedTime = utcDate.toLocaleString('en-AU', {
+                timeZone: 'Australia/Melbourne',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
             $(info.el).tooltip({
-                title: info.event.title + ' - ' + moment(info.event.start).format('h:mm A'),
+                title: info.event.title + ' - ' + formattedTime,
                 placement: 'top',
                 trigger: 'hover',
                 container: 'body'

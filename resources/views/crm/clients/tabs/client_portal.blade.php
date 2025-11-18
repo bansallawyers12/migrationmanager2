@@ -29,6 +29,9 @@
                                    {{ isset($fetchedData->cp_status) && $fetchedData->cp_status == 1 ? 'checked' : '' }}>
                             <span class="toggle-slider"></span>
                         </div>
+                        <span class="portal-toggle-loader" id="portal-toggle-loader-tab" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </span>
                     </label>
                 </div>
                 @endif
@@ -38,141 +41,150 @@
         <div class="portal-content">
             @if(isset($fetchedData->cp_status) && $fetchedData->cp_status == 1)
                 <!-- Portal is Active -->
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> Client portal is currently active. The client can log in using their credentials.
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="info-card">
-                            <h5><i class="fas fa-user"></i> Portal Credentials</h5>
-                            <div class="credential-item">
-                                <label>Email:</label>
-                                <div class="credential-value">
-                                    <span>{{ $fetchedData->email ?? 'No email set' }}</span>
-                                    @if($fetchedData->email)
-                                        <button class="btn btn-sm btn-outline-secondary copy-btn" data-copy="{{ $fetchedData->email }}" title="Copy email">
-                                            <i class="fas fa-copy"></i>
+                <?php
+                // Get the selected matter based on URL parameter or latest active matter
+                $selectedMatter = null;
+                $matterName = '';
+                $matterNumber = '';
+                
+                if(isset($id1) && $id1 != "") {
+                    // If client unique reference id is present in URL
+                    $selectedMatter = DB::table('client_matters as cm')
+                        ->leftJoin('matters as m', 'cm.sel_matter_id', '=', 'm.id')
+                        ->where('cm.client_id', $fetchedData->id)
+                        ->where('cm.client_unique_matter_no', $id1)
+                        ->select('cm.id', 'cm.client_unique_matter_no', 'm.title', 'cm.sel_matter_id', 'cm.workflow_stage_id', 'cm.matter_status')
+                        ->first();
+                } else {
+                    // Get the latest matter (active or inactive)
+                    $selectedMatter = DB::table('client_matters as cm')
+                        ->leftJoin('matters as m', 'cm.sel_matter_id', '=', 'm.id')
+                        ->where('cm.client_id', $fetchedData->id)
+                        ->select('cm.id', 'cm.client_unique_matter_no', 'm.title', 'cm.sel_matter_id', 'cm.workflow_stage_id', 'cm.matter_status')
+                        ->orderBy('cm.id', 'desc')
+                        ->first();
+                }
+                
+                if($selectedMatter) {
+                    // Determine matter name (use "General Matter" if sel_matter_id is 1 or title is null)
+                    if($selectedMatter->sel_matter_id == 1 || empty($selectedMatter->title)) {
+                        $matterName = 'General Matter';
+                    } else {
+                        $matterName = $selectedMatter->title;
+                    }
+                    $matterNumber = $selectedMatter->client_unique_matter_no;
+                    $currentWorkflowStageId = $selectedMatter->workflow_stage_id;
+                } else {
+                    $currentWorkflowStageId = null;
+                }
+                
+                // Get all workflow stages
+                $allWorkflowStages = DB::table('workflow_stages')
+                    ->orderBy('id', 'asc')
+                    ->get();
+                ?>
+                
+                @if($selectedMatter)
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <div class="info-card in-progress-section">
+                                <div class="in-progress-single-line">
+                                    <h5 class="in-progress-title">
+                                        @if($selectedMatter && isset($selectedMatter->matter_status) && $selectedMatter->matter_status == 1)
+                                            Active
+                                        @else
+                                            In-active
+                                        @endif
+                                    </h5>
+                                    <div class="current-stage-info">
+                                        <label class="stage-label">Current Stage:</label>
+                                        <div class="stage-value-container">
+                                            <span class="stage-value">
+                                                @if($currentWorkflowStageId)
+                                                    @php
+                                                        $currentStage = $allWorkflowStages->where('id', $currentWorkflowStageId)->first();
+                                                    @endphp
+                                                    {{ $currentStage ? $currentStage->name : 'N/A' }}
+                                                @else
+                                                    N/A
+                                                @endif
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="overall-progress-container">
+                                        <label class="progress-label">Overall Progress:</label>
+                                        <div class="progress-circle-wrapper">
+                                            @php
+                                                $totalStages = $allWorkflowStages->count();
+                                                $currentStageIndex = $currentWorkflowStageId ? $allWorkflowStages->where('id', '<=', $currentWorkflowStageId)->count() : 0;
+                                                $progressPercentage = $totalStages > 0 ? round(($currentStageIndex / $totalStages) * 100) : 0;
+                                            @endphp
+                                            <div class="progress-circle" data-progress="{{ $progressPercentage }}">
+                                                <svg class="progress-ring" width="80" height="80">
+                                                    <circle class="progress-ring-circle-bg" cx="40" cy="40" r="36" fill="transparent" stroke="#e9ecef" stroke-width="6"/>
+                                                    <circle class="progress-ring-circle" cx="40" cy="40" r="36" fill="transparent" stroke="#007bff" stroke-width="6" stroke-dasharray="{{ 2 * M_PI * 36 }}" stroke-dashoffset="{{ 2 * M_PI * 36 * (1 - $progressPercentage / 100) }}"/>
+                                                </svg>
+                                                <div class="progress-text">{{ $progressPercentage }}%</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="stage-navigation-buttons">
+                                        @php
+                                            // Check if we're at the first stage (can't go back from first stage)
+                                            $isFirstStage = false;
+                                            if($currentWorkflowStageId && $allWorkflowStages->count() > 0) {
+                                                $firstStage = $allWorkflowStages->first();
+                                                $isFirstStage = ($currentWorkflowStageId == $firstStage->id);
+                                            }
+                                        @endphp
+                                        <button class="btn btn-outline-primary btn-sm" id="back-to-previous-stage" data-matter-id="{{ $selectedMatter->id }}" title="Back to Previous Stage" {{ $isFirstStage ? 'disabled' : '' }}>
+                                            <i class="fas fa-angle-left"></i> Back to Previous Stage
                                         </button>
-                                    @endif
+                                        <button class="btn btn-success btn-sm" id="proceed-to-next-stage" data-matter-id="{{ $selectedMatter->id }}" title="Proceed to Next Stage">
+                                            Proceed to Next Stage <i class="fas fa-angle-right"></i>
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="credential-item">
-                                <label>Password:</label>
-                                <div class="credential-value">
-                                    <span class="text-muted"><i>Set by client or sent via activation email</i></span>
-                                </div>
-                            </div>
-                            <div class="credential-actions">
-                                <button class="btn btn-primary btn-sm" id="reset-portal-password" data-client-id="{{ $fetchedData->id }}">
-                                    <i class="fas fa-key"></i> Reset Password & Send Email
-                                </button>
                             </div>
                         </div>
                     </div>
-
-                    <div class="col-md-6">
-                        <div class="info-card">
-                            <h5><i class="fas fa-link"></i> Portal Access</h5>
-                            <div class="credential-item">
-                                <label>Portal URL:</label>
-                                <div class="credential-value">
-                                    <span id="portal-url">{{ config('app.client_portal_url', url('/client-portal')) }}</span>
-                                    <button class="btn btn-sm btn-outline-secondary copy-btn" data-copy="{{ config('app.client_portal_url', url('/client-portal')) }}" title="Copy URL">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="credential-item">
-                                <label>Client ID:</label>
-                                <div class="credential-value">
-                                    <span>{{ $fetchedData->client_id ?? 'N/A' }}</span>
-                                    @if($fetchedData->client_id)
-                                        <button class="btn btn-sm btn-outline-secondary copy-btn" data-copy="{{ $fetchedData->client_id }}" title="Copy Client ID">
-                                            <i class="fas fa-copy"></i>
-                                        </button>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
+                @endif
+                
                 <div class="row mt-3">
                     <div class="col-md-12">
                         <div class="info-card">
-                            <h5><i class="fas fa-chart-line"></i> Portal Usage Information</h5>
-                            <p class="text-muted">Client portal usage statistics and recent activity will be displayed here.</p>
+                            <h5>
+                                <i class="fas fa-folder-open"></i> Selected Matter
+                                @if($selectedMatter)
+                                    - {{ $matterName }} ({{ $matterNumber }})
+                                @endif
+                            </h5>
                             
-                            <?php
-                            // Get client's active matters for portal
-                            $activeMatters = DB::table('client_matters as cm')
-                                ->join('matters as m', 'cm.sel_matter_id', '=', 'm.id')
-                                ->where('cm.client_id', $fetchedData->id)
-                                ->where('cm.matter_status', 1)
-                                ->select('cm.id', 'cm.client_unique_matter_no', 'm.title')
-                                ->get();
-                            ?>
-
-                            @if($activeMatters && count($activeMatters) > 0)
-                                <div class="mt-3">
-                                    <label><strong>Active Matters Visible in Portal:</strong></label>
-                                    <ul class="matter-list">
-                                        @foreach($activeMatters as $matter)
-                                            <li>
-                                                <i class="fas fa-folder-open"></i> 
-                                                {{ $matter->title }} - {{ $matter->client_unique_matter_no }}
-                                            </li>
+                            @if($selectedMatter && $allWorkflowStages->count() > 0)
+                                <div class="workflow-stages-container mt-3">
+                                    <div class="workflow-stages-list">
+                                        @foreach($allWorkflowStages as $index => $stage)
+                                            @php
+                                                $isActive = ($currentWorkflowStageId && $currentWorkflowStageId == $stage->id);
+                                                $isCompleted = ($currentWorkflowStageId && $stage->id < $currentWorkflowStageId);
+                                                $isPending = (!$currentWorkflowStageId || $stage->id > $currentWorkflowStageId);
+                                                
+                                                // Determine stage class
+                                                if($isActive) {
+                                                    $stageClass = 'workflow-stage-active';
+                                                } elseif($isCompleted) {
+                                                    $stageClass = 'workflow-stage-completed';
+                                                } else {
+                                                    $stageClass = 'workflow-stage-pending';
+                                                }
+                                            @endphp
+                                            <div class="workflow-stage-item {{ $stageClass }}">
+                                                <span class="stage-name">{{ $stage->name }}</span>
+                                            </div>
                                         @endforeach
-                                    </ul>
-                                </div>
-                            @else
-                                <div class="alert alert-warning mt-3">
-                                    <i class="fas fa-exclamation-triangle"></i> No active matters found. The client may have limited access in the portal.
+                                    </div>
                                 </div>
                             @endif
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row mt-3">
-                    <div class="col-md-12">
-                        <div class="info-card portal-features">
-                            <h5><i class="fas fa-list-check"></i> Available Features</h5>
-                            <div class="feature-grid">
-                                <div class="feature-item">
-                                    <i class="fas fa-dashboard text-primary"></i>
-                                    <span>Dashboard</span>
-                                </div>
-                                <div class="feature-item">
-                                    <i class="fas fa-file-alt text-success"></i>
-                                    <span>Documents</span>
-                                </div>
-                                <div class="feature-item">
-                                    <i class="fas fa-calendar text-warning"></i>
-                                    <span>Appointments</span>
-                                </div>
-                                <div class="feature-item">
-                                    <i class="fas fa-comments text-info"></i>
-                                    <span>Messages</span>
-                                </div>
-                                <div class="feature-item">
-                                    <i class="fas fa-tasks text-secondary"></i>
-                                    <span>Tasks & Deadlines</span>
-                                </div>
-                                <div class="feature-item">
-                                    <i class="fas fa-sitemap text-danger"></i>
-                                    <span>Workflow Status</span>
-                                </div>
-                                <div class="feature-item">
-                                    <i class="fas fa-receipt text-purple"></i>
-                                    <span>Invoices</span>
-                                </div>
-                                <div class="feature-item">
-                                    <i class="fas fa-user-circle text-dark"></i>
-                                    <span>Profile Management</span>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -266,6 +278,21 @@
     cursor: pointer;
 }
 
+.portal-toggle-loader {
+    margin-left: 8px;
+    color: white;
+    font-size: 14px;
+}
+
+.portal-toggle-loader i {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 .toggle-text {
     font-size: 0.9rem;
     font-weight: 500;
@@ -350,7 +377,6 @@
     font-weight: 600;
     margin-bottom: 15px;
     padding-bottom: 10px;
-    border-bottom: 2px solid #dee2e6;
 }
 
 .credential-item {
@@ -423,6 +449,88 @@
     margin-bottom: 8px;
 }
 
+.selected-matter-display {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.matter-info-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px 15px;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+}
+
+.matter-info-item label {
+    font-weight: 600;
+    color: #495057;
+    min-width: 140px;
+    margin: 0;
+}
+
+.matter-value {
+    font-size: 1rem;
+    color: #2c3e50;
+    font-weight: 500;
+    flex: 1;
+}
+
+.workflow-stages-container {
+    margin-top: 20px;
+}
+
+.workflow-stages-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.workflow-stage-item {
+    padding: 12px 16px;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+    transition: all 0.2s ease;
+    cursor: default;
+}
+
+.workflow-stage-item .stage-name {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #495057;
+}
+
+.workflow-stage-completed {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+}
+
+.workflow-stage-completed .stage-name {
+    color: #155724;
+}
+
+.workflow-stage-active {
+    background-color: #cfe2ff;
+    border-color: #9ec5fe;
+}
+
+.workflow-stage-active .stage-name {
+    color: #084298;
+    font-weight: 600;
+}
+
+.workflow-stage-pending {
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+}
+
+.workflow-stage-pending .stage-name {
+    color: #6c757d;
+}
+
 .feature-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -458,29 +566,175 @@
 .text-purple {
     color: #9333ea !important;
 }
+
+.in-progress-section {
+    padding: 20px;
+}
+
+.in-progress-single-line {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.in-progress-title {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #2c3e50;
+    flex-shrink: 0;
+}
+
+.in-progress-actions {
+    display: flex !important;
+    gap: 10px;
+    align-items: center;
+    visibility: visible !important;
+    opacity: 1 !important;
+    flex-shrink: 0;
+}
+
+.in-progress-actions .btn {
+    white-space: nowrap;
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.stage-navigation-buttons {
+    display: flex !important;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-end;
+    flex-shrink: 0;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.stage-navigation-buttons .btn {
+    white-space: nowrap;
+    width: 100%;
+    min-width: 180px;
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+#back-to-previous-stage {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+    z-index: 10 !important;
+    width: 100% !important;
+    min-width: 180px !important;
+}
+
+/* Override any global styles that might hide the button */
+.stage-navigation-buttons #back-to-previous-stage,
+.in-progress-section #back-to-previous-stage,
+.info-card #back-to-previous-stage {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.current-stage-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.stage-label {
+    font-weight: 600;
+    color: #495057;
+    margin: 0;
+    text-align: center;
+}
+
+.stage-value-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stage-value {
+    font-size: 1rem;
+    color: #28a745;
+    font-weight: 500;
+    text-align: center;
+}
+
+.overall-progress-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.progress-label {
+    font-weight: 600;
+    color: #495057;
+    margin: 0;
+    text-align: center;
+}
+
+.progress-circle-wrapper {
+    position: relative;
+}
+
+.progress-circle {
+    position: relative;
+    width: 80px;
+    height: 80px;
+}
+
+.progress-ring {
+    transform: rotate(-90deg);
+}
+
+.progress-ring-circle {
+    transition: stroke-dashoffset 0.35s;
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+}
+
+.progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #007bff;
+}
+
+@media (max-width: 768px) {
+    .in-progress-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .in-progress-actions {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+    
+    .in-progress-details {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Copy to clipboard functionality
-    document.querySelectorAll('.copy-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const textToCopy = this.getAttribute('data-copy');
-            navigator.clipboard.writeText(textToCopy).then(() => {
-                const originalHtml = this.innerHTML;
-                this.innerHTML = '<i class="fas fa-check"></i>';
-                this.classList.add('btn-success');
-                
-                setTimeout(() => {
-                    this.innerHTML = originalHtml;
-                    this.classList.remove('btn-success');
-                }, 2000);
-            }).catch(err => {
-                console.error('Failed to copy:', err);
-                alert('Failed to copy to clipboard');
-            });
-        });
-    });
 
     // Portal toggle functionality (both sidebar and tab toggles)
     function handlePortalToggle(toggleElement) {
@@ -490,6 +744,20 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Show loading state
         toggleElement.disabled = true;
+        
+        // Show loader based on which toggle was clicked
+        const toggleId = toggleElement.id;
+        let loaderElement = null;
+        
+        if (toggleId === 'client-portal-toggle-tab') {
+            loaderElement = document.getElementById('portal-toggle-loader-tab');
+        } else if (toggleId === 'client-portal-toggle') {
+            loaderElement = document.getElementById('portal-toggle-loader-sidebar');
+        }
+        
+        if (loaderElement) {
+            loaderElement.style.display = 'inline-block';
+        }
         
         fetch('{{ route("clients.toggleClientPortal") }}', {
             method: 'POST',
@@ -505,6 +773,11 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             toggleElement.disabled = false;
+            
+            // Hide loader
+            if (loaderElement) {
+                loaderElement.style.display = 'none';
+            }
             
             if (data.success) {
                 // Update both toggles to stay in sync
@@ -531,6 +804,12 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error:', error);
             toggleElement.disabled = false;
             toggleElement.checked = !isChecked;
+            
+            // Hide loader on error
+            if (loaderElement) {
+                loaderElement.style.display = 'none';
+            }
+            
             alert('Error updating portal status. Please try again.');
         });
     }
@@ -550,78 +829,55 @@ document.addEventListener('DOMContentLoaded', function() {
             handlePortalToggle(this);
         });
     }
-
-    // Reset password functionality
-    const resetBtn = document.getElementById('reset-portal-password');
-    if (resetBtn) {
-        resetBtn.addEventListener('click', function() {
-            const clientId = this.getAttribute('data-client-id');
+    
+    // Back to Previous Stage button handler
+    function ensureBackButtonVisible() {
+        const backStageBtn = document.getElementById('back-to-previous-stage');
+        if (backStageBtn) {
+            // Force button to be visible - override any conflicting styles
+            backStageBtn.style.setProperty('display', 'inline-block', 'important');
+            backStageBtn.style.setProperty('visibility', 'visible', 'important');
+            backStageBtn.style.setProperty('opacity', '1', 'important');
+            backStageBtn.style.setProperty('position', 'relative', 'important');
+            backStageBtn.style.setProperty('z-index', '10', 'important');
             
-            if (confirm('This will generate a new password and send it to the client via email. Continue?')) {
-                // Disable the toggle first
-                const currentStatus = document.getElementById('client-portal-toggle');
-                const isCurrentlyActive = currentStatus && currentStatus.checked;
-                
-                if (!isCurrentlyActive) {
-                    alert('Client portal must be active to reset password');
-                    return;
-                }
-
-                // Show loading state
-                const originalText = this.innerHTML;
-                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resetting...';
-                this.disabled = true;
-
-                // Toggle off and on to trigger password reset
-                fetch('{{ route("clients.toggleClientPortal") }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: JSON.stringify({
-                        client_id: clientId,
-                        status: 0
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                     if (data.success) {
-                        // Now turn it back on with new password
-                        return fetch('{{ route("clients.toggleClientPortal") }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                            },
-                            body: JSON.stringify({
-                                client_id: clientId,
-                                status: 1
-                            })
-                        });
-                    } else {
-                        throw new Error(data.message || 'Failed to reset password');
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    this.innerHTML = originalText;
-                    this.disabled = false;
-                    
-                     if (data.success) {
-                        alert('Password reset successfully! An email with the new credentials has been sent to the client.');
-                    } else {
-                        throw new Error(data.message || 'Failed to reset password');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    this.innerHTML = originalText;
-                    this.disabled = false;
-                    alert('Error resetting password: ' + error.message);
-                });
+            // Also ensure parent container is visible
+            const parentContainer = backStageBtn.closest('.stage-navigation-buttons');
+            if (parentContainer) {
+                parentContainer.style.setProperty('display', 'flex', 'important');
+                parentContainer.style.setProperty('visibility', 'visible', 'important');
+                parentContainer.style.setProperty('opacity', '1', 'important');
+            }
+        }
+    }
+    
+    // Ensure button is visible immediately and after a short delay
+    ensureBackButtonVisible();
+    setTimeout(ensureBackButtonVisible, 100);
+    setTimeout(ensureBackButtonVisible, 500);
+    
+    const backStageBtn = document.getElementById('back-to-previous-stage');
+    if (backStageBtn) {
+        backStageBtn.addEventListener('click', function() {
+            const matterId = this.getAttribute('data-matter-id');
+            if (confirm('Are you sure you want to move back to the previous stage?')) {
+                // TODO: Implement API call to move to previous stage
+                alert('Back to previous stage functionality will be implemented');
             }
         });
     }
+    
+    // Proceed to Next Stage button handler
+    const nextStageBtn = document.getElementById('proceed-to-next-stage');
+    if (nextStageBtn) {
+        nextStageBtn.addEventListener('click', function() {
+            const matterId = this.getAttribute('data-matter-id');
+            if (confirm('Are you sure you want to proceed to the next stage?')) {
+                // TODO: Implement API call to move to next stage
+                alert('Proceed to next stage functionality will be implemented');
+            }
+        });
+    }
+
 });
 </script>
