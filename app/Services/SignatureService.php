@@ -77,14 +77,14 @@ class SignatureService
     protected function sendSigningEmail(Document $document, Signer $signer, array $options = []): void
     {
         try {
-            // ALWAYS use .env FROM EMAIL credentials for sending emails
-            $envConfig = $this->emailConfigService->getEnvAccount();
+            // ALWAYS use Zepto email account for signature emails
+            $zeptoConfig = $this->emailConfigService->getZeptoAccount();
             
-            if (!$envConfig) {
-                throw new \Exception('Email configuration not found in .env file');
+            if (!$zeptoConfig) {
+                throw new \Exception('Zepto email configuration not found');
             }
             
-            $this->emailConfigService->applyConfig($envConfig);
+            $this->emailConfigService->applyConfig($zeptoConfig);
 
             $signingUrl = url("/sign/{$document->id}/{$signer->token}");
             
@@ -105,6 +105,7 @@ class SignatureService
                 'emailMessage' => $message,
                 'documentType' => $document->document_type ?? 'document',
                 'dueDate' => $document->due_at ? $document->due_at->format('F j, Y') : null,
+                'emailSignature' => $zeptoConfig['email_signature'] ?? '',
             ];
 
             // Send email with template
@@ -128,7 +129,8 @@ class SignatureService
             Log::info('Signing email sent', [
                 'document_id' => $document->id,
                 'signer_email' => $signer->email,
-                'template' => $template
+                'template' => $template,
+                'email_account' => $zeptoConfig['from_address']
             ]);
         } catch (\Exception $e) {
             Log::error('Failed to send signing email', [
@@ -155,14 +157,14 @@ class SignatureService
                 throw new \Exception('Please wait 24 hours between reminders');
             }
 
-            // ALWAYS use .env FROM EMAIL credentials for sending emails
-            $envConfig = $this->emailConfigService->getEnvAccount();
+            // ALWAYS use Zepto email account for signature emails
+            $zeptoConfig = $this->emailConfigService->getZeptoAccount();
             
-            if (!$envConfig) {
-                throw new \Exception('Email configuration not found in .env file');
+            if (!$zeptoConfig) {
+                throw new \Exception('Zepto email configuration not found');
             }
             
-            $this->emailConfigService->applyConfig($envConfig);
+            $this->emailConfigService->applyConfig($zeptoConfig);
 
             $document = $signer->document;
             $signingUrl = url("/sign/{$document->id}/{$signer->token}");
@@ -173,6 +175,7 @@ class SignatureService
                 'signingUrl' => $signingUrl,
                 'reminderNumber' => $signer->reminder_count + 1,
                 'dueDate' => $document->due_at ? $document->due_at->format('F j, Y') : null,
+                'emailSignature' => $zeptoConfig['email_signature'] ?? '',
             ];
 
             Mail::send('emails.signature.reminder', $templateData, function ($message) use ($signer) {
@@ -188,7 +191,8 @@ class SignatureService
 
             Log::info('Reminder sent', [
                 'signer_id' => $signer->id,
-                'reminder_count' => $signer->reminder_count
+                'reminder_count' => $signer->reminder_count,
+                'email_account' => $zeptoConfig['from_address']
             ]);
 
             return true;

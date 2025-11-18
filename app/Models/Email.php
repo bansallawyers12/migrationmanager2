@@ -23,6 +23,7 @@ class Email extends Authenticatable
         'smtp_port',
         'smtp_encryption',
         'status',
+        'email_signature',
     ];
 
     /**

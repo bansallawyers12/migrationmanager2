@@ -188,6 +188,12 @@
                 <strong>Regards,</strong><br>
                 Bansal Migration Team
             </p>
+
+            @if(isset($emailSignature) && !empty($emailSignature))
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                    {!! $emailSignature !!}
+                </div>
+            @endif
         </div>
 
         <!-- Footer -->

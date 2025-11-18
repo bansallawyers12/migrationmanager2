@@ -409,15 +409,18 @@ class SignatureDashboardController extends Controller
                     'dueDate' => $document->due_at ? $document->due_at->format('F j, Y') : null,
                 ];
 
-                // ALWAYS use .env FROM EMAIL credentials for sending emails
+                // ALWAYS use Zepto email account for signature emails
                 $emailConfigService = app(\App\Services\EmailConfigService::class);
-                $envConfig = $emailConfigService->getEnvAccount();
+                $zeptoConfig = $emailConfigService->getZeptoAccount();
                 
-                if (!$envConfig) {
-                    throw new \Exception('Email configuration not found in .env file');
+                if (!$zeptoConfig) {
+                    throw new \Exception('Zepto email configuration not found');
                 }
                 
-                $emailConfigService->applyConfig($envConfig);
+                // Add email signature to template data
+                $templateData['emailSignature'] = $zeptoConfig['email_signature'] ?? '';
+                
+                $emailConfigService->applyConfig($zeptoConfig);
 
                 // Send email
                 Mail::send($template, $templateData, function ($message) use ($signer, $subject) {

@@ -896,22 +896,26 @@ class DocumentController extends Controller
                         }
                     }
 
-                    $emailConfig = Email::where('email', $request->email_from)->firstOrFail(); //dd($emailConfig);
-                    // Configure mail settings for this specific email
-                    config([
-                        'mail.mailers.smtp.host' => 'smtp.zoho.com',
-                        'mail.mailers.smtp.port' => 587,
-                        'mail.mailers.smtp.encryption' => 'tls',
-                        'mail.mailers.smtp.username' => $emailConfig->email,
-                        'mail.mailers.smtp.password' => $emailConfig->password,
-                        'mail.from.address' => $request->email_from,
-                        'mail.from.name' => $emailConfig->display_name,
-                    ]);
+                    // Use Zepto email account for signature emails
+                    $emailConfigService = app(\App\Services\EmailConfigService::class);
+                    $zeptoConfig = $emailConfigService->getZeptoAccount();
+                    
+                    if (!$zeptoConfig) {
+                        throw new \Exception('Zepto email configuration not found');
+                    }
+                    
+                    $emailConfigService->applyConfig($zeptoConfig);
+                    
                     //send agreement type document with attachments
-                    $sendMail = Mail::send('emails.sign_agreement_document_email', ['signingUrl' => $signingUrl, 'firstName' => $signerName,'emailmessage' =>$request->message], function ($message) use ($signerEmail, $signerName, $attachments, $checklistFiles, $request, $emailConfig) {
+                    $sendMail = Mail::send('emails.sign_agreement_document_email', [
+                        'signingUrl' => $signingUrl, 
+                        'firstName' => $signerName,
+                        'emailmessage' => $request->message,
+                        'emailSignature' => $zeptoConfig['email_signature'] ?? ''
+                    ], function ($message) use ($signerEmail, $signerName, $attachments, $checklistFiles, $request, $zeptoConfig) {
                         $message->to($signerEmail, $signerName)
                         ->subject($request->subject)
-                        ->from($request->email_from, $emailConfig->display_name);
+                        ->from($zeptoConfig['from_address'], $zeptoConfig['from_name']);
                         // Attach uploaded files with original name and mime
                         foreach ($attachments as $file) {
                             $message->attach($file['path'], [
@@ -929,7 +933,7 @@ class DocumentController extends Controller
                         //Save to mail reports table
                         $obj5 = new \App\Models\MailReport;
                         $obj5->user_id 		=  @Auth::guard('admin')->user()->id;
-                        $obj5->from_mail 	=  $request->email_from;
+                        $obj5->from_mail 	=  $zeptoConfig['from_address'];
                         $obj5->to_mail 		=  $document->client_id;
                         $obj5->template_id 	=  $request->template;
                         $obj5->subject		=  $request->subject; //'Bansal Migration Requesting To Sign Your Agreement Document';
@@ -989,11 +993,25 @@ class DocumentController extends Controller
                 }
                 else
                 {
+                    // Use Zepto email account for signature emails
+                    $emailConfigService = app(\App\Services\EmailConfigService::class);
+                    $zeptoConfig = $emailConfigService->getZeptoAccount();
+                    
+                    if (!$zeptoConfig) {
+                        throw new \Exception('Zepto email configuration not found');
+                    }
+                    
+                    $emailConfigService->applyConfig($zeptoConfig);
+                    
                     //send visa and personal type document
-                    Mail::send('emails.sign_document_email', ['signingUrl' => $signingUrl, 'firstName' => $signerName], function ($message) use ($signerEmail, $signerName) {
+                    Mail::send('emails.sign_document_email', [
+                        'signingUrl' => $signingUrl, 
+                        'firstName' => $signerName,
+                        'emailSignature' => $zeptoConfig['email_signature'] ?? ''
+                    ], function ($message) use ($signerEmail, $signerName, $zeptoConfig) {
                         $message->to($signerEmail, $signerName)
                         ->subject('Bansal Migration Requesting To Sign Your Document')
-                        ->from(env('MAIL_FROM_ADDRESS'), env('MAIL_FROM_NAME'));
+                        ->from($zeptoConfig['from_address'], $zeptoConfig['from_name']);
                     });
                 }
             } catch (\Exception $e) {

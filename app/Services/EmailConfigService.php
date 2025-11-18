@@ -73,6 +73,7 @@ class EmailConfigService
             'password' => $emailConfig->password,
             'from_address' => $emailConfig->email,
             'from_name' => $emailConfig->display_name ?? 'Bansal Migration',
+            'email_signature' => $emailConfig->email_signature ?? '',
             'timeout' => 30,
         ];
     }
@@ -183,6 +184,44 @@ class EmailConfigService
                 'error' => $e->getMessage()
             ]);
             return null;
+        }
+    }
+
+    /**
+     * Get Zepto email account configuration for signature facility
+     * This method is used exclusively for document signature emails
+     *
+     * @return array Email configuration with signature
+     * @throws \Exception If Zepto account not found or not active
+     */
+    public function getZeptoAccount(): array
+    {
+        try {
+            // Option 1: Search by email pattern containing 'zepto' (case-insensitive)
+            $emailConfig = Email::where('status', true)
+                ->where('email', 'like', '%zepto%')
+                ->first();
+            
+            // Option 2: If not found by pattern, try to get a specific email
+            // You can replace this with your actual Zepto email address
+            if (!$emailConfig) {
+                // Fallback: Try specific email address (update this with your Zepto email)
+                $zeptoEmail = env('ZEPTO_EMAIL', 'signatures@yourdomain.com');
+                $emailConfig = Email::where('status', true)
+                    ->where('email', $zeptoEmail)
+                    ->first();
+            }
+            
+            if (!$emailConfig) {
+                throw new \Exception('Zepto email account not configured or not active. Please add a Zepto email account in Admin Console.');
+            }
+            
+            return $this->buildConfig($emailConfig);
+        } catch (\Exception $e) {
+            Log::error('Failed to retrieve Zepto email account', [
+                'error' => $e->getMessage()
+            ]);
+            throw new \Exception("Zepto email account not found: {$e->getMessage()}");
         }
     }
 
