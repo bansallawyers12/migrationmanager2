@@ -57,15 +57,18 @@
 									
 										<div class="col-md-6 mb-3">
 											<div class="service-card-compact" style="border: 2px solid #e9ecef; border-radius: 8px; padding: 12px; transition: all 0.3s ease; cursor: pointer;" data-service-id="1">
-												<div class="d-flex align-items-center">
-													<input type="radio" class="services_item" name="radioGroup" value="1" id="service_1">
+												<div class="d-flex align-items-start">
+													<input type="radio" class="services_item mt-1" name="radioGroup" value="1" id="service_1">
 													<div class="ml-3 flex-grow-1">
-														<div class="d-flex justify-content-between align-items-center">
-															<div>
+														<div class="d-flex justify-content-between align-items-start mb-2">
+															<div class="flex-grow-1">
 																<h6 class="mb-1 font-weight-bold text-dark">Free Consultation</h6>
-																<small class="text-muted">15 minutes</small>
+																<small class="d-block mb-2">15 minutes</small>
+																<p class="mb-0" style="font-size: 12px; line-height: 1.5;">
+																	Perfect for initial inquiries: Quick assessment of your immigration situation, basic visa pathway guidance, and preliminary advice. Available for clients currently within Australia only. Includes initial case evaluation and next steps recommendation.
+																</p>
 															</div>
-															<span class="badge badge-success font-weight-bold">Free</span>
+															<span class="badge badge-success font-weight-bold ml-2" style="white-space: nowrap;">Free</span>
 														</div>
 													</div>
 												</div>
@@ -74,15 +77,18 @@
 
 										<div class="col-md-6 mb-3">
 											<div class="service-card-compact" style="border: 2px solid #e9ecef; border-radius: 8px; padding: 12px; transition: all 0.3s ease; cursor: pointer;" data-service-id="2">
-												<div class="d-flex align-items-center">
-													<input type="radio" class="services_item" name="radioGroup" value="2" id="service_2">
+												<div class="d-flex align-items-start">
+													<input type="radio" class="services_item mt-1" name="radioGroup" value="2" id="service_2">
 													<div class="ml-3 flex-grow-1">
-														<div class="d-flex justify-content-between align-items-center">
-															<div>
+														<div class="d-flex justify-content-between align-items-start mb-2">
+															<div class="flex-grow-1">
 																<h6 class="mb-1 font-weight-bold text-dark">Comprehensive Migration Advice</h6>
-																<small class="text-muted">30 minutes</small>
+																<small class="d-block mb-2">30 minutes</small>
+																<p class="mb-0" style="font-size: 12px; line-height: 1.5;">
+																	In-depth professional consultation: Comprehensive case analysis, detailed migration strategy, complex visa applications, ART appeals, visa cancellations, protection visas, and personalized action plans. Suitable for overseas applicants and complex cases.
+																</p>
 															</div>
-															<span class="badge badge-success font-weight-bold">$150</span>
+															<span class="badge badge-success font-weight-bold ml-2" style="white-space: nowrap;">$150</span>
 														</div>
 													</div>
 												</div>
@@ -92,15 +98,18 @@
 
 										<div class="col-md-6 mb-3">
 											<div class="service-card-compact" style="border: 2px solid #e9ecef; border-radius: 8px; padding: 12px; transition: all 0.3s ease; cursor: pointer;" data-service-id="3">
-												<div class="d-flex align-items-center">
-													<input type="radio" class="services_item" name="radioGroup" value="3" id="service_3">
+												<div class="d-flex align-items-start">
+													<input type="radio" class="services_item mt-1" name="radioGroup" value="3" id="service_3">
 													<div class="ml-3 flex-grow-1">
-														<div class="d-flex justify-content-between align-items-center">
-															<div>
+														<div class="d-flex justify-content-between align-items-start mb-2">
+															<div class="flex-grow-1">
 																<h6 class="mb-1 font-weight-bold text-dark">Overseas Applicant Enquiry</h6>
-																<small class="text-muted">30 minutes</small>
+																<small class="d-block mb-2">30 minutes</small>
+																<p class="mb-0" style="font-size: 12px; line-height: 1.5;">
+																	In-depth professional consultation: Comprehensive case analysis, detailed migration strategy, complex visa applications, ART appeals, visa cancellations, protection visas, and personalized action plans. Suitable for overseas applicants and complex cases.
+																</p>
 															</div>
-															<span class="badge badge-success font-weight-bold">$150</span>
+															<span class="badge badge-success font-weight-bold ml-2" style="white-space: nowrap;">$150</span>
 														</div>
 													</div>
 												</div>

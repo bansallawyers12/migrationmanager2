@@ -1443,8 +1443,7 @@ $(document).ready(function() {
     // Appointment data for the appointments tab
     @php
     $appointmentdata = [];
-    $appointmentlists = \App\Models\Appointment::where('client_id', $fetchedData->id)
-        ->where('related_to', 'client')
+    $appointmentlists = \App\Models\BookingAppointment::where('client_id', $fetchedData->id)
         ->orderby('created_at', 'DESC')
         ->get();
     
@@ -1454,11 +1453,18 @@ $(document).ready(function() {
             ->first();
         $first_name= $admin->first_name ?? 'N/A';
         
+        // Extract start time from timeslot_full (format: "10:00 AM - 10:15 AM" or just "10:00 AM")
+        $appointmentTime = '';
+        if($appointmentlist->timeslot_full) {
+            $timeslotParts = explode(' - ', $appointmentlist->timeslot_full);
+            $appointmentTime = trim($timeslotParts[0] ?? '');
+        }
+        
         $appointmentdata[$appointmentlist->id] = [
-            'title' => $appointmentlist->title,
-            'time' => date('H:i A', strtotime($appointmentlist->time)),
-            'date' => date('d D, M Y', strtotime($appointmentlist->date)),
-            'description' => htmlspecialchars($appointmentlist->description, ENT_QUOTES, 'UTF-8'),
+            'title' => $appointmentlist->service_type ?? 'N/A',
+            'time' => $appointmentTime,
+            'date' => $appointmentlist->appointment_datetime ? date('d D, M Y', strtotime($appointmentlist->appointment_datetime)) : '',
+            'description' => htmlspecialchars($appointmentlist->enquiry_details ?? '', ENT_QUOTES, 'UTF-8'),
             'createdby' => substr($first_name, 0, 1),
             'createdname' => $first_name,
             'createdemail' => $admin->email ?? 'N/A',

@@ -965,7 +965,7 @@ public function update_apppointment_comment(Request $request){
 
         try {
             if ($bansalAppointmentId) {
-                BookingAppointment::updateOrCreate(
+                $bookingAppointment = BookingAppointment::updateOrCreate(
                     ['bansal_appointment_id' => $bansalAppointmentId],
                     $bookingAttributes
                 );
@@ -975,7 +975,7 @@ public function update_apppointment_comment(Request $request){
                     'service_id' => $request->service_id,
                     'appointment_datetime' => $appointmentDateTime?->toDateTimeString(),
                 ];
-                BookingAppointment::updateOrCreate(
+                $bookingAppointment = BookingAppointment::updateOrCreate(
                     $uniqueKey,
                     $bookingAttributes
                 );
@@ -992,222 +992,133 @@ public function update_apppointment_comment(Request $request){
             return;
         }
 
-        $obj = new Appointment;
-		$obj->user_id = @Auth::user()->id;
-		$obj->client_id = @$request->client_id;
-		$obj->timezone = @$request->timezone;
-        $obj->service_id = @$request->service_id;
-        $obj->noe_id = @$request->noe_id;
-        $obj->inperson_address = $request->inperson_address;
-        $obj->appointment_details = @$request->appointment_details;
-        $obj->preferred_language = @$request->preferred_language;
-
-        if( isset($request->appoint_date) && $request->appoint_date != "") {
-            $obj->client_unique_id = @$request->client_unique_id;
-        }
-
-        //$obj->full_name = @$request->fullname;
-        //$obj->email = @$request->email;
-        //$obj->phone = @$request->phone;
-        //$obj->date = @$request->appoint_date;
-		//$obj->time = @$request->appoint_time;
+        // Format appointment date for activity log
+        $appointmentDateFormatted = null;
         if( isset($request->appoint_date) && $request->appoint_date != "") {
             $date = explode('/', $request->appoint_date);
-            $obj->date = $date[2].'-'.$date[1].'-'.$date[0];
+            $appointmentDateFormatted = $date[2].'-'.$date[1].'-'.$date[0];
         }
 
-        $obj->timeslot_full = @$request->appoint_time;
-        if( isset($request->appoint_time) && $request->appoint_time != "" ){
-			$time = explode('-', $request->appoint_time);
-			//echo "@@".date("H:i", strtotime($time[0])); die;
-			$obj->time = date("H:i", strtotime($time[0]));
-		}
+        // Save activity log
+        $objs = new ActivitiesLog;
+        $objs->client_id = $request->client_id;
+        $objs->created_by = Auth::user()->id;
 
-        if( isset($request->slot_overwrite_hidden) && $request->slot_overwrite_hidden != "" ){
-			$obj->slot_overwrite_hidden = $request->slot_overwrite_hidden;
-		}
+        $appoint_date_val = explode('/', $request->appoint_date);
+        $appoint_date_val_formated = $appoint_date_val[0].'/'.$appoint_date_val[1].'/'.$appoint_date_val[2];
+        $appointmentDateTime = $request->appoint_date;
+           
 
-        //$obj->title = @$request->title;
-		$obj->description = @$request->description;
-        //$obj->invites = @$request->invites;
-        if( isset($request->promocode_used) && $request->promocode_used != "" ){
-			$obj->promocode_used = $request->promocode_used;
+        // Use formatted date for activity log
+        $activityLogDate = $appointmentDateFormatted ?? ($appointmentDateTime ? $appointmentDateTime->format('Y-m-d') : date('Y-m-d'));
+
+        if( isset($request->service_id) && $request->service_id == 1 ){ //1=>Free 
+            $subject = 'scheduled an free appointment';
+            $serviceTitle = 'Free Consultation';
+        } else if( isset($request->service_id) && $request->service_id == 2 ){ //2=>paid
+            $subject = 'scheduled an paid appointment without payment';
+            $serviceTitle = 'Comprehensive Migration Advice';
+        } else if( isset($request->service_id) && $request->service_id == 3 ){ //2=>paid overseas
+            $subject = 'scheduled an paid appointment without payment';
+            $serviceTitle = 'Overseas Applicant Enquiry';
         }
 
-        if( isset($request->service_id) && $request->service_id == 1 ){ //1=>Paid,2=>Free
-            if( isset($request->promocode_used) && $request->promocode_used != "" ){
-                $obj->status = 0; //Due to promocode no payment is needed
-            } else {
-                $obj->status = 9; //9=>Pending Appointment With Payment Pending
+
+        if( isset($request->service_id) && $request->noe_id == 1 ){ 
+            $enquiryTitle = 'Permanent Residency Appointment';
+        } else if( isset($request->service_id) && $request->noe_id == 2 ){
+            $enquiryTitle = 'Temporary Residency Appointment';
+        } else if( isset($request->service_id) && $request->noe_id == 3 ){ 
+            $enquiryTitle = 'JRP/Skill Assessment';
+        } else if( isset($request->service_id) && $request->noe_id == 4 ){
+            $enquiryTitle = 'Tourist Visa';
+        } else if( isset($request->service_id) && $request->noe_id == 5 ){
+            $enquiryTitle = 'Education/Course Change/Student Visa/Student Dependent Visa';
+        } else if( isset($request->service_id) && $request->noe_id == 6 ){ 
+            $enquiryTitle = 'Complex matters: AAT, Protection visa, Federal Case';
+        } else if( isset($request->service_id) && $request->noe_id == 7 ){ 
+            $enquiryTitle = 'Visa Cancellation/ NOICC/ Visa refusals';
+        } else if( isset($request->service_id) && $request->noe_id == 8 ){ 
+            $enquiryTitle = 'INDIA/UK/CANADA/EUROPE TO AUSTRALIA';
+        }
+
+        if( isset($requestData['appointment_details']) && $requestData['appointment_details'] != ""){
+            if( $requestData['appointment_details'] == "in_person" ){
+                $appointment_details = "In Person";
+            } else if( $requestData['appointment_details'] == "phone" ){
+                $appointment_details = "Phone";
+            } else if( $requestData['appointment_details'] == "video_call" ){
+                $appointment_details = "Video Call";
             }
-        } else if( isset($request->service_id) && $request->service_id == 2 ){
-            $obj->status = 0; //0=>Pending Appointment With Free Type
-        }
-
-        $obj->related_to = 'client';
-		$saved = $obj->save();
-        //Get Nature of Enquiry
-        $nature_of_enquiry_data = DB::table('nature_of_enquiry')->where('id', $request->noe_id)->first();
-        if($nature_of_enquiry_data){
-            $nature_of_enquiry_title = $nature_of_enquiry_data->title;
         } else {
-            $nature_of_enquiry_title = "";
+            $appointment_details = "";
         }
 
-        //Get book_services
-        $service_data = DB::table('book_services')->where('id', $request->service_id)->first();
-        if($service_data){
-            $service_title = $service_data->title;
-            if( $request->service_id == 1) { //Paid
-                $service_type = 'Paid';
+        $objs->description = '<div style="display: -webkit-inline-box;">
+                <span style="height: 60px; width: 60px; border: 1px solid rgb(3, 169, 244); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2px;overflow: hidden;">
+                    <span  style="flex: 1 1 0%; width: 100%; text-align: center; background: rgb(237, 237, 237); border-top-left-radius: 120px; border-top-right-radius: 120px; font-size: 12px;line-height: 24px;">
+                        '.date('d M', strtotime($activityLogDate)).'
+                    </span>
+                    <span style="background: rgb(84, 178, 75); color: rgb(255, 255, 255); flex: 1 1 0%; width: 100%; border-bottom-left-radius: 120px; border-bottom-right-radius: 120px; text-align: center;font-size: 12px; line-height: 21px;">
+                        '.date('Y', strtotime($activityLogDate)).'
+                    </span>
+                </span>
+            </div>
+            <div style="display:inline-grid;"><span class="text-semi-bold">'.$enquiryTitle.'</span> <span class="text-semi-bold">'.$serviceTitle.'</span>  <span class="text-semi-bold">'.$appointment_details.'</span> <span class="text-semi-bold">'.$request->description.'</span> <p class="text-semi-light-grey col-v-1">@ '.$request->appoint_time.'</p></div>';
+        $objs->subject = $subject;
+        $objs->save();
+        
+
+        // Send email to customer
+        $adminInfo = \App\Models\Admin::select('id','phone','first_name','last_name','email','phone')->where('id','=',$request->client_id)->first();
+        if($adminInfo){
+            $clientFullname = $adminInfo->first_name.' '.$adminInfo->last_name;
+            //Email To customer
+            $host = request()->getHttpHost(); //dd($host);
+
+            
+
+            if(isset($requestData['inperson_address']) && $requestData['inperson_address'] != ""){
+                if($requestData['inperson_address'] == 1){
+                    $inperson_address = "ADELAIDE (Unit 5 5/55 Gawler Pl, Adelaide SA 5000)";
+                } else if($requestData['inperson_address'] == 2){
+                    $inperson_address = "MELBOURNE (Next to flight Center, Level 8/278 Collins St, Melbourne VIC 3000, Australia)";
+                }
             } else {
-                $service_type = 'Free';
+                $inperson_address = "";
             }
-            $service_title_text = $service_title.'-'.$service_type;
-        } else {
-            $service_title = "";
-            $service_title_text = "";
+
+            $details = [
+                'title' => 'You have booked an appointment on '.$request->appoint_date.'  at '.$request->appoint_time,
+                'body' => 'This is for testing email using smtp',
+                'fullname' => $clientFullname,
+                'date' => $request->appoint_date,
+                'time' => $request->appoint_time,
+                'email'=> $adminInfo->email ?? null,
+                'phone' => $adminInfo->phone ?? null,
+                'description' => $request->description?? null,
+                'service'=> $serviceTitle,
+                'host'=> $host,
+                'appointment_id'=> $bookingAppointment->id,  //booking appointment id
+                'appointment_details'=> $appointment_details,
+                'inperson_address'=> $inperson_address,
+                'service_type'=> $request->service_id,
+                'client_id'=> $request->client_id,
+                'preferred_language'=> $request->preferred_language
+            ];
+
+            Mail::to($adminInfo->email)->send(new \App\Mail\AppointmentStripeMail($details));
         }
 
-		if($saved){
-            if( isset($request->promocode_used) && $request->promocode_used != "" ){
-                DB::table('promocode_uses')->insert([
-                    'client_id' => $request->client_id,
-                    'promocode_id' => $request->promocode_id,
-                    'promocode' => $request->promocode_used
-                ]);
-            }
-
-		if(isset($request->type) && $request->atype == 'application'){
-			$objs = new \App\Models\ApplicationActivitiesLog;
-			$objs->stage = $request->type;
-				$objs->type = 'appointment';
-				$objs->comment = 'created appointment '.@$request->appoint_date;
-				$objs->title = '';
-				$objs->description = '';
-				$objs->app_id = $request->noteid;
-				$objs->user_id = Auth::user()->id;
-				$saved = $objs->save();
-            } else {
-                $objs = new ActivitiesLog;
-                $objs->client_id = $request->client_id;
-                $objs->created_by = Auth::user()->id;
-
-                $appoint_date_val = explode('/', $request->appoint_date);
-                $appoint_date_val_formated = $appoint_date_val[0].'/'.$appoint_date_val[1].'/'.$appoint_date_val[2];
-                /*if( isset($request->service_id) && $request->service_id == 1 ){ //1=>Paid
-                    $objs->description = '<p><span class="text-semi-bold">scheduled an paid appointment without payment on '.$appoint_date_val_formated.' at '.$request->appoint_time.'</span></p>';
-                } else if( isset($request->service_id) && $request->service_id == 2 ){ //2=>Free
-                    $objs->description = '<p><span class="text-semi-bold">scheduled an appointment on '.$appoint_date_val_formated.' at '.$request->appoint_time.'</span></p>';
-                }*/
-
-
-                $objs->description = '<div style="display: -webkit-inline-box;">
-						<span style="height: 60px; width: 60px; border: 1px solid rgb(3, 169, 244); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2px;overflow: hidden;">
-							<span  style="flex: 1 1 0%; width: 100%; text-align: center; background: rgb(237, 237, 237); border-top-left-radius: 120px; border-top-right-radius: 120px; font-size: 12px;line-height: 24px;">
-							  '.date('d M', strtotime($obj->date)).'
-							</span>
-							<span style="background: rgb(84, 178, 75); color: rgb(255, 255, 255); flex: 1 1 0%; width: 100%; border-bottom-left-radius: 120px; border-bottom-right-radius: 120px; text-align: center;font-size: 12px; line-height: 21px;">
-							   '.date('Y', strtotime($obj->date)).'
-							</span>
-						</span>
-					</div>
-					<div style="display:inline-grid;"><span class="text-semi-bold">'.$nature_of_enquiry_title.'</span> <span class="text-semi-bold">'.$service_title_text.'</span>  <span class="text-semi-bold">'.$request->appointment_details.'</span> <span class="text-semi-bold">'.$request->description.'</span> <p class="text-semi-light-grey col-v-1">@ '.$request->appoint_time.'</p></div>';
-
-                if( isset($request->service_id) && $request->service_id == 1 ){ //1=>Paid
-                    if( isset($request->promocode_used) && $request->promocode_used != "" ){
-                        $subject = 'scheduled an appointment';
-                    } else {
-                        $subject = 'scheduled an paid appointment without payment';
-                    }
-                } else if( isset($request->service_id) && $request->service_id == 2 ){ //2=>Free
-                    $subject = 'scheduled an appointment';
-                }
-                $objs->subject = $subject;
-                $objs->save();
-			}
-
-            //if( isset($request->service_id) && $request->service_id == 1 )
-            //{ //1=>Paid
-
-                $adminInfo = \App\Models\Admin::select('id','phone','first_name','last_name','email')->where('id','=',$request->client_id)->first();
-                if($adminInfo){
-                    $clientFullname = $adminInfo->first_name.' '.$adminInfo->last_name;
-                } else {
-                    $clientFullname = '';
-                }
-                //Email To customer
-                //$host = request()->getHost(); dd($host);
-                $host = request()->getHttpHost(); //dd($host);
-
-                if( isset($requestData['appointment_details']) && $requestData['appointment_details'] != ""){
-                    if( $requestData['appointment_details'] == "in_person" ){
-                        $appointment_details = "In Person";
-                    } else if( $requestData['appointment_details'] == "phone" ){
-                        $appointment_details = "Phone";
-                    } else if( $requestData['appointment_details'] == "zoom_google_meeting" ){
-                        $appointment_details = "Zoom / Google Meeting";
-                    }
-                } else {
-                    $appointment_details = "";
-                }
-
-                if(isset($requestData['inperson_address']) && $requestData['inperson_address'] != ""){
-                    if($requestData['inperson_address'] == 1){
-                        $inperson_address = "ADELAIDE (Unit 5 5/55 Gawler Pl, Adelaide SA 5000)";
-                    } else if($requestData['inperson_address'] == 2){
-                        $inperson_address = "MELBOURNE (Next to flight Center, Level 8/278 Collins St, Melbourne VIC 3000, Australia)";
-                    }
-                } else {
-                    $inperson_address = "";
-                }
-
-                $details = [
-                    'title' => 'Your Payment is pending. You have booked an appointment on '.$request->appoint_date.'  at '.$request->appoint_time,
-                    'body' => 'This is for testing email using smtp',
-                    'fullname' => $clientFullname,
-                    'date' => $request->appoint_date,
-                    'time' => $request->appoint_time,
-                    'email'=> $request->client_email,
-                    'phone' => $adminInfo->phone,
-                    'description' => $request->description,
-                    'service'=> $service_title,
-                    'host'=> $host,
-                    'appointment_id'=> $obj->id,  //payment id
-                    'appointment_details'=> $appointment_details,
-                    'inperson_address'=> $inperson_address,
-                    'service_type'=> $request->service_id,
-                    'client_id'=> $request->client_id,
-                    'preferred_language'=> $request->preferred_language,
-                    'promocode_used'=> $request->promocode_used
-                ];
-
-                if( \Mail::to($adminInfo->email)->send(new \App\Mail\AppointmentStripeMail($details)) ) {
-                    //send sms message
-                    $message = 'Your appointment booked successfully on '.$request->appoint_date.' '.$request->appoint_time;
-                    /*$verifiedNumber = VerifiedNumber::where('phone_number',$adminInfo->phone)->where('is_verified', true)->first();
-                    if ( $verifiedNumber) {
-                        //$this->twilioService->sendSMS($adminInfo->phone,$message);
-                        $this->smsService->sendSms($adminInfo->phone,$message);
-                    }*/
-                }
-            //}
-
-            $response['status'] = 	true;
-			$response['data']	=	'Appointment saved successfully';
-            if(isset($requestData['is_ajax']) && $requestData['is_ajax'] == 1){
-                $response['reloadpage'] = true;
-            }else{
-                $response['reloadpage'] = true; //false;
-            }
-            $response['client_id']  =    $request->client_id;
-            $response['message']	=	'Appointment is booked successfully';
-		} else {
-			$response['status'] 	= 	false;
-			$response['message']	=	'Please try again';
-            $response['client_id']  =    $request->client_id;
-            $response['message']	=	'Appointment is not booked.Pls try again';
-		}
+        $response['status'] = 	true;
+		$response['data']	=	'Appointment saved successfully';
+        if(isset($requestData['is_ajax']) && $requestData['is_ajax'] == 1){
+            $response['reloadpage'] = true;
+        }else{
+            $response['reloadpage'] = true; //false;
+        }
+        $response['client_id']  =    $request->client_id;
+        $response['message']	=	'Appointment is booked successfully';
         echo json_encode($response);
     }
 
@@ -1575,44 +1486,48 @@ public function update_apppointment_comment(Request $request){
 				<?php
 				$rr=0;
 				$appointmentdata = array();
-				$appointmentlists = Appointment::where('client_id', $request->clientid)->where('related_to', 'client')->orderby('created_at', 'DESC')->get();
-				$appointmentlistslast = Appointment::where('client_id', $request->clientid)->where('related_to', 'client')->orderby('created_at', 'DESC')->first();
+				$appointmentlists = BookingAppointment::where('client_id', $request->clientid)->orderby('created_at', 'DESC')->get();
+				$appointmentlistslast = BookingAppointment::where('client_id', $request->clientid)->orderby('created_at', 'DESC')->first();
 				foreach($appointmentlists as $appointmentlist){
-					$admin = \App\Models\Admin::where('id', $appointmentlist->user_id)->first();
+					$admin = \App\Models\Admin::select('id', 'first_name','email')->where('id', $appointmentlist->user_id)->first();
+					$first_name = $admin->first_name ?? 'N/A';
 					$datetime = $appointmentlist->created_at;
 					$timeago = Controller::time_elapsed_string($datetime);
 
+					// Format date and time from BookingAppointment
+					$appointmentDate = $appointmentlist->appointment_datetime ? date('d/m/Y', strtotime($appointmentlist->appointment_datetime)) : '';
+					// Extract start time from timeslot_full (format: "10:00 AM - 10:15 AM" or just "10:00 AM")
+					$appointmentTime = '';
+					if($appointmentlist->timeslot_full) {
+						$timeslotParts = explode(' - ', $appointmentlist->timeslot_full);
+						$appointmentTime = trim($timeslotParts[0] ?? '');
+					}
+					$appointmentDateFormatted = $appointmentlist->appointment_datetime ? date('d D, M Y', strtotime($appointmentlist->appointment_datetime)) : '';
+
 					$appointmentdata[$appointmentlist->id] = array(
-						'title' => $appointmentlist->title,
-						'time' => date('H:i A', strtotime($appointmentlist->time)),
-						'date' => date('d D, M Y', strtotime($appointmentlist->date)),
-						'description' => $appointmentlist->description,
-						'createdby' => substr($admin->first_name, 0, 1),
-						'createdname' => $admin->first_name,
-						'createdemail' => $admin->email,
+						'title' => $appointmentlist->service_type ?? 'N/A',
+						'time' => $appointmentTime,
+						'date' => $appointmentDateFormatted,
+						'description' => htmlspecialchars($appointmentlist->enquiry_details ?? '', ENT_QUOTES, 'UTF-8'),
+						'createdby' => substr($first_name, 0, 1),
+						'createdname' => $first_name,
+						'createdemail' => $admin->email ?? 'N/A',
 					);
 				?>
 				<div class="appointmentdata <?php if($rr == 0){ echo 'active'; } ?>" data-id="<?php echo $appointmentlist->id; ?>">
 					<div class="appointment_col">
 						<div class="appointdate">
-							<h5><?php echo date('d D', strtotime($appointmentlist->date)); ?></h5>
-							<p><?php echo date('H:i A', strtotime($appointmentlist->time)); ?><br>
+							<h5><?php echo $appointmentDate; ?></h5>
+							<p><?php echo $appointmentTime; ?><br>
 							<i><small><?php echo $timeago ?></small></i></p>
 						</div>
 						<div class="title_desc">
-							<h5><?php echo $appointmentlist->title; ?></h5>
-							<p><?php echo $appointmentlist->description; ?></p>
+							<h5><?php echo htmlspecialchars($appointmentlist->service_type ?? 'N/A', ENT_QUOTES, 'UTF-8'); ?></h5>
+							<p><?php echo htmlspecialchars($appointmentlist->enquiry_details ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
 						</div>
 						<div class="appoint_created">
 							<span class="span_label">Created By:
-							<span><?php echo substr($admin->first_name, 0, 1); ?></span></span>
-							<div class="dropdown d-inline dropdown_ellipsis_icon">
-								<a class="dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
-								<div class="dropdown-menu">
-									<a class="dropdown-item edit_appointment" data-id="<?php echo $appointmentlist->id; ?>" href="javascript:;">Edit</a>
-									<a data-id="<?php echo $appointmentlist->id; ?>" data-href="deleteappointment" class="dropdown-item deletenote" href="javascript:;" >Delete</a>
-								</div>
-							</div>
+							<span><?php echo substr($first_name, 0, 1); ?></span></span>
 						</div>
 					</div>
 				</div>
@@ -1620,34 +1535,43 @@ public function update_apppointment_comment(Request $request){
 			</div>
 			<div class="col-md-7">
 				<div class="editappointment">
-					<a class="edit_link edit_appointment" href="javascript:;" data-id="<?php echo $appointmentlistslast->id; ?>"><i class="fa fa-edit"></i></a>
+					<?php if($appointmentlistslast){ ?>
 					<?php
-					$adminfirst = \App\Models\Admin::where('id', $appointmentlistslast->user_id)->first();
+					$adminfirst = \App\Models\Admin::select('id', 'first_name','email')->where('id', @$appointmentlistslast->user_id)->first();
+					$appointmentDateLast = $appointmentlistslast->appointment_datetime ? date('d/m/Y', strtotime($appointmentlistslast->appointment_datetime)) : '';
+					// Extract start time from timeslot_full (format: "10:00 AM - 10:15 AM" or just "10:00 AM")
+					$appointmentTimeLast = '';
+					if($appointmentlistslast->timeslot_full) {
+						$timeslotPartsLast = explode(' - ', $appointmentlistslast->timeslot_full);
+						$appointmentTimeLast = trim($timeslotPartsLast[0] ?? '');
+					}
+					$appointmentDateFormattedLast = $appointmentlistslast->appointment_datetime ? date('d D, M Y', strtotime($appointmentlistslast->appointment_datetime)) : '';
 					?>
 					<div class="content">
-						<h4 class="appointmentname"><?php echo $appointmentlistslast->title; ?></h4>
+						<h4 class="appointmentname"><?php echo htmlspecialchars(@$appointmentlistslast->service_type ?? 'N/A', ENT_QUOTES, 'UTF-8'); ?></h4>
 						<div class="appitem">
 							<i class="fa fa-clock"></i>
-							<span class="appcontent appointmenttime"><?php echo date('H:i A', strtotime($appointmentlistslast->time)); ?></span>
+							<span class="appcontent appointmenttime"><?php echo $appointmentTimeLast; ?></span>
 						</div>
 						<div class="appitem">
 							<i class="fa fa-calendar"></i>
-							<span class="appcontent appointmentdate"><?php echo date('d D, M Y', strtotime($appointmentlistslast->date)); ?></span>
+							<span class="appcontent appointmentdate"><?php echo $appointmentDateFormattedLast; ?></span>
 						</div>
 						<div class="description appointmentdescription">
-							<p><?php echo $appointmentlistslast->description; ?></p>
+							<p><?php echo htmlspecialchars(@$appointmentlistslast->enquiry_details ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
 						</div>
 						<div class="created_by">
 							<span class="label">Created By:</span>
 							<div class="createdby">
-								<span class="appointmentcreatedby"><?php echo substr($adminfirst->first_name, 0, 1); ?></span>
+								<span class="appointmentcreatedby"><?php echo substr(@$adminfirst->first_name ?? 'N', 0, 1); ?></span>
 							</div>
 							<div class="createdinfo">
-								<a href="" class="appointmentcreatedname"><?php echo $adminfirst->first_name ?></a>
-								<p class="appointmentcreatedemail"><?php echo $adminfirst->primary_email; ?></p>
+								<a href="" class="appointmentcreatedname"><?php echo @$adminfirst->first_name ?? 'N/A' ?></a>
+								<p class="appointmentcreatedemail"><?php echo @$adminfirst->primary_email ?? @$adminfirst->email ?? 'N/A'; ?></p>
 							</div>
 						</div>
 					</div>
+					<?php } ?>
 				</div>
 			</div>
 		</div>

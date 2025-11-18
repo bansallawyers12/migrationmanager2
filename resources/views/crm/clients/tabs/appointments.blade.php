@@ -18,11 +18,18 @@
                                 $datetime = $appointmentlist->created_at;
                                 $timeago = \App\Http\Controllers\Controller::time_elapsed_string($datetime);
 
+                                // Extract start time from timeslot_full (format: "10:00 AM - 10:15 AM" or just "10:00 AM")
+                                $appointmentTime = '';
+                                if($appointmentlist->timeslot_full) {
+                                    $timeslotParts = explode(' - ', $appointmentlist->timeslot_full);
+                                    $appointmentTime = trim($timeslotParts[0] ?? '');
+                                }
+
                                 $appointmentdata[$appointmentlist->id] = [
-                                    'title' => $appointmentlist->service_type,
-                                    'time' => date('H:i A', strtotime($appointmentlist->timeslot_full)),
-                                    'date' => date('d/m/Y', strtotime($appointmentlist->appointment_datetime)),
-                                    'description' => htmlspecialchars($appointmentlist->enquiry_details, ENT_QUOTES, 'UTF-8'),
+                                    'title' => $appointmentlist->service_type ?? 'N/A',
+                                    'time' => $appointmentTime,
+                                    'date' => $appointmentlist->appointment_datetime ? date('d D, M Y', strtotime($appointmentlist->appointment_datetime)) : '',
+                                    'description' => htmlspecialchars($appointmentlist->enquiry_details ?? '', ENT_QUOTES, 'UTF-8'),
                                     'createdby' => substr($first_name, 0, 1),
                                     'createdname' => $first_name,
                                     'createdemail' => $admin->email ?? 'N/A',
@@ -32,8 +39,16 @@
                             <div class="appointmentdata <?php if($rr == 0){ echo 'active'; } ?>" data-id="<?php echo $appointmentlist->id; ?>">
                                 <div class="appointment_col">
                                     <div class="appointdate">
-                                        <h5><?php echo date('d/m/Y', strtotime($appointmentlist->appointment_datetime)); ?></h5>
-                                        <p><?php echo date('H:i A', strtotime($appointmentlist->timeslot_full)); ?><br>
+                                        <h5><?php echo $appointmentlist->appointment_datetime ? date('d/m/Y', strtotime($appointmentlist->appointment_datetime)) : ''; ?></h5>
+                                        <p><?php 
+                                            // Extract start time from timeslot_full
+                                            $displayTime = '';
+                                            if($appointmentlist->timeslot_full) {
+                                                $timeslotParts = explode(' - ', $appointmentlist->timeslot_full);
+                                                $displayTime = trim($timeslotParts[0] ?? '');
+                                            }
+                                            echo $displayTime;
+                                        ?><br>
                                         <i><small><?php echo $timeago ?></small></i></p>
                                     </div>
                                     <div class="title_desc">
@@ -43,12 +58,6 @@
                                     <div class="appoint_created">
                                         <span class="span_label">Created By:
                                         <span><?php echo substr($first_name, 0, 1); ?></span></span>
-                                        <!--<div class="dropdown d-inline dropdown_ellipsis_icon">
-                                            <a class="dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
-                                            <div class="dropdown-menu">
-                                                <a data-id="{{$appointmentlist->id}}" data-href="deleteappointment" class="dropdown-item deletenote" href="javascript:;" >Delete</a>
-                                            </div>
-                                        </div>-->
                                     </div>
                                 </div>
                             </div>
@@ -64,11 +73,19 @@
                                     <h4 class="appointmentname"><?php echo @$appointmentlistslast->service_type; ?></h4>
                                     <div class="appitem">
                                         <i class="fa fa-clock"></i>
-                                        <span class="appcontent appointmenttime"><?php echo date('H:i A', strtotime(@$appointmentlistslast->timeslot_full)); ?></span>
+                                        <span class="appcontent appointmenttime"><?php 
+                                            // Extract start time from timeslot_full
+                                            $displayTimeLast = '';
+                                            if(@$appointmentlistslast->timeslot_full) {
+                                                $timeslotPartsLast = explode(' - ', $appointmentlistslast->timeslot_full);
+                                                $displayTimeLast = trim($timeslotPartsLast[0] ?? '');
+                                            }
+                                            echo $displayTimeLast;
+                                        ?></span>
                                     </div>
                                     <div class="appitem">
                                         <i class="fa fa-calendar"></i>
-                                        <span class="appcontent appointmentdate"><?php echo date('d/m/Y', strtotime(@$appointmentlistslast->appointment_datetime)); ?></span>
+                                        <span class="appcontent appointmentdate"><?php echo @$appointmentlistslast->appointment_datetime ? date('d D, M Y', strtotime($appointmentlistslast->appointment_datetime)) : ''; ?></span>
                                     </div>
                                     <div class="description appointmentdescription">
                                         <p><?php echo @$appointmentlistslast->enquiry_details; ?></p>
@@ -90,4 +107,11 @@
                     </div>
                 </div>
             </div>
+
+            <script>
+                // Ensure appointmentData is available for click handler
+                @if(isset($appointmentdata) && !empty($appointmentdata))
+                    window.appointmentData = {!! json_encode($appointmentdata, JSON_FORCE_OBJECT) !!};
+                @endif
+            </script>
 
