@@ -155,30 +155,6 @@
                                                                     <a target="_blank" class="dropdown-item" href="<?= $fetch->myfile ?>">Preview</a>
                                                                     <a href="#" class="dropdown-item download-file" data-filelink="<?= $fetch->myfile ?>" data-filename="<?= $fetch->myfile_key ?>">Download</a>
                                                                     <a data-id="<?= $fetch->id ?>" class="dropdown-item notuseddoc" data-doctype="personal" data-doccategory="<?= $catVal->title ?>" data-href="notuseddoc" href="javascript:;">Not Used</a>
-
-                                                                     @if (strtolower($fetch->filetype) === 'pdf')
-
-                                                                            @if ($fetch->status === 'draft')
-                                                                                <form method="GET" action="{{ route('documents.edit', $fetch->id) }}" target="_blank" style="display: inline;">
-                                                                                    <button type="submit" class="dropdown-item" style="background: none; border: none; width: 100%; text-align: left; padding: 0.25rem 1.5rem;">
-                                                                                        Send To Signature
-                                                                                    </button>
-                                                                                </form>
-                                                                            @endif
-
-                                                                            @if($fetch->status === 'sent')
-                                                                                <form method="GET" action="{{ route('signatures.show', $fetch->id) }}" target="_blank" style="display: inline;">
-                                                                                    <button type="submit" class="dropdown-item" style="background: none; border: none; width: 100%; text-align: left; padding: 0.25rem 1.5rem;">
-                                                                                        Check To Signature
-                                                                                    </button>
-                                                                                </form>
-                                                                            @endif
-
-                                                                            @if($fetch->status === 'signed')
-                                                                                <a target="_blank" href="{{ route('documents.download.signed', $fetch->id) }}" class="dropdown-item">Download Signed</a>
-                                                                            @endif
-
-                                                                        @endif
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -219,15 +195,6 @@
                 <div class="context-menu-item" onclick="handleContextAction('not-used')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">
                     <i class="fa fa-trash" style="margin-right: 8px;"></i> Not Used
                 </div>
-                <div id="context-send-signature" class="context-menu-item" onclick="handleContextAction('send-signature')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee; display: none;">
-                    <i class="fa fa-signature" style="margin-right: 8px;"></i> Send To Signature
-                </div>
-                <div id="context-check-signature" class="context-menu-item" onclick="handleContextAction('check-signature')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee; display: none;">
-                    <i class="fa fa-check-circle" style="margin-right: 8px;"></i> Check To Signature
-                </div>
-                <div id="context-download-signed" class="context-menu-item" onclick="handleContextAction('download-signed')" style="padding: 8px 12px; cursor: pointer; display: none;">
-                    <i class="fa fa-file-signature" style="margin-right: 8px;"></i> Download Signed
-                </div>
             </div>
 
             <script>
@@ -258,34 +225,6 @@
                         pdfOption.style.display = 'none';
                     }
 
-                    // Show/hide signature options based on file type and status
-                    const sendSignature = document.getElementById('context-send-signature');
-                    const checkSignature = document.getElementById('context-check-signature');
-                    const downloadSigned = document.getElementById('context-download-signed');
-                    
-                    if (fileType.toLowerCase() === 'pdf') {
-                        if (fileStatus === 'draft') {
-                            sendSignature.style.display = 'block';
-                            checkSignature.style.display = 'none';
-                            downloadSigned.style.display = 'none';
-                        } else if (fileStatus === 'sent') {
-                            sendSignature.style.display = 'none';
-                            checkSignature.style.display = 'block';
-                            downloadSigned.style.display = 'none';
-                        } else if (fileStatus === 'signed') {
-                            sendSignature.style.display = 'none';
-                            checkSignature.style.display = 'none';
-                            downloadSigned.style.display = 'block';
-                        } else {
-                            sendSignature.style.display = 'none';
-                            checkSignature.style.display = 'none';
-                            downloadSigned.style.display = 'none';
-                        }
-                    } else {
-                        sendSignature.style.display = 'none';
-                        checkSignature.style.display = 'none';
-                        downloadSigned.style.display = 'none';
-                    }
 
                     // Position menu at cursor with edge detection
                     const MENU_WIDTH = 180;
@@ -366,18 +305,6 @@
                             break;
                         case 'not-used':
                             $('.notuseddoc[data-id="' + currentContextFile + '"]').click();
-                            break;
-                        case 'send-signature':
-                            const sendSignatureUrl = '{{ route('documents.edit', ':id') }}'.replace(':id', currentContextFile);
-                            window.open(sendSignatureUrl, '_blank');
-                            break;
-                        case 'check-signature':
-                            const checkSignatureUrl = '{{ route('signatures.index') }}';
-                            window.open(checkSignatureUrl, '_blank');
-                            break;
-                        case 'download-signed':
-                            const downloadSignedUrl = '{{ route('documents.download.signed', ':id') }}'.replace(':id', currentContextFile);
-                            window.open(downloadSignedUrl, '_blank');
                             break;
                     }
                 }

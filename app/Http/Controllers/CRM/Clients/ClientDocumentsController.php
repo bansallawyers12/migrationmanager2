@@ -154,31 +154,6 @@ class ClientDocumentsController extends Controller
                                             <a href="#" class="dropdown-item download-file" data-filelink="<?php echo $fetch->myfile; ?>" data-filename="<?php echo $fetch->myfile_key; ?>">Download</a>
 
                                             <a data-id="<?php echo $fetch->id; ?>" class="dropdown-item notuseddoc" data-doctype="personal" data-doccategory="<?php echo $request->folder_name;?>" data-href="notuseddoc" href="javascript:;">Not Used</a>
-                                            <?php
-                                            if (strtolower($fetch->filetype) === 'pdf')
-                                            {
-                                                if ($fetch->status === 'draft'){
-                                                    $url1 = route('documents.edit', $fetch->id);
-                                                ?>
-                                                    <a target="_blank" href="<?php echo $url1;?>" class="dropdown-item">Send To Signature</a>
-                                                <?php
-                                                }
-
-                                                if($fetch->status === 'sent') {
-
-                                                    $url2 = route('signatures.show', $fetch->id);
-                                                ?>
-                                                    <a target="_blank" href="<?php echo $url2;?>" class="dropdown-item">Check To Signature</a>
-                                                <?php
-                                                }
-
-                                                if($fetch->status === 'signed') {
-                                                    $url3 = route('download.signed', $fetch->id);
-                                                ?>
-                                                    <a target="_blank" href="<?php echo $url3;?>" class="dropdown-item">Download Signed</a>
-                                                <?php
-                                                }
-                                            }?>
                                             <?php }?>
                                         </div>
                                     </div>
@@ -446,31 +421,7 @@ class ClientDocumentsController extends Controller
                                             <a href="#" class="dropdown-item download-file" data-filelink="<?php echo $fetch->myfile; ?>" data-filename="<?php echo $fetch->myfile_key; ?>">Download</a>
 
                                             <a data-id="<?php echo $fetch->id; ?>" class="dropdown-item notuseddoc" data-doctype="visa" data-href="notuseddoc" href="javascript:;">Not Used</a>
-                                            <?php
-                                            if (strtolower($fetch->filetype) === 'pdf')
-                                            {
-                                                if ($fetch->status === 'draft'){
-                                                    $url1 = route('documents.edit', $fetch->id);
-                                                ?>
-                                                    <a target="_blank" href="<?php echo $url1;?>" class="dropdown-item">Send To Signature</a>
-                                                <?php
-                                                }
-
-                                                if($fetch->status === 'sent') {
-
-                                                    $url2 = route('signatures.show', $fetch->id);
-                                                ?>
-                                                    <a target="_blank" href="<?php echo $url2;?>" class="dropdown-item">Check To Signature</a>
-                                                <?php
-                                                }
-
-                                                if($fetch->status === 'signed') {
-                                                    $url3 = route('download.signed', $fetch->id);
-                                                ?>
-                                                    <a target="_blank" href="<?php echo $url3;?>" class="dropdown-item">Download Signed</a>
-                                                <?php
-                                                }
-                                            }?>
+                                           
 
                                         </div>
                                     </div>
