@@ -30,8 +30,7 @@ class AppointmentStripeMail extends Mailable
      */
     public function build()
     {
-        //return $this->view('emails.appointmentstripe');
-      	$serviceTitle = $this->details['service'] ?? 'Migration Consultation';
+        $serviceTitle = $this->details['service'];
         $subject = "Confirmation of Your {$serviceTitle} Appointment";
         return $this->subject($subject)->view('emails.appointmentstripe');
     }

@@ -58,18 +58,18 @@
                                         <tr>
                                             <td style="width:260px;padding:0;vertical-align:top;color:#153643;">
 
-                                                <?php if( isset($details['service_type'])  && $details['service_type'] == 1 ) { ?>
+                                                <?php if( isset($details['service_type'])  && $details['service_type'] != 1 ) { ?>
                                                     <p style="margin:0 0 12px 0;font-size:16px;line-height:24px;font-family:Arial,sans-serif;">Your Payment is pending. Please use below payment link - <a target="_blank" href="http://{{$details['host']}}/stripe/{{$details['appointment_id']}}" style="color:#ee4c50;text-decoration:underline;">Payment link</a></p>
                                                 <?php }?>
 
-                                                <p style="margin:0 0 12px 12px;font-size:16px;line-height:24px;font-family:Arial,sans-serif;">
+                                                <!--<p style="margin:0 0 12px 12px;font-size:16px;line-height:24px;font-family:Arial,sans-serif;">
                                                     Kindly click this link to confirm you email address. If you do not confirm your email, we may not confirm your appointment.
-                                                    <a href="https://www.bansalimmigration.com.au/email-verify-token/<?php echo base64_encode(convert_uuencode($details['client_id']));?>" style="background-color: #4CAF50;border: none;color: white;padding: 7px 16px;text-align: center;text-decoration: none;display: inline-block;font-size: 16p;cursor: pointer;border-radius: 4px;">Verify Email</a>
+                                                    <a href="https://www.bansalimmigration.com.au/email-verify-token/<?php //echo base64_encode(convert_uuencode($details['client_id']));?>" style="background-color: #4CAF50;border: none;color: white;padding: 7px 16px;text-align: center;text-decoration: none;display: inline-block;font-size: 16p;cursor: pointer;border-radius: 4px;">Verify Email</a>
                                                     or if you are already verified,Pls ignore this
-                                                </p>
-                                                <p style="margin:0 0 12px 0;font-size:16px;line-height:24px;font-family:Arial,sans-serif;">
-                                                    You can also update your details by clicking this link. <a href="https://www.bansalimmigration.com.au/verify-dob/<?php echo base64_encode(convert_uuencode($details['client_id']));?>">Update Detail</a>
-                                                </p>
+                                                </p>-->
+                                                <!--<p style="margin:0 0 12px 0;font-size:16px;line-height:24px;font-family:Arial,sans-serif;">
+                                                    You can also update your details by clicking this link. <a href="https://www.bansalimmigration.com.au/verify-dob/<?php //echo base64_encode(convert_uuencode($details['client_id']));?>">Update Detail</a>
+                                                </p>-->
                                             </td>
                                         </tr>
 
