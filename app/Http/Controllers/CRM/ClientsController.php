@@ -4514,6 +4514,65 @@ class ClientsController extends Controller
                 
                 //dd($clientFamilyDetails);
                 
+                // Check and insert/update application record when Client Portal tab is accessed
+                if ($tab === 'application' && $id1) {
+                    // Get client_matter_id from client_unique_matter_ref_no (id1)
+                    // Check all matters regardless of status
+                    $clientMatter = DB::table('client_matters')
+                        ->where('client_id', $id)
+                        ->where('client_unique_matter_no', $id1)
+                        ->first();
+                    
+                    if ($clientMatter) {
+                        $clientMatterId = $clientMatter->id;
+                        
+                        // Get workflow and stage from client_matters table
+                        $workflowStageInfo = DB::table('client_matters')
+                            ->join('workflow_stages', 'client_matters.workflow_stage_id', '=', 'workflow_stages.id')
+                            ->where('client_matters.id', $clientMatterId)
+                            ->select('workflow_stages.w_id as workflow_id', 'workflow_stages.name as stage_name')
+                            ->first();
+                        
+                        if ($workflowStageInfo) {
+                            // Map matter_status to status (inverse mapping)
+                            // If matter_status = 1 (active), then status = 0 (InProgress)
+                            // If matter_status = 0 (inactive), then status = 1 (Completed)
+                            $applicationStatus = ($clientMatter->matter_status == 1) ? 0 : 1;
+                            
+                            // Check if record exists in applications table
+                            $existingApplication = DB::table('applications')
+                                ->where('client_matter_id', $clientMatterId)
+                                ->where('client_id', $id)
+                                ->first();
+                            
+                            if (!$existingApplication) {
+                                // Insert new record
+                                DB::table('applications')->insert([
+                                    'client_matter_id' => $clientMatterId,
+                                    'client_id' => $id,
+                                    'user_id' => Auth::user()->id,
+                                    'workflow' => $workflowStageInfo->workflow_id,
+                                    'stage' => $workflowStageInfo->stage_name,
+                                    'status' => $applicationStatus,
+                                    'created_at' => now(),
+                                    'updated_at' => now()
+                                ]);
+                            } else {
+                                // Update workflow, stage, and status columns
+                                DB::table('applications')
+                                    ->where('client_matter_id', $clientMatterId)
+                                    ->where('client_id', $id)
+                                    ->update([
+                                        'workflow' => $workflowStageInfo->workflow_id,
+                                        'stage' => $workflowStageInfo->stage_name,
+                                        'status' => $applicationStatus,
+                                        'updated_at' => now()
+                                    ]);
+                            }
+                        }
+                    }
+                }
+                
                 // Get current admin user data for SMS templates
                 $currentAdmin = Auth::user();
                 $staffName = $currentAdmin->first_name . ' ' . $currentAdmin->last_name;

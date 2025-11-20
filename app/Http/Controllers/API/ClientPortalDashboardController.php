@@ -774,10 +774,17 @@ class ClientPortalDashboardController extends Controller
             ->where('workflow_stage_id', 14)   // 14 for file closed stage
             ->count();
 
+        // Get total count of matters for the client
+        $totalMatters = DB::table('client_matters')
+            ->where('client_id', $clientId)
+            ->where('matter_status', 1) // 1 for active matter
+            ->count();
+
         return [
             'active_cases' => $activeCases,
             'completed_cases' => $completedCases,
-            'total_cases' => $totalCases
+            'total_cases' => $totalCases,
+            'total_matters' => $totalMatters
         ];
     }
 

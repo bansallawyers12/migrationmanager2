@@ -26,6 +26,20 @@ class ClientPortalWorkflowController extends Controller
             // Get client_matter_id parameter (optional)
             $clientMatterId = $request->get('client_matter_id');
             
+            // Get application_id if client_matter_id is provided
+            $applicationId = null;
+            if (!is_null($clientMatterId)) {
+                $application = DB::table('applications')
+                    ->select('id as application_id')
+                    ->where('client_matter_id', $clientMatterId)
+                    ->where('client_id', $clientId)
+                    ->first();
+                
+                if ($application) {
+                    $applicationId = $application->application_id;
+                }
+            }
+
             // Get all workflow stages
             $workflowStages = DB::table('workflow_stages')
                 ->orderBy('id', 'asc')
@@ -36,11 +50,38 @@ class ClientPortalWorkflowController extends Controller
                     'updated_at'
                 )
                 ->get()
-                ->map(function ($stage) {
+                ->map(function ($stage) use ($clientId, $applicationId) {
+                    // Calculate allowed_checklist_count and get allowed_checklist items for this stage
+                    $allowedChecklistCount = 0;
+                    $allowedChecklist = [];
+                    
+                    if (!is_null($applicationId)) {
+                        $checklistItems = DB::table('application_document_lists')
+                            ->where('application_id', $applicationId)
+                            ->where('client_id', $clientId)
+                            ->where('typename', $stage->name)
+                            ->where('allow_client', 1)
+                            ->select('id', 'document_type')
+                            ->orderBy('id', 'asc')
+                            ->get();
+                        
+                        $allowedChecklistCount = $checklistItems->count();
+                        
+                        // Format checklist items as array with id and name
+                        $allowedChecklist = $checklistItems->map(function ($item) {
+                            return [
+                                'id' => $item->id,
+                                'name' => $item->document_type
+                            ];
+                        })->toArray();
+                    }
+                    
                     return [
                         'id' => $stage->id,
                         'name' => $stage->name,
                         'stage_name' => $stage->name, // Alias for consistency
+                        'allowed_checklist_count' => $allowedChecklistCount,
+                        'allowed_checklist' => $allowedChecklist,
                         'created_at' => $stage->created_at,
                         'updated_at' => $stage->updated_at
                     ];
@@ -236,7 +277,8 @@ class ClientPortalWorkflowController extends Controller
             
             // Validate input parameters
             $validator = Validator::make($request->all(), [
-                'client_matter_id' => 'required|integer|min:1'
+                'client_matter_id' => 'required|integer|min:1',
+                'stage_id' => 'nullable|integer|min:1'
             ]);
 
             if ($validator->fails()) {
@@ -248,6 +290,20 @@ class ClientPortalWorkflowController extends Controller
             }
 
             $clientMatterId = $request->input('client_matter_id');
+            $stageId = $request->input('stage_id');
+
+            // Get stage name if stage_id is provided
+            $stageName = null;
+            if (!empty($stageId)) {
+                $stage = DB::table('workflow_stages')
+                    ->where('id', $stageId)
+                    ->select('name')
+                    ->first();
+                
+                if ($stage) {
+                    $stageName = $stage->name;
+                }
+            }
 
             // Step 1: Get application_id from applications table
             $application = DB::table('applications')
@@ -272,7 +328,7 @@ class ClientPortalWorkflowController extends Controller
             // Step 2: Get allowed checklist names from application_document_lists table
             // Join with workflow_stages table to get type_id based on typename
             // Join with application_documents table to check upload status
-            $allowedChecklists = DB::table('application_document_lists')
+            $query = DB::table('application_document_lists')
                 ->leftJoin('workflow_stages', 'application_document_lists.typename', '=', 'workflow_stages.name')
                 ->leftJoin('application_documents', function($join) use ($applicationId) {
                     $join->on('application_document_lists.id', '=', 'application_documents.list_id')
@@ -291,14 +347,52 @@ class ClientPortalWorkflowController extends Controller
                     'application_document_lists.updated_at',
                     'workflow_stages.id as type_id',
                     'application_documents.file_name',
-                    'application_documents.myfile as file_url'
+                    'application_documents.myfile as file_url',
+                    'application_documents.status as doc_status',
+                    'application_documents.doc_rejection_reason'
                 )
                 ->where('application_document_lists.application_id', $applicationId)
-                ->where('application_document_lists.allow_client', 1) // Only documents allowed for client
+                ->where('application_document_lists.allow_client', 1); // Only documents allowed for client
+            
+            // Filter by stage name (typename) if stage_id is provided
+            if (!empty($stageName)) {
+                $query->where('application_document_lists.typename', $stageName);
+            }
+            
+            $allowedChecklists = $query
                 ->orderBy('application_document_lists.id', 'asc')
                 ->get()
                 ->map(function ($item) {
                     $isUploaded = !is_null($item->file_name) && !is_null($item->file_url);
+                    
+                    // Set doc_status_id, doc_status_text and doc_rejection_reason
+                    // If no document is uploaded, all should be null
+                    $docStatusId = null;
+                    $docStatusText = null;
+                    $docRejectionReason = null;
+                    
+                    if ($isUploaded && !is_null($item->doc_status)) {
+                        $docStatusId = (int)$item->doc_status; // 0, 1, or 2
+                        
+                        // Map status ID to status text
+                        switch ($docStatusId) {
+                            case 0:
+                                $docStatusText = 'InProgress';
+                                break;
+                            case 1:
+                                $docStatusText = 'Approved';
+                                break;
+                            case 2:
+                                $docStatusText = 'Rejected';
+                                // doc_rejection_reason only if status is 2 (Reject)
+                                if (!is_null($item->doc_rejection_reason)) {
+                                    $docRejectionReason = $item->doc_rejection_reason;
+                                }
+                                break;
+                            default:
+                                $docStatusText = null;
+                        }
+                    }
                     
                     return [
                         'id' => $item->id,
@@ -314,6 +408,9 @@ class ClientPortalWorkflowController extends Controller
                         'is_upload' => $isUploaded,
                         'file_name' => $isUploaded ? $item->file_name : null,
                         'file_url' => $isUploaded ? $item->file_url : null,
+                        'doc_status_id' => $docStatusId,
+                        'doc_status_text' => $docStatusText,
+                        'doc_rejection_reason' => $docRejectionReason,
                         'created_at' => $item->created_at,
                         'updated_at' => $item->updated_at
                     ];
@@ -333,7 +430,9 @@ class ClientPortalWorkflowController extends Controller
                     'total_allowed_checklists' => $allowedChecklists->count(),
                     'mandatory_checklists' => $allowedChecklists->where('is_mandatory', true)->count(),
                     'optional_checklists' => $allowedChecklists->where('is_mandatory', false)->count(),
-                    'client_matter_id' => $clientMatterId
+                    'client_matter_id' => $clientMatterId,
+                    'stage_id' => $stageId ? (int)$stageId : null,
+                    'stage_name' => $stageName
                 ]
             ], 200);
 
@@ -341,6 +440,7 @@ class ClientPortalWorkflowController extends Controller
             Log::error('Allowed Checklist for Stages API Error: ' . $e->getMessage(), [
                 'user_id' => $admin->id ?? null,
                 'client_matter_id' => $request->input('client_matter_id'),
+                'stage_id' => $request->input('stage_id'),
                 'trace' => $e->getTraceAsString()
             ]);
 

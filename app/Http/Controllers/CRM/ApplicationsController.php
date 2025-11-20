@@ -844,23 +844,50 @@ class ApplicationsController extends Controller
 	}
 
 	public function addchecklists(Request $request){
+		// Validate required fields
+		$request->validate([
+			'document_type' => 'required|string|max:255',
+			'client_id' => 'required|integer',
+			'app_id' => 'required|integer',
+			'type' => 'required|string',
+			'typename' => 'required|string'
+		], [
+			'document_type.required' => 'Checklist Name is required.',
+			'document_type.string' => 'Checklist Name must be a valid text.',
+			'document_type.max' => 'Checklist Name cannot exceed 255 characters.',
+			'client_id.required' => 'Client ID is required.',
+			'app_id.required' => 'Application ID is required.',
+			'type.required' => 'Type is required.',
+			'typename.required' => 'Type name is required.'
+		]);
+		
 		$requestData = $request->all();
 		$client_id = $requestData['client_id'];
 		$app_id = $requestData['app_id'];
 		$type = $requestData['type'];
 		$typename = $requestData['typename'];
+		$document_type = trim($request->document_type);
+		
+		// Double check document_type is not empty after trimming
+		if (empty($document_type)) {
+			$response['status'] = false;
+			$response['message'] = 'Checklist Name is required.';
+			echo json_encode($response);
+			return;
+		}
+		
 		$obj = new \App\Models\ApplicationDocumentList;
 		$obj->type = $type;
 		$obj->typename = $typename;
 		$obj->client_id = $client_id;
 		$obj->application_id = $app_id;
-		$obj->document_type = @$request->document_type;
-		$obj->description = $request->description;
-		$obj->allow_client = $request->allow_upload_docu;
-		$obj->make_mandatory = $request->proceed_next_stage;
-		if($requestData['due_date'] == 1){
-			$obj->date = $request->appoint_date;
-			$obj->time = $request->appoint_time;
+		$obj->document_type = $document_type;
+		$obj->description = $request->description ?? null;
+		$obj->allow_client = $request->allow_upload_docu ?? 0;
+		$obj->make_mandatory = $request->proceed_next_stage ?? null;
+		if(isset($requestData['due_date']) && $requestData['due_date'] == 1){
+			$obj->date = $request->appoint_date ?? null;
+			$obj->time = $request->appoint_time ?? null;
 		}
 		$obj->user_id = Auth::user()->id;
 
