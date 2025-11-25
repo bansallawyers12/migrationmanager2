@@ -779,6 +779,15 @@ public function update_apppointment_comment(Request $request){
             }
         }
 
+        // Validate that appointment is not in the past
+        if ($appointmentDateTime && $appointmentDateTime->isPast()) {
+            $response['status'] = false;
+            $response['message'] = 'Cannot book appointments in the past. Please select a future date and time.';
+            $response['client_id'] = $request->client_id;
+            echo json_encode($response);
+            return;
+        }
+
         $location = match ((int) $request->inperson_address) {
             1 => 'adelaide',
             2 => 'melbourne',

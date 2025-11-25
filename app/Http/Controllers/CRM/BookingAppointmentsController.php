@@ -132,8 +132,14 @@ class BookingAppointmentsController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => $appointments->map(function ($appointment) {
+                    $encodedClientId = $appointment->client_id 
+                        ? base64_encode(convert_uuencode($appointment->client_id)) 
+                        : null;
+                    
                     return [
                         'id' => $appointment->id,
+                        'client_id' => $appointment->client_id,
+                        'client_id_encoded' => $encodedClientId,
                         'client_name' => $appointment->client_name,
                         'client_email' => $appointment->client_email,
                         'client_phone' => $appointment->client_phone,
@@ -142,6 +148,7 @@ class BookingAppointmentsController extends Controller
                         'duration_minutes' => $appointment->duration_minutes,
                         'status' => $appointment->status,
                         'location' => $appointment->location,
+                        'meeting_type' => $appointment->meeting_type,
                         'is_paid' => $appointment->is_paid,
                         'consultant' => $appointment->consultant ? [
                             'id' => $appointment->consultant->id,
