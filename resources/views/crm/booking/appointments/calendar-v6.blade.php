@@ -238,12 +238,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         textColor: getStatusTextColor(apt.status),
                         classNames: ['event-' + apt.status],
                         extendedProps: {
+                            client_id: apt.client_id,
+                            client_id_encoded: apt.client_id_encoded,
                             client_name: apt.client_name,
                             client_email: apt.client_email,
                             client_phone: apt.client_phone,
                             service_type: apt.service_type,
                             status: apt.status,
                             location: apt.location,
+                            meeting_type: apt.meeting_type,
                             consultant: apt.consultant?.name || 'Not Assigned',
                             is_paid: apt.is_paid,
                             payment_status: apt.is_paid ? 'Paid' : 'Free',
@@ -300,11 +303,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
+            // Generate client profile URL if client_id exists
+            let clientNameDisplay = props.client_name;
+            if (props.client_id_encoded) {
+                const clientProfileUrl = `/clients/detail/${props.client_id_encoded}`;
+                clientNameDisplay = `<a href="${clientProfileUrl}" target="_blank" style="color: #007bff; text-decoration: underline;">${props.client_name}</a>`;
+            }
+            
+            // Format meeting type for display
+            const meetingTypeDisplay = props.meeting_type 
+                ? props.meeting_type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+                : 'N/A';
+            
             const modalBody = `
                 <div class="appointment-details">
                     <div class="row">
                         <div class="col-md-6">
-                            <p><strong>Client:</strong> ${props.client_name}</p>
+                            <p><strong>Client:</strong> ${clientNameDisplay}</p>
                             <p><strong>Email:</strong> ${props.client_email}</p>
                             <p><strong>Phone:</strong> ${props.client_phone}</p>
                             <p><strong>Service:</strong> ${props.service_type}</p>
@@ -312,7 +327,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             <p><strong>Duration:</strong> ${duration} minutes</p>
                         </div>
                         <div class="col-md-6">
-                            <p><strong>Location:</strong> ${props.location}</p>
+                            <p><strong>Location:</strong> ${props.location ? props.location.charAt(0).toUpperCase() + props.location.slice(1) : 'N/A'}</p>
+                            <p><strong>Meeting Type:</strong> ${meetingTypeDisplay}</p>
                             <p><strong>Consultant:</strong> ${props.consultant}</p>
                             <p><strong>Status:</strong> <span class="badge badge-${getStatusClass(props.status)}" id="statusBadge">${props.status.toUpperCase()}</span></p>
                             <p><strong>Payment:</strong> <span class="badge badge-${props.is_paid ? 'success' : 'secondary'}">${props.payment_status}</span></p>
