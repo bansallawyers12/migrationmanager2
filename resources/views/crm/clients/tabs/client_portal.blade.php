@@ -2589,6 +2589,26 @@
     }
 }
 </style>
+                                          
+<?php
+ if(isset($id1) && $id1 != "") {
+                    // If client unique reference id is present in URL
+                    $selectedMatter = DB::table('client_matters as cm')
+                        ->leftJoin('matters as m', 'cm.sel_matter_id', '=', 'm.id')
+                        ->where('cm.client_id', $fetchedData->id)
+                        ->where('cm.client_unique_matter_no', $id1)
+                        ->select('cm.id', 'cm.client_unique_matter_no', 'm.title', 'cm.sel_matter_id', 'cm.workflow_stage_id', 'cm.matter_status')
+                        ->first();
+                } else {
+                    // Get the latest matter (active or inactive)
+                    $selectedMatter = DB::table('client_matters as cm')
+                        ->leftJoin('matters as m', 'cm.sel_matter_id', '=', 'm.id')
+                        ->where('cm.client_id', $fetchedData->id)
+                        ->select('cm.id', 'cm.client_unique_matter_no', 'm.title', 'cm.sel_matter_id', 'cm.workflow_stage_id', 'cm.matter_status')
+                        ->orderBy('cm.id', 'desc')
+                        ->first();
+                }
+?>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -2739,6 +2759,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Application Tabs Switching Functionality
     const applicationTabItems = document.querySelectorAll('.application-tab-item');
     const applicationTabPanes = document.querySelectorAll('.application-tab-pane');
+  
+    
     
     // Store client matter ID and user info for messages
     const clientMatterId = @if($selectedMatter && isset($selectedMatter->id)) {{ $selectedMatter->id }} @else null @endif;
