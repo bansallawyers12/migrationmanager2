@@ -6,7 +6,7 @@
         <div class="icon-group">
             <a href="{{route('dashboard')}}" class="icon-btn" title="Dashboard"><i class="fas fa-tachometer-alt"></i></a>
             <a href="{{ route('signatures.index') }}" class="icon-btn" title="Signature Dashboard"><i class="fas fa-pen"></i></a>
-            <div class="icon-dropdown js-dropdown">
+            {{-- <div class="icon-dropdown js-dropdown">
                 <a href="{{ route('appointments.index') }}" class="icon-btn" title="Appointments"><i class="fas fa-calendar-alt"></i></a>
                 <div class="icon-dropdown-menu">
                     <a class="dropdown-item" href="{{ route('appointments.index') }}"><i class="far fa-calendar-alt mr-2"></i> Listings</a>
@@ -19,7 +19,7 @@
                     @if(Auth::user() && (Auth::user()->role == 1 || Auth::user()->role == 12))
                     @endif
                 </div>
-            </div>
+            </div> --}}
             <div class="icon-dropdown js-dropdown">
                 <a href="{{ route('booking.appointments.index') }}" class="icon-btn" title="Website Bookings" style="position: relative;">
                     <i class="fas fa-globe"></i>
