@@ -3359,6 +3359,43 @@ function closeCreateChecklistModal() {
 
 // Toggle due date fields
 $(document).ready(function() {
+    // Handle opening checklist modal - ensure hidden fields are populated
+    $(document).on('click', '.openchecklist', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        var id = $(this).attr('data-id');
+        var type = $(this).attr('data-type');
+        var typename = $(this).attr('data-typename');
+        
+        // Validate that required data attributes are present
+        if (!id || !type || !typename) {
+            console.error('Missing required data attributes for checklist modal:', {
+                id: id,
+                type: type,
+                typename: typename
+            });
+            alert('Error: Missing required information. Please try again.');
+            return false;
+        }
+        
+        // Populate hidden fields
+        $('#create_checklist #checklistapp_id').val(id);
+        $('#create_checklist #checklist_type').val(type);
+        $('#create_checklist #checklist_typename').val(typename);
+        
+        // Ensure button is enabled
+        $('#create_checklist_submit_btn').prop('disabled', false);
+        
+        // Clear any previous errors
+        $('#create_checklist_form').find('.custom-error').remove();
+        
+        // Show modal
+        $('#create_checklist').modal('show');
+        
+        return false;
+    });
+    
     // Set backdrop opacity to 0.1 when create_checklist modal is shown
     $('#create_checklist').on('show.bs.modal', function() {
         setTimeout(function() {
@@ -3369,11 +3406,21 @@ $(document).ready(function() {
                 'background-color': 'rgba(0, 0, 0, 0.1)'
             });
         }, 10);
+        
+        // Ensure button is enabled when modal is shown
+        $('#create_checklist_submit_btn').prop('disabled', false);
+        // Clear any previous errors
+        $('.custom-error').remove();
     });
     
-    // Remove the class when modal is hidden
+    // Remove the class and reset form when modal is hidden
     $('#create_checklist').on('hidden.bs.modal', function() {
         $('.modal-backdrop').removeClass('create-checklist-backdrop');
+        $('#create_checklist_form')[0].reset();
+        $('#appoint_date_container, #appoint_time_container').hide();
+        $('.custom-error').remove();
+        // Re-enable button in case it was disabled
+        $('#create_checklist_submit_btn').prop('disabled', false);
     });
     
     $('#due_date_check').on('change', function() {
@@ -3420,13 +3467,6 @@ $(document).ready(function() {
         }
     });
     
-    // Reset form when modal is hidden
-    $('#create_checklist').on('hidden.bs.modal', function() {
-        $('#create_checklist_form')[0].reset();
-        $('#appoint_date_container, #appoint_time_container').hide();
-        $('.custom-error').text('');
-    });
-    
     // Handle Add Checklist button click
     $(document).on('click', '#create_checklist_submit_btn', function(e) {
         e.preventDefault();
@@ -3441,10 +3481,43 @@ $(document).ready(function() {
             alert('Form not found. Please refresh the page.');
             return false;
         }
+        
+        // Check if button is disabled (prevent double submission)
+        if ($(this).prop('disabled')) {
+            console.log('Button is disabled, ignoring click');
+            return false;
+        }
+        
         var isValid = true;
         
         // Clear previous errors
         form.find('.custom-error').remove();
+        
+        // Validate hidden required fields first
+        var applicationId = $.trim(form.find('#checklistapp_id').val());
+        var checklistType = $.trim(form.find('#checklist_type').val());
+        var checklistTypename = $.trim(form.find('#checklist_typename').val());
+        
+        if (!applicationId) {
+            isValid = false;
+            alert('Error: Application ID is missing. Please close and reopen the checklist modal.');
+            console.error('Application ID (checklistapp_id) is missing');
+            return false;
+        }
+        
+        if (!checklistType) {
+            isValid = false;
+            alert('Error: Checklist type is missing. Please close and reopen the checklist modal.');
+            console.error('Checklist type (checklist_type) is missing');
+            return false;
+        }
+        
+        if (!checklistTypename) {
+            isValid = false;
+            alert('Error: Checklist type name is missing. Please close and reopen the checklist modal.');
+            console.error('Checklist type name (checklist_typename) is missing');
+            return false;
+        }
         
         // Validate Checklist Name field specifically (document_type)
         var checklistName = $.trim($('#document_type').val());
@@ -3490,10 +3563,7 @@ $(document).ready(function() {
         // Store current active tab before submission
         var currentActiveTab = $('.application-tab-item.active').attr('data-tab') || 'documents';
         
-        // Get form values for updating the checklist
-        var checklistType = form.find('#checklist_type').val();
-        var checklistTypename = form.find('#checklist_typename').val();
-        var applicationId = form.find('#checklistapp_id').val();
+        // Variables checklistType, checklistTypename, and applicationId are already defined above in validation section
         
         // Submit via AJAX
         var formData = new FormData(form[0]);
@@ -3911,8 +3981,6 @@ $(document).ready(function() {
         return false;
     });
     
-    // Initialize Bootstrap dropdowns for Action buttons
-    $(document).ready(function() {
     // Initialize Bootstrap tooltips for rejected status badges
     function initializeRejectedTooltips() {
         $('.rejected-status-badge[data-toggle="tooltip"]').each(function() {
@@ -4016,26 +4084,26 @@ $(document).ready(function() {
         
         return false;
     });
-        
-        // Ensure all dropdowns are properly initialized
-        $('.checklist-details-table .dropdown-toggle').dropdown({
-            boundary: 'viewport',
-            flip: true
-        });
-        
-        // Force show all dropdown items when opened
-        $('.checklist-details-table .dropdown').on('show.bs.dropdown', function() {
-            var $menu = $(this).find('.dropdown-menu');
-            $menu.css({
-                'display': 'block',
-                'visibility': 'visible',
-                'opacity': '1',
-                'max-height': 'none',
-                'height': 'auto',
-                'overflow': 'visible'
-            });
+    
+    // Ensure all dropdowns are properly initialized
+    $('.checklist-details-table .dropdown-toggle').dropdown({
+        boundary: 'viewport',
+        flip: true
+    });
+    
+    // Force show all dropdown items when opened
+    $('.checklist-details-table .dropdown').on('show.bs.dropdown', function() {
+        var $menu = $(this).find('.dropdown-menu');
+        $menu.css({
+            'display': 'block',
+            'visibility': 'visible',
+            'opacity': '1',
+            'max-height': 'none',
+            'height': 'auto',
+            'overflow': 'visible'
         });
     });
+});
 </script>
 
 <script>
@@ -4295,7 +4363,6 @@ $(document).ready(function() {
         
         return false;
     });
-});
 </script>
 
 <!-- Approve Document Modal -->
