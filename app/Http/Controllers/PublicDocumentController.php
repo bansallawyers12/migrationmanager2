@@ -327,13 +327,23 @@ class PublicDocumentController extends Controller
                 $outputTmpPath = storage_path('app/tmp_' . uniqid() . '_signed.pdf');
                 
                 // Get client ID and doc type for S3 storage (if needed)
+                // Try to get client_id from admins table first, fallback to admin id if not available
                 $clientId = null;
                 $docType = $document->doc_type ?? '';
+                
                 if ($document->client_id) {
                     $admin = \DB::table('admins')->select('client_id')->where('id', $document->client_id)->first();
                     if ($admin && $admin->client_id) {
                         $clientId = $admin->client_id;
+                    } else {
+                        // If client_id is null in admins table, use the admin id (same pattern as document uploads)
+                        $clientId = $document->client_id;
                     }
+                }
+                
+                // If docType is empty, use default 'ad_hoc_documents' (same as document uploads)
+                if (empty($docType)) {
+                    $docType = 'ad_hoc_documents';
                 }
 
                 // Process signatures
@@ -1144,7 +1154,8 @@ class PublicDocumentController extends Controller
             if (class_exists('Spatie\\PdfToImage\\Pdf')) {
                 try {
                     $pdf = new \Spatie\PdfToImage\Pdf($pathToPdf);
-                    return $pdf->getNumberOfPages();
+                    // Use pageCount() method for Spatie PdfToImage v3.1+ (getNumberOfPages() was removed in v3.0)
+                    return $pdf->pageCount();
                 } catch (\Exception $ex) {
                     Log::error('Spatie PDF page count also failed', ['error' => $ex->getMessage()]);
                 }

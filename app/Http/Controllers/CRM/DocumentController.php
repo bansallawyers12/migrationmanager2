@@ -11,6 +11,7 @@ use Spatie\PdfToImage\Pdf;
 use setasign\Fpdi\TcpdfFpdi;
 use Illuminate\Support\Facades\Storage;
 use Smalot\PdfParser\Parser;
+use Smalot\PdfParser\Config as PdfParserConfig;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use App\Models\ActivitiesLog;
@@ -20,6 +21,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\UploadChecklist;
 use App\Models\Email;
 use App\Models\MailReport;
+use App\Services\PythonService;
 
 class DocumentController extends Controller
 {
@@ -602,17 +604,192 @@ class DocumentController extends Controller
 
     /**
      * Count the number of pages in a PDF file using Smalot\PdfParser.
+     * Enhanced with configuration and better error handling.
      */
     protected function countPdfPages($pathToPdf)
     {
+        // Validate file exists and is readable
+        if (!file_exists($pathToPdf)) {
+            \Log::error('PDF file does not exist for page counting', ['path' => $pathToPdf]);
+            return null;
+        }
+        
+        if (!is_readable($pathToPdf)) {
+            \Log::error('PDF file is not readable for page counting', ['path' => $pathToPdf]);
+            return null;
+        }
+        
+        // Get file size for logging
+        $fileSize = filesize($pathToPdf);
+        
+        // Try with configured Smalot\PdfParser (with increased memory limit)
         try {
-            $parser = new Parser();
+            // Create configuration with increased decode memory limit
+            // Set to 512MB (512 * 1024 * 1024 bytes) to handle complex PDFs
+            $config = new PdfParserConfig();
+            $config->setDecodeMemoryLimit(512 * 1024 * 1024); // 512MB
+            
+            // Initialize parser with configuration
+            $parser = new Parser([], $config);
+            
+            // Parse the PDF file
             $pdf = $parser->parseFile($pathToPdf);
+            
+            // Get pages and count
             $pages = $pdf->getPages();
-            return count($pages);
+            $pageCount = count($pages);
+            
+            \Log::info('Successfully counted PDF pages using Smalot\PdfParser', [
+                'path' => $pathToPdf,
+                'page_count' => $pageCount,
+                'file_size' => $fileSize
+            ]);
+            
+            return $pageCount;
+            
         } catch (\Exception $e) {
-            // Log the error - Smalot\PdfParser failed
-            \Log::warning('Smalot/PdfParser failed to count PDF pages', ['error' => $e->getMessage()]);
+            // Store error messages for logging
+            $firstAttemptError = $e->getMessage();
+            $defaultConfigError = null;
+            $lowMemoryError = null;
+            
+            // Check if error is about encrypted/secured PDF
+            $isEncryptedPdf = stripos($firstAttemptError, 'Secured pdf') !== false || 
+                             stripos($firstAttemptError, 'encrypted') !== false ||
+                             stripos($firstAttemptError, 'password') !== false;
+            
+            // Log detailed error information
+            \Log::warning('Smalot/PdfParser failed to count PDF pages (first attempt)', [
+                'error' => $firstAttemptError,
+                'error_type' => get_class($e),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'path' => $pathToPdf,
+                'file_size' => $fileSize,
+                'is_encrypted' => $isEncryptedPdf,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // If PDF is encrypted/secured, skip Smalot\PdfParser retries and go directly to Python service
+            if ($isEncryptedPdf) {
+                \Log::info('Detected encrypted/secured PDF - skipping Smalot\PdfParser retries and using Python service fallback');
+            } else {
+                // Retry with default configuration (no custom config) in case config caused issues
+                try {
+                    \Log::info('Retrying PDF page count with default Smalot\PdfParser configuration');
+                    $parser = new Parser();
+                    $pdf = $parser->parseFile($pathToPdf);
+                    $pages = $pdf->getPages();
+                    $pageCount = count($pages);
+                    
+                    \Log::info('Successfully counted PDF pages on retry with default config', [
+                        'path' => $pathToPdf,
+                        'page_count' => $pageCount
+                    ]);
+                    
+                    return $pageCount;
+                    
+                } catch (\Exception $retryException) {
+                    $defaultConfigError = $retryException->getMessage();
+                    \Log::error('Smalot/PdfParser failed on retry with default configuration', [
+                        'error' => $defaultConfigError,
+                        'error_type' => get_class($retryException),
+                        'original_error' => $firstAttemptError,
+                        'path' => $pathToPdf,
+                        'file_size' => $fileSize
+                    ]);
+                }
+                
+                // Try with lower memory limit (256MB) as another fallback
+                try {
+                    \Log::info('Retrying PDF page count with reduced memory limit (256MB)');
+                    $config = new PdfParserConfig();
+                    $config->setDecodeMemoryLimit(256 * 1024 * 1024); // 256MB
+                    
+                    $parser = new Parser([], $config);
+                    $pdf = $parser->parseFile($pathToPdf);
+                    $pages = $pdf->getPages();
+                    $pageCount = count($pages);
+                    
+                    \Log::info('Successfully counted PDF pages with reduced memory limit', [
+                        'path' => $pathToPdf,
+                        'page_count' => $pageCount
+                    ]);
+                    
+                    return $pageCount;
+                    
+                } catch (\Exception $lowMemoryException) {
+                    $lowMemoryError = $lowMemoryException->getMessage();
+                    \Log::error('Smalot/PdfParser failed with all configuration attempts', [
+                        'error' => $lowMemoryError,
+                        'error_type' => get_class($lowMemoryException),
+                        'path' => $pathToPdf,
+                        'file_size' => $fileSize,
+                        'all_attempts' => [
+                            'first_attempt' => $firstAttemptError,
+                            'default_config' => $defaultConfigError ?? 'N/A',
+                            'low_memory' => $lowMemoryError
+                        ]
+                    ]);
+                }
+            }
+            
+            // Fallback: Python service (PyMuPDF/fitz) - can handle encrypted PDFs
+            // Note: PyMuPDF is AGPL licensed - ensure compliance with license requirements
+            try {
+                $pythonService = app(PythonService::class);
+                
+                if ($pythonService->isHealthy()) {
+                    \Log::info('Attempting to count PDF pages using Python service (PyMuPDF/fitz) - handles encrypted PDFs');
+                    
+                    $pdfInfo = $pythonService->getPdfInfo($pathToPdf);
+                    
+                    if ($pdfInfo && isset($pdfInfo['success']) && $pdfInfo['success'] === true && isset($pdfInfo['page_count'])) {
+                        $pageCount = (int) $pdfInfo['page_count'];
+                        
+                        if ($pageCount > 0) {
+                            \Log::info('Successfully counted PDF pages using Python service (PyMuPDF/fitz)', [
+                                'path' => $pathToPdf,
+                                'page_count' => $pageCount,
+                                'file_size' => $fileSize,
+                                'reason' => 'All PHP libraries failed (encrypted/secured PDF) - PyMuPDF succeeded',
+                                'is_encrypted' => $isEncryptedPdf
+                            ]);
+                            return $pageCount;
+                        } else {
+                            \Log::warning('Python service returned invalid page count', [
+                                'path' => $pathToPdf,
+                                'page_count' => $pageCount,
+                                'pdf_info' => $pdfInfo
+                            ]);
+                        }
+                    } else {
+                        \Log::warning('Python service failed to get PDF info', [
+                            'path' => $pathToPdf,
+                            'pdf_info' => $pdfInfo,
+                            'error' => $pdfInfo['error'] ?? ($pdfInfo ? 'Invalid response format' : 'Service returned null')
+                        ]);
+                    }
+                } else {
+                    \Log::warning('Python service is not available/healthy - skipping PyMuPDF fallback', [
+                        'path' => $pathToPdf
+                    ]);
+                }
+            } catch (\Exception $pythonException) {
+                \Log::error('Python service (PyMuPDF/fitz) fallback also failed to count PDF pages', [
+                    'error' => $pythonException->getMessage(),
+                    'error_type' => get_class($pythonException),
+                    'path' => $pathToPdf,
+                    'file_size' => $fileSize,
+                    'is_encrypted' => $isEncryptedPdf,
+                    'all_previous_errors' => [
+                        'smalot_first' => $firstAttemptError,
+                        'smalot_default' => $defaultConfigError ?? 'N/A',
+                        'smalot_low_memory' => $lowMemoryError ?? 'N/A'
+                    ]
+                ]);
+            }
+            
             return null;
         }
     }
@@ -1295,6 +1472,17 @@ class DocumentController extends Controller
         }
     }
 
+    /**
+     * LEGACY METHOD - COMMENTED OUT
+     * This method is no longer used. All signature submissions now go through
+     * PublicDocumentController::submitSignatures() which handles both public and admin signing.
+     * 
+     * Route for this method is commented out in routes/documents.php (line 227-228)
+     * This method also has a broken redirect to route('documents.thankyou') which doesn't exist.
+     * 
+     * @deprecated Use PublicDocumentController::submitSignatures() instead
+     */
+    /*
     public function submitSignatures(Request $request, $id)
     {
         // Input validation - Critical security fix
@@ -1639,9 +1827,10 @@ class DocumentController extends Controller
             return redirect('/')->with('error', 'An unexpected error occurred: ' . $e->getMessage());
         }
     }
+    */
 
     public function downloadSigned($id)
-    {
+    {  
         try {
             $document = Document::findOrFail($id);
             
@@ -1659,14 +1848,9 @@ class DocumentController extends Controller
             
             // Parse the URL to extract storage path
             $parsed = parse_url($fileUrl);
-            if (!isset($parsed['path'])) {
-                \Log::error('Invalid URL format', ['url' => $fileUrl]);
-                return abort(400, 'Invalid file URL format');
-            }
+            $urlPath = $parsed['path'] ?? '';
             
-            // Extract the path after /storage/ for local storage files
-            $urlPath = $parsed['path'];
-            
+            // Check if it's a local storage path (contains /storage/)
             if (strpos($urlPath, '/storage/') !== false) {
                 // This is a local storage path: /storage/signed/50236_signed.pdf
                 // Extract: signed/50236_signed.pdf
@@ -1691,11 +1875,23 @@ class DocumentController extends Controller
                 // Direct PHP output - bypass all Laravel/Symfony processing
                 $filePath = storage_path('app/public/' . $relativePath);
                 
+                // Verify file exists and get size before output
+                if (!file_exists($filePath)) {
+                    \Log::error('File path does not exist', ['filePath' => $filePath]);
+                    return abort(404, 'Signed document file not found');
+                }
+                
+                $fileSize = filesize($filePath);
+                if ($fileSize === false || $fileSize === 0) {
+                    \Log::error('Invalid file size', ['filePath' => $filePath, 'size' => $fileSize]);
+                    return abort(404, 'Signed document file is invalid or empty');
+                }
+                
                 \Log::info('Attempting direct PHP file output', [
                     'relativePath' => $relativePath,
                     'filePath' => $filePath,
                     'filename' => $filename,
-                    'filesize' => filesize($filePath)
+                    'filesize' => $fileSize
                 ]);
                 
                 // Clear any output buffers
@@ -1706,7 +1902,7 @@ class DocumentController extends Controller
                 // Set headers directly
                 header('Content-Type: application/pdf');
                 header('Content-Disposition: attachment; filename="' . $filename . '"');
-                header('Content-Length: ' . filesize($filePath));
+                header('Content-Length: ' . $fileSize);
                 header('Cache-Control: no-cache, must-revalidate');
                 header('Pragma: public');
                 header('Expires: 0');
@@ -1719,13 +1915,53 @@ class DocumentController extends Controller
                 exit;
             }
             
-            // If not a /storage/ path, treat as direct file path
-            \Log::error('Unexpected URL format - not a storage path', [
+            // Try S3 storage
+            if (isset($parsed['path']) && !empty($parsed['path'])) {
+                $s3Key = ltrim($parsed['path'], '/');
+                $disk = \Storage::disk('s3');
+                
+                \Log::info('Checking S3 storage', [
+                    's3Key' => $s3Key,
+                    'url' => $fileUrl
+                ]);
+                
+                if ($disk->exists($s3Key)) {
+                    try {
+                        $tempUrl = $disk->temporaryUrl(
+                            $s3Key,
+                            now()->addMinutes(5),
+                            ['ResponseContentDisposition' => 'attachment; filename="' . $filename . '"']
+                        );
+                        
+                        \Log::info('S3 temporary URL generated', [
+                            's3Key' => $s3Key,
+                            'tempUrl' => $tempUrl
+                        ]);
+                        
+                        return redirect($tempUrl);
+                    } catch (\Exception $e) {
+                        \Log::error('Failed to generate S3 temporary URL', [
+                            's3Key' => $s3Key,
+                            'error' => $e->getMessage()
+                        ]);
+                        // Fall through to error handling
+                    }
+                } else {
+                    \Log::warning('File not found in S3', [
+                        's3Key' => $s3Key,
+                        'url' => $fileUrl
+                    ]);
+                }
+            }
+            
+            // If neither local nor S3 worked, return error
+            \Log::error('Unexpected URL format - not a valid storage path', [
                 'url' => $fileUrl,
-                'path' => $urlPath
+                'path' => $urlPath,
+                'parsed' => $parsed
             ]);
             
-            return abort(400, 'Invalid storage URL format');
+            return abort(400, 'Invalid storage URL format or file not found');
             
         } catch (\Exception $e) {
             \Log::error('Error downloading signed document', [
