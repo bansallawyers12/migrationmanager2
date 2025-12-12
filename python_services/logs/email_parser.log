@@ -1,7 +1,0 @@
-2025-11-16 13:22:42 - services.email_parser_service - INFO - Email Parser Service initialized
-2025-11-16 13:32:03 - services.email_parser_service - INFO - Parsing .msg file: temp\Fw_ Overdue Account – Action Required for GWW Account 3212470000.msg
-2025-11-16 13:32:04 - services.email_parser_service - INFO - Successfully parsed email: Fw: Overdue Account – Action Required for GWW Account 3212470000
-2025-11-16 22:00:55 - services.email_parser_service - INFO - Email Parser Service initialized
-2025-11-18 16:26:27 - services.email_parser_service - INFO - Email Parser Service initialized
-2025-11-18 11:13:33 - services.email_parser_service - INFO - Email Parser Service initialized
-2025-12-12 18:40:38 - services.email_parser_service - INFO - Email Parser Service initialized

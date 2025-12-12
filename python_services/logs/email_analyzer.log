@@ -1,7 +1,0 @@
-2025-11-16 13:22:42 - services.email_analyzer_service - INFO - Email Analyzer Service initialized
-2025-11-16 13:32:05 - services.email_analyzer_service - INFO - Analyzing email: Fw: Overdue Account – Action Required for GWW Account 3212470000
-2025-11-16 13:32:05 - services.email_analyzer_service - INFO - Analysis completed: Business - high priority
-2025-11-16 22:00:55 - services.email_analyzer_service - INFO - Email Analyzer Service initialized
-2025-11-18 16:26:27 - services.email_analyzer_service - INFO - Email Analyzer Service initialized
-2025-11-18 11:13:33 - services.email_analyzer_service - INFO - Email Analyzer Service initialized
-2025-12-12 18:40:38 - services.email_analyzer_service - INFO - Email Analyzer Service initialized
