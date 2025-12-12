@@ -430,7 +430,6 @@ class PublicDocumentController extends Controller
 
                 // ✅ PYTHON SERVICE: Try Python service first (supports ALL PDF compressions)
                 $pythonService = app(\App\Services\PythonService::class);
-                $usedPythonService = false;
                 
                 if ($pythonService->isHealthy()) {
                     Log::info('Attempting to create signed PDF with Python service');
@@ -490,7 +489,6 @@ class PublicDocumentController extends Controller
                             'document_id' => $document->id,
                             'output_size' => filesize($outputTmpPath)
                         ]);
-                        $usedPythonService = true;
                     } else {
                         Log::error('Python service failed to create signed PDF', [
                             'file_exists' => file_exists($outputTmpPath),
@@ -507,16 +505,6 @@ class PublicDocumentController extends Controller
                     return redirect()->back()
                         ->with('error', 'Signature processing service is currently unavailable. Please try again later or contact support if the issue persists.')
                         ->withInput();
-                }
-
-                if (!file_exists($outputTmpPath) || filesize($outputTmpPath) === 0) {
-                    Log::error('Failed to create signed PDF', [
-                        'document_id' => $document->id,
-                        'output_path' => $outputTmpPath,
-                        'file_exists' => file_exists($outputTmpPath),
-                        'file_size' => file_exists($outputTmpPath) ? filesize($outputTmpPath) : 0
-                    ]);
-                    return redirect()->back()->with('error', 'Failed to create the signed document. Please try again or contact support.');
                 }
 
                 // Generate SHA-256 hash for tamper detection (Phase 7)

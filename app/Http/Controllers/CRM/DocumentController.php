@@ -1342,6 +1342,11 @@ class DocumentController extends Controller
                 ], 503);
             }
         } catch (\Exception $e) {
+            // Clean up temp file if it was created from S3 (not a local file)
+            if (isset($tmpPdfPath) && $tmpPdfPath && !($isLocalFile ?? false)) {
+                @unlink($tmpPdfPath);
+            }
+            
             \Log::error('Error in getPage', [
                 'context' => 'get_page',
                 'document_id' => $id,
