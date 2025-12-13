@@ -17,12 +17,12 @@ return new class extends Migration
         Schema::table('admins', function (Blueprint $table) {
             // Add client_counter if it doesn't exist
             if (!Schema::hasColumn('admins', 'client_counter')) {
-                $table->string('client_counter', 5)->nullable()->after('id');
+                $table->string('client_counter', 5)->nullable();
             }
             
             // Add client_id if it doesn't exist
             if (!Schema::hasColumn('admins', 'client_id')) {
-                $table->string('client_id', 20)->nullable()->after('client_counter');
+                $table->string('client_id', 20)->nullable();
             }
         });
 

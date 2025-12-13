@@ -12,8 +12,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Modify the status enum to include 'paid' option
-        DB::statement("ALTER TABLE `booking_appointments` MODIFY COLUMN `status` ENUM('pending', 'paid', 'confirmed', 'completed', 'cancelled', 'no_show', 'rescheduled') DEFAULT 'pending'");
+        // For PostgreSQL, we need to drop and recreate the column with the new enum values
+        // Laravel's enum() method creates a CHECK constraint in PostgreSQL
+        if (DB::getDriverName() === 'pgsql') {
+            // Drop the existing check constraint
+            DB::statement("ALTER TABLE booking_appointments DROP CONSTRAINT IF EXISTS booking_appointments_status_check");
+            // Add new constraint with 'paid' option
+            DB::statement("ALTER TABLE booking_appointments ADD CONSTRAINT booking_appointments_status_check CHECK (status IN ('pending', 'paid', 'confirmed', 'completed', 'cancelled', 'no_show', 'rescheduled'))");
+        } else {
+            // MySQL syntax
+            DB::statement("ALTER TABLE `booking_appointments` MODIFY COLUMN `status` ENUM('pending', 'paid', 'confirmed', 'completed', 'cancelled', 'no_show', 'rescheduled') DEFAULT 'pending'");
+        }
     }
 
     /**
@@ -21,7 +30,13 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Revert the status enum to remove 'paid' option
-        DB::statement("ALTER TABLE `booking_appointments` MODIFY COLUMN `status` ENUM('pending', 'confirmed', 'completed', 'cancelled', 'no_show', 'rescheduled') DEFAULT 'pending'");
+        if (DB::getDriverName() === 'pgsql') {
+            // Drop the constraint and recreate without 'paid'
+            DB::statement("ALTER TABLE booking_appointments DROP CONSTRAINT IF EXISTS booking_appointments_status_check");
+            DB::statement("ALTER TABLE booking_appointments ADD CONSTRAINT booking_appointments_status_check CHECK (status IN ('pending', 'confirmed', 'completed', 'cancelled', 'no_show', 'rescheduled'))");
+        } else {
+            // MySQL syntax
+            DB::statement("ALTER TABLE `booking_appointments` MODIFY COLUMN `status` ENUM('pending', 'confirmed', 'completed', 'cancelled', 'no_show', 'rescheduled') DEFAULT 'pending'");
+        }
     }
 };

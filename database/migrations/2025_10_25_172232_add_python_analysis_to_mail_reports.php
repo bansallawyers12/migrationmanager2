@@ -13,31 +13,31 @@ return new class extends Migration
     {
         Schema::table('mail_reports', function (Blueprint $table) {
             // Python Analysis Fields
-            $table->json('python_analysis')->nullable()->after('message');
-            $table->json('python_rendering')->nullable()->after('python_analysis');
+            $table->json('python_analysis')->nullable();
+            $table->json('python_rendering')->nullable();
             
             // AI Categorization
-            $table->string('category')->nullable()->after('python_rendering')->index();
-            $table->enum('priority', ['low', 'medium', 'high'])->default('low')->after('category')->index();
-            $table->enum('sentiment', ['positive', 'neutral', 'negative'])->default('neutral')->after('priority');
-            $table->string('language')->nullable()->after('sentiment');
+            $table->string('category')->nullable()->index();
+            $table->enum('priority', ['low', 'medium', 'high'])->default('low')->index();
+            $table->enum('sentiment', ['positive', 'neutral', 'negative'])->default('neutral');
+            $table->string('language')->nullable();
             
             // Enhanced Content
-            $table->longText('enhanced_html')->nullable()->after('language');
-            $table->longText('rendered_html')->nullable()->after('enhanced_html');
-            $table->text('text_preview')->nullable()->after('rendered_html');
+            $table->longText('enhanced_html')->nullable();
+            $table->longText('rendered_html')->nullable();
+            $table->text('text_preview')->nullable();
             
             // Security & Threading
-            $table->json('security_issues')->nullable()->after('text_preview');
-            $table->json('thread_info')->nullable()->after('security_issues');
+            $table->json('security_issues')->nullable();
+            $table->json('thread_info')->nullable();
             
             // Metadata
-            $table->string('message_id')->nullable()->after('thread_info')->index();
-            $table->string('thread_id')->nullable()->after('message_id')->index();
-            $table->timestamp('received_date')->nullable()->after('thread_id');
-            $table->timestamp('processed_at')->nullable()->after('received_date');
-            $table->timestamp('last_accessed_at')->nullable()->after('processed_at');
-            $table->string('file_hash')->nullable()->after('last_accessed_at')->index();
+            $table->string('message_id')->nullable()->index();
+            $table->string('thread_id')->nullable()->index();
+            $table->timestamp('received_date')->nullable();
+            $table->timestamp('processed_at')->nullable();
+            $table->timestamp('last_accessed_at')->nullable();
+            $table->string('file_hash')->nullable()->index();
         });
     }
 

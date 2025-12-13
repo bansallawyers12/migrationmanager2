@@ -11,10 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Match the charset and engine of mail_reports table
         Schema::create('mail_report_attachments', function (Blueprint $table) {
-            $table->engine = 'InnoDB';
-            
             $table->id();
             // Use unsignedInteger to match mail_reports.id which is int(11)
             $table->unsignedInteger('mail_report_id');
@@ -40,8 +37,11 @@ return new class extends Migration
             $table->index(['created_at']);
         });
         
-        // Force charset to match parent table
-        DB::statement('ALTER TABLE mail_report_attachments CONVERT TO CHARACTER SET latin1 COLLATE latin1_swedish_ci');
+        // PostgreSQL doesn't use charset/collation like MySQL
+        // This conversion is only needed for MySQL
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE mail_report_attachments CONVERT TO CHARACTER SET latin1 COLLATE latin1_swedish_ci');
+        }
     }
 
     /**
