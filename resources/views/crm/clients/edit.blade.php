@@ -182,7 +182,15 @@
 
                                 <div class="form-group">
                                     <label for="dob">Date of Birth</label>
-                                    <input type="text" id="dob" name="dob" value="{{ $fetchedData->dob ? date('d/m/Y', strtotime($fetchedData->dob)) : '' }}" placeholder="dd/mm/yyyy" autocomplete="off">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <input type="text" id="dob" name="dob" value="{{ $fetchedData->dob ? date('d/m/Y', strtotime($fetchedData->dob)) : '' }}" placeholder="dd/mm/yyyy" autocomplete="off" style="flex: 1;">
+                                        @if($fetchedData->updated_at)
+                                            <span class="last-updated-badge" style="font-size: 0.85em; color: #6c757d; white-space: nowrap;" title="Last updated: {{ $fetchedData->updated_at->format('M j, Y g:i A') }}">
+                                                <i class="far fa-circle" style="color: #6c757d; margin-right: 4px;"></i>
+                                                Updated: {{ $fetchedData->updated_at->format('d/m/Y') }}
+                                            </span>
+                                        @endif
+                                    </div>
                                     @error('dob')
                                         <span class="text-danger">{{ $message }}</span>
                                     @enderror

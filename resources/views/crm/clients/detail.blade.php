@@ -360,6 +360,17 @@ use App\Http\Controllers\Controller;
                     <i class="fas fa-globe"></i>
                     <span>Client Portal</span>
                 </button>
+                <?php
+                // Get last updated date for the client record
+                if (isset($fetchedData->updated_at) && $fetchedData->updated_at) {
+                    try {
+                        $updatedDate = \Carbon\Carbon::parse($fetchedData->updated_at);
+                        echo '<div style="margin-top: 15px; padding: 10px 15px; color: #6c757d; font-size: 0.85em; text-align: center; border-top: 1px solid #e2e8f0;">Last update on ' . $updatedDate->format('d/m/Y') . '</div>';
+                    } catch (\Exception $e) {
+                        // Silently fail if date parsing fails
+                    }
+                }
+                ?>
             <?php
             }
             else
