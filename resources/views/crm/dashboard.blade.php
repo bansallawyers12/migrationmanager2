@@ -636,7 +636,7 @@
             box-sizing: border-box;
             background-color: var(--background-color);
             color: var(--text-color);
-            font-family: 'Poppins', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         }
 
         .sidebar-expanded + .main-content {

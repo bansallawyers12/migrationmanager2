@@ -26,7 +26,7 @@
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
     padding: 15px;
     background: #fff;
-    font-family: 'Inter', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 .listing-container .datepicker table {
