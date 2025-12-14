@@ -1537,7 +1537,7 @@ class ApplicationsController extends Controller
 					if ($message->sender_id) {
 						$sender = DB::table('admins')
 							->where('id', $message->sender_id)
-							->select('id', 'first_name', 'last_name', DB::raw("CONCAT(first_name, ' ', last_name) as full_name"))
+							->select('id', 'first_name', 'last_name', DB::raw("(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) as full_name"))
 							->first();
 					}
 
@@ -1548,7 +1548,7 @@ class ApplicationsController extends Controller
 						->map(function ($recipient) {
 							$recipientUser = DB::table('admins')
 								->where('id', $recipient->recipient_id)
-								->select('id', 'first_name', 'last_name', DB::raw("CONCAT(first_name, ' ', last_name) as full_name"))
+								->select('id', 'first_name', 'last_name', DB::raw("(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) as full_name"))
 								->first();
 							
 							return [
@@ -1672,7 +1672,7 @@ class ApplicationsController extends Controller
 			// Get sender information
 			$sender = DB::table('admins')
 				->where('id', $senderId)
-				->select('id', 'first_name', 'last_name', DB::raw("CONCAT(first_name, ' ', last_name) as full_name"))
+				->select('id', 'first_name', 'last_name', DB::raw("(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) as full_name"))
 				->first();
 
 			$senderName = $sender ? $sender->full_name : 'Admin';
@@ -1686,7 +1686,7 @@ class ApplicationsController extends Controller
 			// Get recipient information
 			$recipientUser = DB::table('admins')
 				->where('id', $clientId)
-				->select('id', 'first_name', 'last_name', DB::raw("CONCAT(first_name, ' ', last_name) as full_name"))
+				->select('id', 'first_name', 'last_name', DB::raw("(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) as full_name"))
 				->first();
 
 			if (!$recipientUser) {

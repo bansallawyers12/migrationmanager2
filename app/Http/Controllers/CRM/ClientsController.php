@@ -181,7 +181,7 @@ class ClientsController extends Controller
                     $query->where(function ($q) use ($name) {
                         $q->where('ad.first_name', 'LIKE', '%' . $name . '%')
                           ->orWhere('ad.last_name', 'LIKE', '%' . $name . '%')
-                          ->orWhereRaw("CONCAT(ad.first_name, ' ', ad.last_name) LIKE ?", ["%{$name}%"]);
+                          ->orWhereRaw("(COALESCE(ad.first_name, '') || ' ' || COALESCE(ad.last_name, '')) LIKE ?", ["%{$name}%"]);
                     });
                 }
             }
@@ -305,7 +305,7 @@ class ClientsController extends Controller
         $mattersByAgent = DB::table('client_matters as cm')
             ->leftJoin('admins as agent', 'agent.id', '=', 'cm.sel_migration_agent')
             ->select(
-                DB::raw("COALESCE(CONCAT(agent.first_name, ' ', agent.last_name), 'Unassigned') as agent_name"),
+                DB::raw("COALESCE(NULLIF(TRIM(COALESCE(agent.first_name, '') || ' ' || COALESCE(agent.last_name, '')), ''), 'Unassigned') as agent_name"),
                 DB::raw('COUNT(*) as total')
             )
             ->groupBy('agent_name')
@@ -411,7 +411,7 @@ class ClientsController extends Controller
                     $query->where(function ($q) use ($name) {
                         $q->where('first_name', 'LIKE', '%' . $name . '%')
                           ->orWhere('last_name', 'LIKE', '%' . $name . '%')
-                          ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$name}%"]);
+                          ->orWhereRaw("(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) LIKE ?", ["%{$name}%"]);
                     });
                 }
             }
@@ -4456,8 +4456,8 @@ class ClientsController extends Controller
                 $clientAddresses = ClientAddress::where('client_id', $id)->orderBy('created_at', 'desc')->get();
                 $clientContacts = ClientContact::where('client_id', $id)->get();
                 $emails = ClientEmail::where('client_id', $id)->get() ?? [];
-                $qualifications = ClientQualification::where('client_id', $id)->orderByRaw('finish_date IS NULL, finish_date DESC')->get() ?? [];
-                $experiences = ClientExperience::where('client_id', $id)->orderByRaw('job_finish_date IS NULL, job_finish_date DESC')->get() ?? [];
+                $qualifications = ClientQualification::where('client_id', $id)->orderByRaw('finish_date DESC NULLS FIRST')->get() ?? [];
+                $experiences = ClientExperience::where('client_id', $id)->orderByRaw('job_finish_date DESC NULLS FIRST')->get() ?? [];
                 $testScores = ClientTestScore::where('client_id', $id)->get() ?? [];
                 $visaCountries = ClientVisaCountry::where('client_id', $id)->get() ?? [];
                 $clientSpouseDetail = ClientSpouseDetail::where('client_id', $id)->get();
@@ -4618,7 +4618,7 @@ class ClientsController extends Controller
            function($query) use ($squery) {
              return $query
                     ->where('email', 'LIKE', '%'.$squery.'%')
-                    ->orwhere('first_name', 'LIKE','%'.$squery.'%')->orwhere('last_name', 'LIKE','%'.$squery.'%')->orwhere('client_id', 'LIKE','%'.$squery.'%')->orwhere('phone', 'LIKE','%'.$squery.'%')  ->orWhere(DB::raw("concat(first_name, ' ', last_name)"), 'LIKE', "%".$squery."%");
+                    ->orwhere('first_name', 'LIKE','%'.$squery.'%')->orwhere('last_name', 'LIKE','%'.$squery.'%')->orwhere('client_id', 'LIKE','%'.$squery.'%')->orwhere('phone', 'LIKE','%'.$squery.'%')  ->orWhere(DB::raw("(COALESCE(first_name, '') || ' ' || COALESCE(last_name, ''))"), 'LIKE', "%".$squery."%");
             })
             ->get();
 
@@ -4627,7 +4627,7 @@ class ClientsController extends Controller
 			function($query) use ($squery,$d) {
 				return $query
 					->where('email', 'LIKE', '%'.$squery.'%')
-					->orwhere('first_name', 'LIKE','%'.$squery.'%')->orwhere('last_name', 'LIKE','%'.$squery.'%')->orwhere('phone', 'LIKE','%'.$squery.'%')  ->orWhere(DB::raw("concat(first_name, ' ', last_name)"), 'LIKE', "%".$squery."%");
+					->orwhere('first_name', 'LIKE','%'.$squery.'%')->orwhere('last_name', 'LIKE','%'.$squery.'%')->orwhere('phone', 'LIKE','%'.$squery.'%')  ->orWhere(DB::raw("(COALESCE(first_name, '') || ' ' || COALESCE(last_name, ''))"), 'LIKE', "%".$squery."%");
 				})
             ->get();*/
 
@@ -4655,7 +4655,7 @@ class ClientsController extends Controller
            function($query) use ($squery) {
              	return $query
                     ->where('email', 'LIKE', '%'.$squery.'%')
-                    ->orwhere('first_name', 'LIKE','%'.$squery.'%')->orwhere('last_name', 'LIKE','%'.$squery.'%')->orwhere('client_id', 'LIKE','%'.$squery.'%')->orwhere('phone', 'LIKE','%'.$squery.'%')  ->orWhere(DB::raw("concat(first_name, ' ', last_name)"), 'LIKE', "%".$squery."%");
+                    ->orwhere('first_name', 'LIKE','%'.$squery.'%')->orwhere('last_name', 'LIKE','%'.$squery.'%')->orwhere('client_id', 'LIKE','%'.$squery.'%')->orwhere('phone', 'LIKE','%'.$squery.'%')  ->orWhere(DB::raw("(COALESCE(first_name, '') || ' ' || COALESCE(last_name, ''))"), 'LIKE', "%".$squery."%");
             })
             ->get();
 
@@ -4714,7 +4714,7 @@ class ClientsController extends Controller
                         ->orWhere('att_email', 'LIKE', "%$squery%")
                         ->orWhere('att_phone', 'LIKE', "%$squery%")
                         ->orWhere('phone', 'LIKE', "%$squery%")
-                        ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'LIKE', "%$squery%");
+                        ->orWhere(DB::raw("(COALESCE(first_name, '') || ' ' || COALESCE(last_name, ''))"), 'LIKE', "%$squery%");
                     if ($d != "") {
                         $query->orWhere('dob', '=', $d);
                     }
@@ -4791,7 +4791,7 @@ class ClientsController extends Controller
                         ->orWhere('admins.att_phone', 'LIKE', "%$squery%")
                         ->orWhere('admins.phone', 'LIKE', "%$squery%")
                         ->orWhere('admins.emergency_contact_no', 'LIKE', "%$squery%")
-                        ->orWhere(DB::raw("CONCAT(admins.first_name, ' ', admins.last_name)"), 'LIKE', "%$squery%")
+                        ->orWhere(DB::raw("(COALESCE(admins.first_name, '') || ' ' || COALESCE(admins.last_name, ''))"), 'LIKE', "%$squery%")
                         ->orWhere('client_contacts.phone', 'LIKE', "%$squery%")
                         ->orWhere('client_emails.email', 'LIKE', "%$squery%");
                     if ($d != "") {
@@ -4951,7 +4951,7 @@ class ClientsController extends Controller
                         ->orWhere('admins.last_name', 'LIKE', "%$squery%")
                         ->orWhere('admins.client_id', 'LIKE', "%$squery%")
                         ->orWhere('admins.phone', 'LIKE', "%$squery%")
-                        ->orWhere(DB::raw("CONCAT(admins.first_name, ' ', admins.last_name)"), 'LIKE', "%$squery%")
+                        ->orWhere(DB::raw("(COALESCE(admins.first_name, '') || ' ' || COALESCE(admins.last_name, ''))"), 'LIKE', "%$squery%")
                         ->orWhereNotNull('client_contacts.client_id')  // Matches phone search
                         ->orWhereNotNull('client_emails.client_id');    // Matches email search
 

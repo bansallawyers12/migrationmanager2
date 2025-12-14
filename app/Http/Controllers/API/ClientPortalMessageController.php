@@ -87,7 +87,7 @@ class ClientPortalMessageController extends Controller
 
             // Get client/recipient information
             $recipientUser = DB::table('admins')
-                ->select('id', 'first_name', 'last_name', DB::raw("CONCAT(first_name, ' ', last_name) as full_name"))
+                ->select('id', 'first_name', 'last_name', DB::raw("(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) as full_name"))
                 ->where('id', $clientId)
                 ->first();
 
@@ -325,7 +325,7 @@ class ClientPortalMessageController extends Controller
                 // Get recipient details for all target recipients
                 $recipientUsers = DB::table('admins')
                     ->whereIn('id', $targetRecipients)
-                    ->select('id', 'first_name', 'last_name', DB::raw("CONCAT(first_name, ' ', last_name) as full_name"))
+                    ->select('id', 'first_name', 'last_name', DB::raw("(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) as full_name"))
                     ->get()
                     ->keyBy('id');
 
@@ -518,7 +518,7 @@ class ClientPortalMessageController extends Controller
                     if (!empty($recipientIds)) {
                         $recipientUsers = DB::table('admins')
                             ->whereIn('id', $recipientIds)
-                            ->select('id', 'first_name', 'last_name', DB::raw("CONCAT(first_name, ' ', last_name) as full_name"))
+                            ->select('id', 'first_name', 'last_name', DB::raw("(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) as full_name"))
                             ->get()
                             ->keyBy('id');
                         
@@ -649,7 +649,7 @@ class ClientPortalMessageController extends Controller
                     'message_recipients.recipient_id',
                     'admins.first_name',
                     'admins.last_name',
-                    DB::raw("CONCAT(admins.first_name, ' ', admins.last_name) as recipient_name"),
+                    DB::raw("(COALESCE(admins.first_name, '') || ' ' || COALESCE(admins.last_name, '')) as recipient_name"),
                     'message_recipients.is_read',
                     'message_recipients.read_at'
                 )

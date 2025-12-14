@@ -65,7 +65,7 @@ class DashboardService
             $query->whereHas('client', function ($q) use ($request) {
                 $q->where('first_name', 'like', '%' . $request->client_name . '%')
                   ->orWhere('last_name', 'like', '%' . $request->client_name . '%')
-                  ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$request->client_name}%"])
+                  ->orWhereRaw("(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) LIKE ?", ["%{$request->client_name}%"])
                   ->orWhere('client_id', $request->client_name);
             });
         }

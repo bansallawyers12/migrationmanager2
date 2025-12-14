@@ -61,7 +61,7 @@ trait ClientQueries
                 $query->where(function ($q) use ($name) {
                     $q->where('first_name', 'LIKE', '%' . $name . '%')
                       ->orWhere('last_name', 'LIKE', '%' . $name . '%')
-                      ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$name}%"]);
+                      ->orWhereRaw("(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) LIKE ?", ["%{$name}%"]);
                 });
             }
         }
@@ -79,7 +79,7 @@ trait ClientQueries
                 $query->where(function ($q) use ($phone) {
                     $q->where('phone', 'LIKE', '%' . $phone . '%')
                       ->orWhere('country_code', 'LIKE', '%' . $phone . '%')
-                      ->orWhereRaw("CONCAT(country_code, phone) LIKE ?", ["%{$phone}%"]);
+                      ->orWhereRaw("(COALESCE(country_code, '') || COALESCE(phone, '')) LIKE ?", ["%{$phone}%"]);
                 });
             }
         }

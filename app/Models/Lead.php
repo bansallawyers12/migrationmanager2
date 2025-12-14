@@ -167,7 +167,7 @@ class Lead extends Admin
         \App\Models\LeadFollowup::where('lead_id', $this->id)
             ->where('status', 'pending')
             ->update([
-                'notes' => DB::raw("CONCAT(COALESCE(notes, ''), '\n\n[" . now()->format('d/m/Y H:i') . 
+                'notes' => DB::raw("(COALESCE(notes, '') || '\n\n[" . now()->format('d/m/Y H:i') . 
                           "]: Lead converted to client. This follow-up has been preserved for client management.')"),
             ]);
         

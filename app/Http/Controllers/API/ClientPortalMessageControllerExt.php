@@ -81,7 +81,7 @@ trait SendMessageToClientTrait
 
             // Get client/recipient information
             $recipientUser = DB::table('admins')
-                ->select('id', 'first_name', 'last_name', DB::raw("CONCAT(first_name, ' ', last_name) as full_name"))
+                ->select('id', 'first_name', 'last_name', DB::raw("(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) as full_name"))
                 ->where('id', $clientId)
                 ->first();
 

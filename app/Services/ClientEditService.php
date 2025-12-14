@@ -115,7 +115,7 @@ class ClientEditService
      */
     protected function getQualifications(int $clientId)
     {
-        return ClientQualification::where('client_id', $clientId)->orderByRaw('finish_date IS NULL, finish_date DESC')->get() ?? [];
+        return ClientQualification::where('client_id', $clientId)->orderByRaw('finish_date DESC NULLS FIRST')->get() ?? [];
     }
 
     /**
@@ -123,7 +123,7 @@ class ClientEditService
      */
     protected function getExperiences(int $clientId)
     {
-        return ClientExperience::where('client_id', $clientId)->orderByRaw('job_finish_date IS NULL, job_finish_date DESC')->get() ?? [];
+        return ClientExperience::where('client_id', $clientId)->orderByRaw('job_finish_date DESC NULLS FIRST')->get() ?? [];
     }
 
     /**
@@ -165,7 +165,7 @@ class ClientEditService
     protected function getTravels(int $clientId)
     {
         return ClientTravelInformation::where('client_id', $clientId)
-            ->orderByRaw('travel_arrival_date IS NULL, TO_DATE(travel_arrival_date, \'YYYY-MM-DD\') ASC')
+            ->orderByRaw('TO_DATE(travel_arrival_date, \'YYYY-MM-DD\') ASC NULLS FIRST')
             ->get() ?? [];
     }
 
