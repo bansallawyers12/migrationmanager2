@@ -165,7 +165,7 @@ class ClientEditService
     protected function getTravels(int $clientId)
     {
         return ClientTravelInformation::where('client_id', $clientId)
-            ->orderByRaw('TO_DATE(travel_arrival_date, \'YYYY-MM-DD\') ASC NULLS LAST')
+            ->orderByRaw('travel_arrival_date ASC NULLS LAST')
             ->get() ?? [];
     }
 
