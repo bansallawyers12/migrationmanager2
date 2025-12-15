@@ -97,6 +97,16 @@ class Document extends Model
         return $this->belongsTo(Admin::class, 'created_by');
     }
 
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(Admin::class, 'user_id');
+    }
+
+    public function verifiedBy(): BelongsTo
+    {
+        return $this->belongsTo(Admin::class, 'checklist_verified_by');
+    }
+
     public function documentable(): MorphTo
     {
         return $this->morphTo();

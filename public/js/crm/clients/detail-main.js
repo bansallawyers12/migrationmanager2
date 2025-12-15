@@ -16348,5 +16348,83 @@ Bansal Immigration`;
     $(document).ready(function() {
         initializeSidebarReferences();
     });
+
+    // Edit Checklist Button Handler (triggers edit mode)
+    $(document).on('click', '.edit-checklist-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        var checklistId = $(this).data('id');
+        var $drow = $(this).closest('.drow');
+        var $parent = $drow.find('.personalchecklist-row');
+        
+        if ($parent.length === 0) {
+            console.error('Personal checklist row not found');
+            return false;
+        }
+        
+        // Store current HTML
+        $parent.data('current-html', $parent.html());
+        
+        var currentChecklist = $parent.data('personalchecklistname') || $(this).data('checklist');
+        
+        if (!currentChecklist) {
+            console.error('Checklist name not found');
+            return false;
+        }
+        
+        // Replace with input field and buttons
+        $parent.empty().append(
+            $('<input style="display: inline-block;width: auto;" class="form-control opentime" type="text">').prop('value', currentChecklist),
+            $('<button class="btn btn-personalprimary btn-sm mb-1"><i class="fas fa-check"></i></button>'),
+            $('<button class="btn btn-personaldanger btn-sm mb-1"><i class="far fa-trash-alt"></i></button>')
+        );
+        
+        return false;
+    });
+
+    // Delete Checklist Button Handler
+    $(document).on('click', '.delete-checklist-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        var checklistId = $(this).data('id');
+        var checklistName = $(this).data('checklist');
+        var $row = $(this).closest('.drow');
+        
+        if (!confirm('Are you sure you want to delete the checklist "' + checklistName + '"? This action cannot be undone.')) {
+            return false;
+        }
+        
+        // Show loading
+        $('.custom-error-msg').html('<span class="alert alert-info"><i class="fa fa-clock-o"></i> Deleting checklist...</span>');
+        
+        $.ajax({
+            type: "POST",
+            url: site_url + '/documents/delete-checklist',
+            data: {
+                "_token": $('meta[name="csrf-token"]').attr('content'),
+                "id": checklistId
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.status) {
+                    $('.custom-error-msg').html('<span class="alert alert-success">' + response.message + '</span>');
+                    // Remove the row from table
+                    $row.fadeOut(300, function() {
+                        $(this).remove();
+                    });
+                } else {
+                    $('.custom-error-msg').html('<span class="alert alert-danger">' + response.message + '</span>');
+                }
+            },
+            error: function(xhr, status, error) {
+                $('.custom-error-msg').html('<span class="alert alert-danger">An error occurred. Please try again.</span>');
+                console.error('Error deleting checklist:', error);
+            }
+        });
+        
+        return false;
+    });
     
 })();

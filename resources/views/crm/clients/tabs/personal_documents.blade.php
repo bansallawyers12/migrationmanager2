@@ -74,7 +74,7 @@
                                             </thead>
                                             <tbody class="tdata persdocumnetlist documnetlist_<?= $id ?>">
                                                 <?php
-                                                $documents = \App\Models\Document::where('client_id', $clientId)
+                                                $documents = \App\Models\Document::with('user')->where('client_id', $clientId)
                                                     ->whereNull('not_used_doc')
                                                     ->where('doc_type', 'personal')
                                                     ->where('folder_name', $folderName)
@@ -84,7 +84,7 @@
                                                 ?>
                                                 <?php foreach ($documents as $docKey => $fetch): ?>
                                                     <?php
-                                                    $admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
+                                                    $admin = $fetch->user;
                                                     
                                                     // Ensure $fileUrl is always a valid full URL
                                                     if (!empty($fetch->myfile) && strpos($fetch->myfile, 'http') === 0) {
@@ -97,8 +97,18 @@
                                                     ?>
                                                     <tr class="drow" id="id_<?= $fetch->id ?>">
                                                         <td style="white-space: initial;">
-                                                            <div data-id="<?= $fetch->id ?>" data-personalchecklistname="<?= htmlspecialchars($fetch->checklist) ?>" class="personalchecklist-row" title="Uploaded by: <?= htmlspecialchars($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>">
-                                                                <span><?= htmlspecialchars($fetch->checklist) ?></span>
+                                                            <div data-id="<?= $fetch->id ?>" data-personalchecklistname="<?= htmlspecialchars($fetch->checklist) ?>" class="personalchecklist-row" title="Uploaded by: <?= htmlspecialchars($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" style="display: flex; align-items: center; gap: 8px;">
+                                                                <span style="flex: 1;"><?= htmlspecialchars($fetch->checklist) ?></span>
+                                                                <div class="checklist-actions" style="display: flex; gap: 5px;">
+                                                                    <a href="javascript:;" class="edit-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= htmlspecialchars($fetch->checklist) ?>" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;">
+                                                                        <i class="fas fa-edit"></i>
+                                                                    </a>
+                                                                    <?php if (!$fetch->file_name): ?>
+                                                                    <a href="javascript:;" class="delete-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= htmlspecialchars($fetch->checklist) ?>" title="Delete Checklist" style="color: #dc3545; cursor: pointer;">
+                                                                        <i class="fas fa-trash"></i>
+                                                                    </a>
+                                                                    <?php endif; ?>
+                                                                </div>
                                                             </div>
                                                         </td>
                                                         <td style="white-space: initial;">

@@ -33,16 +33,19 @@ class ClientDocumentsController extends Controller
      * Add Personal/Education Document Checklist
      */
     public function addedudocchecklist(Request $request){
-        $clientid = $request->clientid;
-        $admin_info1 = Admin::select('client_id')->where('id', $clientid)->first();
-        if(!empty($admin_info1)){
-            $client_unique_id = $admin_info1->client_id;
-        } else {
-            $client_unique_id = "";
-        }
-        $doctype = isset($request->doctype)? $request->doctype : '';
+        $response = ['status' => false, 'message' => 'Please try again'];
+        
+        try {
+            $clientid = $request->clientid;
+            $admin_info1 = Admin::select('client_id')->where('id', $clientid)->first();
+            if(!empty($admin_info1)){
+                $client_unique_id = $admin_info1->client_id;
+            } else {
+                $client_unique_id = "";
+            }
+            $doctype = isset($request->doctype)? $request->doctype : '';
 
-        if ($request->has('checklist'))
+            if ($request->has('checklist'))
         {
             $checklistArray = $request->input('checklist');
             if (is_array($checklistArray))
@@ -77,17 +80,27 @@ class ClientDocumentsController extends Controller
                     $response['status'] = true;
                     $response['message'] = 'You\'ve successfully added your personal checklist';
 
-                    $fetchd = Document::where('client_id',$clientid)->whereNull('not_used_doc')->where('doc_type',$doctype)->where('type',$request->type)->where('folder_name',$request->folder_name)->orderby('updated_at', 'DESC')->get();
+                    $fetchd = Document::with('user')->where('client_id',$clientid)->whereNull('not_used_doc')->where('doc_type',$doctype)->where('type',$request->type)->where('folder_name',$request->folder_name)->orderby('updated_at', 'DESC')->get();
                     ob_start();
                     foreach($fetchd as $docKey=>$fetch)
                     {
-                        $admin = Admin::where('id', $fetch->user_id)->first();
+                        $admin = $fetch->user;
                         $fileUrl = $fetch->myfile_key ? $fetch->myfile : 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/' . $clientid . '/personal/' . $fetch->myfile;
                         ?>
                         <tr class="drow" id="id_<?php echo $fetch->id; ?>">
                             <td style="white-space: initial;">
-                                <div data-id="<?php echo $fetch->id;?>" data-personalchecklistname="<?php echo htmlspecialchars($fetch->checklist); ?>" class="personalchecklist-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>">
-                                    <span><?php echo htmlspecialchars($fetch->checklist); ?></span>
+                                <div data-id="<?php echo $fetch->id;?>" data-personalchecklistname="<?php echo htmlspecialchars($fetch->checklist); ?>" class="personalchecklist-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="flex: 1;"><?php echo htmlspecialchars($fetch->checklist); ?></span>
+                                    <div class="checklist-actions" style="display: flex; gap: 5px;">
+                                        <a href="javascript:;" class="edit-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo htmlspecialchars($fetch->checklist); ?>" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <?php if (!$fetch->file_name): ?>
+                                        <a href="javascript:;" class="delete-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo htmlspecialchars($fetch->checklist); ?>" title="Delete Checklist" style="color: #dc3545; cursor: pointer;">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
                             </td>
                             <td style="white-space: initial;">
@@ -134,7 +147,7 @@ class ClientDocumentsController extends Controller
                     ob_start();
                     foreach($fetchd as $fetch)
                     {
-                        $admin = Admin::where('id', $fetch->user_id)->first();
+                        $admin = $fetch->user;
                         ?>
                         <div class="grid_list">
                             <div class="grid_col">
@@ -183,6 +196,15 @@ class ClientDocumentsController extends Controller
             $response['status'] = false;
             $response['message'] = 'Please try again';
         } //end else
+        } catch (\Exception $e) {
+            Log::error('Error adding personal document checklist', [
+                'client_id' => $request->clientid ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            $response['status'] = false;
+            $response['message'] = 'An error occurred. Please try again.';
+        }
         echo json_encode($response);
 	}
     
@@ -275,16 +297,19 @@ class ClientDocumentsController extends Controller
      * Add Visa Document Checklist
      */
     public function addvisadocchecklist(Request $request) {
-        $clientid = $request->clientid;
-        $admin_info1 = Admin::select('client_id')->where('id', $clientid)->first();
-        if(!empty($admin_info1)){
-            $client_unique_id = $admin_info1->client_id;
-        } else {
-            $client_unique_id = "";
-        }
+        $response = ['status' => false, 'message' => 'Please try again'];
+        
+        try {
+            $clientid = $request->clientid;
+            $admin_info1 = Admin::select('client_id')->where('id', $clientid)->first();
+            if(!empty($admin_info1)){
+                $client_unique_id = $admin_info1->client_id;
+            } else {
+                $client_unique_id = "";
+            }
 
-        $doctype = isset($request->doctype)? $request->doctype : '';
-        if ($request->has('visa_checklist'))
+            $doctype = isset($request->doctype)? $request->doctype : '';
+            if ($request->has('visa_checklist'))
         {
             $checklistArray = $request->input('visa_checklist');
             if (is_array($checklistArray))
@@ -327,7 +352,7 @@ class ClientDocumentsController extends Controller
                     $response['message']	=	'You have added uploaded your visa checklist';
 
                     // Get all documents for this client (original behavior - no strict filtering)
-                    $fetchd = Document::where('client_id',$clientid)
+                    $fetchd = Document::with('user')->where('client_id',$clientid)
                         ->whereNull('not_used_doc')
                         ->where('doc_type',$doctype)
                         ->where('type',$request->type)
@@ -337,7 +362,7 @@ class ClientDocumentsController extends Controller
                     ob_start();
                     foreach($fetchd as $visaKey=>$fetch)
                     {
-                        $admin = Admin::where('id', $fetch->user_id)->first();
+                        $admin = $fetch->user;
                         $VisaDocumentType = VisaDocumentType::where('id', $fetch->folder_name)->first();
                         $fileUrl = $fetch->myfile_key ? $fetch->myfile : 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/' . $fetch->client_id . '/visa/' . $fetch->myfile;
                         
@@ -402,7 +427,7 @@ class ClientDocumentsController extends Controller
                     ob_start();
                     foreach($fetchd as $fetch)
                     {
-                        $admin = Admin::where('id', $fetch->user_id)->first();
+                        $admin = $fetch->user;
                         ?>
                         <div class="grid_list">
                             <div class="grid_col">
@@ -451,6 +476,15 @@ class ClientDocumentsController extends Controller
             $response['status'] = false;
             $response['message'] = 'Please try again';
         } //end else
+        } catch (\Exception $e) {
+            Log::error('Error adding visa document checklist', [
+                'client_id' => $request->clientid ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            $response['status'] = false;
+            $response['message'] = 'An error occurred. Please try again.';
+        }
         echo json_encode($response);
     }
 
@@ -669,8 +703,12 @@ class ClientDocumentsController extends Controller
      * Delete Document
      */
     public function deletedocs(Request $request) {
-        $note_id = $request->note_id;
-        if(\App\Models\Document::where('id',$note_id)->exists()){
+        $response = ['status' => false, 'message' => 'Please try again'];
+        $data = null;
+        
+        try {
+            $note_id = $request->note_id;
+            if(\App\Models\Document::where('id',$note_id)->exists()){
             $data = DB::table('documents')->where('id', @$note_id)->first();
             $admin = DB::table('admins')->select('client_id')->where('id', @$data->client_id)->first();
             $res = DB::table('documents')->where('id', @$note_id)->delete();
@@ -718,6 +756,15 @@ class ClientDocumentsController extends Controller
                 $response['doc_categry']	= "";
             }
         }
+        } catch (\Exception $e) {
+            Log::error('Error deleting document', [
+                'document_id' => $request->note_id ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            $response['status'] = false;
+            $response['message'] = 'An error occurred. Please try again.';
+        }
         echo json_encode($response);
     }
 
@@ -726,30 +773,43 @@ class ClientDocumentsController extends Controller
      * Get Visa Checklist
      */
     public function getvisachecklist(Request $request) {
-        if( ClientMatter::where('id', $request->client_matter_id)->exists()){
-            $clientMatterInfo = ClientMatter::select('sel_matter_id')->where('id',$request->client_matter_id)->first();
-            //dd($clientMatterInfo->sel_matter_id);
-            if( isset($clientMatterInfo) ){
-                $visaCheckListInfo = VisaDocChecklist::select('id','name')->whereRaw("FIND_IN_SET($clientMatterInfo->sel_matter_id, matter_id)")->get();
-                //dd($visaCheckListInfo);
-                if( !empty($visaCheckListInfo) && count($visaCheckListInfo)>0 ){
-                    $response['status'] 	= 	true;
-                    $response['message']	=	'Visa checklist is successfully fetched.';
-                    $response['visaCheckListInfo']	=	$visaCheckListInfo;
+        $response = ['status' => false, 'message' => 'Please try again', 'visaCheckListInfo' => []];
+        
+        try {
+            if( ClientMatter::where('id', $request->client_matter_id)->exists()){
+                $clientMatterInfo = ClientMatter::select('sel_matter_id')->where('id',$request->client_matter_id)->first();
+                //dd($clientMatterInfo->sel_matter_id);
+                if( isset($clientMatterInfo) ){
+                    $visaCheckListInfo = VisaDocChecklist::select('id','name')->whereRaw("FIND_IN_SET(?, matter_id)", [$clientMatterInfo->sel_matter_id])->get();
+                    //dd($visaCheckListInfo);
+                    if( !empty($visaCheckListInfo) && count($visaCheckListInfo)>0 ){
+                        $response['status'] 	= 	true;
+                        $response['message']	=	'Visa checklist is successfully fetched.';
+                        $response['visaCheckListInfo']	=	$visaCheckListInfo;
+                    } else {
+                        $response['status'] 	= 	false;
+                        $response['message']	=	'Please try again';
+                        $response['visaCheckListInfo'] = array();
+                    }
                 } else {
                     $response['status'] 	= 	false;
                     $response['message']	=	'Please try again';
-                    $response['visaCheckListInfo'] = array();
+                    $response['visaCheckListInfo']	=	array();
                 }
             } else {
                 $response['status'] 	= 	false;
                 $response['message']	=	'Please try again';
                 $response['visaCheckListInfo']	=	array();
             }
-        } else {
-            $response['status'] 	= 	false;
-            $response['message']	=	'Please try again';
-            $response['visaCheckListInfo']	=	array();
+        } catch (\Exception $e) {
+            Log::error('Error getting visa checklist', [
+                'client_matter_id' => $request->client_matter_id ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            $response['status'] = false;
+            $response['message'] = 'An error occurred. Please try again.';
+            $response['visaCheckListInfo'] = [];
         }
         echo json_encode($response);
     }
@@ -758,12 +818,15 @@ class ClientDocumentsController extends Controller
      * Mark Document as Not Used
      */
     public function notuseddoc(Request $request) {
-        $doc_id = $request->doc_id;
-        $doc_type = $request->doc_type;
-        if(\App\Models\Document::where('id',$doc_id)->exists()){
+        $response = ['status' => false, 'message' => 'Please try again'];
+        
+        try {
+            $doc_id = $request->doc_id;
+            $doc_type = $request->doc_type;
+            if(\App\Models\Document::where('id',$doc_id)->exists()){
             $upd = DB::table('documents')->where('id', $doc_id)->update(array('not_used_doc' => 1));
             if($upd){
-                $docInfo = \App\Models\Document::where('id',$doc_id)->first();
+                $docInfo = \App\Models\Document::with(['user', 'verifiedBy'])->where('id',$doc_id)->first();
                 $subject = $doc_type.' document moved to Not Used Tab';
                 $objs = new ActivitiesLog;
                 $objs->client_id = $docInfo->client_id;
@@ -773,18 +836,16 @@ class ClientDocumentsController extends Controller
                 $objs->save();
 
                 if($docInfo){
-                    if( isset($docInfo->user_id) && $docInfo->user_id!= "" ){
-                        $adminInfo = \App\Models\Admin::select('first_name')->where('id',$docInfo->user_id)->first();
-                        $response['Added_By'] = $adminInfo->first_name;
+                    if( isset($docInfo->user_id) && $docInfo->user_id!= "" && $docInfo->user ){
+                        $response['Added_By'] = $docInfo->user->first_name;
                         $response['Added_date'] = date('d/m/Y',strtotime($docInfo->created_at));
                     } else {
                         $response['Added_By'] = "N/A";
                         $response['Added_date'] = "N/A";
                     }
 
-                    if( isset($docInfo->checklist_verified_by) && $docInfo->checklist_verified_by!= "" ){
-                        $verifyInfo = \App\Models\Admin::select('first_name')->where('id',$docInfo->checklist_verified_by)->first();
-                        $response['Verified_By'] = $verifyInfo->first_name;
+                    if( isset($docInfo->checklist_verified_by) && $docInfo->checklist_verified_by!= "" && $docInfo->verifiedBy ){
+                        $response['Verified_By'] = $docInfo->verifiedBy->first_name;
                         $response['Verified_At'] = date('d/m/Y',strtotime($docInfo->checklist_verified_at));
                     } else {
                         $response['Verified_By'] = "N/A";
@@ -827,6 +888,15 @@ class ClientDocumentsController extends Controller
             $response['Verified_By'] = "";
             $response['Verified_At'] = "";
         }
+        } catch (\Exception $e) {
+            Log::error('Error marking document as not used', [
+                'doc_id' => $request->doc_id ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            $response['status'] = false;
+            $response['message'] = 'An error occurred. Please try again.';
+        }
         echo json_encode($response);
     }
 
@@ -834,9 +904,12 @@ class ClientDocumentsController extends Controller
      * Rename Checklist in Document
      */
     public function renamechecklistdoc(Request $request) {
-        $id = $request->id;
-        $checklist = $request->checklist;
-        if(\App\Models\Document::where('id',$id)->exists()){
+        $response = ['status' => false, 'message' => 'Please try again'];
+        
+        try {
+            $id = $request->id;
+            $checklist = $request->checklist;
+            if(\App\Models\Document::where('id',$id)->exists()){
             $doc = \App\Models\Document::where('id',$id)->first();
             $res = DB::table('documents')->where('id', @$id)->update(['checklist' => $checklist]);
             if($res){
@@ -852,6 +925,15 @@ class ClientDocumentsController extends Controller
             $response['status'] = false;
             $response['message'] = 'Please try again';
         }
+        } catch (\Exception $e) {
+            Log::error('Error renaming checklist', [
+                'document_id' => $request->id ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            $response['status'] = false;
+            $response['message'] = 'An error occurred. Please try again.';
+        }
         echo json_encode($response);
     }
 
@@ -859,12 +941,15 @@ class ClientDocumentsController extends Controller
      * Move Document Back from Not Used
      */
     public function backtodoc(Request $request) {
-        $doc_id = $request->doc_id;
-        $doc_type = $request->doc_type;
-        if(\App\Models\Document::where('id',$doc_id)->exists()){
+        $response = ['status' => false, 'message' => 'Please try again'];
+        
+        try {
+            $doc_id = $request->doc_id;
+            $doc_type = $request->doc_type;
+            if(\App\Models\Document::where('id',$doc_id)->exists()){
             $upd = DB::table('documents')->where('id', $doc_id)->update(array('not_used_doc' => null));
             if($upd){
-                $docInfo = \App\Models\Document::where('id',$doc_id)->first();
+                $docInfo = \App\Models\Document::with(['user', 'verifiedBy'])->where('id',$doc_id)->first();
                 $subject = $doc_type.' document moved to '.$doc_type.' document tab';
                 $objs = new ActivitiesLog;
                 $objs->client_id = $docInfo->client_id;
@@ -874,18 +959,16 @@ class ClientDocumentsController extends Controller
                 $objs->save();
 
                 if($docInfo){
-                    if( isset($docInfo->user_id) && $docInfo->user_id!= "" ){
-                        $adminInfo = \App\Models\Admin::select('first_name')->where('id',$docInfo->user_id)->first();
-                        $response['Added_By'] = $adminInfo->first_name;
+                    if( isset($docInfo->user_id) && $docInfo->user_id!= "" && $docInfo->user ){
+                        $response['Added_By'] = $docInfo->user->first_name;
                         $response['Added_date'] = date('d/m/Y',strtotime($docInfo->created_at));
                     } else {
                         $response['Added_By'] = "N/A";
                         $response['Added_date'] = "N/A";
                     }
 
-                    if( isset($docInfo->checklist_verified_by) && $docInfo->checklist_verified_by!= "" ){
-                        $verifyInfo = \App\Models\Admin::select('first_name')->where('id',$docInfo->checklist_verified_by)->first();
-                        $response['Verified_By'] = $verifyInfo->first_name;
+                    if( isset($docInfo->checklist_verified_by) && $docInfo->checklist_verified_by!= "" && $docInfo->verifiedBy ){
+                        $response['Verified_By'] = $docInfo->verifiedBy->first_name;
                         $response['Verified_At'] = date('d/m/Y',strtotime($docInfo->checklist_verified_at));
                     } else {
                         $response['Verified_By'] = "N/A";
@@ -907,9 +990,9 @@ class ClientDocumentsController extends Controller
 
                 $response['Added_By'] = "";
                 $response['Added_date'] = "";
-                $response['Verified_By'] = "";
-                $response['Verified_At'] = "";
-            }
+            $response['Verified_By'] = "";
+            $response['Verified_At'] = "";
+        }
         } else {
             $response['status'] 	= 	false;
             $response['message']	=	'Please try again';
@@ -922,7 +1005,82 @@ class ClientDocumentsController extends Controller
             $response['Verified_By'] = "";
             $response['Verified_At'] = "";
         }
+        } catch (\Exception $e) {
+            Log::error('Error moving document back from not used', [
+                'doc_id' => $request->doc_id ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            $response['status'] = false;
+            $response['message'] = 'An error occurred. Please try again.';
+        }
         echo json_encode($response);
+    }
+
+    /**
+     * Delete Checklist Item (only if no file uploaded)
+     */
+    public function deleteChecklist(Request $request) {
+        $response = ['status' => false, 'message' => 'Please try again'];
+        
+        try {
+            $checklist_id = $request->id;
+            
+            if (!$checklist_id) {
+                $response['message'] = 'Checklist ID is required';
+                return response()->json($response);
+            }
+            
+            $document = Document::find($checklist_id);
+            
+            if (!$document) {
+                $response['message'] = 'Checklist not found';
+                return response()->json($response);
+            }
+            
+            // Only allow deletion if no file has been uploaded
+            if ($document->file_name || $document->myfile) {
+                $response['message'] = 'Cannot delete checklist with uploaded file. Please remove the file first.';
+                return response()->json($response);
+            }
+            
+            $checklistName = $document->checklist;
+            $clientId = $document->client_id;
+            $folderName = $document->folder_name;
+            
+            // Delete the document record
+            $deleted = $document->delete();
+            
+            if ($deleted) {
+                // Log activity
+                $subject = 'deleted personal checklist';
+                $description = "Deleted personal document checklist: '{$checklistName}'";
+                
+                $objs = new ActivitiesLog;
+                $objs->client_id = $clientId;
+                $objs->created_by = Auth::user()->id;
+                $objs->description = $description;
+                $objs->subject = $subject;
+                $objs->activity_type = 'document';
+                $objs->save();
+                
+                $response['status'] = true;
+                $response['message'] = 'Checklist deleted successfully';
+                $response['folder_name'] = $folderName;
+            } else {
+                $response['message'] = 'Failed to delete checklist';
+            }
+        } catch (\Exception $e) {
+            Log::error('Error deleting checklist', [
+                'checklist_id' => $request->id ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            $response['status'] = false;
+            $response['message'] = 'An error occurred. Please try again.';
+        }
+        
+        return response()->json($response);
     }
 
     /**
