@@ -987,17 +987,22 @@
 
         // Trigger file input click when "Add Document" button is clicked
 
-        document.querySelector('.add-document-btn').addEventListener('click', function() {
+        const addDocumentBtn = document.querySelector('.add-document-btn');
+        if (addDocumentBtn) {
+            addDocumentBtn.addEventListener('click', function() {
 
-            document.querySelector('.docclientreceiptupload').click();
+                document.querySelector('.docclientreceiptupload').click();
 
-        });
+            });
+        }
 
 
 
         // Show file selection hint when files are selected
 
-        document.querySelector('.docclientreceiptupload').addEventListener('change', function(e) {
+        const docClientReceiptUpload = document.querySelector('.docclientreceiptupload');
+        if (docClientReceiptUpload) {
+            docClientReceiptUpload.addEventListener('change', function(e) {
 
             const files = e.target.files;
 
@@ -1029,7 +1034,8 @@
 
             }
 
-        });
+            });
+        }
 
 
 
@@ -1037,11 +1043,14 @@
 
         // Trigger file input click when "Add Document" button is clicked
 
-        document.querySelector('.add-document-btn1').addEventListener('click', function() {
+        const addDocumentBtn1 = document.querySelector('.add-document-btn1');
+        if (addDocumentBtn1) {
+            addDocumentBtn1.addEventListener('click', function() {
 
-            document.querySelector('.docofficereceiptupload').click();
+                document.querySelector('.docofficereceiptupload').click();
 
-        });
+            });
+        }
 
 
 
@@ -1486,7 +1495,9 @@
 
         // Show file selection hint when files are selected
 
-        document.querySelector('.docofficereceiptupload').addEventListener('change', function(e) {
+        const docOfficeReceiptUpload = document.querySelector('.docofficereceiptupload');
+        if (docOfficeReceiptUpload) {
+            docOfficeReceiptUpload.addEventListener('change', function(e) {
 
             const files = e.target.files;
 
@@ -1518,7 +1529,8 @@
 
             }
 
-        });
+            });
+        }
 
     });
 
@@ -6856,7 +6868,9 @@ Bansal Immigration`;
 
         // Handle not lodged checkbox
 
-        document.querySelector('input[name="not_lodged"]').addEventListener('change', function() {
+        const notLodgedInput = document.querySelector('input[name="not_lodged"]');
+        if (notLodgedInput) {
+            notLodgedInput.addEventListener('change', function() {
 
             const dateLodgedInput = document.getElementById('date_lodged');
 
@@ -6868,7 +6882,8 @@ Bansal Immigration`;
 
             }
 
-        });
+            });
+        }
 
 
 
