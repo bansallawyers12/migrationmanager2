@@ -82,8 +82,8 @@
                                 <div class="card-header d-flex justify-content-between align-items-center">
                                     <h4 class="mb-0">History</h4>
                                     <div class="d-flex align-items-center gap-2">
-                                        <span class="badge badge-primary" id="broadcast-history-count">0 sent</span>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="broadcast-refresh-history">
+                                        <span class="badge badge-light broadcast-count-badge" id="broadcast-history-count">0 sent</span>
+                                        <button type="button" class="btn btn-outline-light btn-sm broadcast-refresh-btn" id="broadcast-refresh-history">
                                             <i class="fas fa-sync-alt mr-1"></i> Refresh
                                         </button>
                                     </div>
@@ -457,7 +457,7 @@
                     <td>${formatDate(item.sent_at)}</td>
                     <td>
                         ${item.title ? `<strong>${item.title}</strong><br>` : ''}
-                        <span class="text-muted">${item.message}</span>
+                        <span class="broadcast-message-text">${item.message}</span>
                     </td>
                     <td class="text-center">
                         <span class="badge badge-success">${item.read_count}</span>
@@ -1096,6 +1096,40 @@
 <style>
     .broadcast-subtitle {
         color: #4a5568;
+    }
+
+    /* Broadcast History Header Improvements */
+    .broadcast-count-badge {
+        background-color: rgba(255, 255, 255, 0.95) !important;
+        color: #005792 !important;
+        font-weight: 600 !important;
+        border: 1px solid rgba(0, 87, 146, 0.2) !important;
+        padding: 0.4rem 0.75rem !important;
+    }
+
+    .broadcast-refresh-btn {
+        background-color: rgba(255, 255, 255, 0.15) !important;
+        border-color: rgba(255, 255, 255, 0.5) !important;
+        color: #ffffff !important;
+        font-weight: 500 !important;
+        transition: all 0.2s ease;
+    }
+
+    .broadcast-refresh-btn:hover {
+        background-color: rgba(255, 255, 255, 0.95) !important;
+        border-color: #ffffff !important;
+        color: #005792 !important;
+        transform: translateY(-1px);
+    }
+
+    .broadcast-refresh-btn:active {
+        transform: translateY(0);
+    }
+
+    /* Message text readability */
+    .broadcast-message-text {
+        color: #495057 !important;
+        font-size: 0.9375rem;
     }
 
     /* ============================================
