@@ -40,6 +40,9 @@ class Kernel extends ConsoleKernel
         
         // Client Reference Management Commands
         '\App\Console\Commands\FixDuplicateClientReferences',
+        
+        // Client Age Management Commands
+        '\App\Console\Commands\UpdateClientAges',
     ];
 
     /**
@@ -95,6 +98,14 @@ class Kernel extends ConsoleKernel
             ->timezone('Australia/Melbourne')
             ->withoutOverlapping(30)
             ->appendOutputTo(storage_path('logs/signature-auto-reminders.log'));*/
+        
+        // Client Age Management - Update ages bi-weekly (1st and 15th of each month) at 2 AM
+        $schedule->command('clients:update-ages --smart')
+            ->twiceMonthly(1, 15)
+            ->at('02:00')
+            ->timezone('Australia/Melbourne')
+            ->withoutOverlapping(30)
+            ->appendOutputTo(storage_path('logs/age-updates.log'));
     }
 
     /**

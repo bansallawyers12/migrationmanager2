@@ -757,12 +757,24 @@ class ClientsController extends Controller
             if (isset($validated['dob_verified']) && $validated['dob_verified'] === '1') {
                 $client->dob_verified_date = $currentDateTime;
                 $client->dob_verified_by = $currentUserId;
+                
+                // Recalculate age when DOB is verified (ensures age is current)
+                if ($client->dob && $client->dob !== '0000-00-00') {
+                    try {
+                        $dobDate = \Carbon\Carbon::parse($client->dob);
+                        $client->age = $dobDate->diff(\Carbon\Carbon::now())->format('%y years %m months');
+                    } catch (\Exception $e) {
+                        // If calculation fails, use provided age or keep existing
+                        $client->age = $validated['age'] ?? null;
+                    }
+                } else {
+                    $client->age = $validated['age'] ?? null;
+                }
             } else {
                 $client->dob_verified_date = null;
                 $client->dob_verified_by = null;
+                $client->age = $validated['age'] ?? null;
             }
-
-            $client->age = $validated['age'] ?? null;
             $client->gender = $validated['gender'] ?? null;
             $client->marital_status = $validated['marital_status'] ?? null;
             $client->country_passport = $validated['visa_country'][0] ?? null;
@@ -2255,6 +2267,18 @@ class ClientsController extends Controller
             if (isset($requestData['dob_verified']) && $requestData['dob_verified'] === '1') {
                 $obj->dob_verified_date = $currentDateTime;
                 $obj->dob_verified_by = $currentUserId;
+                
+                // Recalculate age when DOB is verified (ensures age is current)
+                // This happens even if DOB hasn't changed, just verification status
+                if ($obj->dob && $obj->dob !== '0000-00-00') {
+                    try {
+                        $dobDate = \Carbon\Carbon::parse($obj->dob);
+                        $obj->age = $dobDate->diff(\Carbon\Carbon::now())->format('%y years %m months');
+                    } catch (\Exception $e) {
+                        // If calculation fails, keep existing age
+                        \Log::warning("Failed to recalculate age for client {$obj->id} during DOB verification: " . $e->getMessage());
+                    }
+                }
             } else {
                 $obj->dob_verified_date = null;
                 $obj->dob_verified_by = null;

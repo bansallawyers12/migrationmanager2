@@ -100,6 +100,38 @@ class Admin extends Authenticatable
         return trim($this->first_name . ' ' . $this->last_name);
     }
 
+    /**
+     * Get age attribute - calculates from DOB on-the-fly
+     * Falls back to stored age if DOB is not available
+     * Always returns accurate age when DOB exists
+     * 
+     * @return string|null
+     */
+    public function getAgeAttribute($value)
+    {
+        // If DOB exists, calculate age on-the-fly (always accurate)
+        if ($this->dob && $this->dob !== '0000-00-00') {
+            try {
+                $dobDate = \Carbon\Carbon::parse($this->dob);
+                $now = \Carbon\Carbon::now();
+                
+                // Don't calculate for future dates
+                if ($dobDate->isFuture()) {
+                    return $value; // Return stored value or null
+                }
+                
+                $diff = $now->diff($dobDate);
+                return $diff->y . ' years ' . $diff->m . ' months';
+            } catch (\Exception $e) {
+                // If calculation fails, return stored value
+                return $value;
+            }
+        }
+        
+        // If no DOB, return stored age value (or null)
+        return $value;
+    }
+
     // ============================================================
     // STAFF RELATIONSHIPS
     // ============================================================
