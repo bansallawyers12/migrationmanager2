@@ -4519,7 +4519,7 @@ class ClientsController extends Controller
                         ->where('cm.client_id', $id)
                         ->where('cm.matter_status', 1)
                         ->where(function($query) {
-                            $query->whereRaw('LOWER(m.nick_name) = ?', ['eoi'])
+                            $query->where(DB::raw('LOWER(m.nick_name)'), '=', 'eoi')
                                   ->orWhere('m.title', 'LIKE', '%eoi%')
                                   ->orWhere('m.title', 'LIKE', '%expression of interest%')
                                   ->orWhere('m.title', 'LIKE', '%expression%');

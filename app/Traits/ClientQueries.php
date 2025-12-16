@@ -4,6 +4,7 @@ namespace App\Traits;
 
 use App\Models\Admin;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 trait ClientQueries
 {
@@ -61,7 +62,7 @@ trait ClientQueries
                 $query->where(function ($q) use ($name) {
                     $q->where('first_name', 'LIKE', '%' . $name . '%')
                       ->orWhere('last_name', 'LIKE', '%' . $name . '%')
-                      ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$name}%"]);
+                      ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'LIKE', "%{$name}%");
                 });
             }
         }

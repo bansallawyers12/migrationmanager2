@@ -118,7 +118,7 @@ class LeadController extends Controller
                 ->paginate($perPage)
                 ->appends($request->except('page'));
         } else {
-            $lists = Lead::whereRaw('1 = 0')->sortable(['id' => 'desc'])->paginate($perPage);
+            $lists = Lead::whereNull('id')->whereNotNull('id')->sortable(['id' => 'desc'])->paginate($perPage);
             $totalData = 0;
         }
         

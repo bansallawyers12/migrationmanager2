@@ -88,7 +88,7 @@ class ClientPortalCommonListingController extends BaseController
         try {
             // Get visa types from Matter table
             $visaTypes = Matter::select('id', 'title', 'nick_name')
-                ->whereRaw('title NOT LIKE ?', ['%skill assessment%'])
+                ->where('title', 'NOT LIKE', '%skill assessment%')
                 ->where('status', 1)
                 ->orderBy('title', 'ASC')
                 ->get();

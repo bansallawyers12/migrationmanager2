@@ -6802,14 +6802,15 @@ class ClientPortalPersonalDetailsController extends Controller
                             // For new Personal emails or updating to Personal type, check uniqueness
                             if (!empty($emailAddress)) {
                                 // Check uniqueness in admins table (excluding current client)
+                                $normalizedEmail = strtolower(trim($emailAddress));
                                 $emailExistsInAdmins = DB::table('admins')
-                                    ->whereRaw('LOWER(TRIM(email)) = ?', [strtolower(trim($emailAddress))])
+                                    ->where(DB::raw('LOWER(TRIM(email))'), '=', $normalizedEmail)
                                     ->where('id', '!=', $clientId)
                                     ->exists();
                                 
                                 // Check uniqueness in client_emails table (excluding current client's emails)
                                 $emailExistsInEmails = DB::table('client_emails')
-                                    ->whereRaw('LOWER(TRIM(email)) = ?', [strtolower(trim($emailAddress))])
+                                    ->where(DB::raw('LOWER(TRIM(email))'), '=', $normalizedEmail)
                                     ->where('client_id', '!=', $clientId)
                                     ->exists();
                                 
