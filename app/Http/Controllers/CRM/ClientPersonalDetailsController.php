@@ -2302,6 +2302,17 @@ class ClientPersonalDetailsController extends Controller
                 }
             }
 
+            // Log activity for travel information update
+            $travelCount = count(array_filter($travels, function($travel) { 
+                return !empty($travel['country_visited']); 
+            }));
+            $this->logClientActivity(
+                $client->id,
+                'updated travel information',
+                "Updated {$travelCount} travel record(s)",
+                'activity'
+            );
+
             return response()->json([
                 'success' => true,
                 'message' => 'Travel information updated successfully'
@@ -2427,6 +2438,23 @@ class ClientPersonalDetailsController extends Controller
                 }
             }
 
+            // Log activity for educational qualifications update
+            $qualificationCount = 0;
+            if (isset($requestData['level']) && is_array($requestData['level'])) {
+                foreach ($requestData['level'] as $key => $level) {
+                    $name = $requestData['name'][$key] ?? null;
+                    if (!empty($level) || !empty($name)) {
+                        $qualificationCount++;
+                    }
+                }
+            }
+            $this->logClientActivity(
+                $client->id,
+                'updated educational qualifications',
+                "Updated {$qualificationCount} qualification record(s)",
+                'activity'
+            );
+
             return response()->json([
                 'success' => true,
                 'message' => 'Qualifications information updated successfully'
@@ -2486,6 +2514,17 @@ class ClientPersonalDetailsController extends Controller
                     ]);
                 }
             }
+
+            // Log activity for work experience update
+            $experienceCount = count(array_filter($experiences, function($exp) { 
+                return !empty($exp['job_title']) || !empty($exp['job_code']) || !empty($exp['job_emp_name']); 
+            }));
+            $this->logClientActivity(
+                $client->id,
+                'updated work experience',
+                "Updated {$experienceCount} experience record(s)",
+                'activity'
+            );
 
             return response()->json([
                 'success' => true,
@@ -3094,6 +3133,17 @@ class ClientPersonalDetailsController extends Controller
                 }
             }
 
+            // Log activity for EOI references update
+            $eoiCount = count(array_filter($eois, function($eoi) { 
+                return !empty($eoi['eoi_number']) || !empty($eoi['subclass']) || !empty($eoi['occupation']); 
+            }));
+            $this->logClientActivity(
+                $client->id,
+                'updated EOI references',
+                "Updated {$eoiCount} EOI reference record(s)",
+                'activity'
+            );
+
             return response()->json([
                 'success' => true,
                 'message' => 'EOI reference information updated successfully'
@@ -3205,6 +3255,22 @@ class ClientPersonalDetailsController extends Controller
                 }
             }
 
+            // Log activity for occupation & skills update
+            $occupationCount = 0;
+            if (isset($requestData['nomi_occupation']) && is_array($requestData['nomi_occupation'])) {
+                foreach ($requestData['nomi_occupation'] as $key => $nomiOccupation) {
+                    if (!empty($nomiOccupation) || isset($requestData['skill_assessment_hidden'][$key])) {
+                        $occupationCount++;
+                    }
+                }
+            }
+            $this->logClientActivity(
+                $client->id,
+                'updated occupation & skills',
+                "Updated {$occupationCount} occupation record(s)",
+                'activity'
+            );
+
             return response()->json([
                 'success' => true,
                 'message' => 'Occupation information saved successfully'
@@ -3312,6 +3378,19 @@ class ClientPersonalDetailsController extends Controller
                     }
                 }
             }
+
+            // Log activity for English test scores update
+            $testScoreCount = isset($requestData['test_type_hidden']) && is_array($requestData['test_type_hidden'])
+                ? count(array_filter($requestData['test_type_hidden'], function($testType) {
+                    return !empty($testType);
+                }))
+                : 0;
+            $this->logClientActivity(
+                $client->id,
+                'updated English test scores',
+                "Updated {$testScoreCount} test score record(s)",
+                'activity'
+            );
 
             return response()->json([
                 'success' => true,
