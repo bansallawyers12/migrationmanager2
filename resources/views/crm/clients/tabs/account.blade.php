@@ -191,7 +191,7 @@
 
                             <td style="text-align: center; vertical-align: middle;">
                                 <div class="dropdown d-inline-block">
-                                    <span class="reference-dropdown-trigger" id="dropdownReceipt{{$rec_val->id}}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <span class="reference-dropdown-trigger dropdown-toggle" id="dropdownReceipt{{$rec_val->id}}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="cursor: pointer;">
                                         <?php echo $rec_val->trans_no;?> <i class="fas fa-caret-down" style="font-size: 11px; opacity: 0.6; margin-left: 3px;"></i>
                                     </span>
                                     <div class="dropdown-menu" aria-labelledby="dropdownReceipt{{$rec_val->id}}">
@@ -366,9 +366,9 @@
                                     data-invoice-no="{{$inc_val->trans_no}}"
                                     data-invoice-balance="{{$inc_val->balance_amount}}"
                                     data-invoice-status="{{$inc_val->invoice_status}}">
-                                    <td style="text-align: center; vertical-align: middle;">
-                                        <div class="dropdown d-inline-block">
-                                            <span class="reference-dropdown-trigger" id="dropdownInvoice{{$inc_val->id}}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <td style="text-align: center; vertical-align: middle;">
+                                            <div class="dropdown d-inline-block">
+                                            <span class="reference-dropdown-trigger dropdown-toggle" id="dropdownInvoice{{$inc_val->id}}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="cursor: pointer;">
                                                 <?php echo $inc_val->trans_no;?> <i class="fas fa-caret-down" style="font-size: 11px; opacity: 0.6; margin-left: 3px;"></i>
                                             </span>
                                             <div class="dropdown-menu" aria-labelledby="dropdownInvoice{{$inc_val->id}}">
@@ -577,9 +577,9 @@
 
                                 <td class="description" style="text-align: left; vertical-align: middle;"><?php echo $off_val->description;?></td>
                                 
-                                <td style="text-align: center; vertical-align: middle;">
-                                    <div class="dropdown d-inline-block">
-                                        <span class="reference-dropdown-trigger" id="dropdownOffice{{$off_val->id}}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <td style="text-align: center; vertical-align: middle;">
+                                        <div class="dropdown d-inline-block">
+                                        <span class="reference-dropdown-trigger dropdown-toggle" id="dropdownOffice{{$off_val->id}}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="cursor: pointer;">
                                             <?php echo $off_val->trans_no;?> <i class="fas fa-caret-down" style="font-size: 11px; opacity: 0.6; margin-left: 3px;"></i>
                                         </span>
                                         <div class="dropdown-menu" aria-labelledby="dropdownOffice{{$off_val->id}}">
@@ -2124,6 +2124,29 @@ document.addEventListener('DOMContentLoaded', function() {
 .transaction-table .dropdown-divider {
     margin: 4px 0;
     border-top: 1px solid #e9ecef;
+}
+
+/* FIX: Remove Bootstrap's default dropdown-toggle arrow (we have custom caret-down icon) */
+.transaction-table .dropdown-toggle::after {
+    display: none !important;
+}
+
+/* FIX: Allow dropdowns to escape overflow constraints */
+.transaction-table .dropdown {
+    position: relative;
+}
+
+.transaction-table .dropdown-menu {
+    position: absolute !important;
+    z-index: 9999 !important;
+    transform: none !important;
+    will-change: auto !important;
+}
+
+/* Override restrictive parent rules for dropdowns */
+.account-section .dropdown-menu {
+    max-width: none !important;
+    overflow: visible !important;
 }
 
 /* Unallocated Office Receipt - Red Background */
