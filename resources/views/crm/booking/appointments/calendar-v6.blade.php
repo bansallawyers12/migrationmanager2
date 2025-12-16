@@ -144,13 +144,33 @@
 @vite(['resources/js/app.js'])
 
 <script>
-// Ensure FullCalendar v6 is loaded
-if (typeof FullCalendar === 'undefined' || !FullCalendar.Calendar) {
-    console.error('FullCalendar v6 is not loaded! Check Vite build.');
+// Wait for FullCalendar v6 to be loaded from Vite module
+// Vite modules load asynchronously, so we need to wait for it
+function waitForFullCalendar(callback, maxAttempts = 50) {
+    let attempts = 0;
+    
+    const checkInterval = setInterval(() => {
+        attempts++;
+        
+        if (typeof FullCalendar !== 'undefined' && FullCalendar.Calendar && 
+            typeof FullCalendarPlugins !== 'undefined') {
+            clearInterval(checkInterval);
+            console.log('✅ FullCalendar v6 detected, initializing calendar...');
+            callback();
+        } else if (attempts >= maxAttempts) {
+            clearInterval(checkInterval);
+            console.error('❌ FullCalendar v6 not loaded after waiting. Please rebuild assets: npm run build');
+            // Still try to initialize if calendar element exists (graceful degradation)
+            const calendarEl = document.getElementById('calendar');
+            if (calendarEl) {
+                calendarEl.innerHTML = '<div class="alert alert-danger">FullCalendar v6 failed to load. Please refresh the page or rebuild assets.</div>';
+            }
+        }
+    }, 100); // Check every 100ms
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Initializing FullCalendar v6...');
+    console.log('Waiting for FullCalendar v6 to load...');
     
     const calendarEl = document.getElementById('calendar');
     if (!calendarEl) {
@@ -158,8 +178,10 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
-    // Initialize FullCalendar v6
-    const calendar = new FullCalendar.Calendar(calendarEl, {
+    // Wait for FullCalendar to be available before initializing
+    waitForFullCalendar(function() {
+        // Initialize FullCalendar v6
+        const calendar = new FullCalendar.Calendar(calendarEl, {
         plugins: [
             FullCalendarPlugins.dayGridPlugin,
             FullCalendarPlugins.timeGridPlugin,
@@ -464,11 +486,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Render the calendar
-    calendar.render();
-    console.log('FullCalendar v6 initialized successfully');
-    
-    // Helper functions
+        // Render the calendar
+        calendar.render();
+        console.log('FullCalendar v6 initialized successfully');
+        
+        // Helper functions
     function getStatusColor(status) {
         const colors = {
             'pending': '#ffc107',
@@ -668,7 +690,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 5000);
         }
     }
-});
+    }); // Close waitForFullCalendar callback
+}); // Close DOMContentLoaded
 </script>
 
 <style>
