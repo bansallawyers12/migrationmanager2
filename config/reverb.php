@@ -17,6 +17,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Reverb Log Channel
+    |--------------------------------------------------------------------------
+    |
+    | This option controls the log channel that will be used by Reverb to
+    | log WebSocket connections and messages. The name specified here
+    | should match one of the channels defined in the "logging" config.
+    |
+    */
+
+    'log_channel' => env('REVERB_LOG_CHANNEL', 'reverb'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Reverb Servers
     |--------------------------------------------------------------------------
     |
