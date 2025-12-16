@@ -1,4 +1,4 @@
-﻿    // Global flag to prevent redirects during page initialization
+    // Global flag to prevent redirects during page initialization
 
     var isInitializing = true;
 
@@ -1058,41 +1058,109 @@
         // ============================================================================
         // DRAG AND DROP FUNCTIONALITY FOR CLIENT FUNDS LEDGER FORM
         // ============================================================================
-
-        // Drag and Drop Zone Event Handlers for Ledger Form
-        $(document).on('dragover', '#ledgerDragDropZone', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            $(this).addClass('drag_over');
-            return false;
-        });
         
-        $(document).on('dragleave', '#ledgerDragDropZone', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            $(this).removeClass('drag_over');
-            return false;
-        });
+        console.log('📄 Ledger Drag & Drop Initialization...');
         
-        $(document).on('drop', '#ledgerDragDropZone', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            $(this).removeClass('drag_over');
+        function initLedgerDragDrop() {
+            console.log('🔄 Initializing Ledger Drag & Drop...');
             
-            var files = e.originalEvent.dataTransfer.files;
-            if (files && files.length > 0) {
-                handleLedgerFilesDrop(files);
+            var $zone = $('#ledgerDragDropZone');
+            if ($zone.length === 0) {
+                console.warn('⚠️ Ledger drag zone not found');
+                return;
             }
-            return false;
+            
+            console.log('✅ Ledger drag zone found');
+            
+            // Remove all existing handlers
+            $zone.off('click dragenter dragover dragleave drop');
+            $(document).off('dragover.ledger dragenter.ledger');
+            
+            // Prevent default drag behaviors
+            $(document).on('dragover.ledger dragenter.ledger', '#createreceiptmodal', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+            
+            // DIRECT BINDING to ledger drag zone for priority
+            $zone.on('dragenter', function(e) {
+                console.log('🔥 LEDGER DRAGENTER');
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                $(this).addClass('drag_over');
+                return false;
+            });
+            
+            $zone.on('dragover', function(e) {
+                console.log('🔥 LEDGER DRAGOVER');
+                var event = e.originalEvent || e;
+                event.preventDefault();
+                event.stopPropagation();
+                
+                if (event.dataTransfer) {
+                    event.dataTransfer.dropEffect = 'copy';
+                }
+                
+                $(this).addClass('drag_over');
+                return false;
+            });
+
+            $zone.on('dragleave', function(e) {
+                console.log('⚠️ LEDGER DRAGLEAVE');
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Only remove highlight if actually leaving the zone
+                var rect = this.getBoundingClientRect();
+                var x = e.originalEvent.clientX;
+                var y = e.originalEvent.clientY;
+                
+                if (x <= rect.left || x >= rect.right || y <= rect.top || y >= rect.bottom) {
+                    $(this).removeClass('drag_over');
+                }
+                return false;
+            });
+
+            $zone.on('drop', function(e) {
+                console.log('🎯 LEDGER DROP');
+                var event = e.originalEvent || e;
+                event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation();
+                
+                $(this).removeClass('drag_over');
+                
+                var files = event.dataTransfer ? event.dataTransfer.files : null;
+                if (files && files.length > 0) {
+                    console.log('📄 Files dropped:', files.length);
+                    handleLedgerFilesDrop(files);
+                } else {
+                    console.error('❌ No files in drop event');
+                }
+                return false;
+            });
+
+            // Click to browse
+            $zone.on('click', function(e) {
+                console.log('🎯 LEDGER ZONE CLICKED');
+                e.preventDefault();
+                if (!$(e.target).closest('.remove-file, .remove-all-files').length) {
+                    $('.docclientreceiptupload').click();
+                }
+            });
+            
+            console.log('✅ Ledger drag-drop handlers attached');
+        }
+        
+        // Initialize when modal is shown
+        $('#createreceiptmodal').on('shown.bs.modal', function() {
+            console.log('📄 Create receipt modal shown, initializing ledger drag-drop...');
+            setTimeout(initLedgerDragDrop, 100);
         });
         
-        // Click to browse
-        $(document).on('click', '#ledgerDragDropZone', function(e) {
-            e.preventDefault();
-            if (!$(e.target).closest('.remove-file, .remove-all-files').length) {
-                $('.docclientreceiptupload').click();
-            }
-        });
+        // Also initialize on page load (in case modal is already open)
+        initLedgerDragDrop();
         
         // File input change handler (for when user clicks to browse) - enhanced
         $(document).on('change', '.docclientreceiptupload', function() {
@@ -1272,42 +1340,114 @@
         // ============================================================================
         // DRAG AND DROP FUNCTIONALITY FOR OFFICE RECEIPT FORM
         // ============================================================================
-
-        // Drag and Drop Zone Event Handlers for Office Receipt Form
-        $(document).on('dragover', '.office-drag-drop-zone', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            $(this).addClass('drag_over');
-            return false;
-        });
         
-        $(document).on('dragleave', '.office-drag-drop-zone', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            $(this).removeClass('drag_over');
-            return false;
-        });
+        console.log('📄 Office Receipt Drag & Drop Initialization...');
         
-        $(document).on('drop', '.office-drag-drop-zone', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            $(this).removeClass('drag_over');
+        function initOfficeDragDrop() {
+            console.log('🔄 Initializing Office Receipt Drag & Drop...');
             
-            var files = e.originalEvent.dataTransfer.files;
-            if (files && files.length > 0) {
-                var zoneId = $(this).attr('id');
-                handleOfficeFilesDrop(files, zoneId);
+            var $zones = $('.office-drag-drop-zone');
+            if ($zones.length === 0) {
+                console.warn('⚠️ Office drag zones not found');
+                return;
             }
-            return false;
+            
+            console.log('✅ Office drag zones found:', $zones.length);
+            
+            // Remove all existing handlers
+            $zones.off('click dragenter dragover dragleave drop');
+            $(document).off('dragover.office dragenter.office');
+            
+            // Prevent default drag behaviors
+            $(document).on('dragover.office dragenter.office', '#createreceiptmodal, #createofficereceiptmodal', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+            
+            // DIRECT BINDING to each office drag zone for priority
+            $zones.each(function() {
+                var $zone = $(this);
+                var zoneId = $zone.attr('id');
+                
+                $zone.on('dragenter', function(e) {
+                    console.log('🔥 OFFICE DRAGENTER -', zoneId);
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    $(this).addClass('drag_over');
+                    return false;
+                });
+                
+                $zone.on('dragover', function(e) {
+                    console.log('🔥 OFFICE DRAGOVER -', zoneId);
+                    var event = e.originalEvent || e;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    
+                    if (event.dataTransfer) {
+                        event.dataTransfer.dropEffect = 'copy';
+                    }
+                    
+                    $(this).addClass('drag_over');
+                    return false;
+                });
+
+                $zone.on('dragleave', function(e) {
+                    console.log('⚠️ OFFICE DRAGLEAVE -', zoneId);
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // Only remove highlight if actually leaving the zone
+                    var rect = this.getBoundingClientRect();
+                    var x = e.originalEvent.clientX;
+                    var y = e.originalEvent.clientY;
+                    
+                    if (x <= rect.left || x >= rect.right || y <= rect.top || y >= rect.bottom) {
+                        $(this).removeClass('drag_over');
+                    }
+                    return false;
+                });
+
+                $zone.on('drop', function(e) {
+                    console.log('🎯 OFFICE DROP -', zoneId);
+                    var event = e.originalEvent || e;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    event.stopImmediatePropagation();
+                    
+                    $(this).removeClass('drag_over');
+                    
+                    var files = event.dataTransfer ? event.dataTransfer.files : null;
+                    if (files && files.length > 0) {
+                        console.log('📄 Files dropped:', files.length);
+                        handleOfficeFilesDrop(files, zoneId);
+                    } else {
+                        console.error('❌ No files in drop event');
+                    }
+                    return false;
+                });
+
+                // Click to browse
+                $zone.on('click', function(e) {
+                    console.log('🎯 OFFICE ZONE CLICKED -', zoneId);
+                    e.preventDefault();
+                    if (!$(e.target).closest('.remove-file, .remove-all-files-office').length) {
+                        $('.docofficereceiptupload').click();
+                    }
+                });
+            });
+            
+            console.log('✅ Office receipt drag-drop handlers attached');
+        }
+        
+        // Initialize when either modal is shown
+        $('#createreceiptmodal, #createofficereceiptmodal').on('shown.bs.modal', function() {
+            console.log('📄 Receipt modal shown, initializing office drag-drop...');
+            setTimeout(initOfficeDragDrop, 100);
         });
         
-        // Click to browse
-        $(document).on('click', '.office-drag-drop-zone', function(e) {
-            e.preventDefault();
-            if (!$(e.target).closest('.remove-file, .remove-all-files-office').length) {
-                $('.docofficereceiptupload').click();
-            }
-        });
+        // Also initialize on page load (in case modal is already open)
+        initOfficeDragDrop();
         
         // File input change handler (for when user clicks to browse) - enhanced
         $(document).on('change', '.docofficereceiptupload', function() {
@@ -10940,42 +11080,108 @@ Bansal Immigration`;
         // DRAG AND DROP FUNCTIONALITY FOR PERSONAL & VISA DOCUMENTS
         // ============================================================================
 
+        // Prevent browser's default drag behavior (required for file drops to work)
+        // This must be on document level, but we let drop zones handle their own events
+        $(document).on('dragover', function(e) {
+            // Allow drop zones to handle their own dragover events
+            if ($(e.target).closest('.personal-doc-drag-zone, .visa-doc-drag-zone').length) {
+                return; // Let the drop zone handler take over
+            }
+            // For other areas, prevent default to allow file drops
+            e.preventDefault();
+        });
+
+        $(document).on('drop', function(e) {
+            // Allow drop zones to handle their own drop events
+            if ($(e.target).closest('.personal-doc-drag-zone, .visa-doc-drag-zone').length) {
+                return; // Let the drop zone handler take over
+            }
+            // For other areas, prevent default to prevent browser from opening file
+            e.preventDefault();
+        });
+
         // -------------------------------------------------------------------------
         // PERSONAL DOCUMENTS - Drag and Drop Handlers
         // -------------------------------------------------------------------------
         
-        $(document).delegate('.personal-doc-drag-zone', 'dragover', function(e) {
+        // Debug: Check if handlers are being attached
+        console.log('🔧 Attaching personal-doc-drag-zone handlers...');
+        console.log('🔍 Current .personal-doc-drag-zone count:', $('.personal-doc-drag-zone').length);
+        
+        $(document).on('dragover', '.personal-doc-drag-zone', function(e) {
+            console.log('✅ DRAGOVER event fired on personal-doc-drag-zone');
             e.preventDefault();
             e.stopPropagation();
             $(this).addClass('drag_over');
             return false;
         });
         
-        $(document).delegate('.personal-doc-drag-zone', 'dragleave', function(e) {
+        $(document).on('dragenter', '.personal-doc-drag-zone', function(e) {
+            console.log('✅ DRAGENTER event fired on personal-doc-drag-zone');
             e.preventDefault();
             e.stopPropagation();
-            $(this).removeClass('drag_over');
+            $(this).addClass('drag_over');
             return false;
         });
         
-        $(document).delegate('.personal-doc-drag-zone', 'drop', function(e) {
+        $(document).on('dragleave', '.personal-doc-drag-zone', function(e) {
+            console.log('⚠️ DRAGLEAVE event fired on personal-doc-drag-zone');
+            e.preventDefault();
+            e.stopPropagation();
+            // Only remove class if leaving the drop zone itself, not child elements
+            var rect = this.getBoundingClientRect();
+            var x = e.originalEvent.clientX;
+            var y = e.originalEvent.clientY;
+            
+            if (x <= rect.left || x >= rect.right || y <= rect.top || y >= rect.bottom) {
+                $(this).removeClass('drag_over');
+            }
+            return false;
+        });
+        
+        $(document).on('drop', '.personal-doc-drag-zone', function(e) {
+            console.log('🎯 DROP event fired on personal-doc-drag-zone!', e.originalEvent.dataTransfer.files);
             e.preventDefault();
             e.stopPropagation();
             $(this).removeClass('drag_over');
             
             var files = e.originalEvent.dataTransfer.files;
             if (files && files.length > 0) {
+                console.log('📄 File detected, calling handlePersonalDocDragDrop');
                 handlePersonalDocDragDrop($(this), files[0]);
+            } else {
+                console.error('❌ No files in drop event');
             }
             return false;
         });
         
-        $(document).delegate('.personal-doc-drag-zone', 'click', function(e) {
+        $(document).on('click', '.personal-doc-drag-zone', function(e) {
+            console.log('👆 CLICK event fired on personal-doc-drag-zone');
             e.preventDefault();
+            e.stopPropagation();
             var fileid = $(this).data('fileid');
+            console.log('📂 File ID:', fileid);
             var fileInput = $('#upload_form_' + fileid).find('.docupload');
-            fileInput.click();
+            console.log('📁 File input found:', fileInput.length > 0);
+            if (fileInput.length > 0) {
+                fileInput.click();
+            } else {
+                console.error('❌ File input not found for fileid:', fileid);
+            }
+            return false;
         });
+        
+        // Debug: Verify handlers after a delay (for dynamically loaded content)
+        setTimeout(function() {
+            console.log('🔍 After delay - .personal-doc-drag-zone count:', $('.personal-doc-drag-zone').length);
+            $('.personal-doc-drag-zone').each(function(index) {
+                console.log('📍 Drop zone #' + index + ':', {
+                    fileid: $(this).data('fileid'),
+                    formid: $(this).data('formid'),
+                    element: this
+                });
+            });
+        }, 2000);
         
         // -------------------------------------------------------------------------
         // VISA DOCUMENTS - Drag and Drop Handlers

@@ -123,8 +123,20 @@ class ClientDocumentsController extends Controller
                                             <input type="hidden" name="type" value="client">
                                             <input type="hidden" name="doctype" value="personal">
                                             <input type="hidden" name="doccategory" value="<?php echo $request->doccategory;?>">
-                                            <a href="javascript:;" class="btn btn-primary add-document" data-fileid="<?php echo $fetch->id;?>"><i class="fa fa-plus"></i> Add Document</a>
-                                            <input class="docupload" data-fileid="<?php echo $fetch->id;?>" data-doccategory="<?php echo $request->doccategory;?>" type="file" name="document_upload"/>
+                                            
+                                            <!-- Drag and Drop Zone -->
+                                            <div class="document-drag-drop-zone personal-doc-drag-zone" 
+                                                 data-fileid="<?php echo $fetch->id; ?>" 
+                                                 data-doccategory="<?php echo $request->folder_name; ?>"
+                                                 data-formid="upload_form_<?php echo $fetch->id; ?>">
+                                                <div class="drag-zone-inner">
+                                                    <i class="fas fa-cloud-upload-alt"></i>
+                                                    <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Keep existing file input (hidden, used as fallback) -->
+                                            <input class="docupload d-none" data-fileid="<?php echo $fetch->id;?>" data-doccategory="<?php echo $request->folder_name;?>" type="file" name="document_upload" style="display: none;"/>
                                         </form>
                                     </div>
                                 <?php
@@ -403,8 +415,25 @@ class ClientDocumentsController extends Controller
                                             <input type="hidden" name="type" value="client">
                                             <input type="hidden" name="doctype" value="visa">
                                             <input type="hidden" name="doccategory" value="<?php echo $VisaDocumentType->title; ?>">
-                                            <a href="javascript:;" class="btn btn-primary"><i class="fa fa-plus"></i> Add Document</a>
-                                            <input class="migdocupload" data-fileid="<?php echo $fetch->id;?>" data-doccategory="<?php echo $fetch->folder_name;?>" type="file" name="document_upload"/>
+                                            
+                                            <!-- Drag and Drop Zone -->
+                                            <div class="document-drag-drop-zone visa-doc-drag-zone" 
+                                                 data-fileid="<?php echo $fetch->id;?>" 
+                                                 data-doccategory="<?php echo $fetch->folder_name;?>"
+                                                 data-formid="mig_upload_form_<?php echo $fetch->id;?>">
+                                                <div class="drag-zone-inner">
+                                                    <i class="fas fa-cloud-upload-alt"></i>
+                                                    <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Keep existing file input (hidden) -->
+                                            <input class="migdocupload d-none" 
+                                                   data-fileid="<?php echo $fetch->id;?>" 
+                                                   data-doccategory="<?php echo $fetch->folder_name;?>" 
+                                                   type="file" 
+                                                   name="document_upload" 
+                                                   style="display: none;"/>
                                         </form>
                                     </div>
                                 <?php

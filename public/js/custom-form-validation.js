@@ -415,6 +415,13 @@ function customValidate(formName, savetype = '')
 									$('.migdocumnetlist_'+folder_name).html(obj.data);
 									//$('.miggriddata').show();
 									$('.miggriddata').html(obj.griddata);
+									
+									// Re-initialize drag and drop for newly added checklist items
+									if (typeof initVisaDocDragDrop === 'function') {
+										setTimeout(function() {
+											initVisaDocDragDrop();
+										}, 100);
+									}
 								}else{
 									$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
 								}

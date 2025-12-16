@@ -2337,13 +2337,15 @@ tr.unallocated-receipt[draggable="true"]:hover::after {
     padding: 40px 20px;
     text-align: center;
     background-color: #f9f9f9;
-    cursor: pointer;
+    cursor: pointer !important;
     transition: all 0.3s ease;
     min-height: 140px;
     display: flex;
     align-items: center;
     justify-content: center;
     margin-bottom: 15px;
+    position: relative;
+    z-index: 1;
 }
 
 .receipt-drag-drop-zone:hover {
@@ -2714,47 +2716,111 @@ $(document).ready(function() {
     // ============================================================================
     // DRAG AND DROP FUNCTIONALITY FOR RECEIPT DOCUMENT UPLOAD MODAL
     // ============================================================================
-
-    // Prevent default drag behaviors on the modal to avoid interference
-    $(document).on('dragover dragenter', '#uploadReceiptDocModal', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-    });
-
-    // Drag and Drop Zone Event Handlers
-    $(document).on('dragover', '#receiptDragDropZone', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        $(this).addClass('drag_over');
-        return false;
-    });
-
-    $(document).on('dragleave', '#receiptDragDropZone', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        $(this).removeClass('drag_over');
-        return false;
-    });
-
-    $(document).on('drop', '#receiptDragDropZone', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        $(this).removeClass('drag_over');
+    
+    console.log('📄 Receipt Drag & Drop Initialization...');
+    
+    function initReceiptDragDrop() {
+        console.log('🔄 Initializing Receipt Drag & Drop...');
         
-        var files = e.originalEvent.dataTransfer.files;
-        if (files && files.length > 0) {
-            handleReceiptFileDrop(files[0]);
+        var $zone = $('#receiptDragDropZone');
+        if ($zone.length === 0) {
+            console.warn('⚠️ Receipt drag zone not found');
+            return;
         }
-        return false;
-    });
+        
+        console.log('✅ Receipt drag zone found');
+        
+        // Remove all existing handlers
+        $zone.off('click dragenter dragover dragleave drop');
+        $(document).off('dragover.receipt dragenter.receipt');
+        
+        // Prevent default drag behaviors on the modal to avoid interference
+        $(document).on('dragover.receipt dragenter.receipt', '#uploadReceiptDocModal', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+        
+        // DIRECT BINDING to receipt drag zone for priority
+        $zone.on('dragenter', function(e) {
+            console.log('🔥 RECEIPT DRAGENTER');
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            $(this).addClass('drag_over');
+            return false;
+        });
+        
+        $zone.on('dragover', function(e) {
+            console.log('🔥 RECEIPT DRAGOVER');
+            var event = e.originalEvent || e;
+            event.preventDefault();
+            event.stopPropagation();
+            
+            if (event.dataTransfer) {
+                event.dataTransfer.dropEffect = 'copy';
+            }
+            
+            $(this).addClass('drag_over');
+            return false;
+        });
 
-    // Click to browse
-    $(document).on('click', '#receiptDragDropZone', function(e) {
-        e.preventDefault();
-        // Don't trigger if user is clicking the remove button
-        if (!$(e.target).closest('.remove-file').length) {
-            $('#receipt_document_upload').click();
-        }
+        $zone.on('dragleave', function(e) {
+            console.log('⚠️ RECEIPT DRAGLEAVE');
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Only remove highlight if actually leaving the zone
+            var rect = this.getBoundingClientRect();
+            var x = e.originalEvent.clientX;
+            var y = e.originalEvent.clientY;
+            
+            if (x <= rect.left || x >= rect.right || y <= rect.top || y >= rect.bottom) {
+                $(this).removeClass('drag_over');
+            }
+            return false;
+        });
+
+        $zone.on('drop', function(e) {
+            console.log('🎯 RECEIPT DROP');
+            var event = e.originalEvent || e;
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+            
+            $(this).removeClass('drag_over');
+            
+            var files = event.dataTransfer ? event.dataTransfer.files : null;
+            if (files && files.length > 0) {
+                console.log('📄 File dropped:', files[0].name);
+                handleReceiptFileDrop(files[0]);
+            } else {
+                console.error('❌ No files in drop event');
+            }
+            return false;
+        });
+
+        // Click to browse
+        $zone.on('click', function(e) {
+            console.log('🎯 RECEIPT ZONE CLICKED');
+            e.preventDefault();
+            // Don't trigger if user is clicking the remove button
+            if (!$(e.target).closest('.remove-file').length) {
+                $('#receipt_document_upload').click();
+            }
+        });
+        
+        console.log('✅ Receipt drag-drop handlers attached');
+    }
+    
+    // Initialize when modal is shown
+    $('#uploadReceiptDocModal').on('shown.bs.modal', function() {
+        console.log('📄 Receipt modal shown, initializing drag-drop...');
+        setTimeout(initReceiptDragDrop, 100);
+    });
+    
+    // Also initialize on page load (in case modal is already open)
+    $(document).ready(function() {
+        initReceiptDragDrop();
     });
 
     // File input change handler (for when user clicks to browse)

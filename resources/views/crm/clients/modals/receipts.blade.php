@@ -15,7 +15,7 @@
     padding: 15px 12px;
     text-align: center;
     background-color: #f9f9f9;
-    cursor: pointer;
+    cursor: pointer !important;
     transition: all 0.3s ease;
     min-height: 70px;
     display: flex;
@@ -25,6 +25,8 @@
     width: auto;
     min-width: 250px;
     max-width: 300px;
+    position: relative;
+    z-index: 1;
 }
 
 .ledger-drag-drop-zone:hover {
