@@ -1777,7 +1777,10 @@
                 script.src = '{{asset('js/broadcasts.js')}}';
                 document.body.appendChild(script);
             } else if (echoCheckAttempts >= maxAttempts) {
-                console.warn('⚠️ window.Echo not available after waiting, broadcasts.js will use polling fallback');
+                // Only show warning if Echo was expected but failed (not if intentionally disabled)
+                if (!window.EchoDisabled) {
+                    console.warn('⚠️ window.Echo not available after waiting, broadcasts.js will use polling fallback');
+                }
                 clearInterval(waitForEcho);
                 
                 // Load broadcasts.js anyway (it has fallback to polling)

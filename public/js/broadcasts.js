@@ -188,7 +188,10 @@
     
     function startRealtimeListener() {
         if (!window.Echo) {
-            console.warn('⚠️ Laravel Echo not available for broadcast notifications, using polling fallback');
+            // Only show warning if Echo was expected but failed (not if intentionally disabled)
+            if (!window.EchoDisabled) {
+                console.warn('⚠️ Laravel Echo not available for broadcast notifications, using polling fallback');
+            }
             startPolling();
             return;
         }

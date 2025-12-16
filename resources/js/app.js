@@ -12,26 +12,36 @@ Alpine.start();
 
 // Initialize Laravel Echo with Reverb (uses Pusher protocol)
 // Reverb is Laravel's native WebSocket server
+// If VITE_REVERB_APP_KEY is not set, Echo will not be initialized and polling fallback will be used
 if (import.meta.env.VITE_REVERB_APP_KEY) {
-    window.Pusher = Pusher;
-    
-    window.Echo = new Echo({
-        broadcaster: 'reverb',
-        key: import.meta.env.VITE_REVERB_APP_KEY,
-        wsHost: import.meta.env.VITE_REVERB_HOST,
-        wsPort: import.meta.env.VITE_REVERB_PORT ?? 8080,
-        wssPort: import.meta.env.VITE_REVERB_PORT ?? 8080,
-        forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'http') === 'https',
-        enabledTransports: ['ws', 'wss'],
-        authEndpoint: '/broadcasting/auth',
-        auth: {
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+    try {
+        window.Pusher = Pusher;
+        
+        window.Echo = new Echo({
+            broadcaster: 'reverb',
+            key: import.meta.env.VITE_REVERB_APP_KEY,
+            wsHost: import.meta.env.VITE_REVERB_HOST || window.location.hostname,
+            wsPort: import.meta.env.VITE_REVERB_PORT ?? 8080,
+            wssPort: import.meta.env.VITE_REVERB_PORT ?? 8080,
+            forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'http') === 'https',
+            enabledTransports: ['ws', 'wss'],
+            authEndpoint: '/broadcasting/auth',
+            auth: {
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+                },
             },
-        },
-    });
-    
-    console.log('✅ Laravel Echo initialized with Reverb');
+        });
+        
+        console.log('✅ Laravel Echo initialized with Reverb');
+    } catch (error) {
+        console.warn('⚠️ Failed to initialize Laravel Echo:', error.message);
+        // Set flag to indicate Echo is intentionally unavailable
+        window.EchoDisabled = true;
+    }
+} else {
+    // Set flag to indicate Echo is intentionally not configured (not an error)
+    window.EchoDisabled = true;
 }
 
 // FullCalendar v6 - for new booking appointments system
