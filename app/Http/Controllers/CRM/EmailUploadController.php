@@ -14,6 +14,7 @@ use App\Models\MailReport;
 use App\Models\ActivitiesLog;
 use App\Models\ClientMatter;
 use App\Models\Admin;
+use App\Traits\LogsClientActivity;
 
 /**
  * Modern Email Upload Controller
@@ -23,6 +24,8 @@ use App\Models\Admin;
  */
 class EmailUploadController extends Controller
 {
+    use LogsClientActivity;
+
     /**
      * Python service configuration
      */
@@ -339,12 +342,46 @@ class EmailUploadController extends Controller
 
             // 6. Create activity log
             if ($request->type == 'client') {
-                $activity = new ActivitiesLog();
-                $activity->client_id = $clientId;
-                $activity->created_by = Auth::user()->id;
-                $activity->description = '';
-                $activity->subject = 'uploaded email document';
-                $activity->save();
+                // Get matter reference
+                $matterReference = '';
+                if ($matterId) {
+                    $matter = ClientMatter::find($matterId);
+                    if ($matter && $matter->client_unique_matter_no) {
+                        $matterReference = $matter->client_unique_matter_no;
+                    }
+                }
+                
+                // Fall back to latest active matter if none found
+                if (empty($matterReference)) {
+                    $latestMatter = ClientMatter::where('client_id', $clientId)
+                        ->where('matter_status', 1)
+                        ->orderBy('id', 'desc')
+                        ->first();
+                    if ($latestMatter && $latestMatter->client_unique_matter_no) {
+                        $matterReference = $latestMatter->client_unique_matter_no;
+                    }
+                }
+                
+                // Format subject with matter reference
+                $emailSubject = $parsedData['subject'] ?? 'Email';
+                $subject = !empty($matterReference)
+                    ? "uploaded Email: {$emailSubject} - {$matterReference}"
+                    : "uploaded Email: {$emailSubject}";
+                
+                // Truncate long subjects
+                if (strlen($subject) > 100) {
+                    $subject = substr($subject, 0, 97) . '...';
+                }
+                
+                $from = $parsedData['from'] ?? 'Unknown';
+                $description = "<p>From: {$from}</p>";
+                
+                $this->logClientActivity(
+                    $clientId,
+                    $subject,
+                    $description,
+                    'email'
+                );
             }
 
             return [

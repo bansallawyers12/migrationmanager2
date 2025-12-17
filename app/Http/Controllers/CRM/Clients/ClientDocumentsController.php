@@ -19,10 +19,11 @@ use App\Models\VisaDocumentType;
 
 use App\Traits\ClientAuthorization;
 use App\Traits\ClientHelpers;
+use App\Traits\LogsClientActivity;
 
 class ClientDocumentsController extends Controller
 {
-    use ClientAuthorization, ClientHelpers;
+    use ClientAuthorization, ClientHelpers, LogsClientActivity;
 
     public function __construct()
     {
@@ -66,15 +67,18 @@ class ClientDocumentsController extends Controller
                 {
                     if($request->type == 'client'){
                         $checklistCount = count($checklistArray);
-                        $subject = 'added personal checklist';
-                        $description = "Added {$checklistCount} personal document checklist items in '{$request->folder_name}' category: " . implode(', ', array_slice($checklistArray, 0, 3)) . ($checklistCount > 3 ? '...' : '');
-                        $objs = new ActivitiesLog;
-                        $objs->client_id = $clientid;
-                        $objs->created_by = Auth::user()->id;
-                        $objs->description = $description;
-                        $objs->subject = $subject;
-                        $objs->activity_type = 'document';
-                        $objs->save();
+                        $matterRef = $this->getMatterReference($clientid);
+                        $subject = !empty($matterRef) 
+                            ? "added Personal Checklist - {$matterRef}"
+                            : "added Personal Checklist";
+                        $description = "<p>Added {$checklistCount} document checklist items in '{$request->folder_name}' category: " . implode(', ', array_slice($checklistArray, 0, 3)) . ($checklistCount > 3 ? '...' : '') . "</p>";
+                        
+                        $this->logClientActivity(
+                            $clientid,
+                            $subject,
+                            $description,
+                            'document'
+                        );
                     }
 
                     $response['status'] = true;
@@ -270,15 +274,18 @@ class ClientDocumentsController extends Controller
                         $saved = $obj->save();
     
                         if ($saved && $request->type == 'client') {
-                            $subject = 'updated personal document';
-                            $description = "Uploaded '{$checklistName}' in '{$request->doccategory}' category";
-                            $objs = new ActivitiesLog;
-                            $objs->client_id = $clientid;
-                            $objs->created_by = Auth::user()->id;
-                            $objs->description = $description;
-                            $objs->subject = $subject;
-                            $objs->activity_type = 'document';
-                            $objs->save();
+                            $matterRef = $this->getMatterReference($clientid);
+                            $subject = !empty($matterRef) 
+                                ? "uploaded {$checklistName} - {$matterRef}"
+                                : "uploaded {$checklistName}";
+                            $description = "<p>Uploaded document in '{$request->doccategory}' category</p>";
+                            
+                            $this->logClientActivity(
+                                $clientid,
+                                $subject,
+                                $description,
+                                'document'
+                            );
                         }
     
                         if ($saved) {
@@ -343,15 +350,18 @@ class ClientDocumentsController extends Controller
                 {
                     if($request->type == 'client'){
                         $checklistCount = count($checklistArray);
-                        $subject = 'added visa checklist';
-                        $description = "Added {$checklistCount} visa document checklist items: " . implode(', ', array_slice($checklistArray, 0, 3)) . ($checklistCount > 3 ? '...' : '');
-                        $objs = new ActivitiesLog;
-                        $objs->client_id = $clientid;
-                        $objs->created_by = Auth::user()->id;
-                        $objs->description = $description;
-                        $objs->subject = $subject;
-                        $objs->activity_type = 'document';
-                        $objs->save();
+                        $matterRef = $this->getMatterReference($clientid, $request->client_matter_id ?? null);
+                        $subject = !empty($matterRef) 
+                            ? "added Visa Checklist - {$matterRef}"
+                            : "added Visa Checklist";
+                        $description = "<p>Added {$checklistCount} visa document checklist items: " . implode(', ', array_slice($checklistArray, 0, 3)) . ($checklistCount > 3 ? '...' : '') . "</p>";
+                        
+                        $this->logClientActivity(
+                            $clientid,
+                            $subject,
+                            $description,
+                            'document'
+                        );
                     }
 
                     //Update date in client matter table
@@ -567,15 +577,18 @@ class ClientDocumentsController extends Controller
                     
                     if($saved){
                         if($request->type == 'client'){
-                            $subject = 'updated visa document';
-                            $description = "Uploaded '{$checklistName}' visa document";
-                            $objs = new ActivitiesLog;
-                            $objs->client_id = $clientid;
-                            $objs->created_by = Auth::user()->id;
-                            $objs->description = $description;
-                            $objs->subject = $subject;
-                            $objs->activity_type = 'document';
-                            $objs->save();
+                            $matterRef = $this->getMatterReference($clientid, $request->client_matter_id ?? null);
+                            $subject = !empty($matterRef) 
+                                ? "uploaded Visa Document: {$checklistName} - {$matterRef}"
+                                : "uploaded Visa Document: {$checklistName}";
+                            $description = "<p>Uploaded visa document</p>";
+                            
+                            $this->logClientActivity(
+                                $clientid,
+                                $subject,
+                                $description,
+                                'document'
+                            );
                         }
 
                         //Update date in client matter table
@@ -694,16 +707,18 @@ class ClientDocumentsController extends Controller
             if($res){
                 // Log activity for document rename
                 $oldName = $doc->file_name;
-                $subject = 'renamed a document';
-                $description = "Renamed {$doc_type} document from '{$oldName}' to '{$filename}'";
-                
-                $objs = new ActivitiesLog;
-                $objs->client_id = $client_id;
-                $objs->created_by = Auth::user()->id;
-                $objs->description = $description;
-                $objs->subject = $subject;
-                $objs->activity_type = 'document';
-                $objs->save();
+                $matterRef = $this->getMatterReference($client_id);
+                $subject = !empty($matterRef) 
+                    ? "renamed Document - {$matterRef}"
+                    : "renamed Document";
+                $description = "<p>Renamed {$doc_type} document from '{$oldName}' to '{$filename}'</p>";
+
+                $this->logClientActivity(
+                    $client_id,
+                    $subject,
+                    $description,
+                    'document'
+                );
                 
                 $response['status'] = true;
                 $response['data'] = 'Document saved successfully';
@@ -749,17 +764,19 @@ class ClientDocumentsController extends Controller
             }
             if($res){
                 $documentName = $data->file_name ?? 'unknown';
-                $documentType = $data->doc_type ?? 'document';
-                $subject = 'deleted a document';
-                $description = "Deleted {$documentType} document: {$documentName}";
+                $documentType = ucfirst($data->doc_type ?? 'Document');
+                $matterRef = $this->getMatterReference($data->client_id);
+                $subject = !empty($matterRef) 
+                    ? "deleted {$documentType}: {$documentName} - {$matterRef}"
+                    : "deleted {$documentType}: {$documentName}";
+                $description = "<p>Deleted {$documentType} document</p>";
 
-                $objs = new ActivitiesLog;
-                $objs->client_id = $data->client_id;
-                $objs->created_by = Auth::user()->id;
-                $objs->description = $description;
-                $objs->subject = $subject;
-                $objs->activity_type = 'document';
-                $objs->save();
+                $this->logClientActivity(
+                    $data->client_id,
+                    $subject,
+                    $description,
+                    'document'
+                );
                 $response['status'] 	= 	true;
                 $response['data']	=	'Document removed successfully';
                 if(isset($data->doc_type) && $data->doc_type == 'personal'){
@@ -856,13 +873,18 @@ class ClientDocumentsController extends Controller
             $upd = DB::table('documents')->where('id', $doc_id)->update(array('not_used_doc' => 1));
             if($upd){
                 $docInfo = \App\Models\Document::with(['user', 'verifiedBy'])->where('id',$doc_id)->first();
-                $subject = $doc_type.' document moved to Not Used Tab';
-                $objs = new ActivitiesLog;
-                $objs->client_id = $docInfo->client_id;
-                $objs->created_by = Auth::user()->id;
-                $objs->description = '';
-                $objs->subject = $subject;
-                $objs->save();
+                $matterRef = $this->getMatterReference($docInfo->client_id);
+                $subject = !empty($matterRef) 
+                    ? "moved {$doc_type} Document to Not Used - {$matterRef}"
+                    : "moved {$doc_type} Document to Not Used";
+                $description = "<p>Document moved to Not Used tab</p>";
+                
+                $this->logClientActivity(
+                    $docInfo->client_id,
+                    $subject,
+                    $description,
+                    'document'
+                );
 
                 if($docInfo){
                     if( isset($docInfo->user_id) && $docInfo->user_id!= "" && $docInfo->user ){
@@ -979,13 +1001,18 @@ class ClientDocumentsController extends Controller
             $upd = DB::table('documents')->where('id', $doc_id)->update(array('not_used_doc' => null));
             if($upd){
                 $docInfo = \App\Models\Document::with(['user', 'verifiedBy'])->where('id',$doc_id)->first();
-                $subject = $doc_type.' document moved to '.$doc_type.' document tab';
-                $objs = new ActivitiesLog;
-                $objs->client_id = $docInfo->client_id;
-                $objs->created_by = Auth::user()->id;
-                $objs->description = '';
-                $objs->subject = $subject;
-                $objs->save();
+                $matterRef = $this->getMatterReference($docInfo->client_id);
+                $subject = !empty($matterRef) 
+                    ? "restored {$doc_type} Document - {$matterRef}"
+                    : "restored {$doc_type} Document";
+                $description = "<p>Document moved back to {$doc_type} tab</p>";
+                
+                $this->logClientActivity(
+                    $docInfo->client_id,
+                    $subject,
+                    $description,
+                    'document'
+                );
 
                 if($docInfo){
                     if( isset($docInfo->user_id) && $docInfo->user_id!= "" && $docInfo->user ){
@@ -1082,16 +1109,18 @@ class ClientDocumentsController extends Controller
             
             if ($deleted) {
                 // Log activity
-                $subject = 'deleted personal checklist';
-                $description = "Deleted personal document checklist: '{$checklistName}'";
-                
-                $objs = new ActivitiesLog;
-                $objs->client_id = $clientId;
-                $objs->created_by = Auth::user()->id;
-                $objs->description = $description;
-                $objs->subject = $subject;
-                $objs->activity_type = 'document';
-                $objs->save();
+                $matterRef = $this->getMatterReference($clientId);
+                $subject = !empty($matterRef) 
+                    ? "deleted Checklist: {$checklistName} - {$matterRef}"
+                    : "deleted Checklist: {$checklistName}";
+                $description = "<p>Deleted personal document checklist</p>";
+
+                $this->logClientActivity(
+                    $clientId,
+                    $subject,
+                    $description,
+                    'document'
+                );
                 
                 $response['status'] = true;
                 $response['message'] = 'Checklist deleted successfully';
@@ -1407,5 +1436,33 @@ class ClientDocumentsController extends Controller
                 'message' => 'Error updating category: ' . $e->getMessage()
             ]);
         }
+    }
+
+    /**
+     * Get matter reference for activity logging
+     */
+    private function getMatterReference($clientId, $matterId = null)
+    {
+        $matterReference = '';
+        
+        // First try to get from provided matter ID
+        if($matterId) {
+            $matter = ClientMatter::find($matterId);
+            if($matter && $matter->client_unique_matter_no) {
+                return $matter->client_unique_matter_no;
+            }
+        }
+        
+        // Fall back to latest active matter
+        $latestMatter = ClientMatter::where('client_id', $clientId)
+            ->where('matter_status', 1)
+            ->orderBy('id', 'desc')
+            ->first();
+            
+        if($latestMatter && $latestMatter->client_unique_matter_no) {
+            return $latestMatter->client_unique_matter_no;
+        }
+        
+        return '';
     }
 }
