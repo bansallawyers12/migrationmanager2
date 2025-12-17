@@ -434,6 +434,7 @@ use App\Http\Controllers\Controller;
                 @endif
                 
                 @include('crm.clients.tabs.account')
+                @include('crm.clients.tabs.emails')
                 @include('crm.clients.tabs.form_generation_client')
                 @include('crm.clients.tabs.appointments')
                 @include('crm.clients.tabs.client_portal')
