@@ -132,6 +132,91 @@
 						</div>
 					</div>
 				</div>
+
+				<!-- Migration Agent Details Section -->
+				@if($fetchedData->is_migration_agent == 1)
+				<div class="col-12 col-md-12 col-lg-12">
+					<div class="card">
+						<div class="card-body">
+							<h4 class="text-primary">
+								<i class="fas fa-user-tie"></i> MIGRATION AGENT DETAILS
+							</h4>
+							<hr>
+
+							<div class="row">
+								<div class="col-md-6">
+									<h6 class="text-muted mt-3">Registration Details</h6>
+									<div class="form-group">
+										<label for="marn_number"><strong>MARN Number</strong></label>
+										<p class="form-control-plaintext">{{ $fetchedData->marn_number ?? 'N/A' }}</p>
+									</div>
+									<div class="form-group">
+										<label for="legal_practitioner_number"><strong>Legal Practitioner Number</strong></label>
+										<p class="form-control-plaintext">{{ $fetchedData->legal_practitioner_number ?? 'N/A' }}</p>
+									</div>
+									@if($fetchedData->exempt_person_reason)
+									<div class="form-group">
+										<label for="exempt_person_reason"><strong>Exempt Person Reason</strong></label>
+										<p class="form-control-plaintext">{{ $fetchedData->exempt_person_reason }}</p>
+									</div>
+									@endif
+								</div>
+
+								<div class="col-md-6">
+									<h6 class="text-muted mt-3">Business Details</h6>
+									<div class="form-group">
+										<label for="company_name"><strong>Business Name</strong></label>
+										<p class="form-control-plaintext">{{ $fetchedData->company_name ?? 'N/A' }}</p>
+									</div>
+									<div class="form-group">
+										<label for="tax_number"><strong>Tax Number (ABN/ACN)</strong></label>
+										<p class="form-control-plaintext">{{ $fetchedData->tax_number ?? 'N/A' }}</p>
+									</div>
+									<div class="form-group">
+										<label for="business_address"><strong>Business Address</strong></label>
+										<p class="form-control-plaintext">{{ $fetchedData->business_address ?? 'N/A' }}</p>
+									</div>
+								</div>
+							</div>
+
+							<div class="row mt-3">
+								<div class="col-md-12">
+									<h6 class="text-muted">Contact Details</h6>
+								</div>
+								<div class="col-md-4">
+									<div class="form-group">
+										<label for="business_phone"><strong>Business Phone</strong></label>
+										<p class="form-control-plaintext">{{ $fetchedData->business_phone ?? 'N/A' }}</p>
+									</div>
+								</div>
+								<div class="col-md-4">
+									<div class="form-group">
+										<label for="business_mobile"><strong>Business Mobile</strong></label>
+										<p class="form-control-plaintext">{{ $fetchedData->business_mobile ?? 'N/A' }}</p>
+									</div>
+								</div>
+								<div class="col-md-4">
+									<div class="form-group">
+										<label for="business_email"><strong>Business Email</strong></label>
+										<p class="form-control-plaintext">{{ $fetchedData->business_email ?? 'N/A' }}</p>
+									</div>
+								</div>
+							</div>
+
+							@if($fetchedData->business_fax)
+							<div class="row">
+								<div class="col-md-4">
+									<div class="form-group">
+										<label for="business_fax"><strong>Business Fax</strong></label>
+										<p class="form-control-plaintext">{{ $fetchedData->business_fax }}</p>
+									</div>
+								</div>
+							</div>
+							@endif
+						</div>
+					</div>
+				</div>
+				@endif
 			</div>
 		</div>
 	</section>

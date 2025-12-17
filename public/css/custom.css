@@ -661,8 +661,8 @@ text-overflow: ellipsis;white-space: nowrap;}
 .custom_nav_setting{background: #fff;border-radius: 6px;overflow: hidden;box-shadow: 0 2px 8px rgba(0,0,0,0.08);max-width: 340px;min-width: 320px;}
 .custom_nav_setting ul{list-style-type:none;padding:0px;}
 .custom_nav_setting ul li{padding:0px;}
-.custom_nav_setting ul li a{ font-size: 14px;line-height: 22px;padding: 12px 20px;color:#495057;border-bottom:1px solid #f1f3f4;transition: all 0.2s ease;font-weight: 500;min-height: 48px;display: flex;align-items: center;}
-.custom_nav_setting ul li.active a, .custom_nav_setting ul li a:hover{background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:#fff;transform: translateX(2px);box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);}
+.custom_nav_setting ul li a{ font-size: 14px;line-height: 22px;padding: 12px 20px;color:#495057;border-bottom:1px solid #f1f3f4;font-weight: 500;min-height: 48px;display: flex;align-items: center;}
+.custom_nav_setting ul li.active a, .custom_nav_setting ul li a:hover{background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:#fff;box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);}
 
 /* Enhanced tab spacing and visual improvements */
 .custom_nav_setting ul li {
@@ -709,12 +709,10 @@ text-overflow: ellipsis;white-space: nowrap;}
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     overflow: hidden;
     background: #ffffff;
-    transition: all 0.3s ease;
 }
 
 .card:hover {
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-    transform: translateY(-2px);
 }
 
 .card-header {
@@ -741,13 +739,11 @@ text-overflow: ellipsis;white-space: nowrap;}
     padding: 8px 20px;
     border-radius: 8px;
     font-weight: 500;
-    transition: all 0.3s ease;
 }
 
 .card-header-action .btn-primary:hover {
     background: rgba(255, 255, 255, 0.3);
     border-color: rgba(255, 255, 255, 0.5);
-    transform: translateY(-1px);
 }
 
 .card-body {
@@ -779,13 +775,11 @@ text-overflow: ellipsis;white-space: nowrap;}
 }
 
 .table tbody tr {
-    transition: all 0.2s ease;
     border-bottom: 1px solid #f1f3f4;
 }
 
 .table tbody tr:hover {
     background: linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%);
-    transform: scale(1.01);
 }
 
 .table tbody td {
@@ -803,13 +797,11 @@ text-overflow: ellipsis;white-space: nowrap;}
     border-radius: 8px;
     padding: 10px 20px;
     font-weight: 500;
-    transition: all 0.3s ease;
     box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
 .btn-primary:hover {
     background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
-    transform: translateY(-2px);
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
 }
 
@@ -827,14 +819,12 @@ text-overflow: ellipsis;white-space: nowrap;}
 
 .dropdown-item {
     padding: 10px 20px;
-    transition: all 0.2s ease;
     color: #495057;
 }
 
 .dropdown-item:hover {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: #ffffff;
-    transform: translateX(5px);
 }
 
 .dropdown-item.has-icon i {

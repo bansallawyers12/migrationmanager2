@@ -96,8 +96,7 @@
                     visaTypesRoute: '{{ route("getVisaTypes") }}',
                     countriesRoute: '{{ route("getCountries") }}',
                     searchPartnerRoute: '{{ route("clients.searchPartner") }}',
-                    csrfToken: '{{ csrf_token() }}',
-                    isSuperAdmin: {{ Auth::user()->role == 1 ? 'true' : 'false' }}
+                    csrfToken: '{{ csrf_token() }}'
                 };
                 
                 // Current client ID for excluding from search results

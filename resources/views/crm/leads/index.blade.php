@@ -20,13 +20,11 @@
         border-radius: 8px;
         color: white !important;
         text-decoration: none;
-        transition: all 0.3s ease;
         box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
     }
 
     .btn-edit-icon:hover {
         background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
-        transform: translateY(-2px);
         box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
         color: white !important;
         text-decoration: none;
@@ -122,7 +120,6 @@
         font-size: 12px;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.3s ease;
         display: inline-flex;
         align-items: center;
         gap: 6px;
@@ -131,7 +128,6 @@
     .clear-filter-btn:hover {
         background: #ef4444;
         color: white;
-        transform: translateY(-2px);
     }
 
     .status-badge {
@@ -542,7 +538,7 @@
         });
 
         $('.listing-container .filter_btn').on('click', function(){
-            $('.listing-container .filter_panel').slideToggle();
+            $('.listing-container .filter_panel').toggle();
         });
         
         $('.listing-container .assignlead_modal').on('click', function(){

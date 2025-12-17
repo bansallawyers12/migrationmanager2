@@ -53,7 +53,6 @@
         color: white !important;
         border-radius: 6px;
         box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
-        transition: all 0.3s ease;
         position: relative;
         display: inline-flex;
         align-items: center;
@@ -65,7 +64,6 @@
         background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%) !important;
         border-color: #5a6fd8 !important;
         box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
-        transform: translateY(-1px);
     }
     
     .listing-container .table td .dropdown-toggle:focus {
@@ -82,7 +80,6 @@
         border-right: 4px solid transparent;
         border-bottom: 0;
         border-left: 4px solid transparent;
-        transition: transform 0.2s ease;
     }
     
     .listing-container .table td .dropdown-toggle.show::after {
@@ -101,7 +98,6 @@
         background-color: transparent;
         border: 0;
         text-decoration: none;
-        transition: all 0.2s ease;
         border-radius: 4px;
         margin: 2px 8px;
         width: calc(100% - 16px);
@@ -111,13 +107,11 @@
         color: #667eea;
         text-decoration: none;
         background: linear-gradient(135deg, #f8f9ff 0%, #e8ecff 100%);
-        transform: translateX(2px);
         box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
     }
     
     .listing-container .dropdown-item:active {
         background: linear-gradient(135deg, #e8ecff 0%, #d8e0ff 100%);
-        transform: translateX(1px);
     }
     
     .listing-container .dropdown-item.has-icon {
@@ -234,7 +228,6 @@
         font-size: 12px;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.3s ease;
         display: inline-flex;
         align-items: center;
         gap: 6px;
@@ -243,7 +236,6 @@
     .clear-filter-btn:hover {
         background: #ef4444;
         color: white;
-        transform: translateY(-2px);
     }
 
     .listing-container .form-group label {
@@ -260,7 +252,6 @@
         border-radius: 10px !important;
         padding: 10px 16px !important;
         font-size: 14px !important;
-        transition: all 0.3s ease;
         background: white !important;
         height: auto !important;
     }
@@ -745,7 +736,7 @@ jQuery(document).ready(function($){
     });
 
 	$('.listing-container .filter_btn').on('click', function(){
-		$('.listing-container .filter_panel').slideToggle();
+		$('.listing-container .filter_panel').toggle();
 	});
 
 	$('.listing-container [data-checkboxes]').each(function () {

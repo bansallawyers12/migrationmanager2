@@ -231,7 +231,7 @@ $('.assignee').on('autocompleteselect', function (e, ui) {
 jQuery(document).ready(function($){
 
 $('.filter_btn').on('click', function(){
-		$('.filter_panel').slideToggle();
+		$('.filter_panel').toggle();
 	});
 
 });

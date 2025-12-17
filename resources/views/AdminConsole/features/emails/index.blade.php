@@ -1,5 +1,100 @@
 @extends('layouts.crm_client_detail')
 @section('title', 'Emails')
+
+@section('styles')
+<style>
+    /* Fix dropdown menu positioning for action buttons */
+    .table-responsive {
+        overflow: visible !important;
+    }
+    
+    .common_table .table td {
+        overflow: visible !important;
+    }
+    
+    .common_table .table td .dropdown {
+        position: relative;
+        display: inline-block;
+        overflow: visible !important;
+    }
+    
+    /* Dropdown Menu */
+    .common_table .dropdown-menu {
+        position: absolute !important;
+        top: 100% !important;
+        right: 0 !important;
+        left: auto !important;
+        float: none !important;
+        min-width: 180px;
+        padding: 8px 0;
+        margin: 4px 0 0;
+        font-size: 14px;
+        text-align: left;
+        background: #ffffff;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        z-index: 9999 !important;
+        transform: none !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+    
+    .common_table .dropdown-menu.show {
+        display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+    
+    /* Dropdown Items Styling */
+    .common_table .dropdown-item {
+        display: block;
+        width: 100%;
+        padding: 10px 20px;
+        clear: both;
+        color: #495057;
+        text-align: inherit;
+        white-space: nowrap;
+        background-color: transparent;
+        border: 0;
+        text-decoration: none;
+        border-radius: 4px;
+        margin: 2px 8px;
+        width: calc(100% - 16px);
+    }
+    
+    .common_table .dropdown-item:hover {
+        color: #667eea;
+        text-decoration: none;
+        background: #f8f9fa;
+    }
+    
+    .common_table .dropdown-item:active {
+        background: #e9ecef;
+    }
+    
+    .common_table .dropdown-item.has-icon {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .common_table .dropdown-item.has-icon i {
+        width: 16px;
+        text-align: center;
+    }
+    
+    /* Ensure all dropdown items are visible */
+    .common_table .dropdown-menu .dropdown-item {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        height: auto !important;
+        min-height: 32px !important;
+        line-height: 1.5 !important;
+    }
+</style>
+@endsection
  
 @section('content')
 

@@ -100,6 +100,22 @@ class UserController extends Controller
 			    $obj->permission		=	"";
 			}
 
+			// Migration Agent Fields
+			$obj->is_migration_agent = isset($requestData['is_migration_agent']) ? 1 : 0;
+			
+			if (isset($requestData['is_migration_agent'])) {
+				$obj->marn_number = @$requestData['marn_number'];
+				$obj->legal_practitioner_number = @$requestData['legal_practitioner_number'];
+				$obj->exempt_person_reason = @$requestData['exempt_person_reason'];
+				$obj->company_name = @$requestData['company_name'];
+				$obj->business_address = @$requestData['business_address'];
+				$obj->business_phone = @$requestData['business_phone'];
+				$obj->business_mobile = @$requestData['business_mobile'];
+				$obj->business_email = @$requestData['business_email'];
+				$obj->business_fax = @$requestData['business_fax'];
+				$obj->tax_number = @$requestData['tax_number'];
+			}
+
 
             //Script start for generate client_id
             if( $requestData['role'] == 7 ) { //if user is of client type
@@ -212,7 +228,34 @@ class UserController extends Controller
 		}else{
 			 $obj->show_dashboard_per = 0;
 		}
+
+		// Migration Agent Fields
+		$obj->is_migration_agent = isset($requestData['is_migration_agent']) ? 1 : 0;
 		
+		if (isset($requestData['is_migration_agent'])) {
+			$obj->marn_number = @$requestData['marn_number'];
+			$obj->legal_practitioner_number = @$requestData['legal_practitioner_number'];
+			$obj->exempt_person_reason = @$requestData['exempt_person_reason'];
+			$obj->company_name = @$requestData['company_name'];
+			$obj->business_address = @$requestData['business_address'];
+			$obj->business_phone = @$requestData['business_phone'];
+			$obj->business_mobile = @$requestData['business_mobile'];
+			$obj->business_email = @$requestData['business_email'];
+			$obj->business_fax = @$requestData['business_fax'];
+			$obj->tax_number = @$requestData['tax_number'];
+		} else {
+			// Clear agent fields if checkbox is unchecked
+			$obj->marn_number = null;
+			$obj->legal_practitioner_number = null;
+			$obj->exempt_person_reason = null;
+			$obj->business_address = null;
+			$obj->business_phone = null;
+			$obj->business_mobile = null;
+			$obj->business_email = null;
+			$obj->business_fax = null;
+			$obj->tax_number = null;
+		}
+
 		if(!empty(@$requestData['password']))
 		{
 			$obj->password = Hash::make(@$requestData['password']);

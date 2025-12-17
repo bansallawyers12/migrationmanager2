@@ -6303,10 +6303,7 @@ async function saveParentsInfo() {
         
         // Conditional validation based on details field
         if (!details || details.trim() === '') {
-            // Require at least first name OR last name (not just last name)
-            if ((!firstName || firstName.trim() === '') && (!lastName || lastName.trim() === '')) {
-                validationErrors.push('First Name or Last Name (at least one is required)');
-            }
+            if (!lastName || lastName.trim() === '') validationErrors.push('Last Name');
             if (!dob || dob.trim() === '') validationErrors.push('DOB');
         }
 
@@ -6397,10 +6394,7 @@ async function saveSiblingsInfo() {
         
         // Conditional validation based on details field
         if (!details || details.trim() === '') {
-            // Require at least first name OR last name (not just last name)
-            if ((!firstName || firstName.trim() === '') && (!lastName || lastName.trim() === '')) {
-                validationErrors.push('First Name or Last Name (at least one is required)');
-            }
+            if (!lastName || lastName.trim() === '') validationErrors.push('Last Name');
             if (!dob || dob.trim() === '') validationErrors.push('DOB');
         }
 
@@ -6491,10 +6485,7 @@ async function saveOthersInfo() {
         
         // Conditional validation based on details field
         if (!details || details.trim() === '') {
-            // Require at least first name OR last name (not just last name)
-            if ((!firstName || firstName.trim() === '') && (!lastName || lastName.trim() === '')) {
-                validationErrors.push('First Name or Last Name (at least one is required)');
-            }
+            if (!lastName || lastName.trim() === '') validationErrors.push('Last Name');
             if (!dob || dob.trim() === '') validationErrors.push('DOB');
         }
 

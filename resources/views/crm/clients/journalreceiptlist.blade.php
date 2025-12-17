@@ -658,7 +658,7 @@
 jQuery(document).ready(function($){
     // Filter button toggle
     $('.filter_btn').on('click', function(){
-        $('.filter_panel').slideToggle();
+        $('.filter_panel').toggle();
     });
 
     // Enhanced Date Filter Scripts

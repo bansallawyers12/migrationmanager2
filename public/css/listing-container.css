@@ -99,7 +99,6 @@
     border-bottom: 1px solid #edf2f7;
     color: #4a5568 !important;
     vertical-align: middle;
-    transition: all 0.2s;
     word-wrap: break-word;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -136,13 +135,11 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    transition: all 0.2s;
     color: white;
 }
 
 .listing-container .btn-primary:hover {
     background: #3182ce;
-    transform: translateY(-1px);
     box-shadow: 0 4px 6px rgba(66, 153, 225, 0.1);
 }
 
@@ -157,7 +154,6 @@
     font-size: 14px;
     font-weight: 500;
     border-radius: 6px;
-    transition: all 0.2s ease;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -166,7 +162,6 @@
 }
 
 .listing-container .card-header .btn:hover {
-    transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -250,10 +245,6 @@
 }
 
 /* Loading State */
-.listing-container .table tbody tr {
-    transition: opacity 0.3s;
-}
-
 .listing-container .table tbody tr.loading {
     opacity: 0.5;
 }
@@ -278,7 +269,6 @@
     white-space: nowrap;
     opacity: 0;
     visibility: hidden;
-    transition: all 0.2s;
 }
 
 .listing-container [data-tooltip]:hover:before {
@@ -378,15 +368,7 @@
     opacity: 0.5;
 }
 
-/* Animation for alerts */
-.listing-container .alert {
-    animation: fadeIn 0.3s ease-in;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
+/* Removed animation for alerts - keeping it simple */
 
 .listing-container .strike-through {
     text-decoration: line-through;
@@ -425,11 +407,9 @@
     font-size: 14px;
     font-weight: 500;
     border-radius: 6px;
-    transition: all 0.2s ease;
 }
 
 .listing-container .filter-buttons-container .btn:hover {
-    transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 

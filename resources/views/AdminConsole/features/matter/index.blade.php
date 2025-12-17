@@ -270,7 +270,7 @@
 <script>
 jQuery(document).ready(function($){
     $('.filter_btn').on('click', function(){
-		$('.filter_panel').slideToggle();
+		$('.filter_panel').toggle();
 	});
 
 	$('.cb-element').change(function () {

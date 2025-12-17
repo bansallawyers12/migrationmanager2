@@ -618,9 +618,8 @@
 
     $(document).ready(function() {
 
-        // COMMENTED OUT - Using the direct event handler below instead
-
-        
+        // PRIMARY HANDLER - jQuery delegated event handler for download-file elements
+        // This handles all downloads including dynamically added elements
 
         $(document).on('click', '.download-file', function(e) {
 
@@ -789,8 +788,11 @@
         
 
     });
-    // Alternative vanilla JavaScript version as backup
+    
+    // DISABLED: Alternative vanilla JavaScript version as backup
+    // This was causing duplicate downloads - the jQuery delegated handler above is sufficient
 
+    /*
     document.addEventListener('DOMContentLoaded', function () {
 
         document.addEventListener('click', function (e) {
@@ -976,6 +978,7 @@
         });
 
     });
+    */
 
 
 
@@ -5605,7 +5608,7 @@ $(document).ready(function() {
 
         $('.filter_btn').on('click', function(){
 
-            $('.filter_panel').slideToggle();
+            $('.filter_panel').toggle();
 
         });
 
@@ -15817,7 +15820,7 @@ Bansal Immigration`;
 
 				});
 
-				$('html, body').animate({scrollTop:0}, 'slow');
+				$('html, body').scrollTop(0);
 
 			}
 
@@ -16101,8 +16104,10 @@ Bansal Immigration`;
 
 
 
-		// Direct event binding for download-file elements
+		// DISABLED: Direct event binding for download-file elements
+		// This was causing duplicate downloads - the jQuery delegated handler at line 625 is sufficient
 
+		/*
 		$('.download-file').off('click').on('click', function(e) {
 
 			e.preventDefault();
@@ -16256,6 +16261,7 @@ Bansal Immigration`;
 			return false;
 
 		});
+		*/
 
 		
 
@@ -17303,9 +17309,7 @@ Bansal Immigration`;
                 if (response.status) {
                     $('.custom-error-msg').html('<span class="alert alert-success">' + response.message + '</span>');
                     // Remove the row from table
-                    $row.fadeOut(300, function() {
-                        $(this).remove();
-                    });
+                    $row.remove();
                 } else {
                     $('.custom-error-msg').html('<span class="alert alert-danger">' + response.message + '</span>');
                 }

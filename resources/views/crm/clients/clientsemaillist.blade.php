@@ -288,7 +288,7 @@
 <script>
 jQuery(document).ready(function($){
     $('.listing-container .filter_btn').on('click', function(){
-        $('.listing-container .filter_panel').slideToggle();
+        $('.listing-container .filter_panel').toggle();
     });
 });
 </script>

@@ -62,7 +62,6 @@
         padding: 10px 20px;
         font-weight: 600;
         font-size: 14px;
-        transition: all 0.3s ease;
         border: none;
         display: inline-flex;
         align-items: center;
@@ -71,12 +70,10 @@
     }
 
     .listing-container .btn:hover {
-        transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 
     .listing-container .btn:active {
-        transform: translateY(0);
     }
 
     .listing-container .btn-theme {
@@ -145,7 +142,6 @@
         border-radius: 10px !important;
         padding: 10px 16px !important;
         font-size: 14px !important;
-        transition: all 0.3s ease;
         background: white !important;
         height: auto !important;
     }
@@ -799,7 +795,7 @@ jQuery(document).ready(function($){
     });
 
     $('.listing-container .filter_btn').on('click', function(){
-		$('.listing-container .filter_panel').slideToggle();
+		$('.listing-container .filter_panel').toggle();
 	});
 
     // Initialize Select2 for searchable dropdowns

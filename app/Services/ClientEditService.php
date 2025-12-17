@@ -74,18 +74,44 @@ class ClientEditService
 
     /**
      * Get client contact numbers
+     * Falls back to admins table if no records in client_contacts
      */
     protected function getClientContacts(int $clientId)
     {
-        return ClientContact::where('client_id', $clientId)->get() ?? [];
+        // Check if records exist in client_contacts table
+        if (ClientContact::where('client_id', $clientId)->exists()) {
+            return ClientContact::where('client_id', $clientId)->get();
+        }
+        
+        // Fallback to admins table
+        if (Admin::where('id', $clientId)->exists()) {
+            return Admin::select('phone', 'country_code', 'contact_type')
+                ->where('id', $clientId)
+                ->get();
+        }
+        
+        return collect(); // Return empty collection
     }
 
     /**
      * Get client email addresses
+     * Falls back to admins table if no records in client_emails
      */
     protected function getClientEmails(int $clientId)
     {
-        return ClientEmail::where('client_id', $clientId)->get() ?? [];
+        // Check if records exist in client_emails table
+        if (ClientEmail::where('client_id', $clientId)->exists()) {
+            return ClientEmail::where('client_id', $clientId)->get();
+        }
+        
+        // Fallback to admins table
+        if (Admin::where('id', $clientId)->exists()) {
+            return Admin::select('email', 'email_type')
+                ->where('id', $clientId)
+                ->get();
+        }
+        
+        return collect(); // Return empty collection
     }
 
     /**

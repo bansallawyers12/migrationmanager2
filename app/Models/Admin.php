@@ -35,11 +35,15 @@ class Admin extends Authenticatable
         'country', 'state', 'city', 'address', 'zip',
         // Profile
         'profile_img', 'status', 'verified',
+        // Migration Agent Flag & Details
+        'is_migration_agent',
         // Business/Professional Info
         'marn_number', 'legal_practitioner_number', 'exempt_person_reason',
+        'business_address', 'business_phone', 'business_mobile', 'business_email', 'business_fax',
+        'tax_number',
         'company_name', 'company_website', 'primary_email',
         'gst_no', 'gstin', 'gst_date', 'is_business_gst',
-        'ABN_number', 'business_mobile', 'business_fax', 'company_fax',
+        'ABN_number', 'company_fax',
         // Email Configuration
         'smtp_host', 'smtp_port', 'smtp_enc', 'smtp_username', 'smtp_password',
         // API/Service Tokens

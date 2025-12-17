@@ -8,14 +8,12 @@
 @endphp
 
 <div class="repeatable-section">
-    @if(Auth::user()->role == 1)
     <button type="button" 
             class="remove-item-btn" 
             title="Remove {{ ucfirst($type) }}" 
             onclick="removePartnerRow(this, '{{ $type }}', {{ $member->id }})">
         <i class="fas fa-times-circle"></i>
     </button>
-    @endif
     
     <input type="hidden" name="{{ $memberIdField }}[{{ $index }}]" class="partner-id" value="{{ $member->related_client_id }}">
     <input type="hidden" name="{{ $relationshipIdField }}[{{ $index }}]" value="{{ $member->id }}">

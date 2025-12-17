@@ -69,7 +69,6 @@
         padding: 10px 20px;
         font-weight: 600;
         font-size: 14px;
-        transition: all 0.3s ease;
         border: none;
         display: inline-flex;
         align-items: center;
@@ -78,12 +77,10 @@
     }
 
     .listing-container .btn:hover {
-        transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 
     .listing-container .btn:active {
-        transform: translateY(0);
     }
 
     .listing-container .btn-theme {
@@ -175,7 +172,6 @@
         font-weight: 600;
         color: #64748b;
         cursor: pointer;
-        transition: all 0.3s ease;
         display: inline-flex;
         align-items: center;
         gap: 6px;
@@ -184,7 +180,6 @@
     .quick-filter-chip:hover {
         border-color: #667eea;
         color: #667eea;
-        transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
     }
 
@@ -1408,7 +1403,7 @@
 <script>
 jQuery(document).ready(function($){
      $('.listing-container .filter_btn').on('click', function(){
-		$('.listing-container .filter_panel').slideToggle();
+		$('.listing-container .filter_panel').toggle();
 	});
 
     // Handle records per page dropdown change

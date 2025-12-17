@@ -37,7 +37,6 @@
     border: 1px solid #dee2e6;
     border-radius: 4px;
     text-decoration: none;
-    transition: all 0.2s;
     white-space: nowrap;
 }
 
@@ -64,7 +63,6 @@
     border-color: #dee2e6;
     color: #0056b3;
     text-decoration: none;
-    transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
