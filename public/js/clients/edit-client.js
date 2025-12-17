@@ -528,7 +528,9 @@ function addPartnerRow(type) {
                 <option value="">Select Relationship</option>
                 <option value="Husband">Husband</option>
                 <option value="Wife">Wife</option>
+                <option value="Ex-Husband">Ex-Husband</option>
                 <option value="Ex-Wife">Ex-Wife</option>
+                <option value="Mother-in-law">Mother-in-law</option>
                 <option value="Defacto">De Facto</option>
             `;
     }

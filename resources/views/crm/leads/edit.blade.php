@@ -1255,7 +1255,7 @@
                                         :index="$index"
                                         :member="$partner"
                                         type="partner"
-                                        :relationshipOptions="['Husband', 'Wife', 'Ex-Wife', 'Defacto']"
+                                        :relationshipOptions="['Husband', 'Wife', 'Ex-Husband', 'Ex-Wife', 'Mother-in-law', 'Defacto']"
                                     />
                                 @endforeach
                             </div>

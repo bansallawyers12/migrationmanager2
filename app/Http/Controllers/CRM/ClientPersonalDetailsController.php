@@ -1451,7 +1451,9 @@ class ClientPersonalDetailsController extends Controller
         $relationshipMap = [
             'Husband' => 'Wife',
             'Wife' => 'Husband',
+            'Ex-Husband' => 'Ex-Husband',
             'Ex-Wife' => 'Ex-Wife',
+            'Mother-in-law' => 'Mother-in-law',
             'Defacto' => 'Defacto',
         ];
 
@@ -2859,8 +2861,12 @@ class ClientPersonalDetailsController extends Controller
                 return 'Wife';
             case 'Wife':
                 return 'Husband';
+            case 'Ex-Husband':
+                return 'Ex-Wife';
             case 'Ex-Wife':
                 return 'Ex-Husband';
+            case 'Mother-in-law':
+                return 'Mother-in-law'; // No specific reciprocal
             case 'Defacto':
                 return 'Defacto';
             default:

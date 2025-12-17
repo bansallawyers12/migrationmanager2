@@ -553,7 +553,7 @@ class ClientsController extends Controller
                 'health_declarations.*.date' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
                 'source' => 'nullable|in:SubAgent,Others',
                 'partner_details.*' => 'nullable|string|max:255',
-                'partner_relationship_type.*' => 'nullable|in:Husband,Wife,Ex-Wife,Defacto',
+                'partner_relationship_type.*' => 'nullable|in:Husband,Wife,Ex-Husband,Ex-Wife,Mother-in-law,Defacto',
                 'partner_company_type.*' => 'nullable|in:Accompany Member,Non-Accompany Member',
                 'partner_email.*' => 'nullable|email|max:255',
                 'partner_first_name.*' => 'nullable|string|max:255',
@@ -1692,7 +1692,7 @@ class ClientsController extends Controller
 
                 // New validations for Partner fields
                 'partner_details.*' => 'nullable|string|max:1000',
-                'relationship_type.*' => 'nullable|in:Husband,Wife,Ex-Wife,Defacto',
+                'relationship_type.*' => 'nullable|in:Husband,Wife,Ex-Husband,Ex-Wife,Mother-in-law,Defacto',
                 'partner_email.*' => 'nullable|email|max:255',
                 'partner_first_name.*' => 'nullable|string|max:255',
                 'partner_last_name.*' => 'nullable|string|max:255',
