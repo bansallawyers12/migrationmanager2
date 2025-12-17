@@ -890,6 +890,131 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
     border-radius: 4px;
 }
 
+/* Note Activity Styling - Base */
+.activity-type-note {
+    border-left: 3px solid #6c757d !important;
+}
+
+.feed-icon-note {
+    background: linear-gradient(135deg, #6c757d, #5a6268) !important;
+    color: #fff !important;
+}
+
+.feed-icon-note i {
+    color: #fff !important;
+}
+
+.activity-type-note .feed-content {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 4px;
+}
+
+/* Call Notes - Green */
+.activity-type-note-call {
+    border-left: 3px solid #28a745 !important;
+}
+
+.feed-icon-note-call {
+    background: linear-gradient(135deg, #28a745, #20c997) !important;
+    color: #fff !important;
+}
+
+.feed-icon-note-call i {
+    color: #fff !important;
+}
+
+.activity-type-note-call .feed-content {
+    background: #f0fdf4;
+    padding: 12px;
+    border-radius: 4px;
+    border: 1px solid #d1fae5;
+}
+
+/* Email Notes - Blue */
+.activity-type-note-email {
+    border-left: 3px solid #0d6efd !important;
+}
+
+.feed-icon-note-email {
+    background: linear-gradient(135deg, #0d6efd, #0b5ed7) !important;
+    color: #fff !important;
+}
+
+.feed-icon-note-email i {
+    color: #fff !important;
+}
+
+.activity-type-note-email .feed-content {
+    background: #f0f7ff;
+    padding: 12px;
+    border-radius: 4px;
+    border: 1px solid #cfe2ff;
+}
+
+/* In-Person Notes - Purple */
+.activity-type-note-in-person {
+    border-left: 3px solid #6f42c1 !important;
+}
+
+.feed-icon-note-in-person {
+    background: linear-gradient(135deg, #6f42c1, #5a32a3) !important;
+    color: #fff !important;
+}
+
+.feed-icon-note-in-person i {
+    color: #fff !important;
+}
+
+.activity-type-note-in-person .feed-content {
+    background: #f8f4ff;
+    padding: 12px;
+    border-radius: 4px;
+    border: 1px solid #e0cffc;
+}
+
+/* Attention Notes - Red/Orange */
+.activity-type-note-attention {
+    border-left: 3px solid #dc3545 !important;
+}
+
+.feed-icon-note-attention {
+    background: linear-gradient(135deg, #dc3545, #c82333) !important;
+    color: #fff !important;
+}
+
+.feed-icon-note-attention i {
+    color: #fff !important;
+}
+
+.activity-type-note-attention .feed-content {
+    background: #fff5f5;
+    padding: 12px;
+    border-radius: 4px;
+    border: 1px solid #f8d7da;
+}
+
+/* Others Notes - Teal */
+.activity-type-note-others {
+    border-left: 3px solid #20c997 !important;
+}
+
+.feed-icon-note-others {
+    background: linear-gradient(135deg, #20c997, #17a589) !important;
+    color: #fff !important;
+}
+
+.feed-icon-note-others i {
+    color: #fff !important;
+}
+
+.activity-type-note-others .feed-content {
+    background: #f0fdfa;
+    padding: 12px;
+    border-radius: 4px;
+    border: 1px solid #ccfbf1;
+}
+
 /* Activity Type Styling (Client edits) */
 .activity-type-activity {
     border-left: 3px solid #007bff !important;

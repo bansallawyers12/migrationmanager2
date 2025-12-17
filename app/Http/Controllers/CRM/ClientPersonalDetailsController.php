@@ -1746,6 +1746,55 @@ class ClientPersonalDetailsController extends Controller
                 $maritalStatus = 'De Facto';
             }
 
+            // Track changed fields for activity log with old and new values
+            $changedFields = [];
+            $fieldLabels = [
+                'first_name' => 'First Name',
+                'last_name' => 'Last Name',
+                'client_id' => 'Client ID',
+                'dob' => 'Date of Birth',
+                'gender' => 'Gender',
+                'marital_status' => 'Marital Status'
+            ];
+
+            // Compare and track changes with old and new values
+            if ($client->first_name !== $validated['first_name']) {
+                $changedFields[$fieldLabels['first_name']] = [
+                    'old' => $client->first_name,
+                    'new' => $validated['first_name']
+                ];
+            }
+            if ($client->last_name !== ($validated['last_name'] ?? null)) {
+                $changedFields[$fieldLabels['last_name']] = [
+                    'old' => $client->last_name,
+                    'new' => $validated['last_name'] ?? null
+                ];
+            }
+            if ($client->client_id !== $validated['client_id']) {
+                $changedFields[$fieldLabels['client_id']] = [
+                    'old' => $client->client_id,
+                    'new' => $validated['client_id']
+                ];
+            }
+            if ($client->dob !== $dob) {
+                $changedFields[$fieldLabels['dob']] = [
+                    'old' => $client->dob,
+                    'new' => $dob
+                ];
+            }
+            if ($client->gender !== ($validated['gender'] ?? null)) {
+                $changedFields[$fieldLabels['gender']] = [
+                    'old' => $client->gender,
+                    'new' => $validated['gender'] ?? null
+                ];
+            }
+            if ($client->marital_status !== $maritalStatus) {
+                $changedFields[$fieldLabels['marital_status']] = [
+                    'old' => $client->marital_status,
+                    'new' => $maritalStatus
+                ];
+            }
+
             // Use direct assignment pattern (like the working old methods)
             $client->first_name = $validated['first_name'];
             $client->last_name = $validated['last_name'] ?? null;
@@ -1756,13 +1805,15 @@ class ClientPersonalDetailsController extends Controller
             $client->marital_status = $maritalStatus;
             $client->save();
 
-            // Log activity for basic information update
-            $this->logClientActivity(
-                $client->id,
-                'updated basic information',
-                'Updated basic client information',
-                'activity'
-            );
+            // Log activity with specific changed fields
+            if (!empty($changedFields)) {
+                $this->logClientActivityWithChanges(
+                    $client->id,
+                    'updated basic information',
+                    $changedFields,
+                    'activity'
+                );
+            }
 
             return response()->json([
                 'success' => true,
@@ -2605,6 +2656,23 @@ class ClientPersonalDetailsController extends Controller
                 $pointsService->clearCache($client->id);
             }
 
+            // Log activity for additional information update
+            $updatedFields = [];
+            if (!empty($naatiTest) || !empty($naatiDate)) $updatedFields[] = 'NAATI Test';
+            if (!empty($pyTest) || !empty($pyDate)) $updatedFields[] = 'PY Test';
+            if (!empty($australianStudy) || !empty($australianStudyDate)) $updatedFields[] = 'Australian Study';
+            if (!empty($specialistEducation) || !empty($specialistEducationDate)) $updatedFields[] = 'Specialist Education';
+            if (!empty($regionalStudy) || !empty($regionalStudyDate)) $updatedFields[] = 'Regional Study';
+            
+            if (!empty($updatedFields)) {
+                $this->logClientActivity(
+                    $client->id,
+                    'updated additional information',
+                    'Updated: ' . implode(', ', $updatedFields),
+                    'activity'
+                );
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Additional information updated successfully'
@@ -2633,6 +2701,7 @@ class ClientPersonalDetailsController extends Controller
             ClientCharacter::where('client_id', $client->id)->delete();
 
             // Insert new character records
+            $characterCount = 0;
             foreach ($characters as $charData) {
                 if (!empty($charData['detail']) && !empty($charData['type_of_character'])) {
                     ClientCharacter::create([
@@ -2641,8 +2710,17 @@ class ClientPersonalDetailsController extends Controller
                         'type_of_character' => $charData['type_of_character'],
                         'character_detail' => $charData['detail']
                     ]);
+                    $characterCount++;
                 }
             }
+
+            // Log activity for character information update
+            $this->logClientActivity(
+                $client->id,
+                'updated character information',
+                "Updated {$characterCount} character record(s)",
+                'activity'
+            );
 
             return response()->json([
                 'success' => true,
@@ -2690,6 +2768,7 @@ class ClientPersonalDetailsController extends Controller
             }
 
             // Insert new partner records
+            $partnerCount = 0;
             foreach ($partners as $partnerData) {
                 if (!empty($partnerData['details']) || !empty($partnerData['relationship_type'])) {
                     // Convert DOB from dd/mm/yyyy to YYYY-mm-dd format
@@ -2719,6 +2798,7 @@ class ClientPersonalDetailsController extends Controller
                         'first_name' => $partnerData['first_name'] ?? null,
                         'phone' => $partnerData['phone'] ?? null
                     ]);
+                    $partnerCount++;
                     
                     // Create reciprocal relationship entry if partner_id exists (existing client)
                     if (!empty($partnerData['partner_id'])) {
@@ -2748,6 +2828,14 @@ class ClientPersonalDetailsController extends Controller
                     }
                 }
             }
+
+            // Log activity for partner information update
+            $this->logClientActivity(
+                $client->id,
+                'updated partner information',
+                "Updated {$partnerCount} partner/spouse record(s)",
+                'activity'
+            );
 
             return response()->json([
                 'success' => true,
@@ -2855,6 +2943,14 @@ class ClientPersonalDetailsController extends Controller
                 $pointsService = new \App\Services\PointsService();
                 $pointsService->clearCache($client->id);
             }
+
+            // Log activity for partner EOI information update
+            $this->logClientActivity(
+                $client->id,
+                'updated partner EOI information',
+                "Updated partner EOI information for {$partnerClient->first_name} {$partnerClient->last_name}",
+                'activity'
+            );
 
             return response()->json([
                 'success' => true,
@@ -2981,10 +3077,12 @@ class ClientPersonalDetailsController extends Controller
                 ->delete();
 
             // Insert new children records
+            $childrenCount = 0;
             foreach ($children as $childData) {
                 if (!empty($childData['details']) || !empty($childData['relationship_type'])) {
                     $relatedClientId = !empty($childData['child_id']) && $childData['child_id'] != 0 ? $childData['child_id'] : null;
                     $saveExtraFields = !$relatedClientId;
+                    $childrenCount++;
                     
                     // Convert DOB from d/m/Y format to Y-m-d format for database storage
                     $dobFormatted = null;
@@ -3075,6 +3173,14 @@ class ClientPersonalDetailsController extends Controller
                     }
                 }
             }
+
+            // Log activity for children information update
+            $this->logClientActivity(
+                $client->id,
+                'updated children information',
+                "Updated {$childrenCount} children record(s)",
+                'activity'
+            );
 
             return response()->json([
                 'success' => true,
@@ -3444,6 +3550,15 @@ class ClientPersonalDetailsController extends Controller
             $client->related_files = $relatedFilesString;
             $client->save();
 
+            // Log activity for related files update
+            $relatedFilesCount = !empty($relatedFiles) ? count($relatedFiles) : 0;
+            $this->logClientActivity(
+                $client->id,
+                'updated related files',
+                "Updated related files: {$relatedFilesCount} file(s) linked",
+                'activity'
+            );
+
             return response()->json([
                 'success' => true,
                 'message' => 'Related files saved successfully'
@@ -3623,10 +3738,12 @@ class ClientPersonalDetailsController extends Controller
                 ->whereIn('relationship_type', ['Father', 'Mother', 'Step Father', 'Step Mother'])
                 ->delete();
 
+            $parentsCount = 0;
             foreach ($parentsData as $parentData) {
                 if (empty($parentData['relationship_type'])) {
                     continue;
                 }
+                $parentsCount++;
 
                 $saveExtraFields = empty($parentData['details']) || trim($parentData['details']) === '';
                 
@@ -3713,6 +3830,14 @@ class ClientPersonalDetailsController extends Controller
                 }
             }
 
+            // Log activity for parents information update
+            $this->logClientActivity(
+                $client->id,
+                'updated parents information',
+                "Updated {$parentsCount} parent record(s)",
+                'activity'
+            );
+
             return response()->json([
                 'success' => true,
                 'message' => 'Parents information updated successfully'
@@ -3748,10 +3873,12 @@ class ClientPersonalDetailsController extends Controller
                 ->whereIn('relationship_type', ['Brother', 'Sister', 'Step Brother', 'Step Sister'])
                 ->delete();
 
+            $siblingsCount = 0;
             foreach ($siblingsData as $siblingData) {
                 if (empty($siblingData['relationship_type'])) {
                     continue;
                 }
+                $siblingsCount++;
 
                 $saveExtraFields = empty($siblingData['details']) || trim($siblingData['details']) === '';
                 
@@ -3838,6 +3965,14 @@ class ClientPersonalDetailsController extends Controller
                 }
             }
 
+            // Log activity for siblings information update
+            $this->logClientActivity(
+                $client->id,
+                'updated siblings information',
+                "Updated {$siblingsCount} sibling record(s)",
+                'activity'
+            );
+
             return response()->json([
                 'success' => true,
                 'message' => 'Siblings information updated successfully'
@@ -3873,10 +4008,12 @@ class ClientPersonalDetailsController extends Controller
                 ->whereIn('relationship_type', ['Cousin', 'Friend', 'Uncle', 'Aunt', 'Grandchild', 'Granddaughter', 'Grandparent', 'Niece', 'Nephew', 'Grandfather'])
                 ->delete();
 
+            $othersCount = 0;
             foreach ($othersData as $otherData) {
                 if (empty($otherData['relationship_type'])) {
                     continue;
                 }
+                $othersCount++;
 
                 $saveExtraFields = empty($otherData['details']) || trim($otherData['details']) === '';
                 
@@ -3962,6 +4099,14 @@ class ClientPersonalDetailsController extends Controller
                     }
                 }
             }
+
+            // Log activity for others information update
+            $this->logClientActivity(
+                $client->id,
+                'updated other relationships',
+                "Updated {$othersCount} other relationship record(s)",
+                'activity'
+            );
 
             return response()->json([
                 'success' => true,

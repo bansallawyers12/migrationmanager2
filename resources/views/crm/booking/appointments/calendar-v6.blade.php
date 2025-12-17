@@ -4,7 +4,7 @@
 @section('content')
 
 {{-- ✅ Load FullCalendar v6 CSS from reliable CDN --}}
-<link href="https://unpkg.com/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet" />
 
 @vite(['resources/css/fullcalendar-v6.css'])
 

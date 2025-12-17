@@ -12,6 +12,7 @@ use App\Models\ActivitiesLog;
 use App\Models\ApplicationActivitiesLog;
 use App\Models\OnlineForm;
 use App\Models\ClientMatter;
+use App\Traits\LogsClientActivity;
 use Auth;
 use Carbon\Carbon;
 
@@ -25,6 +26,8 @@ use Carbon\Carbon;
 | */
 class ClientNotesController extends Controller
 {
+    use LogsClientActivity;
+
     /**
      * Create a new controller instance.
      *
@@ -44,12 +47,39 @@ class ClientNotesController extends Controller
     public function createnote(Request $request)
     { 
         //dd($request->all());
-        if(isset($request->noteid) && $request->noteid != ''){
+        $isUpdate = isset($request->noteid) && $request->noteid != '';
+        $changedFields = [];
+        $oldNote = null;
+        
+        if($isUpdate){
             $obj = Note::find($request->noteid);
+            $oldNote = $obj->replicate(); // Keep a copy of old values for tracking changes
         }else{
             $obj = new Note;
             $obj->title = $request->title;
             $obj->matter_id = $request->matter_id;
+        }
+
+        // Track changes for updates
+        if($isUpdate && $oldNote) {
+            if($oldNote->title !== $request->title) {
+                $changedFields['Title'] = [
+                    'old' => $oldNote->title,
+                    'new' => $request->title
+                ];
+            }
+            if($oldNote->description !== $request->description) {
+                $changedFields['Description'] = [
+                    'old' => $oldNote->description ? substr(strip_tags($oldNote->description), 0, 50) . '...' : '(empty)',
+                    'new' => $request->description ? substr(strip_tags($request->description), 0, 50) . '...' : '(empty)'
+                ];
+            }
+            if($oldNote->task_group !== $request->task_group) {
+                $changedFields['Note Type'] = [
+                    'old' => $oldNote->task_group ?? 'Uncategorized',
+                    'new' => $request->task_group ?? 'Uncategorized'
+                ];
+            }
         }
 
         $obj->client_id = $request->client_id;
@@ -71,18 +101,70 @@ class ClientNotesController extends Controller
         $saved = $obj->save();
 		if($saved){
             if($request->vtype == 'client'){
-                $subject = 'added a note';
-                if(isset($request->noteid) && $request->noteid != ''){
-                $subject = 'updated a note';
+                // Get note type for enhanced subject line with proper formatting
+                $taskGroup = $request->task_group ?? 'General';
+                $noteTypeFormatted = ucfirst(strtolower($taskGroup));
+                
+                // Get matter reference (like TGV_1)
+                $matterReference = '';
+                if(isset($request->matter_id) && $request->matter_id != "") {
+                    $matter = ClientMatter::find($request->matter_id);
+                    if($matter && $matter->client_unique_matter_no) {
+                        $matterReference = $matter->client_unique_matter_no;
+                    }
                 }
-                $objs = new ActivitiesLog;
-                $objs->client_id = $request->client_id;
-                $objs->created_by = Auth::user()->id;
-                //$objs->mobile_number = $request->mobile_number; // Add this line if needed in the log
-                $objs->description = '<span class="text-semi-bold">'.$request->task_group.'</span><p>'.$request->description.'</p>';
-                $objs->subject = $subject;
-                $objs->task_group = $request->task_group; // Set task_group so manually added notes are classified as "Note" type
-                $objs->save();
+                
+                // If no matter reference found, try to get the latest active matter for this client
+                if(empty($matterReference)) {
+                    $latestMatter = ClientMatter::where('client_id', $request->client_id)
+                        ->where('matter_status', 1)
+                        ->orderBy('id', 'desc')
+                        ->first();
+                    if($latestMatter && $latestMatter->client_unique_matter_no) {
+                        $matterReference = $latestMatter->client_unique_matter_no;
+                    }
+                }
+                
+                // Format subject line with action word
+                if($isUpdate) {
+                    // "updated Call Notes - TGV_1"
+                    $subjectLine = !empty($matterReference) 
+                        ? "updated {$noteTypeFormatted} Notes - {$matterReference}"
+                        : "updated {$noteTypeFormatted} Notes";
+                        
+                    // Enhanced update logging with change tracking
+                    if(!empty($changedFields)) {
+                        $this->logClientActivityWithChanges(
+                            $request->client_id,
+                            $subjectLine,
+                            $changedFields,
+                            'note'
+                        );
+                    } else {
+                        // Remove redundant note type from description
+                        $description = '<p>'.substr(strip_tags($request->description), 0, 150).'...</p>';
+                        $this->logClientActivity(
+                            $request->client_id,
+                            $subjectLine,
+                            $description,
+                            'note'
+                        );
+                    }
+                } else {
+                    // "added Call Notes - TGV_1"
+                    $subjectLine = !empty($matterReference) 
+                        ? "added {$noteTypeFormatted} Notes - {$matterReference}"
+                        : "added {$noteTypeFormatted} Notes";
+                        
+                    // Enhanced create logging - Remove redundant note type from description
+                    $description = '<p>'.substr(strip_tags($request->description), 0, 150).'...</p>';
+                    $this->logClientActivity(
+                        $request->client_id,
+                        $subjectLine,
+                        $description,
+                        'note'
+                    );
+                }
 
                 //Update date in client matter table
                 if( isset($request->matter_id) && $request->matter_id != ""){
@@ -92,7 +174,7 @@ class ClientNotesController extends Controller
                 }
             }
             $response['status'] 	= 	true;
-            if(isset($request->noteid) && $request->noteid != ''){
+            if($isUpdate){
                 $response['message']	=	'You have successfully updated Note';
             }else{
                 $response['message']	=	'You have successfully added Note';
@@ -319,18 +401,24 @@ class ClientNotesController extends Controller
     {
 		$note_id = $request->note_id;
 		if(Note::where('id',$note_id)->exists()){
-			$data = Note::select('client_id','title','description')->where('id',$note_id)->first();
+			$data = Note::select('client_id','title','description','task_group','type')->where('id',$note_id)->first();
 			$res = DB::table('notes')->where('id', @$note_id)->delete();
 			if($res){
-				if($data == 'client'){
-                    $subject = 'deleted a note';
-
-                    $objs = new ActivitiesLog;
-                    $objs->client_id = $data->client_id;
-                    $objs->created_by = Auth::user()->id;
-                    $objs->description = '<span class="text-semi-bold">'.$data->title.'</span><p>'.$data->description.'</p>';
-                    $objs->subject = $subject;
-                    $objs->save();
+				if($data->type == 'client'){
+                    // Enhanced delete logging with note type
+                    $taskGroup = $data->task_group ?? 'General';
+                    $noteTypeFormatted = ucfirst(strtolower($taskGroup));
+                    
+                    // Remove redundant note type from description
+                    $description = '<p>'.substr(strip_tags($data->description), 0, 150).'...</p>';
+                    
+                    // Format as "deleted Call Notes"
+                    $this->logClientActivity(
+                        $data->client_id,
+                        "deleted {$noteTypeFormatted} Notes",
+                        $description,
+                        'note'
+                    );
 				}
 			    $response['status'] 	= 	true;
 			    $response['data']	=	$data;
