@@ -45,7 +45,6 @@
     border-radius: 6px;
     text-decoration: none;
     color: #6c757d;
-    transition: all 0.2s;
     cursor: pointer;
     font-size: 14px;
     font-weight: 500;
@@ -97,7 +96,6 @@
 .progress-bar-fill {
     height: 100%;
     background: linear-gradient(90deg, #6777ef, #47c363);
-    transition: width 0.3s;
     border-radius: 4px;
 }
 
@@ -122,12 +120,6 @@
 
 .form-section.active {
     display: block;
-    animation: fadeIn 0.3s;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
 }
 
 .section-header {
@@ -167,7 +159,6 @@
     border-radius: 6px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -229,7 +220,6 @@
     border-radius: 6px;
     padding: 15px;
     margin-bottom: 15px;
-    transition: all 0.2s;
 }
 
 .repeatable-section:hover {
@@ -248,7 +238,6 @@
     padding: 5px 10px;
     cursor: pointer;
     font-size: 14px;
-    transition: all 0.2s;
 }
 
 .remove-item-btn:hover {
@@ -266,7 +255,6 @@
     border-radius: 6px;
     cursor: pointer;
     font-weight: 500;
-    transition: all 0.2s;
 }
 
 .add-item-btn:hover {
@@ -395,7 +383,6 @@
     font-weight: 600;
     font-size: 16px;
     cursor: pointer;
-    transition: all 0.3s ease;
     box-shadow: 0 4px 20px rgba(0,0,0,0.15);
     min-width: 140px;
     justify-content: center;
@@ -411,7 +398,6 @@
     width: 100%;
     height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-    transition: left 0.5s;
 }
 
 .btn-floating:hover::before {
@@ -461,12 +447,6 @@
 }
 
 .btn-save.loading i {
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
 }
 
 /* Responsive floating buttons */
@@ -494,13 +474,11 @@
 
 /* Hide floating button when form is at bottom */
 .floating-save-container.hidden {
-    transform: translateY(100%);
-    transition: transform 0.3s ease;
+    display: none;
 }
 
 /* Show floating button when scrolling up */
 .floating-save-container.visible {
-    transform: translateY(0);
-    transition: transform 0.3s ease;
+    display: block;
 }
 

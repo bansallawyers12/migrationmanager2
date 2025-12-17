@@ -22,8 +22,6 @@ use GuzzleHttp\Client;
  * 
  * Handles email management including inbox, sent items, email filtering,
  * and AI-powered message enhancement.
- * 
- * Maps to: resources/views/crm/email_handling.blade.php
  */
 class ClientEmailController extends Controller
 {

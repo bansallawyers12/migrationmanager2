@@ -20,7 +20,7 @@
 .card .card-body .profile_upload input{width: 100%;height: 100%;padding: 0px;margin: 0px;position: absolute;top: 0px;left: 0px;opacity: 0;}
 .card .card-body .form-group label span.span_req, .modal .modal-body .form-group label span.span_req{color:#ff0000;}
 .card .card-body .form-group .select2-container, .modal .modal-body .form-group .select2-container{display:block;}
-.card .card-body .form-group .country_input button, .modal .modal-body .form-group .country_input button {font-size: 14px;padding: 10px 15px;height: 42px;background-color: #fdfdff;border: 1px solid #e4e6fc;border-radius: 0.25rem;box-shadow: inset 0 0 0 transparent;transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;padding: 10px;width: 100%;text-align: left;color: #495057;}
+.card .card-body .form-group .country_input button, .modal .modal-body .form-group .country_input button {font-size: 14px;padding: 10px 15px;height: 42px;background-color: #fdfdff;border: 1px solid #e4e6fc;border-radius: 0.25rem;box-shadow: inset 0 0 0 transparent;padding: 10px;width: 100%;text-align: left;color: #495057;}
 .card .card-body .form-group .country_input button>span, .modal .modal-body .form-group .country_input button>span {width: calc(100% - 8px);display: inline-block;}
 .card .card-body .form-group .country_input button:hover, .card .card-body .form-group .country_input button:focus, .modal .modal-body .form-group .country_input button:hover, .modal .modal-body .form-group .country_input button:focus{border: 1px solid #e4e6fc!important;background-color: #fdfdff;}
 .card .card-body .form-group .country_input button span.caret, .modal .modal-body .form-group .country_input button span.caret{float: right;}
@@ -678,13 +678,11 @@ text-overflow: ellipsis;white-space: nowrap;}
 }
 
 .custom_nav_setting ul li a:hover {
-    border-left: 3px solid #667eea;
-    padding-left: 17px;
+    padding-left: 20px;
 }
 
 .custom_nav_setting ul li.active a {
-    border-left: 3px solid #ffffff;
-    padding-left: 17px;
+    padding-left: 20px;
 }
 
 /* Modern AdminConsole Design Improvements */
@@ -712,7 +710,6 @@ text-overflow: ellipsis;white-space: nowrap;}
 }
 
 .card:hover {
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
 }
 
 .card-header {
@@ -779,7 +776,7 @@ text-overflow: ellipsis;white-space: nowrap;}
 }
 
 .table tbody tr:hover {
-    background: linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%);
+    background: #f8f9fa;
 }
 
 .table tbody td {
@@ -797,12 +794,10 @@ text-overflow: ellipsis;white-space: nowrap;}
     border-radius: 8px;
     padding: 10px 20px;
     font-weight: 500;
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
 .btn-primary:hover {
     background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
 }
 
 .dropdown-toggle::after {
