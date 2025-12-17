@@ -12278,13 +12278,9 @@ Bansal Immigration`;
 
                             .data('id', obj.Id)
 
-                            .data('personalchecklistname', opentime)
+                            .data('personalchecklistname', obj.checklist)
 
-                            .append(
-
-                                $('<span>').html(obj.checklist)
-
-                            );
+                            .html(obj.html || '<span style="flex: 1;">' + obj.checklist + '</span>');
 
                         if ($('#grid_'+obj.Id).length) {
 
@@ -12771,13 +12767,9 @@ Bansal Immigration`;
 
                             .data('id', obj.Id)
 
-                            .data('visachecklistname', opentime)
+                            .data('visachecklistname', obj.checklist)
 
-                            .append(
-
-                                $('<span>').html(obj.checklist)
-
-                            );
+                            .html(obj.html || '<span style="flex: 1;">' + obj.checklist + '</span>');
 
                         
 

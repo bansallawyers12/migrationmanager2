@@ -964,10 +964,22 @@ class ClientDocumentsController extends Controller
             $doc = \App\Models\Document::where('id',$id)->first();
             $res = DB::table('documents')->where('id', @$id)->update(['checklist' => $checklist]);
             if($res){
+                // Build complete HTML structure to restore UI state
+                $html = '<span style="flex: 1;">' . htmlspecialchars($checklist) . '</span>';
+                
+                // Only show edit/delete buttons if no file uploaded
+                if (!$doc->file_name) {
+                    $html .= '<div class="checklist-actions" style="display: flex; gap: 5px;">';
+                    $html .= '<a href="javascript:;" class="edit-checklist-btn" data-id="' . $doc->id . '" data-checklist="' . htmlspecialchars($checklist) . '" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;"><i class="fas fa-edit"></i></a>';
+                    $html .= '<a href="javascript:;" class="delete-checklist-btn" data-id="' . $doc->id . '" data-checklist="' . htmlspecialchars($checklist) . '" title="Delete Checklist" style="color: #dc3545; cursor: pointer;"><i class="fas fa-trash"></i></a>';
+                    $html .= '</div>';
+                }
+                
                 $response['status'] = true;
                 $response['data'] = 'Checklist saved successfully';
                 $response['Id'] = $id;
                 $response['checklist'] = $checklist;
+                $response['html'] = $html;
             }else{
                 $response['status'] = false;
                 $response['message'] = 'Please try again';

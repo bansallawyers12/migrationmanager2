@@ -7,7 +7,7 @@
         <div class="section-header">
             <div>
                 <h1 class="mb-0">User Login Analytics</h1>
-                <p class="mb-0 text-muted">Track and analyze user login patterns over time</p>
+                <p class="mb-0 text-secondary" style="font-size: 0.95rem;">Track and analyze user login patterns over time</p>
             </div>
         </div>
 
@@ -17,16 +17,16 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-3">
-                            <label for="user-filter">User</label>
+                            <label for="user-filter" class="font-weight-semibold text-dark">User</label>
                             <select id="user-filter" class="form-control">
                                 <option value="">All Users</option>
-                                @foreach(\App\Models\Admin::where('status', 1)->orderBy('first_name')->get() as $user)
+                                @foreach(\App\Models\Admin::where('status', 1)->where('role', '!=', 7)->orderBy('first_name')->get() as $user)
                                     <option value="{{ $user->id }}">{{ trim($user->first_name . ' ' . $user->last_name) ?: $user->email }}</option>
                                 @endforeach
                             </select>
                         </div>
                         <div class="col-md-2">
-                            <label for="period-filter">Period</label>
+                            <label for="period-filter" class="font-weight-semibold text-dark">Period</label>
                             <select id="period-filter" class="form-control">
                                 <option value="daily">Daily</option>
                                 <option value="weekly">Weekly</option>
@@ -34,7 +34,7 @@
                             </select>
                         </div>
                         <div class="col-md-2">
-                            <label for="date-range-preset">Quick Range</label>
+                            <label for="date-range-preset" class="font-weight-semibold text-dark">Quick Range</label>
                             <select id="date-range-preset" class="form-control">
                                 <option value="7">Last 7 Days</option>
                                 <option value="30" selected>Last 30 Days</option>
@@ -45,11 +45,11 @@
                             </select>
                         </div>
                         <div class="col-md-2">
-                            <label for="start-date">Start Date</label>
+                            <label for="start-date" class="font-weight-semibold text-dark">Start Date</label>
                             <input type="date" id="start-date" class="form-control" value="{{ \Carbon\Carbon::now()->subDays(30)->format('Y-m-d') }}">
                         </div>
                         <div class="col-md-2">
-                            <label for="end-date">End Date</label>
+                            <label for="end-date" class="font-weight-semibold text-dark">End Date</label>
                             <input type="date" id="end-date" class="form-control" value="{{ \Carbon\Carbon::now()->format('Y-m-d') }}">
                         </div>
                         <div class="col-md-1">
