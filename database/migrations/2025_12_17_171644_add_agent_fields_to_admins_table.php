@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -14,6 +15,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Check column existence OUTSIDE the Schema::table closure
+        $hasIsMigrationAgent = Schema::hasColumn('admins', 'is_migration_agent');
+        $hasMarnNumber = Schema::hasColumn('admins', 'marn_number');
+        
         Schema::table('admins', function (Blueprint $table) {
             // Check and add only missing columns
             
@@ -32,21 +37,36 @@ return new class extends Migration
             if (!Schema::hasColumn('admins', 'tax_number')) {
                 $table->string('tax_number')->nullable()->after('business_fax');
             }
-            
-            // Add indexes if they don't exist
-            if (!Schema::hasColumn('admins', 'is_migration_agent') || !$this->indexExists('admins', 'admins_is_migration_agent_index')) {
-                $table->index('is_migration_agent');
-            }
-            
-            if (!Schema::hasColumn('admins', 'marn_number') || !$this->indexExists('admins', 'admins_marn_number_index')) {
-                $table->index('marn_number');
-            }
         });
+        
+        // Add indexes separately, outside the Schema::table closure
+        // Only create indexes if the columns actually exist
+        if ($hasIsMigrationAgent && !$this->indexExists('admins', 'admins_is_migration_agent_index')) {
+            Schema::table('admins', function (Blueprint $table) {
+                $table->index('is_migration_agent');
+            });
+        }
+        
+        if ($hasMarnNumber && !$this->indexExists('admins', 'admins_marn_number_index')) {
+            Schema::table('admins', function (Blueprint $table) {
+                $table->index('marn_number');
+            });
+        }
         
         echo "\n✅ Migration completed successfully!\n";
         echo "   - Added missing migration agent fields to admins table\n";
         echo "   - business_address, business_phone, business_email, tax_number\n";
-        echo "   - Using existing: is_migration_agent, marn_number, legal_practitioner_number, etc.\n\n";
+        if ($hasIsMigrationAgent) {
+            echo "   - Index created on is_migration_agent\n";
+        } else {
+            echo "   - Note: is_migration_agent column does not exist, skipping index\n";
+        }
+        if ($hasMarnNumber) {
+            echo "   - Index created on marn_number\n";
+        } else {
+            echo "   - Note: marn_number column does not exist, skipping index\n";
+        }
+        echo "\n";
     }
 
     /**
