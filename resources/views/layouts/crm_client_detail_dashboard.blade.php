@@ -1494,9 +1494,6 @@
                         </div>
                         <div class="teams-notification-body">
                             <div class="teams-notification-sender">
-                                <div class="teams-notification-avatar">
-                                    ${notification.sender_avatar}
-                                </div>
                                 <div class="teams-notification-sender-info">
                                     <div class="teams-notification-sender-name">${notification.sender_name}</div>
                                     <div class="teams-notification-message">${notification.message}</div>
@@ -1520,6 +1517,18 @@
                 `;
                 
                 $('#teamsNotificationContainer').append(notificationHtml);
+                
+                // Play notification sound
+                try {
+                    var audioPlayer = document.getElementById('player');
+                    if (audioPlayer) {
+                        audioPlayer.play().catch(function(error) {
+                            console.log('Could not play notification sound:', error);
+                        });
+                    }
+                } catch (error) {
+                    console.log('Error playing notification sound:', error);
+                }
                 
                 // Show the notification with animation
                 setTimeout(function() {

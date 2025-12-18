@@ -466,6 +466,46 @@
             box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
         }
         
+        /* Fix Select2 text truncation in sidebar matter dropdown */
+        .sidebar-matter-selection .select2-container {
+            width: 100% !important;
+        }
+        
+        .sidebar-matter-selection .select2-container--default .select2-selection--single {
+            height: auto !important;
+            min-height: 38px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+        }
+        
+        .sidebar-matter-selection .select2-container--default .select2-selection--single .select2-selection__rendered {
+            white-space: nowrap !important;
+            overflow: visible !important;
+            text-overflow: clip !important;
+            max-width: none !important;
+            padding-right: 30px !important;
+            line-height: 1.4 !important;
+            padding-top: 6px !important;
+            padding-bottom: 6px !important;
+            display: block !important;
+        }
+        
+        .sidebar-matter-selection .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 36px;
+            right: 8px;
+        }
+        
+        /* Ensure the dropdown container doesn't constrain width */
+        .sidebar-matter-selection {
+            min-width: 0;
+            overflow: visible;
+        }
+        
+        /* Allow the Select2 container to expand if needed */
+        .sidebar-matter-selection .select2-container--default {
+            max-width: 100%;
+        }
+        
         /* Application Status Badge */
         .application-status-badge {
             display: inline-block;
@@ -2420,9 +2460,6 @@
                     </div>
                     <div class="teams-notification-body">
                         <div class="teams-notification-sender">
-                            <div class="teams-notification-avatar">
-                                ${notification.sender_avatar}
-                            </div>
                             <div class="teams-notification-sender-info">
                                 <div class="teams-notification-sender-name">${notification.sender_name}</div>
                                 <div class="teams-notification-message">${notification.message}</div>
@@ -2446,6 +2483,18 @@
             `;
             
             $('#teamsNotificationContainer').append(notificationHtml);
+            
+            // Play notification sound
+            try {
+                var audioPlayer = document.getElementById('player');
+                if (audioPlayer) {
+                    audioPlayer.play().catch(function(error) {
+                        console.log('Could not play notification sound:', error);
+                    });
+                }
+            } catch (error) {
+                console.log('Error playing notification sound:', error);
+            }
             
             // Show the notification with animation
             setTimeout(function() {

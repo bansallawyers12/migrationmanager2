@@ -2971,6 +2971,39 @@ $(document).ready(function() {
 
 
 
+        // If switching to Create Cost Assignment subtab, load agent details
+
+        if (subtabId === 'createcostform') {
+
+            $('#cost_assignment_client_id').val(window.ClientDetailConfig.clientId);
+
+            var hidden_client_matter_id_assignment = $('#sel_matter_id_client_detail').val();
+
+            $('#cost_assignment_client_matter_id').val(hidden_client_matter_id_assignment);
+
+            if (window.ClientDetailConfig.clientId && hidden_client_matter_id_assignment) {
+
+                // Use a small delay to ensure function is available, then load agent details
+                setTimeout(function() {
+                    // Use window function if available
+                    if (typeof window.getCostAssignmentMigrationAgentDetail === 'function') {
+                        window.getCostAssignmentMigrationAgentDetail(window.ClientDetailConfig.clientId, hidden_client_matter_id_assignment);
+                    } else {
+                        // Fallback: try to call it directly (in case it's in the same scope)
+                        if (typeof getCostAssignmentMigrationAgentDetail === 'function') {
+                            getCostAssignmentMigrationAgentDetail(window.ClientDetailConfig.clientId, hidden_client_matter_id_assignment);
+                        } else {
+                            console.error('getCostAssignmentMigrationAgentDetail function not found. Please refresh the page.');
+                        }
+                    }
+                }, 100);
+
+            }
+
+        }
+
+
+
         if ($('.general_matter_checkbox_client_detail').is(':checked')) {
 
             var selectedMatter = $('.general_matter_checkbox_client_detail').val();
@@ -3010,6 +3043,32 @@ $(document).ready(function() {
         }
 
 
+
+        if( subtabId == 'clientagreement') {
+
+            if(selectedMatter != "" ) {
+
+                $('#clientagreement-subtab #form-list2').find('.form-card').each(function() {
+
+                    if ($(this).data('matterid') == selectedMatter) {
+
+                        $(this).show();
+
+                    } else {
+
+                        $(this).hide();
+
+                    }
+
+                });
+
+            }  else {
+
+                $(this).hide();
+
+            }
+
+        }
 
         if( subtabId == 'costform') {
 
@@ -7445,11 +7504,39 @@ Bansal Immigration`;
 
             $('#cost_assignment_client_matter_id').val(hidden_client_matter_id_assignment);
 
-            getCostAssignmentMigrationAgentDetail(window.ClientDetailConfig.clientId, hidden_client_matter_id_assignment);
+            // Switch to Create Cost Assignment subtab
+            $('.subtab3-button').removeClass('active');
+            $('.subtab3-pane').removeClass('active');
+            $('.subtab3-button[data-subtab="createcostform"]').addClass('active');
+            $('#createcostform-subtab').addClass('active');
 
-            $('#costAssignmentCreateFormModel').modal('show');
+            // Load agent details
+            // Use window function if available
+            if (typeof window.getCostAssignmentMigrationAgentDetail === 'function') {
+                window.getCostAssignmentMigrationAgentDetail(window.ClientDetailConfig.clientId, hidden_client_matter_id_assignment);
+            } else {
+                // Fallback: try to call it directly (in case it's in the same scope)
+                if (typeof getCostAssignmentMigrationAgentDetail === 'function') {
+                    getCostAssignmentMigrationAgentDetail(window.ClientDetailConfig.clientId, hidden_client_matter_id_assignment);
+                } else {
+                    console.error('getCostAssignmentMigrationAgentDetail function not found. Please refresh the page.');
+                }
+            }
 
         });
+
+
+
+        // Helper function to switch back to Cost Assignment list
+        function switchToCostAssignmentList() {
+            $('.subtab3-button').removeClass('active');
+            $('.subtab3-pane').removeClass('active');
+            $('.subtab3-button[data-subtab="costform"]').addClass('active');
+            $('#costform-subtab').addClass('active');
+        }
+
+        // Make function available globally
+        window.switchToCostAssignmentList = switchToCostAssignmentList;
 
 
 
@@ -7621,6 +7708,9 @@ Bansal Immigration`;
 
         }
 
+        // Make function available globally for subtab handlers
+        window.getCostAssignmentMigrationAgentDetail = getCostAssignmentMigrationAgentDetail;
+
 
 
         // Handle form submission via AJAX
@@ -7647,9 +7737,11 @@ Bansal Immigration`;
 
                     if (obj.status) {
 
-                        // Hide the modal
-
-                        $('#costAssignmentCreateFormModel').modal('hide');
+                        // Switch back to Cost Assignment list subtab
+                        $('.subtab3-button').removeClass('active');
+                        $('.subtab3-pane').removeClass('active');
+                        $('.subtab3-button[data-subtab="costform"]').addClass('active');
+                        $('#costform-subtab').addClass('active');
 
                         localStorage.setItem('activeTab', 'formgenerations');
 
@@ -7719,9 +7811,11 @@ Bansal Immigration`;
 
                     if (obj.status) {
 
-                        // Hide the modal
-
-                        $('#costAssignmentCreateFormModel').modal('hide');
+                        // Switch back to Cost Assignment list subtab
+                        $('.subtab3-button').removeClass('active');
+                        $('.subtab3-pane').removeClass('active');
+                        $('.subtab3-button[data-subtab="costform"]').addClass('active');
+                        $('#costform-subtab').addClass('active');
 
                         localStorage.setItem('activeTab', 'formgenerations');
 

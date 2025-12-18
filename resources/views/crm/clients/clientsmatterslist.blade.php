@@ -863,21 +863,20 @@ jQuery(document).ready(function($){
             success: function(response) {
                 if(response.success) {
                     // Show success message
-                    swal({
-                        title: "Success!",
-                        text: response.message,
-                        icon: "success",
-                        button: "OK",
-                    }).then(function() {
-                        // Reload page to show updated office
-                        location.reload();
+                    iziToast.success({
+                        title: 'Success!',
+                        message: response.message,
+                        position: 'topRight'
                     });
+                    // Reload page to show updated office after a short delay
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1500);
                 } else {
-                    swal({
-                        title: "Error!",
-                        text: response.message || 'Failed to update office',
-                        icon: "error",
-                        button: "OK",
+                    iziToast.error({
+                        title: 'Error!',
+                        message: response.message || 'Failed to update office',
+                        position: 'topRight'
                     });
                     submitBtn.prop('disabled', false).html(originalText);
                 }
@@ -887,11 +886,10 @@ jQuery(document).ready(function($){
                 if(xhr.responseJSON && xhr.responseJSON.message) {
                     errorMsg = xhr.responseJSON.message;
                 }
-                swal({
-                    title: "Error!",
-                    text: errorMsg,
-                    icon: "error",
-                    button: "OK",
+                iziToast.error({
+                    title: 'Error!',
+                    message: errorMsg,
+                    position: 'topRight'
                 });
                 submitBtn.prop('disabled', false).html(originalText);
             }
