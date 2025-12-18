@@ -6,101 +6,83 @@
     <title>Email Export - {{ $email->subject ?: 'No Subject' }}</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: Arial, Helvetica, sans-serif;
             line-height: 1.6;
-            color: #333;
+            color: #1a1a1a;
             margin: 0;
             padding: 20px;
+            background-color: #f5f5f5;
         }
-        
         .header {
-            border-bottom: 2px solid #007bff;
+            border-bottom: 2px solid #2563eb;
             padding-bottom: 20px;
             margin-bottom: 30px;
         }
-        
         .subject {
             font-size: 24px;
             font-weight: bold;
-            color: #007bff;
+            color: #1a1a1a;
             margin-bottom: 10px;
         }
-        
         .meta-info {
-            display: table;
-            width: 100%;
             margin-bottom: 20px;
         }
-        
         .meta-row {
-            display: table-row;
+            margin: 8px 0;
         }
-        
         .meta-label {
-            display: table-cell;
             font-weight: bold;
+            display: inline-block;
             width: 100px;
-            padding: 5px 0;
+            color: #1a1a1a;
         }
-        
         .meta-value {
-            display: table-cell;
-            padding: 5px 0;
+            color: #1a1a1a;
         }
-        
         .content {
             margin-bottom: 30px;
         }
-        
         .content-title {
             font-size: 18px;
             font-weight: bold;
             margin-bottom: 15px;
-            color: #333;
+            color: #1a1a1a;
         }
-        
         .email-body {
-            background: #f9f9f9;
+            background-color: #f8f9fa;
             padding: 20px;
-            border-radius: 5px;
-            white-space: pre-wrap;
+            border: 1px solid #e0e0e0;
         }
-        
         .attachments {
             margin-top: 30px;
         }
-        
         .attachments-title {
             font-size: 18px;
             font-weight: bold;
             margin-bottom: 15px;
-            color: #333;
+            color: #1a1a1a;
         }
-        
         .attachment-item {
-            background: #f5f5f5;
-            padding: 10px;
+            background-color: #f8f9fa;
+            padding: 15px;
             margin-bottom: 10px;
-            border-radius: 3px;
-            border-left: 4px solid #007bff;
+            border-left: 4px solid #2563eb;
         }
-        
         .attachment-name {
             font-weight: bold;
             margin-bottom: 5px;
+            color: #1a1a1a;
         }
-        
         .attachment-details {
             font-size: 12px;
-            color: #666;
+            color: #1a1a1a;
         }
-        
         .footer {
             margin-top: 40px;
             padding-top: 20px;
-            border-top: 1px solid #ddd;
+            border-top: 1px solid #e0e0e0;
             font-size: 12px;
-            color: #666;
+            color: #1a1a1a;
             text-align: center;
         }
     </style>
@@ -110,21 +92,21 @@
         <div class="subject">{{ $email->subject ?: 'No Subject' }}</div>
         <div class="meta-info">
             <div class="meta-row">
-                <div class="meta-label">From:</div>
-                <div class="meta-value">{{ $email->sender_name ?: 'Unknown' }} &lt;{{ $email->sender_email ?: 'unknown@email.com' }}&gt;</div>
+                <span class="meta-label">From:</span>
+                <span class="meta-value">{{ $email->sender_name ?: 'Unknown' }} &lt;{{ $email->sender_email ?: 'unknown@email.com' }}&gt;</span>
             </div>
             <div class="meta-row">
-                <div class="meta-label">To:</div>
-                <div class="meta-value">{{ $email->recipients ? implode(', ', $email->recipients) : 'No recipients' }}</div>
+                <span class="meta-label">To:</span>
+                <span class="meta-value">{{ $email->recipients ? implode(', ', $email->recipients) : 'No recipients' }}</span>
             </div>
             <div class="meta-row">
-                <div class="meta-label">Date:</div>
-                <div class="meta-value">{{ $email->sent_date ? $email->sent_date->format('F j, Y \a\t g:i A') : 'Unknown date' }}</div>
+                <span class="meta-label">Date:</span>
+                <span class="meta-value">{{ $email->sent_date ? $email->sent_date->format('F j, Y \a\t g:i A') : 'Unknown date' }}</span>
             </div>
             @if($email->message_id)
             <div class="meta-row">
-                <div class="meta-label">Message ID:</div>
-                <div class="meta-value">{{ $email->message_id }}</div>
+                <span class="meta-label">Message ID:</span>
+                <span class="meta-value">{{ $email->message_id }}</span>
             </div>
             @endif
         </div>

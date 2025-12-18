@@ -141,7 +141,7 @@
 				margin: 0 0 12px 0;
 				font-size: 14px;
 				line-height: 1.7;
-				color: #555;
+				color: #1a1a1a;
 			}
 			.payment-instructions p:last-child {
 				margin-bottom: 0;
@@ -272,7 +272,7 @@
                     <tr>
                         <td colspan="2">
                             <div style="text-align: right; padding: 15px; background: #f0f8ff; border-radius: 6px; margin-top: 10px;">
-                                <div style="font-size: 13px; color: #555; margin-bottom: 3px;">Total Amount Received</div>
+                                <div style="font-size: 13px; color: #1a1a1a; margin-bottom: 3px;">Total Amount Received</div>
                                 <div style="font-size: 20px; font-weight: 700; color: #2e7d32;">
                                     ${{number_format($record_get->deposit_amount,2)}}
                                 </div>

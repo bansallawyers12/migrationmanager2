@@ -159,6 +159,9 @@ Route::post('/documents/add-personal-category', [ClientDocumentsController::clas
 Route::post('/documents/update-personal-category', [ClientDocumentsController::class, 'updatePersonalDocCategory'])->name('clients.documents.updatePersonalDocCategory');
 Route::post('/documents/add-visa-category', [ClientDocumentsController::class, 'addVisaDocCategory'])->name('clients.documents.addVisaDocCategory');
 Route::post('/documents/update-visa-category', [ClientDocumentsController::class, 'updateVisaDocCategory'])->name('clients.documents.updateVisaDocCategory');
+Route::post('/documents/get-auto-checklist-matches', [ClientDocumentsController::class, 'getAutoChecklistMatches'])->name('clients.documents.getAutoChecklistMatches');
+Route::post('/documents/bulk-upload-personal', [ClientDocumentsController::class, 'bulkUploadPersonalDocuments'])->name('clients.documents.bulkUploadPersonalDocuments');
+Route::post('/documents/bulk-upload-visa', [ClientDocumentsController::class, 'bulkUploadVisaDocuments'])->name('clients.documents.bulkUploadVisaDocuments');
 
 /*---------- Client EOI/ROI Management ----------*/
 Route::prefix('clients/{client}/eoi-roi')->name('clients.eoi-roi.')->group(function () {

@@ -174,6 +174,46 @@
             background-color: #757575;
         }
         
+        /* Tabs Styles */
+        .signature-tabs {
+            display: flex;
+            border-bottom: 2px solid #eee;
+            margin-bottom: 20px;
+        }
+        
+        .signature-tab {
+            flex: 1;
+            padding: 12px 20px;
+            text-align: center;
+            cursor: pointer;
+            background-color: #f5f5f5;
+            border: none;
+            border-bottom: 3px solid transparent;
+            font-size: 14px;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s;
+        }
+        
+        .signature-tab:hover {
+            background-color: #e8e8e8;
+            color: #333;
+        }
+        
+        .signature-tab.active {
+            background-color: white;
+            color: #4CAF50;
+            border-bottom-color: #4CAF50;
+        }
+        
+        .signature-tab-content {
+            display: none;
+        }
+        
+        .signature-tab-content.active {
+            display: block;
+        }
+        
         .signature-instructions {
             text-align: center;
             color: #666;
@@ -181,16 +221,67 @@
             font-size: 14px;
         }
 
+        /* Type Signature Styles */
         .fallback-signature {
             width: 100%;
-            height: 200px;
-            border: 1px solid #ccc;
+            min-height: 150px;
+            padding: 15px;
+            border: 2px solid #ccc;
             border-radius: 4px;
-            background-color: white;
-            font-family: cursive;
-            font-size: 18px;
-            padding: 10px;
-            resize: none;
+            font-size: 24px;
+            font-family: 'Brush Script MT', 'Lucida Handwriting', cursive, sans-serif;
+            resize: vertical;
+            text-align: center;
+            display: block !important;
+        }
+        
+        .fallback-signature:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        
+        /* Ensure textarea is visible when type tab is active */
+        .signature-tab-content.active .fallback-signature {
+            display: block !important;
+        }
+        
+        /* Upload Signature Styles */
+        .upload-signature-container {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .upload-signature-input {
+            display: none;
+        }
+        
+        .upload-signature-label {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #2196F3;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        
+        .upload-signature-label:hover {
+            background-color: #1976D2;
+        }
+        
+        .upload-signature-preview {
+            margin-top: 20px;
+            max-width: 100%;
+            max-height: 200px;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .upload-signature-preview.active {
+            display: block;
+            margin: 20px auto;
         }
     </style>
 </head>
@@ -386,24 +477,56 @@
                 <span class="close" onclick="closeSignatureModal()">&times;</span>
             </div>
             
-            <div class="signature-instructions">
-                Use your mouse, touch, or stylus to draw your signature below
+            <!-- Tabs -->
+            <div class="signature-tabs">
+                <button class="signature-tab active" onclick="switchSignatureTab('draw', this)">Draw</button>
+                <button class="signature-tab" onclick="switchSignatureTab('type', this)">Type</button>
+                <button class="signature-tab" onclick="switchSignatureTab('upload', this)">Upload</button>
             </div>
             
-            <div class="signature-canvas-container">
-                <canvas
-                    id="signature-pad"
-                    class="signature-pad"
-                    width="450"
-                    height="250"
-                    style="max-width: 100%; width: 100%;"
-                ></canvas>
-                <textarea
-                    id="fallback-signature"
-                    class="fallback-signature"
-                    placeholder="Type your signature here if drawing doesn't work..."
-                    style="display: none;"
-                ></textarea>
+            <!-- Draw Tab Content -->
+            <div id="draw-tab" class="signature-tab-content active">
+                <div class="signature-instructions">
+                    Use your mouse, touch, or stylus to draw your signature below
+                </div>
+                
+                <div class="signature-canvas-container">
+                    <canvas
+                        id="signature-pad"
+                        class="signature-pad"
+                        width="450"
+                        height="250"
+                        style="max-width: 100%; width: 100%;"
+                    ></canvas>
+                </div>
+            </div>
+            
+            <!-- Type Tab Content -->
+            <div id="type-tab" class="signature-tab-content">
+                <div class="signature-instructions">
+                    Type your signature in the box below
+                </div>
+                
+                <div class="signature-canvas-container">
+                    <textarea
+                        id="fallback-signature"
+                        class="fallback-signature"
+                        placeholder="Type your signature here..."
+                    ></textarea>
+                </div>
+            </div>
+            
+            <!-- Upload Tab Content -->
+            <div id="upload-tab" class="signature-tab-content">
+                <div class="signature-instructions">
+                    Upload an image of your signature (PNG, JPG, or SVG)
+                </div>
+                
+                <div class="upload-signature-container">
+                    <input type="file" id="upload-signature-input" class="upload-signature-input" accept="image/png,image/jpeg,image/jpg,image/svg+xml" onchange="handleSignatureUpload(event)">
+                    <label for="upload-signature-input" class="upload-signature-label">Choose Image</label>
+                    <img id="upload-signature-preview" class="upload-signature-preview" alt="Signature preview">
+                </div>
             </div>
             
             <div class="signature-controls">
@@ -626,6 +749,8 @@
         let savedSignatures = {};
         let useFallback = false;
         let userSavedSignatureData = null; // Store user's signature for reuse
+        let currentSignatureMode = 'draw'; // 'draw', 'type', or 'upload'
+        let uploadedSignatureData = null; // Store uploaded signature image data
         let signingFieldOrder = [];
         let totalRequiredFields = 0;
 
@@ -703,8 +828,8 @@
             }
             
             // Delay pad creation until modal is opened so sizing works
-            const fallbackTextarea = document.getElementById('fallback-signature');
-            if (fallbackTextarea) fallbackTextarea.style.display = 'none';
+            // Don't hide fallback textarea - it's now in a tab and will be shown/hidden by tab switching
+            // The textarea visibility is controlled by the tab content display
 
             // Build guided signing sequence and progress
             signingFieldOrder = Array.from(document.querySelectorAll('.signature-field')).map(el => ({
@@ -730,9 +855,112 @@
             formSubmitBtn && formSubmitBtn.addEventListener('click', finishSigning);
         });
 
+        // Tab switching function
+        function switchSignatureTab(mode, buttonElement) {
+            currentSignatureMode = mode;
+            
+            // Update tab buttons
+            document.querySelectorAll('.signature-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            if (buttonElement) {
+                buttonElement.classList.add('active');
+            }
+            
+            // Update tab content
+            document.querySelectorAll('.signature-tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            if (mode === 'draw') {
+                document.getElementById('draw-tab').classList.add('active');
+                // Initialize signature pad if not already done
+                if (!signaturePad && !useFallback) {
+                    requestAnimationFrame(() => {
+                        const canvas = document.getElementById('signature-pad');
+                        if (canvas) {
+                            setupHiDPICanvas(canvas);
+                            signaturePad = createSignaturePad(canvas);
+                        }
+                    });
+                }
+            } else if (mode === 'type') {
+                document.getElementById('type-tab').classList.add('active');
+                // Ensure textarea is visible - remove any inline display styles
+                const fallbackTextarea = document.getElementById('fallback-signature');
+                if (fallbackTextarea) {
+                    fallbackTextarea.style.display = '';
+                    fallbackTextarea.style.visibility = 'visible';
+                }
+            } else if (mode === 'upload') {
+                document.getElementById('upload-tab').classList.add('active');
+            }
+        }
+        
+        // Handle signature file upload
+        function handleSignatureUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // Validate file type
+            const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml'];
+            if (!validTypes.includes(file.type)) {
+                alert('Please upload a valid image file (PNG, JPG, or SVG)');
+                event.target.value = '';
+                return;
+            }
+            
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('File size must be less than 5MB');
+                event.target.value = '';
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                uploadedSignatureData = e.target.result;
+                const preview = document.getElementById('upload-signature-preview');
+                if (preview) {
+                    preview.src = uploadedSignatureData;
+                    preview.classList.add('active');
+                }
+            };
+            reader.onerror = function() {
+                alert('Error reading file. Please try again.');
+                event.target.value = '';
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        // Make functions globally accessible
+        window.switchSignatureTab = switchSignatureTab;
+        window.handleSignatureUpload = handleSignatureUpload;
+
         function activateSignatureField(fieldId, page) {
             currentActiveField = fieldId;
             currentActivePage = page;
+
+            // Reset to draw mode
+            currentSignatureMode = 'draw';
+            
+            // Reset tabs
+            document.querySelectorAll('.signature-tab').forEach((tab, index) => {
+                if (index === 0) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+            
+            // Reset tab content
+            document.querySelectorAll('.signature-tab-content').forEach((content, index) => {
+                if (index === 0) {
+                    content.classList.add('active');
+                } else {
+                    content.classList.remove('active');
+                }
+            });
 
             // Show the modal
             const modal = document.getElementById('signature-modal');
@@ -761,9 +989,26 @@
                 }
             } else if (signaturePad) {
                 signaturePad.clear();
-            } else if (useFallback) {
-                // Clear fallback textarea
-                document.getElementById('fallback-signature').value = '';
+            }
+            
+            // Clear type signature
+            const fallbackTextarea = document.getElementById('fallback-signature');
+            if (fallbackTextarea) {
+                fallbackTextarea.value = '';
+                // Remove any inline display styles so tab visibility works
+                fallbackTextarea.style.display = '';
+            }
+            
+            // Clear upload signature
+            uploadedSignatureData = null;
+            const uploadInput = document.getElementById('upload-signature-input');
+            if (uploadInput) {
+                uploadInput.value = '';
+            }
+            const preview = document.getElementById('upload-signature-preview');
+            if (preview) {
+                preview.src = '';
+                preview.classList.remove('active');
             }
 
             // Update debug info if visible
@@ -776,44 +1021,91 @@
             const modal = document.getElementById('signature-modal');
             modal.style.display = 'none';
             
-            // Clear the signature pad
-            if (signaturePad) {
+            // Clear based on current mode
+            if (currentSignatureMode === 'draw' && signaturePad) {
                 signaturePad.clear();
-            } else if (useFallback) {
-                document.getElementById('fallback-signature').value = '';
+            } else if (currentSignatureMode === 'type') {
+                const fallbackTextarea = document.getElementById('fallback-signature');
+                if (fallbackTextarea) {
+                    fallbackTextarea.value = '';
+                }
+            } else if (currentSignatureMode === 'upload') {
+                uploadedSignatureData = null;
+                const uploadInput = document.getElementById('upload-signature-input');
+                if (uploadInput) {
+                    uploadInput.value = '';
+                }
+                const preview = document.getElementById('upload-signature-preview');
+                if (preview) {
+                    preview.src = '';
+                    preview.classList.remove('active');
+                }
             }
         }
 
         function clearSignature() {
-            if (signaturePad) {
+            if (currentSignatureMode === 'draw' && signaturePad) {
                 signaturePad.clear();
-            } else if (useFallback) {
-                document.getElementById('fallback-signature').value = '';
+            } else if (currentSignatureMode === 'type') {
+                const fallbackTextarea = document.getElementById('fallback-signature');
+                if (fallbackTextarea) {
+                    fallbackTextarea.value = '';
+                }
+            } else if (currentSignatureMode === 'upload') {
+                uploadedSignatureData = null;
+                const uploadInput = document.getElementById('upload-signature-input');
+                if (uploadInput) {
+                    uploadInput.value = '';
+                }
+                const preview = document.getElementById('upload-signature-preview');
+                if (preview) {
+                    preview.src = '';
+                    preview.classList.remove('active');
+                }
             }
         }
 
         function saveSignature() {
             let signatureData = '';
-            if (signaturePad && !signaturePad.isEmpty()) {
-                signatureData = signaturePad.toDataURL('image/png');
-            } else if (useFallback) {
+            
+            if (currentSignatureMode === 'draw') {
+                if (signaturePad && !signaturePad.isEmpty()) {
+                    signatureData = signaturePad.toDataURL('image/png');
+                } else {
+                    alert('Please draw a signature first.');
+                    return;
+                }
+            } else if (currentSignatureMode === 'type') {
                 const fallbackText = document.getElementById('fallback-signature').value.trim();
                 if (fallbackText) {
                     const canvas = document.createElement('canvas');
+                    // Keep original canvas size
                     canvas.width = 400;
-                    canvas.height = 200; // Increase height for better rendering
+                    canvas.height = 200;
                     const ctx = canvas.getContext('2d');
-                    ctx.clearRect(0, 0, canvas.width, canvas.height); // Ensure transparent
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
                     ctx.fillStyle = 'black';
-                    ctx.font = '40px cursive'; // Smaller font to avoid blocky
+                    // Increased font size to 110px for much bigger signature
+                    ctx.font = '110px "Brush Script MT", "Lucida Handwriting", cursive, sans-serif';
                     ctx.textBaseline = 'middle';
                     ctx.textAlign = 'center';
                     ctx.fillText(fallbackText, canvas.width / 2, canvas.height / 2);
                     signatureData = canvas.toDataURL('image/png');
+                } else {
+                    alert('Please type your signature first.');
+                    return;
+                }
+            } else if (currentSignatureMode === 'upload') {
+                if (uploadedSignatureData) {
+                    signatureData = uploadedSignatureData;
+                } else {
+                    alert('Please upload a signature image first.');
+                    return;
                 }
             }
+            
             if (!signatureData) {
-                alert('Please draw or type a signature first.');
+                alert('Please provide a signature first.');
                 return;
             }
             // Save the user's signature for reuse

@@ -104,9 +104,30 @@
                                     <div class="checklist-table-container" style="vertical-align: top; margin-top: 10px; width: 760px;">
                                         <div class="subtab6-header" style="margin-left: 10px;">
                                             <h3><i class="fas fa-file-alt"></i> <?= htmlspecialchars($catVal->title) ?> Documents</h3>
-                                            <button type="button" class="btn add-checklist-btn add_migration_doc" data-type="visa" data-categoryid="<?= $id ?>">
-                                                <i class="fas fa-plus"></i> Add Checklist
-                                            </button>
+                                            <div style="display: flex; gap: 10px;">
+                                                <button type="button" class="btn add-checklist-btn add_migration_doc" data-type="visa" data-categoryid="<?= $id ?>">
+                                                    <i class="fas fa-plus"></i> Add Checklist
+                                                </button>
+                                                <button type="button" class="btn btn-info bulk-upload-toggle-btn-visa" data-categoryid="<?= $id ?>" data-categoryname="<?= htmlspecialchars($catVal->title) ?>" data-matterid="<?= $client_selected_matter_id1 ?? '' ?>">
+                                                    <i class="fas fa-upload"></i> Bulk Upload
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Bulk Upload Dropzone for Visa (Hidden by default) -->
+                                        <div class="bulk-upload-dropzone-container-visa" id="bulk-upload-visa-<?= $id ?>" style="display: none; margin: 15px 0; padding: 20px; border: 2px dashed #4a90e2; border-radius: 8px; background-color: #f8f9fa;">
+                                            <div class="bulk-upload-dropzone-visa" data-categoryid="<?= $id ?>" data-matterid="<?= $client_selected_matter_id1 ?? '' ?>" style="text-align: center; padding: 30px; cursor: pointer;">
+                                                <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: #4a90e2; margin-bottom: 15px;"></i>
+                                                <p style="font-size: 16px; color: #666; margin-bottom: 10px;">
+                                                    <strong>Drag and drop files here</strong> or <strong>click to browse</strong>
+                                                </p>
+                                                <p style="font-size: 14px; color: #999;">You can select multiple files at once</p>
+                                                <input type="file" class="bulk-upload-file-input-visa" data-categoryid="<?= $id ?>" data-matterid="<?= $client_selected_matter_id1 ?? '' ?>" multiple style="display: none;" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                                            </div>
+                                            <div class="bulk-upload-file-list-visa" style="display: none; margin-top: 20px;">
+                                                <h5 style="margin-bottom: 15px;">Files Selected: <span class="file-count-visa">0</span></h5>
+                                                <div class="bulk-upload-files-container-visa"></div>
+                                            </div>
                                         </div>
                                         <table class="checklist-table">
                                             <thead>
@@ -579,6 +600,457 @@
                     setTimeout(function() {
                         initVisaDocDragDrop();
                     }, 500);
+                }
+                
+                // ============================================================================
+                // VISA BULK UPLOAD FUNCTIONALITY
+                // ============================================================================
+                
+                let bulkUploadVisaFiles = {};
+                let currentVisaCategoryId = null;
+                let currentVisaMatterId = <?= $client_selected_matter_id1 ?? 'null' ?>;
+                let currentVisaClientId = <?= $fetchedData->id ?>;
+                
+                // Toggle bulk upload dropzone for visa
+                $(document).on('click', '.bulk-upload-toggle-btn-visa', function() {
+                    const categoryId = $(this).data('categoryid');
+                    const matterId = $(this).data('matterid');
+                    const dropzoneContainer = $('#bulk-upload-visa-' + categoryId);
+                    
+                    // Hide all other dropzones first
+                    $('.bulk-upload-dropzone-container-visa').not('#bulk-upload-visa-' + categoryId).slideUp();
+                    $('.bulk-upload-toggle-btn-visa').not(this).html('<i class="fas fa-upload"></i> Bulk Upload');
+                    
+                    if (dropzoneContainer.is(':visible')) {
+                        dropzoneContainer.slideUp();
+                        $(this).html('<i class="fas fa-upload"></i> Bulk Upload');
+                        // Clear files if closing
+                        bulkUploadVisaFiles[categoryId] = [];
+                        dropzoneContainer.find('.bulk-upload-file-list-visa').hide();
+                        dropzoneContainer.find('.bulk-upload-files-container-visa').empty();
+                        dropzoneContainer.find('.file-count-visa').text('0');
+                    } else {
+                        dropzoneContainer.slideDown();
+                        $(this).html('<i class="fas fa-times"></i> Close');
+                        currentVisaCategoryId = categoryId;
+                        currentVisaMatterId = matterId || null;
+                    }
+                });
+                
+                // Initialize bulk upload files array for each visa category
+                $('.bulk-upload-dropzone-visa').each(function() {
+                    const categoryId = $(this).data('categoryid');
+                    if (!bulkUploadVisaFiles[categoryId]) {
+                        bulkUploadVisaFiles[categoryId] = [];
+                    }
+                });
+                
+                // Click to browse files for visa
+                $(document).on('click', '.bulk-upload-dropzone-visa', function(e) {
+                    if (!$(e.target).is('input')) {
+                        const categoryId = $(this).data('categoryid');
+                        $(this).closest('.bulk-upload-dropzone-container-visa').find('.bulk-upload-file-input-visa[data-categoryid="' + categoryId + '"]').click();
+                    }
+                });
+                
+                // File input change for visa
+                $(document).on('change', '.bulk-upload-file-input-visa', function() {
+                    const categoryId = $(this).data('categoryid');
+                    const matterId = $(this).data('matterid');
+                    const files = this.files;
+                    
+                    if (files.length > 0) {
+                        handleBulkVisaFilesSelected(categoryId, matterId, files);
+                    }
+                });
+                
+                // Drag and drop handlers for visa
+                $(document).on('dragover', '.bulk-upload-dropzone-visa', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    $(this).addClass('drag_over');
+                });
+                
+                $(document).on('dragleave', '.bulk-upload-dropzone-visa', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    $(this).removeClass('drag_over');
+                });
+                
+                $(document).on('drop', '.bulk-upload-dropzone-visa', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    $(this).removeClass('drag_over');
+                    
+                    const categoryId = $(this).data('categoryid');
+                    const matterId = $(this).data('matterid');
+                    const files = e.originalEvent.dataTransfer.files;
+                    
+                    if (files.length > 0) {
+                        handleBulkVisaFilesSelected(categoryId, matterId, files);
+                    }
+                });
+                
+                // Handle visa files selected
+                function handleBulkVisaFilesSelected(categoryId, matterId, files) {
+                    if (!bulkUploadVisaFiles[categoryId]) {
+                        bulkUploadVisaFiles[categoryId] = [];
+                    }
+                    
+                    // Validate and add files to array
+                    const invalidFiles = [];
+                    const maxSize = 50 * 1024 * 1024; // 50MB
+                    const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'];
+                    
+                    Array.from(files).forEach(file => {
+                        // Check file size
+                        if (file.size > maxSize) {
+                            invalidFiles.push(file.name + ' (exceeds 50MB)');
+                            return;
+                        }
+                        
+                        // Check file extension
+                        const ext = file.name.split('.').pop().toLowerCase();
+                        if (!allowedExtensions.includes(ext)) {
+                            invalidFiles.push(file.name + ' (invalid file type)');
+                            return;
+                        }
+                        
+                        // Check if file already exists
+                        const exists = bulkUploadVisaFiles[categoryId].some(f => f.name === file.name && f.size === file.size);
+                        if (!exists) {
+                            bulkUploadVisaFiles[categoryId].push(file);
+                        }
+                    });
+                    
+                    if (invalidFiles.length > 0) {
+                        alert('The following files were skipped:\n' + invalidFiles.join('\n'));
+                    }
+                    
+                    if (bulkUploadVisaFiles[categoryId].length === 0) {
+                        alert('No valid files selected. Please select PDF, JPG, PNG, DOC, or DOCX files under 50MB.');
+                        return;
+                    }
+                    
+                    // Show file list
+                    const container = $('#bulk-upload-visa-' + categoryId);
+                    container.find('.bulk-upload-file-list-visa').show();
+                    container.find('.file-count-visa').text(bulkUploadVisaFiles[categoryId].length);
+                    
+                    // Show mapping interface
+                    showBulkVisaUploadMapping(categoryId, matterId);
+                }
+                
+                // Show visa mapping interface
+                function showBulkVisaUploadMapping(categoryId, matterId) {
+                    currentVisaCategoryId = categoryId;
+                    currentVisaMatterId = matterId || null;
+                    const files = bulkUploadVisaFiles[categoryId];
+                    
+                    if (files.length === 0) {
+                        return;
+                    }
+                    
+                    // Get existing checklists for this visa category
+                    getExistingVisaChecklists(categoryId, function(checklists) {
+                        // Call backend to get auto-matches
+                        getAutoVisaChecklistMatches(categoryId, files, checklists, function(matches) {
+                            displayVisaMappingInterface(files, checklists, matches);
+                        });
+                    });
+                }
+                
+                // Get existing visa checklists
+                function getExistingVisaChecklists(categoryId, callback) {
+                    const checklists = [];
+                    const checklistNames = new Set();
+                    
+                    $('.migdocumnetlist_' + categoryId + ' .visachecklist-row').each(function() {
+                        const checklistName = $(this).data('visachecklistname');
+                        const checklistId = $(this).closest('tr').attr('id').replace('id_', '');
+                        
+                        if (checklistName && !checklistNames.has(checklistName)) {
+                            checklistNames.add(checklistName);
+                            checklists.push({
+                                id: checklistId,
+                                name: checklistName
+                            });
+                        }
+                    });
+                    
+                    callback(checklists);
+                }
+                
+                // Get auto-checklist matches for visa from backend
+                function getAutoVisaChecklistMatches(categoryId, files, checklists, callback) {
+                    const fileData = Array.from(files).map(file => ({
+                        name: file.name,
+                        size: file.size,
+                        type: file.type
+                    }));
+                    
+                    const checklistNames = checklists.map(c => c.name);
+                    
+                    $.ajax({
+                        url: '{{ route("clients.documents.getAutoChecklistMatches") }}',
+                        method: 'POST',
+                        data: {
+                            _token: '{{ csrf_token() }}',
+                            clientid: currentVisaClientId,
+                            categoryid: categoryId,
+                            files: fileData,
+                            checklists: checklistNames
+                        },
+                        success: function(response) {
+                            if (response.status) {
+                                callback(response.matches || {});
+                            } else {
+                                callback({});
+                            }
+                        },
+                        error: function() {
+                            callback({});
+                        }
+                    });
+                }
+                
+                // Display visa mapping interface (reuse the same modal)
+                function displayVisaMappingInterface(files, checklists, matches) {
+                    const modal = $('#bulk-upload-mapping-modal');
+                    const tableContainer = $('#bulk-upload-mapping-table');
+                    
+                    let html = '<table class="table table-bordered" style="width: 100%;">';
+                    html += '<thead><tr><th style="width: 30%;">File Name</th><th style="width: 50%;">Checklist Assignment</th><th style="width: 20%;">Status</th></tr></thead>';
+                    html += '<tbody>';
+                    
+                    Array.from(files).forEach((file, index) => {
+                        const fileName = file.name;
+                        const fileSize = formatFileSize(file.size);
+                        const match = matches[fileName] || null;
+                        
+                        let selectedChecklist = '';
+                        let statusClass = 'manual';
+                        let statusText = 'Manual selection';
+                        
+                        if (match && match.checklist) {
+                            selectedChecklist = match.checklist;
+                            statusClass = match.confidence === 'high' ? 'auto-matched' : 'manual';
+                            statusText = match.confidence === 'high' ? 'Auto-matched' : 'Suggested';
+                        }
+                        
+                        html += '<tr class="bulk-upload-file-item">';
+                        html += '<td>';
+                        html += '<div class="file-info">';
+                        html += '<i class="fas fa-file" style="color: #4a90e2;"></i>';
+                        html += '<div>';
+                        html += '<div class="file-name">' + escapeHtml(fileName) + '</div>';
+                        html += '<div class="file-size">' + fileSize + '</div>';
+                        html += '</div>';
+                        html += '</div>';
+                        html += '</td>';
+                        html += '<td>';
+                        html += '<select class="form-control checklist-select" data-file-index="' + index + '" data-file-name="' + escapeHtml(fileName) + '">';
+                        html += '<option value="">-- Select Checklist --</option>';
+                        html += '<option value="__NEW__">+ Create New Checklist</option>';
+                        checklists.forEach(checklist => {
+                            const selected = selectedChecklist === checklist.name ? 'selected' : '';
+                            html += '<option value="' + escapeHtml(checklist.name) + '" ' + selected + '>' + escapeHtml(checklist.name) + '</option>';
+                        });
+                        html += '</select>';
+                        html += '<input type="text" class="form-control mt-2 new-checklist-input" data-file-index="' + index + '" placeholder="Enter new checklist name" style="display: none;">';
+                        html += '</td>';
+                        html += '<td>';
+                        html += '<span class="match-status ' + statusClass + '">' + statusText + '</span>';
+                        html += '</td>';
+                        html += '</tr>';
+                    });
+                    
+                    html += '</tbody></table>';
+                    tableContainer.html(html);
+                    
+                    // Handle new checklist option
+                    $(document).off('change', '.checklist-select').on('change', '.checklist-select', function() {
+                        const fileIndex = $(this).data('file-index');
+                        const value = $(this).val();
+                        const newInput = $('.new-checklist-input[data-file-index="' + fileIndex + '"]');
+                        
+                        if (value === '__NEW__') {
+                            newInput.show();
+                            newInput.attr('required', true);
+                            $(this).closest('tr').find('.match-status').removeClass('auto-matched manual').addClass('new-checklist').text('New checklist');
+                        } else {
+                            newInput.hide();
+                            newInput.removeAttr('required');
+                            if (value) {
+                                $(this).closest('tr').find('.match-status').removeClass('new-checklist').addClass('manual').text('Manual selection');
+                            }
+                        }
+                    });
+                    
+                    // Update the confirm button to handle visa upload
+                    $('#confirm-bulk-upload').off('click').on('click', function() {
+                        confirmVisaBulkUpload();
+                    });
+                    
+                    modal.show();
+                }
+                
+                // Confirm visa bulk upload
+                function confirmVisaBulkUpload() {
+                    const categoryId = currentVisaCategoryId;
+                    const matterId = currentVisaMatterId;
+                    const files = bulkUploadVisaFiles[categoryId];
+                    const mappings = [];
+                    const autoCreate = $('#auto-create-unmatched').is(':checked');
+                    
+                    // Collect mappings in order of files
+                    Array.from(files).forEach((file, fileIndex) => {
+                        const fileName = file.name;
+                        const selectElement = $('.checklist-select[data-file-index="' + fileIndex + '"]');
+                        
+                        if (selectElement.length === 0) {
+                            mappings.push(null);
+                            return;
+                        }
+                        
+                        const checklist = selectElement.val();
+                        
+                        let mapping = null;
+                        
+                        if (checklist === '__NEW__') {
+                            const newChecklistName = selectElement.closest('tr').find('.new-checklist-input').val();
+                            if (newChecklistName) {
+                                mapping = {
+                                    type: 'new',
+                                    name: newChecklistName.trim()
+                                };
+                            } else if (autoCreate) {
+                                mapping = {
+                                    type: 'new',
+                                    name: extractChecklistNameFromFile(fileName)
+                                };
+                            }
+                        } else if (checklist) {
+                            mapping = {
+                                type: 'existing',
+                                name: checklist
+                            };
+                        } else if (autoCreate) {
+                            mapping = {
+                                type: 'new',
+                                name: extractChecklistNameFromFile(fileName)
+                            };
+                        }
+                        
+                        if (!mapping) {
+                            const matchStatus = selectElement.closest('tr').find('.match-status');
+                            if (matchStatus.hasClass('auto-matched') || matchStatus.hasClass('manual')) {
+                                const selectedOption = selectElement.find('option:selected');
+                                if (selectedOption.val() && selectedOption.val() !== '__NEW__') {
+                                    mapping = {
+                                        type: 'existing',
+                                        name: selectedOption.val()
+                                    };
+                                }
+                            }
+                        }
+                        
+                        mappings.push(mapping);
+                    });
+                    
+                    // Validate all files have mappings
+                    const unmappedFiles = [];
+                    mappings.forEach((mapping, index) => {
+                        if (!mapping || !mapping.name) {
+                            unmappedFiles.push(files[index].name);
+                        }
+                    });
+                    
+                    if (unmappedFiles.length > 0 && !autoCreate) {
+                        alert('Please map all files to checklists or enable "Auto-create checklist for unmatched files"');
+                        return;
+                    }
+                    
+                    // Fill in any missing mappings with auto-create
+                    mappings.forEach((mapping, index) => {
+                        if (!mapping || !mapping.name) {
+                            mappings[index] = {
+                                type: 'new',
+                                name: extractChecklistNameFromFile(files[index].name)
+                            };
+                        }
+                    });
+                    
+                    // Upload files
+                    uploadBulkVisaFiles(categoryId, matterId, files, mappings);
+                }
+                
+                // Upload bulk visa files
+                function uploadBulkVisaFiles(categoryId, matterId, files, mappings) {
+                    const formData = new FormData();
+                    formData.append('_token', '{{ csrf_token() }}');
+                    formData.append('clientid', currentVisaClientId);
+                    formData.append('categoryid', categoryId);
+                    formData.append('matterid', matterId || '');
+                    formData.append('doctype', 'visa');
+                    formData.append('type', 'client');
+                    
+                    // Add files
+                    Array.from(files).forEach((file, index) => {
+                        formData.append('files[]', file);
+                        const mapping = mappings[index] || { type: 'new', name: extractChecklistNameFromFile(file.name) };
+                        formData.append('mappings[]', JSON.stringify(mapping));
+                    });
+                    
+                    // Show progress
+                    $('#bulk-upload-progress').show();
+                    $('#bulk-upload-progress-bar').css('width', '0%').text('0%');
+                    $('#confirm-bulk-upload').prop('disabled', true);
+                    
+                    $.ajax({
+                        url: '{{ route("clients.documents.bulkUploadVisaDocuments") }}',
+                        method: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        xhr: function() {
+                            const xhr = new window.XMLHttpRequest();
+                            xhr.upload.addEventListener('progress', function(e) {
+                                if (e.lengthComputable) {
+                                    const percentComplete = (e.loaded / e.total) * 100;
+                                    $('#bulk-upload-progress-bar').css('width', percentComplete + '%').text(Math.round(percentComplete) + '%');
+                                }
+                            }, false);
+                            return xhr;
+                        },
+                        success: function(response) {
+                            if (response.status) {
+                                let message = response.message || 'Files uploaded successfully!';
+                                if (response.errors && response.errors.length > 0) {
+                                    message += '\n\nWarnings:\n' + response.errors.join('\n');
+                                }
+                                alert(message);
+                                location.reload();
+                            } else {
+                                let errorMsg = 'Error: ' + (response.message || 'Upload failed');
+                                if (response.errors && response.errors.length > 0) {
+                                    errorMsg += '\n\nDetails:\n' + response.errors.join('\n');
+                                }
+                                alert(errorMsg);
+                                $('#bulk-upload-progress').hide();
+                                $('#confirm-bulk-upload').prop('disabled', false);
+                            }
+                        },
+                        error: function(xhr) {
+                            let errorMsg = 'Upload failed';
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMsg = xhr.responseJSON.message;
+                            }
+                            alert('Error: ' + errorMsg);
+                            $('#bulk-upload-progress').hide();
+                            $('#confirm-bulk-upload').prop('disabled', false);
+                        }
+                    });
                 }
             </script>
 

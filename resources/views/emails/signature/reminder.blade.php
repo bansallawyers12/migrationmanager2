@@ -6,23 +6,18 @@
     <title>Document Signature Reminder</title>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
             margin: 0;
             padding: 0;
-            background-color: #f4f7fa;
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: #f5f5f5;
         }
         .email-container {
             max-width: 600px;
-            margin: 20px auto;
-            background: #ffffff;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin: 0 auto;
+            background-color: #ffffff;
         }
         .email-header {
-            background: linear-gradient(135deg, #dc2626 0%, #f59e0b 100%);
+            background-color: #dc2626;
             color: #ffffff;
             padding: 30px 20px;
             text-align: center;
@@ -30,52 +25,44 @@
         .email-header h1 {
             margin: 0;
             font-size: 24px;
-            font-weight: 600;
-        }
-        .email-header .logo {
-            font-size: 28px;
             font-weight: bold;
-            margin-bottom: 10px;
         }
         .reminder-badge {
             display: inline-block;
-            background: rgba(255, 255, 255, 0.2);
+            background-color: rgba(255, 255, 255, 0.3);
             padding: 5px 15px;
-            border-radius: 20px;
+            border-radius: 15px;
             font-size: 12px;
             margin-top: 10px;
-            font-weight: 600;
+            font-weight: bold;
         }
         .email-body {
-            padding: 40px 30px;
+            padding: 30px 20px;
         }
         .greeting {
-            font-size: 18px;
-            font-weight: 600;
-            color: #dc2626;
+            font-size: 16px;
+            font-weight: bold;
+            color: #1a1a1a;
             margin-bottom: 20px;
         }
         .message {
-            color: #4b5563;
-            margin-bottom: 25px;
-            line-height: 1.8;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+            line-height: 1.6;
+            font-size: 15px;
         }
         .urgent-notice {
-            background: #fef2f2;
-            border: 2px solid #fca5a5;
-            border-radius: 6px;
+            background-color: #fee2e2;
+            border: 2px solid #dc2626;
             padding: 20px;
             margin: 25px 0;
             text-align: center;
-        }
-        .urgent-notice .icon {
-            font-size: 40px;
-            margin-bottom: 10px;
         }
         .urgent-notice h3 {
             margin: 10px 0;
             color: #dc2626;
             font-size: 18px;
+            font-weight: bold;
         }
         .urgent-notice p {
             margin: 5px 0;
@@ -83,74 +70,70 @@
             font-size: 14px;
         }
         .document-info {
-            background: #f8fafc;
+            background-color: #f8f9fa;
             border-left: 4px solid #f59e0b;
             padding: 15px 20px;
-            margin: 25px 0;
-            border-radius: 4px;
+            margin: 20px 0;
         }
         .document-info h3 {
             margin: 0 0 10px 0;
-            color: #92400e;
+            color: #1a1a1a;
             font-size: 16px;
+            font-weight: bold;
         }
         .document-info p {
             margin: 5px 0;
-            color: #6b7280;
+            color: #1a1a1a;
             font-size: 14px;
         }
         .due-date-warning {
             color: #dc2626;
-            font-weight: 600;
+            font-weight: bold;
         }
         .cta-button {
             display: inline-block;
-            background: linear-gradient(135deg, #dc2626 0%, #f59e0b 100%);
-            color: #ffffff !important;
+            background-color: #dc2626;
+            color: #ffffff;
             text-decoration: none;
-            padding: 16px 50px;
-            border-radius: 6px;
-            font-weight: 700;
-            font-size: 18px;
-            text-align: center;
-            margin: 20px 0;
-            box-shadow: 0 4px 6px rgba(220, 38, 38, 0.3);
-            transition: transform 0.2s;
-        }
-        .cta-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(220, 38, 38, 0.4);
+            padding: 15px 40px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 16px;
         }
         .button-container {
             text-align: center;
-            margin: 30px 0;
+            margin: 25px 0;
         }
         .help-section {
-            background: #eff6ff;
-            border-left: 4px solid #3b82f6;
+            background-color: #e7f3ff;
+            border-left: 4px solid #2563eb;
             padding: 15px 20px;
-            margin: 25px 0;
-            border-radius: 4px;
+            margin: 20px 0;
         }
         .help-section h4 {
             margin: 0 0 10px 0;
-            color: #1e3a8a;
+            color: #1a1a1a;
             font-size: 14px;
+            font-weight: bold;
         }
         .help-section p {
             margin: 5px 0;
-            color: #6b7280;
+            color: #1a1a1a;
             font-size: 13px;
         }
+        .help-section a {
+            color: #2563eb;
+            text-decoration: none;
+        }
         .email-footer {
-            background: #f8fafc;
-            padding: 25px 30px;
+            background-color: #f8f9fa;
+            padding: 25px 20px;
             text-align: center;
-            border-top: 1px solid #e5e7eb;
+            border-top: 1px solid #e0e0e0;
         }
         .email-footer p {
             margin: 5px 0;
-            color: #6b7280;
+            color: #1a1a1a;
             font-size: 13px;
         }
         .email-footer a {
@@ -161,41 +144,24 @@
             margin-top: 15px;
         }
         .footer-links a {
-            color: #6b7280;
+            color: #666666;
             text-decoration: none;
-            margin: 0 10px;
             font-size: 12px;
-        }
-        @media only screen and (max-width: 600px) {
-            .email-body {
-                padding: 30px 20px;
-            }
-            .email-header h1 {
-                font-size: 20px;
-            }
-            .cta-button {
-                padding: 14px 40px;
-                font-size: 16px;
-            }
+            margin: 0 10px;
         }
     </style>
 </head>
 <body>
     <div class="email-container">
-        <!-- Header -->
         <div class="email-header">
-            <div class="logo">⏰ Bansal Migration</div>
             <h1>Document Signature Reminder</h1>
             <div class="reminder-badge">Reminder #{{ $reminderNumber }}</div>
         </div>
 
-        <!-- Body -->
         <div class="email-body">
             <p class="greeting">Dear {{ $signerName }},</p>
             
-            <!-- Urgent Notice -->
             <div class="urgent-notice">
-                <div class="icon">⚠️</div>
                 <h3>Action Required: Document Awaiting Your Signature</h3>
                 <p>This is a friendly reminder that a document is still pending your signature.</p>
             </div>
@@ -205,20 +171,18 @@
                 it yet. Your prompt attention to this matter would be greatly appreciated.
             </p>
 
-            <!-- Document Info -->
             <div class="document-info">
-                <h3>📄 Document Details</h3>
+                <h3>Document Details</h3>
                 <p><strong>Document:</strong> {{ $documentTitle }}</p>
                 <p><strong>Reminder:</strong> #{{ $reminderNumber }} of 3</p>
                 @if($dueDate)
-                    <p class="due-date-warning"><strong>⏰ Due Date:</strong> {{ $dueDate }}</p>
+                    <p class="due-date-warning"><strong>Due Date:</strong> {{ $dueDate }}</p>
                 @endif
             </div>
 
-            <!-- Call to Action -->
             <div class="button-container">
-                <a href="{{ $signingUrl }}" class="cta-button">
-                    ✍️ Sign Now
+                <a href="{{ $signingUrl }}" class="cta-button" style="display: inline-block; background-color: #dc2626; color: #ffffff; text-decoration: none; padding: 15px 40px; border-radius: 4px; font-weight: bold; font-size: 16px;">
+                    Sign Now
                 </a>
             </div>
 
@@ -228,13 +192,12 @@
                 may impact the progress of your case or application.
             </p>
 
-            <!-- Help Section -->
             <div class="help-section">
-                <h4>🆘 Need Help?</h4>
+                <h4>Need Help?</h4>
                 <p>If you're experiencing any issues with the signing process or have questions about 
                 the document, please contact us immediately:</p>
-                <p>📧 <a href="mailto:info@bansalimmigration.com.au" style="color: #3b82f6;">info@bansalimmigration.com.au</a></p>
-                <p>📞 <a href="tel:+61292673945" style="color: #3b82f6;">+61 2 9267 3945</a></p>
+                <p>Email: <a href="mailto:info@bansalimmigration.com.au">info@bansalimmigration.com.au</a></p>
+                <p>Phone: <a href="tel:+61292673945">+61 2 9267 3945</a></p>
             </div>
 
             <p class="message">
@@ -248,19 +211,18 @@
             </p>
 
             @if(isset($emailSignature) && !empty($emailSignature))
-                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
                     {!! $emailSignature !!}
                 </div>
             @endif
         </div>
 
-        <!-- Footer -->
         <div class="email-footer">
             <p><strong>Bansal Migration</strong></p>
             <p>Immigration & Visa Services</p>
-            <p>📧 Email: <a href="mailto:info@bansalimmigration.com.au">info@bansalimmigration.com.au</a></p>
-            <p>📞 Phone: <a href="tel:+61292673945">+61 2 9267 3945</a></p>
-            <p>🌐 Website: <a href="https://www.bansalimmigration.com.au">www.bansalimmigration.com.au</a></p>
+            <p>Email: <a href="mailto:info@bansalimmigration.com.au">info@bansalimmigration.com.au</a></p>
+            <p>Phone: <a href="tel:+61292673945">+61 2 9267 3945</a></p>
+            <p>Website: <a href="https://www.bansalimmigration.com.au">www.bansalimmigration.com.au</a></p>
             
             <div class="footer-links">
                 <a href="https://www.bansalimmigration.com.au/privacy-policy">Privacy Policy</a> | 
@@ -268,7 +230,7 @@
                 <a href="https://www.bansalimmigration.com.au/contact">Contact Us</a>
             </div>
             
-            <p style="margin-top: 15px; font-size: 11px; color: #9ca3af;">
+            <p style="margin-top: 15px; font-size: 11px; color: #999999;">
                 This is an automated reminder. Please do not reply to this email.<br>
                 You will receive up to 3 reminders.
             </p>
@@ -276,4 +238,3 @@
     </div>
 </body>
 </html>
-

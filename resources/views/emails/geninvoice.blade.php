@@ -130,7 +130,7 @@
             display: table-cell;
             text-align: right;
             padding-right: 15px;
-            color: #555;
+            color: #1a1a1a;
             font-weight: 600;
         }
         .totals-value {
