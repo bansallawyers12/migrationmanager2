@@ -3772,7 +3772,7 @@ class ClientPersonalDetailsController extends Controller
             
             // Delete existing parent relationships for this client
             ClientRelationship::where('client_id', $client->id)
-                ->whereIn('relationship_type', ['Father', 'Mother', 'Step Father', 'Step Mother'])
+                ->whereIn('relationship_type', ['Father', 'Mother', 'Step Father', 'Step Mother', 'Mother-in-law'])
                 ->delete();
 
             $parentsCount = 0;
@@ -4252,6 +4252,8 @@ class ClientPersonalDetailsController extends Controller
                 return $parentGender === 'Female' ? 'Step Daughter' : 'Step Son';
             case 'Step Mother':
                 return $parentGender === 'Female' ? 'Step Daughter' : 'Step Son';
+            case 'Mother-in-law':
+                return $parentGender === 'Female' ? 'Daughter' : 'Son';
             default:
                 return 'Child';
         }

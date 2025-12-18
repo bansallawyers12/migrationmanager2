@@ -1356,7 +1356,7 @@
                                         :index="$index"
                                         :member="$partner"
                                         type="partner"
-                                        :relationshipOptions="['Husband', 'Wife', 'Ex-Husband', 'Ex-Wife', 'Mother-in-law', 'Defacto']"
+                                        :relationshipOptions="['Husband', 'Wife', 'Ex-Husband', 'Ex-Wife', 'Defacto']"
                                     />
                                 @endforeach
                             </div>
@@ -1597,7 +1597,7 @@
                         <!-- Summary View -->
                         <div id="parentsInfoSummary" class="summary-view">
                             @php
-                                $parents = $clientPartners->whereIn('relationship_type', ['Father', 'Mother', 'Step Father', 'Step Mother']);
+                                $parents = $clientPartners->whereIn('relationship_type', ['Father', 'Mother', 'Step Father', 'Step Mother', 'Mother-in-law']);
                             @endphp
                             @if($parents->count() > 0)
                                 <div style="margin-top: 15px;">
@@ -1659,7 +1659,7 @@
                                         :index="$index"
                                         :member="$parent"
                                         type="parent"
-                                        :relationshipOptions="['Father', 'Mother', 'Step Father', 'Step Mother']"
+                                        :relationshipOptions="['Father', 'Mother', 'Step Father', 'Step Mother', 'Mother-in-law']"
                                     />
                                 @endforeach
                             </div>

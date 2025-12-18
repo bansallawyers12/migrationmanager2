@@ -553,7 +553,7 @@ class ClientsController extends Controller
                 'health_declarations.*.date' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
                 'source' => 'nullable|in:SubAgent,Others',
                 'partner_details.*' => 'nullable|string|max:255',
-                'partner_relationship_type.*' => 'nullable|in:Husband,Wife,Ex-Husband,Ex-Wife,Mother-in-law,Defacto',
+                'partner_relationship_type.*' => 'nullable|in:Husband,Wife,Ex-Husband,Ex-Wife,Defacto',
                 'partner_company_type.*' => 'nullable|in:Accompany Member,Non-Accompany Member',
                 'partner_email.*' => 'nullable|email|max:255',
                 'partner_first_name.*' => 'nullable|string|max:255',
@@ -567,7 +567,7 @@ class ClientsController extends Controller
                 'children_last_name.*' => 'nullable|string|max:255',
                 'children_phone.*' => 'nullable|string|max:20',
                 'parent_details.*' => 'nullable|string|max:255',
-                'parent_relationship_type.*' => 'nullable|in:Father,Mother,Step Father,Step Mother',
+                'parent_relationship_type.*' => 'nullable|in:Father,Mother,Step Father,Step Mother,Mother-in-law',
                 'parent_company_type.*' => 'nullable|in:Accompany Member,Non-Accompany Member',
                 'parent_email.*' => 'nullable|email|max:255',
                 'parent_first_name.*' => 'nullable|string|max:255',
@@ -1176,7 +1176,7 @@ class ClientsController extends Controller
             $familyTypes = [
                 'partner' => ['Husband', 'Wife', 'Ex-Wife', 'Defacto'],
                 'children' => ['Son', 'Daughter', 'Step Son', 'Step Daughter'],
-                'parent' => ['Father', 'Mother', 'Step Father', 'Step Mother'],
+                'parent' => ['Father', 'Mother', 'Step Father', 'Step Mother', 'Mother-in-law'],
                 'siblings' => ['Brother', 'Sister', 'Step Brother', 'Step Sister'],
                 'others' => ['Cousin', 'Friend', 'Uncle', 'Aunt', 'Grandchild', 'Granddaughter', 'Grandparent', 'Niece', 'Nephew', 'Grandfather'],
             ];
@@ -1211,6 +1211,8 @@ class ClientsController extends Controller
                         return $relatedGender === 'Female' ? 'Step Daughter' : 'Step Son';
                     case 'Step Mother':
                         return $relatedGender === 'Female' ? 'Step Daughter' : 'Step Son';
+                    case 'Mother-in-law':
+                        return $relatedGender === 'Female' ? 'Daughter' : 'Son';
                     
                     // Sibling relationships
                     case 'Brother':
@@ -1692,7 +1694,7 @@ class ClientsController extends Controller
 
                 // New validations for Partner fields
                 'partner_details.*' => 'nullable|string|max:1000',
-                'relationship_type.*' => 'nullable|in:Husband,Wife,Ex-Husband,Ex-Wife,Mother-in-law,Defacto',
+                'relationship_type.*' => 'nullable|in:Husband,Wife,Ex-Husband,Ex-Wife,Defacto',
                 'partner_email.*' => 'nullable|email|max:255',
                 'partner_first_name.*' => 'nullable|string|max:255',
                 'partner_last_name.*' => 'nullable|string|max:255',
@@ -1712,7 +1714,7 @@ class ClientsController extends Controller
 
                 // Parent
                 'parent_details.*' => 'nullable|string|max:1000',
-                'parent_relationship_type.*' => 'nullable|in:Father,Mother,Step Father,Step Mother',
+                'parent_relationship_type.*' => 'nullable|in:Father,Mother,Step Father,Step Mother,Mother-in-law',
                 'parent_email.*' => 'nullable|email|max:255',
                 'parent_first_name.*' => 'nullable|string|max:255',
                 'parent_last_name.*' => 'nullable|string|max:255',
@@ -2106,7 +2108,7 @@ class ClientsController extends Controller
                 // Parent
                 'parent_details.*.string' => 'Parent Details must be a valid string.',
                 'parent_details.*.max' => 'Parent Details must not exceed 1000 characters.',
-                'parent_relationship_type.*.in' => 'Parent Relationship Type must be one of: Father, Mother, Step Father, Step Mother.',
+                'parent_relationship_type.*.in' => 'Parent Relationship Type must be one of: Father, Mother, Step Father, Step Mother, Mother-in-law.',
                 'parent_email.*.email' => 'Parent Email must be a valid email address.',
                 'parent_email.*.max' => 'Parent Email must not exceed 255 characters.',
                 'parent_first_name.*.string' => 'Parent First Name must be a valid string.',
@@ -3435,7 +3437,7 @@ class ClientsController extends Controller
             $familyTypes = [
                 'partner' => ['Husband', 'Wife', 'Ex-Wife', 'Defacto'],
                 'children' => ['Son', 'Daughter', 'Step Son', 'Step Daughter'],
-                'parent' => ['Father', 'Mother', 'Step Father', 'Step Mother'],
+                'parent' => ['Father', 'Mother', 'Step Father', 'Step Mother', 'Mother-in-law'],
                 'siblings' => ['Brother', 'Sister', 'Step Brother', 'Step Sister'],
                 'others' => ['Cousin', 'Friend', 'Uncle', 'Aunt', 'Grandchild', 'Granddaughter', 'Grandparent', 'Niece', 'Nephew', 'Grandfather'],
             ];
@@ -3470,6 +3472,8 @@ class ClientsController extends Controller
                         return $relatedGender === 'Female' ? 'Step Daughter' : 'Step Son';
                     case 'Step Mother':
                         return $relatedGender === 'Female' ? 'Step Daughter' : 'Step Son';
+                    case 'Mother-in-law':
+                        return $relatedGender === 'Female' ? 'Daughter' : 'Son';
                     
                     // Sibling relationships
                     case 'Brother':
