@@ -671,27 +671,55 @@ class ClientPortalPersonalDetailsController extends Controller
                     }
                 }
 
-                // Get IDs of phones that are in the request (for selective deletion)
-                $requestPhoneIds = [];
+                // Get existing phone IDs from request to identify which ones to update
+                $phoneIdsToUpdate = [];
+                $phoneIdToMetaOrderMap = []; // Map phone ID to its meta_order
+                
                 foreach ($phones as $phoneData) {
+                    // ID field is required - if it has a value (not null), it's an update; if null, it's a new record
                     if (isset($phoneData['id']) && $phoneData['id'] !== null && $phoneData['id'] !== '') {
-                        $requestPhoneIds[] = (string) $phoneData['id'];
+                        $phoneIdsToUpdate[] = (int) $phoneData['id'];
                     }
                 }
 
-                // Delete existing phone audit entries only for phones that are in the request
-                // This preserves the Personal phone's audit entries if it wasn't in the request
-                if (!empty($requestPhoneIds)) {
-                    ClientPortalDetailAudit::where('client_id', $clientId)
-                        ->whereIn('meta_key', ['phone', 'phone_country_code', 'phone_extension'])
-                        ->whereIn('meta_type', $requestPhoneIds)
-                        ->delete();
+                // Get the highest existing meta_order BEFORE deleting (to ensure unique values for new phones)
+                $maxMetaOrder = ClientPortalDetailAudit::where('client_id', $clientId)
+                    ->whereIn('meta_key', ['phone', 'phone_type', 'phone_country_code', 'phone_extension'])
+                    ->max('meta_order') ?? -1;
+
+                // Get meta_order values for existing phones BEFORE deleting (if IDs provided)
+                if (!empty($phoneIdsToUpdate)) {
+                    $existingAuditEntries = ClientPortalDetailAudit::where('client_id', $clientId)
+                        ->where('meta_key', 'phone')
+                        ->whereIn('meta_type', array_map('strval', $phoneIdsToUpdate))
+                        ->get();
+
+                    foreach ($existingAuditEntries as $entry) {
+                        $pid = (int) $entry->meta_type;
+                        if (!isset($phoneIdToMetaOrderMap[$pid])) {
+                            $phoneIdToMetaOrderMap[$pid] = $entry->meta_order;
+                        }
+                    }
+
+                    // Delete existing phone audit entries only for phones that are in the request
+                    // This preserves the Personal phone's audit entries if it wasn't in the request
+                    if (!empty($phoneIdToMetaOrderMap)) {
+                        $ordersToDelete = array_values($phoneIdToMetaOrderMap);
+                        ClientPortalDetailAudit::where('client_id', $clientId)
+                            ->whereIn('meta_key', ['phone', 'phone_type', 'phone_country_code', 'phone_extension'])
+                            ->whereIn('meta_order', $ordersToDelete)
+                            ->delete();
+                    }
                 } else {
                     // If no phone IDs in request (all are new), delete all phone audit entries
                     ClientPortalDetailAudit::where('client_id', $clientId)
-                        ->whereIn('meta_key', ['phone', 'phone_country_code', 'phone_extension'])
+                        ->whereIn('meta_key', ['phone', 'phone_type', 'phone_country_code', 'phone_extension'])
                         ->delete();
                 }
+                // Note: If all phones have id: null (new phones), no deletion happens - safe behavior
+
+                // Track which meta_order values are being reused (to avoid conflicts with new phones)
+                $usedMetaOrders = array_values($phoneIdToMetaOrderMap);
 
                 // Process only phones from the original request (don't add Personal phone to processing)
                 $phonesToProcess = $phones;
@@ -736,7 +764,19 @@ class ClientPortalPersonalDetailsController extends Controller
                     // Determine action: 'create' for new records, 'update' for existing ones
                     $action = $isNewRecord ? 'create' : 'update';
 
-                    $metaOrder = $index;
+                    // Determine meta_order: use existing if updating by ID, otherwise use next available
+                    if (!$isNewRecord && isset($phoneIdToMetaOrderMap[$phoneId])) {
+                        // Use existing meta_order for this phone
+                        $metaOrder = $phoneIdToMetaOrderMap[$phoneId];
+                    } else {
+                        // New phone - use next available meta_order that doesn't conflict with reused values
+                        do {
+                            $maxMetaOrder++;
+                            $metaOrder = $maxMetaOrder;
+                        } while (in_array($metaOrder, $usedMetaOrders));
+                        // Track this meta_order as used to avoid conflicts with subsequent new phones
+                        $usedMetaOrders[] = $metaOrder;
+                    }
 
                     // Save phone number - store record ID in meta_type (original ID for updates, generated ID for new records)
                     ClientPortalDetailAudit::create([
@@ -990,6 +1030,24 @@ class ClientPortalPersonalDetailsController extends Controller
             
             // Case 3: Add if action is 'create' and not already processed
             if ($action === 'create' && !in_array($phoneId, $processedIds)) {
+                $mergedPhones[] = $auditPhone;
+                $processedIds[] = $phoneId;
+            }
+        }
+        
+        // Case 6: Add audit phones with action='update' that weren't processed in first loop
+        // These are phones that exist in audit table but don't exist in source table
+        foreach ($auditPhones as $auditPhone) {
+            $phoneId = $auditPhone['id'] ?? null;
+            $action = $auditPhone['action'] ?? 'update';
+            
+            // Case 4: Skip if this phone is deleted
+            if ($action === 'delete' || ($phoneId !== null && in_array($phoneId, $deletedIds))) {
+                continue;
+            }
+            
+            // Case 6: Add if action is 'update' and not already processed (not in source table)
+            if ($action === 'update' && !in_array($phoneId, $processedIds)) {
                 $mergedPhones[] = $auditPhone;
                 $processedIds[] = $phoneId;
             }
@@ -1291,6 +1349,24 @@ class ClientPortalPersonalDetailsController extends Controller
             
             // Case 3: Add if action is 'create' and not already processed
             if ($action === 'create' && !in_array($emailId, $processedIds)) {
+                $mergedEmails[] = $auditEmail;
+                $processedIds[] = $emailId;
+            }
+        }
+        
+        // Case 6: Add audit emails with action='update' that weren't processed in first loop
+        // These are emails that exist in audit table but don't exist in source table
+        foreach ($auditEmails as $auditEmail) {
+            $emailId = $auditEmail['id'] ?? null;
+            $action = $auditEmail['action'] ?? 'update';
+            
+            // Case 4: Skip if this email is deleted
+            if ($action === 'delete' || ($emailId !== null && in_array($emailId, $deletedIds))) {
+                continue;
+            }
+            
+            // Case 6: Add if action is 'update' and not already processed (not in source table)
+            if ($action === 'update' && !in_array($emailId, $processedIds)) {
                 $mergedEmails[] = $auditEmail;
                 $processedIds[] = $emailId;
             }
@@ -1889,6 +1965,24 @@ class ClientPortalPersonalDetailsController extends Controller
             }
         }
         
+        // Case 6: Add audit visas with action='update' that weren't processed in first loop
+        // These are visas that exist in audit table but don't exist in source table
+        foreach ($auditVisas as $auditVisa) {
+            $visaId = $auditVisa['id'] ?? null;
+            $action = $auditVisa['action'] ?? 'update';
+            
+            // Case 4: Skip if this visa is deleted
+            if ($action === 'delete' || ($visaId !== null && in_array($visaId, $deletedIds))) {
+                continue;
+            }
+            
+            // Case 6: Add if action is 'update' and not already processed (not in source table)
+            if ($action === 'update' && !in_array($visaId, $processedIds)) {
+                $mergedVisas[] = $auditVisa;
+                $processedIds[] = $visaId;
+            }
+        }
+        
         return $mergedVisas;
     }
 
@@ -2158,6 +2252,24 @@ class ClientPortalPersonalDetailsController extends Controller
             
             // Case 3: Add if action is 'create' and not already processed
             if ($action === 'create' && !in_array($addressId, $processedIds)) {
+                $mergedAddresses[] = $auditAddress;
+                $processedIds[] = $addressId;
+            }
+        }
+        
+        // Case 6: Add audit addresses with action='update' that weren't processed in first loop
+        // These are addresses that exist in audit table but don't exist in source table
+        foreach ($auditAddresses as $auditAddress) {
+            $addressId = $auditAddress['id'] ?? null;
+            $action = $auditAddress['action'] ?? 'update';
+            
+            // Case 4: Skip if this address is deleted
+            if ($action === 'delete' || ($addressId !== null && in_array($addressId, $deletedIds))) {
+                continue;
+            }
+            
+            // Case 6: Add if action is 'update' and not already processed (not in source table)
+            if ($action === 'update' && !in_array($addressId, $processedIds)) {
                 $mergedAddresses[] = $auditAddress;
                 $processedIds[] = $addressId;
             }
@@ -2466,6 +2578,24 @@ class ClientPortalPersonalDetailsController extends Controller
             }
         }
         
+        // Case 6: Add audit travels with action='update' that weren't processed in first loop
+        // These are travels that exist in audit table but don't exist in source table
+        foreach ($auditTravels as $auditTravel) {
+            $travelId = $auditTravel['id'] ?? null;
+            $action = $auditTravel['action'] ?? 'update';
+            
+            // Case 4: Skip if this travel is deleted
+            if ($action === 'delete' || ($travelId !== null && in_array($travelId, $deletedIds))) {
+                continue;
+            }
+            
+            // Case 6: Add if action is 'update' and not already processed (not in source table)
+            if ($action === 'update' && !in_array($travelId, $processedIds)) {
+                $mergedTravels[] = $auditTravel;
+                $processedIds[] = $travelId;
+            }
+        }
+        
         return $mergedTravels;
     }
 
@@ -2732,6 +2862,24 @@ class ClientPortalPersonalDetailsController extends Controller
             
             // Case 3: Add if action is 'create' and not already processed
             if ($action === 'create' && !in_array($qualificationId, $processedIds)) {
+                $mergedQualifications[] = $auditQualification;
+                $processedIds[] = $qualificationId;
+            }
+        }
+        
+        // Case 6: Add audit qualifications with action='update' that weren't processed in first loop
+        // These are qualifications that exist in audit table but don't exist in source table
+        foreach ($auditQualifications as $auditQualification) {
+            $qualificationId = $auditQualification['id'] ?? null;
+            $action = $auditQualification['action'] ?? 'update';
+            
+            // Case 4: Skip if this qualification is deleted
+            if ($action === 'delete' || ($qualificationId !== null && in_array($qualificationId, $deletedIds))) {
+                continue;
+            }
+            
+            // Case 6: Add if action is 'update' and not already processed (not in source table)
+            if ($action === 'update' && !in_array($qualificationId, $processedIds)) {
                 $mergedQualifications[] = $auditQualification;
                 $processedIds[] = $qualificationId;
             }
@@ -3048,6 +3196,24 @@ class ClientPortalPersonalDetailsController extends Controller
             }
         }
         
+        // Case 6: Add audit experiences with action='update' that weren't processed in first loop
+        // These are experiences that exist in audit table but don't exist in source table
+        foreach ($auditExperiences as $auditExperience) {
+            $experienceId = $auditExperience['id'] ?? null;
+            $action = $auditExperience['action'] ?? 'update';
+            
+            // Case 4: Skip if this experience is deleted
+            if ($action === 'delete' || ($experienceId !== null && in_array($experienceId, $deletedIds))) {
+                continue;
+            }
+            
+            // Case 6: Add if action is 'update' and not already processed (not in source table)
+            if ($action === 'update' && !in_array($experienceId, $processedIds)) {
+                $mergedExperiences[] = $auditExperience;
+                $processedIds[] = $experienceId;
+            }
+        }
+        
         return $mergedExperiences;
     }
 
@@ -3356,6 +3522,24 @@ class ClientPortalPersonalDetailsController extends Controller
             }
         }
         
+        // Case 6: Add audit occupations with action='update' that weren't processed in first loop
+        // These are occupations that exist in audit table but don't exist in source table
+        foreach ($auditOccupations as $auditOccupation) {
+            $occupationId = $auditOccupation['id'] ?? null;
+            $action = $auditOccupation['action'] ?? 'update';
+            
+            // Case 4: Skip if this occupation is deleted
+            if ($action === 'delete' || ($occupationId !== null && in_array($occupationId, $deletedIds))) {
+                continue;
+            }
+            
+            // Case 6: Add if action is 'update' and not already processed (not in source table)
+            if ($action === 'update' && !in_array($occupationId, $processedIds)) {
+                $mergedOccupations[] = $auditOccupation;
+                $processedIds[] = $occupationId;
+            }
+        }
+        
         return $mergedOccupations;
     }
 
@@ -3659,6 +3843,24 @@ class ClientPortalPersonalDetailsController extends Controller
             
             // Case 3: Add if action is 'create' and not already processed
             if ($action === 'create' && !in_array($testScoreId, $processedIds)) {
+                $mergedTestScores[] = $auditTestScore;
+                $processedIds[] = $testScoreId;
+            }
+        }
+        
+        // Case 6: Add audit test scores with action='update' that weren't processed in first loop
+        // These are test scores that exist in audit table but don't exist in source table
+        foreach ($auditTestScores as $auditTestScore) {
+            $testScoreId = $auditTestScore['id'] ?? null;
+            $action = $auditTestScore['action'] ?? 'update';
+            
+            // Case 4: Skip if this test score is deleted
+            if ($action === 'delete' || ($testScoreId !== null && in_array($testScoreId, $deletedIds))) {
+                continue;
+            }
+            
+            // Case 6: Add if action is 'update' and not already processed (not in source table)
+            if ($action === 'update' && !in_array($testScoreId, $processedIds)) {
                 $mergedTestScores[] = $auditTestScore;
                 $processedIds[] = $testScoreId;
             }
@@ -4193,11 +4395,7 @@ class ClientPortalPersonalDetailsController extends Controller
                 case 'passport':
                     return $this->deletePassportRecord($clientId, $recordId, $userId);
                 case 'visa':
-                    // TODO: Implement visa deletion
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Visa deletion is not yet implemented.'
-                    ], 501);
+                    return $this->deleteVisaRecord($clientId, $recordId, $userId);
                 case 'phone':
                     return $this->deletePhoneRecord($clientId, $recordId, $userId);
                 case 'email':
@@ -4420,6 +4618,221 @@ class ClientPortalPersonalDetailsController extends Controller
     }
 
     /**
+     * Delete visa record - helper method for visa deletion
+     * 
+     * @param int $clientId
+     * @param int $visaId
+     * @param int $userId
+     * @return \Illuminate\Http\JsonResponse
+     */
+    private function deleteVisaRecord($clientId, $visaId, $userId)
+    {
+        DB::beginTransaction();
+
+        try {
+            // Step 1: Check if record exists in audit table with meta_type matching id and client_id matching user_id
+            $existingAuditEntry = ClientPortalDetailAudit::where('client_id', $clientId)
+                ->where('meta_key', 'visa')
+                ->where('meta_type', (string) $visaId)
+                ->first();
+
+            if ($existingAuditEntry) {
+                // Record exists in audit table - update action to 'delete' for all related entries
+                $metaOrder = $existingAuditEntry->meta_order;
+
+                // Update all related visa entries to action='delete'
+                ClientPortalDetailAudit::where('client_id', $clientId)
+                    ->whereIn('meta_key', ['visa', 'visa_country', 'visa_type', 'visa_description', 'visa_expiry_date', 'visa_grant_date'])
+                    ->where('meta_order', $metaOrder)
+                    ->update([
+                        'action' => 'delete',
+                        'updated_by' => $userId,
+                        'updated_at' => now(),
+                    ]);
+
+                DB::commit();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Visa deleted successfully',
+                    'data' => [
+                        'id' => $visaId,
+                        'type' => 'visa',
+                        'action' => 'delete'
+                    ]
+                ]);
+            }
+
+            // Step 2: Record doesn't exist in audit table - check source table
+            $sourceVisa = DB::table('client_visa_countries')
+                ->where('client_id', $clientId)
+                ->where('id', $visaId)
+                ->first();
+
+            if (!$sourceVisa) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Visa ID does not exist'
+                ], 404);
+            }
+
+            // Step 3: Record exists in source table - insert into audit table with action='delete'
+            // Get the highest existing meta_order to continue from there
+            $maxMetaOrder = ClientPortalDetailAudit::where('client_id', $clientId)
+                ->whereIn('meta_key', ['visa', 'visa_country', 'visa_type', 'visa_description', 'visa_expiry_date', 'visa_grant_date'])
+                ->max('meta_order') ?? -1;
+            $metaOrder = $maxMetaOrder + 1;
+
+            // Format dates from database format to dd/mm/yyyy
+            $expiryDate = $sourceVisa->visa_expiry_date && $sourceVisa->visa_expiry_date != '0000-00-00' ? $this->formatDate($sourceVisa->visa_expiry_date) : null;
+            $grantDate = $sourceVisa->visa_grant_date && $sourceVisa->visa_grant_date != '0000-00-00' ? $this->formatDate($sourceVisa->visa_grant_date) : null;
+
+            // Convert dates from Y-m-d to Y-m-d format for storage (already in correct format, but handle edge cases)
+            $expiryDateDb = null;
+            if ($sourceVisa->visa_expiry_date && $sourceVisa->visa_expiry_date != '0000-00-00') {
+                try {
+                    $date = Carbon::createFromFormat('Y-m-d', $sourceVisa->visa_expiry_date);
+                    $expiryDateDb = $date->format('Y-m-d');
+                } catch (\Exception $e) {
+                    // If date is already in wrong format, try to parse it
+                    try {
+                        $date = Carbon::parse($sourceVisa->visa_expiry_date);
+                        $expiryDateDb = $date->format('Y-m-d');
+                    } catch (\Exception $e2) {
+                        $expiryDateDb = null;
+                    }
+                }
+            }
+
+            $grantDateDb = null;
+            if ($sourceVisa->visa_grant_date && $sourceVisa->visa_grant_date != '0000-00-00') {
+                try {
+                    $date = Carbon::createFromFormat('Y-m-d', $sourceVisa->visa_grant_date);
+                    $grantDateDb = $date->format('Y-m-d');
+                } catch (\Exception $e) {
+                    // If date is already in wrong format, try to parse it
+                    try {
+                        $date = Carbon::parse($sourceVisa->visa_grant_date);
+                        $grantDateDb = $date->format('Y-m-d');
+                    } catch (\Exception $e2) {
+                        $grantDateDb = null;
+                    }
+                }
+            }
+
+            // Insert visa marker
+            ClientPortalDetailAudit::create([
+                'client_id' => $clientId,
+                'meta_key' => 'visa',
+                'old_value' => null,
+                'new_value' => '1', // Marker value
+                'meta_order' => $metaOrder,
+                'meta_type' => (string) $visaId,
+                'action' => 'delete',
+                'updated_by' => $userId,
+                'updated_at' => now(),
+            ]);
+
+            // Insert visa country if exists
+            if ($sourceVisa->visa_country) {
+                ClientPortalDetailAudit::create([
+                    'client_id' => $clientId,
+                    'meta_key' => 'visa_country',
+                    'old_value' => null,
+                    'new_value' => $sourceVisa->visa_country,
+                    'meta_order' => $metaOrder,
+                    'meta_type' => (string) $visaId,
+                    'action' => 'delete',
+                    'updated_by' => $userId,
+                    'updated_at' => now(),
+                ]);
+            }
+
+            // Insert visa type if exists
+            if ($sourceVisa->visa_type !== null) {
+                ClientPortalDetailAudit::create([
+                    'client_id' => $clientId,
+                    'meta_key' => 'visa_type',
+                    'old_value' => null,
+                    'new_value' => (string) $sourceVisa->visa_type,
+                    'meta_order' => $metaOrder,
+                    'meta_type' => (string) $visaId,
+                    'action' => 'delete',
+                    'updated_by' => $userId,
+                    'updated_at' => now(),
+                ]);
+            }
+
+            // Insert visa description if exists
+            if ($sourceVisa->visa_description) {
+                ClientPortalDetailAudit::create([
+                    'client_id' => $clientId,
+                    'meta_key' => 'visa_description',
+                    'old_value' => null,
+                    'new_value' => $sourceVisa->visa_description,
+                    'meta_order' => $metaOrder,
+                    'meta_type' => (string) $visaId,
+                    'action' => 'delete',
+                    'updated_by' => $userId,
+                    'updated_at' => now(),
+                ]);
+            }
+
+            // Insert visa expiry date if exists
+            if ($expiryDateDb) {
+                ClientPortalDetailAudit::create([
+                    'client_id' => $clientId,
+                    'meta_key' => 'visa_expiry_date',
+                    'old_value' => null,
+                    'new_value' => $expiryDateDb,
+                    'meta_order' => $metaOrder,
+                    'meta_type' => (string) $visaId,
+                    'action' => 'delete',
+                    'updated_by' => $userId,
+                    'updated_at' => now(),
+                ]);
+            }
+
+            // Insert visa grant date if exists
+            if ($grantDateDb) {
+                ClientPortalDetailAudit::create([
+                    'client_id' => $clientId,
+                    'meta_key' => 'visa_grant_date',
+                    'old_value' => null,
+                    'new_value' => $grantDateDb,
+                    'meta_order' => $metaOrder,
+                    'meta_type' => (string) $visaId,
+                    'action' => 'delete',
+                    'updated_by' => $userId,
+                    'updated_at' => now(),
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Visa deleted successfully',
+                'data' => [
+                    'id' => $visaId,
+                    'type' => 'visa',
+                    'visa_country' => $sourceVisa->visa_country ?? null,
+                    'visa_type' => $sourceVisa->visa_type ?? null,
+                    'visa_description' => $sourceVisa->visa_description ?? null,
+                    'visa_expiry_date' => $expiryDate,
+                    'visa_grant_date' => $grantDate,
+                    'action' => 'delete'
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
      * Delete phone record - helper method for phone deletion
      * 
      * @param int $clientId
@@ -4439,8 +4852,26 @@ class ClientPortalPersonalDetailsController extends Controller
                 ->first();
 
             if ($existingAuditEntry) {
-                // Record exists in audit table - update action to 'delete' for all related entries
+                // Record exists in audit table - check if it's a Personal phone
                 $metaOrder = $existingAuditEntry->meta_order;
+                
+                // Get phone_type from audit table
+                $phoneTypeEntry = ClientPortalDetailAudit::where('client_id', $clientId)
+                    ->where('meta_key', 'phone_type')
+                    ->where('meta_order', $metaOrder)
+                    ->orderBy('updated_at', 'desc')
+                    ->first();
+                
+                $phoneType = $phoneTypeEntry ? $phoneTypeEntry->new_value : null;
+                
+                // Check if phone type is Personal (case-insensitive)
+                if (strtolower(trim($phoneType ?? '')) === 'personal') {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Personal phone number cannot be deleted. It is readonly.'
+                    ], 422);
+                }
 
                 // Update all related phone entries to action='delete'
                 ClientPortalDetailAudit::where('client_id', $clientId)
@@ -4477,6 +4908,16 @@ class ClientPortalPersonalDetailsController extends Controller
                     'success' => false,
                     'message' => 'Phone ID does not exist'
                 ], 404);
+            }
+            
+            // Check if phone type is Personal (case-insensitive)
+            $phoneType = $sourcePhone->contact_type ?? 'Mobile';
+            if (strtolower(trim($phoneType)) === 'personal') {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Personal phone number cannot be deleted. It is readonly.'
+                ], 422);
             }
 
             // Step 3: Record exists in source table - insert into audit table with action='delete'
@@ -4529,12 +4970,13 @@ class ClientPortalPersonalDetailsController extends Controller
             }
 
             // Insert extension if exists
-            if ($sourcePhone->extension) {
+            $extension = $sourcePhone->extension ?? null;
+            if ($extension) {
                 ClientPortalDetailAudit::create([
                     'client_id' => $clientId,
                     'meta_key' => 'phone_extension',
                     'old_value' => null,
-                    'new_value' => $sourcePhone->extension,
+                    'new_value' => $extension,
                     'meta_order' => $metaOrder,
                     'meta_type' => (string) $phoneId,
                     'action' => 'delete',
@@ -4554,7 +4996,7 @@ class ClientPortalPersonalDetailsController extends Controller
                     'phone' => $sourcePhone->phone ?? '',
                     'phone_type' => $phoneType,
                     'country_code' => $sourcePhone->country_code ?? null,
-                    'extension' => $sourcePhone->extension ?? null,
+                    'extension' => $extension ?? null,
                     'action' => 'delete'
                 ]
             ]);
@@ -4585,8 +5027,26 @@ class ClientPortalPersonalDetailsController extends Controller
                 ->first();
 
             if ($existingAuditEntry) {
-                // Record exists in audit table - update action to 'delete' for all related entries
+                // Record exists in audit table - check if it's a Personal email
                 $metaOrder = $existingAuditEntry->meta_order;
+                
+                // Get email_type from audit table
+                $emailTypeEntry = ClientPortalDetailAudit::where('client_id', $clientId)
+                    ->where('meta_key', 'email_type')
+                    ->where('meta_order', $metaOrder)
+                    ->orderBy('updated_at', 'desc')
+                    ->first();
+                
+                $emailType = $emailTypeEntry ? $emailTypeEntry->new_value : null;
+                
+                // Check if email type is Personal (case-insensitive)
+                if (strtolower(trim($emailType ?? '')) === 'personal') {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Personal email cannot be deleted. It is readonly.'
+                    ], 422);
+                }
 
                 // Update all related email entries to action='delete'
                 ClientPortalDetailAudit::where('client_id', $clientId)
@@ -4623,6 +5083,16 @@ class ClientPortalPersonalDetailsController extends Controller
                     'success' => false,
                     'message' => 'Email ID does not exist'
                 ], 404);
+            }
+            
+            // Check if email type is Personal (case-insensitive)
+            $emailType = $sourceEmail->email_type ?? 'Personal';
+            if (strtolower(trim($emailType)) === 'personal') {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Personal email cannot be deleted. It is readonly.'
+                ], 422);
             }
 
             // Step 3: Record exists in source table - insert into audit table with action='delete'
@@ -6957,33 +7427,55 @@ class ClientPortalPersonalDetailsController extends Controller
                     }
                 }
 
-                // Get IDs of emails that are in the request (for selective deletion)
-                $requestEmailIds = [];
+                // Get existing email IDs from request to identify which ones to update
+                $emailIdsToUpdate = [];
+                $emailIdToMetaOrderMap = []; // Map email ID to its meta_order
+                
                 foreach ($emails as $emailData) {
+                    // ID field is required - if it has a value (not null), it's an update; if null, it's a new record
                     if (isset($emailData['id']) && $emailData['id'] !== null && $emailData['id'] !== '') {
-                        $requestEmailIds[] = (string) $emailData['id'];
+                        $emailIdsToUpdate[] = (int) $emailData['id'];
                     }
                 }
 
-                // Delete existing email audit entries only for emails that are in the request
-                // This preserves the Personal email's audit entries if it wasn't in the request
-                if (!empty($requestEmailIds)) {
-                    ClientPortalDetailAudit::where('client_id', $clientId)
+                // Get the highest existing meta_order BEFORE deleting (to ensure unique values for new emails)
+                $maxMetaOrder = ClientPortalDetailAudit::where('client_id', $clientId)
+                    ->whereIn('meta_key', ['email', 'email_type'])
+                    ->max('meta_order') ?? -1;
+
+                // Get meta_order values for existing emails BEFORE deleting (if IDs provided)
+                if (!empty($emailIdsToUpdate)) {
+                    $existingAuditEntries = ClientPortalDetailAudit::where('client_id', $clientId)
                         ->where('meta_key', 'email')
-                        ->whereIn('meta_type', $requestEmailIds)
-                        ->delete();
-                    
-                    // Also delete email_type entries for these emails
-                    ClientPortalDetailAudit::where('client_id', $clientId)
-                        ->where('meta_key', 'email_type')
-                        ->whereIn('meta_type', $requestEmailIds)
-                        ->delete();
+                        ->whereIn('meta_type', array_map('strval', $emailIdsToUpdate))
+                        ->get();
+
+                    foreach ($existingAuditEntries as $entry) {
+                        $eid = (int) $entry->meta_type;
+                        if (!isset($emailIdToMetaOrderMap[$eid])) {
+                            $emailIdToMetaOrderMap[$eid] = $entry->meta_order;
+                        }
+                    }
+
+                    // Delete existing email audit entries only for emails that are in the request
+                    // This preserves the Personal email's audit entries if it wasn't in the request
+                    if (!empty($emailIdToMetaOrderMap)) {
+                        $ordersToDelete = array_values($emailIdToMetaOrderMap);
+                        ClientPortalDetailAudit::where('client_id', $clientId)
+                            ->whereIn('meta_key', ['email', 'email_type'])
+                            ->whereIn('meta_order', $ordersToDelete)
+                            ->delete();
+                    }
                 } else {
                     // If no email IDs in request (all are new), delete all email audit entries
                     ClientPortalDetailAudit::where('client_id', $clientId)
                         ->whereIn('meta_key', ['email', 'email_type'])
                         ->delete();
                 }
+                // Note: If all emails have id: null (new emails), no deletion happens - safe behavior
+
+                // Track which meta_order values are being reused (to avoid conflicts with new emails)
+                $usedMetaOrders = array_values($emailIdToMetaOrderMap);
 
                 // Process only emails from the original request (don't add Personal email to processing)
                 $emailsToProcess = $emails;
@@ -7023,7 +7515,19 @@ class ClientPortalPersonalDetailsController extends Controller
                     // Determine action: 'create' for new records, 'update' for existing ones
                     $action = $isNewRecord ? 'create' : 'update';
 
-                    $metaOrder = $index;
+                    // Determine meta_order: use existing if updating by ID, otherwise use next available
+                    if (!$isNewRecord && isset($emailIdToMetaOrderMap[$emailId])) {
+                        // Use existing meta_order for this email
+                        $metaOrder = $emailIdToMetaOrderMap[$emailId];
+                    } else {
+                        // New email - use next available meta_order that doesn't conflict with reused values
+                        do {
+                            $maxMetaOrder++;
+                            $metaOrder = $maxMetaOrder;
+                        } while (in_array($metaOrder, $usedMetaOrders));
+                        // Track this meta_order as used to avoid conflicts with subsequent new emails
+                        $usedMetaOrders[] = $metaOrder;
+                    }
 
                     // Save email address - store record ID in meta_type (original ID for updates, generated ID for new records)
                     ClientPortalDetailAudit::create([
