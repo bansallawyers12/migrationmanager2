@@ -30,6 +30,7 @@ class SignatureDashboardController extends Controller
         
         // Get all documents (global access - everyone can see everything)
         $query = Document::with(['creator', 'signers', 'documentable'])
+            ->forSignatureWorkflow()
             ->visible($user)
             ->notArchived()
             ->orderBy('created_at', 'desc');
@@ -73,11 +74,11 @@ class SignatureDashboardController extends Controller
 
         // Get counts for dashboard cards (global access - all documents)
         $counts = [
-            'sent_by_me' => Document::forUser($user->id)->notArchived()->count(),
-            'visible_to_me' => Document::visible($user)->notArchived()->count(), // All documents (global)
-            'pending' => Document::visible($user)->byStatus('sent')->notArchived()->count(), // All pending (global)
-            'signed' => Document::visible($user)->byStatus('signed')->notArchived()->count(), // All signed (global)
-            'overdue' => Document::visible($user)
+            'sent_by_me' => Document::forSignatureWorkflow()->forUser($user->id)->notArchived()->count(),
+            'visible_to_me' => Document::forSignatureWorkflow()->visible($user)->notArchived()->count(), // All documents (global)
+            'pending' => Document::forSignatureWorkflow()->visible($user)->byStatus('sent')->notArchived()->count(), // All pending (global)
+            'signed' => Document::forSignatureWorkflow()->visible($user)->byStatus('signed')->notArchived()->count(), // All signed (global)
+            'overdue' => Document::forSignatureWorkflow()->visible($user)
                 ->whereNotNull('due_at')
                 ->where('due_at', '<', now())
                 ->where('status', '!=', 'signed')
@@ -86,8 +87,8 @@ class SignatureDashboardController extends Controller
         ];
 
         // All users see global counts now
-        $counts['all'] = Document::notArchived()->count();
-        $counts['all_pending'] = Document::byStatus('sent')->notArchived()->count();
+        $counts['all'] = Document::forSignatureWorkflow()->notArchived()->count();
+        $counts['all_pending'] = Document::forSignatureWorkflow()->byStatus('sent')->notArchived()->count();
 
         // Provide errors variable for the layout
         $errors = $request->session()->get('errors') ?? new \Illuminate\Support\MessageBag();

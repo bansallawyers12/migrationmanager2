@@ -6,35 +6,45 @@
     <title>Verification Failed</title>
     <style>
         body {
-            margin: 0;
-            padding: 20px;
             font-family: Arial, Helvetica, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
             background-color: #f5f5f5;
+            padding: 20px;
+            margin: 0;
         }
         .error-container {
-            background-color: #ffffff;
-            padding: 40px 30px;
+            background: #ffffff;
+            padding: 50px 40px;
+            border: 1px solid #dddddd;
             text-align: center;
             max-width: 550px;
-            margin: 20px auto;
+            width: 100%;
         }
         .error-icon {
             width: 80px;
             height: 80px;
-            background-color: #dc2626;
+            background-color: #ef4444;
+            border: 3px solid #dc2626;
             border-radius: 50%;
-            display: inline-block;
-            line-height: 80px;
-            margin: 0 auto 20px;
-            font-size: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 25px;
+        }
+        .error-icon::before {
+            content: '✗';
+            font-size: 50px;
             color: #ffffff;
             font-weight: bold;
         }
         h1 {
-            color: #dc2626;
+            color: #1a1a1a;
             margin-bottom: 20px;
             font-size: 28px;
-            font-weight: bold;
+            font-weight: 700;
         }
         p {
             color: #1a1a1a;
@@ -45,31 +55,32 @@
         .error-message {
             background-color: #fff3cd;
             border: 2px solid #ffc107;
-            padding: 15px 20px;
+            padding: 20px;
             margin: 25px 0;
             text-align: left;
         }
         .error-message p {
             margin: 0;
-            color: #856404;
-            font-weight: bold;
+            color: #1a1a1a;
+            font-weight: 600;
             font-size: 15px;
         }
         .reasons-box {
             background-color: #f8f9fa;
-            padding: 20px;
+            padding: 25px;
             margin: 25px 0;
             text-align: left;
+            border: 1px solid #dee2e6;
         }
         .reasons-box p {
             margin-bottom: 15px;
-            font-weight: bold;
+            font-weight: 700;
             color: #1a1a1a;
             font-size: 16px;
         }
         .reasons-box ul {
             margin: 0;
-            padding-left: 20px;
+            padding-left: 25px;
             color: #1a1a1a;
         }
         .reasons-box li {
@@ -79,9 +90,10 @@
         }
         .help-box {
             background-color: #e7f3ff;
-            border-left: 4px solid #2563eb;
-            padding: 15px 20px;
-            margin-top: 25px;
+            border: 1px solid #3b82f6;
+            border-left: 4px solid #3b82f6;
+            padding: 20px;
+            margin-top: 30px;
             text-align: left;
         }
         .help-box p {
@@ -89,24 +101,24 @@
             color: #1a1a1a;
         }
         .help-box p:first-child {
-            font-weight: bold;
+            font-weight: 700;
             font-size: 16px;
             margin-bottom: 10px;
         }
         .company-name {
-            margin-top: 25px;
-            color: #999999;
+            margin-top: 30px;
+            color: #666666;
             font-size: 14px;
         }
         .company-name strong {
-            color: #dc2626;
-            font-weight: bold;
+            color: #1a1a1a;
+            font-weight: 700;
         }
     </style>
 </head>
 <body>
     <div class="error-container">
-        <div class="error-icon">✗</div>
+        <div class="error-icon"></div>
         <h1>Verification Failed</h1>
         
         <div class="error-message">

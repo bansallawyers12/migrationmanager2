@@ -6,7 +6,7 @@
     <title>Appointment Confirmation</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: Arial, Helvetica, sans-serif;
             line-height: 1.6;
             color: #1a1a1a;
             max-width: 600px;
@@ -19,32 +19,39 @@
             color: #ffffff;
             padding: 20px;
             text-align: center;
+            border: 1px solid #1a252f;
         }
         .header h1 {
-            margin: 0;
+            margin: 10px 0 0 0;
             font-size: 24px;
+            color: #ffffff;
+        }
+        .header p {
+            margin: 5px 0 0 0;
+            color: #ffffff;
         }
         .content {
             background-color: #ffffff;
             padding: 30px;
-            border: 1px solid #e0e0e0;
+            border: 1px solid #dddddd;
         }
         .appointment-details {
-            background-color: #f8f9fa;
+            background-color: #ffffff;
             padding: 20px;
             margin: 20px 0;
-            border-left: 4px solid #2563eb;
+            border: 1px solid #dee2e6;
+            border-left: 4px solid #3498db;
         }
         .detail-row {
             margin: 15px 0;
             padding: 10px 0;
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid #eeeeee;
         }
         .detail-row:last-child {
             border-bottom: none;
         }
         .label {
-            font-weight: bold;
+            font-weight: 700;
             color: #1a1a1a;
             display: inline-block;
             width: 140px;
@@ -54,6 +61,7 @@
         }
         .important-note {
             background-color: #fff3cd;
+            border: 1px solid #ffc107;
             border-left: 4px solid #ffc107;
             padding: 15px;
             margin: 20px 0;
@@ -62,23 +70,21 @@
             text-align: center;
             padding: 20px;
             color: #1a1a1a;
-            font-size: 14px;
+            font-size: 0.9em;
         }
         .contact-info {
             background-color: #e7f3ff;
+            border: 1px solid #3b82f6;
             padding: 15px;
             margin: 20px 0;
-        }
-        .contact-info a {
-            color: #2563eb;
-            text-decoration: none;
         }
     </style>
 </head>
 <body>
     <div class="header">
+        <img src="{{URL::to('/public/img/logo.png')}}" alt="Bansal Immigration" style="max-width: 180px; height: auto; margin-bottom: 10px;" />
         <h1>Bansal Immigration</h1>
-        <p style="margin: 5px 0 0 0;">Appointment Confirmation</p>
+        <p>Appointment Confirmation</p>
     </div>
 
     <div class="content">
@@ -87,7 +93,7 @@
         <p>Thank you for booking an appointment with Bansal Immigration. This email confirms your appointment details:</p>
 
         <div class="appointment-details">
-            <h2 style="margin-top: 0; color: #1a1a1a;">Appointment Details</h2>
+            <h2 style="margin-top: 0; color: #1a1a1a; font-size: 18px;">Appointment Details</h2>
             
             <div class="detail-row">
                 <span class="label">Date:</span>
@@ -118,13 +124,13 @@
         @if($adminNotes)
         <div class="important-note">
             <strong>Important Notes:</strong>
-            <p style="margin: 10px 0 0 0;">{{ $adminNotes }}</p>
+            <p style="margin: 10px 0 0 0; color: #1a1a1a;">{{ $adminNotes }}</p>
         </div>
         @endif
 
         <div class="important-note">
             <strong>Please bring:</strong>
-            <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+            <ul style="margin: 10px 0 0 0; padding-left: 20px; color: #1a1a1a;">
                 <li>Valid photo identification (Passport, Driver's License)</li>
                 <li>All relevant documents related to your visa inquiry</li>
                 <li>Any previous correspondence from immigration authorities</li>
@@ -132,11 +138,11 @@
         </div>
 
         <div class="contact-info">
-            <strong>Need to reschedule or have questions?</strong>
-            <p style="margin: 10px 0 0 0;">
-                Phone: <a href="tel:1300859368">1300 859 368</a><br>
-                Email: <a href="mailto:info@bansalimmigration.com">info@bansalimmigration.com</a><br>
-                Website: <a href="https://bansalimmigration.com">bansalimmigration.com</a>
+            <strong style="color: #1a1a1a;">Need to reschedule or have questions?</strong>
+            <p style="margin: 10px 0 0 0; color: #1a1a1a;">
+                Phone: <a href="tel:1300859368" style="color: #2563eb; text-decoration: none; font-weight: 600;">1300 859 368</a><br>
+                Email: <a href="mailto:info@bansalimmigration.com" style="color: #2563eb; text-decoration: none; font-weight: 600;">info@bansalimmigration.com</a><br>
+                Website: <a href="https://bansalimmigration.com" style="color: #2563eb; text-decoration: none; font-weight: 600;">bansalimmigration.com</a>
             </p>
         </div>
 
@@ -148,7 +154,7 @@
 
     <div class="footer">
         <p>This is an automated confirmation email. Please do not reply to this email.</p>
-        <p style="font-size: 12px; color: #666666;">
+        <p style="font-size: 0.8em; color: #666666;">
             &copy; {{ date('Y') }} Bansal Immigration. All rights reserved.
         </p>
     </div>

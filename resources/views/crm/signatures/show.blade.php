@@ -1057,35 +1057,6 @@
                 </div>
             </div>
 
-            <!-- Association History Card -->
-            @if($document->notes->count() > 0)
-            <div class="sidebar-card" style="margin-top: 20px;">
-                <h3 class="section-title" style="font-size: 16px;">
-                    <i class="fas fa-clipboard-list"></i>
-                    Association History
-                </h3>
-
-                <div style="padding-left: 10px;">
-                    @foreach($document->notes as $note)
-                    <div class="timeline-item">
-                        <div class="timeline-date">{{ $note->created_at->format('M d, Y g:i A') }}</div>
-                        <div class="timeline-text">
-                            <strong>{{ $note->action_text }}</strong>
-                            @if($note->creator)
-                            <br><small>by {{ $note->creator->first_name }} {{ $note->creator->last_name }}</small>
-                            @endif
-                        </div>
-                        @if($note->note)
-                        <div style="margin-top: 5px; font-size: 13px; color: #6c757d; font-style: italic;">
-                            "{{ $note->note }}"
-                        </div>
-                        @endif
-                    </div>
-                    @endforeach
-                </div>
-            </div>
-            @endif
-
             <!-- Activity Timeline Card -->
             <div class="sidebar-card" style="margin-top: 20px;">
                 <h3 class="section-title" style="font-size: 16px;">
@@ -1219,10 +1190,10 @@
                             </div>
                             <div class="timeline-content">
                                 <div class="timeline-date">{{ $activity['date']->format('M d, Y g:i A') }}</div>
-                                <div class="timeline-text">{{ $activity['text'] }}</div>
+                                <div class="timeline-text" style="{{ $activity['type'] === 'email_failed' ? 'color: #dc3545; font-weight: 500;' : '' }}">{{ $activity['text'] }}</div>
                                 @if(isset($activity['error']))
-                                <div style="margin-top: 5px; font-size: 12px; color: #dc3545; font-style: italic;">
-                                    Error: {{ \Illuminate\Support\Str::limit($activity['error'], 100) }}
+                                <div style="margin-top: 5px; padding: 6px 10px; background-color: #fee; border-left: 3px solid #dc3545; border-radius: 4px; font-size: 12px; color: #721c24;">
+                                    <strong>Error:</strong> {{ \Illuminate\Support\Str::limit($activity['error'], 150) }}
                                 </div>
                                 @endif
                                 @if(isset($activity['note']) && $activity['note']->metadata && isset($activity['note']->metadata['request_id']))

@@ -23,7 +23,7 @@
 			<table width="100%" border="0">
 				<tbody>
 					<tr>
-						<td><img src="" title="Company Logo" alt="Company Logo"/></td>
+						<td><img src="{{URL::to('/public/img/logo.png')}}" title="Company Logo" alt="Company Logo" style="max-width: 200px; height: auto;"/></td>
 						<td></td>
 						<td style="text-align: right;">
 							<span style="font-size:21px;line-height:24px;color:#000;"><b>{{$admin->company_name}}</b></span>

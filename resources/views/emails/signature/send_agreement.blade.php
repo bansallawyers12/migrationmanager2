@@ -6,15 +6,17 @@
     <title>Agreement Signature Request</title>
     <style>
         body {
+            font-family: Arial, Helvetica, sans-serif;
             margin: 0;
             padding: 0;
-            font-family: Arial, Helvetica, sans-serif;
             background-color: #f5f5f5;
+            color: #1a1a1a;
         }
         .email-container {
             max-width: 600px;
-            margin: 0 auto;
-            background-color: #ffffff;
+            margin: 20px auto;
+            background: #ffffff;
+            border: 1px solid #dddddd;
         }
         .email-header {
             background-color: #059669;
@@ -23,16 +25,17 @@
             text-align: center;
         }
         .email-header h1 {
-            margin: 0;
+            margin: 10px 0 0 0;
             font-size: 24px;
-            font-weight: bold;
+            font-weight: 700;
+            color: #ffffff;
         }
         .email-body {
-            padding: 30px 20px;
+            padding: 30px 25px;
         }
         .greeting {
             font-size: 16px;
-            font-weight: bold;
+            font-weight: 600;
             color: #1a1a1a;
             margin-bottom: 20px;
         }
@@ -44,24 +47,26 @@
         }
         .custom-message {
             background-color: #f0fdf4;
-            border-left: 4px solid #059669;
-            padding: 15px 20px;
+            border: 1px solid #10b981;
+            border-left: 4px solid #10b981;
+            padding: 15px;
             margin: 20px 0;
         }
         .document-info {
             background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
             border-left: 4px solid #059669;
-            padding: 15px 20px;
-            margin: 20px 0;
+            padding: 20px;
+            margin: 25px 0;
         }
         .document-info h3 {
-            margin: 0 0 10px 0;
+            margin: 0 0 15px 0;
             color: #1a1a1a;
             font-size: 16px;
-            font-weight: bold;
+            font-weight: 700;
         }
         .document-info p {
-            margin: 5px 0;
+            margin: 8px 0;
             color: #1a1a1a;
             font-size: 14px;
         }
@@ -71,39 +76,42 @@
             color: #ffffff;
             text-decoration: none;
             padding: 15px 40px;
-            border-radius: 4px;
-            font-weight: bold;
+            border: 2px solid #047857;
+            font-weight: 700;
             font-size: 16px;
+            text-align: center;
         }
         .button-container {
             text-align: center;
-            margin: 25px 0;
+            margin: 30px 0;
         }
         .note {
             background-color: #fff3cd;
+            border: 1px solid #ffc107;
             border-left: 4px solid #ffc107;
-            padding: 15px 20px;
+            padding: 15px;
             margin: 20px 0;
             font-size: 14px;
-            color: #856404;
+            color: #1a1a1a;
         }
         .attachments {
             background-color: #e7f3ff;
-            border-left: 4px solid #2563eb;
-            padding: 15px 20px;
+            border: 1px solid #3b82f6;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
             margin: 20px 0;
         }
         .attachments h4 {
             margin: 0 0 10px 0;
             color: #1a1a1a;
             font-size: 14px;
-            font-weight: bold;
+            font-weight: 700;
         }
         .email-footer {
             background-color: #f8f9fa;
             padding: 25px 20px;
             text-align: center;
-            border-top: 1px solid #e0e0e0;
+            border-top: 1px solid #dee2e6;
         }
         .email-footer p {
             margin: 5px 0;
@@ -113,27 +121,23 @@
         .email-footer a {
             color: #059669;
             text-decoration: none;
-        }
-        .footer-links {
-            margin-top: 15px;
-        }
-        .footer-links a {
-            color: #666666;
-            text-decoration: none;
-            font-size: 12px;
-            margin: 0 10px;
+            font-weight: 600;
         }
     </style>
 </head>
 <body>
     <div class="email-container">
+        <!-- Header -->
         <div class="email-header">
+            <img src="{{URL::to('/public/img/logo.png')}}" alt="Bansal Migration" style="max-width: 200px; height: auto; margin-bottom: 15px;" />
             <h1>Agreement Signature Request</h1>
         </div>
 
+        <!-- Body -->
         <div class="email-body">
             <p class="greeting">Dear {{ $signerName }},</p>
             
+            <!-- Custom Message -->
             @if(isset($emailMessage) && !empty($emailMessage))
             <div class="custom-message">
                 {!! nl2br(e($emailMessage)) !!}
@@ -145,6 +149,7 @@
             </p>
             @endif
 
+            <!-- Document Info -->
             <div class="document-info">
                 <h3>Agreement Details</h3>
                 <p><strong>Document:</strong> {{ $documentTitle }}</p>
@@ -154,18 +159,21 @@
                 @endif
             </div>
 
+            <!-- Attachments Notice (if any) -->
             <div class="attachments">
                 <h4>Additional Information</h4>
-                <p>This email may include additional documents and information related to your matter. 
+                <p style="margin: 0; color: #1a1a1a; font-size: 14px;">This email may include additional documents and information related to your matter. 
                 Please review all attached materials carefully before signing.</p>
             </div>
 
+            <!-- Call to Action -->
             <div class="button-container">
-                <a href="{{ $signingUrl }}" class="cta-button" style="display: inline-block; background-color: #059669; color: #ffffff; text-decoration: none; padding: 15px 40px; border-radius: 4px; font-weight: bold; font-size: 16px;">
+                <a href="{{ $signingUrl }}" class="cta-button" style="display: inline-block; background-color: #059669; color: #ffffff; text-decoration: none; padding: 15px 40px; border: 2px solid #047857; font-weight: 700; font-size: 16px;">
                     Review & Sign Agreement
                 </a>
             </div>
 
+            <!-- Legal Note -->
             <div class="note">
                 <strong>Important Legal Notice:</strong> By signing this agreement, you acknowledge that you have 
                 read, understood, and agree to the terms and conditions outlined in the document. This is a legally 
@@ -179,16 +187,18 @@
 
             <p class="message" style="margin-top: 30px;">
                 <strong>Warm regards,</strong><br>
-                Bansal Migration Team
+                Bansal Migration Team<br>
+                <em>Your trusted immigration partner</em>
             </p>
 
             @if(isset($emailSignature) && !empty($emailSignature))
-                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6;">
                     {!! $emailSignature !!}
                 </div>
             @endif
         </div>
 
+        <!-- Footer -->
         <div class="email-footer">
             <p><strong>Bansal Migration</strong></p>
             <p>Immigration & Visa Services</p>
@@ -196,13 +206,7 @@
             <p>Phone: <a href="tel:+61292673945">+61 2 9267 3945</a></p>
             <p>Website: <a href="https://www.bansalimmigration.com.au">www.bansalimmigration.com.au</a></p>
             
-            <div class="footer-links">
-                <a href="https://www.bansalimmigration.com.au/privacy-policy">Privacy Policy</a> | 
-                <a href="https://www.bansalimmigration.com.au/terms">Terms of Service</a> |
-                <a href="https://www.bansalimmigration.com.au/contact">Contact Us</a>
-            </div>
-            
-            <p style="margin-top: 15px; font-size: 11px; color: #999999;">
+            <p style="margin-top: 15px; font-size: 11px; color: #666666;">
                 This is an automated message. Please do not reply to this email.
             </p>
         </div>

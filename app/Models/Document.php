@@ -167,6 +167,15 @@ class Document extends Model
     }
 
     /**
+     * Scope to show only signature workflow documents
+     * Excludes client file uploads which don't have created_by set
+     */
+    public function scopeForSignatureWorkflow($query)
+    {
+        return $query->whereNotNull('created_by');
+    }
+
+    /**
      * Scope to filter documents by office (includes matter-derived)
      */
     public function scopeByOffice($query, $officeId)

@@ -6,15 +6,17 @@
     <title>Document Signature Reminder</title>
     <style>
         body {
+            font-family: Arial, Helvetica, sans-serif;
             margin: 0;
             padding: 0;
-            font-family: Arial, Helvetica, sans-serif;
             background-color: #f5f5f5;
+            color: #1a1a1a;
         }
         .email-container {
             max-width: 600px;
-            margin: 0 auto;
-            background-color: #ffffff;
+            margin: 20px auto;
+            background: #ffffff;
+            border: 1px solid #dddddd;
         }
         .email-header {
             background-color: #dc2626;
@@ -23,25 +25,27 @@
             text-align: center;
         }
         .email-header h1 {
-            margin: 0;
+            margin: 10px 0 0 0;
             font-size: 24px;
-            font-weight: bold;
+            font-weight: 700;
+            color: #ffffff;
         }
         .reminder-badge {
             display: inline-block;
-            background-color: rgba(255, 255, 255, 0.3);
+            background-color: rgba(255, 255, 255, 0.2);
             padding: 5px 15px;
-            border-radius: 15px;
+            border: 1px solid #ffffff;
             font-size: 12px;
             margin-top: 10px;
-            font-weight: bold;
+            font-weight: 600;
+            color: #ffffff;
         }
         .email-body {
-            padding: 30px 20px;
+            padding: 30px 25px;
         }
         .greeting {
             font-size: 16px;
-            font-weight: bold;
+            font-weight: 600;
             color: #1a1a1a;
             margin-bottom: 20px;
         }
@@ -53,7 +57,7 @@
         }
         .urgent-notice {
             background-color: #fee2e2;
-            border: 2px solid #dc2626;
+            border: 2px solid #fca5a5;
             padding: 20px;
             margin: 25px 0;
             text-align: center;
@@ -62,33 +66,34 @@
             margin: 10px 0;
             color: #dc2626;
             font-size: 18px;
-            font-weight: bold;
+            font-weight: 700;
         }
         .urgent-notice p {
             margin: 5px 0;
-            color: #991b1b;
+            color: #1a1a1a;
             font-size: 14px;
         }
         .document-info {
             background-color: #f8f9fa;
-            border-left: 4px solid #f59e0b;
-            padding: 15px 20px;
-            margin: 20px 0;
+            border: 1px solid #dee2e6;
+            border-left: 4px solid #dc2626;
+            padding: 20px;
+            margin: 25px 0;
         }
         .document-info h3 {
-            margin: 0 0 10px 0;
+            margin: 0 0 15px 0;
             color: #1a1a1a;
             font-size: 16px;
-            font-weight: bold;
+            font-weight: 700;
         }
         .document-info p {
-            margin: 5px 0;
+            margin: 8px 0;
             color: #1a1a1a;
             font-size: 14px;
         }
         .due-date-warning {
             color: #dc2626;
-            font-weight: bold;
+            font-weight: 700;
         }
         .cta-button {
             display: inline-block;
@@ -96,25 +101,26 @@
             color: #ffffff;
             text-decoration: none;
             padding: 15px 40px;
-            border-radius: 4px;
-            font-weight: bold;
+            border: 2px solid #b91c1c;
+            font-weight: 700;
             font-size: 16px;
         }
         .button-container {
             text-align: center;
-            margin: 25px 0;
+            margin: 30px 0;
         }
         .help-section {
             background-color: #e7f3ff;
-            border-left: 4px solid #2563eb;
-            padding: 15px 20px;
-            margin: 20px 0;
+            border: 1px solid #3b82f6;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin: 25px 0;
         }
         .help-section h4 {
             margin: 0 0 10px 0;
             color: #1a1a1a;
             font-size: 14px;
-            font-weight: bold;
+            font-weight: 700;
         }
         .help-section p {
             margin: 5px 0;
@@ -124,12 +130,13 @@
         .help-section a {
             color: #2563eb;
             text-decoration: none;
+            font-weight: 600;
         }
         .email-footer {
             background-color: #f8f9fa;
             padding: 25px 20px;
             text-align: center;
-            border-top: 1px solid #e0e0e0;
+            border-top: 1px solid #dee2e6;
         }
         .email-footer p {
             margin: 5px 0;
@@ -139,28 +146,24 @@
         .email-footer a {
             color: #dc2626;
             text-decoration: none;
-        }
-        .footer-links {
-            margin-top: 15px;
-        }
-        .footer-links a {
-            color: #666666;
-            text-decoration: none;
-            font-size: 12px;
-            margin: 0 10px;
+            font-weight: 600;
         }
     </style>
 </head>
 <body>
     <div class="email-container">
+        <!-- Header -->
         <div class="email-header">
+            <img src="{{URL::to('/public/img/logo.png')}}" alt="Bansal Migration" style="max-width: 200px; height: auto; margin-bottom: 15px;" />
             <h1>Document Signature Reminder</h1>
             <div class="reminder-badge">Reminder #{{ $reminderNumber }}</div>
         </div>
 
+        <!-- Body -->
         <div class="email-body">
             <p class="greeting">Dear {{ $signerName }},</p>
             
+            <!-- Urgent Notice -->
             <div class="urgent-notice">
                 <h3>Action Required: Document Awaiting Your Signature</h3>
                 <p>This is a friendly reminder that a document is still pending your signature.</p>
@@ -171,6 +174,7 @@
                 it yet. Your prompt attention to this matter would be greatly appreciated.
             </p>
 
+            <!-- Document Info -->
             <div class="document-info">
                 <h3>Document Details</h3>
                 <p><strong>Document:</strong> {{ $documentTitle }}</p>
@@ -180,8 +184,9 @@
                 @endif
             </div>
 
+            <!-- Call to Action -->
             <div class="button-container">
-                <a href="{{ $signingUrl }}" class="cta-button" style="display: inline-block; background-color: #dc2626; color: #ffffff; text-decoration: none; padding: 15px 40px; border-radius: 4px; font-weight: bold; font-size: 16px;">
+                <a href="{{ $signingUrl }}" class="cta-button" style="display: inline-block; background-color: #dc2626; color: #ffffff; text-decoration: none; padding: 15px 40px; border: 2px solid #b91c1c; font-weight: 700; font-size: 16px;">
                     Sign Now
                 </a>
             </div>
@@ -192,6 +197,7 @@
                 may impact the progress of your case or application.
             </p>
 
+            <!-- Help Section -->
             <div class="help-section">
                 <h4>Need Help?</h4>
                 <p>If you're experiencing any issues with the signing process or have questions about 
@@ -211,12 +217,13 @@
             </p>
 
             @if(isset($emailSignature) && !empty($emailSignature))
-                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6;">
                     {!! $emailSignature !!}
                 </div>
             @endif
         </div>
 
+        <!-- Footer -->
         <div class="email-footer">
             <p><strong>Bansal Migration</strong></p>
             <p>Immigration & Visa Services</p>
@@ -224,13 +231,7 @@
             <p>Phone: <a href="tel:+61292673945">+61 2 9267 3945</a></p>
             <p>Website: <a href="https://www.bansalimmigration.com.au">www.bansalimmigration.com.au</a></p>
             
-            <div class="footer-links">
-                <a href="https://www.bansalimmigration.com.au/privacy-policy">Privacy Policy</a> | 
-                <a href="https://www.bansalimmigration.com.au/terms">Terms of Service</a> |
-                <a href="https://www.bansalimmigration.com.au/contact">Contact Us</a>
-            </div>
-            
-            <p style="margin-top: 15px; font-size: 11px; color: #999999;">
+            <p style="margin-top: 15px; font-size: 11px; color: #666666;">
                 This is an automated reminder. Please do not reply to this email.<br>
                 You will receive up to 3 reminders.
             </p>
