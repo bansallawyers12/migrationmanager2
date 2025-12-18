@@ -18,36 +18,81 @@ return new class extends Migration
         // Check column existence OUTSIDE the Schema::table closure
         $hasIsMigrationAgent = Schema::hasColumn('admins', 'is_migration_agent');
         $hasMarnNumber = Schema::hasColumn('admins', 'marn_number');
+        $hasBusinessFax = Schema::hasColumn('admins', 'business_fax');
+        $hasBusinessAddress = Schema::hasColumn('admins', 'business_address');
+        $hasBusinessPhone = Schema::hasColumn('admins', 'business_phone');
+        $hasBusinessMobile = Schema::hasColumn('admins', 'business_mobile');
+        $hasBusinessEmail = Schema::hasColumn('admins', 'business_email');
+        $hasTaxNumber = Schema::hasColumn('admins', 'tax_number');
         
-        Schema::table('admins', function (Blueprint $table) {
-            // Check and add only missing columns
-            
-            if (!Schema::hasColumn('admins', 'business_address')) {
-                $table->text('business_address')->nullable()->after('business_fax');
+        Schema::table('admins', function (Blueprint $table) use ($hasBusinessFax, $hasIsMigrationAgent, $hasMarnNumber, $hasBusinessAddress, $hasBusinessPhone, $hasBusinessMobile, $hasBusinessEmail, $hasTaxNumber) {
+            // Add core migration agent fields first
+            if (!$hasIsMigrationAgent) {
+                $table->tinyInteger('is_migration_agent')->default(0)->nullable()
+                    ->comment('Flag to indicate if user is a migration agent');
             }
             
-            if (!Schema::hasColumn('admins', 'business_phone')) {
-                $table->string('business_phone')->nullable()->after('business_fax');
+            if (!$hasMarnNumber) {
+                $table->string('marn_number')->nullable()
+                    ->comment('Migration Agent Registration Number');
             }
             
-            if (!Schema::hasColumn('admins', 'business_email')) {
-                $table->string('business_email')->nullable()->after('business_fax');
+            // Add business-related fields
+            // Determine position based on business_fax existence
+            if (!$hasBusinessAddress) {
+                if ($hasBusinessFax) {
+                    $table->text('business_address')->nullable()->after('business_fax');
+                } else {
+                    $table->text('business_address')->nullable();
+                }
             }
             
-            if (!Schema::hasColumn('admins', 'tax_number')) {
-                $table->string('tax_number')->nullable()->after('business_fax');
+            if (!$hasBusinessPhone) {
+                if ($hasBusinessFax) {
+                    $table->string('business_phone')->nullable()->after('business_fax');
+                } else {
+                    $table->string('business_phone')->nullable();
+                }
+            }
+            
+            if (!$hasBusinessMobile) {
+                if ($hasBusinessFax) {
+                    $table->string('business_mobile')->nullable()->after('business_fax');
+                } else {
+                    $table->string('business_mobile')->nullable();
+                }
+            }
+            
+            if (!$hasBusinessEmail) {
+                if ($hasBusinessFax) {
+                    $table->string('business_email')->nullable()->after('business_fax');
+                } else {
+                    $table->string('business_email')->nullable();
+                }
+            }
+            
+            if (!$hasTaxNumber) {
+                if ($hasBusinessFax) {
+                    $table->string('tax_number')->nullable()->after('business_fax');
+                } else {
+                    $table->string('tax_number')->nullable();
+                }
             }
         });
         
+        // Re-check column existence after creation for index creation
+        $hasIsMigrationAgentAfter = Schema::hasColumn('admins', 'is_migration_agent');
+        $hasMarnNumberAfter = Schema::hasColumn('admins', 'marn_number');
+        
         // Add indexes separately, outside the Schema::table closure
         // Only create indexes if the columns actually exist
-        if ($hasIsMigrationAgent && !$this->indexExists('admins', 'admins_is_migration_agent_index')) {
+        if ($hasIsMigrationAgentAfter && !$this->indexExists('admins', 'admins_is_migration_agent_index')) {
             Schema::table('admins', function (Blueprint $table) {
                 $table->index('is_migration_agent');
             });
         }
         
-        if ($hasMarnNumber && !$this->indexExists('admins', 'admins_marn_number_index')) {
+        if ($hasMarnNumberAfter && !$this->indexExists('admins', 'admins_marn_number_index')) {
             Schema::table('admins', function (Blueprint $table) {
                 $table->index('marn_number');
             });
@@ -55,16 +100,35 @@ return new class extends Migration
         
         echo "\n✅ Migration completed successfully!\n";
         echo "   - Added missing migration agent fields to admins table\n";
-        echo "   - business_address, business_phone, business_email, tax_number\n";
-        if ($hasIsMigrationAgent) {
-            echo "   - Index created on is_migration_agent\n";
+        $addedFields = [];
+        if (!$hasIsMigrationAgent) $addedFields[] = 'is_migration_agent';
+        if (!$hasMarnNumber) $addedFields[] = 'marn_number';
+        if (!$hasBusinessAddress) $addedFields[] = 'business_address';
+        if (!$hasBusinessPhone) $addedFields[] = 'business_phone';
+        if (!$hasBusinessMobile) $addedFields[] = 'business_mobile';
+        if (!$hasBusinessEmail) $addedFields[] = 'business_email';
+        if (!$hasTaxNumber) $addedFields[] = 'tax_number';
+        
+        if (!empty($addedFields)) {
+            echo "   - Created columns: " . implode(', ', $addedFields) . "\n";
         } else {
-            echo "   - Note: is_migration_agent column does not exist, skipping index\n";
+            echo "   - All columns already exist\n";
         }
-        if ($hasMarnNumber) {
-            echo "   - Index created on marn_number\n";
-        } else {
-            echo "   - Note: marn_number column does not exist, skipping index\n";
+        
+        if ($hasIsMigrationAgentAfter) {
+            if (!$this->indexExists('admins', 'admins_is_migration_agent_index')) {
+                echo "   - Index created on is_migration_agent\n";
+            } else {
+                echo "   - Index already exists on is_migration_agent\n";
+            }
+        }
+        
+        if ($hasMarnNumberAfter) {
+            if (!$this->indexExists('admins', 'admins_marn_number_index')) {
+                echo "   - Index created on marn_number\n";
+            } else {
+                echo "   - Index already exists on marn_number\n";
+            }
         }
         echo "\n";
     }
@@ -88,22 +152,52 @@ return new class extends Migration
      */
     public function down(): void
     {
+        // Drop indexes first if they exist
+        if ($this->indexExists('admins', 'admins_is_migration_agent_index')) {
+            Schema::table('admins', function (Blueprint $table) {
+                $table->dropIndex('admins_is_migration_agent_index');
+            });
+        }
+        
+        if ($this->indexExists('admins', 'admins_marn_number_index')) {
+            Schema::table('admins', function (Blueprint $table) {
+                $table->dropIndex('admins_marn_number_index');
+            });
+        }
+        
         Schema::table('admins', function (Blueprint $table) {
-            // Only drop columns that we added
+            // Drop all columns that we added
+            $columnsToDrop = [];
+            
+            if (Schema::hasColumn('admins', 'is_migration_agent')) {
+                $columnsToDrop[] = 'is_migration_agent';
+            }
+            if (Schema::hasColumn('admins', 'marn_number')) {
+                $columnsToDrop[] = 'marn_number';
+            }
             if (Schema::hasColumn('admins', 'business_address')) {
-                $table->dropColumn('business_address');
+                $columnsToDrop[] = 'business_address';
             }
             if (Schema::hasColumn('admins', 'business_phone')) {
-                $table->dropColumn('business_phone');
+                $columnsToDrop[] = 'business_phone';
+            }
+            if (Schema::hasColumn('admins', 'business_mobile')) {
+                $columnsToDrop[] = 'business_mobile';
             }
             if (Schema::hasColumn('admins', 'business_email')) {
-                $table->dropColumn('business_email');
+                $columnsToDrop[] = 'business_email';
             }
             if (Schema::hasColumn('admins', 'tax_number')) {
-                $table->dropColumn('tax_number');
+                $columnsToDrop[] = 'tax_number';
+            }
+            
+            if (!empty($columnsToDrop)) {
+                $table->dropColumn($columnsToDrop);
             }
         });
         
-        echo "\n✅ Rollback completed - new agent fields removed\n\n";
+        echo "\n✅ Rollback completed - migration agent fields removed\n";
+        echo "   - Dropped columns: is_migration_agent, marn_number, business_address, business_phone, business_mobile, business_email, tax_number\n";
+        echo "   - Dropped indexes on is_migration_agent and marn_number\n\n";
     }
 };

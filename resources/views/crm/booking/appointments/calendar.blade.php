@@ -393,7 +393,8 @@ $(document).ready(function() {
                                 status: appointment.status,
                                 location: appointment.location,
                                 consultant: appointment.consultant ? appointment.consultant.name : 'Not Assigned',
-                                payment_status: appointment.is_paid ? 'Paid' : 'Free'
+                                payment_status: appointment.is_paid ? 'Paid' : 'Free',
+                                final_amount: appointment.final_amount || 0
                             };
                         });
                         console.log('Processed events:', events);
@@ -446,9 +447,14 @@ $(document).ready(function() {
                                 <button type="button" class="btn btn-sm btn-outline-primary" onclick="updateAppointmentStatus(${event.id}, 'completed')">
                                     <i class="fas fa-check-circle"></i> Mark as Complete
                                 </button>
-                                <!-- <button type="button" class="btn btn-sm btn-outline-warning" onclick="updateAppointmentStatus(${event.id}, 'pending')">
-                                    <i class="fas fa-clock"></i> Mark as Pending
-                                </button> -->
+                                ${event.final_amount && parseFloat(event.final_amount) > 0 ? `
+                                <button type="button" class="btn btn-sm btn-outline-info" onclick="updateAppointmentStatus(${event.id}, 'paid')">
+                                    <i class="fas fa-dollar-sign"></i> Mark As Payment Done
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-warning" onclick="updateAppointmentStatus(${event.id}, 'pending')">
+                                    <i class="fas fa-clock"></i> Mark As Payment Pending
+                                </button>
+                                ` : ''}
                                 <button type="button" class="btn btn-sm btn-outline-danger" onclick="updateAppointmentStatus(${event.id}, 'cancelled')">
                                     <i class="fas fa-times"></i> Mark as Cancelled
                                 </button>
@@ -491,10 +497,12 @@ $(document).ready(function() {
     function getStatusClass(status) {
         switch(status) {
             case 'pending': return 'warning';
+            case 'paid': return 'info';
             case 'confirmed': return 'success';
             case 'completed': return 'info';
             case 'cancelled': return 'danger';
             case 'no_show': return 'dark';
+            case 'rescheduled': return 'primary';
             default: return 'secondary';
         }
     }

@@ -406,6 +406,14 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <!-- <button type="button" class="btn btn-sm btn-outline-warning" onclick="updateAppointmentStatus(${event.id}, 'pending')">
                                     <i class="fas fa-clock"></i> Mark as Pending
                                 </button> -->
+                                ${props.final_amount && parseFloat(props.final_amount) > 0 ? `
+                                <button type="button" class="btn btn-sm btn-outline-info" onclick="updateAppointmentStatus(${event.id}, 'paid')">
+                                    <i class="fas fa-dollar-sign"></i> Mark As Payment Done
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-warning" onclick="updateAppointmentStatus(${event.id}, 'pending')">
+                                    <i class="fas fa-clock"></i> Mark As Payment Pending
+                                </button>
+                                ` : ''}
                                 <button type="button" class="btn btn-sm btn-outline-danger" onclick="updateAppointmentStatus(${event.id}, 'cancelled')">
                                     <i class="fas fa-times"></i> Mark as Cancelled
                                 </button>
@@ -511,6 +519,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function getStatusClass(status) {
         const classes = {
             'pending': 'warning',
+            'paid': 'info',
             'confirmed': 'success',
             'completed': 'info',
             'cancelled': 'danger',

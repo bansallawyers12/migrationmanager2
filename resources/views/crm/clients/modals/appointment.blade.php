@@ -55,25 +55,25 @@
 								<label for="service_id" class="font-weight-bold text-dark mb-3">Services <span class="text-danger">*</span></label>
 								<div class="row">
 									
-										<div class="col-md-6 mb-3">
-											<div class="service-card-compact" style="border: 2px solid #e9ecef; border-radius: 8px; padding: 12px; transition: all 0.3s ease; cursor: pointer;" data-service-id="1">
-												<div class="d-flex align-items-start">
-													<input type="radio" class="services_item mt-1" name="radioGroup" value="1" id="service_1">
-													<div class="ml-3 flex-grow-1">
-														<div class="d-flex justify-content-between align-items-start mb-2">
-															<div class="flex-grow-1">
-																<h6 class="mb-1 font-weight-bold text-dark">Free Consultation</h6>
-																<small class="d-block mb-2">15 minutes</small>
-																<p class="mb-0" style="font-size: 12px; line-height: 1.5;">
-																	Perfect for initial inquiries: Quick assessment of your immigration situation, basic visa pathway guidance, and preliminary advice. Available for clients currently within Australia only. Includes initial case evaluation and next steps recommendation.
-																</p>
-															</div>
-															<span class="badge badge-success font-weight-bold ml-2" style="white-space: nowrap;">Free</span>
+									<div class="col-md-6 mb-3 service-free-consultation">
+										<div class="service-card-compact" style="border: 2px solid #e9ecef; border-radius: 8px; padding: 12px; transition: all 0.3s ease; cursor: pointer;" data-service-id="1">
+											<div class="d-flex align-items-start">
+												<input type="radio" class="services_item mt-1" name="radioGroup" value="1" id="service_1">
+												<div class="ml-3 flex-grow-1">
+													<div class="d-flex justify-content-between align-items-start mb-2">
+														<div class="flex-grow-1">
+															<h6 class="mb-1 font-weight-bold text-dark">Free Consultation</h6>
+															<small class="d-block mb-2">15 minutes</small>
+															<p class="mb-0" style="font-size: 12px; line-height: 1.5;">
+																Perfect for initial inquiries: Quick assessment of your immigration situation, basic visa pathway guidance, and preliminary advice. Available for clients currently within Australia only. Includes initial case evaluation and next steps recommendation.
+															</p>
 														</div>
+														<span class="badge badge-success font-weight-bold ml-2" style="white-space: nowrap;">Free</span>
 													</div>
 												</div>
 											</div>
 										</div>
+									</div>
 
 										<div class="col-md-6 mb-3">
 											<div class="service-card-compact" style="border: 2px solid #e9ecef; border-radius: 8px; padding: 12px; transition: all 0.3s ease; cursor: pointer;" data-service-id="2">
@@ -175,7 +175,7 @@
                                         <option value="">Select</option>
                                         <option value="phone"> Phone Call</option>
                                         <option value="in_person">In person</option>
-                                        <option value="video_call" id="video_call_option" style="display: none;">Video Call</option>
+                                        <option value="video_call" id="video_call_option" style="display: none;">Video Call/Zoom</option>
                                     </select>
                                 </div>
 
@@ -1018,6 +1018,38 @@ document.addEventListener('DOMContentLoaded', function() {
 		if (appointmentDetailsSelect) {
 			appointmentDetailsSelect.value = '';
 		}
+		// Reset Nature of Enquiry and show all services by default
+		const enquirySelect = document.querySelector('.enquiry_item');
+		if (enquirySelect) {
+			enquirySelect.value = '';
+		}
+		// Show Free Consultation service by default when modal opens
+		const freeConsultationService = document.querySelector('.service-free-consultation');
+		if (freeConsultationService) {
+			freeConsultationService.style.display = 'block';
+		}
+		// Reset service selection
+		document.querySelectorAll('.services_item').forEach(radio => {
+			radio.checked = false;
+		});
+		document.getElementById('service_id').value = '';
+		// Remove selected class from all service cards
+		document.querySelectorAll('.service-card-compact').forEach(card => {
+			card.classList.remove('selected');
+		});
+		// Hide services and appointment sections
+		document.getElementById('services').style.display = 'none';
+		document.getElementById('appointment_details').style.display = 'none';
+		document.getElementById('info').style.display = 'none';
+	});
+	
+	// Reset form when modal is hidden
+	$(document).on('hidden.bs.modal', '#create_appoint', function() {
+		// Show Free Consultation service by default when modal is closed (for next open)
+		const freeConsultationService = document.querySelector('.service-free-consultation');
+		if (freeConsultationService) {
+			freeConsultationService.style.display = 'block';
+		}
 	});
 	
 	// Use event delegation to handle clicks on service cards
@@ -1061,6 +1093,33 @@ document.addEventListener('DOMContentLoaded', function() {
 			var selectedValue = e.target.value;
 			if (selectedValue) {
 				document.getElementById('services').style.display = 'block';
+				
+				// Hide Free Consultation if Nature of Enquiry is "INDIA/UK/CANADA/EUROPE TO AUSTRALIA" (value="8")
+				// Show Free Consultation for all other options
+				const freeConsultationService = document.querySelector('.service-free-consultation');
+				if (freeConsultationService) {
+					if (selectedValue === '8') {
+						// Hide Free Consultation for INDIA/UK/CANADA/EUROPE TO AUSTRALIA
+						freeConsultationService.style.display = 'none';
+						// Uncheck Free Consultation if it was selected
+						const freeConsultationRadio = document.getElementById('service_1');
+						if (freeConsultationRadio && freeConsultationRadio.checked) {
+							freeConsultationRadio.checked = false;
+							document.getElementById('service_id').value = '';
+							// Remove selected class from Free Consultation card
+							const freeConsultationCard = freeConsultationService.querySelector('.service-card-compact');
+							if (freeConsultationCard) {
+								freeConsultationCard.classList.remove('selected');
+							}
+							// Hide appointment details if Free Consultation was selected
+							document.getElementById('appointment_details').style.display = 'none';
+							document.getElementById('info').style.display = 'none';
+						}
+					} else {
+						// Show Free Consultation for all other options
+						freeConsultationService.style.display = 'block';
+					}
+				}
 			} else {
 				document.getElementById('services').style.display = 'none';
 				document.getElementById('appointment_details').style.display = 'none';

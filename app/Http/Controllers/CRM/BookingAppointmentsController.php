@@ -358,7 +358,7 @@ class BookingAppointmentsController extends Controller
         $appointment = BookingAppointment::findOrFail($id);
         
         $request->validate([
-            'status' => 'required|in:pending,confirmed,completed,cancelled,no_show,rescheduled',
+            'status' => 'required|in:pending,paid,confirmed,completed,cancelled,no_show,rescheduled',
             'cancellation_reason' => 'nullable|string'
         ]);
 
