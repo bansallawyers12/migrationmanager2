@@ -2971,7 +2971,7 @@ $(document).ready(function() {
 
 
 
-        // If switching to Create Cost Assignment subtab, load agent details
+        // If switching to Create Cost Assignment subtab, load agent details and initialize calculations
 
         if (subtabId === 'createcostform') {
 
@@ -2999,6 +2999,9 @@ $(document).ready(function() {
                 }, 100);
 
             }
+
+            // Initialize calculation handlers for the subtab form
+            initializeCostAssignmentCalculations();
 
         }
 
@@ -7523,6 +7526,13 @@ Bansal Immigration`;
                 }
             }
 
+            // Initialize calculation handlers
+            setTimeout(function() {
+                if (typeof window.initializeCostAssignmentCalculations === 'function') {
+                    window.initializeCostAssignmentCalculations();
+                }
+            }, 200);
+
         });
 
 
@@ -7700,6 +7710,19 @@ Bansal Immigration`;
 
                         }
 
+                        // Trigger calculations after data is loaded
+                        setTimeout(function() {
+                            if (typeof window.calculateTotalBlockFee === 'function') {
+                                window.calculateTotalBlockFee();
+                            }
+                            if (typeof window.calculateTotalDoHACharges === 'function') {
+                                window.calculateTotalDoHACharges();
+                            }
+                            if (typeof window.calculateTotalDoHASurcharges === 'function') {
+                                window.calculateTotalDoHASurcharges();
+                            }
+                        }, 100);
+
                     }
 
                 }
@@ -7710,6 +7733,131 @@ Bansal Immigration`;
 
         // Make function available globally for subtab handlers
         window.getCostAssignmentMigrationAgentDetail = getCostAssignmentMigrationAgentDetail;
+
+
+
+        // Initialize calculation handlers for Cost Assignment form
+        function initializeCostAssignmentCalculations() {
+            // Remove any existing handlers to prevent duplicates
+            $('#Block_1_Ex_Tax, #Block_2_Ex_Tax, #Block_3_Ex_Tax').off('input change keyup');
+            $('#Dept_Base_Application_Charge, #Dept_Non_Internet_Application_Charge, #Dept_Additional_Applicant_Charge_18_Plus, #Dept_Additional_Applicant_Charge_Under_18, #Dept_Subsequent_Temp_Application_Charge, #Dept_Second_VAC_Instalment_Charge_18_Plus, #Dept_Second_VAC_Instalment_Under_18, #Dept_Nomination_Application_Charge, #Dept_Sponsorship_Application_Charge').off('input change keyup');
+            $('#Dept_Base_Application_Charge_no_of_person, #Dept_Non_Internet_Application_Charge_no_of_person, #Dept_Additional_Applicant_Charge_18_Plus_no_of_person, #Dept_Additional_Applicant_Charge_Under_18_no_of_person, #Dept_Subsequent_Temp_Application_Charge_no_of_person, #Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person, #Dept_Second_VAC_Instalment_Under_18_no_of_person').off('input change keyup');
+            $('#surcharge').off('change');
+
+            // Calculate Total Block Fee when Block fields change
+            $('#Block_1_Ex_Tax, #Block_2_Ex_Tax, #Block_3_Ex_Tax').on('input change keyup', function() {
+                calculateTotalBlockFee();
+            });
+
+            // Calculate Total DoHA Charges when Department fields change
+            $('#Dept_Base_Application_Charge, #Dept_Non_Internet_Application_Charge, #Dept_Additional_Applicant_Charge_18_Plus, #Dept_Additional_Applicant_Charge_Under_18, #Dept_Subsequent_Temp_Application_Charge, #Dept_Second_VAC_Instalment_Charge_18_Plus, #Dept_Second_VAC_Instalment_Under_18, #Dept_Nomination_Application_Charge, #Dept_Sponsorship_Application_Charge').on('input change keyup', function() {
+                calculateTotalDoHACharges();
+            });
+
+            // Recalculate when person counts change
+            $('#Dept_Base_Application_Charge_no_of_person, #Dept_Non_Internet_Application_Charge_no_of_person, #Dept_Additional_Applicant_Charge_18_Plus_no_of_person, #Dept_Additional_Applicant_Charge_Under_18_no_of_person, #Dept_Subsequent_Temp_Application_Charge_no_of_person, #Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person, #Dept_Second_VAC_Instalment_Under_18_no_of_person').on('input change keyup', function() {
+                calculateTotalDoHACharges();
+            });
+
+            // Calculate Total DoHA Surcharges when surcharge selection changes
+            $('#surcharge').on('change', function() {
+                calculateTotalDoHASurcharges();
+            });
+
+            // Initial calculations
+            calculateTotalBlockFee();
+            calculateTotalDoHACharges();
+            calculateTotalDoHASurcharges();
+        }
+
+        // Calculate Total Block Fee
+        function calculateTotalBlockFee() {
+            var block1 = parseFloat($('#Block_1_Ex_Tax').val()) || 0;
+            var block2 = parseFloat($('#Block_2_Ex_Tax').val()) || 0;
+            var block3 = parseFloat($('#Block_3_Ex_Tax').val()) || 0;
+            var total = block1 + block2 + block3;
+            $('#TotalBLOCKFEE').val(total.toFixed(2));
+        }
+
+        // Calculate Total DoHA Charges
+        function calculateTotalDoHACharges() {
+            var total = 0;
+
+            // Dept Base Application Charge (with person multiplier)
+            var baseCharge = parseFloat($('#Dept_Base_Application_Charge').val()) || 0;
+            var basePersons = parseFloat($('#Dept_Base_Application_Charge_no_of_person').val()) || 1;
+            total += baseCharge * basePersons;
+
+            // Dept Non Internet Application Charge (with person multiplier)
+            var nonInternetCharge = parseFloat($('#Dept_Non_Internet_Application_Charge').val()) || 0;
+            var nonInternetPersons = parseFloat($('#Dept_Non_Internet_Application_Charge_no_of_person').val()) || 1;
+            total += nonInternetCharge * nonInternetPersons;
+
+            // Dept Additional Applicant Charge 18+ (with person multiplier)
+            var add18PlusCharge = parseFloat($('#Dept_Additional_Applicant_Charge_18_Plus').val()) || 0;
+            var add18PlusPersons = parseFloat($('#Dept_Additional_Applicant_Charge_18_Plus_no_of_person').val()) || 1;
+            total += add18PlusCharge * add18PlusPersons;
+
+            // Dept Additional Applicant Charge Under 18 (with person multiplier)
+            var addUnder18Charge = parseFloat($('#Dept_Additional_Applicant_Charge_Under_18').val()) || 0;
+            var addUnder18Persons = parseFloat($('#Dept_Additional_Applicant_Charge_Under_18_no_of_person').val()) || 1;
+            total += addUnder18Charge * addUnder18Persons;
+
+            // Dept Subsequent Temp Application Charge (with person multiplier)
+            var subsequentCharge = parseFloat($('#Dept_Subsequent_Temp_Application_Charge').val()) || 0;
+            var subsequentPersons = parseFloat($('#Dept_Subsequent_Temp_Application_Charge_no_of_person').val()) || 1;
+            total += subsequentCharge * subsequentPersons;
+
+            // Dept Second VAC Instalment 18+ (with person multiplier)
+            var vac18PlusCharge = parseFloat($('#Dept_Second_VAC_Instalment_Charge_18_Plus').val()) || 0;
+            var vac18PlusPersons = parseFloat($('#Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person').val()) || 1;
+            total += vac18PlusCharge * vac18PlusPersons;
+
+            // Dept Second VAC Instalment Under 18 (with person multiplier)
+            var vacUnder18Charge = parseFloat($('#Dept_Second_VAC_Instalment_Under_18').val()) || 0;
+            var vacUnder18Persons = parseFloat($('#Dept_Second_VAC_Instalment_Under_18_no_of_person').val()) || 1;
+            total += vacUnder18Charge * vacUnder18Persons;
+
+            // Dept Nomination Application Charge (no person multiplier)
+            var nominationCharge = parseFloat($('#Dept_Nomination_Application_Charge').val()) || 0;
+            total += nominationCharge;
+
+            // Dept Sponsorship Application Charge (no person multiplier)
+            var sponsorshipCharge = parseFloat($('#Dept_Sponsorship_Application_Charge').val()) || 0;
+            total += sponsorshipCharge;
+
+            $('#TotalDoHACharges').val(total.toFixed(2));
+            
+            // Recalculate surcharges when charges change
+            calculateTotalDoHASurcharges();
+        }
+
+        // Calculate Total DoHA Surcharges
+        function calculateTotalDoHASurcharges() {
+            var surcharge = $('#surcharge').val();
+            var totalSurcharges = 0;
+
+            if (surcharge === 'Yes') {
+                // Calculate surcharge based on applicable charges
+                // Typically surcharge is a percentage (usually 2% or 4%) of certain charges
+                // For now, we'll calculate it based on the total DoHA charges
+                // You may need to adjust this formula based on your business logic
+                var totalCharges = parseFloat($('#TotalDoHACharges').val()) || 0;
+                
+                // Common surcharge rates: 2% or 4% depending on visa type
+                // Using 2% as default - adjust if needed
+                var surchargeRate = 0.02; // 2%
+                totalSurcharges = totalCharges * surchargeRate;
+            }
+
+            $('#TotalDoHASurcharges').val(totalSurcharges.toFixed(2));
+        }
+
+        // Make calculation functions globally available
+        window.initializeCostAssignmentCalculations = initializeCostAssignmentCalculations;
+        window.calculateTotalBlockFee = calculateTotalBlockFee;
+        window.calculateTotalDoHACharges = calculateTotalDoHACharges;
+        window.calculateTotalDoHASurcharges = calculateTotalDoHASurcharges;
 
 
 

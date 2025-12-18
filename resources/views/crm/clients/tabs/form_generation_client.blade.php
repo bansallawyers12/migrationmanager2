@@ -342,10 +342,6 @@
 
                         <!-- Create Cost Assignment Form Subtab -->
                         <div class="subtab3-pane" id="createcostform-subtab" style="padding: 2rem;">
-                            <div class="form-header" style="padding: 1.5rem 0; margin-bottom: 2rem;">
-                                <h3 class="text-2xl font-semibold text-gray-800">Create Cost Assignment</h3>
-                            </div>
-
                             <form method="POST" action="{{route('clients.savecostassignment')}}" name="costAssignmentform" id="costAssignmentform" autocomplete="off">
                                 @csrf
                                 <!-- Hidden Fields for Client and Client Matter ID -->
@@ -380,9 +376,9 @@
                                     </div>
                                 </div>
 
-                                <div class="accordion-body collapse show" id="primary_info" data-parent="#accordion">
+                                <div id="primary_info">
 
-                                    <div style="margin-bottom: 15px;" class="accordion-header" role="button" data-toggle="collapse" data-target="#primary_info" aria-expanded="true">
+                                    <div style="margin-bottom: 15px;">
                                         <h4>Block Fee</h4>
                                     </div>
 
@@ -433,7 +429,7 @@
                                         </div>
                                     </div>
 
-                                    <div style="margin-bottom: 15px;" class="accordion-header" role="button" data-toggle="collapse" data-target="#primary_info" aria-expanded="true">
+                                    <div style="margin-bottom: 15px;">
                                         <h4>Department Fee</h4>
                                         <div class="col-3">
                                             <label for="surcharge">Surcharge</label>
@@ -640,7 +636,7 @@
                                         </div>
                                     </div>
 
-                                    <div style="margin-bottom: 15px;" class="accordion-header" role="button" data-toggle="collapse" data-target="#primary_info" aria-expanded="true">
+                                    <div style="margin-bottom: 15px;">
                                         <h4>Additional Fee</h4>
                                     </div>
 
