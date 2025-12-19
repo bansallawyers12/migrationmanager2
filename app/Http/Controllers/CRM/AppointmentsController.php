@@ -823,13 +823,31 @@ public function update_apppointment_comment(Request $request){
             ? Carbon::createFromFormat('H:i:s', $appointmentTimeStart24)->format('H:i')
             : null;
 
+
+           
+        if( isset($request->appointment_details) && $request->appointment_details != ""){
+            if($request->appointment_details == "phone"){
+                $appointmentDetailsWebsite = 'phone';
+                $appointmentDetailsCrm = 'phone';
+            } else if($request->appointment_details == "in_person"){
+                $appointmentDetailsWebsite = 'in-person';
+                $appointmentDetailsCrm = 'in_person';
+            } else if($request->appointment_details == "video_call"){
+                $appointmentDetailsWebsite = 'video-call';
+                $appointmentDetailsCrm = 'video';
+            } else {
+                $appointmentDetailsWebsite = 'in-person';
+                $appointmentDetailsCrm = 'in_person';
+            }
+        }
+
         $apiPayload = [
             'full_name' => $client?->full_name,
             'email' => $client?->email,
             'phone' => $client?->phone,
             'client_reference' => $request->client_unique_id,
             'location' => $location,
-            'meeting_type' => $request->appointment_details,
+            'meeting_type' =>  $appointmentDetailsWebsite,
             'preferred_language' => $request->preferred_language,
 
             'enquiry_type' => $enquiryType,
@@ -904,7 +922,7 @@ public function update_apppointment_comment(Request $request){
         $timeslotFull = $apiAppointmentData['appointment_time'];
         $durationMinutes = $apiAppointmentData['duration_minutes'] ?? $serviceDuration;
         $location = $apiAppointmentData['location'] ?? $location;
-        $meetingType = $apiAppointmentData['meeting_type'] ?? $request->appointment_details;
+        $meetingType = $appointmentDetailsCrm;
         $preferredLanguage = $apiAppointmentData['preferred_language'] ?? $request->preferred_language;
         $status = $apiAppointmentData['status'] ?? 'pending';
         $enquiryType = $apiAppointmentData['enquiry_type'] ?? $enquiryType;
