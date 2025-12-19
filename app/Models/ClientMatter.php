@@ -28,7 +28,10 @@ class ClientMatter extends Model
         'matter_status',
         'client_unique_matter_no',
         'sel_matter_id',
-        'updated_at_type'
+        'updated_at_type',
+        // Reference fields
+        'department_reference',
+        'other_reference'
     ];
 
     /**
@@ -189,5 +192,42 @@ class ClientMatter extends Model
     public function hasOffice()
     {
         return !is_null($this->office_id);
+    }
+
+    /**
+     * Boot method to add model events for debugging
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Log when department_reference or other_reference are being changed
+        static::updating(function ($model) {
+            if ($model->isDirty('department_reference') || $model->isDirty('other_reference')) {
+                \Log::info('ClientMatter references being updated', [
+                    'matter_id' => $model->id,
+                    'client_id' => $model->client_id,
+                    'old_department_reference' => $model->getOriginal('department_reference'),
+                    'new_department_reference' => $model->department_reference,
+                    'old_other_reference' => $model->getOriginal('other_reference'),
+                    'new_other_reference' => $model->other_reference,
+                    'changed_attributes' => $model->getDirty(),
+                    'all_attributes' => $model->getAttributes(),
+                    'backtrace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10)
+                ]);
+            }
+        });
+
+        // Log when model is saved
+        static::saved(function ($model) {
+            if ($model->wasChanged('department_reference') || $model->wasChanged('other_reference')) {
+                \Log::info('ClientMatter references saved', [
+                    'matter_id' => $model->id,
+                    'client_id' => $model->client_id,
+                    'department_reference' => $model->department_reference,
+                    'other_reference' => $model->other_reference,
+                ]);
+            }
+        });
     }
 }

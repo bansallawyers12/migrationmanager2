@@ -314,17 +314,21 @@
 
         $(document).delegate('.saveReferenceValue', 'click', function() {
 
-            let department_reference = $('#department_reference').val();
+            let department_reference = $('#department_reference').val() || '';
 
-            let other_reference = $('#other_reference').val();
+            let other_reference = $('#other_reference').val() || '';
 
             let client_id = window.ClientDetailConfig.clientId;
 
             let selectedMatter = $('#sel_matter_id_client_detail').val();
+            
+            // Get matter ID from URL if available (matches page load logic)
+            let matterIdFromUrl = window.ClientDetailConfig.matterId || '';
 
-            if(department_reference == '' || other_reference == ''){
+            // Only require at least ONE reference (not both)
+            if(department_reference.trim() == '' && other_reference.trim() == ''){
 
-                alert('Please enter department reference, other refence value');
+                alert('Please enter at least one reference value');
 
             } else {
 
@@ -342,7 +346,9 @@
 
                         client_id: client_id,
 
-                        client_matter_id:selectedMatter,
+                        client_matter_id: selectedMatter,
+                        
+                        client_unique_matter_no: matterIdFromUrl,
 
                         _token: window.ClientDetailConfig.csrfToken
 
@@ -350,9 +356,9 @@
 
                     success: function (response) {
 
-                        alert('Saved successfully');
-
-                        location.reload(); //Page reload after success
+                        console.log('References saved:', response);
+                        // Don't reload - the chips are already updated
+                        // location.reload();
 
                     },
 

@@ -56,6 +56,8 @@ class Admin extends Authenticatable
         'show_dashboard_per',
         // Personal (staff might need some personal info)
         'marital_status', 'time_zone',
+        // Client/Lead Tags
+        'tagname',
         // Timestamps
         'created_at', 'updated_at'
     ];

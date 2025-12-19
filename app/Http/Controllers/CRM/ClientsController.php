@@ -7514,26 +7514,94 @@ class ClientsController extends Controller
             'other_reference' => 'nullable|string|max:255',
         ]);
 
-        // Step 2: Check if the record exists
-        $matter = \App\Models\ClientMatter::where('client_id', $request->client_id)
-        ->where('id', $request->client_matter_id)
-        ->first();
-
-        if (!$matter) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Record not found for given client_id and client_matter_id.'
-            ], 404);
+        // Step 2: Find the matter - use EXACT same logic as page load (detail.blade.php lines 252-267)
+        // Priority: 1) Use client_unique_matter_no from URL (id1), 2) Use client_matter_id from dropdown, 3) Get latest active matter
+        $matter = null;
+        $lookupMethod = '';
+        
+        if ($request->has('client_unique_matter_no') && !empty($request->client_unique_matter_no)) {
+            // Priority 1: Use client_unique_matter_no from URL (id1) - EXACT match to page load logic
+            $matter = \App\Models\ClientMatter::where('client_id', $request->client_id)
+                ->where('client_unique_matter_no', $request->client_unique_matter_no)
+                ->first();
+            $lookupMethod = 'client_unique_matter_no: ' . $request->client_unique_matter_no;
+        } elseif ($request->has('client_matter_id') && !empty($request->client_matter_id)) {
+            // Priority 2: Use the matter ID from dropdown
+            $matter = \App\Models\ClientMatter::where('client_id', $request->client_id)
+                ->where('id', $request->client_matter_id)
+                ->first();
+            $lookupMethod = 'client_matter_id: ' . $request->client_matter_id;
+        } else {
+            // Priority 3: Fallback - Get latest active matter (EXACT match to page load logic)
+            $matter = \App\Models\ClientMatter::where('client_id', $request->client_id)
+                ->where('matter_status', 1)
+                ->orderBy('id', 'desc')
+                ->first();
+            $lookupMethod = 'latest active matter';
         }
 
-        // Step 3: Perform the update
-        $matter->department_reference = $request->department_reference;
-        $matter->other_reference = $request->other_reference;
-        $matter->save();
+        if (!$matter) {
+            \Log::error('References save - Matter not found', [
+                'client_id' => $request->client_id,
+                'client_unique_matter_no' => $request->client_unique_matter_no ?? 'not provided',
+                'client_matter_id' => $request->client_matter_id ?? 'not provided',
+                'lookup_method' => $lookupMethod
+            ]);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Record not found for given client_id and matter information.'
+            ], 404);
+        }
+        
+        \Log::info('References save - Matter found', [
+            'matter_id' => $matter->id,
+            'client_id' => $matter->client_id,
+            'client_unique_matter_no' => $matter->client_unique_matter_no,
+            'lookup_method' => $lookupMethod,
+            'current_department_reference' => $matter->department_reference,
+            'current_other_reference' => $matter->other_reference
+        ]);
+
+        // Step 3: Perform the update - convert empty strings to null
+        $deptRefInput = $request->input('department_reference', '');
+        $otherRefInput = $request->input('other_reference', '');
+        $deptRef = !empty($deptRefInput) && trim($deptRefInput) !== '' ? trim($deptRefInput) : null;
+        $otherRef = !empty($otherRefInput) && trim($otherRefInput) !== '' ? trim($otherRefInput) : null;
+        
+        // Direct assignment and save (fields are in fillable, so this is safe)
+        $matter->department_reference = $deptRef;
+        $matter->other_reference = $otherRef;
+        $saved = $matter->save();
+        
+        if (!$saved) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to save references.'
+            ], 500);
+        }
+        
+        // Refresh to get latest values from database
+        $matter->refresh();
+
+        // Log for debugging
+        \Log::info('References saved', [
+            'matter_id' => $matter->id,
+            'client_id' => $request->client_id,
+            'client_unique_matter_no' => $matter->client_unique_matter_no,
+            'department_reference' => $matter->department_reference,
+            'other_reference' => $matter->other_reference,
+            'saved' => $saved
+        ]);
 
         return response()->json([
             'status' => 'success',
-            'message' => 'References updated successfully.'
+            'message' => 'References updated successfully.',
+            'data' => [
+                'matter_id' => $matter->id,
+                'client_unique_matter_no' => $matter->client_unique_matter_no,
+                'department_reference' => $matter->department_reference,
+                'other_reference' => $matter->other_reference
+            ]
         ]);
     }
 
