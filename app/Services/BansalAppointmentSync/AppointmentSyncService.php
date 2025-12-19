@@ -295,6 +295,7 @@ class AppointmentSyncService
     /**
      * Map meeting type from Bansal API to CRM enum values
      * Handles various formats and normalizes to: 'in_person', 'phone', 'video'
+     * API values: in-person, phone, video-call
      */
     protected function mapMeetingType(?string $meetingType): string
     {
@@ -303,14 +304,14 @@ class AppointmentSyncService
             return 'in_person'; // Default value
         }
 
-        // Normalize: convert to lowercase and replace spaces/hyphens with underscores
+        // Normalize: convert to lowercase and trim
         $normalized = strtolower(trim($meetingType));
-        $normalized = str_replace([' ', '-'], '_', $normalized);
 
+        // Map the three possible API values: in-person, phone, video-call
         return match($normalized) {
-            'in_person', 'inperson', 'in-person', 'in person', 'office', 'onsite' => 'in_person',
-            'phone', 'telephone', 'call' => 'phone',
-            'video', 'videocall', 'video_call', 'zoom', 'online' => 'video',
+            'in-person', 'in_person' => 'in_person',
+            'phone' => 'phone',
+            'video-call', 'video_call' => 'video',
             default => 'in_person' // Default fallback
         };
     }
