@@ -520,7 +520,8 @@ class DashboardService
                 'description' => '<span class="text-semi-bold">' . ($note->title ?? 'Note') . '</span><p>' . ($note->description ?? '') . '</p>',
                 'use_for' => Auth::id() != $note->user_id ? $note->user_id : '',
                 'followup_date' => $note->followup_date ?? null,
-                'task_group' => $note->task_group ?? null
+                'task_group' => $note->task_group ?? null,
+                'task_status' => 0,
             ]);
         } catch (\Exception $e) {
             // Log the error but don't break the main functionality

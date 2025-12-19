@@ -32,6 +32,7 @@ class LeadFollowupService
                            ". Priority: {$followup->priority}. " . 
                            ($data['notes'] ?? ''),
             'activity_type' => 'followup_scheduled',
+            'task_status' => 0,
         ]);
         
         return $followup;
@@ -74,6 +75,7 @@ class LeadFollowupService
             'subject' => "Follow-up completed: {$followup->followup_type}",
             'description' => "Outcome: {$data['outcome']}. " . ($data['notes'] ?? ''),
             'activity_type' => 'followup_completed',
+            'task_status' => 0,
         ]);
         
         return $followup;
@@ -101,6 +103,7 @@ class LeadFollowupService
             'subject' => "Follow-up auto-scheduled: {$nextFollowup->followup_type}",
             'description' => "Scheduled for " . $nextFollowup->scheduled_date->format('d/m/Y H:i') . " (in {$daysFromNow} days)",
             'activity_type' => 'followup_scheduled',
+            'task_status' => 0,
         ]);
         
         return $nextFollowup;
@@ -142,6 +145,7 @@ class LeadFollowupService
             'subject' => "Follow-up rescheduled",
             'description' => "From " . $oldDate->format('d/m/Y H:i') . " to " . $newDate->format('d/m/Y H:i'),
             'activity_type' => 'followup_rescheduled',
+            'task_status' => 0,
         ]);
         
         return $newFollowup;
@@ -167,6 +171,7 @@ class LeadFollowupService
             'subject' => "Follow-up cancelled",
             'description' => $reason ?? 'No reason provided',
             'activity_type' => 'followup_cancelled',
+            'task_status' => 0,
         ]);
         
         return $followup;

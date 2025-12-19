@@ -161,6 +161,7 @@ class Lead extends Admin
                            "Total follow-ups: {$followupCount}, Completed: {$completedFollowups}. " .
                            "Follow-up history has been preserved.",
             'activity_type' => 'lead_converted',
+            'task_status' => 0,
         ]);
         
         // Mark all pending follow-ups with a note

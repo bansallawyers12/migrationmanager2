@@ -204,17 +204,13 @@
                         $visa_Info_with_expiry = App\Models\ClientVisaCountry::select('visa_country','visa_type','visa_expiry_date','visa_grant_date','visa_description')
                             ->where('client_id', $fetchedData->id)
                             ->whereNotNull('visa_expiry_date')
-                            ->where('visa_expiry_date', '!=', '0000-00-00')
                             ->orderBy('visa_expiry_date', 'desc')
                             ->first();
                         
                         // Get all visas without expiry date
                         $visas_without_expiry = App\Models\ClientVisaCountry::select('visa_country','visa_type','visa_expiry_date','visa_grant_date','visa_description')
                             ->where('client_id', $fetchedData->id)
-                            ->where(function($query) {
-                                $query->whereNull('visa_expiry_date')
-                                      ->orWhere('visa_expiry_date', '0000-00-00');
-                            })
+                            ->whereNull('visa_expiry_date')
                             ->get();
                         
                         // Combine both: visa with expiry first, then visas without expiry
@@ -250,7 +246,7 @@
                                     <span class="field-label">Visa Expiry Date</span>
                                     <span class="field-value">
                                         <?php
-                                        if( $visa_Info && $visa_Info->visa_expiry_date != "" && $visa_Info->visa_expiry_date != '0000-00-00'){
+                                        if( $visa_Info && !empty($visa_Info->visa_expiry_date)){
                                             $verifiedVisa = \App\Models\Admin::where('id',$fetchedData->id)->whereNotNull('visa_expiry_verified_at')->first();
                                             if ( $verifiedVisa) {
                                                 $verifiedVisaTick = '<i class="fas fa-check-circle verified-icon fa-lg"></i>';
@@ -277,7 +273,7 @@
                                         ?>
                                     </span>
                                 </div>
-                                @if($visa_Info->visa_grant_date && $visa_Info->visa_grant_date != '0000-00-00')
+                                @if($visa_Info->visa_grant_date && !empty($visa_Info->visa_grant_date))
                                 <div class="field-group">
                                     <span class="field-label">Visa Grant Date</span>
                                     <span class="field-value">

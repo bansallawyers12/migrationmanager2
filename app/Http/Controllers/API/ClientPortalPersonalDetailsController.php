@@ -2132,7 +2132,7 @@ class ClientPortalPersonalDetailsController extends Controller
                 'visa_country' => $visa->visa_country ?? null,
                 'visa_type' => $visa->visa_type ?? null,
                 'visa_description' => $visa->visa_description ?? null,
-                'visa_expiry_date' => $visa->visa_expiry_date && $visa->visa_expiry_date != '0000-00-00' ? $this->formatDate($visa->visa_expiry_date) : null,
+                'visa_expiry_date' => !empty($visa->visa_expiry_date) ? $this->formatDate($visa->visa_expiry_date) : null,
                 'visa_grant_date' => $visa->visa_grant_date ? $this->formatDate($visa->visa_grant_date) : null,
                 'action' => null, // Records from source table have action: null
             ];
@@ -3713,8 +3713,8 @@ class ClientPortalPersonalDetailsController extends Controller
                 'occupation_code' => $occupation->occupation_code ?? null,
                 'assessing_authority' => $occupation->list ?? null,
                 'visa_subclass' => $occupation->visa_subclass ?? null,
-                'assessment_date' => $occupation->dates && $occupation->dates != '0000-00-00' ? $this->formatDate($occupation->dates) : null,
-                'expiry_date' => $occupation->expiry_dates && $occupation->expiry_dates != '0000-00-00' ? $this->formatDate($occupation->expiry_dates) : null,
+                'assessment_date' => !empty($occupation->dates) ? $this->formatDate($occupation->dates) : null,
+                'expiry_date' => !empty($occupation->expiry_dates) ? $this->formatDate($occupation->expiry_dates) : null,
                 'reference_no' => $occupation->occ_reference_no ?? null,
                 'relevant_occupation' => ($occupation->relevant_occupation == 1) ? true : false,
                 'anzsco_occupation_id' => $occupation->anzsco_occupation_id ? (int) $occupation->anzsco_occupation_id : null,
@@ -4506,7 +4506,7 @@ class ClientPortalPersonalDetailsController extends Controller
 
             // Convert dates from dd/mm/yyyy to Y-m-d format for storage
             $issueDateDb = null;
-            if ($sourcePassport->passport_issue_date && $sourcePassport->passport_issue_date != '0000-00-00') {
+            if (!empty($sourcePassport->passport_issue_date)) {
                 try {
                     $date = Carbon::createFromFormat('Y-m-d', $sourcePassport->passport_issue_date);
                     $issueDateDb = $date->format('Y-m-d');
@@ -4522,7 +4522,7 @@ class ClientPortalPersonalDetailsController extends Controller
             }
 
             $expiryDateDb = null;
-            if ($sourcePassport->passport_expiry_date && $sourcePassport->passport_expiry_date != '0000-00-00') {
+            if (!empty($sourcePassport->passport_expiry_date)) {
                 try {
                     $date = Carbon::createFromFormat('Y-m-d', $sourcePassport->passport_expiry_date);
                     $expiryDateDb = $date->format('Y-m-d');
@@ -4685,12 +4685,12 @@ class ClientPortalPersonalDetailsController extends Controller
             $metaOrder = $maxMetaOrder + 1;
 
             // Format dates from database format to dd/mm/yyyy
-            $expiryDate = $sourceVisa->visa_expiry_date && $sourceVisa->visa_expiry_date != '0000-00-00' ? $this->formatDate($sourceVisa->visa_expiry_date) : null;
-            $grantDate = $sourceVisa->visa_grant_date && $sourceVisa->visa_grant_date != '0000-00-00' ? $this->formatDate($sourceVisa->visa_grant_date) : null;
+            $expiryDate = !empty($sourceVisa->visa_expiry_date) ? $this->formatDate($sourceVisa->visa_expiry_date) : null;
+            $grantDate = !empty($sourceVisa->visa_grant_date) ? $this->formatDate($sourceVisa->visa_grant_date) : null;
 
             // Convert dates from Y-m-d to Y-m-d format for storage (already in correct format, but handle edge cases)
             $expiryDateDb = null;
-            if ($sourceVisa->visa_expiry_date && $sourceVisa->visa_expiry_date != '0000-00-00') {
+            if (!empty($sourceVisa->visa_expiry_date)) {
                 try {
                     $date = Carbon::createFromFormat('Y-m-d', $sourceVisa->visa_expiry_date);
                     $expiryDateDb = $date->format('Y-m-d');
@@ -4706,7 +4706,7 @@ class ClientPortalPersonalDetailsController extends Controller
             }
 
             $grantDateDb = null;
-            if ($sourceVisa->visa_grant_date && $sourceVisa->visa_grant_date != '0000-00-00') {
+            if (!empty($sourceVisa->visa_grant_date)) {
                 try {
                     $date = Carbon::createFromFormat('Y-m-d', $sourceVisa->visa_grant_date);
                     $grantDateDb = $date->format('Y-m-d');
@@ -5223,7 +5223,7 @@ class ClientPortalPersonalDetailsController extends Controller
 
             // Convert dates from dd/mm/yyyy to Y-m-d format for storage
             $startDateDb = null;
-            if ($sourceAddress->start_date && $sourceAddress->start_date != '0000-00-00') {
+            if (!empty($sourceAddress->start_date)) {
                 try {
                     $date = Carbon::createFromFormat('Y-m-d', $sourceAddress->start_date);
                     $startDateDb = $date->format('Y-m-d');
@@ -5238,7 +5238,7 @@ class ClientPortalPersonalDetailsController extends Controller
             }
 
             $endDateDb = null;
-            if ($sourceAddress->end_date && $sourceAddress->end_date != '0000-00-00') {
+            if (!empty($sourceAddress->end_date)) {
                 try {
                     $date = Carbon::createFromFormat('Y-m-d', $sourceAddress->end_date);
                     $endDateDb = $date->format('Y-m-d');
@@ -5503,7 +5503,7 @@ class ClientPortalPersonalDetailsController extends Controller
             $departureDate = $sourceTravel->travel_departure_date ? $this->formatDate($sourceTravel->travel_departure_date) : null;
 
             $arrivalDateDb = null;
-            if ($sourceTravel->travel_arrival_date && $sourceTravel->travel_arrival_date != '0000-00-00') {
+            if (!empty($sourceTravel->travel_arrival_date)) {
                 try {
                     $date = Carbon::createFromFormat('Y-m-d', $sourceTravel->travel_arrival_date);
                     $arrivalDateDb = $date->format('Y-m-d');
@@ -5518,7 +5518,7 @@ class ClientPortalPersonalDetailsController extends Controller
             }
 
             $departureDateDb = null;
-            if ($sourceTravel->travel_departure_date && $sourceTravel->travel_departure_date != '0000-00-00') {
+            if (!empty($sourceTravel->travel_departure_date)) {
                 try {
                     $date = Carbon::createFromFormat('Y-m-d', $sourceTravel->travel_departure_date);
                     $departureDateDb = $date->format('Y-m-d');
@@ -5688,7 +5688,7 @@ class ClientPortalPersonalDetailsController extends Controller
             $finishDate = $sourceQualification->finish_date ? $this->formatDate($sourceQualification->finish_date) : null;
 
             $startDateDb = null;
-            if ($sourceQualification->start_date && $sourceQualification->start_date != '0000-00-00') {
+            if (!empty($sourceQualification->start_date)) {
                 try {
                     $date = Carbon::createFromFormat('Y-m-d', $sourceQualification->start_date);
                     $startDateDb = $date->format('Y-m-d');
@@ -5703,7 +5703,7 @@ class ClientPortalPersonalDetailsController extends Controller
             }
 
             $finishDateDb = null;
-            if ($sourceQualification->finish_date && $sourceQualification->finish_date != '0000-00-00') {
+            if (!empty($sourceQualification->finish_date)) {
                 try {
                     $date = Carbon::createFromFormat('Y-m-d', $sourceQualification->finish_date);
                     $finishDateDb = $date->format('Y-m-d');
@@ -5987,7 +5987,7 @@ class ClientPortalPersonalDetailsController extends Controller
             $finishDate = $sourceExperience->job_finish_date ? $this->formatDate($sourceExperience->job_finish_date) : null;
 
             $startDateDb = null;
-            if ($sourceExperience->job_start_date && $sourceExperience->job_start_date != '0000-00-00') {
+            if (!empty($sourceExperience->job_start_date)) {
                 try {
                     $date = Carbon::createFromFormat('Y-m-d', $sourceExperience->job_start_date);
                     $startDateDb = $date->format('Y-m-d');
@@ -6002,7 +6002,7 @@ class ClientPortalPersonalDetailsController extends Controller
             }
 
             $finishDateDb = null;
-            if ($sourceExperience->job_finish_date && $sourceExperience->job_finish_date != '0000-00-00') {
+            if (!empty($sourceExperience->job_finish_date)) {
                 try {
                     $date = Carbon::createFromFormat('Y-m-d', $sourceExperience->job_finish_date);
                     $finishDateDb = $date->format('Y-m-d');
@@ -6258,11 +6258,11 @@ class ClientPortalPersonalDetailsController extends Controller
                 ->max('meta_order') ?? -1;
             $metaOrder = $maxMetaOrder + 1;
 
-            $assessmentDate = $sourceOccupation->dates && $sourceOccupation->dates != '0000-00-00' ? $this->formatDate($sourceOccupation->dates) : null;
-            $expiryDate = $sourceOccupation->expiry_dates && $sourceOccupation->expiry_dates != '0000-00-00' ? $this->formatDate($sourceOccupation->expiry_dates) : null;
+            $assessmentDate = !empty($sourceOccupation->dates) ? $this->formatDate($sourceOccupation->dates) : null;
+            $expiryDate = !empty($sourceOccupation->expiry_dates) ? $this->formatDate($sourceOccupation->expiry_dates) : null;
 
             $assessmentDateDb = null;
-            if ($sourceOccupation->dates && $sourceOccupation->dates != '0000-00-00') {
+            if (!empty($sourceOccupation->dates)) {
                 try {
                     $date = Carbon::createFromFormat('Y-m-d', $sourceOccupation->dates);
                     $assessmentDateDb = $date->format('Y-m-d');
@@ -6277,7 +6277,7 @@ class ClientPortalPersonalDetailsController extends Controller
             }
 
             $expiryDateDb = null;
-            if ($sourceOccupation->expiry_dates && $sourceOccupation->expiry_dates != '0000-00-00') {
+            if (!empty($sourceOccupation->expiry_dates)) {
                 try {
                     $date = Carbon::createFromFormat('Y-m-d', $sourceOccupation->expiry_dates);
                     $expiryDateDb = $date->format('Y-m-d');
@@ -6536,7 +6536,7 @@ class ClientPortalPersonalDetailsController extends Controller
             $testDate = $sourceTestScore->test_date ? $this->formatDate($sourceTestScore->test_date) : null;
 
             $testDateDb = null;
-            if ($sourceTestScore->test_date && $sourceTestScore->test_date != '0000-00-00') {
+            if (!empty($sourceTestScore->test_date)) {
                 try {
                     $date = Carbon::createFromFormat('Y-m-d', $sourceTestScore->test_date);
                     $testDateDb = $date->format('Y-m-d');
@@ -6820,7 +6820,7 @@ class ClientPortalPersonalDetailsController extends Controller
 
                 // Convert dates from dd/mm/yyyy to Y-m-d format for storage
                 $issueDateDb = null;
-                if ($sourcePassport->passport_issue_date && $sourcePassport->passport_issue_date != '0000-00-00') {
+                if (!empty($sourcePassport->passport_issue_date)) {
                     try {
                         $date = Carbon::createFromFormat('Y-m-d', $sourcePassport->passport_issue_date);
                         $issueDateDb = $date->format('Y-m-d');
@@ -6836,7 +6836,7 @@ class ClientPortalPersonalDetailsController extends Controller
                 }
 
                 $expiryDateDb = null;
-                if ($sourcePassport->passport_expiry_date && $sourcePassport->passport_expiry_date != '0000-00-00') {
+                if (!empty($sourcePassport->passport_expiry_date)) {
                     try {
                         $date = Carbon::createFromFormat('Y-m-d', $sourcePassport->passport_expiry_date);
                         $expiryDateDb = $date->format('Y-m-d');

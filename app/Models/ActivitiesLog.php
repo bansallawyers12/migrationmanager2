@@ -22,6 +22,7 @@ class ActivitiesLog extends Authenticatable
 		'use_for',
 		'followup_date',
 		'task_group',
+		'task_status',
 		'pin',
 	];
 

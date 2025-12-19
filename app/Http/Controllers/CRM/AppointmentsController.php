@@ -320,6 +320,7 @@ class AppointmentsController extends Controller
             }
             $objs->subject = $subject;
             $obj->appointment_details = @$request->appointment_details;
+			$objs->task_status = 0;
 			$objs->save();
             return redirect()->route('appointments.index')->with('success','Appointment updated successfully');
 		} else {
@@ -1075,6 +1076,7 @@ public function update_apppointment_comment(Request $request){
             </div>
             <div style="display:inline-grid;"><span class="text-semi-bold">'.$enquiryTitle.'</span> <span class="text-semi-bold">'.$serviceTitle.'</span>  <span class="text-semi-bold">'.$appointment_details.'</span> <span class="text-semi-bold">'.$request->description.'</span> <p class="text-semi-light-grey col-v-1">@ '.$request->appoint_time.'</p></div>';
         $objs->subject = $subject;
+        $objs->task_status = 0;
         $objs->save();
         
 
@@ -1179,6 +1181,7 @@ public function update_apppointment_comment(Request $request){
 				@ '.date('H:i A', strtotime($obj->time)).'
 				</p></div>';
 			$objs->subject = $subject;
+			$objs->task_status = 0;
 			$objs->save();
 			}
 
@@ -1231,6 +1234,7 @@ public function update_apppointment_comment(Request $request){
 				@ '.date('H:i A', strtotime($obj->time)).'
 				</p></div>';
 			$objs->subject = $subject;
+			$objs->task_status = 0;
 			$objs->save();
 			$response['status'] 	= 	true;
 			$response['data']	=	'Appointment updated successfully';
@@ -1295,6 +1299,7 @@ public function update_apppointment_comment(Request $request){
 				@ '.date('H:i A', strtotime($obj->time)).'
 				</p></div>';
 				$objs->subject = $subject;
+				$objs->task_status = 0;
 				$objs->save();
 				//return Redirect::to('/appointments-cal')->with('success', 'Appointment updated successfully.');
                 return redirect()->back()->withInput()->with('success', 'Appointment updated successfully.');
@@ -1477,6 +1482,7 @@ public function update_apppointment_comment(Request $request){
                 $subject = 'updated an appointment';
             }
             $objs->subject = $subject;
+            $objs->task_status = 0;
             $objs->save();
             //return Redirect::to('/appointments-cal')->with('success', 'Appointment updated successfully.');
             return Redirect()->back()->with('success', 'Appointment updated successfully.');
@@ -1754,6 +1760,7 @@ public function update_apppointment_comment(Request $request){
 				@ '.date('H:i A', strtotime($data->time)).'
 				</p></div>';
 				$objs->subject = $subject;
+				$objs->task_status = 0;
 				$objs->save();
 			$response['status'] 	= 	true;
 			$response['data']	=	$data;

@@ -24,6 +24,7 @@ trait LogsClientActivity
             'subject' => $subject,
             'description' => $description,
             'activity_type' => $activityType,
+            'task_status' => 0, // Default to 0 for non-task activities (PostgreSQL NOT NULL requirement)
         ]);
     }
 

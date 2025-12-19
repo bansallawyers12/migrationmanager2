@@ -1293,6 +1293,7 @@ class PublicDocumentController extends Controller
             'subject' => $subject,
             'description' => $description,
             'activity_type' => 'document',
+            'task_status' => 0,
         ]);
         
         Log::info('Activity log created for document signature', [

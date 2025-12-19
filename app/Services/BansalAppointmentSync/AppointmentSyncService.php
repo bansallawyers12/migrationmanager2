@@ -623,6 +623,7 @@ class AppointmentSyncService
             'subject' => $finalSubject,
             'description' => $description,
             'activity_type' => 'activity',
+            'task_status' => 0,
         ]);
     }
 }

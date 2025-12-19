@@ -218,6 +218,7 @@ class UnifiedSmsManager
                 'description' => $this->formatActivityDescription($data),
                 'sms_log_id' => $smsLog->id,
                 'activity_type' => 'sms',
+                'task_status' => 0,
             ]);
         }
 

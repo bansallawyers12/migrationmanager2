@@ -5161,6 +5161,7 @@ class ClientsController extends Controller
 				$objs->client_id = $request->id;
 				$objs->created_by = Auth::user()->id;
 				$objs->subject = $subject;
+				$objs->task_status = 0;
 				$objs->save();
 				$response['status'] 	= 	true;
 				$response['message']	=	'You’ve successfully updated your client’s information.';
@@ -5207,6 +5208,7 @@ class ClientsController extends Controller
 				$objs->created_by = Auth::user()->id;
 				$objs->description = '<span class="text-semi-bold">'.@$productdetail->name.'</span><p>'.@$partnerdetail->partner_name.' ('.@$PartnerBranch->name.')</p>';
 				$objs->subject = $subject;
+				$objs->task_status = 0;
 				$objs->save();
 				$response['status'] 	= 	true;
 				$response['message']	=	'You’ve successfully updated your client’s information.';
@@ -8426,6 +8428,7 @@ class ClientsController extends Controller
                 $objs->created_by = Auth::user()->id;
                 $objs->subject = 'Set action for ' . $assigneeName;
                 $objs->description = '<span class="text-semi-bold">' . @$requestData['remindersubject'] . '</span><p>' . @$requestData['description'] . '</p>';
+                $objs->task_status = 0;
 
                 if (Auth::user()->id != $assigneeId) {
                     $objs->use_for = $assigneeId;
@@ -8801,6 +8804,7 @@ class ClientsController extends Controller
             $activityLog->client_id = $matter->client_id;
             $activityLog->created_by = Auth::id();
             $activityLog->subject = $activitySubject;
+            $activityLog->task_status = 0;
             $activityLog->save();
             
             return response()->json([

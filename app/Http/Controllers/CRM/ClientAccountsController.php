@@ -690,6 +690,7 @@ class ClientAccountsController extends Controller
                     $objs->created_by = Auth::user()->id;
                     $objs->description = '';
                     $objs->subject = $subject;
+                    $objs->task_status = 0;
                     $objs->save();
    
                     $amount11 = floatval($requestData['withdraw_amount'][$i]);
@@ -866,6 +867,7 @@ class ClientAccountsController extends Controller
                     $objs->created_by = Auth::user()->id;
                     $objs->description = '';
                     $objs->subject = $subject;
+                    $objs->task_status = 0;
                     $objs->save();
    
                     $amount11 = $withdrawAmount;
@@ -2223,6 +2225,7 @@ class ClientAccountsController extends Controller
                $objs->description = '';
                $objs->subject = $subject;
                $objs->activity_type = 'document';
+               $objs->task_status = 0;
                $objs->save();
            }
           }
@@ -2739,6 +2742,7 @@ class ClientAccountsController extends Controller
                $objs->description = '';
                $objs->subject = $subject;
                $objs->activity_type = 'document';
+               $objs->task_status = 0;
                $objs->save();
 
            }
@@ -2955,6 +2959,7 @@ class ClientAccountsController extends Controller
                $objs->description = '';
                $objs->subject = $subject;
                $objs->activity_type = 'document';
+               $objs->task_status = 0;
                $objs->save();
 
            }
@@ -3170,6 +3175,7 @@ class ClientAccountsController extends Controller
                $objs->description = '';
                $objs->subject = $subject;
                $objs->activity_type = 'document';
+               $objs->task_status = 0;
                $objs->save();
            }
            $response['status']     =     true;
@@ -3397,6 +3403,7 @@ class ClientAccountsController extends Controller
                $objs->created_by = Auth::user()->id;
                $objs->description = '';
                $objs->subject = $subject;
+               $objs->task_status = 0;
                $objs->save();
 
                $record_info = DB::table('account_client_receipts')
@@ -3556,6 +3563,7 @@ class ClientAccountsController extends Controller
                            $reversal_activity->created_by = Auth::user()->id;
                            $reversal_activity->description = 'Fee Transfer voided - Amount no longer withdrawn from client funds';
                            $reversal_activity->subject = $reversal_subject;
+                           $reversal_activity->task_status = 0;
                            $reversal_activity->save();
                            
                            \Log::info('Fee Transfer marked as voided', [
@@ -3939,6 +3947,7 @@ class ClientAccountsController extends Controller
                $objs->created_by = Auth::user()->id;
                $objs->description = '';
                $objs->subject = $subject;
+               $objs->task_status = 0;
                $objs->save();
            }
 
@@ -5130,6 +5139,7 @@ public function getInvoiceAmount(Request $request)
             $objs->created_by = Auth::user()->id;
             $objs->description = 'Invoice #' . $invoiceNo . ' sent to client email: ' . $clientname->primary_email;
             $objs->subject = 'Invoice sent to client';
+            $objs->task_status = 0;
             $objs->save();
 
             // Clean up temp file after a delay (queued job will handle sending)
@@ -5255,6 +5265,7 @@ public function getInvoiceAmount(Request $request)
             $objs->created_by = Auth::user()->id;
             $objs->description = 'Client fund receipt #' . $receiptNo . ' sent to client email: ' . $clientname->primary_email;
             $objs->subject = 'Client fund receipt sent to client';
+            $objs->task_status = 0;
             $objs->save();
 
             return response()->json([
@@ -5377,6 +5388,7 @@ public function getInvoiceAmount(Request $request)
             $objs->created_by = Auth::user()->id;
             $objs->description = 'Office receipt #' . $receiptNo . ' sent to client email: ' . $clientname->primary_email;
             $objs->subject = 'Office receipt sent to client';
+            $objs->task_status = 0;
             $objs->save();
 
             return response()->json([

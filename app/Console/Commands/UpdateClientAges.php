@@ -51,7 +51,6 @@ class UpdateClientAges extends Command
         // Get all clients with valid DOB
         $query = Admin::where('role', 7) // Clients only
             ->whereNotNull('dob')
-            ->where('dob', '!=', '0000-00-00')
             ->where('dob', '<=', Carbon::now()->format('Y-m-d')) // Not future dates
             ->whereNull('is_deleted')
             ->where('is_archived', 0);
@@ -137,7 +136,7 @@ class UpdateClientAges extends Command
      */
     protected function calculateAge($dob)
     {
-        if (empty($dob) || $dob === '0000-00-00') {
+        if (empty($dob)) {
             return null;
         }
 

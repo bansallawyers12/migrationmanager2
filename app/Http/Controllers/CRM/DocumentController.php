@@ -1749,6 +1749,7 @@ class DocumentController extends Controller
                         $objs->description = '';
                         $objs->subject = $subject;
                         $objs->activity_type = 'document';
+                        $objs->task_status = 0;
                         $objsupd = $objs->save();
                         if($objsupd){
                             //update client matter table

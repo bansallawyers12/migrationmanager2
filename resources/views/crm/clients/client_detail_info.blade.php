@@ -78,10 +78,8 @@
                                                     </div>
                                                 </div>
                                                 <?php
-                                                    if(isset($fetchedData->dob) && $fetchedData->dob != ''){
-                                                        if( $fetchedData->dob != '0000-00-00'){
-                                                            $dob = date('d/m/Y', strtotime($fetchedData->dob));
-                                                        }
+                                                    if(isset($fetchedData->dob) && $fetchedData->dob != '' && !empty($fetchedData->dob)){
+                                                        $dob = date('d/m/Y', strtotime($fetchedData->dob));
                                                     }
                                                 ?>
                                                 <input type="text" name="dob" value="{{ @$dob }}" class="form-control dobdatepickers" data-valid="" autocomplete="off" placeholder="">

@@ -1585,6 +1585,7 @@ class ClientPersonalDetailsController extends Controller
             $objs->client_id = $request->id;
             $objs->created_by = \Auth::user()->id;
             $objs->subject = $subject;
+            $objs->task_status = 0;
             $objs->save();
             return redirect()->route('assignee.index')->with('success','Assignee updated successfully');
         } else {
