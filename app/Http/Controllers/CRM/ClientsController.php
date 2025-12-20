@@ -761,7 +761,7 @@ class ClientsController extends Controller
                 $client->dob_verified_by = $currentUserId;
                 
                 // Recalculate age when DOB is verified (ensures age is current)
-                if ($client->dob && $client->dob !== '0000-00-00') {
+                if ($client->dob && $client->dob !== null) {
                     try {
                         $dobDate = \Carbon\Carbon::parse($client->dob);
                         $client->age = $dobDate->diff(\Carbon\Carbon::now())->format('%y years %m months');
@@ -2282,7 +2282,7 @@ class ClientsController extends Controller
                 
                 // Recalculate age when DOB is verified (ensures age is current)
                 // This happens even if DOB hasn't changed, just verification status
-                if ($obj->dob && $obj->dob !== '0000-00-00') {
+                if ($obj->dob && $obj->dob !== null) {
                     try {
                         $dobDate = \Carbon\Carbon::parse($obj->dob);
                         $obj->age = $dobDate->diff(\Carbon\Carbon::now())->format('%y years %m months');
@@ -8470,91 +8470,145 @@ class ClientsController extends Controller
      */
     public function followupstore(Request $request)
     {
-        $requestData = $request->all(); //dd($requestData);
-        // Decode the client ID
-        $clientId = $this->decodeString(@$requestData['client_id']);
-
-        // Get the next unique ID for this task
-        //$lastUniqueId = \App\Models\Note::max('unique_group_id'); // Get the last unique_id
-        //$taskUniqueId = $lastUniqueId ? $lastUniqueId + 1 : 1; // Increment by 1 or start from 1
-
-        $taskUniqueId = 'group_' . uniqid('', true);
-
-        // Loop through each assignee and create a follow-up note
-        foreach ($requestData['rem_cat'] as $assigneeId) {
-            // Create a new followup note for each assignee
-            $followup = new \App\Models\Note;
-            $followup->client_id = $clientId;
-            $followup->user_id = Auth::user()->id;
-            $followup->description = @$requestData['description'];
-            $followup->unique_group_id = $taskUniqueId;
-
-            // Set the title for the current assignee
-            $assigneeName = $this->getAssigneeName($assigneeId);
-            $followup->title = @$requestData['remindersubject'] ?? 'Lead assigned to ' . $assigneeName;
-
-            $followup->folloup = 1;
-            $followup->type = 'client';
-            $followup->task_group = @$requestData['task_group'];
-            $followup->assigned_to = $assigneeId;
-
-            if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
-                $followup->followup_date = @$requestData['followup_datetime'];
+        try {
+            $requestData = $request->all();
+            
+            // Validate required fields
+            if (empty($requestData['client_id'])) {
+                echo json_encode(array('success' => false, 'message' => 'Client ID is required'));
+                exit;
             }
+            
+            // Decode the client ID
+            $clientId = $this->decodeString($requestData['client_id']);
+            
+            // Validate decoded client ID
+            if ($clientId === false || empty($clientId)) {
+                echo json_encode(array('success' => false, 'message' => 'Invalid client ID'));
+                exit;
+            }
+            
+            // Handle rem_cat - ensure it exists and is an array (PostgreSQL migration pattern)
+            $remCat = $requestData['rem_cat'] ?? [];
+            if (!is_array($remCat)) {
+                // If it's a single value, convert to array
+                $remCat = !empty($remCat) ? [$remCat] : [];
+            }
+            
+            // Validate that at least one assignee is selected
+            if (empty($remCat)) {
+                echo json_encode(array('success' => false, 'message' => 'At least one assignee must be selected'));
+                exit;
+            }
+            
+            // Get the next unique ID for this task
+            $taskUniqueId = 'group_' . uniqid('', true);
 
-            //add note deadline
-            if(isset($requestData['note_deadline_checkbox']) && $requestData['note_deadline_checkbox'] != ''){
-                if($requestData['note_deadline_checkbox'] == 1){
-                    $followup->note_deadline = $requestData['note_deadline'];
+            // Loop through each assignee and create a follow-up note
+            foreach ($remCat as $assigneeId) {
+                // Create a new followup note for each assignee
+                $followup = new \App\Models\Note;
+                $followup->client_id = $clientId;
+                $followup->user_id = Auth::user()->id;
+                $followup->description = $requestData['description'] ?? '';
+                $followup->unique_group_id = $taskUniqueId;
+
+                // Set the title for the current assignee
+                $assigneeName = $this->getAssigneeName($assigneeId);
+                $followup->title = $requestData['remindersubject'] ?? 'Lead assigned to ' . $assigneeName;
+
+                // PostgreSQL NOT NULL constraints - must set these fields (Notes Table pattern)
+                $followup->folloup = 1; // This is a follow-up note
+                $followup->pin = 0; // Default to not pinned
+                $followup->status = '0'; // Default status (string '0' = active, '1' = completed)
+                $followup->type = 'client';
+                $followup->task_group = $requestData['task_group'] ?? null;
+                $followup->assigned_to = $assigneeId;
+
+                if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
+                    $followup->followup_date = $requestData['followup_datetime'];
+                }
+
+                //add note deadline
+                if(isset($requestData['note_deadline_checkbox']) && $requestData['note_deadline_checkbox'] != ''){
+                    if($requestData['note_deadline_checkbox'] == 1){
+                        $followup->note_deadline = $requestData['note_deadline'] ?? null;
+                    } else {
+                        $followup->note_deadline = NULL;
+                    }
                 } else {
                     $followup->note_deadline = NULL;
                 }
-            } else {
-                $followup->note_deadline = NULL;
-            }
 
-            $saved = $followup->save();
+                $saved = $followup->save();
 
-            if ($saved) {
-                // Update lead follow-up date
-                if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
-                    $Lead = Admin::find($clientId);
-                    $Lead->followup_date = @$requestData['followup_datetime'];
-                    $Lead->save();
+                if ($saved) {
+                    // Update lead follow-up date
+                    if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
+                        $Lead = Admin::find($clientId);
+                        if ($Lead) {
+                            $Lead->followup_date = $requestData['followup_datetime'];
+                            $Lead->save();
+                        }
+                    }
+
+                    // Create a notification for the current assignee
+                    $o = new \App\Models\Notification;
+                    $o->sender_id = Auth::user()->id;
+                    $o->receiver_id = $assigneeId;
+                    $o->module_id = $clientId;
+                    $o->url = \URL::to('/clients/detail/' . $requestData['client_id']);
+                    $o->notification_type = 'client';
+                    $o->receiver_status = 0; // Unread
+                    $o->seen = 0; // Not seen
+                    
+                    $followupDateTime = $requestData['followup_datetime'] ?? now();
+                    try {
+                        if (is_numeric($followupDateTime)) {
+                            $formattedDate = date('d/M/Y h:i A', $followupDateTime);
+                        } else {
+                            $timestamp = strtotime($followupDateTime);
+                            $formattedDate = $timestamp !== false ? date('d/M/Y h:i A', $timestamp) : date('d/M/Y h:i A');
+                        }
+                    } catch (\Exception $dateEx) {
+                        $formattedDate = date('d/M/Y h:i A');
+                    }
+                    
+                    $o->message = 'Followup Assigned by ' . Auth::user()->first_name . ' ' . Auth::user()->last_name . ' on ' . $formattedDate;
+                    $o->save();
+
+                    // Log the activity for the current assignee
+                    $objs = new ActivitiesLog;
+                    $objs->client_id = $clientId;
+                    $objs->created_by = Auth::user()->id;
+                    $objs->subject = 'Set action for ' . $assigneeName;
+                    $objs->description = '<span class="text-semi-bold">' . ($requestData['remindersubject'] ?? '') . '</span><p>' . ($requestData['description'] ?? '') . '</p>';
+                    $objs->task_status = 0;
+                    $objs->pin = 0;
+
+                    if (Auth::user()->id != $assigneeId) {
+                        $objs->use_for = $assigneeId;
+                    } else {
+                        $objs->use_for = "";
+                    }
+
+                    $objs->followup_date = $requestData['followup_datetime'] ?? null;
+                    $objs->task_group = $requestData['task_group'] ?? null;
+                    $objs->save();
                 }
-
-                // Create a notification for the current assignee
-                $o = new \App\Models\Notification;
-                $o->sender_id = Auth::user()->id;
-                $o->receiver_id = $assigneeId;
-                $o->module_id = $clientId;
-                $o->url = \URL::to('/clients/detail/' . @$requestData['client_id']);
-                $o->notification_type = 'client';
-                $o->message = 'Followup Assigned by ' . Auth::user()->first_name . ' ' . Auth::user()->last_name . ' on ' . date('d/M/Y h:i A', strtotime(@$requestData['followup_datetime']));
-                $o->save();
-
-                // Log the activity for the current assignee
-                $objs = new ActivitiesLog;
-                $objs->client_id = $clientId;
-                $objs->created_by = Auth::user()->id;
-                $objs->subject = 'Set action for ' . $assigneeName;
-                $objs->description = '<span class="text-semi-bold">' . @$requestData['remindersubject'] . '</span><p>' . @$requestData['description'] . '</p>';
-                $objs->task_status = 0;
-                $objs->pin = 0;
-
-                if (Auth::user()->id != $assigneeId) {
-                    $objs->use_for = $assigneeId;
-                } else {
-                    $objs->use_for = "";
-                }
-
-                $objs->followup_date = @$requestData['followup_datetime'];
-                $objs->task_group = @$requestData['task_group'];
-                $objs->save();
             }
+            
+            echo json_encode(array('success' => true, 'message' => 'successfully saved', 'clientID' => $requestData['client_id']));
+            exit;
+            
+        } catch (\Exception $e) {
+            Log::error('Error in followupstore: ' . $e->getMessage(), [
+                'request_data' => $request->all(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            echo json_encode(array('success' => false, 'message' => 'Error saving follow-up. Please try again.'));
+            exit;
         }
-        echo json_encode(array('success' => true, 'message' => 'successfully saved', 'clientID' => $requestData['client_id']));
-        exit;
     }
 
     // Helper function to get assignee name

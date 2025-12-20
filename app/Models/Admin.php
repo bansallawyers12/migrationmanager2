@@ -116,7 +116,7 @@ class Admin extends Authenticatable
     public function getAgeAttribute($value)
     {
         // If DOB exists, calculate age on-the-fly (always accurate)
-        if ($this->dob && $this->dob !== '0000-00-00') {
+        if ($this->dob && $this->dob !== null) {
             try {
                 $dobDate = \Carbon\Carbon::parse($this->dob);
                 $now = \Carbon\Carbon::now();
