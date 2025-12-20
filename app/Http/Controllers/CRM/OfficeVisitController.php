@@ -114,7 +114,7 @@ class OfficeVisitController extends Controller
 				if($CheckinLog->contact_type == 'Lead'){
 				    	$client = \App\Models\Lead::where('id', '=', $CheckinLog->client_id)->first();
 				}else{
-				    	$client = \App\Models\Admin::where('role', '=', '7')->where('id', '=', $CheckinLog->client_id)->first();
+				    	$client = \App\Models\Admin::where('role', '=', 7)->where('id', '=', $CheckinLog->client_id)->first();
 				}
 
 			?>

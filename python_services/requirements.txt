@@ -2,37 +2,31 @@
 # All dependencies for PDF, Email, and Document processing
 
 # Web Framework
-fastapi>=0.100.0
-uvicorn[standard]>=0.20.0
-pydantic>=2.0.0
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.5.0
+python-multipart>=0.0.6  # Required for FastAPI file uploads
 
 # PDF Processing
-PyPDF2>=3.0.0
-pdf2image>=1.16.0
-Pillow>=9.0.0
-reportlab>=4.0.0
-PyMuPDF>=1.23.0  # fitz - for advanced PDF operations
+PyPDF2>=3.0.1
+pdf2image>=1.17.0  # Requires poppler system package (apt: poppler-utils, brew: poppler)
+Pillow>=10.1.0
+PyMuPDF>=1.23.8  # fitz - for advanced PDF operations
 
 # Email Processing
-extract-msg>=0.40.0
-beautifulsoup4>=4.12.0
-lxml>=4.9.0
-html5lib>=1.1
+extract-msg>=0.41.1
+beautifulsoup4>=4.12.2
+lxml>=4.9.3  # HTML/XML parser for BeautifulSoup
+html5lib>=1.1  # Alternative HTML parser for BeautifulSoup
 
 # Document Conversion
-python-docx>=1.0.0
-openpyxl>=3.1.0
-docx2pdf>=0.1.8  # Fallback DOCX converter
+docx2pdf>=0.1.8  # Fallback DOCX converter (requires Microsoft Word on Windows)
 
-# Utilities
-python-multipart>=0.0.6
-aiofiles>=23.0.0
-python-dateutil>=2.8.0
+# Testing & Development
+requests>=2.31.0  # For testing endpoints
 
-# Security & Validation
-bleach>=6.0.0
-validators>=0.20.0
-
-# Logging & Monitoring
-loguru>=0.7.0
+# Note: System dependencies required:
+# - poppler-utils (for pdf2image): apt-get install poppler-utils (Linux) or brew install poppler (Mac)
+# - LibreOffice (optional, for DOCX conversion): Preferred method for docx2pdf conversion
+# - Microsoft Word (optional, for docx2pdf on Windows): Required if using docx2pdf fallback
 

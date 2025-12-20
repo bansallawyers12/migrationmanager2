@@ -391,7 +391,7 @@ class ClientsController extends Controller
             $sortDirection = $request->get('direction', 'desc');
 
             $query = Admin::where('is_archived', '=', '0')
-                ->where('role', '=', '7')
+                ->where('role', '=', 7)
                 ->where('type', '=', 'client')
                 ->whereNotNull('email')
                 ->where('email', '!=', '')
@@ -427,7 +427,7 @@ class ClientsController extends Controller
 
             $lists = $query->paginate(20);
         } else {
-            $query = Admin::where('id', '=', '')->where('role', '=', '7')->whereNull('is_deleted');
+            $query = Admin::where('id', '=', '')->where('role', '=', 7)->whereNull('is_deleted');
             $lists = $query->sortable(['id' => 'desc'])->paginate(20);
             $totalData = 0;
         }
@@ -437,7 +437,7 @@ class ClientsController extends Controller
 
     public function archived(Request $request)
 	{
-		$query 		= Admin::where('is_archived', '=', '1')->where('role', '=', '7');
+		$query 		= Admin::where('is_archived', '=', '1')->where('role', '=', 7);
         $totalData 	= $query->count();	//for all data
         $lists		= $query->sortable(['id' => 'desc'])->paginate(20);
         return view('crm.archived.index', compact(['lists', 'totalData']));
@@ -1424,7 +1424,7 @@ class ClientsController extends Controller
         // Check authorization (assumed to be handled elsewhere)
         if (isset($id) && !empty($id)) {
             $id = $this->decodeString($id);
-            if (Admin::where('id', '=', $id)->where('role', '=', '7')->exists()) {
+            if (Admin::where('id', '=', $id)->where('role', '=', 7)->exists()) {
                 
                 // Use service to get all data with optimized queries (prevents N+1)
                 $data = app(\App\Services\ClientEditService::class)->getClientEditData($id);
@@ -4507,7 +4507,7 @@ class ClientsController extends Controller
             // Set default tab if not provided
             $activeTab = $tab ?? 'personaldetails';
 
-            if (Admin::where('id', '=', $id)->where('role', '=', '7')->exists()) {
+            if (Admin::where('id', '=', $id)->where('role', '=', 7)->exists()) {
                 $fetchedData = Admin::find($id); //dd($fetchedData);
 
 
@@ -5133,6 +5133,18 @@ class ClientsController extends Controller
     }
 
 	public function activities(Request $request){ 
+		// Bypass all output buffering
+		while (ob_get_level()) {
+			ob_end_clean();
+		}
+		
+		// Start fresh output buffer
+		ob_start();
+		
+		// Force error reporting off
+		@ini_set('display_errors', '0');
+		@error_reporting(0);
+		
 		// Initialize response with default error state
 		$response = [
 			'status' => false,
@@ -5140,21 +5152,34 @@ class ClientsController extends Controller
 		];
 
 		try {
-			if(Admin::where('role', '=', '7')->where('id', $request->id)->exists()){
-				$activities = ActivitiesLog::where('client_id', $request->id)->orderby('created_at', 'DESC')->get(); //->where('subject', '<>','added a note')
+			// Validate request has id parameter
+			if (!$request->has('id') || empty($request->id)) {
+				$response['message'] = 'Client ID is required';
+				header('Content-Type: application/json');
+				echo json_encode($response);
+				ob_end_flush();
+				exit;
+			}
+
+			// Check if client exists - role must be integer for PostgreSQL compatibility
+			$clientExists = Admin::where('role', '=', 7)->where('id', $request->id)->exists();
+			
+			if($clientExists){
+				$activities = ActivitiesLog::where('client_id', $request->id)->orderby('created_at', 'DESC')->get();
 				$data = array();
+				
 				foreach($activities as $activit){
 					$admin = Admin::where('id', $activit->created_by)->first();
 					$data[] = array(
 						'activity_id' => $activit->id,
-						'subject' => $activit->subject,
+						'subject' => $activit->subject ?? '',
 						'createdname' => $admin ? substr($admin->first_name, 0, 1) : '?',
 						'name' => $admin ? $admin->first_name : 'Unknown',
-						'message' => $activit->description,
+						'message' => $activit->description ?? '',
 						'date' => date('d M Y, H:i A', strtotime($activit->created_at)),
-					   'followup_date' => $activit->followup_date,
-					   'task_group' => $activit->task_group,
-					   'pin' => $activit->pin,
+					   'followup_date' => $activit->followup_date ?? '',
+					   'task_group' => $activit->task_group ?? '',
+					   'pin' => $activit->pin ?? 0,
 					   'activity_type' => $activit->activity_type ?? 'note'
 					);
 				}
@@ -5167,20 +5192,37 @@ class ClientsController extends Controller
 				$response['message']	=	'Client not found';
 			}
 		} catch (\Exception $e) {
-			\Log::error('Error fetching activities: ' . $e->getMessage(), [
-				'client_id' => $request->id,
+			\Log::error('Error fetching activities (Exception): ' . $e->getMessage(), [
+				'client_id' => $request->id ?? 'N/A',
+				'file' => $e->getFile(),
+				'line' => $e->getLine(),
 				'trace' => $e->getTraceAsString()
 			]);
 			$response['status'] = false;
-			$response['message'] = 'An error occurred while fetching activities';
+			$response['message'] = 'Exception: ' . $e->getMessage();
+		} catch (\Throwable $e) {
+			// Catch fatal errors
+			\Log::error('Fatal error fetching activities (Throwable): ' . $e->getMessage(), [
+				'client_id' => $request->id ?? 'N/A',
+				'file' => $e->getFile(),
+				'line' => $e->getLine(),
+				'trace' => $e->getTraceAsString()
+			]);
+			$response['status'] = false;
+			$response['message'] = 'Fatal: ' . $e->getMessage();
 		}
 
-		echo json_encode($response);
+		// Ensure JSON response is always returned
+		header('Content-Type: application/json');
+		$jsonOutput = json_encode($response);
+		echo $jsonOutput;
+		ob_end_flush();
+		exit;
 	}
 
 	public function updateclientstatus(Request $request){
-		if(Admin::where('role', '=', '7')->where('id', $request->id)->exists()){
-			$client = Admin::where('role', '=', '7')->where('id', $request->id)->first();
+		if(Admin::where('role', '=', 7)->where('id', $request->id)->exists()){
+			$client = Admin::where('role', '=', 7)->where('id', $request->id)->first();
 
 			$obj = Admin::find($request->id);
 			$obj->rating = $request->rating;
@@ -5212,7 +5254,7 @@ class ClientsController extends Controller
 	}
 
 	public function saveapplication(Request $request){
-		if(Admin::where('role', '=', '7')->where('id', $request->client_id)->exists()){
+		if(Admin::where('role', '=', 7)->where('id', $request->client_id)->exists()){
 			$workflow = $request->workflow;
 			$explode = explode('_', $request->partner_branch);
 			$partner = $explode[1];
@@ -5260,7 +5302,7 @@ class ClientsController extends Controller
 	}
 
 	public function getapplicationlists(Request $request){
-		if(Admin::where('role', '=', '7')->where('id', $request->id)->exists()){
+		if(Admin::where('role', '=', 7)->where('id', $request->id)->exists()){
 			$applications = \App\Models\Application::where('client_id', $request->id)->orderby('created_at', 'DESC')->get();
             //dd($applications);
 			$data = array();
@@ -8408,7 +8450,7 @@ class ClientsController extends Controller
     public function changetype(Request $request,$id = Null, $slug = Null){ 
         if(isset($id) && !empty($id)) {
             $id = $this->decodeString($id);
-            if(Admin::where('id', '=', $id)->where('role', '=', '7')->exists()) {
+            if(Admin::where('id', '=', $id)->where('role', '=', 7)->exists()) {
                 $obj = Admin::find($id);
                 $user_type = $obj->type;
                 if($slug == 'client') {

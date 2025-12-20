@@ -8890,8 +8890,15 @@ Bansal Immigration`;
                 data:{id:window.ClientDetailConfig.clientId},
 
                 success: function(responses){
+                    try {
+                        // Check if response is HTML (redirect page)
+                        if (typeof responses === 'string' && responses.trim().startsWith('<!DOCTYPE') || responses.trim().startsWith('<html')) {
+                            console.error('Received HTML instead of JSON. User might be logged out.');
+                            console.log('Response received:', responses.substring(0, 200));
+                            return;
+                        }
 
-                    var ress = JSON.parse(responses);
+                        var ress = JSON.parse(responses);
 
                     var html = '';
 
@@ -8972,6 +8979,11 @@ Bansal Immigration`;
                     // Adjust Activity Feed height after content update
 
                     adjustActivityFeedHeight();
+
+                    } catch (error) {
+                        console.error('Error processing activities:', error);
+                        $('.popuploader').hide();
+                    }
 
                 }
 

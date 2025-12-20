@@ -1632,7 +1632,7 @@ class ClientPersonalDetailsController extends Controller
         if(isset($id) && !empty($id))
         {
             $id = $this->decodeString($id); //dd($id);
-            if(Admin::where('id', '=', $id)->where('role', '=', '7')->exists())
+            if(Admin::where('id', '=', $id)->where('role', '=', 7)->exists())
             {
                 // Use service to get all data with optimized queries (prevents N+1)
                 // Now returns complete data set including passports, travels, etc.

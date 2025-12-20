@@ -336,7 +336,7 @@ class UserController extends Controller
 				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
 			}
 		//check authorization end
-		$query 		= Admin::where('role', '=', '7');
+		$query 		= Admin::where('role', '=', 7);
 
 		$totalData 	= $query->count();	//for all data
 
