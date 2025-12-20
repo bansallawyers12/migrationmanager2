@@ -5408,6 +5408,8 @@ class ClientsController extends Controller
                     $objs->created_by = Auth::user()->id;
                     $objs->description = '';
                     $objs->subject = $subject;
+                    $objs->task_status = 0;
+                    $objs->pin = 0;
                     $objs->save();
                 }
 
@@ -7756,6 +7758,7 @@ class ClientsController extends Controller
                 $obj5->client_unique_matter_no = $matterInfo->nick_name."_".$client_matters_current_no;
             }
             $obj5->workflow_stage_id = 1;
+            $obj5->matter_status = 1; // Active by default
             $saved5 = $obj5->save();
             $lastInsertedId = $obj5->id; // ← This gets the last inserted ID
             if($saved5) 
@@ -8399,6 +8402,7 @@ class ClientsController extends Controller
                     }
 
                     $matter->workflow_stage_id = 1;
+                    $matter->matter_status = 1; // Active by default
                     $matter->save();
                     
                     if($user_type == 'lead'){
@@ -8407,6 +8411,8 @@ class ClientsController extends Controller
                         $activity->created_by = Auth::user()->id;
                         $activity->subject = 'Lead converted to client. Matter '.$matter->client_unique_matter_no. ' created';
                         $activity->description = 'Lead converted to client. Matter '.$matter->client_unique_matter_no. ' created';
+                        $activity->task_status = 0;
+                        $activity->pin = 0;
                         $activity->save();
 
                         $msg = 'Lead converted to client. Matter '.$matter->client_unique_matter_no. ' created';
@@ -8416,6 +8422,8 @@ class ClientsController extends Controller
                         $activity->created_by = Auth::user()->id;
                         $activity->subject = 'Matter '.$matter->client_unique_matter_no. ' created';
                         $activity->description = 'Matter '.$matter->client_unique_matter_no. ' created';
+                        $activity->task_status = 0;
+                        $activity->pin = 0;
                         $activity->save();
 
                         $msg = 'Matter '.$matter->client_unique_matter_no. ' created';

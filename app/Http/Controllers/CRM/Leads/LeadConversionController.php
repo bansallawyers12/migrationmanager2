@@ -110,6 +110,7 @@ class LeadConversionController extends Controller
                 }
                 
                 $matter->workflow_stage_id = 1;
+                $matter->matter_status = 1; // Active by default
                 $matter->save();
             }
 

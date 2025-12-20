@@ -12,7 +12,8 @@ This document serves as a quick reference for syntax changes made during the MyS
 5. [Null Handling in ORDER BY](#null-handling-in-order-by)
 6. [String Concatenation](#string-concatenation)
 7. [NOT NULL Constraints](#not-null-constraints)
-8. [Search Patterns](#search-patterns)
+8. [Pending Migrations and Schema Mismatches](#pending-migrations-and-schema-mismatches)
+9. [Search Patterns](#search-patterns)
 
 ---
 
@@ -406,12 +407,26 @@ of relation "activities_logs" violates not-null constraint
 - `new Model; $obj->field = value; $obj->save();` - Add `$obj->not_null_field = default_value;` before save
 - Mass assignment - Ensure `$fillable` array includes the NOT NULL field in the model
 
+**ActivitiesLog Specific Pattern:**
+When using `new ActivitiesLog` followed by `->save()`, always set:
+```php
+$objs = new ActivitiesLog;
+$objs->client_id = $clientId;
+$objs->created_by = Auth::user()->id;
+$objs->subject = $subject;
+$objs->description = $description;
+$objs->task_status = 0; // Required NOT NULL field (0 = activity, 1 = task)
+$objs->pin = 0; // Required NOT NULL field (0 = not pinned, 1 = pinned)
+$objs->save();
+```
+
 **Known Tables with NOT NULL Columns:**
 - `activities_logs`: `task_status` (default: 0), `pin` (default: 0)
 - `client_emails`: `is_verified` (default: false)
 - `client_contacts`: `is_verified` (default: false)
 - `client_qualifications`: `specialist_education` (default: 0), `stem_qualification` (default: 0), `regional_study` (default: 0)
 - `client_experiences`: `fte_multiplier` (default: 1.00)
+- `client_matters`: `matter_status` (default: 1 for active) - **CRITICAL**: Must set `matter_status = 1` when creating new matters
 - `admins`: 
   - `verified` (default: 0 for new leads/clients, 1 for verified users) - **CRITICAL**: Required when using `DB::table('admins')->insert()` or `insertGetId()`
   - `password` (NOT NULL, use `Hash::make('LEAD_PLACEHOLDER')` for leads) - **CRITICAL**: Empty strings may be rejected. Use hashed placeholder for leads/clients without portal access.
@@ -419,6 +434,96 @@ of relation "activities_logs" violates not-null constraint
   - `cp_status` (default: 0), `cp_code_verify` (default: 0) - **CRITICAL**: Database defaults not applied with explicit INSERT column lists. Must explicitly provide values.
   - `australian_study`, `specialist_education`, `regional_study` (all default: 0) - **CRITICAL**: Database defaults not applied with explicit INSERT column lists. Must explicitly provide values.
 - Check migration files for other tables with NOT NULL columns that have defaults
+
+---
+
+## Pending Migrations and Schema Mismatches
+
+### Issue: Code References Columns That Don't Exist Yet
+
+**Problem:** When pulling new code from MySQL or adding new features, the code may reference database columns that don't exist in PostgreSQL yet. This typically happens when:
+- Migration files exist but haven't been run
+- Code was written assuming a column exists, but the migration is pending
+- Schema changes were made in MySQL but not yet migrated to PostgreSQL
+
+**Error Example:**
+```
+SQLSTATE[42703]: Undefined column: 7 ERROR: column "office_id" of relation "client_matters" does not exist
+LINE 1: ...rt into "client_matters" ("user_id", "client_id", "office_id...
+```
+
+**Common Symptoms:**
+- `QueryException` with `Undefined column` error
+- Code sets a property on a model (e.g., `$matter->office_id = ...`) but the column doesn't exist
+- Model's `$fillable` array includes a column that's not in the database table
+- INSERT/UPDATE operations fail with column name errors
+
+**How to Identify:**
+1. Check if the error mentions a specific column that doesn't exist
+2. Check if a migration file exists for that column:
+   ```bash
+   # Search for migration files
+   ls -la database/migrations/ | grep -i "column_name"
+   ```
+3. Check migration status:
+   ```bash
+   php artisan migrate:status
+   ```
+4. Look for the column in the model's `$fillable` array or where it's being used in code
+
+**Solution:**
+1. **Find the migration file** that adds the missing column
+2. **Check migration status** to see if it's pending:
+   ```bash
+   php artisan migrate:status
+   ```
+3. **Run the specific migration**:
+   ```bash
+   php artisan migrate --path=database/migrations/YYYY_MM_DD_HHMMSS_migration_name.php
+   ```
+4. **Or run all pending migrations** (if safe):
+   ```bash
+   php artisan migrate
+   ```
+
+**Example from Codebase:**
+- **Error:** `column "office_id" of relation "client_matters" does not exist`
+- **Location:** `app/Http/Controllers/CRM/ClientsController.php` line 8386
+- **Code:**
+  ```php
+  $matter = new ClientMatter();
+  $matter->office_id = $request['office_id'] ?? Auth::user()->office_id ?? null;
+  // ... other assignments
+  $matter->save(); // ❌ Fails because office_id column doesn't exist
+  ```
+- **Model:** `app/Models/ClientMatter.php` has `'office_id'` in `$fillable` array
+- **Migration:** `database/migrations/2025_12_17_145310_add_office_to_client_matters_and_documents.php` was pending
+- **Fix:** Ran the migration: `php artisan migrate --path=database/migrations/2025_12_17_145310_add_office_to_client_matters_and_documents.php`
+
+**Safety:** 🔴 **CRITICAL** - Code referencing non-existent columns will **fail immediately** with `QueryException`. Must run pending migrations before the code can execute.
+
+**Notes:**
+- Always check `php artisan migrate:status` after pulling new code
+- If you see "Undefined column" errors, check for pending migrations first
+- Migration files may exist in `database/migrations/` but not have been executed
+- Some migrations may fail if they depend on tables/columns that don't exist yet - run migrations in order
+- When using `Model::create()` or `$model->save()`, Laravel will try to insert all `$fillable` columns, even if they don't exist in the database
+- Check model's `$fillable` array matches actual database schema
+- If a column is truly not needed, remove it from `$fillable` or make it conditional
+
+**Prevention Checklist:**
+- [ ] After pulling new code, run `php artisan migrate:status` to check for pending migrations
+- [ ] If code references new columns, verify the migration exists and has been run
+- [ ] Check model's `$fillable` array matches database schema
+- [ ] Run migrations in development/staging before production
+- [ ] If migration fails, check error message - may need to run dependent migrations first
+
+**Common Migration Patterns:**
+- New columns added to existing tables
+- New tables created
+- Indexes added/removed
+- Foreign key constraints added
+- Column type changes
 
 ---
 
@@ -461,6 +566,9 @@ grep -r "ClientContact::create" app/
 grep -r "ClientQualification::create" app/
 grep -r "ClientExperience::create" app/
 grep -r "ActivitiesLog::create" app/
+
+# Check for pending migrations
+php artisan migrate:status | grep Pending
 ```
 
 ---
@@ -484,11 +592,14 @@ grep -r "ActivitiesLog::create" app/
 | `ClientContact::create()` missing `is_verified` | Add `'is_verified' => false` | 🔴 Critical | client_contacts table |
 | `ClientQualification::create()` missing `specialist_education`/`stem_qualification`/`regional_study` | Add `'specialist_education' => 0, 'stem_qualification' => 0, 'regional_study' => 0` | 🔴 Critical | client_qualifications table |
 | `ClientExperience::create()` missing `fte_multiplier` | Add `'fte_multiplier' => 1.00` | 🔴 Critical | client_experiences table |
+| `ClientMatter` creation missing `matter_status` | Add `$matter->matter_status = 1;` before save (1 = active) | 🔴 Critical | client_matters table |
+| `new ActivitiesLog` missing `task_status`/`pin` | Add `$objs->task_status = 0; $objs->pin = 0;` before save | 🔴 Critical | activities_logs table |
 | `DB::table('admins')->insert()` missing `verified` | Add `'verified' => 0` (for new leads/clients) | 🔴 Critical | admins table |
 | `DB::table('admins')->insert()` password empty string | Use `'password' => Hash::make('LEAD_PLACEHOLDER')` | 🔴 Critical | admins table - PostgreSQL rejects empty strings for NOT NULL |
 | `DB::table('admins')->insert()` missing `show_dashboard_per` | Add `'show_dashboard_per' => 0` (for new leads/clients) | 🔴 Critical | admins table |
 | `DB::table('admins')->insert()` missing `cp_status`/`cp_code_verify` | Add `'cp_status' => 0, 'cp_code_verify' => 0` | 🔴 Critical | admins table - Database defaults not applied with explicit column lists |
 | `DB::table('admins')->insert()` missing EOI fields | Add `'australian_study' => 0, 'specialist_education' => 0, 'regional_study' => 0` | 🔴 Critical | admins table - Database defaults not applied with explicit column lists |
+| Code references column that doesn't exist | Run pending migration: `php artisan migrate --path=database/migrations/YYYY_MM_DD_HHMMSS_name.php` | 🔴 Critical | Check `php artisan migrate:status` for pending migrations |
 
 ---
 
@@ -510,6 +621,8 @@ When pulling new code from MySQL, check for:
 - [ ] `ClientContact::create()` → Verify `is_verified` is included
 - [ ] `ClientQualification::create()` → Verify `specialist_education`, `stem_qualification`, and `regional_study` are included
 - [ ] `ClientExperience::create()` → Verify `fte_multiplier` is included
+- [ ] `ClientMatter` creation → Verify `matter_status` is set to `1` (active) before save
+- [ ] `new ActivitiesLog` followed by `->save()` → Verify `task_status` and `pin` are set (both default to `0`)
 - [ ] `DB::table('admins')->insert()` or `insertGetId()` → Verify `verified` is included (use `0` for new leads/clients)
 - [ ] `DB::table('admins')->insert()` or `insertGetId()` → Verify `password` is included (use `Hash::make('LEAD_PLACEHOLDER')` for leads, not empty string)
 - [ ] `DB::table('admins')->insert()` or `insertGetId()` → Verify `show_dashboard_per` is included (use `0` for new leads/clients)
@@ -518,6 +631,10 @@ When pulling new code from MySQL, check for:
 - [ ] Check other models for NOT NULL columns with defaults that need explicit values
 - [ ] **IMPORTANT:** Database defaults (`default()` in migrations) are NOT applied when using `DB::table()->insert()` with explicit column lists. Always provide explicit values for NOT NULL columns.
 - [ ] Check for empty strings `''` being used for NOT NULL string columns - PostgreSQL may reject them
+- [ ] **Check for pending migrations:** Run `php artisan migrate:status` after pulling new code
+- [ ] If you see "Undefined column" errors, check for pending migrations that add those columns
+- [ ] Verify model's `$fillable` array matches actual database schema
+- [ ] Run specific pending migrations if needed: `php artisan migrate --path=database/migrations/YYYY_MM_DD_HHMMSS_name.php`
 
 ---
 
