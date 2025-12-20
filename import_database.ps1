@@ -17,3 +17,5 @@ if ($LASTEXITCODE -eq 0) {
 } else {
     Write-Host "Error importing database. Exit code: $LASTEXITCODE"
 }
+
+

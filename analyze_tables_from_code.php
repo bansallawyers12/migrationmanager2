@@ -187,3 +187,5 @@ echo "\n3. Has model but no code references:\n";
 foreach ($potentiallyUnused as $table => $model) {
     echo "   - $table\n";
 }
+
+
