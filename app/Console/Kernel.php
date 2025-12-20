@@ -53,6 +53,9 @@ class Kernel extends ConsoleKernel
         
         // Activity Cleanup Commands
         '\App\Console\Commands\CleanupActivityDescriptions',
+        
+        // Database Comparison
+        '\App\Console\Commands\CompareDatabaseTables',
     ];
 
     /**
