@@ -194,6 +194,8 @@ class ClientAccountsController extends Controller
                 $obj->type = $request->type;
                 $obj->file_size = $size;
                 $obj->doc_type = $doctype;
+                // PostgreSQL NOT NULL constraint - signer_count is required (default: 1 for regular documents)
+                $obj->signer_count = 1;
                 $doc_saved = $obj->save();
                 $insertedDocId = $obj->id;
             }
@@ -1515,6 +1517,8 @@ class ClientAccountsController extends Controller
            $obj->type = $request->type;
            $obj->file_size = $size;
            $obj->doc_type = $doctype;
+           // PostgreSQL NOT NULL constraint - signer_count is required (default: 1 for regular documents)
+           $obj->signer_count = 1;
            $obj->save();
            $insertedDocId = $obj->id;
           }
@@ -2260,6 +2264,8 @@ class ClientAccountsController extends Controller
            $obj->type = $request->type;
            $obj->file_size = $size;
            $obj->doc_type = $doctype;
+           // PostgreSQL NOT NULL constraint - signer_count is required (default: 1 for regular documents)
+           $obj->signer_count = 1;
            $doc_saved = $obj->save();
 
            $insertedDocId = $obj->id;
@@ -2603,6 +2609,8 @@ class ClientAccountsController extends Controller
           $document->type = 'invoice'; // Document type identifier
           $document->doc_type = $docType;
           $document->file_size = strlen($pdfContent);
+          // PostgreSQL NOT NULL constraint - signer_count is required (default: 1 for regular documents)
+          $document->signer_count = 1;
           $document->save();
           
           // Update account_client_receipts with PDF document ID
@@ -2761,6 +2769,8 @@ class ClientAccountsController extends Controller
                $obj->file_size = $size;
                $obj->doc_type = $doctype;
                $obj->client_matter_id = $client_matter_id;  // Store matter ID
+               // PostgreSQL NOT NULL constraint - signer_count is required (default: 1 for regular documents)
+               $obj->signer_count = 1;
                $saved = $obj->save();
                
                // Update the receipt with the uploaded document ID
@@ -2979,6 +2989,8 @@ class ClientAccountsController extends Controller
                $obj->file_size = $size;
                $obj->doc_type = $doctype;
                $obj->client_matter_id = $client_matter_id;  // Store matter ID
+               // PostgreSQL NOT NULL constraint - signer_count is required (default: 1 for regular documents)
+               $obj->signer_count = 1;
                $saved = $obj->save();
                
                // Update the receipt with the uploaded document ID
@@ -3196,6 +3208,8 @@ class ClientAccountsController extends Controller
                $obj->file_size = $size;
                $obj->doc_type = $doctype;
                $obj->client_matter_id = $client_matter_id;  // Store matter ID
+               // PostgreSQL NOT NULL constraint - signer_count is required (default: 1 for regular documents)
+               $obj->signer_count = 1;
                $saved = $obj->save();
                
                // Update the journal entry with the uploaded document ID
@@ -4280,6 +4294,8 @@ class ClientAccountsController extends Controller
         $document->type = 'client_fund_receipt';
         $document->doc_type = $docType;
         $document->file_size = strlen($pdfContent);
+        // PostgreSQL NOT NULL constraint - signer_count is required (default: 1 for regular documents)
+        $document->signer_count = 1;
         $document->save();
         
         // Update account_client_receipts with PDF document ID
@@ -4452,6 +4468,8 @@ public function genofficereceiptInvoice(Request $request, $id){
         $document->type = 'office_receipt'; // Document type identifier
         $document->doc_type = $docType;
         $document->file_size = strlen($pdfContent);
+        // PostgreSQL NOT NULL constraint - signer_count is required (default: 1 for regular documents)
+        $document->signer_count = 1;
         $document->save();
         
         // Update account_client_receipts with PDF document ID
@@ -4534,6 +4552,8 @@ public function genofficereceiptInvoice(Request $request, $id){
          $obj->type = $request->type;
          $obj->file_size = $size;
          $obj->doc_type = $doctype;
+         // PostgreSQL NOT NULL constraint - signer_count is required (default: 1 for regular documents)
+         $obj->signer_count = 1;
          $doc_saved = $obj->save();
          $insertedDocId = $obj->id;
         }
@@ -4685,6 +4705,8 @@ public function updateClientFundsLedger(Request $request)
          $obj->type = $request->type;
          $obj->file_size = $size;
          $obj->doc_type = $doctype;
+         // PostgreSQL NOT NULL constraint - signer_count is required (default: 1 for regular documents)
+         $obj->signer_count = 1;
          $obj->save();
 
          $insertedDocId = $obj->id; // Store the last inserted ID

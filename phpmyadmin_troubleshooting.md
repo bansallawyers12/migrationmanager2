@@ -82,3 +82,4 @@ If nothing works, you may need to reinstall phpMyAdmin from the XAMPP package.
 **Session errors**: Check tmp directory permissions and session.save_path in php.ini
 
 
+

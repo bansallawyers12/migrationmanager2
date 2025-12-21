@@ -463,7 +463,8 @@ This occurs when `new ActivitiesLog` is used without setting `task_status` and `
   - `signer_count` (NOT NULL, default: 1) - **CRITICAL**: Must set before save when using `new Document` followed by `->save()`. Use `1` for regular documents (non-signature documents). Database defaults are not applied with explicit INSERT column lists.
   - **Pattern:** Always set `$document->signer_count = 1;` before `->save()` when creating new Document records
   - **Common mistake:** Forgetting to set `signer_count` causes immediate PostgreSQL NOT NULL violations: `SQLSTATE[23502]: Not null violation: 7 ERROR: null value in column "signer_count" of relation "documents" violates not-null constraint`
-  - **Files Fixed:** `app/Http/Controllers/CRM/Clients/ClientDocumentsController.php` (6 instances), `app/Http/Controllers/API/ClientPortalDocumentController.php` (1 instance)
+  - **Common scenarios:** Document checklists, receipt uploads, invoice/receipt PDF generation, general document uploads
+  - **Files Fixed:** `app/Http/Controllers/CRM/Clients/ClientDocumentsController.php` (6 instances), `app/Http/Controllers/API/ClientPortalDocumentController.php` (1 instance), `app/Http/Controllers/CRM/ClientAccountsController.php` (11 instances)
 - `admins`: 
   - `verified` (default: 0 for new leads/clients, 1 for verified users) - **CRITICAL**: Required when using `DB::table('admins')->insert()` or `insertGetId()`
   - `password` (NOT NULL, use `Hash::make('LEAD_PLACEHOLDER')` for leads) - **CRITICAL**: Empty strings may be rejected. Use hashed placeholder for leads/clients without portal access.
@@ -763,7 +764,7 @@ Error saving note. Please try again.
 
 ### Issue: Documents Table NOT NULL Constraint on signer_count
 
-**Problem:** After MySQL to PostgreSQL migration, creating document checklist entries fails with "Error saving '...': SQLSTATE[23502]: Not null violation: 7 ERROR: null value in column "signer_count" of relation "documents" violates not-null constraint". The `documents` table has a NOT NULL constraint on the `signer_count` column that MySQL may have allowed to be NULL or had implicit defaults, but PostgreSQL strictly enforces.
+**Problem:** After MySQL to PostgreSQL migration, creating documents (including document checklists, receipt uploads, invoice PDFs, etc.) fails with "Error saving '...': SQLSTATE[23502]: Not null violation: 7 ERROR: null value in column "signer_count" of relation "documents" violates not-null constraint". The `documents` table has a NOT NULL constraint on the `signer_count` column that MySQL may have allowed to be NULL or had implicit defaults, but PostgreSQL strictly enforces.
 
 **MySQL Approach:**
 ```php
@@ -825,11 +826,88 @@ $documentData = [
 $documentId = DB::table('documents')->insertGetId($documentData);
 ```
 
-**Example from Codebase:**
+**For Receipt Document Uploads:**
+```php
+// ❌ MySQL - May work without explicitly setting signer_count
+$obj = new \App\Models\Document;
+$obj->file_name = $explodeFileName[0];
+$obj->filetype = $exploadename[1];
+$obj->user_id = Auth::user()->id;
+$obj->myfile_key = $name;
+$obj->myfile = $name;
+$obj->client_id = $id;
+$obj->type = $request->type;
+$obj->file_size = $size;
+$obj->doc_type = $doctype;
+$obj->client_matter_id = $client_matter_id;
+$saved = $obj->save(); // ❌ Fails in PostgreSQL
+
+// ✅ PostgreSQL - Must explicitly set signer_count
+$obj = new \App\Models\Document;
+$obj->file_name = $explodeFileName[0];
+$obj->filetype = $exploadename[1];
+$obj->user_id = Auth::user()->id;
+$obj->myfile_key = $name;
+$obj->myfile = $name;
+$obj->client_id = $id;
+$obj->type = $request->type;
+$obj->file_size = $size;
+$obj->doc_type = $doctype;
+$obj->client_matter_id = $client_matter_id;
+// PostgreSQL NOT NULL constraint - signer_count is required (default: 1 for regular documents)
+$obj->signer_count = 1;
+$saved = $obj->save(); // ✅ Works in PostgreSQL
+```
+
+**For PDF Generation (Invoices, Receipts):**
+```php
+// ❌ MySQL - May work without explicitly setting signer_count
+$document = new \App\Models\Document;
+$document->file_name = $fileName;
+$document->filetype = 'pdf';
+$document->user_id = $userId;
+$document->myfile = $s3Url;
+$document->myfile_key = $s3FileName;
+$document->client_id = $record_get->client_id;
+$document->type = 'client_fund_receipt';
+$document->doc_type = $docType;
+$document->file_size = strlen($pdfContent);
+$document->save(); // ❌ Fails in PostgreSQL
+
+// ✅ PostgreSQL - Must explicitly set signer_count
+$document = new \App\Models\Document;
+$document->file_name = $fileName;
+$document->filetype = 'pdf';
+$document->user_id = $userId;
+$document->myfile = $s3Url;
+$document->myfile_key = $s3FileName;
+$document->client_id = $record_get->client_id;
+$document->type = 'client_fund_receipt';
+$document->doc_type = $docType;
+$document->file_size = strlen($pdfContent);
+// PostgreSQL NOT NULL constraint - signer_count is required (default: 1 for regular documents)
+$document->signer_count = 1;
+$document->save(); // ✅ Works in PostgreSQL
+```
+
+**Examples from Codebase:**
 - **File:** `app/Http/Controllers/CRM/Clients/ClientDocumentsController.php`
 - **Lines:** 76-91, 417-427, 1914-1923, 1934-1943, 2095-2104, 2119-2129
 - **Issue:** Creating personal/visa document checklists failed with database constraint violation
 - **Fields Required:** 
+  - `signer_count` (integer, NOT NULL, default: 1)
+
+- **File:** `app/Http/Controllers/CRM/ClientAccountsController.php`
+- **Lines:** ~197, ~1518, ~2263, ~2606, ~2764, ~2982, ~3203, ~4283, ~4455, ~4545, ~4696
+- **Issue:** Receipt document uploads and PDF generation failed with database constraint violation
+- **Scenarios Fixed:**
+  - Client receipt document uploads
+  - Office receipt document uploads
+  - Invoice PDF generation
+  - Client fund receipt PDF generation
+  - Office receipt PDF generation
+  - General document uploads
+- **Fields Required:**
   - `signer_count` (integer, NOT NULL, default: 1)
 
 **Error Message:**
@@ -838,7 +916,13 @@ Error saving 'National Identity Card': SQLSTATE[23502]: Not null violation: 7 ER
 null value in column "signer_count" of relation "documents" violates not-null constraint
 ```
 
-**Safety:** 🔴 **CRITICAL** - Document checklist creation will fail completely in PostgreSQL without this field. This is a common issue after migration where MySQL's lenient NULL handling differs from PostgreSQL's strict enforcement.
+OR (for receipt uploads):
+```
+Failed to upload document: SQLSTATE[23502]: Not null violation: 7 ERROR: null value in column "signer_count" of relation "documents" violates not-null constraint
+DETAIL: Failing row contains (75647, null, null, null, null, null, null, null, null, null, null, null, null, null, agreement_PUNE2500911_1766045909, pdf, 1766278990_agreement_PUNE2500911_1766045909.pdf, 1766278990_agreement_PUNE2500911_1766045909.pdf, 1, 44034, 681748, client, receipt_uploads, null, null, 3541, null, null, null, null, null, null, null, null, null, null, null, null, null, 2025-12-21 12:03:13, 2025-12-21 12:03:13, null).
+```
+
+**Safety:** 🔴 **CRITICAL** - Document creation (checklists, uploads, PDFs) will fail completely in PostgreSQL without this field. This is a common issue after migration where MySQL's lenient NULL handling differs from PostgreSQL's strict enforcement.
 
 **Notes:**
 - MySQL may allow NULL values or have implicit defaults even when NOT NULL is specified (depending on SQL mode)
@@ -857,6 +941,7 @@ null value in column "signer_count" of relation "documents" violates not-null co
 **Files Fixed:**
 - `app/Http/Controllers/CRM/Clients/ClientDocumentsController.php` - 6 instances (personal checklist, visa checklist, bulk upload)
 - `app/Http/Controllers/API/ClientPortalDocumentController.php` - 1 instance (API endpoint)
+- `app/Http/Controllers/CRM/ClientAccountsController.php` - 11 instances (receipt uploads, invoice PDFs, receipt PDFs, general document uploads)
 
 ---
 
