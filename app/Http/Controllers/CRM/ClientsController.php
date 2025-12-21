@@ -4932,12 +4932,14 @@ class ClientsController extends Controller
                     $matterNoPart = $parts[1];
                     
                     // Optimized: Single query with JOIN instead of nested loops
+                    $clientIdPartLower = strtolower($clientIdPart);
+                    $matterNoPartLower = strtolower($matterNoPart);
                     $matterResults = DB::table('admins')
                         ->join('client_matters', 'admins.id', '=', 'client_matters.client_id')
                         ->where('admins.role', 7)
                         ->whereNull('admins.is_deleted')
-                        ->where('admins.client_id', 'LIKE', "%{$clientIdPart}%")
-                        ->where('client_matters.client_unique_matter_no', 'LIKE', "%{$matterNoPart}%")
+                        ->whereRaw('LOWER(admins.client_id) LIKE ?', ["%{$clientIdPartLower}%"])
+                        ->whereRaw('LOWER(client_matters.client_unique_matter_no) LIKE ?', ["%{$matterNoPartLower}%"])
                         ->select(
                             'admins.id as client_id',
                             'admins.first_name',

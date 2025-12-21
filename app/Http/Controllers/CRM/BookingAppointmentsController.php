@@ -59,20 +59,21 @@ class BookingAppointmentsController extends Controller
         // Search in Client Reference and Description
         if ($request->filled('search')) {
             $searchTerm = $request->search;
-            $query->where(function($q) use ($searchTerm) {
+            $searchTermLower = strtolower($searchTerm);
+            $query->where(function($q) use ($searchTerm, $searchTermLower) {
                 // Search in enquiry_details
-                $q->where('enquiry_details', 'LIKE', '%' . $searchTerm . '%')
+                $q->whereRaw('LOWER(enquiry_details) LIKE ?', ['%' . $searchTermLower . '%'])
                   // Search in client_unique_matter_no via ClientMatter
-                  ->orWhereIn('client_id', function($subQuery) use ($searchTerm) {
+                  ->orWhereIn('client_id', function($subQuery) use ($searchTermLower) {
                       $subQuery->select('client_id')
                                ->from('client_matters')
-                               ->where('client_unique_matter_no', 'LIKE', '%' . $searchTerm . '%');
+                               ->whereRaw('LOWER(client_unique_matter_no) LIKE ?', ['%' . $searchTermLower . '%']);
                   })
                   // Search in admins.client_id column
-                  ->orWhereIn('client_id', function($subQuery) use ($searchTerm) {
+                  ->orWhereIn('client_id', function($subQuery) use ($searchTermLower) {
                       $subQuery->select('id')
                                ->from('admins')
-                               ->where('client_id', 'LIKE', '%' . $searchTerm . '%');
+                               ->whereRaw('LOWER(client_id) LIKE ?', ['%' . $searchTermLower . '%']);
                   });
             });
         }
