@@ -686,12 +686,34 @@ function customValidate(formName, savetype = '')
 							contentType: false,
 							data: fd,
                             success: function(response){
+                                console.log('========== CLIENT RECEIPT FORM SUCCESS ==========');
+                                console.log('Response:', response);
+                                
                                 var obj = response; // Remove $.parseJSON(response)
                                 $('.popuploader').hide();
                                 if(obj.status){
-									$('#createreceiptmodal').modal('hide');
+                                    console.log('Receipt saved successfully');
+                                    console.log('About to close modal');
+                                    $('#createreceiptmodal').modal('hide');
+                                    
+                                    console.log('Setting localStorage activeTab to accounts');
                                     localStorage.setItem('activeTab', 'accounts');
-                                    location.reload();
+                                    
+                                    // Store client_id in localStorage so we can call getallactivities after reload
+                                    if (client_id) {
+                                        localStorage.setItem('pendingGetActivities', client_id);
+                                    }
+                                    
+                                    console.log('About to call location.reload()');
+                                    console.log('WARNING: location.reload() will interrupt execution');
+                                    console.log('client_id at this point:', client_id);
+                                    console.log('window.ClientDetailConfig:', window.ClientDetailConfig);
+                                    
+                                    // Reload the page - this will abort any pending AJAX requests
+                                    location.reload(); // LINE 707
+                                    
+                                    // THIS CODE NEVER EXECUTES because reload happens first
+                                    console.log('THIS WILL NEVER PRINT - after reload');
 									if(obj.requestData){
 										var reqData = obj.requestData;
 										var awsUrl = obj.awsUrl; //console.log('awsUrl='+awsUrl);
@@ -779,7 +801,10 @@ function customValidate(formName, savetype = '')
                                         $('.outstanding-balance').text('$ ' + obj.outstanding_balance);
                                     }
                                     //Fetch All Activities
-                                    getallactivities(client_id);
+                                    // REMOVED: getallactivities call that was being aborted by location.reload()
+                                    // The localStorage mechanism in detail.blade.php will handle calling getallactivities after page reload
+                                    console.log('Skipping getallactivities here - will be called after page reload via localStorage mechanism');
+                                    console.log('client_id stored in localStorage:', client_id);
                                     $('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 								}else{
 									alert(obj.message);
@@ -3034,15 +3059,111 @@ async function getInvoiceAmount(invoiceNo) {
 
 //Fetch All Activities
 function getallactivities(client_id){
-	console.log('getallactivities called with client_id:', client_id);
+	// ========== DEBUG LOGGING START ==========
+	console.log('========== getallactivities DEBUG START ==========');
+	console.log('1. Called with client_id:', client_id);
+	console.log('2. Type of client_id:', typeof client_id);
+	console.log('3. client_id is undefined?', client_id === undefined);
+	console.log('4. client_id is null?', client_id === null);
+	console.log('5. client_id is empty string?', client_id === '');
+	console.log('6. Stack trace:');
+	console.trace();
+	console.log('7. site_url value:', typeof site_url !== 'undefined' ? site_url : 'UNDEFINED');
+	console.log('8. site_url is undefined?', typeof site_url === 'undefined');
+	console.log('9. window.ClientDetailConfig:', window.ClientDetailConfig);
+	console.log('10. Current URL:', window.location.href);
+	console.log('11. localStorage activeTab:', localStorage.getItem('activeTab'));
+	console.log('12. Timestamp:', new Date().toISOString());
+	console.log('========== getallactivities DEBUG END ==========');
+	// ========== DEBUG LOGGING END ==========
+	
 	$.ajax({
 		url: site_url+'/get-activities',
 		type:'GET',
 		datatype:'json',
 		data:{id:client_id},
-		success: function(responses){
-			console.log('Activities response:', responses);
-			var ress = JSON.parse(responses);
+		beforeSend: function(xhr, settings) {
+			console.log('========== AJAX beforeSend ==========');
+			console.log('URL:', settings.url);
+			console.log('Data:', settings.data);
+			console.log('Data type:', typeof settings.data);
+			// Safely build query string - avoid using $.param if it causes issues
+			try {
+				var queryString = '';
+				if (settings.data && typeof settings.data === 'object') {
+					// Manually build query string to avoid jQuery param issues
+					var params = [];
+					for (var key in settings.data) {
+						if (settings.data.hasOwnProperty(key)) {
+							params.push(encodeURIComponent(key) + '=' + encodeURIComponent(settings.data[key]));
+						}
+					}
+					queryString = params.length > 0 ? '?' + params.join('&') : '';
+				} else if (settings.data) {
+					queryString = '?' + settings.data;
+				}
+				console.log('Complete URL:', settings.url + queryString);
+			} catch(e) {
+				console.error('Error building query string:', e);
+				console.log('Data object:', settings.data);
+			}
+			console.log('Client ID being sent:', client_id);
+		},
+		success: function(responses, textStatus, xhr){
+			console.log('========== AJAX success ==========');
+			console.log('Response (raw):', responses);
+			console.log('Response type:', typeof responses);
+			console.log('Response length:', responses ? responses.length : 'N/A');
+			console.log('textStatus:', textStatus);
+			console.log('xhr.status:', xhr.status);
+			console.log('xhr.responseText:', xhr.responseText);
+			console.log('xhr.getAllResponseHeaders():', xhr.getAllResponseHeaders());
+			
+			// Check if response is empty or invalid
+			if (!responses || responses === '' || (typeof responses === 'string' && responses.trim() === '')) {
+				console.error('❌ EMPTY RESPONSE DETECTED!');
+				console.error('This is the bug - server returned empty response');
+				console.error('xhr.responseText:', xhr.responseText);
+				console.error('xhr.status:', xhr.status);
+				return; // Exit early to prevent JSON.parse error
+			}
+			
+			// Check if response is already parsed (jQuery might auto-parse JSON)
+			var ress;
+			if (typeof responses === 'object') {
+				console.log('Response is already an object (auto-parsed by jQuery)');
+				ress = responses;
+			} else if (typeof responses === 'string') {
+				console.log('Activities response (string):', responses);
+				console.log('Response length:', responses.length);
+				console.log('First 200 chars:', responses.substring(0, 200));
+				
+				// Check if it looks like JSON
+				var trimmed = responses.trim();
+				if (trimmed.charAt(0) !== '{' && trimmed.charAt(0) !== '[') {
+					console.error('❌ RESPONSE IS NOT JSON!');
+					console.error('Response starts with:', trimmed.substring(0, 50));
+					console.error('This might be an HTML error page or PHP warning');
+					console.error('Full response:', responses);
+					return; // Exit early
+				}
+				
+				try {
+					ress = JSON.parse(responses);
+				} catch(e) {
+					console.error('❌ JSON PARSE ERROR!');
+					console.error('Error:', e.message);
+					console.error('Response that failed to parse:', responses);
+					console.error('Response type:', typeof responses);
+					console.error('Response length:', responses.length);
+					return; // Exit early
+				}
+			} else {
+				console.error('❌ UNEXPECTED RESPONSE TYPE!');
+				console.error('Response type:', typeof responses);
+				console.error('Response:', responses);
+				return;
+			}
 			console.log('Parsed activities:', ress);
 			var html = '';
 		$.each(ress.data, function (k, v) {
@@ -3096,7 +3217,23 @@ function getallactivities(client_id){
 			$('.popuploader').hide();
 		},
 		error: function(xhr, status, error){
-			console.error('Error fetching activities:', error, xhr.responseText);
+			console.error('========== AJAX error ==========');
+			console.error('xhr.status:', xhr.status);
+			console.error('xhr.statusText:', xhr.statusText);
+			console.error('xhr.responseText:', xhr.responseText);
+			console.error('xhr.getAllResponseHeaders():', xhr.getAllResponseHeaders());
+			console.error('status:', status);
+			console.error('error:', error);
+			console.error('Error object:', xhr);
+			console.error('Request URL:', xhr.responseURL || 'N/A');
+			console.error('========== END AJAX error ==========');
+		},
+		complete: function(xhr, status) {
+			console.log('========== AJAX complete ==========');
+			console.log('Status:', status);
+			console.log('xhr.readyState:', xhr.readyState);
+			console.log('xhr.status:', xhr.status);
+			console.log('========== END AJAX complete ==========');
 		}
 	});
 }

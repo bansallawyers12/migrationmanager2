@@ -5155,10 +5155,32 @@ class ClientsController extends Controller
     }
 
 	public function activities(Request $request){ 
+		// ========== DEBUG LOGGING START ==========
+		\Log::info('========== activities() METHOD CALLED ==========');
+		\Log::info('Request details:', [
+			'all_input' => $request->all(),
+			'query_params' => $request->query(),
+			'has_id' => $request->has('id'),
+			'id_value' => $request->id,
+			'id_type' => gettype($request->id),
+			'id_empty' => empty($request->id),
+			'url' => $request->fullUrl(),
+			'method' => $request->method(),
+			'ip' => $request->ip(),
+			'user_agent' => $request->userAgent(),
+		]);
+		// ========== DEBUG LOGGING END ==========
+		
 		// Bypass all output buffering
+		$ob_level_before = ob_get_level();
+		\Log::info('Output buffering level before cleanup:', ['level' => $ob_level_before]);
+		
 		while (ob_get_level()) {
 			ob_end_clean();
 		}
+		
+		$ob_level_after = ob_get_level();
+		\Log::info('Output buffering level after cleanup:', ['level' => $ob_level_after]);
 		
 		// Start fresh output buffer
 		ob_start();
@@ -5174,20 +5196,55 @@ class ClientsController extends Controller
 		];
 
 		try {
+			\Log::info('Inside try block');
+			
 			// Validate request has id parameter
 			if (!$request->has('id') || empty($request->id)) {
 				$response['message'] = 'Client ID is required';
+				\Log::warning('Client ID missing or empty', [
+					'has_id' => $request->has('id'),
+					'id_value' => $request->id,
+					'response' => $response
+				]);
+				
 				header('Content-Type: application/json');
-				echo json_encode($response);
+				$jsonOutput = json_encode($response);
+				\Log::info('Sending response (no client ID):', [
+					'json' => $jsonOutput,
+					'length' => strlen($jsonOutput)
+				]);
+				echo $jsonOutput;
 				ob_end_flush();
 				exit;
 			}
 
+			\Log::info('Client ID validation passed', ['client_id' => $request->id]);
+
 			// Check if client exists - role must be integer for PostgreSQL compatibility
 			$clientExists = Admin::where('role', '=', 7)->where('id', $request->id)->exists();
+			\Log::info('Client existence check:', [
+				'client_id' => $request->id,
+				'exists' => $clientExists
+			]);
 			
 			if($clientExists){
-				$activities = ActivitiesLog::where('client_id', $request->id)->orderby('created_at', 'DESC')->get();
+				\Log::info('Fetching activities for client', ['client_id' => $request->id]);
+				
+				// Enable query logging
+				\DB::enableQueryLog();
+				
+				$activities = ActivitiesLog::where('client_id', $request->id)
+					->orderby('created_at', 'DESC')
+					->get();
+				
+				$queries = \DB::getQueryLog();
+				\Log::info('Database queries executed:', $queries);
+				
+				\Log::info('Activities fetched', [
+					'count' => $activities->count(),
+					'client_id' => $request->id
+				]);
+				
 				$data = array();
 				
 				foreach($activities as $activit){
@@ -5209,26 +5266,37 @@ class ClientsController extends Controller
 				$response['status'] 	= 	true;
 				$response['data']	=	$data;
 				unset($response['message']); // Remove error message on success
+				
+				\Log::info('Response prepared successfully', [
+					'activities_count' => count($data),
+					'response_keys' => array_keys($response)
+				]);
 			}else{
 				$response['status'] 	= 	false;
 				$response['message']	=	'Client not found';
+				\Log::warning('Client not found', [
+					'client_id' => $request->id,
+					'role_checked' => 7
+				]);
 			}
 		} catch (\Exception $e) {
-			\Log::error('Error fetching activities (Exception): ' . $e->getMessage(), [
-				'client_id' => $request->id ?? 'N/A',
+			\Log::error('Exception in activities()', [
+				'message' => $e->getMessage(),
 				'file' => $e->getFile(),
 				'line' => $e->getLine(),
-				'trace' => $e->getTraceAsString()
+				'trace' => $e->getTraceAsString(),
+				'client_id' => $request->id ?? 'N/A'
 			]);
 			$response['status'] = false;
 			$response['message'] = 'Exception: ' . $e->getMessage();
 		} catch (\Throwable $e) {
 			// Catch fatal errors
-			\Log::error('Fatal error fetching activities (Throwable): ' . $e->getMessage(), [
-				'client_id' => $request->id ?? 'N/A',
+			\Log::error('Fatal error in activities()', [
+				'message' => $e->getMessage(),
 				'file' => $e->getFile(),
 				'line' => $e->getLine(),
-				'trace' => $e->getTraceAsString()
+				'trace' => $e->getTraceAsString(),
+				'client_id' => $request->id ?? 'N/A'
 			]);
 			$response['status'] = false;
 			$response['message'] = 'Fatal: ' . $e->getMessage();
@@ -5237,8 +5305,24 @@ class ClientsController extends Controller
 		// Ensure JSON response is always returned
 		header('Content-Type: application/json');
 		$jsonOutput = json_encode($response);
+		
+		\Log::info('Final response prepared:', [
+			'json_length' => strlen($jsonOutput),
+			'json_preview' => substr($jsonOutput, 0, 200),
+			'response_status' => $response['status']
+		]);
+		
+		// Check if output is actually being sent
+		$buffer_contents = ob_get_contents();
+		\Log::info('Output buffer before flush:', [
+			'buffer_length' => strlen($buffer_contents),
+			'buffer_preview' => substr($buffer_contents, 0, 100)
+		]);
+		
 		echo $jsonOutput;
 		ob_end_flush();
+		
+		\Log::info('========== activities() METHOD COMPLETE ==========');
 		exit;
 	}
 

@@ -1334,6 +1334,57 @@ window.setTinyMCEContent = function(editorId, content) {
 
 // Initialize TinyMCE when DOM is ready
 $(document).ready(function() {
+    // ========== PAGE LOAD DEBUGGING START ==========
+    console.log('========== PAGE LOAD DEBUG ==========');
+    console.log('Page loaded/reloaded at:', new Date().toISOString());
+    console.log('localStorage.activeTab:', localStorage.getItem('activeTab'));
+    console.log('window.ClientDetailConfig:', window.ClientDetailConfig);
+    console.log('site_url:', typeof site_url !== 'undefined' ? site_url : 'UNDEFINED');
+    console.log('Current URL:', window.location.href);
+    console.log('window.ClientDetailConfig.clientId:', window.ClientDetailConfig ? window.ClientDetailConfig.clientId : 'N/A');
+    console.log('========== END PAGE LOAD DEBUG ==========');
+    
+    // ========== FIX: Call getallactivities after page load if pending ==========
+    var pendingClientId = localStorage.getItem('pendingGetActivities');
+    if (pendingClientId && typeof getallactivities === 'function') {
+        console.log('========== PENDING GETACTIVITIES DETECTED ==========');
+        console.log('Client ID from localStorage:', pendingClientId);
+        console.log('Waiting for page to fully load before calling getallactivities...');
+        
+        // Wait for page to fully load and account tab to be active
+        setTimeout(function() {
+            var activeTab = localStorage.getItem('activeTab');
+            console.log('Active tab:', activeTab);
+            
+            if (activeTab === 'accounts' || activeTab === 'account') {
+                console.log('Account tab is active, calling getallactivities with client_id:', pendingClientId);
+                getallactivities(pendingClientId);
+                // Clear the pending flag
+                localStorage.removeItem('pendingGetActivities');
+            } else {
+                console.log('Account tab not active yet, will retry...');
+                // Retry after tab activation
+                setTimeout(function() {
+                    if (typeof getallactivities === 'function') {
+                        console.log('Retrying getallactivities with client_id:', pendingClientId);
+                        getallactivities(pendingClientId);
+                        localStorage.removeItem('pendingGetActivities');
+                    }
+                }, 1000);
+            }
+        }, 500); // Wait 500ms for page to stabilize
+    }
+    // ========== END FIX ==========
+    
+    // Check if getallactivities is being called automatically after 5 seconds
+    setTimeout(function() {
+        console.log('========== 5 SECONDS AFTER PAGE LOAD ==========');
+        console.log('Checking if getallactivities was called automatically');
+        console.log('Current active tab:', localStorage.getItem('activeTab'));
+        console.log('========== END 5 SECONDS CHECK ==========');
+    }, 5000);
+    // ========== PAGE LOAD DEBUGGING END ==========
+    
     initTinyMCEForModals();
     
     // Re-initialize when modals are shown (in case they're dynamically loaded)
