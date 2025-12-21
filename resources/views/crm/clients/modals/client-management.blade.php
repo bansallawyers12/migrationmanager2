@@ -236,68 +236,94 @@
         width: 100%;
     }
 
-    .enhanced-dropdown-btn {
+    /* Enhanced Dropdown Input Wrapper */
+    .enhanced-dropdown-input-wrapper {
+        position: relative;
         width: 100%;
-        text-align: left;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 12px 15px;
-        background: white;
-        color: #2d3748;
-        font-size: 0.95rem;
-        transition: all 0.3s ease;
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: white;
         min-height: 48px;
-        position: relative;
+        transition: all 0.3s ease;
     }
 
-    .enhanced-dropdown-btn #selected-users-text {
-        flex: 1;
-        margin: 0 10px;
-        word-wrap: break-word;
-        white-space: normal;
-    }
-
-    /* Only apply truncation when text is actually too long */
-    .enhanced-dropdown-btn.has-long-text #selected-users-text {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .enhanced-dropdown-btn:hover,
-    .enhanced-dropdown-btn:focus {
+    .enhanced-dropdown-input-wrapper:hover {
         border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        outline: none;
     }
 
-    /* Button styling when users are selected */
-    .enhanced-dropdown-btn.has-selection {
+    .enhanced-dropdown-input-wrapper.has-selection {
         border-color: #667eea;
         background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
+    }
+
+    .dropdown-input-icon {
+        position: absolute;
+        left: 15px;
+        color: #718096;
+        z-index: 2;
+        pointer-events: none;
+    }
+
+    .enhanced-dropdown-input {
+        width: 100%;
+        border: none;
+        padding: 12px 40px 12px 45px;
+        background: transparent;
+        color: #2d3748;
+        font-size: 0.95rem;
+        outline: none;
+        flex: 1;
+    }
+
+    .enhanced-dropdown-input:focus {
+        box-shadow: none;
+    }
+
+    .enhanced-dropdown-input-wrapper:focus-within {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .selected-users-display {
+        position: absolute;
+        left: 45px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #2d3748;
+        font-size: 0.95rem;
+        pointer-events: none;
+        white-space: nowrap;
+        max-width: calc(100% - 90px);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        z-index: 1;
+    }
+
+    .enhanced-dropdown-input-wrapper.has-selection .selected-users-display {
         color: #667eea;
         font-weight: 500;
     }
 
-    .enhanced-dropdown-btn.has-selection:hover {
-        background: linear-gradient(135deg, #f0f4ff 0%, #e6f0ff 100%);
-        border-color: #5a67d8;
+    .enhanced-dropdown-input-wrapper.has-selection .enhanced-dropdown-input {
+        color: transparent;
     }
 
-    /* Selection indicator */
-    .enhanced-dropdown-btn.has-selection::before {
-        content: '';
+    .enhanced-dropdown-input-wrapper.has-selection .enhanced-dropdown-input::placeholder {
+        color: transparent;
+    }
+
+    .dropdown-chevron-icon {
         position: absolute;
-        top: 8px;
-        right: 40px;
-        width: 8px;
-        height: 8px;
-        background: #667eea;
-        border-radius: 50%;
-        box-shadow: 0 0 0 2px white;
+        right: 15px;
+        color: #718096;
+        z-index: 2;
+        pointer-events: none;
+    }
+
+    .enhanced-dropdown-input-wrapper.has-selection .dropdown-chevron-icon {
+        color: #667eea;
     }
 
     .modern-dropdown-menu {
@@ -312,24 +338,9 @@
         margin-top: 5px;
     }
 
+    /* Remove search from dropdown since it's now in the main input */
     .dropdown-search {
-        margin-bottom: 15px;
-    }
-
-    .dropdown-search .form-control {
-        border-radius: 6px;
-        border: 1px solid #e2e8f0;
-        padding: 8px 12px;
-        font-size: 0.9rem;
-        color: #2d3748;
-        background: white;
-    }
-
-    .dropdown-search .form-control:focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
-        outline: none;
-        color: #2d3748;
+        display: none;
     }
 
     .dropdown-actions {
@@ -581,21 +592,24 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="form-group enhanced-form-group">
-                            <label for="dropdownMenuButton" class="form-label">
+                            <label for="user-search-input" class="form-label">
                                 <i class="fas fa-users text-muted mr-1"></i>
                                 Select Assignee <span class="text-danger">*</span>
                             </label>
                             <div class="dropdown-multi-select modern-dropdown">
-                                <button type="button" class="btn btn-default dropdown-toggle enhanced-dropdown-btn" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    <i class="fas fa-user-plus mr-2"></i>
-                                    <span id="selected-users-text">Assign User</span>
-                                    <i class="fas fa-chevron-down"></i>
-                                </button>
-                                <div class="dropdown-menu modern-dropdown-menu" aria-labelledby="dropdownMenuButton">
-                                    <!-- Search input -->
-                                    <div class="dropdown-search">
-                                        <input type="text" id="user-search" class="form-control" placeholder="Search users...">
-                                    </div>
+                                <div class="enhanced-dropdown-input-wrapper">
+                                    <i class="fas fa-user-plus dropdown-input-icon"></i>
+                                    <input type="text" 
+                                           id="user-search-input" 
+                                           class="form-control enhanced-dropdown-input" 
+                                           placeholder="Search or select users..." 
+                                           autocomplete="off"
+                                           aria-haspopup="true" 
+                                           aria-expanded="false">
+                                    <span id="selected-users-display" class="selected-users-display"></span>
+                                    <i class="fas fa-chevron-down dropdown-chevron-icon"></i>
+                                </div>
+                                <div class="dropdown-menu modern-dropdown-menu" id="userDropdownMenu" aria-labelledby="user-search-input">
                                     <!-- Select All/None buttons -->
                                     <div class="dropdown-actions">
                                         <button type="button" id="select-all-users" class="btn btn-sm btn-outline-primary">Select All</button>

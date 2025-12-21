@@ -71,20 +71,68 @@ $(document).ready(function() {
     // Initialize the multi-select dropdown functionality
     initializeMultiSelectDropdown();
 
-    // Ensure dropdown functionality works (remove any conflicting tooltip data-toggle)
-    $('#dropdownMenuButton').removeAttr('data-toggle');
-    $('#dropdownMenuButton').attr('data-toggle', 'dropdown');
-
     // Handle checkbox changes
     $('.checkbox-item').on('change', function() {
         updateSelectedUsers();
         updateHiddenSelect();
     });
 
-    // Handle search functionality
-    $('#user-search').on('keyup', function() {
-        var searchTerm = $(this).val().toLowerCase();
-        filterUsers(searchTerm);
+    // Handle search functionality in main input
+    var searchTimeout;
+    $('#user-search-input').on('input keyup', function() {
+        var $input = $(this);
+        var $wrapper = $('.enhanced-dropdown-input-wrapper');
+        var searchTerm = $input.val().toLowerCase();
+        
+        // Clear previous timeout
+        clearTimeout(searchTimeout);
+        
+        // When user types, temporarily hide selected users display to show search
+        if (searchTerm.length > 0) {
+            $wrapper.removeClass('has-selection');
+        } else {
+            // Restore selected users display if search is cleared and users are selected
+            if ($('.checkbox-item:checked').length > 0) {
+                $wrapper.addClass('has-selection');
+            }
+        }
+        
+        // Debounce search
+        searchTimeout = setTimeout(function() {
+            filterUsers(searchTerm);
+        }, 200);
+    });
+
+    // Open dropdown on focus
+    $('#user-search-input').on('focus click', function() {
+        var $dropdown = $('#userDropdownMenu');
+        var $wrapper = $('.enhanced-dropdown-input-wrapper');
+        
+        // If users are selected, clear input to show search placeholder
+        if ($('.checkbox-item:checked').length > 0 && $(this).val() === '') {
+            $wrapper.removeClass('has-selection');
+        }
+        
+        if (!$dropdown.hasClass('show')) {
+            $dropdown.addClass('show');
+            $(this).attr('aria-expanded', 'true');
+        }
+    });
+
+    // Close dropdown when clicking outside
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('.dropdown-multi-select').length) {
+            $('#userDropdownMenu').removeClass('show');
+            $('#user-search-input').attr('aria-expanded', 'false');
+            // Clear search when closing
+            $('#user-search-input').val('');
+            filterUsers('');
+        }
+    });
+
+    // Prevent dropdown from closing when clicking inside
+    $('#userDropdownMenu').on('click', function(e) {
+        e.stopPropagation();
     });
 
     // Handle select all button
@@ -113,73 +161,56 @@ function updateSelectedUsers() {
     var selectedUsersWithDetails = [];
     
     $('.checkbox-item:checked').each(function() {
-        var userName = $(this).data('name');
+        var userItem = $(this).closest('.modern-user-item');
+        var fullName = userItem.find('.user-name').text().trim();
         var userId = $(this).val();
         
-        selectedUsers.push(userName);
+        // Only add the name (not the branch) for display
+        selectedUsers.push(fullName);
         
-        // Get full details for tooltip
-        var userItem = $(this).closest('.modern-user-item');
-        var fullName = userItem.find('.user-name').text();
-        var branch = userItem.find('.user-branch').text();
+        // Get full details for tooltip (includes branch)
+        var branch = userItem.find('.user-branch').text().trim();
         selectedUsersWithDetails.push(fullName + ' ' + branch);
     });
 
-    var buttonText;
+    var displayText = '';
     var tooltipText = '';
     
     if (selectedUsers.length === 0) {
-        buttonText = 'Assign User';
+        displayText = '';
         tooltipText = 'No users selected';
     } else if (selectedUsers.length === 1) {
-        buttonText = selectedUsers[0];
+        displayText = selectedUsers[0];
         tooltipText = 'Selected: ' + selectedUsersWithDetails[0];
-    } else if (selectedUsers.length <= 2) {
-        // Show all names if 2 or fewer
-        buttonText = selectedUsers.join(', ');
+    } else if (selectedUsers.length === 2) {
+        // Show both names
+        displayText = selectedUsers.join(', ');
         tooltipText = 'Selected Users:\n• ' + selectedUsersWithDetails.join('\n• ');
     } else {
-        // Show first 2 names and count for more
+        // Show first 2 names and count (e.g., "Ajay Bansal, Shubam +3")
         var firstTwo = selectedUsers.slice(0, 2).join(', ');
         var remaining = selectedUsers.length - 2;
-        buttonText = firstTwo + ' +' + remaining + ' more';
+        displayText = firstTwo + ' +' + remaining;
         tooltipText = 'Selected Users:\n• ' + selectedUsersWithDetails.join('\n• ');
     }
 
-    // Update button text
-    $('#selected-users-text').text(buttonText);
+    // Update display text
+    $('#selected-users-display').text(displayText);
     
     // Update visual state
-    var $dropdownBtn = $('#dropdownMenuButton');
-    if (selectedUsers.length > 0) {
-        $dropdownBtn.addClass('has-selection');
-        
-        // Add or update selection count badge
-        if ($dropdownBtn.find('.selection-count-badge').length === 0) {
-            $dropdownBtn.append('<span class="selection-count-badge">' + selectedUsers.length + '</span>');
-        } else {
-            $dropdownBtn.find('.selection-count-badge').text(selectedUsers.length);
-        }
-        
-        // Check if text is too long and add truncation class (with small delay for DOM update)
-        setTimeout(function() {
-            var $textElement = $('#selected-users-text');
-            var textWidth = $textElement[0].scrollWidth;
-            var containerWidth = $textElement.parent()[0].clientWidth - 60; // Account for icons and padding
-            
-            if (textWidth > containerWidth) {
-                $dropdownBtn.addClass('has-long-text');
-            } else {
-                $dropdownBtn.removeClass('has-long-text');
-            }
-        }, 10);
-    } else {
-        $dropdownBtn.removeClass('has-selection has-long-text');
-        $dropdownBtn.find('.selection-count-badge').remove();
-    }
+    var $wrapper = $('.enhanced-dropdown-input-wrapper');
+    var $input = $('#user-search-input');
     
-    // Ensure dropdown functionality is preserved
-    $dropdownBtn.attr('data-toggle', 'dropdown');
+    if (selectedUsers.length > 0) {
+        $wrapper.addClass('has-selection');
+        
+        // Clear input if it's not focused (to show selected users)
+        if (!$input.is(':focus')) {
+            $input.val('');
+        }
+    } else {
+        $wrapper.removeClass('has-selection');
+    }
 }
 
 function updateHiddenSelect() {
@@ -191,9 +222,11 @@ function updateHiddenSelect() {
 }
 
 function filterUsers(searchTerm) {
+    searchTerm = searchTerm.toLowerCase();
+    
     $('.user-item').each(function() {
-        var userName = $(this).data('name');
-        if (userName.includes(searchTerm)) {
+        var userName = $(this).data('name') || '';
+        if (searchTerm === '' || userName.includes(searchTerm)) {
             $(this).show();
         } else {
             $(this).hide();
@@ -223,13 +256,25 @@ $('#select-all-users').on('click', function() {
     }
 });
 
-// Clear search when dropdown is closed
-$('#dropdownMenuButton').on('click', function() {
+// Clear search when input loses focus (but keep selected users visible)
+$('#user-search-input').on('blur', function() {
+    var $input = $(this);
+    var $wrapper = $('.enhanced-dropdown-input-wrapper');
+    
+    // Small delay to allow checkbox clicks to register
     setTimeout(function() {
-        $('#user-search').val('');
-        $('.user-item').show();
-        $('#select-all-users').text('Select All').removeClass('btn-outline-secondary').addClass('btn-outline-primary');
-    }, 100);
+        // Clear search input
+        $input.val('');
+        filterUsers('');
+        
+        // Show selected users if any are selected
+        if ($('.checkbox-item:checked').length > 0) {
+            $wrapper.addClass('has-selection');
+            updateSelectedUsers(); // Refresh display
+        } else {
+            $wrapper.removeClass('has-selection');
+        }
+    }, 200);
 });
 
 // Clear validation errors when modal is opened
@@ -246,8 +291,13 @@ $('#create_action_popup').on('hidden.bs.modal', function() {
     $('#assignnote').val('');
     $('#task_group').val('');
     $('.checkbox-item').prop('checked', false);
+    $('#user-search-input').val('');
+    filterUsers('');
     updateSelectedUsers();
     updateHiddenSelect();
+    // Close dropdown
+    $('#userDropdownMenu').removeClass('show');
+    $('#user-search-input').attr('aria-expanded', 'false');
 });
 
 //Start Convert Activity to Note functionality - Using event delegation for dynamic content
