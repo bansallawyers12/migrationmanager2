@@ -38,21 +38,63 @@ This document serves as a quick reference for syntax changes made during the MyS
 ->whereRaw("TO_DATE(trans_date, 'DD/MM/YYYY') BETWEEN TO_DATE(?, 'DD/MM/YYYY') AND TO_DATE(?, 'DD/MM/YYYY')", [$startDate, $endDate])
 ```
 
-**Example from Codebase:**
-- **File:** `app/Services/FinancialStatsService.php`
-- **Lines:** 63-67
-```php
-$applyDateFilter = function($query, $start, $end) {
-    return $query->whereRaw("TO_DATE(trans_date, 'DD/MM/YYYY') BETWEEN TO_DATE(?, 'DD/MM/YYYY') AND TO_DATE(?, 'DD/MM/YYYY')", [$start, $end]);
-};
-```
+**Examples from Codebase:**
 
-**Safety:** ✅ **SAFE** - This is the correct way to handle VARCHAR date fields in PostgreSQL. Always use when comparing dates stored as VARCHAR.
+1. **FinancialStatsService.php (Correct Implementation):**
+   - **File:** `app/Services/FinancialStatsService.php`
+   - **Lines:** 63-67
+   ```php
+   $applyDateFilter = function($query, $start, $end) {
+       return $query->whereRaw("TO_DATE(trans_date, 'DD/MM/YYYY') BETWEEN TO_DATE(?, 'DD/MM/YYYY') AND TO_DATE(?, 'DD/MM/YYYY')", [$start, $end]);
+   };
+   ```
+
+2. **ClientAccountsController.php - Date Filter Fix:**
+   - **File:** `app/Http/Controllers/CRM/ClientAccountsController.php`
+   - **Method:** `applyDateFilters()` (lines 50-140)
+   - **Issue:** Used `whereBetween()` with `Y-m-d` format on VARCHAR `trans_date` column, causing date filters to fail
+   - **Broken Pattern:**
+     ```php
+     // ❌ PostgreSQL - This doesn't work with VARCHAR dd/mm/yyyy dates
+     $query->whereBetween('trans_date', [
+         $startDate->format('Y-m-d'),  // Wrong format (Y-m-d)
+         $endDate->format('Y-m-d')
+     ]);
+     ```
+   - **Fixed Pattern:**
+     ```php
+     // ✅ PostgreSQL - Convert to dd/mm/yyyy and use TO_DATE()
+     $startDateStr = $startDate->format('d/m/Y');
+     $endDateStr = $endDate->format('d/m/Y');
+     $query->whereRaw("TO_DATE(trans_date, 'DD/MM/YYYY') BETWEEN TO_DATE(?, 'DD/MM/YYYY') AND TO_DATE(?, 'DD/MM/YYYY')", [$startDateStr, $endDateStr]);
+     ```
+   - **For Custom Date Ranges:** Dates from datepicker are already in `dd/mm/yyyy` format:
+     ```php
+     // ✅ PostgreSQL - Use TO_DATE() directly with datepicker input
+     if (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $fromDate) && preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $toDate)) {
+         $query->whereRaw("TO_DATE(trans_date, 'DD/MM/YYYY') BETWEEN TO_DATE(?, 'DD/MM/YYYY') AND TO_DATE(?, 'DD/MM/YYYY')", [$fromDate, $toDate]);
+     }
+     ```
+   - **For Financial Year:** Convert Carbon dates to `dd/mm/yyyy` format:
+     ```php
+     // ✅ PostgreSQL - Convert financial year dates to dd/mm/yyyy
+     $fyStartDate = \Carbon\Carbon::createFromDate($years[0], 7, 1)->startOfDay();
+     $fyEndDate = \Carbon\Carbon::createFromDate($years[1], 6, 30)->endOfDay();
+     $startDateStr = $fyStartDate->format('d/m/Y');
+     $endDateStr = $fyEndDate->format('d/m/Y');
+     $query->whereRaw("TO_DATE(trans_date, 'DD/MM/YYYY') BETWEEN TO_DATE(?, 'DD/MM/YYYY') AND TO_DATE(?, 'DD/MM/YYYY')", [$startDateStr, $endDateStr]);
+     ```
+
+**Safety:** 🔴 **CRITICAL** - Date filters using `whereBetween()` with wrong format will **fail silently** or return incorrect results in PostgreSQL. This must be fixed for date filtering to work correctly.
 
 **Notes:**
 - Format string is case-sensitive: `'DD/MM/YYYY'` (uppercase)
 - Use parameterized queries (bindings) to prevent SQL injection
 - Both operands must be converted with TO_DATE() for proper comparison
+- Always convert dates to `dd/m/Y` format before using in TO_DATE() comparisons
+- When using Carbon dates, use `->format('d/m/Y')` not `->format('Y-m-d')`
+- Datepicker inputs are already in `dd/mm/yyyy` format, so use them directly
+- For financial year calculations, create Carbon dates first, then format as `dd/mm/yyyy`
 
 ---
 
@@ -1008,6 +1050,12 @@ grep -r "->[a-zA-Z_]* = \$request->" app/Http/Controllers/
 # Check for comparison without isset check
 grep -r "!== \$request->" app/Http/Controllers/
 grep -r "== \$request->" app/Http/Controllers/ | grep -v "isset"
+
+# Check for VARCHAR date field comparisons using wrong format (whereBetween with Y-m-d)
+grep -r "whereBetween.*trans_date" app/Http/Controllers/
+grep -r "whereBetween.*'trans_date'" app/Http/Controllers/
+grep -r "format('Y-m-d')" app/Http/Controllers/ | grep -i "date"
+# Should use TO_DATE() with dd/mm/yyyy format instead
 ```
 
 ---
@@ -1018,6 +1066,7 @@ grep -r "== \$request->" app/Http/Controllers/ | grep -v "isset"
 |-------------|-------------------|--------------|-------|
 | `DATE_FORMAT(date, '%Y-%m')` | `TO_CHAR(date, 'YYYY-MM')` | 🔴 Critical | Must convert format codes |
 | `STR_TO_DATE(str, '%d/%m/%Y')` | `TO_DATE(str, 'DD/MM/YYYY')` | 🔴 Critical | Different format syntax |
+| `whereBetween('trans_date', ['Y-m-d', 'Y-m-d'])` on VARCHAR dd/mm/yyyy | `whereRaw("TO_DATE(trans_date, 'DD/MM/YYYY') BETWEEN TO_DATE(?, 'DD/MM/YYYY') AND TO_DATE(?, 'DD/MM/YYYY')", ['d/m/Y', 'd/m/Y'])` | 🔴 Critical | VARCHAR dates stored as dd/mm/yyyy must use TO_DATE() with correct format |
 | `GROUP_CONCAT(col)` | `STRING_AGG(col, ', ')` | 🔴 Critical | Requires delimiter |
 | `column != '0000-00-00'` | `column IS NOT NULL` | 🔴 Critical | PostgreSQL rejects invalid dates |
 | `column = '0000-00-00'` | `column IS NULL` | 🔴 Critical | Same as above |

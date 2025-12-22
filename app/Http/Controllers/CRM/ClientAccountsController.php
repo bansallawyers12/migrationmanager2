@@ -54,14 +54,10 @@ class ClientAccountsController extends Controller
         $toDate = $request->input('to_date');
         $financialYear = $request->input('financial_year');
 
-        // Helper function to convert dd/mm/yyyy to Y-m-d
-        $convertDate = function($dateStr) {
-            if (empty($dateStr)) return null;
-            $parts = explode('/', $dateStr);
-            if (count($parts) == 3) {
-                return $parts[2] . '-' . $parts[1] . '-' . $parts[0]; // Y-m-d
-            }
-            return null;
+        // Helper function to format date as dd/mm/yyyy for PostgreSQL TO_DATE()
+        // trans_date is VARCHAR stored in dd/mm/yyyy format, so we need to use TO_DATE() for proper comparison
+        $formatDateForQuery = function($carbonDate) {
+            return $carbonDate->format('d/m/Y');
         };
 
         if ($dateFilterType && $dateFilterType !== 'custom' && $dateFilterType !== 'financial_year') {
@@ -113,28 +109,29 @@ class ClientAccountsController extends Controller
             }
 
             if ($startDate && $endDate) {
-                $query->whereBetween('trans_date', [
-                    $startDate->format('Y-m-d'),
-                    $endDate->format('Y-m-d')
-                ]);
+                // PostgreSQL: Convert VARCHAR dd/mm/yyyy to DATE for proper comparison
+                $startDateStr = $formatDateForQuery($startDate);
+                $endDateStr = $formatDateForQuery($endDate);
+                $query->whereRaw("TO_DATE(trans_date, 'DD/MM/YYYY') BETWEEN TO_DATE(?, 'DD/MM/YYYY') AND TO_DATE(?, 'DD/MM/YYYY')", [$startDateStr, $endDateStr]);
             }
         } 
         elseif ($fromDate && $toDate) {
-            // Custom Date Range
-            $from = $convertDate($fromDate);
-            $to = $convertDate($toDate);
-            
-            if ($from && $to) {
-                $query->whereBetween('trans_date', [$from, $to]);
+            // Custom Date Range - dates are already in dd/mm/yyyy format from datepicker
+            // Validate format and use TO_DATE() for proper comparison
+            if (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $fromDate) && preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $toDate)) {
+                $query->whereRaw("TO_DATE(trans_date, 'DD/MM/YYYY') BETWEEN TO_DATE(?, 'DD/MM/YYYY') AND TO_DATE(?, 'DD/MM/YYYY')", [$fromDate, $toDate]);
             }
         }
         elseif ($financialYear) {
             // Financial Year (e.g., "2023-2024" means July 1, 2023 to June 30, 2024)
             $years = explode('-', $financialYear);
             if (count($years) == 2) {
-                $fyStart = $years[0] . '-07-01'; // July 1st
-                $fyEnd = $years[1] . '-06-30';   // June 30th
-                $query->whereBetween('trans_date', [$fyStart, $fyEnd]);
+                $fyStartDate = \Carbon\Carbon::createFromDate($years[0], 7, 1)->startOfDay(); // July 1st
+                $fyEndDate = \Carbon\Carbon::createFromDate($years[1], 6, 30)->endOfDay();   // June 30th
+                
+                $startDateStr = $formatDateForQuery($fyStartDate);
+                $endDateStr = $formatDateForQuery($fyEndDate);
+                $query->whereRaw("TO_DATE(trans_date, 'DD/MM/YYYY') BETWEEN TO_DATE(?, 'DD/MM/YYYY') AND TO_DATE(?, 'DD/MM/YYYY')", [$startDateStr, $endDateStr]);
             }
         }
     }
