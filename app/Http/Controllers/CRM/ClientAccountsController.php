@@ -320,6 +320,7 @@ class ClientAccountsController extends Controller
                     // Process Fee Transfers
                     $remainingWithdraw = $totalWithdrawAmount;
                     $totalNewFeeTransferAmount = 0; // Track total amount of new fee transfers being created
+                    $firstFeeTransferTransNo = null; // Track first fee transfer trans_no for residual description
 
                     foreach ($feeTransfers as $feeTransfer) {
                         $i = $feeTransfer['index'];
@@ -340,6 +341,9 @@ class ClientAccountsController extends Controller
                         $totalNewFeeTransferAmount += $amountToUse;
    
                         $trans_no = $this->createTransactionNumber('Fee Transfer');
+                        if ($firstFeeTransferTransNo === null) {
+                            $firstFeeTransferTransNo = $trans_no; // Store first trans_no for residual description
+                        }
                         $deposit = 0;
                         $withdraw = $amountToUse;
    
@@ -385,24 +389,78 @@ class ClientAccountsController extends Controller
                         $remainingWithdraw -= $amountToUse;
                     }
    
-                    // Handle excess amount by creating additional Fee Transfer linked to the same invoice
+                    // Handle excess amount by creating residual client fund deposit (like office receipts)
                     if ($remainingWithdraw > 0) {
                         // Check if remaining amount would exceed invoice
                         $maxAllowed = $invoiceWithdrawAmount - $currentTotalPaid - $totalNewFeeTransferAmount;
+                        $excessAmount = $remainingWithdraw;
+                        
+                        // If invoice is not fully paid yet, apply remaining amount up to invoice limit
                         if ($maxAllowed > 0) {
                             $withdraw = min($remainingWithdraw, $maxAllowed);
-                        } else {
-                            $withdraw = 0; // Invoice already fully paid
+                            $excessAmount = $remainingWithdraw - $withdraw;
+                            
+                            if ($withdraw > 0) {
+                                $trans_no = $this->createTransactionNumber('Fee Transfer');
+                                if ($firstFeeTransferTransNo === null) {
+                                    $firstFeeTransferTransNo = $trans_no;
+                                }
+
+                                $running_balance += 0 - $withdraw;
+                                $totalNewFeeTransferAmount += $withdraw;
+
+                                $saved = DB::table('account_client_receipts')->insert([
+                                    'user_id' => $requestData['loggedin_userid'],
+                                    'client_id' => $requestData['client_id'],
+                                    'client_matter_id' => $requestData['client_matter_id'] ?? null,
+                                    'receipt_id' => $receipt_id,
+                                    'receipt_type' => $requestData['receipt_type'],
+                                    'trans_date' => $feeTransfers[0]['trans_date'],
+                                    'entry_date' => $feeTransfers[0]['entry_date'],
+                                    'invoice_no' => $invoiceNo,
+                                    'trans_no' => $trans_no,
+                                    'client_fund_ledger_type' => 'Fee Transfer',
+                                    'description' => $feeTransfers[0]['description'],
+                                    'deposit_amount' => 0,
+                                    'withdraw_amount' => $withdraw,
+                                    'balance_amount' => $running_balance,
+                                    'uploaded_doc_id' => $insertedDocId,
+                                    'validate_receipt' => 0,
+                                    'void_invoice' => 0,
+                                    'invoice_status' => 0,
+                                    'save_type' => 'final',
+                                    'hubdoc_sent' => 0,
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ]);
+
+                                $finalArr[] = [
+                                    'trans_date' => $feeTransfers[0]['trans_date'],
+                                    'entry_date' => $feeTransfers[0]['entry_date'],
+                                    'client_fund_ledger_type' => 'Fee Transfer',
+                                    'trans_no' => $trans_no,
+                                    'invoice_no' => $invoiceNo,
+                                    'description' => $feeTransfers[0]['description'],
+                                    'deposit_amount' => 0,
+                                    'withdraw_amount' => $withdraw,
+                                    'balance_amount' => $running_balance,
+                                ];
+                            }
                         }
                         
-                        if ($withdraw > 0) {
-                            $trans_no = $this->createTransactionNumber('Fee Transfer');
-                            $deposit = 0;
+                        // Create residual client fund deposit for excess amount (same behavior as office receipts)
+                        if ($excessAmount > 0.01) { // Allow for small rounding differences
+                            $residualTransNo = $this->createTransactionNumber('Deposit');
+                            $residualDescription = 'Residual from Fee Transfer';
+                            if ($firstFeeTransferTransNo) {
+                                $residualDescription .= ' ' . $firstFeeTransferTransNo;
+                            }
+                            $residualDescription .= ' - Applied to ' . $invoiceNo;
+                            
+                            // Deposit the excess amount back to client funds
+                            $running_balance += $excessAmount;
 
-                            $running_balance += $deposit - $withdraw;
-                            $totalNewFeeTransferAmount += $withdraw;
-
-                            $saved = DB::table('account_client_receipts')->insert([
+                            $residualReceiptId = DB::table('account_client_receipts')->insertGetId([
                                 'user_id' => $requestData['loggedin_userid'],
                                 'client_id' => $requestData['client_id'],
                                 'client_matter_id' => $requestData['client_matter_id'] ?? null,
@@ -410,15 +468,15 @@ class ClientAccountsController extends Controller
                                 'receipt_type' => $requestData['receipt_type'],
                                 'trans_date' => $feeTransfers[0]['trans_date'],
                                 'entry_date' => $feeTransfers[0]['entry_date'],
-                                'invoice_no' => $invoiceNo,
-                                'trans_no' => $trans_no,
-                                'client_fund_ledger_type' => 'Fee Transfer',
-                                'description' => $feeTransfers[0]['description'],
-                                'deposit_amount' => $deposit,
-                                'withdraw_amount' => $withdraw,
+                                'trans_no' => $residualTransNo,
+                                'invoice_no' => null, // Unallocated - can be allocated to other invoices later
+                                'client_fund_ledger_type' => 'Deposit',
+                                'description' => $residualDescription,
+                                'deposit_amount' => $excessAmount,
+                                'withdraw_amount' => 0,
                                 'balance_amount' => $running_balance,
                                 'uploaded_doc_id' => $insertedDocId,
-                                'extra_amount_receipt' => 'exceed',
+                                'extra_amount_receipt' => 'residual',
                                 'validate_receipt' => 0,
                                 'void_invoice' => 0,
                                 'invoice_status' => 0,
@@ -431,15 +489,24 @@ class ClientAccountsController extends Controller
                             $finalArr[] = [
                                 'trans_date' => $feeTransfers[0]['trans_date'],
                                 'entry_date' => $feeTransfers[0]['entry_date'],
-                                'client_fund_ledger_type' => 'Fee Transfer',
-                                'trans_no' => $trans_no,
-                                'invoice_no' => $invoiceNo,
-                                'description' => $feeTransfers[0]['description'],
-                                'deposit_amount' => $deposit,
-                                'withdraw_amount' => $withdraw,
+                                'client_fund_ledger_type' => 'Deposit',
+                                'trans_no' => $residualTransNo,
+                                'invoice_no' => null,
+                                'description' => $residualDescription,
+                                'deposit_amount' => $excessAmount,
+                                'withdraw_amount' => 0,
                                 'balance_amount' => $running_balance,
-                                'extra_amount_receipt' => 'exceed'
+                                'extra_amount_receipt' => 'residual'
                             ];
+
+                            Log::info('Residual client fund deposit created from fee transfer', [
+                                'invoice_no' => $invoiceNo,
+                                'fee_transfer_trans_no' => $firstFeeTransferTransNo,
+                                'residual_receipt_id' => $residualReceiptId,
+                                'residual_trans_no' => $residualTransNo,
+                                'excess_amount' => $excessAmount,
+                                'allocated_amount' => $totalNewFeeTransferAmount,
+                            ]);
                         }
                     }
 
@@ -1412,67 +1479,113 @@ class ClientAccountsController extends Controller
       // Get save type (draft or final)
       $saveType = isset($requestData['save_type']) ? $requestData['save_type'] : 'final';
 
+      // Initialize variables outside conditional block to ensure they're always set
+      $finalArr = [];
+      $saved = false;
+      $processedInvoices = []; // Track invoices that need status updates
+
+      // Validate trans_date exists and is an array with at least one entry
+      if (!isset($requestData['trans_date']) || !is_array($requestData['trans_date']) || empty($requestData['trans_date'])) {
+          return response()->json([
+              'status' => false,
+              'message' => 'Transaction date is required. Please add at least one receipt entry.',
+              'requestData' => [],
+              'awsUrl' => ""
+          ], 400);
+      }
+
       // Handle office receipt processing (receipt_type=2 only)
-      if (isset($requestData['trans_date'])) {
-          $is_record_exist = DB::table('account_client_receipts')->select('receipt_id')->where('receipt_type', 2)->orderBy('receipt_id', 'desc')->first();
-          $receipt_id = !$is_record_exist ? 1 : $is_record_exist->receipt_id + 1;
+      $is_record_exist = DB::table('account_client_receipts')->select('receipt_id')->where('receipt_type', 2)->orderBy('receipt_id', 'desc')->first();
+      $receipt_id = !$is_record_exist ? 1 : $is_record_exist->receipt_id + 1;
 
-          $finalArr = [];
-          $saved = false;
-          $processedInvoices = []; // Track invoices that need status updates
-
-          // Process each transaction individually (no invoice grouping)
-          for ($i = 0; $i < count($requestData['trans_date']); $i++) {
-           $trans_no = $this->generateTransNo();
-           $invoiceNo = isset($requestData['invoice_no'][$i]) && $requestData['invoice_no'][$i] !== '' ? $requestData['invoice_no'][$i] : null;
-
-           $saved = DB::table('account_client_receipts')->insertGetId([
-               'user_id' => $requestData['loggedin_userid'],
-               'client_id' => $requestData['client_id'],
-               'client_matter_id' => $requestData['client_matter_id'] ?? null,
-               'receipt_id' => $receipt_id,
-               'receipt_type' => 2, // Only office receipts
-               'trans_date' => $requestData['trans_date'][$i],
-               'entry_date' => $requestData['entry_date'][$i],
-               'trans_no' => $trans_no,
-               'invoice_no' => $invoiceNo,
-               'payment_method' => $requestData['payment_method'][$i],
-               'description' => $requestData['description'][$i],
-               'deposit_amount' => $requestData['deposit_amount'][$i],
-               'uploaded_doc_id' => $insertedDocId,
-               'save_type' => $saveType, // Track if draft or final
-               'validate_receipt' => 0,
-               'void_invoice' => 0,
-               'invoice_status' => 0,
-               'hubdoc_sent' => 0,
-               'created_at' => now(),
-               'updated_at' => now(),
-           ]);
-
-           $finalArr[] = [
-               'trans_date' => $requestData['trans_date'][$i],
-               'entry_date' => $requestData['entry_date'][$i],
-               'trans_no' => $trans_no,
-               'invoice_no' => $invoiceNo,
-               'payment_method' => $requestData['payment_method'][$i],
-               'description' => $requestData['description'][$i],
-               'deposit_amount' => $requestData['deposit_amount'][$i],
-           ];
-
-           // Track invoices that need status updates (only for final receipts with invoice_no)
-           if ($saveType == 'final' && !empty($invoiceNo)) {
-               if (!isset($processedInvoices[$invoiceNo])) {
-                   $processedInvoices[$invoiceNo] = [];
-               }
-               $processedInvoices[$invoiceNo][] = [
-                   'receipt_id' => $saved,
-                   'amount' => floatval($requestData['deposit_amount'][$i])
-               ];
-           }
+      // Process each transaction individually (no invoice grouping)
+      $savedIds = []; // Track all saved receipt IDs
+      for ($i = 0; $i < count($requestData['trans_date']); $i++) {
+          // Validate required fields for this transaction
+          if (empty($requestData['trans_date'][$i]) || empty($requestData['deposit_amount'][$i])) {
+              \Log::warning('Skipping office receipt entry due to missing required fields', [
+                  'index' => $i,
+                  'trans_date' => $requestData['trans_date'][$i] ?? 'missing',
+                  'deposit_amount' => $requestData['deposit_amount'][$i] ?? 'missing'
+              ]);
+              continue; // Skip this entry but continue with others
           }
 
-          // Process invoice matching for all affected invoices (only for final receipts)
-          if ($saveType == 'final' && !empty($processedInvoices)) {
+          $trans_no = $this->generateTransNo();
+          $invoiceNo = isset($requestData['invoice_no'][$i]) && $requestData['invoice_no'][$i] !== '' ? $requestData['invoice_no'][$i] : null;
+
+          try {
+              $insertedId = DB::table('account_client_receipts')->insertGetId([
+                  'user_id' => $requestData['loggedin_userid'],
+                  'client_id' => $requestData['client_id'],
+                  'client_matter_id' => $requestData['client_matter_id'] ?? null,
+                  'receipt_id' => $receipt_id,
+                  'receipt_type' => 2, // Only office receipts
+                  'trans_date' => $requestData['trans_date'][$i],
+                  'entry_date' => $requestData['entry_date'][$i] ?? $requestData['trans_date'][$i],
+                  'trans_no' => $trans_no,
+                  'invoice_no' => $invoiceNo,
+                  'payment_method' => $requestData['payment_method'][$i] ?? '',
+                  'description' => $requestData['description'][$i] ?? '',
+                  'deposit_amount' => $requestData['deposit_amount'][$i],
+                  'uploaded_doc_id' => $insertedDocId,
+                  'save_type' => $saveType, // Track if draft or final
+                  'validate_receipt' => 0,
+                  'void_invoice' => 0,
+                  'invoice_status' => 0,
+                  'hubdoc_sent' => 0,
+                  'created_at' => now(),
+                  'updated_at' => now(),
+              ]);
+
+              // Mark as saved if we got an ID back
+              if ($insertedId) {
+                  $saved = true;
+                  $savedIds[] = $insertedId;
+
+                  $finalArr[] = [
+                      'trans_date' => $requestData['trans_date'][$i],
+                      'entry_date' => $requestData['entry_date'][$i] ?? $requestData['trans_date'][$i],
+                      'trans_no' => $trans_no,
+                      'invoice_no' => $invoiceNo,
+                      'payment_method' => $requestData['payment_method'][$i] ?? '',
+                      'description' => $requestData['description'][$i] ?? '',
+                      'deposit_amount' => $requestData['deposit_amount'][$i],
+                  ];
+
+                  // Track invoices that need status updates (only for final receipts with invoice_no)
+                  if ($saveType == 'final' && !empty($invoiceNo)) {
+                      if (!isset($processedInvoices[$invoiceNo])) {
+                          $processedInvoices[$invoiceNo] = [];
+                      }
+                      $processedInvoices[$invoiceNo][] = [
+                          'receipt_id' => $insertedId,
+                          'amount' => floatval($requestData['deposit_amount'][$i])
+                      ];
+                  }
+              }
+          } catch (\Exception $e) {
+              \Log::error('Error inserting office receipt entry', [
+                  'index' => $i,
+                  'error' => $e->getMessage(),
+                  'trace' => $e->getTraceAsString()
+              ]);
+              // Continue processing other entries even if one fails
+          }
+      }
+
+      // If no receipts were saved, return error
+      if (!$saved || empty($finalArr)) {
+          return response()->json([
+              'status' => false,
+              'message' => 'Failed to save office receipt. Please check that all required fields are filled and try again.',
+              'requestData' => [],
+              'awsUrl' => ""
+          ], 400);
+      }
+
+      // Process invoice matching for all affected invoices (only for final receipts)
+      if ($saveType == 'final' && !empty($processedInvoices)) {
               foreach ($processedInvoices as $invoiceNo => $receipts) {
                   try {
                       // Get the invoice
@@ -1571,8 +1684,8 @@ class ClientAccountsController extends Controller
               }
           }
 
-          // Log activity
-          if ($saved && !empty($finalArr)) {
+      // Log activity
+      if ($saved && !empty($finalArr)) {
            // Get the last transaction details for logging
            $lastEntry = end($finalArr);
            $lastTransDate = $lastEntry['trans_date'] ?? '';
@@ -1595,7 +1708,6 @@ class ClientAccountsController extends Controller
                $objs->pin = 0;
                $objs->save();
            }
-          }
       }
 
       // Prepare response

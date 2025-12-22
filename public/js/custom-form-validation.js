@@ -1098,7 +1098,13 @@ function customValidate(formName, savetype = '')
                             if (shouldProceed) {
                                 var client_id = $('#office_receipt_form input[name="client_id"]').val();
                                 var myform = document.getElementById('office_receipt_form');
+                                
+                                // FIX: Set save_type in hidden field and FormData (was missing, causing intermittent issues)
+                                $('#office_receipt_form input[name="save_type"]').val(savetype);
+                                
                                 var fd = new FormData(myform);
+                                // Also append explicitly to ensure it's sent
+                                fd.append('save_type', savetype);
 
                                 $('.popuploader').show(); // Show loader if part of your UI
 
