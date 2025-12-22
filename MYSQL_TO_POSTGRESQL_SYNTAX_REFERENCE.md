@@ -1105,6 +1105,8 @@ When pulling new code from MySQL, check for:
 - [ ] `DATE_FORMAT()` → Change to `TO_CHAR()` with updated format codes
 - [ ] `GROUP_CONCAT()` → Change to `STRING_AGG()` with delimiter
 - [ ] VARCHAR date comparisons → Use `TO_DATE()` for proper comparison
+- [ ] **VARCHAR date field filtering:** Check for `whereBetween('trans_date', [...])` or similar with `Y-m-d` format → Must use `whereRaw("TO_DATE(trans_date, 'DD/MM/YYYY') BETWEEN TO_DATE(?, 'DD/MM/YYYY') AND TO_DATE(?, 'DD/MM/YYYY')", ['d/m/Y', 'd/m/Y'])` for VARCHAR fields stored as dd/mm/yyyy
+- [ ] **Date format in filters:** When filtering VARCHAR dates (like `trans_date`), ensure dates are formatted as `d/m/Y` (not `Y-m-d`) before using in TO_DATE() queries
 - [ ] `ORDER BY` with date columns → Consider adding `NULLS LAST`
 - [ ] `IFNULL()` → Consider `COALESCE()` (both work, but COALESCE is standard)
 - [ ] Any raw SQL queries using MySQL-specific functions

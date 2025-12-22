@@ -1357,10 +1357,12 @@ class ClientAccountsController extends Controller
 
           $finalArr = [];
           $saved = false;
+          $processedInvoices = []; // Track invoices that need status updates
 
           // Process each transaction individually (no invoice grouping)
           for ($i = 0; $i < count($requestData['trans_date']); $i++) {
            $trans_no = $this->generateTransNo();
+           $invoiceNo = isset($requestData['invoice_no'][$i]) && $requestData['invoice_no'][$i] !== '' ? $requestData['invoice_no'][$i] : null;
 
            $saved = DB::table('account_client_receipts')->insertGetId([
                'user_id' => $requestData['loggedin_userid'],
@@ -1371,7 +1373,7 @@ class ClientAccountsController extends Controller
                'trans_date' => $requestData['trans_date'][$i],
                'entry_date' => $requestData['entry_date'][$i],
                'trans_no' => $trans_no,
-               'invoice_no' => isset($requestData['invoice_no'][$i]) && $requestData['invoice_no'][$i] !== '' ? $requestData['invoice_no'][$i] : null,
+               'invoice_no' => $invoiceNo,
                'payment_method' => $requestData['payment_method'][$i],
                'description' => $requestData['description'][$i],
                'deposit_amount' => $requestData['deposit_amount'][$i],
@@ -1389,11 +1391,122 @@ class ClientAccountsController extends Controller
                'trans_date' => $requestData['trans_date'][$i],
                'entry_date' => $requestData['entry_date'][$i],
                'trans_no' => $trans_no,
-               'invoice_no' => isset($requestData['invoice_no'][$i]) && $requestData['invoice_no'][$i] !== '' ? $requestData['invoice_no'][$i] : null,
+               'invoice_no' => $invoiceNo,
                'payment_method' => $requestData['payment_method'][$i],
                'description' => $requestData['description'][$i],
                'deposit_amount' => $requestData['deposit_amount'][$i],
            ];
+
+           // Track invoices that need status updates (only for final receipts with invoice_no)
+           if ($saveType == 'final' && !empty($invoiceNo)) {
+               if (!isset($processedInvoices[$invoiceNo])) {
+                   $processedInvoices[$invoiceNo] = [];
+               }
+               $processedInvoices[$invoiceNo][] = [
+                   'receipt_id' => $saved,
+                   'amount' => floatval($requestData['deposit_amount'][$i])
+               ];
+           }
+          }
+
+          // Process invoice matching for all affected invoices (only for final receipts)
+          if ($saveType == 'final' && !empty($processedInvoices)) {
+              foreach ($processedInvoices as $invoiceNo => $receipts) {
+                  try {
+                      // Get the invoice
+                      $invoice = DB::table('account_client_receipts')
+                          ->where('receipt_type', 3)
+                          ->where('trans_no', $invoiceNo)
+                          ->where('client_id', $requestData['client_id'])
+                          ->first();
+
+                      if ($invoice) {
+                          // Check if invoice is voided - skip if voided
+                          if (!empty($invoice->void_invoice) && $invoice->void_invoice == 1) {
+                              \Log::warning('Attempted to match receipt to voided invoice', [
+                                  'invoice_no' => $invoiceNo,
+                                  'client_id' => $requestData['client_id']
+                              ]);
+                              continue;
+                          }
+
+                          // Calculate total payments for this invoice (from office receipts and fee transfers)
+                          $totalPaidOffice = DB::table('account_client_receipts')
+                              ->where('receipt_type', 2)
+                              ->where('invoice_no', $invoiceNo)
+                              ->where('client_id', $requestData['client_id'])
+                              ->where('save_type', 'final')
+                              ->sum('deposit_amount');
+
+                          // Sum fee transfers for this invoice
+                          $totalPaidFeeTransfer = DB::table('account_client_receipts')
+                              ->where('receipt_type', 1)
+                              ->where('client_fund_ledger_type', 'Fee Transfer')
+                              ->where('invoice_no', $invoiceNo)
+                              ->where('client_id', $requestData['client_id'])
+                              ->where(function($q) {
+                                  $q->whereNull('void_fee_transfer')
+                                    ->orWhere('void_fee_transfer', 0);
+                              })
+                              ->sum('withdraw_amount');
+
+                          $totalPaid = $totalPaidOffice + $totalPaidFeeTransfer;
+                          $invoiceAmount = floatval($invoice->withdraw_amount);
+                          $newBalance = $invoiceAmount - $totalPaid;
+
+                          // Determine new status: 0=Unpaid, 1=Paid, 2=Partial
+                          if ($newBalance <= 0) {
+                              $newStatus = 1; // Paid
+                          } elseif ($totalPaid > 0) {
+                              $newStatus = 2; // Partial
+                          } else {
+                              $newStatus = 0; // Unpaid
+                          }
+
+                          // Update invoice status and balance
+                          DB::table('account_client_receipts')
+                              ->where('receipt_type', 3)
+                              ->where('trans_no', $invoiceNo)
+                              ->where('client_id', $requestData['client_id'])
+                              ->update([
+                                  'invoice_status' => $newStatus,
+                                  'partial_paid_amount' => $totalPaid,
+                                  'balance_amount' => max(0, $newBalance),
+                                  'updated_at' => now(),
+                              ]);
+
+                          // Also update in account_all_invoice_receipts if it exists
+                          DB::table('account_all_invoice_receipts')
+                              ->where('receipt_type', 3)
+                              ->where('invoice_no', $invoiceNo)
+                              ->where('client_id', $requestData['client_id'])
+                              ->update([
+                                  'invoice_status' => $newStatus,
+                                  'updated_at' => now(),
+                              ]);
+
+                          \Log::info('Invoice status updated after office receipt creation', [
+                              'invoice_no' => $invoiceNo,
+                              'total_paid' => $totalPaid,
+                              'new_balance' => $newBalance,
+                              'new_status' => $newStatus,
+                              'client_id' => $requestData['client_id']
+                          ]);
+                      } else {
+                          \Log::warning('Invoice not found for receipt matching', [
+                              'invoice_no' => $invoiceNo,
+                              'client_id' => $requestData['client_id']
+                          ]);
+                      }
+                  } catch (\Exception $e) {
+                      \Log::error('Error updating invoice status in saveofficereport', [
+                          'invoice_no' => $invoiceNo,
+                          'error' => $e->getMessage(),
+                          'trace' => $e->getTraceAsString()
+                      ]);
+                      // Continue processing other invoices even if one fails
+                  }
+              }
           }
 
           // Log activity
@@ -1434,6 +1547,33 @@ class ClientAccountsController extends Controller
            $response['awsUrl'] = $awsUrl;
           } else {
            $response['awsUrl'] = "";
+          }
+
+          // Add invoice data to response for frontend (if invoice was matched)
+          if ($saveType == 'final' && !empty($finalArr)) {
+              // Get the first receipt with an invoice_no (for backward compatibility)
+              $firstReceiptWithInvoice = null;
+              foreach ($finalArr as $receipt) {
+                  if (!empty($receipt['invoice_no'])) {
+                      $firstReceiptWithInvoice = $receipt;
+                      break;
+                  }
+              }
+
+              if ($firstReceiptWithInvoice) {
+                  $invoiceNo = $firstReceiptWithInvoice['invoice_no'];
+                  $invoice = DB::table('account_client_receipts')
+                      ->where('receipt_type', 3)
+                      ->where('trans_no', $invoiceNo)
+                      ->where('client_id', $requestData['client_id'])
+                      ->first();
+
+                  if ($invoice) {
+                      $response['invoice_no'] = $invoiceNo;
+                      $response['invoice_balance'] = floatval($invoice->balance_amount ?? $invoice->withdraw_amount);
+                      $response['invoice_status'] = $invoice->invoice_status ?? 0;
+                  }
+              }
           }
       } else {
           $response['status'] = false;
