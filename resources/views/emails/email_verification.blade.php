@@ -127,14 +127,15 @@
 <body>
     <div class="email-container">
         <div class="email-header">
-            <img src="{{URL::to('/public/img/logo.png')}}" alt="Bansal Migration" style="max-width: 200px; height: auto; margin-bottom: 15px;" />
+            <img src="{{ asset('img/logo.png') }}" alt="BANSAL Immigration" style="max-width: 200px; height: auto; margin-bottom: 15px;" />
+            <p style="margin: 0; font-size: 14px; color: #ffffff; opacity: 0.9;">BANSAL Immigration</p>
             <h1>Verify Your Email Address</h1>
         </div>
         
         <div class="email-body">
             <p>Hello,</p>
             
-            <p>Thank you for providing your email address <strong class="email-highlight">{{ $clientEmail->email }}</strong> to <strong>Bansal Immigration</strong>.</p>
+            <p>Thank you for providing your email address <strong class="email-highlight">{{ $clientEmail->email }}</strong> to <strong>BANSAL Immigration</strong>.</p>
             
             <p>To complete your email verification and ensure we can communicate with you effectively, please click the button below:</p>
             
@@ -166,10 +167,10 @@
         </div>
         
         <div class="email-footer">
-            <p>This is an automated email from <strong>Bansal Immigration</strong>.</p>
+            <p>This is an automated email from <strong>BANSAL Immigration</strong>.</p>
             <p>If you have any questions, please contact our office.</p>
             <p style="margin-top: 15px; font-size: 12px; color: #666666;">
-                &copy; {{ date('Y') }} Bansal Immigration. All rights reserved.
+                &copy; {{ date('Y') }} BANSAL Immigration. All rights reserved.
             </p>
         </div>
     </div>
