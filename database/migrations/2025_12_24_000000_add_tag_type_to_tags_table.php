@@ -15,12 +15,12 @@ return new class extends Migration
         Schema::table('tags', function (Blueprint $table) {
             // Add tag_type column: 'normal' or 'red'
             if (!Schema::hasColumn('tags', 'tag_type')) {
-                $table->string('tag_type', 20)->default('normal')->after('name');
+                $table->string('tag_type', 20)->default('normal');
             }
             
             // Add is_hidden column: true for red tags, false for normal tags
             if (!Schema::hasColumn('tags', 'is_hidden')) {
-                $table->boolean('is_hidden')->default(false)->after('tag_type');
+                $table->boolean('is_hidden')->default(false);
             }
             
             // Add index for filtering by tag type
@@ -51,7 +51,7 @@ return new class extends Migration
     }
     
     /**
-     * Check if an index exists on a table
+     * Check if an index exists on a table (PostgreSQL compatible)
      */
     private function hasIndex($table, $indexName): bool
     {
@@ -60,11 +60,11 @@ return new class extends Migration
         
         $result = $connection->select(
             "SELECT COUNT(*) as count 
-             FROM information_schema.statistics 
-             WHERE table_schema = ? 
-             AND table_name = ? 
-             AND index_name = ?",
-            [$databaseName, $table, $indexName]
+             FROM pg_indexes 
+             WHERE schemaname = ? 
+             AND tablename = ? 
+             AND indexname = ?",
+            [$connection->getConfig('schema') ?? 'public', $table, $indexName]
         );
         
         return $result[0]->count > 0;
