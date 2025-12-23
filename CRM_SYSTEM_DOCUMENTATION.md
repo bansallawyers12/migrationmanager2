@@ -184,7 +184,7 @@ Route::get('/clients/detail/{id}', 'Agent\ClientsController@detail')->name('agen
 - `App\NatureOfEnquiry` - Types of enquiries
 
 #### Key Controllers
-- `App\Http\Controllers\Admin\AppointmentsController`
+- `App\Http\Controllers\Admin\AppointmentsController` (NOTE: This controller has been deleted - old appointment system removed)
 - `App\Http\Controllers\AppointmentBookController`
 
 #### Key Features

@@ -95,10 +95,10 @@ class HomeController extends Controller
 
     /**
      * Get disabled date/time - COMMENTED OUT FOR FUTURE USE
-     * This function has been replaced by AppointmentsController::getDisabledDateTime()
-     * which uses the Bansal API REST endpoint.
+     * WARNING: AppointmentsController has been deleted - old appointment system removed
+     * This method used deleted models (BookService, BookServiceSlotPerPerson, Appointment)
      * 
-     * @deprecated Use AppointmentsController::getDisabledDateTime() instead
+     * @deprecated Old appointment system removed - no longer available
      */
     /*
     public function getdisableddatetime(Request $request)
@@ -322,10 +322,10 @@ class HomeController extends Controller
 
     /**
      * Get date/time backend - COMMENTED OUT FOR FUTURE USE
-     * This function has been replaced by AppointmentsController::getDateTimeBackend()
-     * which uses the Bansal API REST endpoint.
+     * WARNING: AppointmentsController has been deleted - old appointment system removed
+     * This method used deleted models (BookService, BookServiceSlotPerPerson)
      * 
-     * @deprecated Use AppointmentsController::getDateTimeBackend() instead
+     * @deprecated Old appointment system removed - no longer available
      */
     /*
     public function getdatetimebackend(Request $request)

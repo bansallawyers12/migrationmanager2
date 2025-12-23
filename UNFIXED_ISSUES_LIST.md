@@ -79,7 +79,9 @@ This document lists all issues from `MYSQL_TO_POSTGRESQL_SYNTAX_REFERENCE.md` th
 
 **Locations:**
 
-1. **File:** `app/Http/Controllers/CRM/AppointmentsController.php`
+**NOTE:** `app/Http/Controllers/CRM/AppointmentsController.php` has been **DELETED** - old appointment system removed. The issues below are historical and no longer applicable.
+
+1. **File:** `app/Http/Controllers/CRM/AppointmentsController.php` (DELETED)
    - **Line:** 277
    - **Issue:** Missing `task_status` and `pin` before `save()` at line 326
    - **Current Code:**

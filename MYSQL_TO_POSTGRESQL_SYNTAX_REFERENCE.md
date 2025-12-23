@@ -530,7 +530,7 @@ This occurs when `new ActivitiesLog` is used without setting `task_status` and `
 
 **Files Fixed (30 locations):**
 - `app/Http/Controllers/CRM/ClientsController.php` - 8 locations
-- `app/Http/Controllers/CRM/AppointmentsController.php` - 3 locations
+- `app/Http/Controllers/CRM/AppointmentsController.php` - 3 locations (NOTE: This controller has been deleted - old appointment system removed)
 - `app/Http/Controllers/CRM/AssigneeController.php` - 3 locations
 - `app/Http/Controllers/CRM/ClientPersonalDetailsController.php` - 1 location
 - `app/Http/Controllers/CRM/ClientAccountsController.php` - 12 locations

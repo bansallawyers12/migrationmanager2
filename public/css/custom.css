@@ -395,21 +395,7 @@ padding: 5px 10px;width:100%;background-color: #fdfdff;}
 .appointmentlist .appointmentdata .appoint_created span.span_label{font-size: 12px;line-height: 16px;margin-right: 10px;}
 .appointmentlist .appointmentdata .appoint_created span.span_label span{display: inline-block;width: 25px;height: 25px;border-radius: 50%;background: #6777ef;text-align: center;color: #fff;font-size: 12px;line-height: 25px;vertical-align: top;}
 .appointmentlist .appointmentdata.active .appointment_col  .appoint_created span.span_label span{background: #fff;color: #6777ef;}
-.editappointment{}
-.editappointment .content{}
-.editappointment .content h4{font-size:15px;line-height:21px;}
-.editappointment .content .appitem{}
-.editappointment .content .appitem i{font-size:14px;color: #6777ef;}
-.editappointment .content .appitem span{font-size:13px;}
-.editappointment .content .description{margin: 10px 0px;padding: 10px 0px;border-top: 1px solid #d4d4d5;border-bottom: 1px solid #d4d4d5;}
-.editappointment .content .description p{font-size:13px;line-height:18px;margin: 0px;}
-.editappointment .content .created_by{}
-.editappointment .content .created_by span.label{font-size:13px;display:block;}
-.editappointment .content .created_by .createdby{display:inline-block;}
-.editappointment .content .created_by .createdby span{display: block;width: 30px;height: 30px;border-radius: 50%;background: #6777ef;text-align: center;color: #fff;font-size: 12px;line-height: 30px;vertical-align: top;}
-.editappointment .content .created_by .createdinfo{display:inline-block;margin-left:10px;vertical-align: middle;}
-.editappointment .content .created_by .createdinfo a{font-size: 13px;line-height: 16px;color: #6777ef;}
-.editappointment .content .created_by .createdinfo p{font-size: 12px;line-height: 16px;color: #6777ef;margin: 0px;}
+/* WARNING: .editappointment CSS removed - old appointment system deleted */
 .cus_invice_btn{width:auto;float:right;margin-bottom: 15px;}
 .cus_col_7 .col_full{width:100%;display:block;}
 .cus_col_7 .col_half{width: calc(50% - 5px);float: left;}

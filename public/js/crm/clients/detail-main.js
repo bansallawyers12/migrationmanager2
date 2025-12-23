@@ -5970,6 +5970,9 @@ Bansal Immigration`;
                 
                 var slot_overwrite = $('#slot_overwrite_hidden').val() == 1 ? 1 : 0; // Get slot overwrite value
 
+                // DEPRECATED: Appointment system removed - getDateTimeBackend route no longer exists
+                // Commenting out AJAX call to prevent errors
+                /*
                 $.ajax({
 
                     url:window.ClientDetailConfig.urls.getDateTimeBackend,
@@ -6059,6 +6062,9 @@ Bansal Immigration`;
 
                                     var slot_overwrite = $('#slot_overwrite_hidden').val() == 1 ? 1 : 0; // Get slot overwrite value
 
+                                    // DEPRECATED: Appointment system removed - getDisabledDateTime route no longer exists
+                                    // Commenting out AJAX call to prevent errors
+                                    /*
                                     $.ajax({
 
                                         url:window.ClientDetailConfig.urls.getDisabledDateTime,
@@ -6192,6 +6198,8 @@ Bansal Immigration`;
                                         }
 
                                     });
+                                    */
+                                    // End of deprecated getDisabledDateTime AJAX call
 
                                 });
 
@@ -6272,6 +6280,8 @@ Bansal Immigration`;
                         $('#myTab .nav-item #appointment_details-tab').addClass('disabled');
                         $('#myTab a[href="#'+v+'"]').trigger('click');
                     }
+                    */
+                    // End of deprecated getDateTimeBackend AJAX call
 
                 })
 
@@ -9611,8 +9621,11 @@ Bansal Immigration`;
 
                             $('.subagent_data').html('');
 
+                        // DEPRECATED: Appointment system removed - deleteappointment route no longer exists
                         }else if(delhref == 'deleteappointment'){
 
+                            // Commented out - appointment system removed
+                            /*
                             $.ajax({
 
                                 url: site_url+'/get-appointments',
@@ -9628,6 +9641,8 @@ Bansal Immigration`;
                                 }
 
                             });
+                            */
+                            console.warn('deleteappointment route has been removed - appointment system deprecated');
 
                         } else if(delhref == 'deletepaymentschedule'){
 
@@ -13227,7 +13242,8 @@ Bansal Immigration`;
 
                 $('.appointmentcreatedemail').html(res[v].createdemail);
 
-                $('.editappointment .edit_link').attr('data-id', v);
+                // DEPRECATED: Appointment system removed - editappointment form no longer exists
+                // $('.editappointment .edit_link').attr('data-id', v);
 
             }
 

@@ -1571,7 +1571,11 @@ function customValidate(formName, savetype = '')
 								}
 							}
 						});		
+					// DEPRECATED: Appointment system removed - editappointment form no longer exists
 					}else if(formName == 'editappointment'){
+						console.warn('editappointment form validation has been removed - appointment system deprecated');
+						return false;
+						/*
 						var client_id = $('#editappointment input[name="client_id"]').val();
 						var myform = document.getElementById('editappointment');
 						var fd = new FormData(myform);	
@@ -1620,7 +1624,9 @@ function customValidate(formName, savetype = '')
 									
 								}
 							}
-						});		
+						});
+						*/
+						// End of deprecated editappointment validation
 					}else if(formName == 'editpartnerappointment'){
 						var client_id = $('#editpartnerappointment input[name="client_id"]').val();
 						var myform = document.getElementById('editpartnerappointment');

@@ -1443,8 +1443,9 @@ $(document).ready(function() {
             checkStarClient: '{{ route("check.star.client") }}',
             getInfoByReceiptId: '{{ URL::to("/clients/getInfoByReceiptId") }}',
             notPickedCall: '{{ URL::to("/not-picked-call") }}',
-            getDateTimeBackend: '{{ URL::to("/getdatetimebackend") }}',
-            getDisabledDateTime: '{{ URL::to("/getdisableddatetime") }}',
+            // DEPRECATED: Appointment system removed - routes no longer exist
+            // getDateTimeBackend: '{{ URL::to("/getdatetimebackend") }}',
+            // getDisabledDateTime: '{{ URL::to("/getdisableddatetime") }}',
             checkCostAssignment: '{{ URL::to("/clients/check-cost-assignment") }}',
             getVisaAgreementAgent: '{{ URL::to("/clients/getVisaAggreementMigrationAgentDetail") }}',
             generateAgreement: '{{ route("clients.generateagreement") }}',
