@@ -142,7 +142,7 @@ window.getRegionalCodeInfo = function(postCode) {
     }
 
     // WA Regional City: 6000 to 6038, 6050 to 6083, 6090 to 6182, 6208 to 6211, 6214 and 6556 to 6558
-    if (
+    else if (
         (postCode >= 6000 && postCode <= 6038) ||
         (postCode >= 6050 && postCode <= 6083) ||
         (postCode >= 6090 && postCode <= 6182) ||
@@ -154,7 +154,7 @@ window.getRegionalCodeInfo = function(postCode) {
     }
 
     // WA Regional centres - All other WA postcodes (6000-6999)
-    if (postCode >= 6000 && postCode <= 6999) {
+    else if (postCode >= 6000 && postCode <= 6999) {
         return "Regional Centre WA";
     }
 

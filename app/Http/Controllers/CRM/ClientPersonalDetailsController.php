@@ -2416,6 +2416,7 @@ class ClientPersonalDetailsController extends Controller
             
             // Get existing addresses before update for change tracking
             $existingAddresses = ClientAddress::where('client_id', $client->id)->get();
+            $existingAddressCount = $existingAddresses->count(); // Track count for safety check
             $oldAddressDisplay = [];
             foreach ($existingAddresses as $existing) {
                 $display = [];
@@ -2445,8 +2446,10 @@ class ClientPersonalDetailsController extends Controller
             $oldAddressDisplayStr = !empty($oldAddressDisplay) ? implode(' | ', $oldAddressDisplay) : '(empty)';
             
             if (isset($requestData['zip']) && is_array($requestData['zip'])) {
-                ClientAddress::where('client_id', $client->id)->delete();
+                // Track which address IDs should be kept (both updated and newly created)
+                $addressIdsToKeep = [];
                 
+                // Process each address in the request
                 foreach ($requestData['zip'] as $key => $zip) {
                     $address_line_1 = $requestData['address_line_1'][$key] ?? null;
                     $address_line_2 = $requestData['address_line_2'][$key] ?? null;
@@ -2456,8 +2459,13 @@ class ClientPersonalDetailsController extends Controller
                     $regional_code = $requestData['regional_code'][$key] ?? null;
                     $start_date = $requestData['address_start_date'][$key] ?? null;
                     $end_date = $requestData['address_end_date'][$key] ?? null;
+                    $address_id = $requestData['address_id'][$key] ?? null;
+                    
+                    // Clean up address_id - it might be empty string, null, or actual ID
+                    $address_id = !empty($address_id) ? (int)$address_id : null;
                     
                     \Log::info("Processing address entry $key:", [
+                        'address_id' => $address_id ?: '(new)',
                         'zip' => $zip,
                         'address_line_1' => $address_line_1,
                         'suburb' => $suburb,
@@ -2467,6 +2475,11 @@ class ClientPersonalDetailsController extends Controller
                         'start_date' => $start_date,
                         'end_date' => $end_date
                     ]);
+                    
+                    // Skip empty addresses (no address_line_1 and no zip)
+                    if (empty($address_line_1) && empty($zip)) {
+                        continue;
+                    }
                     
                     // Date conversion
                     $formatted_start_date = null;
@@ -2505,8 +2518,52 @@ class ClientPersonalDetailsController extends Controller
                         'country' => $country
                     ]);
                     
-                    if (!empty($address_line_1) || !empty($zip)) {
-                        ClientAddress::create([
+                    if ($address_id) {
+                        // Update existing address
+                        $existingAddress = ClientAddress::find($address_id);
+                        if ($existingAddress && $existingAddress->client_id == $client->id) {
+                            $existingAddress->update([
+                                'admin_id' => Auth::user()->id,
+                                'address' => $combined_address,
+                                'city' => $suburb,
+                                'address_line_1' => $address_line_1,
+                                'address_line_2' => $address_line_2,
+                                'suburb' => $suburb,
+                                'state' => $state,
+                                'country' => $country,
+                                'zip' => $zip,
+                                'regional_code' => $regional_code,
+                                'start_date' => $formatted_start_date,
+                                'end_date' => $formatted_end_date
+                            ]);
+                            // Track this ID to keep it
+                            $addressIdsToKeep[] = $address_id;
+                            \Log::info("Updated address ID: $address_id");
+                        } else {
+                            // Address ID provided but doesn't exist or doesn't belong to client
+                            // Create as new address instead
+                            $newAddress = ClientAddress::create([
+                                'admin_id' => Auth::user()->id,
+                                'client_id' => $client->id,
+                                'address' => $combined_address,
+                                'city' => $suburb,
+                                'address_line_1' => $address_line_1,
+                                'address_line_2' => $address_line_2,
+                                'suburb' => $suburb,
+                                'state' => $state,
+                                'country' => $country,
+                                'zip' => $zip,
+                                'regional_code' => $regional_code,
+                                'start_date' => $formatted_start_date,
+                                'end_date' => $formatted_end_date
+                            ]);
+                            // Track newly created ID to keep it
+                            $addressIdsToKeep[] = $newAddress->id;
+                            \Log::info("Created new address (invalid ID provided), new ID: {$newAddress->id}");
+                        }
+                    } else {
+                        // Create new address (no ID provided)
+                        $newAddress = ClientAddress::create([
                             'admin_id' => Auth::user()->id,
                             'client_id' => $client->id,
                             'address' => $combined_address,
@@ -2521,7 +2578,30 @@ class ClientPersonalDetailsController extends Controller
                             'start_date' => $formatted_start_date,
                             'end_date' => $formatted_end_date
                         ]);
+                        // Track newly created ID to keep it
+                        $addressIdsToKeep[] = $newAddress->id;
+                        \Log::info("Created new address, ID: {$newAddress->id}");
                     }
+                }
+                
+                // Delete addresses that exist in DB but were not processed/created
+                // This handles the case where user removes an address from the form
+                \Log::info('Address IDs to keep:', $addressIdsToKeep);
+                
+                // CRITICAL SAFETY CHECK: Prevent accidental deletion of all addresses
+                // If there were existing addresses but $addressIdsToKeep is empty after processing,
+                // this indicates all submitted addresses were empty (skipped). This is suspicious
+                // and could indicate a bug or accidental empty form submission - prevent deletion.
+                if (!empty($addressIdsToKeep)) {
+                    $deletedCount = ClientAddress::where('client_id', $client->id)
+                        ->whereNotIn('id', $addressIdsToKeep)
+                        ->delete();
+                    \Log::info("Deleted $deletedCount addresses that were not in the request");
+                } elseif ($existingAddressCount > 0) {
+                    // Security safeguard: If there were existing addresses but none to keep,
+                    // this is suspicious - log warning and prevent deletion to avoid data loss
+                    \Log::warning("SECURITY: Prevented deletion of all {$existingAddressCount} addresses for client {$client->id}. " .
+                        "No valid addresses in request - this may indicate an empty form submission or bug.");
                 }
             }
             
@@ -2555,22 +2635,47 @@ class ClientPersonalDetailsController extends Controller
             }
             $newAddressDisplayStr = !empty($newAddressDisplay) ? implode(' | ', $newAddressDisplay) : '(empty)';
 
-            // Log activity with before/after values
-            $changedFields = [];
-            if ($oldAddressDisplayStr !== $newAddressDisplayStr) {
-                $changedFields['Address Information'] = [
-                    'old' => $oldAddressDisplayStr,
-                    'new' => $newAddressDisplayStr
-                ];
-            }
-
-            if (!empty($changedFields)) {
-                $this->logClientActivityWithChanges(
-                    $client->id,
-                    'updated address information',
-                    $changedFields,
-                    'activity'
-                );
+            // Log activity with intelligent diff showing only actual changes
+            try {
+                $diffResult = $this->buildAddressDiff($existingAddresses, $newAddresses);
+                
+                if (!empty($diffResult['added']) || !empty($diffResult['removed']) || !empty($diffResult['modified'])) {
+                    // Build HTML directly with proper formatting
+                    $description = $this->formatAddressDiffForActivityLog($diffResult);
+                    
+                    \Log::info('Creating activity log for address change', [
+                        'added' => count($diffResult['added']),
+                        'removed' => count($diffResult['removed']),
+                        'modified' => count($diffResult['modified'])
+                    ]);
+                    
+                    $this->logClientActivity(
+                        $client->id,
+                        'updated address information',
+                        $description,
+                        'activity'
+                    );
+                } else {
+                    \Log::info('No activity log created - addresses are identical');
+                }
+            } catch (\Exception $e) {
+                // Fallback to simple comparison if diff fails
+                \Log::warning('Address diff failed, using simple comparison', [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                
+                if ($oldAddressDisplayStr !== $newAddressDisplayStr) {
+                    $this->logClientActivityWithChanges(
+                        $client->id,
+                        'updated address information',
+                        ['Address Information' => [
+                            'old' => $oldAddressDisplayStr,
+                            'new' => $newAddressDisplayStr
+                        ]],
+                        'activity'
+                    );
+                }
             }
 
             return response()->json([
@@ -2578,6 +2683,9 @@ class ClientPersonalDetailsController extends Controller
                 'message' => 'Address information updated successfully'
             ]);
         } catch (\Exception $e) {
+            \Log::error('Error saving address information: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Error saving address information: ' . $e->getMessage()
@@ -4832,5 +4940,196 @@ class ClientPersonalDetailsController extends Controller
             default:
                 return 'Other';
         }
+    }
+
+    /**
+     * Build address diff showing only actual changes
+     * 
+     * @param Collection $oldAddresses Old addresses before save
+     * @param Collection $newAddresses New addresses after save
+     * @return array Array with 'added', 'removed', 'modified' keys
+     */
+    private function buildAddressDiff($oldAddresses, $newAddresses)
+    {
+        $added = [];
+        $removed = [];
+        $modified = [];
+        
+        // Normalize addresses for comparison
+        $oldNormalized = $this->normalizeAddressesForComparison($oldAddresses);
+        $newNormalized = $this->normalizeAddressesForComparison($newAddresses);
+        
+        // Find added addresses (in new but not in old)
+        foreach ($newNormalized as $newKey => $newAddr) {
+            if (!isset($oldNormalized[$newKey])) {
+                $added[] = $this->formatAddressForDisplay($newAddr);
+            }
+        }
+        
+        // Find removed addresses (in old but not in new)
+        foreach ($oldNormalized as $oldKey => $oldAddr) {
+            if (!isset($newNormalized[$oldKey])) {
+                $removed[] = $this->formatAddressForDisplay($oldAddr);
+            }
+        }
+        
+        // Find modified addresses (same key but different details)
+        foreach ($oldNormalized as $key => $oldAddr) {
+            if (isset($newNormalized[$key])) {
+                $newAddr = $newNormalized[$key];
+                if ($this->isAddressModified($oldAddr, $newAddr)) {
+                    $modified[] = [
+                        'old' => $this->formatAddressForDisplay($oldAddr),
+                        'new' => $this->formatAddressForDisplay($newAddr)
+                    ];
+                }
+            }
+        }
+        
+        return [
+            'added' => $added,
+            'removed' => $removed,
+            'modified' => $modified
+        ];
+    }
+
+    /**
+     * Normalize addresses for comparison by creating a unique key
+     * 
+     * @param Collection $addresses
+     * @return array Array keyed by comparison key
+     */
+    private function normalizeAddressesForComparison($addresses)
+    {
+        $normalized = [];
+        
+        foreach ($addresses as $address) {
+            // Create comparison key from core address fields
+            $key = strtolower(trim(
+                ($address->address_line_1 ?? '') . '|' .
+                ($address->suburb ?? '') . '|' .
+                ($address->state ?? '') . '|' .
+                ($address->zip ?? '')
+            ));
+            
+            // Store full address object with the key
+            $normalized[$key] = $address;
+        }
+        
+        return $normalized;
+    }
+
+    /**
+     * Format address for display in activity log
+     * 
+     * @param object $address Address object
+     * @return string Formatted address string
+     */
+    private function formatAddressForDisplay($address)
+    {
+        $parts = [];
+        
+        if (!empty($address->address_line_1)) {
+            $parts[] = $address->address_line_1;
+        }
+        if (!empty($address->address_line_2)) {
+            $parts[] = $address->address_line_2;
+        }
+        if (!empty($address->suburb)) {
+            $parts[] = $address->suburb;
+        }
+        if (!empty($address->state)) {
+            $parts[] = $address->state;
+        }
+        if (!empty($address->zip)) {
+            $parts[] = $address->zip;
+        }
+        if (!empty($address->country)) {
+            $parts[] = $address->country;
+        }
+        if (!empty($address->start_date)) {
+            $parts[] = 'From: ' . date('d/m/Y', strtotime($address->start_date));
+        }
+        if (!empty($address->end_date)) {
+            $parts[] = 'To: ' . date('d/m/Y', strtotime($address->end_date));
+        }
+        
+        return !empty($parts) ? implode(', ', $parts) : 'Address record';
+    }
+
+    /**
+     * Check if an address has been modified (same location, different details)
+     * 
+     * @param object $oldAddr Old address
+     * @param object $newAddr New address
+     * @return bool True if modified
+     */
+    private function isAddressModified($oldAddr, $newAddr)
+    {
+        // Compare fields that might change
+        $fieldsToCompare = [
+            'address_line_2',
+            'country',
+            'regional_code',
+            'start_date',
+            'end_date'
+        ];
+        
+        foreach ($fieldsToCompare as $field) {
+            $oldValue = $oldAddr->$field ?? null;
+            $newValue = $newAddr->$field ?? null;
+            
+            if ($oldValue !== $newValue) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Format address diff result for activity log with HTML styling
+     * 
+     * @param array $diffResult Result from buildAddressDiff()
+     * @return string HTML formatted description
+     */
+    private function formatAddressDiffForActivityLog($diffResult)
+    {
+        $html = '<div style="margin-top: 5px;">';
+        
+        // Removed addresses (red strikethrough)
+        foreach ($diffResult['removed'] as $addr) {
+            $html .= '<div style="margin-bottom: 4px;">';
+            $html .= '<span style="color: #dc3545; text-decoration: line-through;">';
+            $html .= htmlspecialchars($addr);
+            $html .= '</span>';
+            $html .= '</div>';
+        }
+        
+        // Modified addresses (old in red strikethrough → new in green)
+        foreach ($diffResult['modified'] as $mod) {
+            $html .= '<div style="margin-bottom: 4px;">';
+            $html .= '<span style="color: #dc3545; text-decoration: line-through;">';
+            $html .= htmlspecialchars($mod['old']);
+            $html .= '</span>';
+            $html .= ' <span style="color: #666;">→</span> ';
+            $html .= '<span style="color: #28a745; font-weight: 600;">';
+            $html .= htmlspecialchars($mod['new']);
+            $html .= '</span>';
+            $html .= '</div>';
+        }
+        
+        // Added addresses (green)
+        foreach ($diffResult['added'] as $addr) {
+            $html .= '<div style="margin-bottom: 4px;">';
+            $html .= '<span style="color: #28a745; font-weight: 600;">';
+            $html .= htmlspecialchars($addr);
+            $html .= '</span>';
+            $html .= '</div>';
+        }
+        
+        $html .= '</div>';
+        
+        return $html;
     }
 }

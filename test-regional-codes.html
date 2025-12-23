@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Regional Code Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-case {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            margin: 5px 0;
+            border-left: 4px solid #ddd;
+            background: #f9f9f9;
+        }
+        .test-case.pass {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .test-case.fail {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        .postcode {
+            font-weight: bold;
+            color: #007bff;
+        }
+        .result {
+            color: #333;
+        }
+        .expected {
+            color: #666;
+            font-style: italic;
+        }
+        .status {
+            font-weight: bold;
+        }
+        .pass .status {
+            color: #28a745;
+        }
+        .fail .status {
+            color: #dc3545;
+        }
+        .summary {
+            background: #007bff;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 18px;
+        }
+        .summary.all-pass {
+            background: #28a745;
+        }
+        .summary.has-fail {
+            background: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Regional Code Classification Test</h1>
+    <p>Testing the <code>getRegionalCodeInfo()</code> function with various Australian postcodes.</p>
+    
+    <div id="test-results"></div>
+    <div id="summary"></div>
+
+    <script src="js/clients/address-regional-codes.js"></script>
+    <script>
+        // Test cases: [postcode, expected_result, description]
+        const testCases = [
+            // NT - Northern Territory
+            ['0800', 'Regional Centre NT', 'NT lower bound'],
+            ['0850', 'Regional Centre NT', 'NT middle'],
+            ['0999', 'Regional Centre NT', 'NT upper bound'],
+            
+            // ACT - Australian Capital Territory
+            ['0200', 'Regional City ACT', 'ACT lower bound (0200-0299)'],
+            ['0250', 'Regional City ACT', 'ACT middle (0200-0299)'],
+            ['2600', 'Regional City ACT', 'ACT lower bound (2600-2639)'],
+            ['2620', 'Regional City ACT', 'ACT middle (2600-2639)'],
+            ['2639', 'Regional City ACT', 'ACT upper bound'],
+            
+            // NSW - Regional City
+            ['2259', 'Regional City NSW', 'NSW Regional City - specific'],
+            ['2264', 'Regional City NSW', 'NSW Regional City - lower bound'],
+            ['2300', 'Regional City NSW', 'NSW Regional City - Newcastle'],
+            ['2500', 'Regional City NSW', 'NSW Regional City - Wollongong'],
+            ['2574', 'Regional City NSW', 'NSW Regional City - specific'],
+            
+            // NSW - Regional Centre
+            ['2250', 'Regional Centre NSW', 'NSW Regional Centre - lower bound'],
+            ['2311', 'Regional Centre NSW', 'NSW Regional Centre'],
+            ['2640', 'Regional Centre NSW', 'NSW Regional Centre - Albury'],
+            ['2773', 'Regional Centre NSW', 'NSW Regional Centre'],
+            
+            // NSW - Metro Area
+            ['2000', 'Metro Area NSW', 'NSW Metro - Sydney CBD'],
+            ['2150', 'Metro Area NSW', 'NSW Metro - Parramatta'],
+            ['2200', 'Metro Area NSW', 'NSW Metro - Bankstown'],
+            
+            // VIC - Regional City
+            ['3211', 'Regional City VIC', 'VIC Regional City - Geelong lower'],
+            ['3220', 'Regional City VIC', 'VIC Regional City - Geelong'],
+            ['3235', 'Regional City VIC', 'VIC Regional City - specific'],
+            ['3328', 'Regional City VIC', 'VIC Regional City - specific'],
+            ['3340', 'Regional City VIC', 'VIC Regional City - specific'],
+            
+            // VIC - Regional Centre
+            ['3097', 'Regional Centre VIC', 'VIC Regional Centre - lower bound'],
+            ['3139', 'Regional Centre VIC', 'VIC Regional Centre - specific'],
+            ['3350', 'Regional Centre VIC', 'VIC Regional Centre - Ballarat'],
+            ['3550', 'Regional Centre VIC', 'VIC Regional Centre - Bendigo'],
+            
+            // VIC - Metro Area
+            ['3000', 'Metro Area VIC', 'VIC Metro - Melbourne CBD'],
+            ['3150', 'Metro Area VIC', 'VIC Metro - Glen Waverley'],
+            ['3175', 'Metro Area VIC', 'VIC Metro - Dandenong'],
+            
+            // QLD - Regional City
+            ['4019', 'Regional City QLD', 'QLD Regional City - lower bound'],
+            ['4207', 'Regional City QLD', 'QLD Regional City - Gold Coast'],
+            ['4550', 'Regional City QLD', 'QLD Regional City - Sunshine Coast'],
+            
+            // QLD - Regional Centre
+            ['4124', 'Regional Centre QLD', 'QLD Regional Centre - specific'],
+            ['4350', 'Regional Centre QLD', 'QLD Regional Centre - Toowoomba'],
+            ['4700', 'Regional Centre QLD', 'QLD Regional Centre - Rockhampton'],
+            
+            // QLD - Metro Area
+            ['4000', 'Metro Area QLD', 'QLD Metro - Brisbane CBD'],
+            ['4101', 'Metro Area QLD', 'QLD Metro - Brisbane South'],
+            
+            // WA - Regional City (CRITICAL TEST - was broken)
+            ['6000', 'Regional City WA', 'WA Regional City - Perth CBD (BUG TEST)'],
+            ['6050', 'Regional City WA', 'WA Regional City - middle range'],
+            ['6100', 'Regional City WA', 'WA Regional City - Victoria Park'],
+            ['6210', 'Regional City WA', 'WA Regional City - Mandurah'],
+            ['6214', 'Regional City WA', 'WA Regional City - specific'],
+            ['6556', 'Regional City WA', 'WA Regional City - Geraldton'],
+            
+            // WA - Regional Centre (CRITICAL TEST - was unreachable)
+            ['6200', 'Regional Centre WA', 'WA Regional Centre - Bunbury (BUG TEST)'],
+            ['6400', 'Regional Centre WA', 'WA Regional Centre - Kalgoorlie'],
+            ['6700', 'Regional Centre WA', 'WA Regional Centre - Karratha'],
+            
+            // SA - Regional City
+            ['5000', 'Regional City SA', 'SA Regional City - Adelaide CBD'],
+            ['5100', 'Regional City SA', 'SA Regional City - Adelaide North'],
+            ['5231', 'Regional City SA', 'SA Regional City - specific'],
+            
+            // SA - Regional Centre
+            ['5172', 'Regional Centre SA', 'SA Regional Centre'],
+            ['5300', 'Regional Centre SA', 'SA Regional Centre'],
+            
+            // TAS - Regional City
+            ['7000', 'Regional City TAS', 'TAS Regional City - Hobart'],
+            ['7004', 'Regional City TAS', 'TAS Regional City - lower bound'],
+            ['7250', 'Regional City TAS', 'TAS Regional City - Launceston'],
+            
+            // TAS - Regional Centre
+            ['7001', 'Regional Centre TAS', 'TAS Regional Centre'],
+            ['7300', 'Regional Centre TAS', 'TAS Regional Centre'],
+            
+            // Other Territories
+            ['6798', 'Regional Centre - Other Territories', 'Christmas Island'],
+            ['6799', 'Regional Centre - Other Territories', 'Cocos Islands'],
+            
+            // Invalid/Empty
+            ['9999', '', 'Invalid postcode - out of range'],
+            ['1234', '', 'Invalid postcode - not Australian'],
+        ];
+
+        let passed = 0;
+        let failed = 0;
+        const resultsContainer = document.getElementById('test-results');
+
+        testCases.forEach(([postcode, expected, description]) => {
+            const result = window.getRegionalCodeInfo(postcode);
+            const isPass = result === expected;
+            
+            if (isPass) {
+                passed++;
+            } else {
+                failed++;
+            }
+
+            const testDiv = document.createElement('div');
+            testDiv.className = `test-case ${isPass ? 'pass' : 'fail'}`;
+            testDiv.innerHTML = `
+                <div>
+                    <span class="postcode">${postcode}</span> - ${description}
+                    <br>
+                    <span class="result">Result: "${result}"</span>
+                    ${!isPass ? `<br><span class="expected">Expected: "${expected}"</span>` : ''}
+                </div>
+                <div class="status">${isPass ? '✓ PASS' : '✗ FAIL'}</div>
+            `;
+            resultsContainer.appendChild(testDiv);
+        });
+
+        // Summary
+        const summaryDiv = document.getElementById('summary');
+        const summaryClass = failed === 0 ? 'all-pass' : 'has-fail';
+        summaryDiv.className = `summary ${summaryClass}`;
+        summaryDiv.innerHTML = `
+            <strong>Test Summary:</strong> ${passed} passed, ${failed} failed out of ${testCases.length} tests
+            ${failed === 0 ? ' 🎉 All tests passed!' : ' ⚠️ Some tests failed!'}
+        `;
+
+        // Console output
+        console.log('='.repeat(60));
+        console.log('REGIONAL CODE TEST RESULTS');
+        console.log('='.repeat(60));
+        console.log(`Total Tests: ${testCases.length}`);
+        console.log(`Passed: ${passed}`);
+        console.log(`Failed: ${failed}`);
+        console.log('='.repeat(60));
+        
+        if (failed > 0) {
+            console.error('❌ Some tests failed! Check the page for details.');
+        } else {
+            console.log('✅ All tests passed!');
+        }
+    </script>
+</body>
+</html>
+

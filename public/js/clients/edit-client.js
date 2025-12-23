@@ -908,14 +908,32 @@ function addAnotherAddress() {
     
     container.insertAdjacentHTML('beforeend', addressHTML);
     
-    // Reinitialize date pickers
+    // Get the newly added wrapper element
+    const newWrapper = container.querySelector(`.address-entry-wrapper[data-address-index="${index}"]`);
+    
+    // Reinitialize date pickers for all fields (including the new one)
     if (typeof initializeDatepickers === 'function') {
         initializeDatepickers();
     }
     
-    // Trigger address autocomplete initialization for the new entry
-    if (typeof initAddressAutocomplete === 'function') {
+    // Initialize autocomplete for the new address field
+    // Note: Event listeners use delegation, so they work automatically
+    // But we need to initialize datepickers for the new field
+    if (typeof window.initAddressAutocompleteForNewField === 'function' && newWrapper) {
+        // Use jQuery wrapper for consistency with address-autocomplete.js
+        window.initAddressAutocompleteForNewField($(newWrapper));
+    } else if (typeof initAddressAutocomplete === 'function') {
+        // Fallback: Re-initialize everything (less efficient but works)
         initAddressAutocomplete();
+    } else {
+        // Last resort: Just initialize datepickers manually
+        if (typeof $ !== 'undefined' && typeof $.fn.datepicker !== 'undefined' && newWrapper) {
+            $(newWrapper).find('.date-picker').datepicker({
+                format: 'dd/mm/yyyy',
+                autoclose: true,
+                todayHighlight: true
+            });
+        }
     }
     
     console.log(`✅ Added new address entry with index: ${index}`);

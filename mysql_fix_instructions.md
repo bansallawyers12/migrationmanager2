@@ -57,3 +57,4 @@ After fixing permissions, try starting MySQL in XAMPP Control Panel. If it start
 
 
 
+
