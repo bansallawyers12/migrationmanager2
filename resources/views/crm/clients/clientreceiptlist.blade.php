@@ -103,6 +103,11 @@
         font-weight: 700;
     }
 
+    .listing-container .Validate_Receipt[style*="background-color: #394eea"],
+    .Validate_Receipt[style*="background-color: #394eea"] {
+        color: white !important;
+    }
+
     .listing-container .Validate_Receipt:hover {
         background: rgba(255, 255, 255, 0.95) !important;
     }
@@ -469,7 +474,7 @@
                                 </button>
                             @endif
 
-                            <button class="btn btn-primary Validate_Receipt" style="background-color: #394eea !important;">
+                            <button class="btn btn-primary Validate_Receipt" style="background-color: #394eea !important; color: white !important;">
                                 <i class="fas fa-check-circle"></i>
                                 Validate Receipt
                             </button>

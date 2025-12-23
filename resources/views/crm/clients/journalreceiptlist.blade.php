@@ -129,6 +129,11 @@
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
+    .btn-primary.Validate_Receipt[style*="background-color: #394eea"],
+    .Validate_Receipt[style*="background-color: #394eea"] {
+        color: white !important;
+    }
+
     .btn-primary.Validate_Receipt:hover {
         background: rgba(255, 255, 255, 0.95) !important;
         transform: translateY(-2px);
@@ -457,7 +462,7 @@
                     <div class="d-flex align-items-center">
                         <a href="{{ route('clients.analytics-dashboard') }}" class="btn btn-theme btn-theme-sm mr-2" title="View Financial Analytics Dashboard"><i class="fas fa-chart-line"></i> Analytics</a>
                         <a href="javascript:;" style="background: #394eea;color: white;" class="btn btn-theme btn-theme-sm filter_btn mr-2"><i class="fas fa-filter"></i> Filter</a>
-                        <button class="btn btn-primary Validate_Receipt" style="background-color: #394eea !important;">
+                        <button class="btn btn-primary Validate_Receipt" style="background-color: #394eea !important; color: white !important;">
                             <i class="fas fa-check-circle"></i>
                             Validate Receipt
                         </button>

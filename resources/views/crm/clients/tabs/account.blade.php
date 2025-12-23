@@ -83,6 +83,65 @@
                 Funds held in trust/client account on behalf of the client.
             </p>
             
+            <!-- Date Filter Section -->
+            <div class="date-filter-section" style="margin-bottom: 15px; padding: 15px; background: #ffffff; border: 1px solid #dee2e6; border-radius: 5px;">
+                <h5 style="margin-bottom: 15px; font-size: 14px; font-weight: 600; color: #495057;">
+                    <i class="fas fa-calendar-alt"></i> Date Filter
+                </h5>
+                
+                <!-- Hidden field to track filter type -->
+                <input type="hidden" id="account-date-filter-type" value="">
+                
+                <!-- Quick Filter Chips -->
+                <div class="quick-filters" style="margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 8px;">
+                    <span class="quick-filter-chip account-quick-filter" data-filter="today" style="padding: 6px 12px; background: #e9ecef; border: 1px solid #ced4da; border-radius: 4px; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; gap: 5px;">
+                        <i class="fas fa-calendar-day"></i> Today
+                    </span>
+                    <span class="quick-filter-chip account-quick-filter" data-filter="this_week" style="padding: 6px 12px; background: #e9ecef; border: 1px solid #ced4da; border-radius: 4px; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; gap: 5px;">
+                        <i class="fas fa-calendar-week"></i> This Week
+                    </span>
+                    <span class="quick-filter-chip account-quick-filter" data-filter="this_month" style="padding: 6px 12px; background: #e9ecef; border: 1px solid #ced4da; border-radius: 4px; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; gap: 5px;">
+                        <i class="fas fa-calendar"></i> This Month
+                    </span>
+                    <span class="quick-filter-chip account-quick-filter" data-filter="last_month" style="padding: 6px 12px; background: #e9ecef; border: 1px solid #ced4da; border-radius: 4px; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; gap: 5px;">
+                        <i class="fas fa-calendar-minus"></i> Last Month
+                    </span>
+                    <span class="quick-filter-chip account-quick-filter" data-filter="last_30_days" style="padding: 6px 12px; background: #e9ecef; border: 1px solid #ced4da; border-radius: 4px; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; gap: 5px;">
+                        <i class="fas fa-calendar-alt"></i> Last 30 Days
+                    </span>
+                    <span class="quick-filter-chip account-quick-filter" data-filter="last_90_days" style="padding: 6px 12px; background: #e9ecef; border: 1px solid #ced4da; border-radius: 4px; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; gap: 5px;">
+                        <i class="fas fa-calendar-alt"></i> Last 90 Days
+                    </span>
+                    <span class="quick-filter-chip account-quick-filter" data-filter="this_year" style="padding: 6px 12px; background: #e9ecef; border: 1px solid #ced4da; border-radius: 4px; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; gap: 5px;">
+                        <i class="fas fa-calendar-alt"></i> This Year
+                    </span>
+                    <span class="quick-filter-chip account-quick-filter" data-filter="last_year" style="padding: 6px 12px; background: #e9ecef; border: 1px solid #ced4da; border-radius: 4px; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; gap: 5px;">
+                        <i class="fas fa-calendar-minus"></i> Last Year
+                    </span>
+                </div>
+
+                <div class="divider-text" style="text-align: center; margin: 10px 0; color: #6c757d; font-size: 12px; font-weight: 500;">OR CUSTOM RANGE</div>
+
+                <!-- Custom Date Range -->
+                <div class="date-range-wrapper" style="display: flex; align-items: flex-end; gap: 10px; margin-bottom: 10px;">
+                    <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                        <label for="account-from-date" style="font-size: 12px; font-weight: 500; color: #495057; margin-bottom: 5px; display: block;">
+                            <i class="fas fa-calendar-plus"></i> FROM DATE
+                        </label>
+                        <input type="text" id="account-from-date" class="form-control account-datepicker" autocomplete="off" placeholder="dd/mm/yyyy" style="font-size: 12px; padding: 6px 10px;">
+                    </div>
+                    
+                    <span style="margin-bottom: 24px; color: #6c757d; font-weight: bold;">→</span>
+                    
+                    <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                        <label for="account-to-date" style="font-size: 12px; font-weight: 500; color: #495057; margin-bottom: 5px; display: block;">
+                            <i class="fas fa-calendar-check"></i> TO DATE
+                        </label>
+                        <input type="text" id="account-to-date" class="form-control account-datepicker" autocomplete="off" placeholder="dd/mm/yyyy" style="font-size: 12px; padding: 6px 10px;">
+                    </div>
+                </div>
+            </div>
+            
             <div class="ledger-filters" style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
                 <strong>🔍 Ledger Filters:</strong>
                 <label style="margin-left: 10px;">
