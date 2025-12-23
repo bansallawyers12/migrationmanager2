@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\CRM\ApplicationsController;
+use App\Http\Controllers\CRM\ClientPortalController;
 use App\Http\Controllers\CRM\OfficeVisitController;
 // WARNING: AppointmentsController has been deleted - old appointment system removed
 // use App\Http\Controllers\CRM\AppointmentsController;
@@ -22,31 +22,33 @@ use App\Http\Controllers\HomeController;
 */
 
 /*---------- Applications Management ----------*/
-Route::get('/applications', [ApplicationsController::class, 'index'])->name('applications.index');
-Route::get('/applications/create', [ApplicationsController::class, 'create'])->name('applications.create');
-Route::get('/applications/detail/{id}', [ApplicationsController::class, 'detail'])->name('applications.detail');
-Route::post('/applications-import', [ApplicationsController::class, 'import'])->name('applications.import');
+// REMOVED - Standalone applications pages (not linked from anywhere, all functionality moved to client portal tab)
+// Route::get('/applications', [ClientPortalController::class, 'index'])->name('applications.index');
+// Route::get('/applications/create', [ClientPortalController::class, 'create'])->name('applications.create');
+// Route::get('/applications/detail/{id}', [ClientPortalController::class, 'detail'])->name('applications.detail');
+// Route::post('/applications-import', [ClientPortalController::class, 'import'])->name('applications.import');
 
 /*---------- Application Operations ----------*/
-Route::get('/getapplicationdetail', [ApplicationsController::class, 'getapplicationdetail']);
-Route::post('/load-application-insert-update-data', [ApplicationsController::class, 'loadApplicationInsertUpdateData']);
-Route::get('/updatestage', [ApplicationsController::class, 'updatestage']);
-Route::get('/completestage', [ApplicationsController::class, 'completestage']);
-Route::get('/updatebackstage', [ApplicationsController::class, 'updatebackstage']);
-Route::get('/get-applications-logs', [ApplicationsController::class, 'getapplicationslogs']);
-Route::get('/get-applications', [ApplicationsController::class, 'getapplications']);
+// REMOVED - Old application detail route (replaced by modern client portal tab)
+// Route::get('/getapplicationdetail', [ClientPortalController::class, 'getapplicationdetail']);
+Route::post('/load-application-insert-update-data', [ClientPortalController::class, 'loadApplicationInsertUpdateData']);
+Route::get('/updatestage', [ClientPortalController::class, 'updatestage']);
+Route::get('/completestage', [ClientPortalController::class, 'completestage']);
+Route::get('/updatebackstage', [ClientPortalController::class, 'updatebackstage']);
+Route::get('/get-applications-logs', [ClientPortalController::class, 'getapplicationslogs']);
+Route::get('/get-applications', [ClientPortalController::class, 'getapplications']);
 
-Route::post('/discontinue_application', [ApplicationsController::class, 'discontinue_application']);
-Route::post('/revert_application', [ApplicationsController::class, 'revert_application']);
+Route::post('/discontinue_application', [ClientPortalController::class, 'discontinue_application']);
+Route::post('/revert_application', [ClientPortalController::class, 'revert_application']);
 
 /*---------- Application Notes & Communication ----------*/
-Route::post('/create-app-note', [ApplicationsController::class, 'addNote']);
-Route::get('/getapplicationnotes', [ApplicationsController::class, 'getapplicationnotes']);
-Route::post('/application-sendmail', [ApplicationsController::class, 'applicationsendmail']);
+Route::post('/create-app-note', [ClientPortalController::class, 'addNote']);
+Route::get('/getapplicationnotes', [ClientPortalController::class, 'getapplicationnotes']);
+Route::post('/application-sendmail', [ClientPortalController::class, 'applicationsendmail']);
 
 /*---------- Application Messages (Client Portal) ----------*/
-Route::get('/clients/matter-messages', [ApplicationsController::class, 'getMatterMessages'])->name('clients.matter-messages');
-Route::post('/clients/send-message', [ApplicationsController::class, 'sendMessageToClient'])->name('clients.send-message');
+Route::get('/clients/matter-messages', [ClientPortalController::class, 'getMatterMessages'])->name('clients.matter-messages');
+Route::post('/clients/send-message', [ClientPortalController::class, 'sendMessageToClient'])->name('clients.send-message');
 
 /*---------- Broadcasting Auth ----------*/
 // Broadcasting authentication is handled by Laravel's built-in BroadcastServiceProvider
@@ -54,30 +56,33 @@ Route::post('/clients/send-message', [ApplicationsController::class, 'sendMessag
 // The /broadcasting/auth route is automatically registered by Broadcast::routes()
 
 /*---------- Application Updates ----------*/
-Route::get('/application/updateintake', [ApplicationsController::class, 'updateintake']);
-Route::get('/application/updatedates', [ApplicationsController::class, 'updatedates']);
-Route::get('/application/updateexpectwin', [ApplicationsController::class, 'updateexpectwin']);
-Route::get('/application/getapplicationbycid', [ApplicationsController::class, 'getapplicationbycid']);
+Route::get('/application/updateintake', [ClientPortalController::class, 'updateintake']);
+Route::get('/application/updatedates', [ClientPortalController::class, 'updatedates']);
+Route::get('/application/updateexpectwin', [ClientPortalController::class, 'updateexpectwin']);
+// REMOVED - Unused route (no references found in views or JavaScript)
+// Route::get('/application/getapplicationbycid', [ClientPortalController::class, 'getapplicationbycid']);
 
 /*---------- Application Agents ----------*/
-Route::post('/application/spagent_application', [ApplicationsController::class, 'spagent_application']);
-Route::post('/application/sbagent_application', [ApplicationsController::class, 'sbagent_application']);
-Route::post('/application/application_ownership', [ApplicationsController::class, 'application_ownership']);
-Route::get('/superagent', [ApplicationsController::class, 'superagent']);
-Route::get('/subagent', [ApplicationsController::class, 'subagent']);
+Route::post('/application/spagent_application', [ClientPortalController::class, 'spagent_application']);
+Route::post('/application/sbagent_application', [ClientPortalController::class, 'sbagent_application']);
+Route::post('/application/application_ownership', [ClientPortalController::class, 'application_ownership']);
+Route::get('/superagent', [ClientPortalController::class, 'superagent']);
+Route::get('/subagent', [ClientPortalController::class, 'subagent']);
 
 /*---------- Application Documents ----------*/
-Route::get('/application/export/pdf/{id}', [ApplicationsController::class, 'exportapplicationpdf']);
-Route::post('/add-checklists', [ApplicationsController::class, 'addchecklists']);
-Route::post('/application/checklistupload', [ApplicationsController::class, 'checklistupload']);
-Route::get('/deleteapplicationdocs', [ApplicationsController::class, 'deleteapplicationdocs']);
-Route::get('/application/publishdoc', [ApplicationsController::class, 'publishdoc']);
-Route::post('/application/approve-document', [ApplicationsController::class, 'approveDocument']);
-Route::post('/application/reject-document', [ApplicationsController::class, 'rejectDocument']);
-Route::get('/application/download-document', [ApplicationsController::class, 'downloadDocument']);
+// REMOVED - Application PDF export route (functionality was broken and unused)
+// Route::get('/application/export/pdf/{id}', [ClientPortalController::class, 'exportapplicationpdf']);
+Route::post('/add-checklists', [ClientPortalController::class, 'addchecklists']);
+Route::post('/application/checklistupload', [ClientPortalController::class, 'checklistupload']);
+Route::get('/deleteapplicationdocs', [ClientPortalController::class, 'deleteapplicationdocs']);
+Route::get('/application/publishdoc', [ClientPortalController::class, 'publishdoc']);
+Route::post('/application/approve-document', [ClientPortalController::class, 'approveDocument']);
+Route::post('/application/reject-document', [ClientPortalController::class, 'rejectDocument']);
+Route::get('/application/download-document', [ClientPortalController::class, 'downloadDocument']);
 
 /*---------- Migration Index ----------*/
-Route::get('/migration', [ApplicationsController::class, 'migrationindex'])->name('migration.index');
+// REMOVED - Standalone migration index page (not linked from anywhere, orphaned page)
+// Route::get('/migration', [ClientPortalController::class, 'migrationindex'])->name('migration.index');
 
 /*
 |--------------------------------------------------------------------------

@@ -1406,10 +1406,6 @@ function customValidate(formName, savetype = '')
 					// Application fee form has been removed
 					}else if(formName == 'applicationfeeform'){
 						$('.custom-error-msg').html('<span class="alert alert-danger">Application fee options feature has been removed.</span>');
-
-								}
-							}
-						});
 					}else if(formName == 'servicefeeform'){
 
 						var myform = document.getElementById('servicefeeform');

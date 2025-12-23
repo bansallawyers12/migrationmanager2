@@ -324,7 +324,7 @@ Add to `C:\Windows\System32\drivers\etc\hosts`:
   
 - **Controllers**: 
   - `ClientsController` - Client CRUD operations and relationship management
-  - `ApplicationsController` - Application tracking and workflow management
+  - `ClientPortalController` - Client portal operations including application tracking, workflow management, and portal user management
   - `InvoiceController` - Invoice generation, payment processing, and schedules
   - `AppointmentsController` - Appointment scheduling and calendar management (NOTE: This controller has been deleted - old appointment system removed. New system uses `BookingAppointmentsController`)
   - `DocumentController` - Document upload, download, and signature handling

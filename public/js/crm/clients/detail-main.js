@@ -6064,20 +6064,14 @@ Bansal Immigration`;
 
                                     // DEPRECATED: Appointment system removed - getDisabledDateTime route no longer exists
                                     // Commenting out AJAX call to prevent errors
-                                    /*
-                                    $.ajax({
-
-                                        url:window.ClientDetailConfig.urls.getDisabledDateTime,
-
-                                        headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
-
-                                        type:'POST',
-
-                                        data:{service_id:service_id,sel_date:date, enquiry_item:enquiry_item,inperson_address:inperson_address,slot_overwrite:slot_overwrite},
-
-                                        datatype:'json',
-
-                                        success:function(res){
+                                    // Note: Nested comment removed - this AJAX call is already inside the main commented block
+                                    // $.ajax({
+                                    // url:window.ClientDetailConfig.urls.getDisabledDateTime,
+                                    // headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+                                    // type:'POST',
+                                    // data:{service_id:service_id,sel_date:date, enquiry_item:enquiry_item,inperson_address:inperson_address,slot_overwrite:slot_overwrite},
+                                    // datatype:'json',
+                                    // success:function(res){
 
                                             $('.timeslots').html('');
 
@@ -6197,61 +6191,58 @@ Bansal Immigration`;
                                             console.error('Response:', xhr.responseText);
                                         }
 
-                                    });
-                                    */
+                                    // });
                                     // End of deprecated getDisabledDateTime AJAX call
 
                                 });
 
+                            if(id != ""){
 
+                                var v = 'appointment_details';
 
-                                if(id != ""){
+                                $('#myTab .nav-item #services-tab').addClass('disabled');
 
-                                    var v = 'appointment_details';
+                                $('#myTab .nav-item #appointment_details-tab').removeClass('disabled');
 
-                                    $('#myTab .nav-item #services-tab').addClass('disabled');
-
-                                    $('#myTab .nav-item #appointment_details-tab').removeClass('disabled');
-
-                                    $('#myTab a[href="#'+v+'"]').trigger('click');
-
-                                } else {
-
-                                    var v = 'services';
-
-                                    $('#myTab .nav-item #services-tab').removeClass('disabled');
-
-                                    $('#myTab .nav-item #appointment_details-tab').addClass('disabled');
-
-                                    $('#myTab a[href="#'+v+'"]').trigger('click');
-
-                                }
-
-                                $('input[name="service_id"]').val($("input[name='radioGroup']:checked").val());
+                                $('#myTab a[href="#'+v+'"]').trigger('click');
 
                             } else {
 
-                                $('input[name="service_id"]').val('');
-
                                 var v = 'services';
-
-                                var errorMessage = obj.message || 'There is a problem in our system. please try again';
-                                alert(errorMessage);
 
                                 $('#myTab .nav-item #services-tab').removeClass('disabled');
 
                                 $('#myTab .nav-item #appointment_details-tab').addClass('disabled');
 
+                                $('#myTab a[href="#'+v+'"]').trigger('click');
+
                             }
-                        } catch (e) {
-                            console.error('Error parsing response:', e);
-                            console.error('Response text:', res);
+
+                            $('input[name="service_id"]').val($("input[name='radioGroup']:checked").val());
+
+                        } else {
+
                             $('input[name="service_id"]').val('');
+
                             var v = 'services';
-                            alert('There is a problem in our system. please try again');
+
+                            var errorMessage = obj.message || 'There is a problem in our system. please try again';
+                            alert(errorMessage);
+
                             $('#myTab .nav-item #services-tab').removeClass('disabled');
+
                             $('#myTab .nav-item #appointment_details-tab').addClass('disabled');
+
                         }
+                    } catch (e) {
+                        console.error('Error parsing response:', e);
+                        console.error('Response text:', res);
+                        $('input[name="service_id"]').val('');
+                        var v = 'services';
+                        alert('There is a problem in our system. please try again');
+                        $('#myTab .nav-item #services-tab').removeClass('disabled');
+                        $('#myTab .nav-item #appointment_details-tab').addClass('disabled');
+                    }
 
                     },
                     error: function(xhr, status, error) {
@@ -6280,10 +6271,10 @@ Bansal Immigration`;
                         $('#myTab .nav-item #appointment_details-tab').addClass('disabled');
                         $('#myTab a[href="#'+v+'"]').trigger('click');
                     }
+
+                });
                     */
                     // End of deprecated getDateTimeBackend AJAX call
-
-                })
 
             }
 
