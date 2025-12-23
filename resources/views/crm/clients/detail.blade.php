@@ -58,7 +58,6 @@ use App\Http\Controllers\Controller;
                         <a href="javascript:;" data-id="{{@$fetchedData->id}}" data-email="{{@$fetchedData->email}}" data-name="{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}" class="clientemail" title="Compose Mail"><i class="fa fa-envelope"></i></a>
                         <a href="javascript:;" class="send-sms-btn" data-client-id="{{@$fetchedData->id}}" data-client-name="{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}" title="Send SMS"><i class="fas fa-sms"></i></a>
                         <a href="javascript:;" datatype="not_picked_call" class="not_picked_call" title="Not Picked Call"><i class="fas fa-mobile-alt"></i></a>
-                        <a href="javascript:;" data-toggle="modal" data-target="#create_appoint" title="Add Appointment"><i class="fas fa-calendar-plus"></i></a>
                     </div>
                     
                 </div>
@@ -453,7 +452,6 @@ use App\Http\Controllers\Controller;
     @include('crm.clients.tabs.activity_feed')
 </div>
 
-@include('crm.clients.modals.appointment')
 @include('crm.clients.addclientmodal')
 @include('crm.clients.editclientmodal')
 @include('crm.clients.modals.edit-matter-office')
