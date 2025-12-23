@@ -19,13 +19,14 @@ return new class extends Migration
         $hasIsMigrationAgent = Schema::hasColumn('admins', 'is_migration_agent');
         $hasMarnNumber = Schema::hasColumn('admins', 'marn_number');
         $hasBusinessFax = Schema::hasColumn('admins', 'business_fax');
+        $hasCompanyName = Schema::hasColumn('admins', 'company_name');
         $hasBusinessAddress = Schema::hasColumn('admins', 'business_address');
         $hasBusinessPhone = Schema::hasColumn('admins', 'business_phone');
         $hasBusinessMobile = Schema::hasColumn('admins', 'business_mobile');
         $hasBusinessEmail = Schema::hasColumn('admins', 'business_email');
         $hasTaxNumber = Schema::hasColumn('admins', 'tax_number');
         
-        Schema::table('admins', function (Blueprint $table) use ($hasBusinessFax, $hasIsMigrationAgent, $hasMarnNumber, $hasBusinessAddress, $hasBusinessPhone, $hasBusinessMobile, $hasBusinessEmail, $hasTaxNumber) {
+        Schema::table('admins', function (Blueprint $table) use ($hasBusinessFax, $hasIsMigrationAgent, $hasMarnNumber, $hasCompanyName, $hasBusinessAddress, $hasBusinessPhone, $hasBusinessMobile, $hasBusinessEmail, $hasTaxNumber) {
             // Add core migration agent fields first
             if (!$hasIsMigrationAgent) {
                 $table->tinyInteger('is_migration_agent')->default(0)->nullable()
@@ -35,6 +36,17 @@ return new class extends Migration
             if (!$hasMarnNumber) {
                 $table->string('marn_number')->nullable()
                     ->comment('Migration Agent Registration Number');
+            }
+            
+            // Add business name (company name)
+            if (!$hasCompanyName) {
+                if ($hasMarnNumber) {
+                    $table->string('company_name')->nullable()->after('marn_number')
+                        ->comment('Business/Company Name');
+                } else {
+                    $table->string('company_name')->nullable()
+                        ->comment('Business/Company Name');
+                }
             }
             
             // Add business-related fields
@@ -103,6 +115,7 @@ return new class extends Migration
         $addedFields = [];
         if (!$hasIsMigrationAgent) $addedFields[] = 'is_migration_agent';
         if (!$hasMarnNumber) $addedFields[] = 'marn_number';
+        if (!$hasCompanyName) $addedFields[] = 'company_name';
         if (!$hasBusinessAddress) $addedFields[] = 'business_address';
         if (!$hasBusinessPhone) $addedFields[] = 'business_phone';
         if (!$hasBusinessMobile) $addedFields[] = 'business_mobile';
@@ -134,17 +147,24 @@ return new class extends Migration
     }
 
     /**
-     * Check if an index exists
+     * Check if an index exists (works with both MySQL and PostgreSQL)
      */
     private function indexExists($table, $indexName)
     {
-        $indexes = DB::select("SHOW INDEX FROM {$table}");
-        foreach ($indexes as $index) {
-            if ($index->Key_name === $indexName) {
-                return true;
+        try {
+            $sm = Schema::getConnection()->getDoctrineSchemaManager();
+            $indexesFound = $sm->listTableIndexes($table);
+            
+            foreach ($indexesFound as $index) {
+                if ($index->getName() === $indexName) {
+                    return true;
+                }
             }
+            return false;
+        } catch (\Exception $e) {
+            // If we can't check, assume it doesn't exist to be safe
+            return false;
         }
-        return false;
     }
 
     /**
@@ -175,6 +195,9 @@ return new class extends Migration
             if (Schema::hasColumn('admins', 'marn_number')) {
                 $columnsToDrop[] = 'marn_number';
             }
+            if (Schema::hasColumn('admins', 'company_name')) {
+                $columnsToDrop[] = 'company_name';
+            }
             if (Schema::hasColumn('admins', 'business_address')) {
                 $columnsToDrop[] = 'business_address';
             }
@@ -197,7 +220,7 @@ return new class extends Migration
         });
         
         echo "\n✅ Rollback completed - migration agent fields removed\n";
-        echo "   - Dropped columns: is_migration_agent, marn_number, business_address, business_phone, business_mobile, business_email, tax_number\n";
+        echo "   - Dropped columns: is_migration_agent, marn_number, company_name, business_address, business_phone, business_mobile, business_email, tax_number\n";
         echo "   - Dropped indexes on is_migration_agent and marn_number\n\n";
     }
 };

@@ -200,8 +200,8 @@ class Form956Controller extends Controller
             $agent_address_parts_line3 = "";
             $agent_address_parts_postcode = "";
 
-            $agent_address = $form->agent->address;
-            if($agent_address !=  ''){
+            $agent_address = $form->agent->business_address;
+            if($agent_address != ''){
                 $agent_address_parts = $this->formatAddressForPDFAgent($agent_address);
                 //dd($agent_address_parts);
                 if(!empty($agent_address_parts)){
@@ -242,7 +242,7 @@ class Form956Controller extends Controller
                 'mg.org name' => $form->agent->company_name,
                 'mg.marn' => $form->agent->marn_number ?? '',
                 'mg.lpn' => $form->agent->legal_practitioner_number ?? '',
-                'mg.email' => $form->agent->email ?? '',
+                'mg.email' => $form->agent->business_email ?? '',
                 'mg.email agree' => 'on',
                 'mg.comm' => 'Yes',
 
@@ -253,7 +253,7 @@ class Form956Controller extends Controller
 
                 'mg.postal str' => 'AS ABOVE',
 
-                'mg.mob' => $form->agent->business_mobile ?? $form->agent->phone ?? '',
+                'mg.mob' => $form->agent->business_mobile ?? $form->agent->business_phone ?? '',
 
                  // Form type
                 'mg.app' => $form->form_type === 'appointment' ? 'No' : 'Yes',
@@ -344,38 +344,92 @@ class Form956Controller extends Controller
 
     //Split Agent address
     public function formatAddressForPDFAgent($fullAddress) {
-        // Extract postcode (4-digit at the end)
-        preg_match('/\s*(\d{4})$/', $fullAddress, $matches);
+        if (empty($fullAddress)) {
+            return [
+                'line1' => '',
+                'line2' => '',
+                'line3' => '',
+                'postcode' => ''
+            ];
+        }
+
+        // Clean the address - remove extra whitespace
+        $fullAddress = trim(preg_replace('/\s+/', ' ', $fullAddress));
+
+        // Extract postcode (4-digit at the end, possibly with spaces)
+        preg_match('/\s*(\d{4})\s*$/', $fullAddress, $matches);
         $postcode = $matches[1] ?? '';
 
-        // Remove postcode
-        $withoutPostcode = trim(preg_replace('/\s*\d{4}$/', '', $fullAddress));
+        // Remove postcode from address
+        $withoutPostcode = trim(preg_replace('/\s*\d{4}\s*$/', '', $fullAddress));
 
         $line1 = $line2 = $line3 = '';
 
         // Split by comma
         if (strpos($withoutPostcode, ',') !== false) {
             $parts = array_map('trim', explode(',', $withoutPostcode));
+            
+            // Remove empty parts
+            $parts = array_filter($parts, function($part) {
+                return !empty($part);
+            });
+            $parts = array_values($parts);
 
-            $line1 = $parts[0] ?? ''; // "123 Immigration Street"
+            // First part is always street address
+            $line1 = $parts[0] ?? '';
 
-            // Handle "Melbourne VIC" in second part
-            if (!empty($parts[1])) {
-                $secondPart = explode(' ', $parts[1]);
-
-                // First word: city
-                $line2 = $secondPart[0] ?? '';
-
-                // Remaining: state
-                $line3 = isset($secondPart[1]) ? implode(' ', array_slice($secondPart, 1)) : '';
+            // Handle remaining parts (city, state, etc.)
+            if (isset($parts[1])) {
+                $remaining = trim($parts[1]);
+                
+                // Try to split city and state
+                // Common Australian state abbreviations
+                $statePattern = '/\b(NSW|VIC|QLD|SA|WA|TAS|NT|ACT)\b/i';
+                
+                if (preg_match($statePattern, $remaining, $stateMatches)) {
+                    // State found - split at state
+                    $statePos = strpos(strtoupper($remaining), strtoupper($stateMatches[0]));
+                    $line2 = trim(substr($remaining, 0, $statePos)); // City
+                    $line3 = trim(substr($remaining, $statePos)); // State
+                } else {
+                    // No state abbreviation found, try to split by space
+                    $words = preg_split('/\s+/', $remaining);
+                    if (count($words) > 1) {
+                        // Last word might be state, rest is city
+                        $line2 = implode(' ', array_slice($words, 0, -1)); // City
+                        $line3 = end($words); // State (might not be abbreviation)
+                    } else {
+                        // Single word - assume it's city
+                        $line2 = $remaining;
+                    }
+                }
+            }
+        } else {
+            // No comma found - try to parse as single line
+            // Look for state abbreviation
+            $statePattern = '/\b(NSW|VIC|QLD|SA|WA|TAS|NT|ACT)\b/i';
+            if (preg_match($statePattern, $withoutPostcode, $stateMatches, PREG_OFFSET_CAPTURE)) {
+                $statePos = $stateMatches[0][1];
+                $line1 = trim(substr($withoutPostcode, 0, $statePos)); // Street
+                $remaining = trim(substr($withoutPostcode, $statePos));
+                $words = preg_split('/\s+/', $remaining);
+                if (count($words) > 1) {
+                    $line2 = implode(' ', array_slice($words, 0, -1)); // City
+                    $line3 = end($words); // State
+                } else {
+                    $line3 = $remaining; // Just state
+                }
+            } else {
+                // No state found - put everything in line1
+                $line1 = $withoutPostcode;
             }
         }
 
         return [
-            'line1' => $line1,   // 123 Immigration Street
-            'line2' => $line2,   // Melbourne
-            'line3' => $line3,   // VIC
-            'postcode' => $postcode // 3000
+            'line1' => $line1,   // Street address
+            'line2' => $line2,   // City/Suburb
+            'line3' => $line3,   // State
+            'postcode' => $postcode // Postcode
         ];
     }
 
@@ -495,8 +549,8 @@ class Form956Controller extends Controller
             $agent_address_parts_line3 = "";
             $agent_address_parts_postcode = "";
 
-            $agent_address = $form->agent->address;
-            if($agent_address !=  ''){
+            $agent_address = $form->agent->business_address;
+            if($agent_address != ''){
                 $agent_address_parts = $this->formatAddressForPDFAgent($agent_address); //dd($agent_address_parts);
                 if(!empty($agent_address_parts)){
                     $agent_address_parts_line1 = $agent_address_parts['line1'];
@@ -536,7 +590,7 @@ class Form956Controller extends Controller
                 'mg.org name' => $form->agent->company_name,
                 'mg.marn' => $form->agent->marn_number ?? '',
                 'mg.lpn' => $form->agent->legal_practitioner_number ?? '',
-                'mg.email' => $form->agent->email ?? '',
+                'mg.email' => $form->agent->business_email ?? '',
                 'mg.email agree' => 'on',
                 'mg.comm' => 'Yes',
 
@@ -546,7 +600,7 @@ class Form956Controller extends Controller
                 'mg.resadd pc' =>  $agent_address_parts_postcode,
 
                 'mg.postal str' => 'AS ABOVE',
-                'mg.mob' => $form->agent->business_mobile ?? $form->agent->phone ?? '',
+                'mg.mob' => $form->agent->business_mobile ?? $form->agent->business_phone ?? '',
 
                 // Form type
                 'mg.app' => $form->form_type === 'appointment' ? 'No' : 'Yes',
