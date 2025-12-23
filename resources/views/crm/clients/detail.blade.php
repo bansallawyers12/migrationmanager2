@@ -981,17 +981,35 @@ use App\Http\Controllers\Controller;
 							<div class="form-group">
 								<label for="super_agent">Tags <span class="span_req">*</span></label>
 								<select data-valid="required" multiple class="tagsselec form-control super_tag" id="tag" name="tag[]" data-tags="true">
-								<?php $r = [];
+								<?php 
+								$r = [];
 								if($fetchedData->tagname != ''){
 									$r = explode(',', $fetchedData->tagname);
 								}
+								
+								// Separate normal and red tags
+								$normalTags = \App\Models\Tag::normal()->orderBy('name')->get();
+								$redTags = \App\Models\Tag::red()->orderBy('name')->get();
 								?>
 									<option value="">Please Select</option>
-									<?php $stagd = \App\Models\Tag::all(); ?>
-									@foreach($stagd as $sa)
-										<option <?php if(in_array($sa->id, $r)){ echo 'selected'; } ?> value="{{$sa->name}}">{{$sa->name}}</option>
-									@endforeach
+									@if($normalTags->count() > 0)
+										<optgroup label="Normal Tags">
+											@foreach($normalTags as $sa)
+												<option <?php if(in_array($sa->id, $r)){ echo 'selected'; } ?> value="{{$sa->name}}" data-tag-type="normal">{{$sa->name}}</option>
+											@endforeach
+										</optgroup>
+									@endif
+									@if($redTags->count() > 0)
+										<optgroup label="Red Tags (Hidden)">
+											@foreach($redTags as $sa)
+												<option <?php if(in_array($sa->id, $r)){ echo 'selected'; } ?> value="{{$sa->name}}" data-tag-type="red" style="color: #dc3545;">{{$sa->name}} <i class="fas fa-exclamation-triangle"></i></option>
+											@endforeach
+										</optgroup>
+									@endif
 								</select>
+								<small class="form-text text-muted">
+									<i class="fas fa-info-circle"></i> Red tags are hidden by default on client detail pages.
+								</small>
 
 							</div>
 						</div>

@@ -5984,252 +5984,293 @@ Bansal Immigration`;
 
                     success:function(res){
 
-                        var obj = JSON.parse(res);
+                        try {
+                            var obj = JSON.parse(res);
 
-                        if(obj.success){
+                            if(obj.success){
 
-                            duration = obj.duration;
+                                duration = obj.duration;
 
-                            daysOfWeek =  obj.weeks;
+                                daysOfWeek =  obj.weeks;
 
-                            starttime =  obj.start_time;
+                                starttime =  obj.start_time;
 
-                            endtime =  obj.end_time;
+                                endtime =  obj.end_time;
 
-                            disabledtimeslotes = obj.disabledtimeslotes;
+                                disabledtimeslotes = obj.disabledtimeslotes;
 
-                            var datesForDisable = obj.disabledatesarray;
+                                var datesForDisable = obj.disabledatesarray;
 
 
 
-                            $('#datetimepicker').datepicker({
+                                $('#datetimepicker').datepicker({
 
-                                inline: true,
+                                    inline: true,
 
-                                startDate: new Date(),
+                                    startDate: new Date(),
 
-                                datesDisabled: datesForDisable,
+                                    datesDisabled: datesForDisable,
 
-                                daysOfWeekDisabled: daysOfWeek,
+                                    daysOfWeekDisabled: daysOfWeek,
 
-                                format: 'dd/mm/yyyy'
+                                    format: 'dd/mm/yyyy'
 
-                            }).on('changeDate', function(e) {
+                                }).on('changeDate', function(e) {
 
-                                var date = e.format();
+                                    var date = e.format();
 
-                                var checked_date=e.date.toLocaleDateString('en-US');
+                                    var checked_date=e.date.toLocaleDateString('en-US');
 
 
 
-                                $('.showselecteddate').html(date);
+                                    $('.showselecteddate').html(date);
 
-                                $('input[name="date"]').val(date);
+                                    $('input[name="date"]').val(date);
 
-                                $('#timeslot_col_date').val(date);
+                                    $('#timeslot_col_date').val(date);
 
 
 
-                                // If slot overwrite is enabled, don't fetch/show time slots
+                                    // If slot overwrite is enabled, don't fetch/show time slots
 
-                                if( $('#slot_overwrite_hidden').val() == 1){
+                                    if( $('#slot_overwrite_hidden').val() == 1){
 
-                                    // User will select time from dropdown, not from slots
+                                        // User will select time from dropdown, not from slots
 
-                                    return false;
-
-                                }
-
-
-
-                                $('.timeslots').html('');
-
-                                var start_time = parseTime(starttime),
-
-                                end_time = parseTime(endtime),
-
-                                interval = parseInt(duration);
-
-                                var service_id = $("input[name='radioGroup']:checked").val(); //alert(service_id);
-
-                                var inperson_address = $("input[name='inperson_address']:checked").attr('data-val'); //alert(inperson_address);
-
-                                var enquiry_item  = $('.enquiry_item').val(); //alert(enquiry_item);
-
-                                var slot_overwrite = $('#slot_overwrite_hidden').val() == 1 ? 1 : 0; // Get slot overwrite value
-
-                                $.ajax({
-
-                                    url:window.ClientDetailConfig.urls.getDisabledDateTime,
-
-                                    headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
-
-                                    type:'POST',
-
-                                    data:{service_id:service_id,sel_date:date, enquiry_item:enquiry_item,inperson_address:inperson_address,slot_overwrite:slot_overwrite},
-
-                                    datatype:'json',
-
-                                    success:function(res){
-
-                                        $('.timeslots').html('');
-
-                                        var obj = JSON.parse(res);
-
-                                        if(obj.success){
-
-                                            
-
-                                            // If slot overwrite is enabled, don't generate time slots
-
-                                            if( $('#slot_overwrite_hidden').val() == 1){
-
-                                                // Slot overwrite enabled - user will use dropdown, don't show time slots
-
-                                                return false;
-
-                                            }
-
-
-
-                                            var objdisable = obj.disabledtimeslotes;
-
-                                           
-
-                                            var start_timer = start_time;
-
-                                            for(var i = start_time; i<end_time; i = i+interval){
-
-                                                var timeString = start_timer + interval;
-
-                                                // Prepend any date. Use your birthday.
-
-                                                const timeString12hr = new Date('1970-01-01T' + convertHours(start_timer) + 'Z')
-
-                                                .toLocaleTimeString('en-US',
-
-                                                    {timeZone:'UTC',hour12:true,hour:'numeric',minute:'numeric'}
-
-                                                );
-
-                                                const timetoString12hr = new Date('1970-01-01T' + convertHours(timeString) + 'Z')
-
-                                                .toLocaleTimeString('en-US',
-
-                                                    {timeZone:'UTC',hour12:true,hour:'numeric',minute:'numeric'}
-
-                                                );
-
-
-
-                                                var today_date = new Date();
-
-                                                //const options = { timeZone: 'Australia/Sydney'};
-
-                                                today_date = today_date.toLocaleDateString('en-US');
-
-
-
-                                                // current time
-
-                                                var now = new Date();
-
-                                                var nowTime = new Date('1/1/1900 ' + now.toLocaleTimeString(navigator.language, {
-
-                                                    hour: '2-digit',
-
-                                                    minute: '2-digit',
-
-                                                    hour12: true
-
-                                                }));
-
-
-
-                                                var current_time=nowTime.toLocaleTimeString('en-US');
-
-                                                if(objdisable.length > 0){
-
-                                                    if(jQuery.inArray(timeString12hr, objdisable) != -1  ) {
-
-
-
-                                                    } else if ((checked_date == today_date) && (current_time > timeString12hr || current_time > timetoString12hr)){
-
-                                                    } else{
-
-                                                        $('.timeslots').append('<div data-fromtime="'+timeString12hr+'" data-totime="'+timetoString12hr+'" style="cursor: pointer;" class="timeslot_col"><span>'+timeString12hr+'</span></div>');
-
-                                                    }
-
-                                                } else{
-
-                                                    if((checked_date == today_date) && (current_time > timeString12hr || current_time > timetoString12hr)){
-
-                                                    } else {
-
-                                                        $('.timeslots').append('<div data-fromtime="'+timeString12hr+'" data-totime="'+timetoString12hr+'" style="cursor: pointer;" class="timeslot_col"><span>'+timeString12hr+'</span></div>');
-
-                                                    }
-
-                                                }
-
-                                                start_timer = timeString;
-
-                                            }
-
-                                        }else{
-
-
-
-                                        }
+                                        return false;
 
                                     }
 
+
+
+                                    $('.timeslots').html('');
+
+                                    var start_time = parseTime(starttime),
+
+                                    end_time = parseTime(endtime),
+
+                                    interval = parseInt(duration);
+
+                                    var service_id = $("input[name='radioGroup']:checked").val(); //alert(service_id);
+
+                                    var inperson_address = $("input[name='inperson_address']:checked").attr('data-val'); //alert(inperson_address);
+
+                                    var enquiry_item  = $('.enquiry_item').val(); //alert(enquiry_item);
+
+                                    var slot_overwrite = $('#slot_overwrite_hidden').val() == 1 ? 1 : 0; // Get slot overwrite value
+
+                                    $.ajax({
+
+                                        url:window.ClientDetailConfig.urls.getDisabledDateTime,
+
+                                        headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+
+                                        type:'POST',
+
+                                        data:{service_id:service_id,sel_date:date, enquiry_item:enquiry_item,inperson_address:inperson_address,slot_overwrite:slot_overwrite},
+
+                                        datatype:'json',
+
+                                        success:function(res){
+
+                                            $('.timeslots').html('');
+
+                                            var obj = JSON.parse(res);
+
+                                            if(obj.success){
+
+                                                
+
+                                                // If slot overwrite is enabled, don't generate time slots
+
+                                                if( $('#slot_overwrite_hidden').val() == 1){
+
+                                                    // Slot overwrite enabled - user will use dropdown, don't show time slots
+
+                                                    return false;
+
+                                                }
+
+
+
+                                                var objdisable = obj.disabledtimeslotes;
+
+                                               
+
+                                                var start_timer = start_time;
+
+                                                for(var i = start_time; i<end_time; i = i+interval){
+
+                                                    var timeString = start_timer + interval;
+
+                                                    // Prepend any date. Use your birthday.
+
+                                                    const timeString12hr = new Date('1970-01-01T' + convertHours(start_timer) + 'Z')
+
+                                                    .toLocaleTimeString('en-US',
+
+                                                        {timeZone:'UTC',hour12:true,hour:'numeric',minute:'numeric'}
+
+                                                    );
+
+                                                    const timetoString12hr = new Date('1970-01-01T' + convertHours(timeString) + 'Z')
+
+                                                    .toLocaleTimeString('en-US',
+
+                                                        {timeZone:'UTC',hour12:true,hour:'numeric',minute:'numeric'}
+
+                                                    );
+
+
+
+                                                    var today_date = new Date();
+
+                                                    //const options = { timeZone: 'Australia/Sydney'};
+
+                                                    today_date = today_date.toLocaleDateString('en-US');
+
+
+
+                                                    // current time
+
+                                                    var now = new Date();
+
+                                                    var nowTime = new Date('1/1/1900 ' + now.toLocaleTimeString(navigator.language, {
+
+                                                        hour: '2-digit',
+
+                                                        minute: '2-digit',
+
+                                                        hour12: true
+
+                                                    }));
+
+
+
+                                                    var current_time=nowTime.toLocaleTimeString('en-US');
+
+                                                    if(objdisable.length > 0){
+
+                                                        if(jQuery.inArray(timeString12hr, objdisable) != -1  ) {
+
+
+
+                                                        } else if ((checked_date == today_date) && (current_time > timeString12hr || current_time > timetoString12hr)){
+
+                                                        } else{
+
+                                                            $('.timeslots').append('<div data-fromtime="'+timeString12hr+'" data-totime="'+timetoString12hr+'" style="cursor: pointer;" class="timeslot_col"><span>'+timeString12hr+'</span></div>');
+
+                                                        }
+
+                                                    } else{
+
+                                                        if((checked_date == today_date) && (current_time > timeString12hr || current_time > timetoString12hr)){
+
+                                                        } else {
+
+                                                            $('.timeslots').append('<div data-fromtime="'+timeString12hr+'" data-totime="'+timetoString12hr+'" style="cursor: pointer;" class="timeslot_col"><span>'+timeString12hr+'</span></div>');
+
+                                                        }
+
+                                                    }
+
+                                                    start_timer = timeString;
+
+                                                }
+
+                                            }else{
+
+
+
+                                            }
+
+                                        },
+                                        error: function(xhr, status, error) {
+                                            console.error('getDisabledDateTime error:', error);
+                                            console.error('Response:', xhr.responseText);
+                                        }
+
+                                    });
+
                                 });
 
-                            });
 
 
+                                if(id != ""){
 
-                            if(id != ""){
+                                    var v = 'appointment_details';
 
-                                var v = 'appointment_details';
+                                    $('#myTab .nav-item #services-tab').addClass('disabled');
 
-                                $('#myTab .nav-item #services-tab').addClass('disabled');
+                                    $('#myTab .nav-item #appointment_details-tab').removeClass('disabled');
 
-                                $('#myTab .nav-item #appointment_details-tab').removeClass('disabled');
+                                    $('#myTab a[href="#'+v+'"]').trigger('click');
 
-                                $('#myTab a[href="#'+v+'"]').trigger('click');
+                                } else {
+
+                                    var v = 'services';
+
+                                    $('#myTab .nav-item #services-tab').removeClass('disabled');
+
+                                    $('#myTab .nav-item #appointment_details-tab').addClass('disabled');
+
+                                    $('#myTab a[href="#'+v+'"]').trigger('click');
+
+                                }
+
+                                $('input[name="service_id"]').val($("input[name='radioGroup']:checked").val());
 
                             } else {
 
+                                $('input[name="service_id"]').val('');
+
                                 var v = 'services';
+
+                                var errorMessage = obj.message || 'There is a problem in our system. please try again';
+                                alert(errorMessage);
 
                                 $('#myTab .nav-item #services-tab').removeClass('disabled');
 
                                 $('#myTab .nav-item #appointment_details-tab').addClass('disabled');
 
-                                $('#myTab a[href="#'+v+'"]').trigger('click');
-
                             }
-
-                            $('input[name="service_id"]').val($("input[name='radioGroup']:checked").val());
-
-                        } else {
-
+                        } catch (e) {
+                            console.error('Error parsing response:', e);
+                            console.error('Response text:', res);
                             $('input[name="service_id"]').val('');
-
                             var v = 'services';
-
                             alert('There is a problem in our system. please try again');
-
                             $('#myTab .nav-item #services-tab').removeClass('disabled');
-
                             $('#myTab .nav-item #appointment_details-tab').addClass('disabled');
-
                         }
 
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('getDateTimeBackend AJAX error:', error);
+                        console.error('Status:', xhr.status);
+                        console.error('Response:', xhr.responseText);
+                        
+                        var errorMessage = 'There is a problem in our system. please try again';
+                        
+                        // Try to parse error response if available
+                        try {
+                            if (xhr.responseText) {
+                                var errorObj = JSON.parse(xhr.responseText);
+                                if (errorObj.message) {
+                                    errorMessage = errorObj.message;
+                                }
+                            }
+                        } catch (e) {
+                            // If parsing fails, use default message
+                        }
+                        
+                        $('input[name="service_id"]').val('');
+                        var v = 'services';
+                        alert(errorMessage);
+                        $('#myTab .nav-item #services-tab').removeClass('disabled');
+                        $('#myTab .nav-item #appointment_details-tab').addClass('disabled');
+                        $('#myTab a[href="#'+v+'"]').trigger('click');
                     }
 
                 })

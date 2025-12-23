@@ -3977,17 +3977,31 @@
                                     if($fetchedData->tagname != ''){
                                         $explodee = explode(',', $fetchedData->tagname);
                                     }
+                                    
+                                    // Separate normal and red tags
+                                    $normalTags = \App\Models\Tag::normal()->orderBy('name')->get();
+                                    $redTags = \App\Models\Tag::red()->orderBy('name')->get();
                                     ?>
                                     <select multiple class="form-control select2" name="tagname[]">
                                         <option value="">-- Search & Select tag --</option>
-                                        <?php
-                                        foreach(\App\Models\Tag::all() as $tags){
-                                            ?>
-                                            <option <?php if(in_array($tags->id, $explodee)){ echo 'selected'; } ?>  value="{{$tags->id}}">{{$tags->name}}</option>
-                                            <?php
-                                        }
-                                        ?>
+                                        @if($normalTags->count() > 0)
+                                            <optgroup label="Normal Tags">
+                                                @foreach($normalTags as $tags)
+                                                    <option <?php if(in_array($tags->id, $explodee)){ echo 'selected'; } ?> value="{{$tags->id}}">{{$tags->name}}</option>
+                                                @endforeach
+                                            </optgroup>
+                                        @endif
+                                        @if($redTags->count() > 0)
+                                            <optgroup label="Red Tags (Hidden)">
+                                                @foreach($redTags as $tags)
+                                                    <option <?php if(in_array($tags->id, $explodee)){ echo 'selected'; } ?> value="{{$tags->id}}" style="color: #dc3545;">{{$tags->name}} <i class="fas fa-exclamation-triangle"></i></option>
+                                                @endforeach
+                                            </optgroup>
+                                        @endif
                                     </select>
+                                    <small class="form-text text-muted">
+                                        <i class="fas fa-info-circle"></i> Red tags are hidden by default on client detail pages.
+                                    </small>
                                 </div>
                             </div>
 

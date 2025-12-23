@@ -40,6 +40,11 @@ class TagController extends Controller
 		//check authorization end 
 	
 		$query 		= Tag::with(['createddetail', 'updateddetail']); 
+		
+		// Filter by tag type if provided
+		if ($request->has('tag_type') && $request->tag_type != '') {
+			$query->where('tag_type', $request->tag_type);
+		}
 		 
 		$totalData 	= $query->count();	//for all data
 		
@@ -64,13 +69,16 @@ class TagController extends Controller
 		if ($request->isMethod('post')) 
 		{
 			$this->validate($request, [
-										'name' => 'required|max:255'
+										'name' => 'required|max:255',
+										'tag_type' => 'required|in:normal,red'
 									  ]);
 			
 			$requestData 		= 	$request->all();
 			
 			$obj				= 	new Tag; 
 			$obj->name	=	@$requestData['name'];
+			$obj->tag_type	=	@$requestData['tag_type'] ?? Tag::TYPE_NORMAL;
+			$obj->is_hidden	=	(@$requestData['tag_type'] === Tag::TYPE_RED) ? true : false;
 			$obj->created_by	=	Auth::user()->id;
 			$saved				=	$obj->save();  
 			
@@ -123,7 +131,8 @@ class TagController extends Controller
 		$requestData = $request->all();
 		
 		$this->validate($request, [										
-									'name' => 'required|max:255'
+									'name' => 'required|max:255',
+									'tag_type' => 'required|in:normal,red'
 								  ]);
 							  					  
 		$obj = Tag::find($id);
@@ -133,6 +142,8 @@ class TagController extends Controller
 		
 		$obj->updated_by = Auth::user()->id;			
 		$obj->name = @$requestData['name'];
+		$obj->tag_type = @$requestData['tag_type'] ?? Tag::TYPE_NORMAL;
+		$obj->is_hidden = (@$requestData['tag_type'] === Tag::TYPE_RED) ? true : false;
 		$saved = $obj->save();
 		
 		if(!$saved)

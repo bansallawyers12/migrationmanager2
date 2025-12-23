@@ -1878,7 +1878,7 @@ public function update_apppointment_comment(Request $request){
 			// Return response in the same format as the old function for backward compatibility
 			// Using json_encode() like the old function to return a JSON string (not a JSON response)
 			// This ensures jQuery doesn't auto-parse it, allowing JSON.parse() in frontend to work
-			return json_encode([
+			$responseData = json_encode([
 				'success' => true,
 				'duration' => $apiResponse['data']['duration'] ?? $apiResponse['duration'] ?? 0,
 				'weeks' => $apiResponse['data']['weeks'] ?? $apiResponse['weeks'] ?? [],
@@ -1886,19 +1886,29 @@ public function update_apppointment_comment(Request $request){
 				'end_time' => $apiResponse['data']['end_time'] ?? $apiResponse['end_time'] ?? '',
 				'disabledatesarray' => $apiResponse['data']['disabledatesarray'] ?? $apiResponse['disabledatesarray'] ?? [],
 			]);
+			
+			// Return with proper content-type header
+			return response($responseData, 200)
+				->header('Content-Type', 'application/json');
 
 		} catch (Exception $e) {
 			Log::error('getDateTimeBackend error', [
 				'error' => $e->getMessage(),
 				'request' => $request->all(),
+				'trace' => $e->getTraceAsString(),
 			]);
 
 			// Return JSON string like the old function did for errors
-			return json_encode([
+			// But wrap it in a proper response with correct status code
+			$errorResponse = json_encode([
 				'success' => false,
 				'message' => $e->getMessage() ?: 'Unable to fetch date/time backend configuration. Please try again.',
 				'duration' => 0
 			]);
+			
+			// Return with 500 status code so error handler in JS can catch it
+			return response($errorResponse, 500)
+				->header('Content-Type', 'application/json');
 		}
 	}
 
@@ -2006,23 +2016,33 @@ public function update_apppointment_comment(Request $request){
 			// Return response in the same format as the old function for backward compatibility
 			// Using json_encode() like the old function to return a JSON string (not a JSON response)
 			// This ensures jQuery doesn't auto-parse it, allowing JSON.parse() in frontend to work
-			return json_encode([
+			$responseData = json_encode([
 				'success' => true,
 				'disabledtimeslotes' => $convertedDisabledSlots,
 			]);
+			
+			// Return with proper content-type header
+			return response($responseData, 200)
+				->header('Content-Type', 'application/json');
 
 		} catch (Exception $e) {
 			Log::error('getDisabledDateTime error', [
 				'error' => $e->getMessage(),
 				'request' => $request->all(),
+				'trace' => $e->getTraceAsString(),
 			]);
 
 			// Return JSON string like the old function did for errors
-			return json_encode([
+			// But wrap it in a proper response with correct status code
+			$errorResponse = json_encode([
 				'success' => false,
 				'message' => $e->getMessage() ?: 'Unable to fetch disabled date/time slots. Please try again.',
 				'disabledtimeslotes' => []
 			]);
+			
+			// Return with 500 status code so error handler in JS can catch it
+			return response($errorResponse, 500)
+				->header('Content-Type', 'application/json');
 		}
 	}
 

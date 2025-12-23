@@ -25,12 +25,29 @@
 							</div>
 						</div>
 						<div class="card-body">
+							<!-- Filter Section -->
+							<div class="row mb-3">
+								<div class="col-md-4">
+									<form method="GET" action="{{ route('adminconsole.features.tags.index') }}">
+										<div class="form-group">
+											<label for="tag_type_filter">Filter by Type:</label>
+											<select name="tag_type" id="tag_type_filter" class="form-control" onchange="this.form.submit()">
+												<option value="">All Tags</option>
+												<option value="normal" {{ request('tag_type') == 'normal' ? 'selected' : '' }}>Normal Tags</option>
+												<option value="red" {{ request('tag_type') == 'red' ? 'selected' : '' }}>Red Tags</option>
+											</select>
+										</div>
+									</form>
+								</div>
+							</div>
+							
 							<div class="table-responsive common_table"> 
 								<table class="table text_wrap">
 								<thead>
 									<tr>
 										
 										<th>Name</th>
+										<th>Type</th>
 										<th>Created By</th>
 										<th>Last Updated By</th>
 										<th>Last Updated On</th>
@@ -41,9 +58,16 @@
 								<?php $i=0; ?>
 								<tbody class="tdata">	
 								@foreach (@$lists as $list)
-									<tr id="id_{{@$list->id}}">
+									<tr id="id_{{@$list->id}}" class="{{ @$list->tag_type == 'red' ? 'table-danger' : '' }}">
 										
 										<td>{{ @$list->name == "" ? config('constants.empty') : Str::limit(@$list->name, '50', '...') }}</td> 	
+										<td>
+											@if(@$list->tag_type == 'red')
+												<span class="badge badge-danger"><i class="fas fa-tag"></i> Red Tag</span>
+											@else
+												<span class="badge badge-primary"><i class="fas fa-tag"></i> Normal</span>
+											@endif
+										</td>
 										<td>{{@$list->createddetail->first_name}}</td> 	
 										<td>{{@$list->updateddetail->first_name}}</td> 	
 										<td>@if($list->created_at != '') {{date('Y-m-d', strtotime($list->created_at))}} @else - @endif</td> 	

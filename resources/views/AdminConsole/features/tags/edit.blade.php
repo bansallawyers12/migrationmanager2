@@ -46,6 +46,22 @@
 												</div>
 												</div>
 												
+												<div class="col-12 col-md-4 col-lg-4">
+												<div class="form-group"> 
+													<label for="tag_type">Tag Type <span class="span_req">*</span></label>
+													<select name="tag_type" class="form-control" data-valid="required">
+														<option value="normal" {{ old('tag_type', @$fetchedData->tag_type ?? 'normal') == 'normal' ? 'selected' : '' }}>Normal Tag</option>
+														<option value="red" {{ old('tag_type', @$fetchedData->tag_type ?? 'normal') == 'red' ? 'selected' : '' }}>Red Tag (Hidden)</option>
+													</select>
+													<small class="form-text text-muted">Red tags are hidden by default and only visible when toggled on client detail pages.</small>
+													@if ($errors->has('tag_type'))
+														<span class="custom-error" role="alert">
+															<strong>{{ @$errors->first('tag_type') }}</strong>
+														</span> 
+													@endif
+												</div>
+												</div>
+												
 											</div>
 										</div>
 									</div>

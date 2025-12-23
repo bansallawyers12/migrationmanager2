@@ -850,6 +850,19 @@ class ClientPersonalDetailsController extends Controller
         $obj->py_test = $pyTest;
         $obj->py_date = $pyTest ? ($requestData['py_date'] ?? null) : null;
         $obj->related_files	=	rtrim($related_files,',');
+        
+        // Handle tags/tagname
+        if (isset($requestData['tagname']) && is_array($requestData['tagname'])) {
+            // Filter out empty values and convert to comma-separated string
+            $tagIds = array_filter($requestData['tagname'], function($value) {
+                return !empty($value);
+            });
+            $obj->tagname = !empty($tagIds) ? implode(',', $tagIds) : null;
+        } else {
+            // If no tags are selected, set to null
+            $obj->tagname = null;
+        }
+        
         $obj->save(); //Finally, save the object
 
         //Contact Type Start Code

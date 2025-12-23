@@ -927,20 +927,51 @@
 
                         <div class="" style="overflow-wrap: break-word; word-wrap: break-word; max-width: 100%;">
                             <?php 
-                            $tags = '';
+                            $normalTags = [];
+                            $redTags = [];
+                            $redTagCount = 0;
+                            
                             if($fetchedData->tagname != ''){
                                 $rs = explode(',', $fetchedData->tagname);
                                 foreach($rs as $key=>$r){
                                     $stagd = \App\Models\Tag::where('id','=',$r)->first();
-                                    if($stagd)
-                                    { ?>
-                                        <span class="ui label ag-flex ag-align-center ag-space-between" style="display: inline-flex; margin: 5px 5px 5px 0;">
-                                            <span class="col-hr-1" style="font-size: 12px;">{{@$stagd->name}} <!--<a href="{{--URL::to('/clients/removetag?rem_id='.$key.'&c='.$fetchedData->id)--}}" class="removetag" ><i class="fa fa-times"></i></a>--></span>
-                                        </span>
-                                    <?php
+                                    if($stagd) {
+                                        if($stagd->tag_type == 'red') {
+                                            $redTags[] = $stagd;
+                                            $redTagCount++;
+                                        } else {
+                                            $normalTags[] = $stagd;
+                                        }
                                     }
                                 }
                             }
+                            
+                            // Display normal tags
+                            foreach($normalTags as $tag) { ?>
+                                <span class="ui label tag-normal ag-flex ag-align-center ag-space-between" style="display: inline-flex; margin: 5px 5px 5px 0;">
+                                    <span class="col-hr-1" style="font-size: 12px;">{{@$tag->name}}</span>
+                                </span>
+                            <?php }
+                            
+                            // Display red tags section (hidden by default)
+                            if($redTagCount > 0) { ?>
+                                <div class="red-tags-section" style="display: none; margin-top: 10px;">
+                                    <div style="margin-bottom: 5px; font-size: 11px; color: #dc3545; font-weight: bold;">
+                                        <i class="fas fa-exclamation-triangle"></i> Red Tags:
+                                    </div>
+                                    <?php foreach($redTags as $tag) { ?>
+                                        <span class="ui label tag-red ag-flex ag-align-center ag-space-between" style="display: inline-flex; margin: 5px 5px 5px 0; background-color: #dc3545; border: 1px solid #c82333;">
+                                            <span class="col-hr-1" style="font-size: 12px;">{{@$tag->name}}</span>
+                                        </span>
+                                    <?php } ?>
+                                </div>
+                                
+                                <div style="margin-top: 10px;">
+                                    <a href="javascript:;" id="toggleRedTags" class="btn btn-sm btn-outline-danger" data-client-id="{{$fetchedData->id}}">
+                                        <i class="fas fa-eye"></i> Show Red Tags (<span id="redTagCount">{{$redTagCount}}</span>)
+                                    </a>
+                                </div>
+                            <?php }
                             ?>
                         </div>
                     </div>
@@ -964,6 +995,14 @@
                             -webkit-transition: background .1s ease;
                             transition: background .1s ease;
                         }
+                        .ui.label.tag-red {
+                            background-color: #dc3545 !important;
+                            border: 1px solid #c82333 !important;
+                            color: #fff !important;
+                        }
+                        .ui.label.tag-normal {
+                            background-color: #6777ef;
+                        }
                         .ag-align-center {
                             align-items: center;
                         }
@@ -972,6 +1011,20 @@
                         }
                         .col-hr-1 {
                             margin-right: 5px !important;
+                        }
+                        .red-tags-section {
+                            padding: 10px;
+                            background-color: #fff5f5;
+                            border-left: 3px solid #dc3545;
+                            border-radius: 4px;
+                            margin-top: 10px;
+                        }
+                        #toggleRedTags {
+                            transition: all 0.3s ease;
+                        }
+                        #toggleRedTags:hover {
+                            transform: translateY(-1px);
+                            box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
                         }
 
                     </style>
@@ -1019,6 +1072,44 @@
                     message += 'Please take immediate action to renew or extend this visa.\n\nClick OK to continue viewing the client details.';
                     
                     alert(message);
+                }
+                
+                // Red Tags Toggle Functionality
+                const toggleRedTagsBtn = document.getElementById('toggleRedTags');
+                const redTagsSection = document.querySelector('.red-tags-section');
+                
+                if (toggleRedTagsBtn && redTagsSection) {
+                    // Store toggle state in sessionStorage
+                    const storageKey = 'redTagsVisible_' + toggleRedTagsBtn.getAttribute('data-client-id');
+                    const isVisible = sessionStorage.getItem(storageKey) === 'true';
+                    
+                    // Set initial state
+                    if (isVisible) {
+                        redTagsSection.style.display = 'block';
+                        toggleRedTagsBtn.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Red Tags (<span id="redTagCount">' + document.getElementById('redTagCount').textContent + '</span>)';
+                        toggleRedTagsBtn.classList.remove('btn-outline-danger');
+                        toggleRedTagsBtn.classList.add('btn-danger');
+                    }
+                    
+                    toggleRedTagsBtn.addEventListener('click', function() {
+                        const isCurrentlyVisible = redTagsSection.style.display !== 'none';
+                        
+                        if (isCurrentlyVisible) {
+                            // Hide red tags
+                            redTagsSection.style.display = 'none';
+                            this.innerHTML = '<i class="fas fa-eye"></i> Show Red Tags (<span id="redTagCount">' + document.getElementById('redTagCount').textContent + '</span>)';
+                            this.classList.remove('btn-danger');
+                            this.classList.add('btn-outline-danger');
+                            sessionStorage.setItem(storageKey, 'false');
+                        } else {
+                            // Show red tags
+                            redTagsSection.style.display = 'block';
+                            this.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Red Tags (<span id="redTagCount">' + document.getElementById('redTagCount').textContent + '</span>)';
+                            this.classList.remove('btn-outline-danger');
+                            this.classList.add('btn-danger');
+                            sessionStorage.setItem(storageKey, 'true');
+                        }
+                    });
                 }
             });
             </script>
