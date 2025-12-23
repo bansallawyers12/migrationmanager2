@@ -13,6 +13,7 @@ use App\Http\Controllers\API\ClientPortalWorkflowController;
 use App\Http\Controllers\API\ClientPortalMessageController;
 use App\Http\Controllers\API\ClientPortalPersonalDetailsController;
 use App\Http\Controllers\API\ClientPortalCommonListingController;
+use App\Http\Controllers\API\FCMController;
 
 /*
 |--------------------------------------------------------------------------
@@ -181,6 +182,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/notifications/broadcasts', [BroadcastNotificationController::class, 'index']);
     Route::get('/notifications/broadcasts/{batchUuid}', [BroadcastNotificationController::class, 'show']);
     Route::post('/notifications/broadcasts/{notificationId}/read', [BroadcastNotificationController::class, 'markAsRead']);
+    
+    // FCM Push Notification routes
+    Route::post('/fcm/register-token', [FCMController::class, 'registerToken']);
+    Route::post('/fcm/unregister-token', [FCMController::class, 'unregisterToken']);
+    Route::post('/fcm/test', [FCMController::class, 'testNotification']);
+    Route::post('/fcm/send-message', [FCMController::class, 'sendMessage']);
     
 });
 

@@ -6549,6 +6549,307 @@
 					"body": "{\n    \"message\": \"Unauthenticated.\"\n}"
 				}
 			]
+		},
+		{
+			"name": "FCM - Register Token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 201 || pm.response.code === 200) {",
+							"    pm.test(\"Status code is success\", function () {",
+							"        pm.response.to.have.status(201);",
+							"    });",
+							"    ",
+							"    pm.test(\"Response has success field\", function () {",
+							"        var jsonData = pm.response.json();",
+							"        pm.expect(jsonData).to.have.property('success');",
+							"        pm.expect(jsonData.success).to.be.true;",
+							"    });",
+							"    ",
+							"    pm.test(\"Response contains device token data\", function () {",
+							"        var jsonData = pm.response.json();",
+							"        pm.expect(jsonData).to.have.property('data');",
+							"        pm.expect(jsonData.data).to.have.property('id');",
+							"        pm.expect(jsonData.data).to.have.property('user_id');",
+							"    });",
+							"} else {",
+							"    pm.test(\"Check error response\", function () {",
+							"        var jsonData = pm.response.json();",
+							"        pm.expect(jsonData).to.have.property('success');",
+							"        pm.expect(jsonData.success).to.be.false;",
+							"    });",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text",
+						"description": "Use token from login response"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"token\": \"{{fcm_token}}\",\n    \"client_id\": 1\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/fcm/register-token",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"fcm",
+						"register-token"
+					]
+				},
+				"description": "Register or update an FCM device token for push notifications.\n\n**Required Fields:**\n- `token`: FCM device token (string, max 500 chars)\n- `client_id`: User ID (integer, must exist in admins table)\n\n**Response:**\n- `201`: Token registered successfully\n- `200`: Token updated successfully\n- `422`: Validation error\n- `401`: Unauthorized"
+			},
+			"response": []
+		},
+		{
+			"name": "FCM - Test Notification",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200) {",
+							"    pm.test(\"Status code is success\", function () {",
+							"        pm.response.to.have.status(200);",
+							"    });",
+							"    ",
+							"    pm.test(\"Response has success field\", function () {",
+							"        var jsonData = pm.response.json();",
+							"        pm.expect(jsonData).to.have.property('success');",
+							"    });",
+							"    ",
+							"    pm.test(\"Check config status\", function () {",
+							"        var jsonData = pm.response.json();",
+							"        if (jsonData.success) {",
+							"            pm.expect(jsonData).to.have.property('config_status');",
+							"            pm.expect(jsonData.config_status).to.equal('working');",
+							"        }",
+							"    });",
+							"} else {",
+							"    pm.test(\"Check error response\", function () {",
+							"        var jsonData = pm.response.json();",
+							"        pm.expect(jsonData).to.have.property('config_status');",
+							"        console.log(\"Config Status:\", jsonData.config_status);",
+							"    });",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text",
+						"description": "Use token from login response"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"title\": \"Test Notification\",\n    \"body\": \"This is a test notification from the FCM integration\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/fcm/test",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"fcm",
+						"test"
+					]
+				},
+				"description": "Send a test FCM notification to verify the integration is working.\n\nThis endpoint will:\n- Check if service account is configured\n- Check if service account file exists\n- Check if user has device tokens registered\n- Send a test notification\n- Return detailed status information\n\n**Optional Fields:**\n- `user_id`: Target user ID (defaults to authenticated user)\n- `title`: Notification title (default: \"Test Notification\")\n- `body`: Notification body (default: \"This is a test notification from the FCM integration\")\n\n**Response Status Codes:**\n- `200`: Notification sent successfully\n- `401`: Unauthorized\n- `403`: Permission denied\n- `404`: No device tokens found\n- `500`: Configuration or sending error\n\n**Config Status Values:**\n- `working`: Everything configured correctly\n- `file_not_found`: Service account file missing\n- `no_tokens`: No device tokens registered\n- `send_failed`: Configuration OK but sending failed\n- `error`: General error occurred"
+			},
+			"response": []
+		},
+		{
+			"name": "FCM - Unregister Token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200) {",
+							"    pm.test(\"Status code is success\", function () {",
+							"        pm.response.to.have.status(200);",
+							"    });",
+							"    ",
+							"    pm.test(\"Response has success field\", function () {",
+							"        var jsonData = pm.response.json();",
+							"        pm.expect(jsonData).to.have.property('success');",
+							"        pm.expect(jsonData.success).to.be.true;",
+							"    });",
+							"} else {",
+							"    pm.test(\"Check error response\", function () {",
+							"        var jsonData = pm.response.json();",
+							"        pm.expect(jsonData).to.have.property('success');",
+							"        pm.expect(jsonData.success).to.be.false;",
+							"    });",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text",
+						"description": "Use token from login response"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"token\": \"{{fcm_token}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/fcm/unregister-token",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"fcm",
+						"unregister-token"
+					]
+				},
+				"description": "Unregister (deactivate) an FCM device token.\n\n**Required Fields:**\n- `token`: FCM device token to unregister\n\n**Response:**\n- `200`: Token unregistered successfully\n- `404`: Token not found\n- `401`: Unauthorized\n- `422`: Validation error\n\n**Note:** The token is deactivated (not deleted) for audit purposes."
+			},
+			"response": []
+		},
+		{
+			"name": "FCM - Send Message",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200) {",
+							"    pm.test(\"Status code is success\", function () {",
+							"        pm.response.to.have.status(200);",
+							"    });",
+							"    ",
+							"    pm.test(\"Response has success field\", function () {",
+							"        var jsonData = pm.response.json();",
+							"        pm.expect(jsonData).to.have.property('success');",
+							"        pm.expect(jsonData.success).to.be.true;",
+							"    });",
+							"    ",
+							"    pm.test(\"Response contains sent_at timestamp\", function () {",
+							"        var jsonData = pm.response.json();",
+							"        if (jsonData.success && jsonData.data) {",
+							"            pm.expect(jsonData.data).to.have.property('sent_at');",
+							"        }",
+							"    });",
+							"} else {",
+							"    pm.test(\"Check error response\", function () {",
+							"        var jsonData = pm.response.json();",
+							"        pm.expect(jsonData).to.have.property('success');",
+							"        pm.expect(jsonData.success).to.be.false;",
+							"    });",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text",
+						"description": "Use token from login response"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"message\": {\n        \"token\": \"{{fcm_token}}\",\n        \"data\": {\n            \"title\": \"Test Title\",\n            \"body\": \"Test notification\",\n            \"type\": \"chat\",\n            \"userId\": \"123\"\n        }\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/fcm/send-message",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"fcm",
+						"send-message"
+					]
+				},
+				"description": "Send a push notification message to a specific device token.\n\n**Required Fields:**\n- `message`: Object containing message data\n  - `message.token`: FCM device token (string, max 500 chars)\n  - `message.data`: Object containing notification data\n    - `message.data.title`: Notification title (string, max 255 chars)\n    - `message.data.body`: Notification body (string)\n\n**Optional Fields in message.data:**\n- `type`: Message type (e.g., \"chat\", \"notification\", etc.)\n- `userId`: User ID associated with the message\n- Any other custom data fields\n\n**Response:**\n- `200`: Notification sent successfully\n- `422`: Validation error\n- `401`: Unauthorized\n- `500`: Failed to send notification (check logs for details)\n\n**Example Request:**\n```json\n{\n  \"message\": {\n    \"token\": \"fcm_device_token_here\",\n    \"data\": {\n      \"title\": \"New Message\",\n      \"body\": \"You have a new message\",\n      \"type\": \"chat\",\n      \"userId\": \"123\"\n    }\n  }\n}\n```"
+			},
+			"response": []
 		}
 	],
 	"event": [
@@ -6621,6 +6922,12 @@
 			"value": "",
 			"type": "string",
 			"description": "Message ID (auto-populated from send message response)"
+		},
+		{
+			"key": "fcm_token",
+			"value": "",
+			"type": "string",
+			"description": "FCM device token for push notifications"
 		}
 	]
 }
