@@ -159,14 +159,6 @@ class Admin extends Authenticatable
     }
 
     /**
-     * Get the followups assigned to this staff member
-     */
-    public function assignedFollowups(): HasMany
-    {
-        return $this->hasMany(\App\Models\LeadFollowup::class, 'assigned_to');
-    }
-
-    /**
      * Get the documents created by this staff member
      */
     public function createdDocuments(): HasMany

@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Log;
 
 use App\Models\Admin;
 use App\Models\UserRole;
-use App\Models\UserType;
 
 use Auth;
 use App\Services\ClientReferenceService;
@@ -433,7 +432,7 @@ class UserController extends Controller
 				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
 			}
 		//check authorization end
-		$usertype = UserType::all();
+		$usertype = UserRole::all();
 		
 		if(isset($id) && !empty($id))
 		{

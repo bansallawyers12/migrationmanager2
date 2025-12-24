@@ -10,7 +10,6 @@ use App\Http\Controllers\CRM\EmailVerificationController;
 use App\Http\Controllers\CRM\Leads\LeadController;
 use App\Http\Controllers\CRM\Leads\LeadAssignmentController;
 use App\Http\Controllers\CRM\Leads\LeadConversionController;
-use App\Http\Controllers\CRM\Leads\LeadFollowupController;
 use App\Http\Controllers\CRM\Leads\LeadAnalyticsController;
 use App\Http\Controllers\CRM\DashboardController;
 use App\Http\Controllers\CRM\CRMUtilityController;
@@ -200,17 +199,6 @@ Route::middleware(['auth:admin'])->group(function() {
         Route::post('/convert-single', [LeadConversionController::class, 'convertSingleLead'])->name('convert_single');
         Route::post('/bulk-convert', [LeadConversionController::class, 'bulkConvertToClient'])->name('bulk_convert');
         Route::get('/conversion-stats', [LeadConversionController::class, 'getConversionStats'])->name('conversion_stats');
-        
-        // Follow-up System
-        Route::prefix('followups')->name('followups.')->group(function () {
-            Route::get('/', [LeadFollowupController::class, 'index'])->name('index');
-            Route::get('/dashboard', [LeadFollowupController::class, 'myFollowups'])->name('dashboard');
-            Route::post('/', [LeadFollowupController::class, 'store'])->name('store');
-            Route::post('/{id}/complete', [LeadFollowupController::class, 'complete'])->name('complete');
-            Route::post('/{id}/reschedule', [LeadFollowupController::class, 'reschedule'])->name('reschedule');
-            Route::post('/{id}/cancel', [LeadFollowupController::class, 'cancel'])->name('cancel');
-        });
-        Route::get('/{leadId}/followups', [LeadFollowupController::class, 'getLeadFollowups'])->name('followups.get');
         
         // Analytics (Admin/Team Lead only)
         Route::prefix('analytics')->name('analytics.')->group(function () {

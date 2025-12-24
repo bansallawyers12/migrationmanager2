@@ -85,8 +85,6 @@ Relationship.php
 Report.php
 RepresentingPartner.php
 Service.php
-ServiceFeeOption.php
-ServiceFeeOptionType.php
 Setting.php
 ShareInvoice.php
 SignatureField.php

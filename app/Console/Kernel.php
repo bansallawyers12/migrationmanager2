@@ -24,10 +24,6 @@ class Kernel extends ConsoleKernel
         //'\App\Console\Commands\RandomClientSelectionReward',
         //'\App\Console\Commands\VisaExpireReminderEmail',
         
-        // Lead Follow-up System Commands
-        '\App\Console\Commands\SendFollowupReminders',
-        '\App\Console\Commands\MarkOverdueFollowups',
-        
         // Appointment Sync System Commands
         '\App\Console\Commands\SyncBansalAppointments',
         '\App\Console\Commands\SendAppointmentReminders',
@@ -77,12 +73,6 @@ class Kernel extends ConsoleKernel
         //$schedule->command('RandomClientSelectionReward:monthly')->monthly();
         //visa expire Reminder email before 15 days daily at 1 time
         //$schedule->command('VisaExpireReminderEmail:daily')->daily();
-        
-        // Lead Follow-up System - Send reminders every hour for upcoming follow-ups
-        $schedule->command('followups:send-reminders')->hourly();
-        
-        // Lead Follow-up System - Mark overdue follow-ups every 15 minutes
-        $schedule->command('followups:mark-overdue')->everyFifteenMinutes();
         
         // Appointment Sync System - Sync from Bansal website every 5 minutes (look back 24 hours)
         $schedule->command('booking:sync-appointments --minutes=1440')

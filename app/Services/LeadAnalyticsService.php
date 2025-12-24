@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Admin;
-use App\Models\LeadFollowup;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
@@ -25,12 +24,8 @@ class LeadAnalyticsService
         
         $totalLeads = $query->count();
         $qualified = (clone $query)->where('lead_quality', '!=', 'cold')->count();
-        $contacted = (clone $query)->whereHas('followups', function($q) {
-            $q->where('status', 'completed');
-        })->count();
-        $interested = (clone $query)->whereHas('followups', function($q) {
-            $q->where('outcome', 'interested');
-        })->count();
+        $contacted = 0; // Follow-up system removed
+        $interested = 0; // Follow-up system removed
         $converted = (clone $query)->where('type', 'client')->count();
         
         return [
@@ -125,17 +120,9 @@ class LeadAnalyticsService
                 ->when($endDate, fn($q) => $q->where('created_at', '<=', $endDate))
                 ->count();
             
-            $completedFollowups = LeadFollowup::where('assigned_to', $agent->id)
-                ->where('status', 'completed')
-                ->when($startDate, fn($q) => $q->where('completed_at', '>=', $startDate))
-                ->when($endDate, fn($q) => $q->where('completed_at', '<=', $endDate))
-                ->count();
-            
-            $overdueFollowups = LeadFollowup::where('assigned_to', $agent->id)
-                ->where('status', 'overdue')
-                ->count();
-            
-            $avgResponseTime = $this->calculateAvgResponseTime($agent->id, $startDate, $endDate);
+            $completedFollowups = 0; // Follow-up system removed
+            $overdueFollowups = 0; // Follow-up system removed
+            $avgResponseTime = 0; // Follow-up system removed
             
             $performance[] = [
                 'agent_id' => $agent->id,
@@ -159,30 +146,11 @@ class LeadAnalyticsService
     
     /**
      * Calculate average response time for an agent
+     * Note: Follow-up system removed, returns 0
      */
     protected function calculateAvgResponseTime($agentId, $startDate = null, $endDate = null)
     {
-        $followups = LeadFollowup::where('assigned_to', $agentId)
-            ->where('status', 'completed')
-            ->when($startDate, fn($q) => $q->where('completed_at', '>=', $startDate))
-            ->when($endDate, fn($q) => $q->where('completed_at', '<=', $endDate))
-            ->whereNotNull('completed_at')
-            ->get();
-        
-        if ($followups->isEmpty()) {
-            return 0;
-        }
-        
-        $totalHours = 0;
-        $count = 0;
-        
-        foreach ($followups as $followup) {
-            $diff = $followup->completed_at->diffInHours($followup->scheduled_date);
-            $totalHours += abs($diff);
-            $count++;
-        }
-        
-        return $count > 0 ? round($totalHours / $count, 2) : 0;
+        return 0; // Follow-up system removed
     }
     
     /**
@@ -285,8 +253,8 @@ class LeadAnalyticsService
             'cold' => (clone $query)->where('lead_quality', 'cold')->count(),
             'hot' => (clone $query)->where('lead_quality', 'hot')->count(),
             'avg_conversion_time' => $this->getAvgConversionTime($startDate, $endDate),
-            'pending_followups' => LeadFollowup::where('status', 'pending')->count(),
-            'overdue_followups' => LeadFollowup::where('status', 'overdue')->count(),
+            'pending_followups' => 0, // Follow-up system removed
+            'overdue_followups' => 0, // Follow-up system removed
         ];
     }
     
