@@ -2763,8 +2763,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     
     // Store client matter ID and user info for messages
-    const clientMatterId = @if($selectedMatter && isset($selectedMatter->id)) {{ $selectedMatter->id }} @else null @endif;
-    const currentUserId = {{ Auth::guard('admin')->id() ?? 'null' }};
+    const clientMatterId = @json(($selectedMatter && isset($selectedMatter->id)) ? $selectedMatter->id : null);
+    const currentUserId = @json(Auth::guard('admin')->id() ?? null);
     const pusherAppKey = '{{ config("broadcasting.connections.pusher.key") }}';
     const pusherCluster = '{{ config("broadcasting.connections.pusher.options.cluster", "ap2") }}';
     
@@ -2774,7 +2774,7 @@ document.addEventListener('DOMContentLoaded', function() {
         currentUserId: currentUserId,
         pusherAppKey: pusherAppKey ? 'Set' : 'Missing',
         pusherCluster: pusherCluster,
-        selectedMatterExists: @if($selectedMatter) true @else false @endif
+        selectedMatterExists: @json($selectedMatter ? true : false)
     });
     
     // Pusher variables

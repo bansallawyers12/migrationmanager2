@@ -1397,20 +1397,20 @@ $(document).ready(function() {
 <script>
     // Configuration object with all Blade variables needed for JavaScript
     window.ClientDetailConfig = {
-        clientId: @json($fetchedData->id ?? ''),
-        encodeId: @json($encodeId ?? ''),
-        matterId: @json($id1 ?? ''),
-        activeTab: @json($activeTab ?? 'personaldetails'),
-        matterRefNo: @json($id1 ?? ''),
-        clientFirstName: @json($fetchedData->first_name ?? 'user'),
+        clientId: @json(($fetchedData->id ?? '')),
+        encodeId: @json(($encodeId ?? '')),
+        matterId: @json(($id1 ?? '')),
+        activeTab: @json(($activeTab ?? 'personaldetails')),
+        matterRefNo: @json(($id1 ?? '')),
+        clientFirstName: @json(($fetchedData->first_name ?? 'user')),
         // SMS Template Variables
-        staffName: @json($staffName ?? ''),
-        matterNumber: @json($matterNumber ?? ''),
-        officePhone: @json($officePhone ?? ''),
-        officeCountryCode: @json($officeCountryCode ?? '+61'),
-        csrfToken: @json(csrf_token() ?? ''),
-        currentDate: @json(date('Y-m-d') ?? ''),
-        appId: @json($_GET['appid'] ?? ''),
+        staffName: @json(($staffName ?? '')),
+        matterNumber: @json(($matterNumber ?? '')),
+        officePhone: @json(($officePhone ?? '')),
+        officeCountryCode: @json(($officeCountryCode ?? '+61')),
+        csrfToken: @json(csrf_token()),
+        currentDate: @json(date('Y-m-d')),
+        appId: @json(($_GET['appid'] ?? '')),
         urls: {
             base: '{{ URL::to("/") }}',
             admin: '{{ URL::to("/") }}',
