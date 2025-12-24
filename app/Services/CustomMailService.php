@@ -49,9 +49,16 @@ class CustomMailService
      */
     public static function sendEmailTemplate($replace, $replace_with, $alias, $to, $subject, $sender, $sendername)
     {
+        // email_templates table has been deleted - using fallback content
         $email_template = DB::table('email_templates')->where('alias', $alias)->first();
-        $emailContent = $email_template->description;
-        $emailContent = str_replace($replace, $replace_with, $emailContent);
+        if(!$email_template) {
+            \Log::warning('Email template not found for alias: ' . $alias . ' - email_templates table has been deleted');
+            // Use a simple fallback email content
+            $emailContent = 'Email template content is no longer available. Please contact support.';
+        } else {
+            $emailContent = $email_template->description;
+            $emailContent = str_replace($replace, $replace_with, $emailContent);
+        }
         
         if ($subject == NULL) {
             $subject = $subject;

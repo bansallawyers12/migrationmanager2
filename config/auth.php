@@ -14,8 +14,8 @@ return [
     */
 
     'defaults' => [
-        'guard' => 'web',
-        'passwords' => 'users',
+        'guard' => 'admin',
+        'passwords' => 'admins',
     ],
 	'admins' => [
         'driver' => 'eloquent',
@@ -42,7 +42,7 @@ return [
     'guards' => [
         'web' => [
             'driver' => 'session',
-            'provider' => 'users',
+            'provider' => 'admins', // Changed from 'users' to 'admins'
         ],
 
         'api' => [
@@ -77,10 +77,11 @@ return [
     */
 
     'providers' => [
-        'users' => [
-            'driver' => 'eloquent',
-            'model' => App\Models\User::class,
-        ],
+        // Removed 'users' provider - no longer used (legacy sub-user system was never implemented)
+        // 'users' => [
+        //     'driver' => 'eloquent',
+        //     'model' => App\Models\User::class,
+        // ],
 		'admins' => [
             'driver' => 'eloquent',
             'model' => App\Models\Admin::class,
@@ -107,11 +108,12 @@ return [
     */
 
     'passwords' => [
-        'users' => [
-            'provider' => 'users',
-            'table' => 'password_reset_tokens',
-            'expire' => 60,
-        ],
+        // Removed 'users' password reset config - no longer used
+        // 'users' => [
+        //     'provider' => 'users',
+        //     'table' => 'password_reset_tokens',
+        //     'expire' => 60,
+        // ],
 		'admins' => [
             'provider' => 'admins',
             'table' => 'password_reset_tokens',

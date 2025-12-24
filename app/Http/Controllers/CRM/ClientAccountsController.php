@@ -5522,7 +5522,7 @@ public function getInvoiceAmount(Request $request)
 
             // Send email using InvoiceEmailManager
             $invoiceArray = [
-                'view' => 'emails.invoice',
+                'view' => 'emails.template',
                 'from' => 'invoice@bansalimmigration.com.au',
                 'name' => 'Bansal Immigration',
                 'subject' => $subject,
@@ -5649,7 +5649,7 @@ public function getInvoiceAmount(Request $request)
 
             // Send email using InvoiceEmailManager
             $invoiceArray = [
-                'view' => 'emails.invoice',
+                'view' => 'emails.template',
                 'from' => 'invoice@bansalimmigration.com.au',
                 'name' => 'Bansal Immigration',
                 'subject' => $subject,
@@ -5773,7 +5773,7 @@ public function getInvoiceAmount(Request $request)
 
             // Send email using InvoiceEmailManager
             $invoiceArray = [
-                'view' => 'emails.invoice',
+                'view' => 'emails.template',
                 'from' => 'invoice@bansalimmigration.com.au',
                 'name' => 'Bansal Immigration',
                 'subject' => $subject,

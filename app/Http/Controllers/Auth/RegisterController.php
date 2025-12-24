@@ -79,7 +79,7 @@ class RegisterController extends Controller
      * Create a new user instance after a valid registration.
      *
      * @param  array  $data
-     * @return \App\Models\User
+     * @return \App\Models\Admin
      */
     protected function create(array $data)
     {
@@ -102,8 +102,9 @@ class RegisterController extends Controller
 		$tokenurl = \URL::to('/user/verify/'.$verifyUser->token);
 	$replaceav = array('{company_logo}','{emailid}','{tokenemail}');
 	$replace_withav = array(\URL::to('/').'/public/img/logo.png', @$result->email, $tokenurl);			
+	// email_templates table has been deleted - using fallback subject
 	$emailtemplate	= 	DB::table('email_templates')->where('alias', 'verify-email')->first();
-	$subContentav 	= 	$emailtemplate->subject;
+	$subContentav 	= 	$emailtemplate ? $emailtemplate->subject : 'Please verify your email address';
 	$issuccess = $this->send_email_template($replaceav, $replace_withav, 'verify-email', @$result->email,$subContentav, config('mail.from.address'));
 			return $result;
 		}

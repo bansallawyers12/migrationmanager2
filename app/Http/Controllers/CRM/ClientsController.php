@@ -6127,8 +6127,8 @@ class ClientsController extends Controller
                 }
             }
 
-            //accounts
-            $accounts = DB::table('invoices')->where('client_id', $request->merge_from)->get(); //dd($accounts);
+            //accounts - DISABLED: invoices table has been deleted
+            /* $accounts = DB::table('invoices')->where('client_id', $request->merge_from)->get(); //dd($accounts);
             if(!empty($accounts)){
                 foreach($accounts as $acckey=>$accval){
                     DB::table('invoices')->insert(
@@ -6154,7 +6154,7 @@ class ClientsController extends Controller
                         ]
                     );
                 }
-            }
+            } */
 
             // Email history (mail_reports)
             $conversations = DB::table('mail_reports')->where('client_id', $request->merge_from)->get(); //dd($conversations);

@@ -194,3 +194,4 @@ After applying these changes:
 This cleanup removes all UI references to the old appointment creation system while preserving the ability to view appointments from the new synced system. The appointments tab remains functional as a read-only display of `BookingAppointment` records.
 
 
+

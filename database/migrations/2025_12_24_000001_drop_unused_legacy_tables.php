@@ -18,7 +18,10 @@ return new class extends Migration
      * - sub_categories: Unused categorization
      * - test_scores: Legacy test score table (migrated to client_testscore table, code uses ClientTestScore model)
      * - tasks: Unused task management
-     * - users: Legacy user table (replaced by admins)
+     * 
+     * Note: 'users' table removed from drop list - needs verification of production data first.
+     * The User model was intended for sub-users but was never fully implemented.
+     * Auth config has been updated to remove dependencies on 'users' table.
      */
     public function up(): void
     {
@@ -33,7 +36,9 @@ return new class extends Migration
             'test_scores',                 // Might reference other tables
             'tasks',                       // Might reference other tables
             'nature_of_enquiry',           // Old appointment system
-            'users',                       // Legacy user table (might be referenced, but should be safe if unused)
+            // 'users' - Removed from drop list pending production data verification
+            // The users table is no longer referenced in code or config, but may contain data
+            // DO NOT DROP until verified with business and production database checked
         ];
         
         foreach ($tablesToDrop as $table) {

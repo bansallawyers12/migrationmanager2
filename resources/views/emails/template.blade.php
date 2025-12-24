@@ -34,7 +34,7 @@
                 <tr>
                   <td style="padding:0;color:#111827;">
                     <div style="font-size:16px;line-height:24px;font-family:Arial,sans-serif;color:#111827;">
-                      {!! $content !!}
+                      {!! isset($array['content']) ? $array['content'] : (isset($content) ? $content : '') !!}
                     </div>
                   </td>
                 </tr>

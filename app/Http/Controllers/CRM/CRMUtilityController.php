@@ -13,7 +13,6 @@ use App\Models\Lead;
 use App\Models\Admin;
 // use App\Models\WebsiteSetting; // removed website settings dependency
 use PDF;
-use App\Models\InvoicePayment;
 use App\Models\Setting;
 use Auth;
 use App\Models\ActivitiesLog;
@@ -829,20 +828,6 @@ class CRMUtilityController extends Controller
                                 $message = 'ID does not exist, please check it once again.';
                             }
 						}
-                        else if($requestData['table'] == 'invoice_schedules'){
-                            $response	=	DB::table($requestData['table'])->where('id', @$requestData['id'])->delete();
-                            DB::table('schedule_items')->where('schedule_id', @$requestData['id'])->delete();
-
-                            if($response)
-                                {
-                                    $status = 1;
-                                    $message = 'Record has been deleted successfully.';
-                                }
-                                else
-                                {
-                                    $message = config('constants.server_error');
-                                }
-                        }
                         else if($requestData['table'] == 'agents'){
                             $response	=	DB::table($requestData['table'])->where('id', @$requestData['id'])->update(['is_acrchived' => 1]);
 
@@ -1105,53 +1090,6 @@ class CRMUtilityController extends Controller
 		$user_id = @Auth::user()->id;
 		$reciept_id = '';
 		$array = array();
-
-        if(isset($requestData['receipt'])){
-            $fetchedData = InvoicePayment::where('id', '=', $requestData['receipt'])->first();
-            $reciept_id = $fetchedData->id;
-            $pdf = PDF::setOptions([
-                'isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true,
-                'logOutputFile' => storage_path('logs/log.htm'),
-                'tempDir' => storage_path('logs/')
-            ])->loadView('emails.reciept', compact('fetchedData'));
-            $output = $pdf->output();
-            $invoicefilename = 'receipt_'.$reciept_id.'.pdf';
-            file_put_contents('/home/bansaledu/public/invoices/'.$invoicefilename, $output);
-            $array['file'] = '/home/bansaledu/public/invoices/'.$invoicefilename;
-            $array['file_name'] = $invoicefilename;
-        }
-
-        if(isset($requestData['invreceipt'])){
-            $invoicedetail = \App\Models\Invoice::where('id', '=', $requestData['invreceipt'])->first();
-            if($invoicedetail->type == 3){
-                $workflowdaa = \App\Models\Workflow::where('id', $invoicedetail->application_id)->first();
-                $applicationdata = array();
-                $partnerdata = array();
-                $productdata = array();
-                $branchdata = array();
-            }else{
-                $applicationdata = \App\Models\Application::where('id', $invoicedetail->application_id)->first();
-                
-                $workflowdaa = \App\Models\Workflow::where('id', @$applicationdata->workflow)->first();
-            }
-
-			$clientdata = \App\Models\Admin::where('role', 7)->where('id', $invoicedetail->client_id)->first();
-			$admindata = \App\Models\Admin::where('role', 1)->where('id', $invoicedetail->user_id)->first();
-
-            $pdf = PDF::setOptions([
-            'isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true,
-            'logOutputFile' => storage_path('logs/log.htm'),
-            'tempDir' => storage_path('logs/')
-            ])->loadView('emails.invoice',compact(['applicationdata','workflowdaa','clientdata','productdata','invoicedetail','admindata']));
-            $reciept_id = $invoicedetail->id;
-
-            $output = $pdf->output();
-            $invoicefilename = 'invoice_'.$reciept_id.'.pdf';
-            file_put_contents(public_path('invoices/'.$invoicefilename), $output);
-
-            $array['file'] = public_path() . '/' .'invoices/'.$invoicefilename;
-            $array['file_name'] = $invoicefilename;
-        }
 
 		$obj = new \App\Models\MailReport;
 		$obj->user_id 		=  $user_id;

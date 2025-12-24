@@ -4,11 +4,8 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use DB;
 use App\Models\Admin;
-use App\Models\Invoice;
-use App\Models\InvoiceDetail;
-use App\Models\InvoicePayment;
 use App\Models\InvoiceFollowup;
-use App\Models\EmailTemplate;
+// use App\Models\EmailTemplate; // REMOVED: email_templates table has been deleted
 use App\Models\ShareInvoice;
  use PDF;
  use DateTime;
@@ -49,6 +46,11 @@ class CronJob extends Command
      */
     public function handle()
     {
+		// Invoice-related functionality disabled - invoice_payments, invoice_details, and invoices tables have been deleted
+		// This cron job previously handled invoice reminder emails for invoices due in 2 days or on due date
+		// All invoice model references (Invoice, InvoicePayment, InvoiceDetail) have been removed
+		
+		/* DISABLED - Invoice reminder functionality
 		$query 		= Invoice::where('status', '!=', 1)->with(['customer','company']);
 		$totalco = $query->count();
 		
@@ -75,7 +77,7 @@ class CronJob extends Command
 				$subContent 	= 	$emailtemplate->subject;
 				$subContent	=	str_replace($replacesub,$replace_with_sub,$subContent);
 				
-					/*Attachment start*/
+					//Attachment start
 					$invoicedetail = Invoice::find($invoice->id);
 					$invoicefilename = $invoicedetail->invoice.'-'.$invoicedetail->id.'.pdf';
 
@@ -115,7 +117,7 @@ class CronJob extends Command
 				$subContent 	= 	$emailtemplate->subject;
 				$subContent	=	str_replace($replacesub,$replace_with_sub,$subContent);
 				
-					/*Attachment start*/
+					//Attachment start
 					$invoicedetail = Invoice::find($invoice->id);
 					$invoicefilename = $invoicedetail->invoice.'-'.$invoicedetail->id.'.pdf';
 
@@ -145,6 +147,7 @@ class CronJob extends Command
 			}
 			
 		}
+		*/
 		/* \DB::table('users')
             ->where('id', 1)
             ->update(['course_level' => str_random(10)]);
@@ -158,9 +161,16 @@ class CronJob extends Command
 	
 	public static function send_attachment_email_template($invoicearray, $replace = array(), $replace_with = array(), $alias = null, $to = null, $subject = null, $sender = null) 
 	{
+		// email_templates table has been deleted - using fallback content
 		$email_template	= 	DB::table('email_templates')->where('alias', $alias)->first();
-		$emailContent 	= 	$email_template->description;
-		$emailContent	=	str_replace($replace,$replace_with,$emailContent);
+		if(!$email_template) {
+			\Log::warning('Email template not found for alias: ' . $alias . ' - email_templates table has been deleted');
+			// Use a simple fallback email content
+			$emailContent = 'Email template content is no longer available. Please contact support.';
+		} else {
+			$emailContent 	= 	$email_template->description;
+			$emailContent	=	str_replace($replace,$replace_with,$emailContent);
+		}
 		if($subject == NULL)
 		{
 			$subject		=	$subject;	

@@ -61,7 +61,6 @@ Invoice.php
 InvoiceDetail.php
 InvoiceFollowup.php
 InvoicePayment.php
-InvoiceSchedule.php
 Label.php
 Lead.php
 MailReport.php

@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Events\BroadcastNotificationCreated;
 use App\Models\Admin;
 use App\Models\Notification;
-use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -498,8 +497,8 @@ class BroadcastNotificationService
     }
 
     /**
-     * @return \Illuminate\Support\Collection<int,\App\Models\User>
-     * @deprecated No longer used - clients are excluded from broadcasts
+     * @return \Illuminate\Support\Collection<int,never>
+     * @deprecated No longer used - clients are excluded from broadcasts. This method always returns an empty collection.
      */
     protected function portalUsers(): Collection
     {
