@@ -17,6 +17,7 @@ use Auth;
 use PDF;
 use App\Models\CheckinLog;
 use App\Models\Note;
+use App\Models\BookingAppointment;
 use App\Models\clientServiceTaken;
 use App\Models\AccountClientReceipt;
 
@@ -9341,6 +9342,226 @@ class ClientsController extends Controller
                 return response()->json([
                     'status' => false,
                     'success' => false, // Also include for compatibility
+                    'message' => 'Failed to create appointment: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            return redirect()->back()->with('error', 'Failed to create appointment: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Add booking appointment (new booking system using BookingAppointment model)
+     * POST /add-appointment-book
+     */
+    public function addAppointmentBook(Request $request)
+    {
+        try {
+            $requestData = $request->all();
+            
+            // Validate required fields
+            $validator = Validator::make($requestData, [
+                'client_id' => 'required|exists:admins,id',
+                'noe_id' => 'required|integer|in:1,2,3,4,5,6,7,8',
+                'service_id' => 'required|integer|in:1,2,3',
+                'appoint_date' => 'required|date',
+                'appoint_time' => 'required|string',
+                'description' => 'required|string',
+                'appointment_details' => 'required|in:phone,in_person,video_call',
+                'preferred_language' => 'required|string',
+                'inperson_address' => 'required|in:1,2',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Validation failed: ' . $validator->errors()->first(),
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            // Get client information
+            $client = Admin::findOrFail($requestData['client_id']);
+            
+            // Map service_id from form to actual service_id
+            // Form: 1=Free Consultation, 2=Comprehensive Migration Advice, 3=Overseas Applicant Enquiry
+            // DB: 1=Paid, 2=Free, 3=Paid Overseas
+            $serviceIdMap = [
+                1 => 2, // Free Consultation -> Free
+                2 => 1, // Comprehensive Migration Advice -> Paid
+                3 => 3, // Overseas Applicant Enquiry -> Paid Overseas
+            ];
+            $serviceId = $serviceIdMap[$requestData['service_id']] ?? 2;
+
+            // Map NOE ID to service_type/enquiry_type
+            $noeToServiceType = [
+                1 => ['service_type' => 'Permanent Residency', 'enquiry_type' => 'pr'],
+                2 => ['service_type' => 'Temporary Residency', 'enquiry_type' => 'tr'],
+                3 => ['service_type' => 'JRP/Skill Assessment', 'enquiry_type' => 'jrp'],
+                4 => ['service_type' => 'Tourist Visa', 'enquiry_type' => 'tourist'],
+                5 => ['service_type' => 'Education/Student Visa', 'enquiry_type' => 'education'],
+                6 => ['service_type' => 'Complex Matters (AAT, Protection visa, Federal Case)', 'enquiry_type' => 'complex'],
+                7 => ['service_type' => 'Visa Cancellation/NOICC/Refusals', 'enquiry_type' => 'cancellation'],
+                8 => ['service_type' => 'INDIA/UK/CANADA/EUROPE TO AUSTRALIA', 'enquiry_type' => 'international'],
+            ];
+            $serviceTypeMapping = $noeToServiceType[$requestData['noe_id']] ?? ['service_type' => 'Other', 'enquiry_type' => 'other'];
+
+            // Map location
+            $locationMap = [1 => 'adelaide', 2 => 'melbourne'];
+            $location = $locationMap[$requestData['inperson_address']] ?? 'melbourne';
+
+            // Map meeting type
+            $meetingTypeMap = [
+                'phone' => 'phone',
+                'in_person' => 'in_person',
+                'video_call' => 'video',
+            ];
+            $meetingType = $meetingTypeMap[$requestData['appointment_details']] ?? 'in_person';
+
+            // Parse appointment time - handle different formats
+            // Time can be in format "10:00 AM - 10:15 AM" or "10:00 AM" or "10:00:00"
+            $timeStr = trim($requestData['appoint_time']);
+            
+            // Extract start time if in range format (e.g., "10:00 AM - 10:15 AM")
+            if (preg_match('/^([0-9]{1,2}:[0-9]{2}\s*(?:AM|PM)?)/i', $timeStr, $matches)) {
+                $timeStr = trim($matches[1]);
+            }
+            
+            // Parse time - handle 12-hour format with AM/PM
+            try {
+                if (preg_match('/(AM|PM)/i', $timeStr)) {
+                    // 12-hour format with AM/PM
+                    $parsedTime = Carbon::createFromFormat('g:i A', $timeStr);
+                    $timeStr = $parsedTime->format('H:i');
+                } else {
+                    // 24-hour format - extract just HH:MM
+                    if (preg_match('/^(\d{1,2}):(\d{2})/', $timeStr, $timeMatches)) {
+                        $timeStr = $timeMatches[1] . ':' . $timeMatches[2];
+                    }
+                }
+            } catch (\Exception $e) {
+                // If parsing fails, try to extract HH:MM format
+                if (preg_match('/^(\d{1,2}):(\d{2})/', $timeStr, $timeMatches)) {
+                    $timeStr = $timeMatches[1] . ':' . $timeMatches[2];
+                } else {
+                    throw new \Exception('Invalid time format: ' . $requestData['appoint_time']);
+                }
+            }
+
+            // Combine date and time
+            $dateStr = $requestData['appoint_date'];
+            $timezone = $requestData['timezone'] ?? 'Australia/Melbourne';
+            
+            try {
+                $appointmentDateTime = Carbon::createFromFormat('Y-m-d H:i', $dateStr . ' ' . $timeStr, $timezone)
+                    ->setTimezone(config('app.timezone', 'UTC'));
+            } catch (\Exception $e) {
+                // Try alternative date format
+                try {
+                    $appointmentDateTime = Carbon::createFromFormat('Y-m-d H:i:s', $dateStr . ' ' . $timeStr . ':00', $timezone)
+                        ->setTimezone(config('app.timezone', 'UTC'));
+                } catch (\Exception $e2) {
+                    throw new \Exception('Invalid date/time format. Date: ' . $dateStr . ', Time: ' . $timeStr);
+                }
+            }
+
+            // Calculate duration based on service
+            // Service 1 (Free Consultation) = 15 min, Service 2/3 (Paid) = 30 min
+            $durationMinutes = $requestData['service_id'] == 1 ? 15 : 30;
+
+            // Use ConsultantAssignmentService to assign consultant
+            $consultantAssigner = app(\App\Services\BansalAppointmentSync\ConsultantAssignmentService::class);
+            $appointmentDataForConsultant = [
+                'noe_id' => $requestData['noe_id'],
+                'service_id' => $serviceId,
+                'location' => $location,
+                'inperson_address' => $requestData['inperson_address'],
+            ];
+            $consultant = $consultantAssigner->assignConsultant($appointmentDataForConsultant);
+
+            if (!$consultant) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Could not assign consultant. Please ensure consultants are set up for the selected service type.'
+                ], 422);
+            }
+
+            // Generate unique bansal_appointment_id for manually created appointments
+            // Use timestamp + random to ensure uniqueness (manual appointments start from 1000000)
+            $bansalAppointmentId = 1000000 + (time() % 900000) + mt_rand(1, 99999);
+
+            // Ensure uniqueness
+            while (BookingAppointment::where('bansal_appointment_id', $bansalAppointmentId)->exists()) {
+                $bansalAppointmentId = 1000000 + (time() % 900000) + mt_rand(1, 99999);
+            }
+
+            // Create booking appointment
+            $appointment = BookingAppointment::create([
+                'bansal_appointment_id' => $bansalAppointmentId,
+                'order_hash' => null, // No payment for manually created appointments
+                
+                'client_id' => $client->id,
+                'consultant_id' => $consultant->id,
+                'assigned_by_admin_id' => Auth::id(),
+                
+                'client_name' => $client->first_name . ' ' . ($client->last_name ?? ''),
+                'client_email' => $client->email ?? '',
+                'client_phone' => $client->phone ?? null,
+                'client_timezone' => $requestData['timezone'] ?? 'Australia/Melbourne',
+                
+                'appointment_datetime' => $appointmentDateTime,
+                'timeslot_full' => $requestData['appoint_time'], // Store as provided
+                'duration_minutes' => $durationMinutes,
+                'location' => $location,
+                'inperson_address' => $requestData['inperson_address'],
+                'meeting_type' => $meetingType,
+                'preferred_language' => $requestData['preferred_language'],
+                
+                'service_id' => $serviceId,
+                'noe_id' => $requestData['noe_id'],
+                'enquiry_type' => $serviceTypeMapping['enquiry_type'],
+                'service_type' => $serviceTypeMapping['service_type'],
+                'enquiry_details' => $requestData['description'],
+                
+                'status' => 'pending',
+                'is_paid' => ($serviceId == 2) ? false : true, // Free service is not paid
+                'amount' => ($serviceId == 2) ? 0 : 150, // Set appropriate amounts
+                'final_amount' => ($serviceId == 2) ? 0 : 150,
+                'payment_status' => ($serviceId == 2) ? null : 'pending',
+                'user_id' => Auth::id(),
+            ]);
+
+            // Log activity
+            $activityLog = new ActivitiesLog();
+            $activityLog->client_id = $client->id;
+            $activityLog->created_by = Auth::id();
+            $activityLog->subject = 'Booking appointment created: ' . $serviceTypeMapping['service_type'];
+            $activityLog->description = $requestData['description'];
+            $activityLog->task_status = 0;
+            $activityLog->pin = 0;
+            $activityLog->save();
+
+            // Return JSON response matching expected format
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'status' => true,
+                    'success' => true,
+                    'message' => 'Appointment booked successfully'
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Appointment booked successfully');
+            
+        } catch (\Exception $e) {
+            \Log::error('Error creating booking appointment: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
+            
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'status' => false,
+                    'success' => false,
                     'message' => 'Failed to create appointment: ' . $e->getMessage()
                 ], 500);
             }
