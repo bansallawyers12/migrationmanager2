@@ -1,4 +1,4 @@
-name: Deploy production2
+name: production2 CI test
 
 on:
   push:
@@ -9,5 +9,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "GitHub Actions is working on production2"
+      - name: Confirm workflow trigger
+        run: |
+          echo "Workflow triggered on production2"
+          echo "Commit: $GITHUB_SHA"
+          echo "Branch: $GITHUB_REF"
 
