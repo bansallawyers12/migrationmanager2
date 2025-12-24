@@ -9261,4 +9261,92 @@ class ClientsController extends Controller
         }
     }
 
+    /**
+     * Add appointment (legacy appointment system using Note model)
+     * POST /add-appointment
+     */
+    public function addAppointment(Request $request)
+    {
+        try {
+            $requestData = $request->all();
+            
+            // Validate required fields
+            $validator = Validator::make($requestData, [
+                'client_id' => 'required|exists:admins,id',
+                'title' => 'required|string|max:255',
+                'appoint_date' => 'required|date',
+                'appoint_time' => 'required',
+                'timezone' => 'required|string',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            // Combine date and time into datetime
+            $appointmentDateTime = $requestData['appoint_date'] . ' ' . $requestData['appoint_time'];
+            // Parse the datetime in the user's selected timezone, then convert to UTC for storage
+            $followupDateTime = Carbon::createFromFormat('Y-m-d H:i', $appointmentDateTime, $requestData['timezone'])
+                ->setTimezone(config('app.timezone', 'UTC'));
+            
+            // Create appointment as Note record
+            $appointment = new Note();
+            $appointment->client_id = $requestData['client_id'];
+            $appointment->user_id = Auth::id();
+            $appointment->title = $requestData['title'];
+            $appointment->description = $requestData['description'] ?? '';
+            $appointment->followup_date = $followupDateTime->toDateTimeString();
+            $appointment->type = 'application'; // Legacy appointment type
+            $appointment->folloup = 1; // Active followup
+            $appointment->status = 0; // Incomplete
+            $appointment->pin = 0;
+            
+            // Set assigned_to from invitees if provided
+            if (!empty($requestData['invitees'])) {
+                $appointment->assigned_to = $requestData['invitees'];
+            }
+            
+            $appointment->save();
+
+            // Log activity
+            $activityLog = new ActivitiesLog();
+            $activityLog->client_id = $requestData['client_id'];
+            $activityLog->created_by = Auth::id();
+            $activityLog->subject = 'Appointment created: ' . $requestData['title'];
+            $activityLog->description = $requestData['description'] ?? '';
+            $activityLog->followup_date = $followupDateTime->toDateTimeString();
+            $activityLog->task_status = 0;
+            $activityLog->pin = 0;
+            $activityLog->save();
+
+            // Return JSON response matching expected format (status instead of success)
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'status' => true,
+                    'success' => true, // Also include for compatibility
+                    'message' => 'Appointment created successfully'
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Appointment created successfully');
+            
+        } catch (\Exception $e) {
+            \Log::error('Error creating appointment: ' . $e->getMessage());
+            
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'status' => false,
+                    'success' => false, // Also include for compatibility
+                    'message' => 'Failed to create appointment: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            return redirect()->back()->with('error', 'Failed to create appointment: ' . $e->getMessage());
+        }
+    }
+
 }

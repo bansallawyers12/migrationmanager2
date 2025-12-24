@@ -1,19 +1,15 @@
-{{-- DEPRECATED: Appointment system has been removed. This modal is kept for reference but disabled. --}}
 <!-- Add Appointment Modal -->
-<div class="modal fade add_appointment custom_modal" id="create_applicationappoint" tabindex="-1" role="dialog" aria-labelledby="create_appointModalLabel" aria-hidden="true" style="display: none;">
+<div class="modal fade add_appointment custom_modal" id="create_applicationappoint" tabindex="-1" role="dialog" aria-labelledby="create_appointModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title" id="appointModalLabel">Add Appointment (Deprecated)</h5>
+				<h5 class="modal-title" id="appointModalLabel">Add Appointment</h5>
 				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
 			<div class="modal-body">
-				<div class="alert alert-warning">
-					<strong>Note:</strong> The appointment system has been removed. This feature is no longer available.
-				</div>
-				<form method="post" action="#" name="appliappointform" id="appliappointform" autocomplete="off" enctype="multipart/form-data" onsubmit="return false;">
+				<form method="post" action="{{URL::to('/add-appointment')}}" name="appliappointform" id="appliappointform" autocomplete="off" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
 				<input type="hidden" id="type" name="type" value="application">

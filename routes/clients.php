@@ -293,6 +293,10 @@ Route::post('/clients/reassignfollowup/store', 'CRM\ClientsController@reassignfo
 Route::post('/clients/update-session-completed', 'CRM\ClientsController@updatesessioncompleted')->name('clients.updatesessioncompleted');
 Route::post('/clients/getAllUser', 'CRM\ClientsController@getAllUser')->name('clients.getAllUser');
 
+/*---------- Appointments ----------*/
+Route::post('/add-appointment', 'CRM\ClientsController@addAppointment');
+Route::post('/add-appointment-book', 'CRM\ClientsController@addAppointmentBook');
+
 /*---------- Client Portal ----------*/
 Route::post('/clients/toggle-client-portal', 'CRM\ClientPortalController@toggleClientPortal')->name('clients.toggleClientPortal');
 Route::post('/api/client-portal-details/approve-audit', 'CRM\ClientPortalController@approveAuditValue')->name('clients.approveAuditValue');

@@ -32,11 +32,12 @@
 <!-- Activities & Appointments Modals moved to resources/views/Admin/clients/modals/activities.blade.php -->
 @include('crm.clients.modals.activities')
 
+<!-- Appointment Booking Modal -->
+@include('crm.clients.modals.appointment')
+
 <!-- Financial modals (Commission Invoice, General Invoice, Payment Details) removed - now in modals/financial.blade.php -->
 
 <!-- Create Application Note Modal moved to resources/views/Admin/clients/modals/notes.blade.php -->
-
-<!-- Appointment Modal removed - now in modals/activities.blade.php -->
 
 <!-- Checklist modals (create_checklist, openeducationdocsmodal, openmigrationdocsmodal) removed - now in modals/checklists.blade.php -->
 
