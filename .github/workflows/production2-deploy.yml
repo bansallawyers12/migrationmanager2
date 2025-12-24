@@ -1,0 +1,13 @@
+name: Deploy production2
+
+on:
+  push:
+    branches:
+      - production2
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "GitHub Actions is working on production2"
+
