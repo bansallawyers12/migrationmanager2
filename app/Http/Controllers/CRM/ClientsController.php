@@ -7951,56 +7951,6 @@ class ClientsController extends Controller
         return response()->json(['success' => false, 'message' => 'Only client-generated categories can be deleted.']);
     }*/
 
-
-    //send to n8n webhook
-    public function sendToWebhook(Request $request)
-    {
-        try {
-            $data = $request->all();
-            $webhookUrl = env('N8N_GTE_WEBHOOK');
-            
-            // Check if webhook URL is configured
-            if (empty($webhookUrl)) {
-                return response()->json([
-                    'message' => 'N8N webhook URL is not configured. Please check your environment settings.',
-                    'error' => 'Missing N8N_GTE_WEBHOOK environment variable'
-                ], 500);
-            }
-
-            // Add timeout and retry configuration
-            $response = Http::timeout(30)
-                           ->retry(3, 1000)
-                           ->post($webhookUrl, $data);
-
-            if ($response->successful()) {
-                return response()->json([
-                    'message' => 'Data sent to n8n successfully', 
-                    'data' => $response->json()
-                ]);
-            } else {
-                return response()->json([
-                    'message' => 'Error sending data to n8n', 
-                    'error' => $response->json(),
-                    'status_code' => $response->status()
-                ], 500);
-            }
-            
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            return response()->json([
-                'message' => 'Cannot connect to n8n server. Please check if the server is running and accessible.',
-                'error' => $e->getMessage(),
-                'webhook_url' => $webhookUrl ?? 'Not configured'
-            ], 500);
-            
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Unexpected error occurred while sending data to n8n',
-                'error' => $e->getMessage(),
-                'webhook_url' => $webhookUrl ?? 'Not configured'
-            ], 500);
-        }
-    }
-
     //Check same client_id and same client matter is already exist in db or not
     public function checkCostAssignment(Request $request)
     {
