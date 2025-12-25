@@ -75,7 +75,7 @@ use App\Http\Controllers\Controller;
                 <?php
                 $assign_info_arr = \App\Models\Admin::select('type')->where('id',@$fetchedData->id)->first();
                 ?>
-                @if($assign_info_arr->type == 'client')
+                @if($assign_info_arr->type)
                     <?php 
                     if($id1)
                     {
