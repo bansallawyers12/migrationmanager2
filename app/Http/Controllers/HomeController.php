@@ -90,381 +90,124 @@ class HomeController extends Controller
 	
 
 
-    // WARNING: getdatetime() method removed - old appointment system deleted
-    // This method used deleted models: BookService, BookServiceSlotPerPerson
-
     /**
-     * Get disabled date/time - COMMENTED OUT FOR FUTURE USE
-     * WARNING: AppointmentsController has been deleted - old appointment system removed
-     * This method used deleted models (BookService, BookServiceSlotPerPerson, Appointment)
-     * 
-     * @deprecated Old appointment system removed - no longer available
+     * Get date/time backend settings (office hours, duration, disabled days)
+     * Returns appointment configuration for calendar initialization
      */
-    /*
-    public function getdisableddatetime(Request $request)
-    {
-		$requestData = $request->all(); //dd($requestData);
-		$slot_overwrite = $request->slot_overwrite ?? 0; // Default to 0 if not provided
-		$date = explode('/', $requestData['sel_date']);
-		$datey = $date[2].'-'.$date[1].'-'.$date[0];
-
-        //Adelaide
-        if( isset($request->inperson_address) && $request->inperson_address == 1 )
-        {
-            if( isset($request->service_id) && $request->service_id == 1  ){ //Adelaide Paid Service
-                $book_service_slot_per_person_tbl_unique_id = 6;
-            } else if( isset($request->service_id) && $request->service_id == 2  ){ //Adelaide Free Service
-                $book_service_slot_per_person_tbl_unique_id = 8;
-            }
-
-            $service = \App\Models\Appointment::select('id','date','time')
-            ->where('inperson_address', '=', 1)
-            ->where('status', '!=', 7)
-            ->whereDate('date', $datey)
-            ->exists();
-
-            $servicelist = \App\Models\Appointment::select('id','date','time')
-            ->where('inperson_address', '=', 1)
-            ->where('status', '!=', 7)
-            ->whereDate('date', $datey)
-            ->get();
-        }
-
-        //Melbourne
-        else
-        {
-            if
-            (
-                ( isset($request->service_id) && $request->service_id == 1  )
-                ||
-                (
-                    ( isset($request->service_id) && $request->service_id == 2 )
-                    &&
-                    ( isset($request->enquiry_item) && ( $request->enquiry_item == 1 || $request->enquiry_item == 6 || $request->enquiry_item == 7) )
-                )
-            ) { //Paid
-                if( isset($request->service_id) && $request->service_id == 1  ){ //Ajay Paid Service
-                    $book_service_slot_per_person_tbl_unique_id = 1;
-                } else if( isset($request->service_id) && $request->service_id == 2  ){ //Ajay Free Service
-                    $book_service_slot_per_person_tbl_unique_id = 2;
-                }
-
-                $service = \App\Models\Appointment::select('id', 'date', 'time')
-                ->where(function ($query) {
-                    $query->whereNull('inperson_address')
-                        ->orWhere('inperson_address', '')
-                        ->orWhere('inperson_address', 2); //For Melbourne
-                })
-                ->where('status', '!=', 7)
-                ->whereDate('date', $datey)
-                ->where(function ($query) {
-                    $query->where(function ($q) {
-                        $q->whereIn('noe_id', [1, 2, 3, 4, 5, 6, 7, 8])
-                        ->where('service_id', 1);
-                    })
-                    ->orWhere(function ($q) {
-                        $q->whereIn('noe_id', [1, 6, 7])
-                        ->where('service_id', 2);
-                    });
-                })->exists();
-
-                $servicelist = \App\Models\Appointment::select('id', 'date', 'time')
-                ->where(function ($query) {
-                    $query->whereNull('inperson_address')
-                        ->orWhere('inperson_address', '')
-                        ->orWhere('inperson_address', 2); //For Melbourne
-                })
-                ->where('status', '!=', 7)
-                ->whereDate('date', $datey)
-                ->where(function ($query) {
-                    $query->where(function ($q) {
-                        $q->whereIn('noe_id', [1, 2, 3, 4, 5, 6, 7, 8])
-                        ->where('service_id', 1);
-                    })
-                    ->orWhere(function ($q) {
-                        $q->whereIn('noe_id', [1, 6, 7])
-                        ->where('service_id', 2);
-                    });
-                })->get();
-            }
-            else if( isset($request->service_id) && $request->service_id == 2) { //Free
-                if( isset($request->enquiry_item) && ( $request->enquiry_item == 2 || $request->enquiry_item == 3 ) ) { //Temporary and JRP
-
-                    if( isset($request->service_id) && $request->service_id == 2  ){ //Shubam Free Service
-                        $book_service_slot_per_person_tbl_unique_id = 3;
-                    }
-
-                    $service = \App\Models\Appointment::select('id','date','time')
-                    ->where(function ($query) {
-                        $query->whereNull('inperson_address')
-                            ->orWhere('inperson_address', '')
-                            ->orWhere('inperson_address', 2); //For Melbourne
-                    })
-                    ->where('status', '!=', 7)
-                    ->whereDate('date', $datey)
-                    ->where(function ($query) {
-                        $query->whereIn('noe_id', [2,3])
-                        ->Where('service_id', 2);
-                    })->exists();
-
-                    $servicelist = \App\Models\Appointment::select('id','date','time')
-                    ->where(function ($query) {
-                        $query->whereNull('inperson_address')
-                            ->orWhere('inperson_address', '')
-                            ->orWhere('inperson_address', 2); //For Melbourne
-                    })
-                    ->where('status', '!=', 7)
-                    ->whereDate('date', $datey)
-                    ->where(function ($query) {
-                        $query->whereIn('noe_id', [2,3])
-                        ->Where('service_id', 2);
-                    })->get();
-                }
-                else if( isset($request->enquiry_item) && ( $request->enquiry_item == 4 ) ) { //Tourist Visa
-
-                    if( isset($request->service_id) && $request->service_id == 2  ){ //Tourist Free Service
-                        $book_service_slot_per_person_tbl_unique_id = 4;
-                    }
-
-                    $service = \App\Models\Appointment::select('id','date','time')
-                    ->where(function ($query) {
-                        $query->whereNull('inperson_address')
-                            ->orWhere('inperson_address', '')
-                            ->orWhere('inperson_address', 2); //For Melbourne
-                    })
-                    ->where('status', '!=', 7)
-                    ->whereDate('date', $datey)
-                    ->where(function ($query) {
-                        $query->whereIn('noe_id', [4])
-                        ->Where('service_id', 2);
-                    })->exists();
-
-                    $servicelist = \App\Models\Appointment::select('id','date','time')
-                    ->where(function ($query) {
-                        $query->whereNull('inperson_address')
-                            ->orWhere('inperson_address', '')
-                            ->orWhere('inperson_address', 2); //For Melbourne
-                    })
-                    ->where('status', '!=', 7)
-                    ->whereDate('date', $datey)
-                    ->where(function ($query) {
-                        $query->whereIn('noe_id', [4])
-                        ->Where('service_id', 2);
-                    })->get();
-                }
-                else if( isset($request->enquiry_item) && ( $request->enquiry_item == 5 ) ) { //Education/Course Change
-                    if( isset($request->service_id) && $request->service_id == 2  ){ //Education Free Service
-                        $book_service_slot_per_person_tbl_unique_id = 5;
-                    }
-                    $service = \App\Models\Appointment::select('id','date','time')
-                    ->where(function ($query) {
-                        $query->whereNull('inperson_address')
-                            ->orWhere('inperson_address', '')
-                            ->orWhere('inperson_address', 2); //For Melbourne
-                    })
-                    ->where('status', '!=', 7)
-                    ->whereDate('date', $datey)
-                    ->where(function ($query) {
-                        $query->whereIn('noe_id', [5])
-                        ->Where('service_id', 2);
-                    })->exists();
-
-                    $servicelist = \App\Models\Appointment::select('id','date','time')
-                    ->where(function ($query) {
-                        $query->whereNull('inperson_address')
-                            ->orWhere('inperson_address', '')
-                            ->orWhere('inperson_address', 2); //For Melbourne
-                    })
-                    ->where('status', '!=', 7)
-                    ->whereDate('date', $datey)
-                    ->where(function ($query) {
-                        $query->whereIn('noe_id', [5])
-                        ->Where('service_id', 2);
-                    })->get();
-                }
-            }
-        }
-        //dd($servicelist);
-        $disabledtimeslotes = array();
-	    if($service){
-            foreach($servicelist as $list){
-                $disabledtimeslotes[] = date('g:i A', strtotime($list->time)); //'H:i A'
-			}
-            // Query book_service_disable_slots table only if slot_overwrite is not enabled
-            if($slot_overwrite != 1){
-                $disabled_slot_arr = \App\Models\BookServiceDisableSlot::select('id','slots')->where('book_service_slot_per_person_id', $book_service_slot_per_person_tbl_unique_id)->whereDate('disabledates', $datey)->get();
-                //dd($disabled_slot_arr);
-                if(!empty($disabled_slot_arr) && count($disabled_slot_arr) >0 ){
-                    $newArray = explode(",",$disabled_slot_arr[0]->slots); //dd($newArray);
-                } else {
-                    $newArray = array();
-                }
-                $disabledtimeslotes = array_merge($disabledtimeslotes, $newArray); //dd($disabledtimeslotes);
-            }
-		    return json_encode(array('success'=>true, 'disabledtimeslotes' =>$disabledtimeslotes));
-	    } else {
-            // Query book_service_disable_slots table only if slot_overwrite is not enabled
-            if($slot_overwrite != 1){
-                $disabled_slot_arr = \App\Models\BookServiceDisableSlot::select('id','slots')->where('book_service_slot_per_person_id', $book_service_slot_per_person_tbl_unique_id)->whereDate('disabledates', $datey)->get();
-                //dd($disabled_slot_arr);
-                if(!empty($disabled_slot_arr) && count($disabled_slot_arr) >0 ){
-                    $newArray = explode(",",$disabled_slot_arr[0]->slots); //dd($newArray);
-                } else {
-                    $newArray = array();
-                }
-                $disabledtimeslotes = array_merge($disabledtimeslotes, $newArray); //dd($disabledtimeslotes);
-            }
-		    return json_encode(array('success'=>true, 'disabledtimeslotes' =>$disabledtimeslotes));
-	    }
-    }
-    */
-
-
-    /**
-     * Get date/time backend - COMMENTED OUT FOR FUTURE USE
-     * WARNING: AppointmentsController has been deleted - old appointment system removed
-     * This method used deleted models (BookService, BookServiceSlotPerPerson)
-     * 
-     * @deprecated Old appointment system removed - no longer available
-     */
-    /*
     public function getdatetimebackend(Request $request)
-    {   //dd($request->all());
+    {
         $enquiry_item = $request->enquiry_item;
         $req_service_id = $request->id;
-        $slot_overwrite = $request->slot_overwrite ?? 0; // Default to 0 if not provided
-        \Log::info('getdatetimebackend called with slot_overwrite:', ['slot_overwrite' => $slot_overwrite, 'request' => $request->all()]);
-        //echo $enquiry_item."===".$req_service_id; die;
+        $slot_overwrite = $request->slot_overwrite ?? 0;
+        $inperson_address = $request->inperson_address;
         
-        $book_service_slot_per_person_tbl_unique_id = null; // Initialize
+        \Log::info('getdatetimebackend called', [
+            'service_id' => $req_service_id,
+            'enquiry_item' => $enquiry_item,
+            'inperson_address' => $inperson_address,
+            'slot_overwrite' => $slot_overwrite
+        ]);
         
-        if(isset($request->inperson_address) && $request->inperson_address == 1 ) { //Adelaide
-            if( $enquiry_item != "" && $req_service_id != "") {
-                if( $req_service_id == 1 ) { //Paid service
-                    $person_id = 5; //Adelaide
-                    $service_type = $req_service_id; //Paid service
-                    $book_service_slot_per_person_tbl_unique_id = 6;
-                }
-                else if( $req_service_id == 2 ) { //Free service
-                    $person_id = 5; //Adelaide
-                    $service_type = $req_service_id; //Free service
-                    $book_service_slot_per_person_tbl_unique_id = 8;
-                }
-            }
+        // Define default settings based on service and location
+        // Service 1 = Free Consultation (15 min)
+        // Service 2 = Comprehensive Migration Advice (30 min)
+        // Service 3 = Overseas Applicant Enquiry (30 min)
+        
+        $duration = 15; // Default
+        $start_time = '09:00';
+        $end_time = '17:00';
+        $weekendd = [];
+        $disabledatesarray = [];
+        
+        // Determine duration based on service
+        if ($req_service_id == 1) {
+            $duration = 15; // Free Consultation
+        } else if ($req_service_id == 2 || $req_service_id == 3) {
+            $duration = 30; // Paid services
         }
-        else { //Melbourne
-
-            if( $enquiry_item != "" && $req_service_id != "")
-            {
-                if( $req_service_id == 1 ) { //Paid service
-                    $person_id = 1; //Ajay
-                    $service_type = $req_service_id; //Paid service
-                    $book_service_slot_per_person_tbl_unique_id = 1;
-                }
-                else if( $req_service_id == 2 ) { //Free service
-                    if( $enquiry_item == 1 || $enquiry_item == 6 || $enquiry_item == 7 ){
-                        //1 => Permanent Residency Appointment
-                        //6 => Complex matters: AAT, Protection visa, Federal Cas
-                        //7 => Visa Cancellation/ NOICC/ Visa refusals
-                        $person_id = 1; //Ajay
-                        $service_type = $req_service_id; //Free service
-                        $book_service_slot_per_person_tbl_unique_id = 2;
-                    }
-                    else if( $enquiry_item == 2 || $enquiry_item == 3 ){
-                        //2 => Temporary Residency Appointment
-                        //3 => JRP/Skill Assessment
-                        $person_id = 2; //Shubam
-                        $service_type = $req_service_id; //Free service
-                        $book_service_slot_per_person_tbl_unique_id = 3;
-                    }
-                    else if( $enquiry_item == 4 ){ //Tourist Visa
-                        $person_id = 3; //Tourist
-                        $service_type = $req_service_id; //Free service
-                        $book_service_slot_per_person_tbl_unique_id = 4;
-                    }
-                    else if( $enquiry_item == 5 ){ //Education/Course Change/Student Visa/Student Dependent Visa (for education selection only)
-                        $person_id = 4; //Education
-                        $service_type = $req_service_id; //Free service
-                        $book_service_slot_per_person_tbl_unique_id = 5;
-                    }
-                }
-            }
+        
+        // Set office hours based on location
+        if ($inperson_address == 1) {
+            // Adelaide office hours
+            $start_time = '09:00';
+            $end_time = '17:00';
+        } else {
+            // Melbourne office hours
+            $start_time = '09:00';
+            $end_time = '17:00';
         }
-        //echo $person_id."===".$service_type; die;
-        $bookservice = \App\Models\BookService::where('id', $req_service_id)->first();//dd($bookservice);
-        $service = \App\Models\BookServiceSlotPerPerson::where('person_id', $person_id)->where('service_type', $service_type)->first();//dd($service);
-	    if( $service ){
-		   $weekendd  =array();
-		   // Skip weekend blocking if slot_overwrite is enabled
-		    if($service->weekend != '' && $slot_overwrite != 1){
-				$weekend = explode(',',$service->weekend);
-				foreach($weekend as $e){
-					$e = trim($e); // Remove whitespace
-					if($e == 'Sun'){
-						$weekendd[] = 0;
-					}else if($e == 'Mon'){
-						$weekendd[] = 1;
-					}else if($e == 'Tue'){
-						$weekendd[] = 2;
-					}else if($e == 'Wed'){
-						$weekendd[] = 3;
-					}else if($e == 'Thu'){
-						$weekendd[] = 4;
-					}else if($e == 'Fri'){
-						$weekendd[] = 5;
-					}else if($e == 'Sat'){
-						$weekendd[] = 6;
-					}
-				}
-			}
-			$start_time = date('H:i',strtotime($service->start_time));
-			$end_time = date('H:i',strtotime($service->end_time));
+        
+        // Block weekends unless slot_overwrite is enabled
+        if ($slot_overwrite != 1) {
+            $weekendd = [0, 6]; // Sunday and Saturday
+        }
+        
+        // Return success with appointment settings
+        return json_encode([
+            'success' => true,
+            'duration' => $duration,
+            'weeks' => $weekendd,
+            'start_time' => $start_time,
+            'end_time' => $end_time,
+            'disabledatesarray' => $disabledatesarray
+        ]);
+    }
 
-            if($service->disabledates != ''){
-                $disabledatesarray =  array();
-                if( strpos($service->disabledates, ',') !== false ) {
-                    $disabledatesArr = explode(',',$service->disabledates);
-                    $disabledatesarray = $disabledatesArr;
-                } else {
-                    $disabledatesarray = array($service->disabledates);
+    /**
+     * Get disabled date/time slots for selected date
+     * Queries BookingAppointment table to find already booked time slots
+     */
+    public function getdisableddatetime(Request $request)
+    {
+        $requestData = $request->all();
+        $slot_overwrite = $request->slot_overwrite ?? 0;
+        $date = explode('/', $requestData['sel_date']);
+        $datey = $date[2].'-'.$date[1].'-'.$date[0];
+        
+        \Log::info('getdisableddatetime called', [
+            'date' => $datey,
+            'service_id' => $request->service_id,
+            'inperson_address' => $request->inperson_address,
+            'slot_overwrite' => $slot_overwrite
+        ]);
+
+        // Query BookingAppointment table to find already booked slots
+        $query = \App\Models\BookingAppointment::select('id', 'appointment_datetime', 'timeslot_full')
+            ->whereDate('appointment_datetime', $datey)
+            ->whereNotIn('status', ['cancelled', 'no_show']);
+
+        // Filter by location
+        if (isset($request->inperson_address)) {
+            $query->where('inperson_address', '=', $request->inperson_address);
+        }
+
+        $servicelist = $query->get();
+        
+        // Extract booked time slots
+        $disabledtimeslotes = array();
+        
+        foreach ($servicelist as $appointment) {
+            // Try to extract start time from timeslot_full (e.g., "10:00 AM - 10:15 AM")
+            if ($appointment->timeslot_full) {
+                // Extract the start time
+                if (preg_match('/^([0-9]{1,2}:[0-9]{2}\s*(?:AM|PM)?)/i', $appointment->timeslot_full, $matches)) {
+                    $disabledtimeslotes[] = trim($matches[1]);
                 }
             } else {
-                $disabledatesarray =  array();
+                // Fallback to appointment_datetime
+                $time = date('g:i A', strtotime($appointment->appointment_datetime));
+                $disabledtimeslotes[] = $time;
             }
-            
-            // Query book_service_disable_slots table to get additional disabled dates
-            // Skip this if slot_overwrite is enabled (allows booking on blocked dates)
-            if(isset($book_service_slot_per_person_tbl_unique_id) && $slot_overwrite != 1){
-                $disabled_dates_from_table = \App\Models\BookServiceDisableSlot::select('disabledates')
-                    ->where('book_service_slot_per_person_id', $book_service_slot_per_person_tbl_unique_id)
-                    ->get();
-                
-                foreach($disabled_dates_from_table as $disabled_date_row){
-                    $formatted_date = date('d/m/Y', strtotime($disabled_date_row->disabledates));
-                    if(!in_array($formatted_date, $disabledatesarray)){
-                        $disabledatesarray[] = $formatted_date;
-                    }
-                }
-            }
-            
-            // Add the current date to the array
-            //$disabledatesarray[] = date('d/m/Y'); //dd($disabledatesarray);
-            if(isset($request->inperson_address) && $request->inperson_address == 1 ) { //Adelaide
-                $duration = $bookservice->duration;
-            } else { //Melbourne
-                if( isset($req_service_id) && $req_service_id == 1){ //Paid
-                    $duration = 15; //In melbourne case paid service = 15
-                } else if( isset($req_service_id) && $req_service_id == 2){ //Free
-                    $duration = $bookservice->duration; //In melbourne case free service = 15
-                }
-            }
-            \Log::info('getdatetimebackend response:', ['slot_overwrite' => $slot_overwrite, 'weekendd' => $weekendd, 'disabledatesarray' => $disabledatesarray]);
-            return json_encode(array('success'=>true, 'duration' =>$duration,'weeks' => $weekendd,'start_time' =>$start_time,'end_time'=>$end_time,'disabledatesarray'=>$disabledatesarray));
-	    }else{
-		 return json_encode(array('success'=>false, 'duration' =>0));
-	   }
+        }
+        
+        // Remove duplicates
+        $disabledtimeslotes = array_unique($disabledtimeslotes);
+        
+        \Log::info('Disabled timeslots found', ['count' => count($disabledtimeslotes), 'slots' => $disabledtimeslotes]);
+        
+        return json_encode(array('success' => true, 'disabledtimeslotes' => array_values($disabledtimeslotes)));
     }
-    */
+
 
 
 }

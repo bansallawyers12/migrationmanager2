@@ -2251,9 +2251,24 @@ function customValidate(formName, savetype = '')
                                 processData: false,
                                 contentType: false,
                                 data: fd,
+                                dataType: 'json', // Expect JSON response
                                 success: function(response){
                                     $('.popuploader').hide();
-                                    var obj = $.parseJSON(response);
+                                    
+                                    // Response is already parsed as JSON when dataType is set
+                                    var obj = response;
+                                    
+                                    // Fallback: if response is a string, parse it
+                                    if (typeof response === 'string') {
+                                        try {
+                                            obj = $.parseJSON(response);
+                                        } catch (e) {
+                                            console.error('JSON parse error:', e);
+                                            console.error('Response:', response);
+                                            $('.custom-error-msg').html('<span class="alert alert-danger">Invalid server response. Please try again.</span>');
+                                            return;
+                                        }
+                                    }
 
                                     if(obj.status){
                                         /*if(obj.reloadpage){
@@ -2274,7 +2289,25 @@ function customValidate(formName, savetype = '')
 									}else{
 										$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
                                     }
-								}
+								},
+                                error: function(xhr, status, error) {
+                                    $('.popuploader').hide();
+                                    console.error('AJAX Error:', error);
+                                    console.error('Status:', status);
+                                    console.error('Response:', xhr.responseText);
+                                    
+                                    var errorMessage = 'Failed to create appointment. Please try again.';
+                                    try {
+                                        var errorObj = JSON.parse(xhr.responseText);
+                                        if (errorObj.message) {
+                                            errorMessage = errorObj.message;
+                                        }
+                                    } catch (e) {
+                                        // Response is not JSON
+                                    }
+                                    
+                                    $('.custom-error-msg').html('<span class="alert alert-danger">' + errorMessage + '</span>');
+                                }
 							});
 					  	}
 					}

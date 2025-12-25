@@ -9314,7 +9314,7 @@ class ClientsController extends Controller
                 'client_id' => 'required|exists:admins,id',
                 'noe_id' => 'required|integer|in:1,2,3,4,5,6,7,8',
                 'service_id' => 'required|integer|in:1,2,3',
-                'appoint_date' => 'required|date',
+                'appoint_date' => 'required|string', // Accept string format (dd/mm/yyyy), validate after conversion
                 'appoint_time' => 'required|string',
                 'description' => 'required|string',
                 'appointment_details' => 'required|in:phone,in_person,video_call',
@@ -9332,6 +9332,20 @@ class ClientsController extends Controller
 
             // Get client information
             $client = Admin::findOrFail($requestData['client_id']);
+            
+            // Validate client has required fields
+            $clientName = trim($client->first_name . ' ' . ($client->last_name ?? ''));
+            if (empty($clientName)) {
+                $clientName = $client->email ?? 'Client ' . $client->id;
+            }
+            
+            $clientEmail = $client->email ?? '';
+            if (empty($clientEmail)) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Client email is required. Please update client information first.'
+                ], 422);
+            }
             
             // Map service_id from form to actual service_id
             // Form: 1=Free Consultation, 2=Comprehensive Migration Advice, 3=Overseas Applicant Enquiry
@@ -9402,6 +9416,12 @@ class ClientsController extends Controller
             $dateStr = $requestData['appoint_date'];
             $timezone = $requestData['timezone'] ?? 'Australia/Melbourne';
             
+            // Convert date from dd/mm/yyyy to Y-m-d format if needed
+            if (preg_match('/^(\d{2})\/(\d{2})\/(\d{4})$/', $dateStr, $dateMatches)) {
+                // Date is in dd/mm/yyyy format, convert to Y-m-d
+                $dateStr = $dateMatches[3] . '-' . $dateMatches[2] . '-' . $dateMatches[1];
+            }
+            
             try {
                 $appointmentDateTime = Carbon::createFromFormat('Y-m-d H:i', $dateStr . ' ' . $timeStr, $timezone)
                     ->setTimezone(config('app.timezone', 'UTC'));
@@ -9411,7 +9431,7 @@ class ClientsController extends Controller
                     $appointmentDateTime = Carbon::createFromFormat('Y-m-d H:i:s', $dateStr . ' ' . $timeStr . ':00', $timezone)
                         ->setTimezone(config('app.timezone', 'UTC'));
                 } catch (\Exception $e2) {
-                    throw new \Exception('Invalid date/time format. Date: ' . $dateStr . ', Time: ' . $timeStr);
+                    throw new \Exception('Invalid date/time format. Date: ' . $requestData['appoint_date'] . ', Time: ' . $timeStr . '. Error: ' . $e2->getMessage());
                 }
             }
 
@@ -9429,11 +9449,14 @@ class ClientsController extends Controller
             ];
             $consultant = $consultantAssigner->assignConsultant($appointmentDataForConsultant);
 
+            // Consultant is nullable, but log if not found
             if (!$consultant) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Could not assign consultant. Please ensure consultants are set up for the selected service type.'
-                ], 422);
+                \Log::warning('No consultant assigned for appointment', [
+                    'noe_id' => $requestData['noe_id'],
+                    'service_id' => $serviceId,
+                    'location' => $location,
+                    'inperson_address' => $requestData['inperson_address']
+                ]);
             }
 
             // Generate unique bansal_appointment_id for manually created appointments
@@ -9451,11 +9474,11 @@ class ClientsController extends Controller
                 'order_hash' => null, // No payment for manually created appointments
                 
                 'client_id' => $client->id,
-                'consultant_id' => $consultant->id,
-                'assigned_by_admin_id' => Auth::id(),
+                'consultant_id' => $consultant ? $consultant->id : null,
+                'assigned_by_admin_id' => Auth::id() ?: null,
                 
-                'client_name' => $client->first_name . ' ' . ($client->last_name ?? ''),
-                'client_email' => $client->email ?? '',
+                'client_name' => $clientName,
+                'client_email' => $clientEmail,
                 'client_phone' => $client->phone ?? null,
                 'client_timezone' => $requestData['timezone'] ?? 'Australia/Melbourne',
                 
@@ -9478,6 +9501,12 @@ class ClientsController extends Controller
                 'amount' => ($serviceId == 2) ? 0 : 150, // Set appropriate amounts
                 'final_amount' => ($serviceId == 2) ? 0 : 150,
                 'payment_status' => ($serviceId == 2) ? null : 'pending',
+                
+                // Boolean fields with default values
+                'follow_up_required' => false,
+                'confirmation_email_sent' => false,
+                'reminder_sms_sent' => false,
+                
                 'user_id' => Auth::id(),
             ]);
 
