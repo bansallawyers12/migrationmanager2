@@ -151,11 +151,9 @@ Route::get('/office-visits/change_assignee', [OfficeVisitController::class, 'cha
 // Route::get('/change_assignee', [AppointmentsController::class, 'change_assignee']); // REMOVED
 
 /*---------- Appointment Scheduling Backend ----------*/
-// WARNING: These methods used deleted models (BookService, BookServiceSlotPerPerson)
-// Route::post('/getdatetimebackend', [HomeController::class, 'getdatetimebackend'])->name('getdatetimebackend'); // REMOVED
-// Route::post('/getdatetimebackend', [AppointmentsController::class, 'getDateTimeBackend'])->name('getdatetimebackend'); // REMOVED - AppointmentsController deleted
-// Route::post('/getdisableddatetime', [HomeController::class, 'getdisableddatetime'])->name('getdisableddatetime'); // REMOVED
-// Route::post('/getdisableddatetime', [AppointmentsController::class, 'getDisabledDateTime'])->name('getdisableddatetime'); // REMOVED - AppointmentsController deleted
+// Restored: Using HomeController methods with BookingAppointment model
+Route::post('/getdatetimebackend', [HomeController::class, 'getdatetimebackend'])->name('getdatetimebackend');
+Route::post('/getdisableddatetime', [HomeController::class, 'getdisableddatetime'])->name('getdisableddatetime');
 
 /*
 |--------------------------------------------------------------------------

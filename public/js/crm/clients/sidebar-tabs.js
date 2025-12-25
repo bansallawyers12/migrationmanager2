@@ -263,8 +263,9 @@
             // Check matter match
             let matterMatch = false;
             if (matterId !== "" && matterId !== null && matterId !== undefined) {
-                // Show notes that match the selected matter OR notes with no matter_id
-                matterMatch = (noteMatterId == matterId || noteMatterId == '' || noteMatterId == null);
+                // Show only notes that match the selected matter (exclude notes with no matter_id)
+                // Notes without matter_id should only appear in Activity feed, not in Notes tab
+                matterMatch = (noteMatterId == matterId && noteMatterId !== '' && noteMatterId !== null);
             } else {
                 // Show all notes when no matter is selected
                 matterMatch = true;

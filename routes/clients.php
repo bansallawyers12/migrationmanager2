@@ -296,6 +296,7 @@ Route::post('/clients/getAllUser', 'CRM\ClientsController@getAllUser')->name('cl
 /*---------- Appointments ----------*/
 Route::post('/add-appointment', 'CRM\ClientsController@addAppointment');
 Route::post('/add-appointment-book', 'CRM\ClientsController@addAppointmentBook');
+Route::get('/get-appointments', 'CRM\ClientsController@getAppointments');
 
 /*---------- Client Portal ----------*/
 Route::post('/clients/toggle-client-portal', 'CRM\ClientPortalController@toggleClientPortal')->name('clients.toggleClientPortal');
@@ -314,8 +315,6 @@ Route::post('/save-references', 'CRM\ClientsController@savereferences')->name('r
 Route::post('/check-star-client', 'CRM\ClientsController@checkStarClient')->name('check.star.client');
 Route::post('/merge_records','CRM\ClientsController@merge_records')->name('client.merge_records');
 
-/*---------- Webhook Integration ----------*/
-Route::post('/send-webhook', 'CRM\ClientsController@sendToWebhook')->name('send-webhook');
 
 /*---------- Visa Expiry Messages ----------*/
 Route::get('/fetch-visa_expiry_messages', 'CRM\CRMUtilityController@fetchvisaexpirymessages');

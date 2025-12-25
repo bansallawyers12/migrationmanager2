@@ -26,6 +26,7 @@ bootstrap/cache/config.php
 
 old_migrationmanager.sql
 .env.backup
+sample env need fix.txt
 pdftk_server_installer.exe
 
 *.backup
