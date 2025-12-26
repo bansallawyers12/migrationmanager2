@@ -440,6 +440,8 @@
     background: #fafafa;
     border-radius: 12px;
     overflow: hidden;
+    display: flex;
+    flex-direction: column; /* Use flexbox for internal layout */
 }
 
 .todo-header {
@@ -500,6 +502,10 @@
 
 .todo-task-list-container {
     background: white;
+    flex: 1; /* Allow container to grow and fill available space */
+    min-height: 0; /* Important for flex children with overflow */
+    max-height: 500px; /* Prevent containers from becoming extremely long */
+    overflow-y: auto; /* Enable scrolling when content exceeds container */
 }
 
 .todo-task-list {
