@@ -9070,20 +9070,43 @@ Bansal Immigration`;
                             }
 
                             
-
+                            
                             // Call the functions to refresh the data
+                            // Add a small delay to ensure database transaction is committed
+                            setTimeout(function() {
+                                // Refresh Activity Feed
+                                if (typeof getallactivities === 'function') {
+                                    try {
+                                        getallactivities();
+                                    } catch (e) {
+                                        console.error('Error refreshing Activity Feed:', e);
+                                        // Try fallback method
+                                        if (typeof window.loadActivities === 'function') {
+                                            try {
+                                                window.loadActivities();
+                                            } catch (e2) {
+                                                console.error('Error with fallback Activity Feed refresh:', e2);
+                                            }
+                                        }
+                                    }
+                                } else if (typeof window.loadActivities === 'function') {
+                                    // Fallback if getallactivities is not available
+                                    try {
+                                        window.loadActivities();
+                                    } catch (e) {
+                                        console.error('Error with window.loadActivities():', e);
+                                    }
+                                }
 
-                            if (typeof getallactivities === 'function') {
-
-                                getallactivities();
-
-                            }
-
-                            if (typeof getallnotes === 'function') {
-
-                                getallnotes();
-
-                            }
+                                // Refresh notes list
+                                if (typeof getallnotes === 'function') {
+                                    try {
+                                        getallnotes();
+                                    } catch (e) {
+                                        console.error('Error refreshing notes:', e);
+                                    }
+                                }
+                            }, 500); // 500ms delay to ensure DB transaction is committed
 
                         } else {
 
@@ -9220,20 +9243,32 @@ Bansal Immigration`;
 
                 type:'GET',
 
-                datatype:'json',
+                dataType:'json', // Fixed: changed from datatype to dataType (case-sensitive)
 
                 data:{id:window.ClientDetailConfig.clientId},
 
                 success: function(responses){
                     try {
-                        // Check if response is HTML (redirect page)
-                        if (typeof responses === 'string' && responses.trim().startsWith('<!DOCTYPE') || responses.trim().startsWith('<html')) {
-                            console.error('Received HTML instead of JSON. User might be logged out.');
-                            console.log('Response received:', responses.substring(0, 200));
+                        // Handle response - it might already be an object if dataType is 'json'
+                        var ress;
+                        
+                        if (typeof responses === 'string') {
+                            // Check if response is HTML (redirect page)
+                            var trimmedResponse = responses.trim();
+                            if (trimmedResponse.startsWith('<!DOCTYPE') || trimmedResponse.startsWith('<html')) {
+                                console.error('Received HTML instead of JSON. User might be logged out.');
+                                console.log('Response received:', responses.substring(0, 200));
+                                return;
+                            }
+                            // Parse string response
+                            ress = JSON.parse(responses);
+                        } else if (typeof responses === 'object' && responses !== null) {
+                            // Response is already parsed (dataType: 'json' was used)
+                            ress = responses;
+                        } else {
+                            console.error('Unexpected response type:', typeof responses);
                             return;
                         }
-
-                        var ress = JSON.parse(responses);
 
                     var html = '';
 
