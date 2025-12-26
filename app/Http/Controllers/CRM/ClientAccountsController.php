@@ -3032,6 +3032,7 @@ class ClientAccountsController extends Controller
       }
       
       $doctype = isset($request->doctype)? $request->doctype : '';
+      $uploadedDocumentId = null; // Store the uploaded document ID
       if ($request->hasfile('document_upload')) {
           if(!is_array($request->file('document_upload'))){
            $files[] = $request->file('document_upload');
@@ -3084,6 +3085,9 @@ class ClientAccountsController extends Controller
                $obj->signer_count = 1;
                $saved = $obj->save();
                
+               // Store the uploaded document ID
+               $uploadedDocumentId = $obj->id;
+               
                // Update the receipt with the uploaded document ID
                if ($receipt_id && $obj->id) {
                    DB::table('account_client_receipts')
@@ -3125,7 +3129,11 @@ class ClientAccountsController extends Controller
            }
            $response['status']     =     true;
            $response['message']    =    "You've successfully uploaded your client receipt document";
-           $fetchd = \App\Models\Document::where('client_id',$id)->where('doc_type',$doctype)->where('type',$request->type)->orderby('created_at', 'DESC')->get();
+           // FIX: Only fetch the document that was just uploaded, not all documents
+           // This ensures the response always shows the correct document for this receipt
+           $fetchd = $uploadedDocumentId 
+               ? \App\Models\Document::where('id', $uploadedDocumentId)->get()
+               : collect(); // Return empty collection if no document ID was stored
            ob_start();
            foreach($fetchd as $fetch){
                $admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
@@ -3252,6 +3260,7 @@ class ClientAccountsController extends Controller
       }
       
       $doctype = isset($request->doctype)? $request->doctype : '';
+      $uploadedDocumentId = null; // Store the uploaded document ID
       if ($request->hasfile('document_upload')) {
           if(!is_array($request->file('document_upload'))){
            $files[] = $request->file('document_upload');
@@ -3304,6 +3313,9 @@ class ClientAccountsController extends Controller
                $obj->signer_count = 1;
                $saved = $obj->save();
                
+               // Store the uploaded document ID
+               $uploadedDocumentId = $obj->id;
+               
                // Update the receipt with the uploaded document ID
                if ($receipt_id && $obj->id) {
                    DB::table('account_client_receipts')
@@ -3345,7 +3357,11 @@ class ClientAccountsController extends Controller
            }
            $response['status']     =     true;
            $response['message']    =    "You've successfully uploaded your office receipt document";
-           $fetchd = \App\Models\Document::where('client_id',$id)->where('doc_type',$doctype)->where('type',$request->type)->orderby('created_at', 'DESC')->get();
+           // FIX: Only fetch the document that was just uploaded, not all documents
+           // This ensures the response always shows the correct document for this receipt
+           $fetchd = $uploadedDocumentId 
+               ? \App\Models\Document::where('id', $uploadedDocumentId)->get()
+               : collect(); // Return empty collection if no document ID was stored
            ob_start();
            foreach($fetchd as $fetch){
                $admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
@@ -3471,6 +3487,7 @@ class ClientAccountsController extends Controller
       }
       
       $doctype = isset($request->doctype)? $request->doctype : '';
+      $uploadedDocumentId = null; // Store the uploaded document ID
       if ($request->hasfile('document_upload')) {
           if(!is_array($request->file('document_upload'))){
            $files[] = $request->file('document_upload');
@@ -3523,6 +3540,9 @@ class ClientAccountsController extends Controller
                $obj->signer_count = 1;
                $saved = $obj->save();
                
+               // Store the uploaded document ID
+               $uploadedDocumentId = $obj->id;
+               
                // Update the journal entry with the uploaded document ID
                if ($receipt_id && $obj->id) {
                    DB::table('account_journal_entries')
@@ -3563,7 +3583,11 @@ class ClientAccountsController extends Controller
            }
            $response['status']     =     true;
            $response['message']    =    "You've successfully uploaded your journal receipt document";
-           $fetchd = \App\Models\Document::where('client_id',$id)->where('doc_type',$doctype)->where('type',$request->type)->orderby('created_at', 'DESC')->get();
+           // FIX: Only fetch the document that was just uploaded, not all documents
+           // This ensures the response always shows the correct document for this receipt
+           $fetchd = $uploadedDocumentId 
+               ? \App\Models\Document::where('id', $uploadedDocumentId)->get()
+               : collect(); // Return empty collection if no document ID was stored
            ob_start();
            foreach($fetchd as $fetch){
                $admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
