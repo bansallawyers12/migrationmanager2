@@ -265,7 +265,7 @@ class EmailUploadController extends Controller
             
             // 1. Upload file to S3
             $filePath = $clientUniqueId . '/' . $docType . '/' . $mailType . '/' . $uniqueFileName;
-            Storage::disk('s3')->put($filePath, file_get_contents($file));
+            Storage::disk('s3')->put($filePath, file_get_contents($file->getPathname()));
             $fileUrl = Storage::disk('s3')->url($filePath);
 
             // 2. Parse email using Python microservice
@@ -575,11 +575,26 @@ class EmailUploadController extends Controller
         try {
             // Call Python microservice
             $response = Http::timeout(30)
-                ->attach('file', file_get_contents($file), $file->getClientOriginalName())
+                ->attach('file', file_get_contents($file->getPathname()), $file->getClientOriginalName())
                 ->post($this->pythonServiceUrl . '/email/parse');
 
             if ($response->successful()) {
-                $result = $response->json();
+                // Safely parse JSON response - handle cases where service returns HTML error pages
+                try {
+                    $result = $response->json();
+                } catch (\Exception $jsonException) {
+                    Log::error('Failed to parse Python service response as JSON', [
+                        'status' => $response->status(),
+                        'content_type' => $response->header('Content-Type'),
+                        'body_preview' => substr($response->body(), 0, 500),
+                        'error' => $jsonException->getMessage()
+                    ]);
+                    return [
+                        'success' => false,
+                        'error' => 'Invalid response from email processing service. The service may be experiencing issues.'
+                    ];
+                }
+                
                 // Python service returns data directly on success, or {'success': False, 'error': ...} on error
                 // Check if response contains error (even with 200 status)
                 if (isset($result['error']) || (isset($result['success']) && !$result['success'])) {

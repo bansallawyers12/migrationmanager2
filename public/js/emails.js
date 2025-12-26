@@ -499,6 +499,19 @@
                 }
             );
 
+            // Validate response before parsing JSON
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Upload failed: ${response.status} ${response.statusText}. ${errorText.substring(0, 200)}`);
+            }
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const errorText = await response.text();
+                console.error('Server returned non-JSON response:', errorText.substring(0, 500));
+                throw new Error('Server returned invalid response format. Please try again or contact support if the issue persists.');
+            }
+
             const data = await response.json();
             console.log('Upload response:', data);
 
