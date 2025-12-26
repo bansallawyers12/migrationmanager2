@@ -68,7 +68,7 @@ class AssigneeController extends Controller
     }
 
     //Update task to be complete
-    public function updatetaskcompleted(Request $request,Note $note)
+    public function updatetaskcompleted(Request $request)
     {
         $data = $request->all(); //dd($data);
         $note = Note::where('unique_group_id',$data['unique_group_id'])
@@ -129,7 +129,7 @@ class AssigneeController extends Controller
     }
 
     //Update task to be not complete
-    public function updatetasknotcompleted(Request $request,Note $note)
+    public function updatetasknotcompleted(Request $request)
     {
         $data = $request->all(); //dd($data['id']);
         $note = Note::where('unique_group_id',$data['unique_group_id'])

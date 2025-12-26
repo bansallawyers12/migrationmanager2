@@ -485,23 +485,60 @@
                 matterId
             );
 
+            // Validate and add CSRF token (both in header and form data for compatibility)
+            const csrfToken = getCsrfToken();
+            if (!csrfToken) {
+                throw new Error('Security token not found. Please refresh the page and try again.');
+            }
+            formData.append('_token', csrfToken);
+
             console.log('Uploading to:', currentMailType === 'sent' ? '/upload-sent-fetch-mail' : '/upload-fetch-mail');
 
+            // Note: Don't set Content-Type header when using FormData - browser sets it automatically with boundary
             const response = await fetch(
                 currentMailType === 'sent' ? '/upload-sent-fetch-mail' : '/upload-fetch-mail',
                 {
                     method: 'POST',
                     headers: {
-                        'X-CSRF-TOKEN': getCsrfToken(),
+                        'X-CSRF-TOKEN': csrfToken,
                         'Accept': 'application/json'
+                        // Don't set Content-Type - browser will set it with multipart/form-data boundary
                     },
-                    body: formData
+                    body: formData,
+                    credentials: 'same-origin' // Include cookies for session/CSRF
                 }
             );
 
             // Validate response before parsing JSON
             if (!response.ok) {
                 const errorText = await response.text();
+                
+                // Handle specific error codes with user-friendly messages
+                if (response.status === 403) {
+                    if (errorText.includes('CSRF') || errorText.includes('Forbidden')) {
+                        console.error('CSRF token error - page may need to be refreshed');
+                        throw new Error('Session expired or security token invalid. Please refresh the page and try again.');
+                    }
+                    throw new Error('Access denied. You may not have permission to upload emails, or your session has expired. Please refresh the page and try again.');
+                } else if (response.status === 419) {
+                    // Laravel's CSRF token mismatch status code
+                    console.error('CSRF token mismatch - page needs refresh');
+                    throw new Error('Security token expired. Please refresh the page and try again.');
+                } else if (response.status === 413) {
+                    throw new Error('File too large. Maximum file size is 30MB per file.');
+                } else if (response.status === 422) {
+                    // Validation error - try to parse as JSON for better error message
+                    try {
+                        const errorData = JSON.parse(errorText);
+                        const errorMsg = errorData.message || errorData.errors ? 
+                            Object.values(errorData.errors || {}).flat().join(', ') : 
+                            'Validation failed';
+                        throw new Error(`Upload validation failed: ${errorMsg}`);
+                    } catch {
+                        throw new Error(`Upload validation failed. Please check your file format and try again.`);
+                    }
+                }
+                
                 throw new Error(`Upload failed: ${response.status} ${response.statusText}. ${errorText.substring(0, 200)}`);
             }
 
@@ -509,6 +546,14 @@
             if (!contentType || !contentType.includes('application/json')) {
                 const errorText = await response.text();
                 console.error('Server returned non-JSON response:', errorText.substring(0, 500));
+                
+                // Check for common HTML error pages
+                if (errorText.includes('403 Forbidden') || errorText.includes('Forbidden')) {
+                    throw new Error('Access denied. Your session may have expired. Please refresh the page and try again.');
+                } else if (errorText.includes('419') || errorText.includes('CSRF')) {
+                    throw new Error('Security token expired. Please refresh the page and try again.');
+                }
+                
                 throw new Error('Server returned invalid response format. Please try again or contact support if the issue persists.');
             }
 
