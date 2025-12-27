@@ -267,8 +267,14 @@ class EmailUploadController extends Controller
             $docType = 'conversion_email_fetch';
             
             // 1. Upload file to S3 (use sanitized filename in path)
-            $filePath = $clientUniqueId . '/' . $docType . '/' . $mailType . '/' . $uniqueFileName;
+            // Ensure all path components are sanitized to prevent 403 errors
+            $sanitizedClientId = preg_replace('/[^a-zA-Z0-9\-_\.]/', '_', $clientUniqueId);
+            $filePath = $sanitizedClientId . '/' . $docType . '/' . $mailType . '/' . $uniqueFileName;
+            
+            // Upload to S3
             Storage::disk('s3')->put($filePath, file_get_contents($file->getPathname()));
+            
+            // Generate S3 URL - use Storage method which handles encoding properly
             $fileUrl = Storage::disk('s3')->url($filePath);
 
             // 2. Parse email using Python microservice
@@ -576,9 +582,13 @@ class EmailUploadController extends Controller
     protected function parseEmailWithPython($file)
     {
         try {
-            // Call Python microservice
+            // Sanitize filename for Python service to prevent issues with special characters
+            $originalFileName = $file->getClientOriginalName();
+            $sanitizedFileName = $this->sanitizeFilename($originalFileName);
+            
+            // Call Python microservice (use sanitized filename in attachment)
             $response = Http::timeout(30)
-                ->attach('file', file_get_contents($file->getPathname()), $file->getClientOriginalName())
+                ->attach('file', file_get_contents($file->getPathname()), $sanitizedFileName)
                 ->post($this->pythonServiceUrl . '/email/parse');
 
             if ($response->successful()) {
@@ -747,8 +757,11 @@ class EmailUploadController extends Controller
                         ]);
                         // Continue to create attachment record without file
                     } else {
-                        // Generate unique S3 key
-                        $s3Key = $clientUniqueId . '/attachments/' . time() . '_' . ($attachmentData['filename'] ?? 'attachment');
+                        // Sanitize attachment filename for S3 path to prevent 403 errors
+                        $attachmentFileName = $attachmentData['filename'] ?? 'attachment';
+                        $sanitizedAttachmentFileName = $this->sanitizeFilename($attachmentFileName);
+                        // Generate unique S3 key with sanitized filename
+                        $s3Key = $clientUniqueId . '/attachments/' . time() . '_' . $sanitizedAttachmentFileName;
                         
                         try {
                             // Upload to S3
