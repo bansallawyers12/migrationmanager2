@@ -2813,17 +2813,20 @@ class ClientAccountsController extends Controller
 
       //Total Pending Amount
       $total_Pending_amount = DB::table('account_client_receipts')
-        ->where('receipt_type', 3) // Invoice
-        ->where('receipt_id', $id)
-        ->where(function ($query) {
-            $query->whereIn('invoice_status', [0, 2])
-                ->orWhere(function ($q) {
-                    $q->where('invoice_status', 1)
-                        ->where('balance_amount', '!=', 0.00);
-                });
-        })
-        ->sum('balance_amount');
+    ->where('receipt_type', 3)
+    ->where('receipt_id', $id)
+    ->where(function ($query) {
+        $query->whereIn('invoice_status', [0, 2])
+              ->orWhere(function ($q) {
+                  $q->where('invoice_status', 1)
+                    ->whereRaw('balance_amount <> 0::numeric');
+              });
+    })
+    ->sum('balance_amount');
 
+      if ($total_Pending_amount === null) {
+          $total_Pending_amount = 0.00;
+      }
 
       $clientname = DB::table('admins')->where('id',$record_get[0]->client_id)->first();
       
