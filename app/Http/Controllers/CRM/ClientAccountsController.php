@@ -2823,6 +2823,7 @@ class ClientAccountsController extends Controller
               });
     })
     ->sum('balance_amount');
+    Log::info('Total Pending Amount: ' . $total_Pending_amount);
 
       if ($total_Pending_amount === null) {
           $total_Pending_amount = 0.00;
