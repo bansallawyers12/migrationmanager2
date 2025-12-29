@@ -2694,8 +2694,33 @@ class ClientAccountsController extends Controller
       }
   }
 
-  public function genInvoice(Request $request, $id, $client_id = null){
-      $record_get = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$id)->get();
+  public function genInvoice(Request $request, $id, $client_id = null){ 
+      // ============= BACKWARD COMPATIBILITY: Get client_id if not provided =============
+      $queryClientId = $client_id;
+      if (empty($queryClientId)) {
+          // Try to get from account_all_invoice_receipts first (by receipt_id only)
+          $tempRecord = DB::table('account_all_invoice_receipts')
+              ->where('receipt_type', 3)
+              ->where('receipt_id', $id)
+              ->first();
+          
+          if ($tempRecord && !empty($tempRecord->client_id)) {
+              $queryClientId = $tempRecord->client_id;
+          }
+      }
+      
+      // Validate that we have a client_id (either provided or found)
+      if (empty($queryClientId)) {
+          abort(404, 'Invoice not found or client_id could not be determined');
+      }
+      // ============= END BACKWARD COMPATIBILITY =============
+      
+      $record_get = DB::table('account_all_invoice_receipts')
+          ->where('receipt_type', 3)
+          ->where('receipt_id', $id)
+          ->where('client_id', $queryClientId)
+          ->get();
+      
       // Validate invoice exists
       if ($record_get->isEmpty()) {
           abort(404, 'Invoice not found');
@@ -2704,7 +2729,7 @@ class ClientAccountsController extends Controller
       // Get receipt_id entry from account_client_receipts to check for cached PDF
       $receipt_entry = DB::table('account_client_receipts')
           ->where('receipt_id', $id)
-          ->where('client_id', $client_id)
+          ->where('client_id', $queryClientId)
           ->where('receipt_type', 3)
           ->first();
 
@@ -2774,20 +2799,21 @@ class ClientAccountsController extends Controller
       
       // ============= PDF DATA PREPARATION =============
 
-      $record_get_Professional_Fee_cnt = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Professional Fee')->count();
-      $record_get_Department_Charges_cnt = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Department Charges')->count();
-      $record_get_Surcharge_cnt = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Surcharge')->count();
-      $record_get_Disbursements_cnt = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Disbursements')->count();
-      $record_get_Other_Cost_cnt = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Other Cost')->count();
-      $record_get_Discount_cnt = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Discount')->count();
-      $record_get_Professional_Fee = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Professional Fee')->get();
-      $record_get_Department_Charges = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Department Charges')->get();
-      $record_get_Surcharge = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Surcharge')->get();
-      $record_get_Disbursements = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Disbursements')->get();
-      $record_get_Other_Cost = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Other Cost')->get();
-      $record_get_Discount = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Discount')->get();
+      $record_get_Professional_Fee_cnt = DB::table('account_all_invoice_receipts')->where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Professional Fee')->count();
+      $record_get_Department_Charges_cnt = DB::table('account_all_invoice_receipts')->where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Department Charges')->count();
+      $record_get_Surcharge_cnt = DB::table('account_all_invoice_receipts')->where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Surcharge')->count();
+      $record_get_Disbursements_cnt = DB::table('account_all_invoice_receipts')->where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Disbursements')->count();
+      $record_get_Other_Cost_cnt = DB::table('account_all_invoice_receipts')->where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Other Cost')->count();
+      $record_get_Discount_cnt = DB::table('account_all_invoice_receipts')->where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Discount')->count();
+      $record_get_Professional_Fee = DB::table('account_all_invoice_receipts')->where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Professional Fee')->get();
+      $record_get_Department_Charges = DB::table('account_all_invoice_receipts')->where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Department Charges')->get();
+      $record_get_Surcharge = DB::table('account_all_invoice_receipts')->where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Surcharge')->get();
+      $record_get_Disbursements = DB::table('account_all_invoice_receipts')->where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Disbursements')->get();
+      $record_get_Other_Cost = DB::table('account_all_invoice_receipts')->where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Other Cost')->get();
+      $record_get_Discount = DB::table('account_all_invoice_receipts')->where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Discount')->get();
       //Calculate Gross Amount
       $total_Gross_Amount = DB::table('account_all_invoice_receipts')
+          ->where('client_id', $queryClientId)
           ->where('receipt_type', 3)
           ->where('receipt_id', $id)
           ->sum(DB::raw("
@@ -2801,6 +2827,7 @@ class ClientAccountsController extends Controller
 
       //Total Invoice Amount
       $total_Invoice_Amount = DB::table('account_all_invoice_receipts')
+          ->where('client_id', $queryClientId)
           ->where('receipt_type', 3)
           ->where('receipt_id', $id)
           ->sum(DB::raw("CASE
@@ -2812,26 +2839,18 @@ class ClientAccountsController extends Controller
       $total_GST_amount =  $total_Invoice_Amount - $total_Gross_Amount;
 
       //Total Pending Amount
-      // Get client_id if not provided (for backward compatibility)
-      $queryClientId = $client_id;
-      if (empty($queryClientId) && !empty($record_get) && count($record_get) > 0) {
-          $queryClientId = $record_get[0]->client_id ?? null;
-      }
-      
       $total_Pending_amount = DB::table('account_client_receipts')
-    ->where('receipt_type', 3)
-    ->where('receipt_id', $id)
-    ->when($queryClientId, function ($query) use ($queryClientId) {
-        return $query->where('client_id', $queryClientId);
-    })
-    ->where(function ($query) {
-        $query->whereIn('invoice_status', [0, 2])
-              ->orWhere(function ($q) {
-                  $q->where('invoice_status', 1)
-                    ->whereRaw('balance_amount <> 0::numeric');
-              });
-    })
-    ->sum('balance_amount'); 
+        ->where('receipt_type', 3)
+        ->where('receipt_id', $id)
+        ->where('client_id', $queryClientId)
+        ->where(function ($query) {
+            $query->whereIn('invoice_status', [0, 2])
+                ->orWhere(function ($q) {
+                    $q->where('invoice_status', 1)
+                        ->whereRaw('balance_amount <> 0::numeric');
+                });
+        })
+        ->sum('balance_amount');  
     Log::info('Total Pending Amount: ' . $total_Pending_amount);
 
       if ($total_Pending_amount === null) {
@@ -2997,6 +3016,7 @@ class ClientAccountsController extends Controller
           DB::table('account_client_receipts')
            ->where('receipt_id', $id)
            ->where('receipt_type', 3)
+           ->where('client_id', $queryClientId)
            ->update(['pdf_document_id' => $document->id]);
           
           // Return appropriate response
