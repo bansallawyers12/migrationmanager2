@@ -934,7 +934,20 @@
                             if($fetchedData->tagname != ''){
                                 $rs = explode(',', $fetchedData->tagname);
                                 foreach($rs as $key=>$r){
-                                    $stagd = \App\Models\Tag::where('id','=',$r)->first();
+                                    $r = trim($r); // Remove any whitespace
+                                    $stagd = null;
+                                    
+                                    // Handle both tag IDs (numeric) and tag names (strings) for backward compatibility
+                                    if (is_numeric($r) && $r > 0) {
+                                        // Try to find by ID first (most common case)
+                                        $stagd = \App\Models\Tag::where('id', $r)->first();
+                                    }
+                                    
+                                    // If not found by ID, try to find by name (handles legacy data with tag names)
+                                    if (!$stagd && !empty($r)) {
+                                        $stagd = \App\Models\Tag::where('name', $r)->first();
+                                    }
+                                    
                                     if($stagd) {
                                         if($stagd->tag_type == 'red') {
                                             $redTags[] = $stagd;
