@@ -933,21 +933,53 @@
                             
                             if($fetchedData->tagname != ''){
                                 $rs = explode(',', $fetchedData->tagname);
+                                
+                                // Separate IDs and names for bulk query optimization
+                                $tagIds = [];
+                                $tagNames = [];
+                                
                                 foreach($rs as $key=>$r){
-                                    $r = trim($r); // Remove any whitespace
+                                    $r = trim($r);
+                                    if (empty($r)) continue;
+                                    
+                                    // Separate numeric IDs from tag names
+                                    if (is_numeric($r) && $r > 0) {
+                                        $tagIds[] = (int)$r;
+                                    } else {
+                                        $tagNames[] = $r;
+                                    }
+                                }
+                                
+                                // Bulk fetch tags by IDs (single query for all IDs)
+                                $tagsByIds = [];
+                                if (!empty($tagIds)) {
+                                    $tagsByIds = \App\Models\Tag::whereIn('id', $tagIds)->get()->keyBy('id');
+                                }
+                                
+                                // Bulk fetch tags by names (single query for all names)
+                                $tagsByNames = [];
+                                if (!empty($tagNames)) {
+                                    $tagsByNames = \App\Models\Tag::whereIn('name', $tagNames)->get()->keyBy('name');
+                                }
+                                
+                                // Process all tags and categorize them
+                                foreach($rs as $key=>$r){
+                                    $r = trim($r);
+                                    if (empty($r)) continue;
+                                    
                                     $stagd = null;
                                     
-                                    // Handle both tag IDs (numeric) and tag names (strings) for backward compatibility
+                                    // Try to get tag by ID first
                                     if (is_numeric($r) && $r > 0) {
-                                        // Try to find by ID first (most common case)
-                                        $stagd = \App\Models\Tag::where('id', $r)->first();
+                                        $stagd = $tagsByIds[(int)$r] ?? null;
                                     }
                                     
-                                    // If not found by ID, try to find by name (handles legacy data with tag names)
-                                    if (!$stagd && !empty($r)) {
-                                        $stagd = \App\Models\Tag::where('name', $r)->first();
+                                    // If not found by ID, try by name
+                                    if (!$stagd) {
+                                        $stagd = $tagsByNames[$r] ?? null;
                                     }
                                     
+                                    // Categorize tag if found
                                     if($stagd) {
                                         if($stagd->tag_type == 'red') {
                                             $redTags[] = $stagd;
