@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\BookingAppointment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -448,32 +449,33 @@ class ClientPortalDashboardController extends Controller
             $search = $request->get('search', '');
 
             // Get upcoming appointments (after current datetime)
-            $upcomingAppointments = DB::table('appointments')
-                ->where('client_id', $clientId)
-                ->where(function($query) {
-                    $query->where('date', '>', now()->toDateString())
-                          ->orWhere(function($subQuery) {
-                              $subQuery->where('date', '=', now()->toDateString())
-                                       ->where('time', '>', now()->toTimeString());
-                          });
-                })
-                ->whereNotIn('status', [2, 4, 6, 7, 8])
+            $upcomingAppointments = BookingAppointment::where('client_id', $clientId)
+                ->where('appointment_datetime', '>', now())
+                ->whereNotIn('status', ['cancelled', 'no_show', 'completed'])
                 ->when(!empty($search), function($query) use ($search) {
-                    $query->where('title', 'LIKE', "%{$search}%");
+                    $query->where(function($q) use ($search) {
+                        $q->where('client_name', 'LIKE', "%{$search}%")
+                          ->orWhere('service_type', 'LIKE', "%{$search}%");
+                    });
                 })
-                ->orderBy('date', 'asc')
-                ->orderBy('time', 'asc')
+                ->orderBy('appointment_datetime', 'asc')
                 ->get()
                 ->map(function ($appointment) {
-                    $appointmentDate = \Carbon\Carbon::parse($appointment->date);
+                    $appointmentDate = $appointment->appointment_datetime;
                     $daysUntil = $appointmentDate->diffInDays(now());
+                    
+                    // Use client_name or service_type as title
+                    $title = $appointment->client_name;
+                    if ($appointment->service_type) {
+                        $title .= ' - ' . $appointment->service_type;
+                    }
                     
                     return [
                         'id' => $appointment->id,
-                        'title' => $appointment->title,
-                        'date' => $appointment->date,
-                        'time' => $appointment->time,
-                        'datetime' => $appointmentDate->format('M d, Y') . ($appointment->time ? ' at ' . \Carbon\Carbon::parse($appointment->time)->format('g:i A') : ''),
+                        'title' => $title,
+                        'date' => $appointmentDate->format('Y-m-d'),
+                        'time' => $appointmentDate->format('H:i:s'),
+                        'datetime' => $appointmentDate->format('M d, Y') . ' at ' . $appointmentDate->format('g:i A'),
                         'status' => ucfirst($appointment->status),
                         'days_until' => $daysUntil,
                         'type' => 'appointment',
@@ -823,16 +825,9 @@ class ClientPortalDashboardController extends Controller
      */
     private function getTotalAppointments($clientId)
     {
-        $totalAppointments = DB::table('appointments')
-            ->where('client_id', $clientId)
-            ->whereNotIn('status', [2, 4, 6, 7, 8])
-            ->where(function($query) {
-                $query->where('date', '>', now()->toDateString())
-                      ->orWhere(function($subQuery) {
-                          $subQuery->where('date', '=', now()->toDateString())
-                                   ->where('time', '>', now()->toTimeString());
-                      });
-            })
+        $totalAppointments = BookingAppointment::where('client_id', $clientId)
+            ->whereNotIn('status', ['cancelled', 'no_show', 'completed'])
+            ->where('appointment_datetime', '>', now())
             ->count();
 
         return $totalAppointments;
@@ -1036,34 +1031,30 @@ class ClientPortalDashboardController extends Controller
     private function getUpcomingDeadlines($clientId)
     {
         // Get upcoming appointments (after current datetime)
-        $appointmentsQuery = DB::table('appointments')
-            ->where('client_id', $clientId)
-            ->where(function($query) {
-                // Appointments on future dates
-                $query->where('date', '>', now()->toDateString())
-                      // OR appointments on today's date but after current time
-                      ->orWhere(function($subQuery) {
-                          $subQuery->where('date', '=', now()->toDateString())
-                                   ->where('time', '>', now()->toTimeString());
-                      });
-            })
-            ->whereNotIn('status', [2, 4, 6, 7, 8]);
+        $appointmentsQuery = BookingAppointment::where('client_id', $clientId)
+            ->where('appointment_datetime', '>', now())
+            ->whereNotIn('status', ['cancelled', 'no_show', 'completed']);
             
         $upcomingAppointments = $appointmentsQuery
-            ->orderBy('date', 'asc')
-            ->orderBy('time', 'asc')
+            ->orderBy('appointment_datetime', 'asc')
             ->limit(3)
             ->get()
             ->map(function ($appointment) {
-                $appointmentDate = \Carbon\Carbon::parse($appointment->date);
+                $appointmentDate = $appointment->appointment_datetime;
                 $daysUntil = $appointmentDate->diffInDays(now());
+                
+                // Use client_name or service_type as title
+                $title = $appointment->client_name;
+                if ($appointment->service_type) {
+                    $title .= ' - ' . $appointment->service_type;
+                }
                 
                 return [
                     'id' => $appointment->id,
-                    'title' => $appointment->title,
-                    'date' => $appointment->date,
-                    'time' => $appointment->time,
-                    'datetime' => $appointmentDate->format('M d, Y') . ($appointment->time ? ' at ' . \Carbon\Carbon::parse($appointment->time)->format('g:i A') : ''),
+                    'title' => $title,
+                    'date' => $appointmentDate->format('Y-m-d'),
+                    'time' => $appointmentDate->format('H:i:s'),
+                    'datetime' => $appointmentDate->format('M d, Y') . ' at ' . $appointmentDate->format('g:i A'),
                     'status' => ucfirst($appointment->status),
                     'days_until' => $daysUntil,
                     'type' => 'appointment'
