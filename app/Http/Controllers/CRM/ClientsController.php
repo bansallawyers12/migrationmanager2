@@ -6772,8 +6772,52 @@ class ClientsController extends Controller
                     }
                 }
 
-                $email->preview_url = $previewUrl;
-                return $email;
+                // Ensure attachments and labels relationships are loaded
+                if (!$email->relationLoaded('attachments')) {
+                    $email->load('attachments');
+                }
+                if (!$email->relationLoaded('labels')) {
+                    $email->load('labels');
+                }
+
+                // Convert to array to ensure all relationships are properly serialized
+                $emailArray = $email->toArray();
+                
+                // Explicitly fetch attachments - try relationship first, then direct query as fallback
+                $attachments = $email->attachments;
+                
+                // If relationship is empty, try direct query (fallback for relationship issues)
+                if (!$attachments || (method_exists($attachments, 'count') && $attachments->count() === 0)) {
+                    $attachments = \App\Models\MailReportAttachment::where('mail_report_id', $email->id)->get();
+                }
+                
+                // Format attachments as array with all required fields
+                if ($attachments && method_exists($attachments, 'count') && $attachments->count() > 0) {
+                    $emailArray['attachments'] = $attachments->map(function ($attachment) {
+                        return [
+                            'id' => $attachment->id,
+                            'mail_report_id' => $attachment->mail_report_id,
+                            'filename' => $attachment->filename,
+                            'display_name' => $attachment->display_name ?? $attachment->filename,
+                            'content_type' => $attachment->content_type,
+                            'file_path' => $attachment->file_path,
+                            's3_key' => $attachment->s3_key,
+                            'file_size' => (int) $attachment->file_size,
+                            'content_id' => $attachment->content_id,
+                            'is_inline' => (bool) $attachment->is_inline, // Ensure boolean for frontend filtering
+                            'description' => $attachment->description,
+                            'extension' => $attachment->extension,
+                        ];
+                    })->values()->toArray(); // values() re-indexes the array
+                } else {
+                    // Ensure attachments key exists even if empty
+                    $emailArray['attachments'] = [];
+                }
+                
+                // Add preview_url to the array
+                $emailArray['preview_url'] = $previewUrl;
+                
+                return $emailArray;
             });
 
             return response()->json($emails, 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -6876,12 +6920,56 @@ class ClientsController extends Controller
 					$previewUrl = '';
 				}
 
-				$email->preview_url = $previewUrl;
-				$email->from_mail = $email->from_mail ?? '';
-				$email->to_mail = $email->to_mail ?? '';
-				$email->subject = $email->subject ?? '';
-				$email->message = $email->message ?? '';
-				return $email;
+				// Ensure attachments and labels relationships are loaded
+				if (!$email->relationLoaded('attachments')) {
+					$email->load('attachments');
+				}
+				if (!$email->relationLoaded('labels')) {
+					$email->load('labels');
+				}
+
+				// Convert to array to ensure all relationships are properly serialized
+				$emailArray = $email->toArray();
+				
+				// Explicitly fetch attachments - try relationship first, then direct query as fallback
+				$attachments = $email->attachments;
+				
+				// If relationship is empty, try direct query (fallback for relationship issues)
+				if (!$attachments || (method_exists($attachments, 'count') && $attachments->count() === 0)) {
+					$attachments = \App\Models\MailReportAttachment::where('mail_report_id', $email->id)->get();
+				}
+				
+				// Format attachments as array with all required fields
+				if ($attachments && method_exists($attachments, 'count') && $attachments->count() > 0) {
+					$emailArray['attachments'] = $attachments->map(function ($attachment) {
+						return [
+							'id' => $attachment->id,
+							'mail_report_id' => $attachment->mail_report_id,
+							'filename' => $attachment->filename,
+							'display_name' => $attachment->display_name ?? $attachment->filename,
+							'content_type' => $attachment->content_type,
+							'file_path' => $attachment->file_path,
+							's3_key' => $attachment->s3_key,
+							'file_size' => (int) $attachment->file_size,
+							'content_id' => $attachment->content_id,
+							'is_inline' => (bool) $attachment->is_inline, // Ensure boolean for frontend filtering
+							'description' => $attachment->description,
+							'extension' => $attachment->extension,
+						];
+					})->values()->toArray(); // values() re-indexes the array
+				} else {
+					// Ensure attachments key exists even if empty
+					$emailArray['attachments'] = [];
+				}
+				
+				// Add preview_url and ensure required fields have defaults
+				$emailArray['preview_url'] = $previewUrl;
+				$emailArray['from_mail'] = $emailArray['from_mail'] ?? '';
+				$emailArray['to_mail'] = $emailArray['to_mail'] ?? '';
+				$emailArray['subject'] = $emailArray['subject'] ?? '';
+				$emailArray['message'] = $emailArray['message'] ?? '';
+				
+				return $emailArray;
 			});
 
 			return response()->json($emails, 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

@@ -1091,17 +1091,23 @@
         const from = email.from_mail || 'Unknown';
         const to = cleanRecipients(email.to_mail) || 'Unknown';
         const date = formatDate(getEmailDate(email));
-        const message = email.message || '(No content)';
+        let message = email.message || '(No content)';
 
-        // Get regular (non-inline) attachments
-        const regularAttachments = getRegularAttachments(email.attachments);
+        // Get all attachments (including inline) - show all so users can download important files like payment receipts
+        // Even if they're displayed inline in the email body, they should also be available as downloadable attachments
+        const allAttachments = email.attachments && Array.isArray(email.attachments) ? email.attachments : [];
+        const regularAttachments = allAttachments; // Show all attachments, not just non-inline
         const hasAttachments = regularAttachments.length > 0;
+        
+        // Replace cid: references in email message with actual preview URLs for inline images
+        message = replaceCidReferences(message, allAttachments);
         
         // Debug logging
         console.log('Loading email detail:', {
             id: email.id,
             subject: email.subject,
             attachments: email.attachments,
+            allAttachments: allAttachments,
             regularAttachments: regularAttachments,
             hasAttachments: hasAttachments
         });
@@ -1187,6 +1193,80 @@
             ${attachmentHtml}
             ${previewSection}
         `;
+    }
+
+    /**
+     * Replace cid: references in email HTML with actual preview URLs for inline attachments
+     */
+    function replaceCidReferences(htmlContent, attachments) {
+        if (!htmlContent || !attachments || attachments.length === 0) {
+            return htmlContent;
+        }
+        
+        // Create a map of content_id to attachment for quick lookup
+        const cidMap = {};
+        attachments.forEach(att => {
+            if (!att.id) return; // Skip if no attachment ID
+            
+            // Always add filename to map (case-insensitive) as fallback
+            if (att.filename) {
+                const filenameKey = att.filename.toLowerCase();
+                cidMap[filenameKey] = att;
+                // Also try without extension
+                const filenameWithoutExt = filenameKey.replace(/\.[^.]+$/, '');
+                if (filenameWithoutExt !== filenameKey) {
+                    cidMap[filenameWithoutExt] = att;
+                }
+            }
+            
+            // If content_id exists, add it to map (normalized)
+            if (att.content_id) {
+                // Normalize content_id (remove < > brackets if present)
+                const normalizedCid = att.content_id.replace(/^<|>$/g, '').trim();
+                if (normalizedCid) {
+                    cidMap[normalizedCid.toLowerCase()] = att;
+                }
+            }
+        });
+        
+        // Replace cid: references in img src attributes
+        // Pattern: cid:filename or cid:<content-id>
+        htmlContent = htmlContent.replace(/src=["']cid:([^"'>]+)["']/gi, (match, cidValue) => {
+            // Remove any brackets and normalize
+            const normalizedCid = cidValue.replace(/^<|>$/g, '').trim().toLowerCase();
+            
+            // Try to find matching attachment
+            let attachment = cidMap[normalizedCid];
+            
+            // If not found, try with the original value
+            if (!attachment) {
+                attachment = cidMap[cidValue.toLowerCase()];
+            }
+            
+            // If attachment found and it's an image, replace with preview URL
+            if (attachment && attachment.id) {
+                const previewUrl = `/mail-attachments/${attachment.id}/preview`;
+                return `src="${previewUrl}"`;
+            }
+            
+            // If not found, return original (broken image will show)
+            return match;
+        });
+        
+        // Also handle background-image CSS with cid: references
+        htmlContent = htmlContent.replace(/background-image:\s*url\(["']?cid:([^"')]+)["']?\)/gi, (match, cidValue) => {
+            const normalizedCid = cidValue.replace(/^<|>$/g, '').trim().toLowerCase();
+            let attachment = cidMap[normalizedCid] || cidMap[cidValue.toLowerCase()];
+            
+            if (attachment && attachment.id) {
+                const previewUrl = `/mail-attachments/${attachment.id}/preview`;
+                return `background-image: url("${previewUrl}")`;
+            }
+            
+            return match;
+        });
+        
+        return htmlContent;
     }
 
     /**
