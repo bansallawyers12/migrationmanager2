@@ -75,6 +75,7 @@ class ClientEditService
     /**
      * Get client contact numbers
      * Falls back to admins table if no records in client_contacts
+     * Always returns ClientContact models for consistency
      */
     protected function getClientContacts(int $clientId)
     {
@@ -83,11 +84,25 @@ class ClientEditService
             return ClientContact::where('client_id', $clientId)->get();
         }
         
-        // Fallback to admins table
-        if (Admin::where('id', $clientId)->exists()) {
-            return Admin::select('phone', 'country_code', 'contact_type')
-                ->where('id', $clientId)
-                ->get();
+        // Fallback: Convert Admin data to ClientContact models (without saving to DB)
+        // This ensures the blade template always receives ClientContact instances
+        $admin = Admin::where('id', $clientId)->first();
+        if ($admin && !empty($admin->phone)) {
+            // Create a ClientContact instance from Admin data (temporary, not persisted)
+            $clientContact = new ClientContact();
+            $clientContact->id = null; // No DB record yet - will be created on save
+            $clientContact->client_id = $clientId;
+            $clientContact->contact_type = $admin->contact_type ?? 'Personal';
+            $clientContact->country_code = $admin->country_code ?? '';
+            $clientContact->phone = $admin->phone;
+            $clientContact->is_verified = false; // Default to unverified
+            $clientContact->verified_at = null;
+            $clientContact->verified_by = null;
+            
+            // Mark as temporary so form knows to create new record on save
+            $clientContact->exists = false; // Tell Eloquent this is a new model
+            
+            return collect([$clientContact]); // Return as collection
         }
         
         return collect(); // Return empty collection

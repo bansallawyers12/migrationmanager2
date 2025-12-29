@@ -269,7 +269,7 @@
                                                         <i class="fas fa-check-circle"></i> Verified
                                                     </span>
                                                 @else
-                                                    <button type="button" class="btn-verify-phone" onclick="sendOTP({{ $contact->id }}, '{{ $contact->phone }}', '{{ $contact->country_code }}')" data-contact-id="{{ $contact->id }}">
+                                                    <button type="button" class="btn-verify-phone" onclick="sendOTP({{ $contact->id ?? 'null' }}, '{{ $contact->phone }}', '{{ $contact->country_code }}')" data-contact-id="{{ $contact->id ?? '' }}">
                                                         <i class="fas fa-lock"></i> Verify
                                                     </button>
                                                 @endif
