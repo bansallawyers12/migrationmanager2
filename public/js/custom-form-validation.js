@@ -2548,13 +2548,13 @@ function customValidate(formName, savetype = '')
                                                 ? $('.general_matter_checkbox_client_detail').val() 
                                                 : $('#sel_matter_id_client_detail').val();
                                             const activeTaskGroup = $('.subtab8-button.active').data('subtab8') || 'All';
-                                            
+                                            //alert(selectedMatter);
                                             $('#noteterm-tab').find('.note-card-redesign').each(function() {
                                                 const noteMatterId = $(this).data('matterid');
                                                 const noteType = $(this).data('type');
                                                 
                                                 let showNote = false;
-                                                
+                                               
                                                 // Matter filtering logic
                                                 if (selectedMatter !== "") {
                                                     // Show notes that match the selected matter OR notes with no matter_id
@@ -2644,7 +2644,7 @@ function customValidate(formName, savetype = '')
                                             // Apply combined matter and task group filtering
                                             const selectedMatter = $('.general_matter_checkbox_client_detail').is(':checked') 
                                                 ? $('.general_matter_checkbox_client_detail').val() 
-                                                : $('#sel_matter_id_client_detail').val();
+                                                : $('#sel_matter_id_client_detail').val(); 
                                             const activeTaskGroup = $('.subtab8-button.active').data('subtab8') || 'All';
                                             
                                             $('#noteterm-tab').find('.note-card-redesign').each(function() {
@@ -2652,11 +2652,11 @@ function customValidate(formName, savetype = '')
                                                 const noteType = $(this).data('type');
                                                 
                                                 let showNote = false;
-                                                
-                                                // Matter filtering logic
+												 // Matter filtering logic
                                                 if (selectedMatter !== "") {
                                                     // Show notes that match the selected matter OR notes with no matter_id
-                                                    showNote = (noteMatterId == selectedMatter || noteMatterId == '' || noteMatterId == null);
+                                                    //showNote = (noteMatterId == selectedMatter || noteMatterId == '' || noteMatterId == null);
+													showNote = (noteMatterId == selectedMatter);
                                                 } else {
                                                     // Show all notes when no matter is selected
                                                     showNote = true;

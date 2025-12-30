@@ -190,7 +190,7 @@
                             ->where('type', 'client')
                             ->orderby('pin', 'DESC')
                             ->orderBy('updated_at', 'DESC')
-                            ->get(); 
+                            ->get();
                         foreach($notelist as $list) {
                             $admin = \App\Models\Admin::where('id', $list->user_id)->first();
                             // Determine type label and color

@@ -343,12 +343,12 @@ class ClientNotesController extends Controller
      * @return html
      */
     public function getnotes(Request $request)
-    {
+    {   
         $client_id = $request->clientid;
-        $type = $request->type;
+        $type = $request->type; 
         $task_group = $request->task_group;
         //if($task_group == ''){
-            $notelist = Note::where('client_id',$client_id)->whereNull('assigned_to')->where('type',$type)->orderby('pin', 'DESC')->orderBy('created_at', 'DESC')->get();
+            $notelist = Note::where('client_id',$client_id)->whereNull('assigned_to')->where('type',$type)->orderby('pin', 'DESC')->orderBy('updated_at', 'DESC')->get();
         /*}else{
             $notelist = Note::where('client_id',$client_id)->whereNull('assigned_to')->where('type',$type)->where('task_group',$task_group)->orderby('pin', 'DESC')->orderBy('created_at', 'DESC')->get();
         }*/
