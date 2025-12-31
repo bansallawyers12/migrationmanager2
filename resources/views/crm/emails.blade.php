@@ -27,11 +27,11 @@
         </div>
         
         <div class="control-section filter-section">
-            <label for="mailTypeFilter">Type:</label>
+            {{-- <label for="mailTypeFilter">Type:</label>
             <select id="mailTypeFilter" class="filter-select">
                 <option value="inbox">Inbox</option>
                 <option value="sent">Sent</option>
-            </select>
+            </select> --}}
             
             <label for="labelFilter">Label:</label>
             <select id="labelFilter" class="filter-select">
@@ -183,18 +183,19 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // If email was sent, switch to "Sent" tab
-    if (emailSentSuccessfully) {
-        const mailTypeFilter = document.getElementById('mailTypeFilter');
-        if (mailTypeFilter) {
-            mailTypeFilter.value = 'sent';
-            // Update the module's currentMailType variable if function exists
-            if (typeof window.setEmailMailType === 'function') {
-                window.setEmailMailType('sent');
-            }
-            // Trigger change event to reload emails
-            mailTypeFilter.dispatchEvent(new Event('change'));
-        }
-    }
+    // Commented out - Type dropdown is disabled
+    // if (emailSentSuccessfully) {
+    //     const mailTypeFilter = document.getElementById('mailTypeFilter');
+    //     if (mailTypeFilter) {
+    //         mailTypeFilter.value = 'sent';
+    //         // Update the module's currentMailType variable if function exists
+    //         if (typeof window.setEmailMailType === 'function') {
+    //             window.setEmailMailType('sent');
+    //         }
+    //         // Trigger change event to reload emails
+    //         mailTypeFilter.dispatchEvent(new Event('change'));
+    //     }
+    // }
     
     // Debug: Check if modules are available
     console.log('initializeUpload available:', typeof window.initializeUpload);
