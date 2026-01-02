@@ -47,6 +47,7 @@ use App\Models\ClientTestScore; // Import the ClientAddress model
 use App\Models\ClientVisaCountry; // Import the ClientAddress model
 use App\Models\ClientOccupation; // Import the ClientAddress model
 use App\Models\ClientSpouseDetail; // Import the ClientAddress model
+use App\Models\AppointmentConsultant; // Import the AppointmentConsultant model
 
 use App\Models\EmailRecord;
 use App\Models\ClientPoint;
@@ -9600,15 +9601,8 @@ class ClientsController extends Controller
                 'user_id' => Auth::id(),
             ]);
 
-            // Log activity
-            $activityLog = new ActivitiesLog();
-            $activityLog->client_id = $client->id;
-            $activityLog->created_by = Auth::id();
-            $activityLog->subject = 'Booking appointment created: ' . $serviceTypeMapping['service_type'];
-            $activityLog->description = $requestData['description'];
-            $activityLog->task_status = 0;
-            $activityLog->pin = 0;
-            $activityLog->save();
+            // Log activity with detailed appointment information
+            $this->createActivityLogForBookingAppointment($appointment, $serviceId, $requestData['noe_id']);
 
             // Return JSON response matching expected format
             if ($request->expectsJson() || $request->ajax()) {
@@ -9775,6 +9769,159 @@ class ClientsController extends Controller
         </script>';
 
         return $html;
+    }
+
+    /**
+     * Create detailed activity log for booking appointment (manual creation from CRM)
+     * 
+     * @param BookingAppointment $appointment
+     * @param int $serviceId
+     * @param int $noeId
+     * @return void
+     */
+    protected function createActivityLogForBookingAppointment(BookingAppointment $appointment, int $serviceId, int $noeId): void
+    {
+        // Determine subject based on service type
+        $subject = 'scheduled an appointment';
+        $serviceTitle = 'Appointment';
+        
+        if ($serviceId == 2) {
+            $subject = 'scheduled an free appointment';
+            $serviceTitle = 'Free Consultation';
+        } elseif ($serviceId == 1) {
+            $subject = 'scheduled an paid appointment';
+            $serviceTitle = 'Comprehensive Migration Advice';
+        } elseif ($serviceId == 3) {
+            $subject = 'scheduled an paid appointment';
+            $serviceTitle = 'Overseas Applicant Enquiry';
+        }
+
+        // Determine enquiry title based on noe_id
+        $enquiryTitle = 'Appointment';
+        if ($noeId == 1) {
+            $enquiryTitle = 'Permanent Residency Appointment';
+        } elseif ($noeId == 2) {
+            $enquiryTitle = 'Temporary Residency Appointment';
+        } elseif ($noeId == 3) {
+            $enquiryTitle = 'JRP/Skill Assessment';
+        } elseif ($noeId == 4) {
+            $enquiryTitle = 'Tourist Visa';
+        } elseif ($noeId == 5) {
+            $enquiryTitle = 'Education/Course Change/Student Visa/Student Dependent Visa';
+        } elseif ($noeId == 6) {
+            $enquiryTitle = 'Complex matters: AAT, Protection visa, Federal Case';
+        } elseif ($noeId == 7) {
+            $enquiryTitle = 'Visa Cancellation/ NOICC/ Visa refusals';
+        } elseif ($noeId == 8) {
+            $enquiryTitle = 'INDIA/UK/CANADA/EUROPE TO AUSTRALIA';
+        }
+
+        // Format meeting type
+        $appointmentDetails = '';
+        if ($appointment->meeting_type) {
+            $meetingType = strtolower($appointment->meeting_type);
+            if ($meetingType === 'in_person') {
+                $appointmentDetails = 'In Person';
+            } elseif ($meetingType === 'phone') {
+                $appointmentDetails = 'Phone';
+            } elseif ($meetingType === 'video') {
+                $appointmentDetails = 'Video Call';
+            }
+        }
+
+        // Format appointment date
+        $appointmentDate = $appointment->appointment_datetime;
+        if ($appointmentDate instanceof Carbon) {
+            $activityLogDate = $appointmentDate->format('Y-m-d');
+        } elseif ($appointmentDate) {
+            $activityLogDate = Carbon::parse($appointmentDate)->format('Y-m-d');
+        } else {
+            $activityLogDate = date('Y-m-d');
+        }
+        
+        // Format appointment time
+        $appointmentTime = $appointment->timeslot_full ?? '';
+        if (empty($appointmentTime) && $appointmentDate) {
+            if ($appointmentDate instanceof Carbon) {
+                $appointmentTime = $appointmentDate->format('h:i A');
+            } else {
+                $appointmentTime = Carbon::parse($appointmentDate)->format('h:i A');
+            }
+        }
+
+        // Get location display name
+        $locationDisplay = '';
+        if ($appointment->location) {
+            $locationDisplay = ucfirst($appointment->location);
+            if ($appointment->location === 'adelaide' && $appointment->service_id == 2) {
+                $locationDisplay = 'Adelaide Free PR';
+            } elseif ($appointment->location === 'melbourne' && $appointment->service_id == 2) {
+                $locationDisplay = 'Melbourne Free PR';
+            }
+        }
+
+        // Build description HTML (matching synced appointment format)
+        $description = '<div style="display: -webkit-inline-box;">
+                <span style="height: 60px; width: 60px; border: 1px solid rgb(3, 169, 244); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2px;overflow: hidden;">
+                    <span  style="flex: 1 1 0%; width: 100%; text-align: center; background: rgb(237, 237, 237); border-top-left-radius: 120px; border-top-right-radius: 120px; font-size: 12px;line-height: 24px;">
+                        ' . date('d M', strtotime($activityLogDate)) . '
+                    </span>
+                    <span style="background: rgb(84, 178, 75); color: rgb(255, 255, 255); flex: 1 1 0%; width: 100%; border-bottom-left-radius: 120px; border-bottom-right-radius: 120px; text-align: center;font-size: 12px; line-height: 21px;">
+                        ' . date('Y', strtotime($activityLogDate)) . '
+                    </span>
+                </span>
+            </div>
+            <div style="display:inline-grid;">
+                <span class="text-semi-bold">' . e($enquiryTitle) . '</span> 
+                <span class="text-semi-bold">' . e($serviceTitle) . '</span>';
+        
+        if ($appointmentDetails) {
+            $description .= '  <span class="text-semi-bold">' . e($appointmentDetails) . '</span>';
+        }
+        
+        if ($appointment->preferred_language) {
+            $description .= '  <span class="text-semi-bold">' . e($appointment->preferred_language) . '</span>';
+        }
+        
+        if ($appointment->enquiry_details) {
+            $description .= '  <span class="text-semi-bold">' . e($appointment->enquiry_details) . '</span>';
+        }
+        
+        if ($appointmentTime) {
+            $description .= '  <p class="text-semi-light-grey col-v-1">@ ' . e($appointmentTime) . '</p>';
+        }
+        
+        $description .= '</div>';
+
+        // Get client name for subject
+        $clientName = '';
+        if ($appointment->client_id) {
+            // Try to get client name from Admin model (first_name + last_name)
+            $client = Admin::where('id', $appointment->client_id)
+                ->where('role', 7) // Ensure it's a client
+                ->select('first_name', 'last_name')
+                ->first();
+            
+            if ($client) {
+                $clientName = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
+            }
+        }
+        
+        // Fallback to client_name field if Admin lookup didn't work
+        if (empty($clientName) && $appointment->client_name) {
+            $clientName = trim($appointment->client_name);
+        }
+
+        // Create activity log entry
+        ActivitiesLog::create([
+            'client_id' => $appointment->client_id,
+            'created_by' => Auth::id(),
+            'subject' => $subject,
+            'description' => $description,
+            'activity_type' => 'activity',
+            'task_status' => 0,
+            'pin' => 0,
+        ]);
     }
 
 }
