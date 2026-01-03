@@ -75,6 +75,7 @@ use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\PhpWord;
 use App\Mail\HubdocInvoiceMail;
 use App\Services\Sms\UnifiedSmsManager;
+use App\Services\BansalAppointmentSync\BansalApiClient;
 use App\Traits\ClientAuthorization;
 use App\Traits\ClientHelpers;
 use App\Traits\ClientQueries;
@@ -9449,8 +9450,9 @@ class ClientsController extends Controller
             $serviceId = $serviceIdMap[$requestData['service_id']] ?? 2;
 
             // Map NOE ID to service_type/enquiry_type
+            // Note: enquiry_type values must match what Bansal API expects (e.g., 'pr_complex' not 'pr')
             $noeToServiceType = [
-                1 => ['service_type' => 'Permanent Residency', 'enquiry_type' => 'pr'],
+                1 => ['service_type' => 'Permanent Residency', 'enquiry_type' => 'pr_complex'],  // API expects 'pr_complex'
                 2 => ['service_type' => 'Temporary Residency', 'enquiry_type' => 'tr'],
                 3 => ['service_type' => 'JRP/Skill Assessment', 'enquiry_type' => 'jrp'],
                 4 => ['service_type' => 'Tourist Visa', 'enquiry_type' => 'tourist'],
@@ -9459,7 +9461,7 @@ class ClientsController extends Controller
                 7 => ['service_type' => 'Visa Cancellation/NOICC/Refusals', 'enquiry_type' => 'cancellation'],
                 8 => ['service_type' => 'INDIA/UK/CANADA/EUROPE TO AUSTRALIA', 'enquiry_type' => 'international'],
             ];
-            $serviceTypeMapping = $noeToServiceType[$requestData['noe_id']] ?? ['service_type' => 'Other', 'enquiry_type' => 'other'];
+            $serviceTypeMapping = $noeToServiceType[$requestData['noe_id']] ?? ['service_type' => 'Other', 'enquiry_type' => 'pr_complex']; // Default to pr_complex
 
             // Map location
             $locationMap = [1 => 'adelaide', 2 => 'melbourne'];
@@ -9550,13 +9552,104 @@ class ClientsController extends Controller
                 ]);
             }
 
-            // Generate unique bansal_appointment_id for manually created appointments
-            // Use timestamp + random to ensure uniqueness (manual appointments start from 1000000)
-            $bansalAppointmentId = 1000000 + (time() % 900000) + mt_rand(1, 99999);
+            // Map service_id to specific_service for Bansal API
+            $specificServiceMap = [
+                1 => 'paid-consultation',  // Paid Migration Advice
+                2 => 'consultation',        // Free Consultation
+                3 => 'overseas-enquiry',    // Overseas Applicant Enquiry
+            ];
+            $specificService = $specificServiceMap[$serviceId] ?? 'consultation';
 
-            // Ensure uniqueness
-            while (BookingAppointment::where('bansal_appointment_id', $bansalAppointmentId)->exists()) {
-                $bansalAppointmentId = 1000000 + (time() % 900000) + mt_rand(1, 99999);
+            // Prepare appointment data for Bansal API
+            // Format appointment date and time separately as API expects
+            $appointmentDateForApi = $appointmentDateTime->copy()->setTimezone($timezone)->format('Y-m-d');
+            
+            // Format appointment time - API expects H:i format (without seconds) for validation
+            // Extract the time from the parsed datetime in the original timezone
+            $appointmentTimeForApi = $appointmentDateTime->copy()->setTimezone($timezone)->format('H:i');
+            
+            // Format appointment time slot for display (e.g., "1:00 PM-1:15 PM")
+            $appointmentTimeSlot = $requestData['appoint_time'];
+
+            // Build payload for Bansal API (matching the expected structure from API error response)
+            $bansalApiPayload = [
+                'full_name' => $clientName,
+                'email' => $clientEmail,
+                'phone' => $client->phone ?? '',
+                'appointment_date' => $appointmentDateForApi,  // Required: YYYY-MM-DD format
+                'appointment_time' => $appointmentTimeForApi, // Required: HH:MM:SS format
+                'appointment_datetime' => $appointmentDateTime->copy()->setTimezone($timezone)->format('Y-m-d H:i:s'),
+                'duration_minutes' => $durationMinutes,
+                'location' => $location,
+                'meeting_type' => $meetingType,
+                'preferred_language' => $requestData['preferred_language'],
+                'specific_service' => $specificService,
+                'enquiry_type' => $serviceTypeMapping['enquiry_type'], // Required: use enquiry_type not service_type
+                'service_type' => $serviceTypeMapping['service_type'],
+                'enquiry_details' => $requestData['description'],
+                'is_paid' => ($serviceId == 2) ? false : true,
+                'amount' => ($serviceId == 2) ? 0 : 150,
+                'final_amount' => ($serviceId == 2) ? 0 : 150,
+                'payment_status' => ($serviceId == 2) ? null : 'pending',
+            ];
+
+            // Call Bansal API to create appointment and get real bansal_appointment_id
+            $bansalAppointmentId = null;
+            $bansalApiError = null;
+            
+            try {
+                $bansalApiClient = app(BansalApiClient::class);
+                $bansalApiResponse = $bansalApiClient->createAppointment($bansalApiPayload);
+                
+                // Extract bansal_appointment_id from API response
+                if (isset($bansalApiResponse['data']['id'])) {
+                    $bansalAppointmentId = (int) $bansalApiResponse['data']['id'];
+                } elseif (isset($bansalApiResponse['data']['appointment_id'])) {
+                    $bansalAppointmentId = (int) $bansalApiResponse['data']['appointment_id'];
+                } elseif (isset($bansalApiResponse['appointment_id'])) {
+                    $bansalAppointmentId = (int) $bansalApiResponse['appointment_id'];
+                } else {
+                    throw new \Exception('Bansal API did not return appointment ID. Response: ' . json_encode($bansalApiResponse));
+                }
+                
+                \Log::info('Appointment created on Bansal website', [
+                    'bansal_appointment_id' => $bansalAppointmentId,
+                    'client_id' => $client->id,
+                    'client_email' => $clientEmail
+                ]);
+            } catch (\Exception $apiException) {
+                $bansalApiError = $apiException->getMessage();
+                \Log::error('Failed to create appointment on Bansal website via API', [
+                    'error' => $bansalApiError,
+                    'client_id' => $client->id,
+                    'client_email' => $clientEmail,
+                    'payload' => $bansalApiPayload,
+                    'trace' => $apiException->getTraceAsString()
+                ]);
+                
+                // If API call fails, we'll still create the appointment locally
+                // but with a temporary ID that indicates it needs to be synced
+                // This ensures existing functionality doesn't break
+                $bansalAppointmentId = null; // Will be set to a placeholder if API fails
+            }
+
+            // If API call failed, use a placeholder ID that indicates manual creation
+            // This allows the appointment to exist in CRM while we can retry API sync later
+            if ($bansalAppointmentId === null) {
+                // Generate temporary ID starting from 2000000 to distinguish from old system
+                // This will be replaced when API sync succeeds
+                $bansalAppointmentId = 2000000 + (time() % 900000) + mt_rand(1, 99999);
+                
+                // Ensure uniqueness
+                while (BookingAppointment::where('bansal_appointment_id', $bansalAppointmentId)->exists()) {
+                    $bansalAppointmentId = 2000000 + (time() % 900000) + mt_rand(1, 99999);
+                }
+                
+                \Log::warning('Using temporary bansal_appointment_id due to API failure', [
+                    'temporary_id' => $bansalAppointmentId,
+                    'api_error' => $bansalApiError,
+                    'client_id' => $client->id
+                ]);
             }
 
             // Create booking appointment
@@ -9598,22 +9691,40 @@ class ClientsController extends Controller
                 'confirmation_email_sent' => false,
                 'reminder_sms_sent' => false,
                 
+                // Sync status tracking
+                'sync_status' => $bansalApiError ? 'failed' : 'synced',
+                'sync_error' => $bansalApiError,
+                'last_synced_at' => $bansalApiError ? null : now(),
+                
                 'user_id' => Auth::id(),
             ]);
 
             // Log activity with detailed appointment information
             $this->createActivityLogForBookingAppointment($appointment, $serviceId, $requestData['noe_id']);
 
+            // Prepare response message
+            $successMessage = 'Appointment booked successfully';
+            if ($bansalApiError) {
+                $successMessage .= '. Note: Appointment created in CRM but could not be synced to Bansal website. Error: ' . $bansalApiError;
+                \Log::warning('Appointment created locally but Bansal API sync failed', [
+                    'appointment_id' => $appointment->id,
+                    'bansal_appointment_id' => $bansalAppointmentId,
+                    'api_error' => $bansalApiError
+                ]);
+            }
+
             // Return JSON response matching expected format
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
                     'status' => true,
                     'success' => true,
-                    'message' => 'Appointment booked successfully'
+                    'message' => $successMessage,
+                    'bansal_synced' => !$bansalApiError,
+                    'bansal_appointment_id' => $bansalAppointmentId
                 ]);
             }
 
-            return redirect()->back()->with('success', 'Appointment booked successfully');
+            return redirect()->back()->with($bansalApiError ? 'warning' : 'success', $successMessage);
             
         } catch (\Exception $e) {
             \Log::error('Error creating booking appointment: ' . $e->getMessage(), [
