@@ -1088,7 +1088,7 @@ class CRMUtilityController extends Controller
 		$requestData = $request->all();
 		//echo '<pre>'; print_r($requestData); die;
 		$user_id = @Auth::user()->id;
-		$reciept_id = null;
+		$reciept_id = '';
 		$array = array();
 
 		$obj = new \App\Models\MailReport;
