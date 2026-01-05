@@ -14,6 +14,8 @@ use App\Models\Admin;
 use App\Models\Application;
 use App\Models\ActivitiesLog;
 use App\Models\ClientPortalDetailAudit;
+use App\Models\ClientMatter;
+use App\Models\WorkflowStage;
 use App\Events\MessageSent;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
@@ -707,6 +709,169 @@ class ClientPortalController extends Controller
 				$response['message']	=	'';
 	   }
 		echo json_encode($response);
+	}
+
+	/**
+	 * Move Client Matter to Next Stage
+	 * 
+	 * Updates the workflow_stage_id for a client_matter to the next stage in sequence
+	 * Also updates the applications table if it exists (for backward compatibility)
+	 * 
+	 * @param Request $request
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function updateClientMatterNextStage(Request $request){
+		try {
+			$matterId = $request->input('matter_id');
+			
+			if (!$matterId) {
+				return response()->json([
+					'status' => false,
+					'message' => 'Matter ID is required'
+				], 422);
+			}
+
+			// Get the client matter
+			$clientMatter = ClientMatter::find($matterId);
+			
+			if (!$clientMatter) {
+				return response()->json([
+					'status' => false,
+					'message' => 'Client matter not found'
+				], 404);
+			}
+
+			// Get current stage
+			$currentStageId = $clientMatter->workflow_stage_id;
+			
+			if (!$currentStageId) {
+				return response()->json([
+					'status' => false,
+					'message' => 'Current stage not found'
+				], 404);
+			}
+
+			// Get current stage details
+			$currentStage = WorkflowStage::find($currentStageId);
+			
+			if (!$currentStage) {
+				return response()->json([
+					'status' => false,
+					'message' => 'Current workflow stage not found'
+				], 404);
+			}
+
+			// Get next stage (ordered by id ascending)
+			$nextStage = WorkflowStage::where('id', '>', $currentStageId)
+				->orderBy('id', 'asc')
+				->first();
+
+			if (!$nextStage) {
+				return response()->json([
+					'status' => false,
+					'message' => 'Already at the last stage',
+					'is_last_stage' => true
+				], 400);
+			}
+
+			// Update client_matters table
+			$clientMatter->workflow_stage_id = $nextStage->id;
+			$saved = $clientMatter->save();
+
+			if ($saved) {
+				// Update applications table if it exists (for backward compatibility)
+				// This follows the same pattern as loadApplicationInsertUpdateData method
+				$application = DB::table('applications')
+					->where('client_matter_id', $matterId)
+					->where('client_id', $clientMatter->client_id)
+					->first();
+
+				if ($application) {
+					// Get workflow info from workflow_stages table
+					// Note: w_id is a legacy field that may or may not exist
+					// Following the same pattern as loadApplicationInsertUpdateData (line 554)
+					try {
+						$workflowInfo = DB::table('workflow_stages')
+							->where('id', $nextStage->id)
+							->select('workflow_stages.name', 'workflow_stages.w_id')
+							->first();
+
+						if ($workflowInfo) {
+							$updateData = [
+								'stage' => $workflowInfo->name,
+								'updated_at' => now()
+							];
+							
+							// Only include workflow if w_id exists and is not null
+							if (isset($workflowInfo->w_id) && !is_null($workflowInfo->w_id)) {
+								$updateData['workflow'] = $workflowInfo->w_id;
+							}
+							
+							DB::table('applications')
+								->where('id', $application->id)
+								->update($updateData);
+						}
+					} catch (\Exception $e) {
+						// If w_id column doesn't exist, just update stage field
+						// This maintains backward compatibility
+						DB::table('applications')
+							->where('id', $application->id)
+							->update([
+								'stage' => $nextStage->name,
+								'updated_at' => now()
+							]);
+					}
+				}
+
+				// Calculate progress percentage
+				$totalStages = WorkflowStage::count();
+				$currentStageIndex = WorkflowStage::where('id', '<=', $nextStage->id)->count();
+				$progressPercentage = $totalStages > 0 ? round(($currentStageIndex / $totalStages) * 100) : 0;
+
+				// Check if this is the last stage
+				$isLastStage = !WorkflowStage::where('id', '>', $nextStage->id)->exists();
+
+				// Log activity
+				$comments = 'moved the stage from <b>' . $currentStage->name . '</b> to <b>' . $nextStage->name . '</b>';
+				
+				$activityLog = new ActivitiesLog;
+				$activityLog->client_id = $clientMatter->client_id;
+				$activityLog->created_by = Auth::user()->id;
+				$activityLog->subject = 'Stage: ' . $currentStage->name;
+				$activityLog->description = $comments;
+				$activityLog->activity_type = 'stage';
+				// Note: use_for is an integer field in PostgreSQL, so we don't set it here
+				// The existing code pattern for stage activities doesn't require use_for
+				$activityLog->task_status = 0;
+				$activityLog->pin = 0;
+				$activityLog->save();
+
+				return response()->json([
+					'status' => true,
+					'message' => 'Matter has been successfully moved to the next stage.',
+					'stage_name' => $nextStage->name,
+					'stage_id' => $nextStage->id,
+					'progress_percentage' => $progressPercentage,
+					'is_last_stage' => $isLastStage
+				]);
+			} else {
+				return response()->json([
+					'status' => false,
+					'message' => 'Failed to update matter stage. Please try again.'
+				], 500);
+			}
+
+		} catch (\Exception $e) {
+			Log::error('Error updating client matter next stage: ' . $e->getMessage(), [
+				'matter_id' => $request->input('matter_id'),
+				'trace' => $e->getTraceAsString()
+			]);
+
+			return response()->json([
+				'status' => false,
+				'message' => 'An error occurred while updating the stage. Please try again.'
+			], 500);
+		}
 	}
 
 	// LEGACY METHOD - Still used by some JavaScript but outputs HTML directly (old pattern)

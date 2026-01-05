@@ -7606,41 +7606,45 @@ Bansal Immigration`;
 
                                             if (response.success && response.download_url) {
 
-                                                // Use window.open for better download handling
+                                                // Use window.open for download - single method to prevent duplicates
 
                                                 try {
 
-                                                    // Method 1: Try window.open first
+                                                    // Primary method: window.open for download
 
                                                     var downloadWindow = window.open(response.download_url, '_blank');
 
                                                     
 
-                                                    // Fallback: If window.open fails, try direct download
+                                                    // Check if window.open was blocked or failed immediately
 
-                                                    setTimeout(function() {
+                                                    if (!downloadWindow || downloadWindow.closed) {
 
-                                                        if (!downloadWindow || downloadWindow.closed) {
+                                                        // Fallback: Use direct link click only if window.open was blocked
 
-                                                            // Method 2: Create a form and submit it
+                                                        var link = document.createElement('a');
 
-                                                            var form = document.createElement('form');
+                                                        link.href = response.download_url;
 
-                                                            form.method = 'GET';
+                                                        link.download = 'visa_agreement_' + new Date().getTime() + '.docx';
 
-                                                            form.action = response.download_url;
+                                                        link.target = '_blank';
 
-                                                            form.target = '_blank';
+                                                        link.style.display = 'none';
 
-                                                            document.body.appendChild(form);
+                                                        document.body.appendChild(link);
 
-                                                            form.submit();
+                                                        link.click();
 
-                                                            document.body.removeChild(form);
+                                                        // Clean up after a short delay
 
-                                                        }
+                                                        setTimeout(function() {
 
-                                                    }, 1000);
+                                                            document.body.removeChild(link);
+
+                                                        }, 100);
+
+                                                    }
 
                                                     
 
@@ -7652,25 +7656,43 @@ Bansal Immigration`;
 
                                                     console.error('Download error:', error);
 
-                                                    // Method 3: Direct link approach as last resort
-
-                                                    var link = document.createElement('a');
-
-                                                    link.href = response.download_url;
-
-                                                    link.download = 'visa_agreement_' + new Date().getTime() + '.docx';
-
-                                                    link.target = '_blank';
-
-                                                    document.body.appendChild(link);
-
-                                                    link.click();
-
-                                                    document.body.removeChild(link);
-
                                                     
 
-                                                    alert('Visa agreement generated successfully!');
+                                                    // Last resort: Direct link approach only if window.open throws an error
+
+                                                    try {
+
+                                                        var link = document.createElement('a');
+
+                                                        link.href = response.download_url;
+
+                                                        link.download = 'visa_agreement_' + new Date().getTime() + '.docx';
+
+                                                        link.target = '_blank';
+
+                                                        link.style.display = 'none';
+
+                                                        document.body.appendChild(link);
+
+                                                        link.click();
+
+                                                        setTimeout(function() {
+
+                                                            document.body.removeChild(link);
+
+                                                        }, 100);
+
+                                                        
+
+                                                        alert('Visa agreement generated successfully!');
+
+                                                    } catch (fallbackError) {
+
+                                                        console.error('Fallback download error:', fallbackError);
+
+                                                        alert('Visa agreement generated successfully! Please check your downloads folder or browser download settings.');
+
+                                                    }
 
                                                 }
 

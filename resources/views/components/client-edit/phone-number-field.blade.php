@@ -6,7 +6,7 @@
         <i class="fas fa-trash"></i>
     </button>
     
-    <input type="hidden" name="contact_id[{{ $index }}]" value="{{ $contact->id }}">
+    <input type="hidden" name="contact_id[{{ $index }}]" value="{{ $contact->id ?? '' }}">
     
     <div class="content-grid">
         <div class="form-group">

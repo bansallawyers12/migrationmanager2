@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\BookingAppointment;
+use App\Helpers\Utf8Helper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -448,32 +450,33 @@ class ClientPortalDashboardController extends Controller
             $search = $request->get('search', '');
 
             // Get upcoming appointments (after current datetime)
-            $upcomingAppointments = DB::table('appointments')
-                ->where('client_id', $clientId)
-                ->where(function($query) {
-                    $query->where('date', '>', now()->toDateString())
-                          ->orWhere(function($subQuery) {
-                              $subQuery->where('date', '=', now()->toDateString())
-                                       ->where('time', '>', now()->toTimeString());
-                          });
-                })
-                ->whereNotIn('status', [2, 4, 6, 7, 8])
+            $upcomingAppointments = BookingAppointment::where('client_id', $clientId)
+                ->where('appointment_datetime', '>', now())
+                ->whereNotIn('status', ['cancelled', 'no_show', 'completed'])
                 ->when(!empty($search), function($query) use ($search) {
-                    $query->where('title', 'LIKE', "%{$search}%");
+                    $query->where(function($q) use ($search) {
+                        $q->where('client_name', 'LIKE', "%{$search}%")
+                          ->orWhere('service_type', 'LIKE', "%{$search}%");
+                    });
                 })
-                ->orderBy('date', 'asc')
-                ->orderBy('time', 'asc')
+                ->orderBy('appointment_datetime', 'asc')
                 ->get()
                 ->map(function ($appointment) {
-                    $appointmentDate = \Carbon\Carbon::parse($appointment->date);
+                    $appointmentDate = $appointment->appointment_datetime;
                     $daysUntil = $appointmentDate->diffInDays(now());
+                    
+                    // Use client_name or service_type as title
+                    $title = $appointment->client_name;
+                    if ($appointment->service_type) {
+                        $title .= ' - ' . $appointment->service_type;
+                    }
                     
                     return [
                         'id' => $appointment->id,
-                        'title' => $appointment->title,
-                        'date' => $appointment->date,
-                        'time' => $appointment->time,
-                        'datetime' => $appointmentDate->format('M d, Y') . ($appointment->time ? ' at ' . \Carbon\Carbon::parse($appointment->time)->format('g:i A') : ''),
+                        'title' => $title,
+                        'date' => $appointmentDate->format('Y-m-d'),
+                        'time' => $appointmentDate->format('H:i:s'),
+                        'datetime' => $appointmentDate->format('M d, Y') . ' at ' . $appointmentDate->format('g:i A'),
                         'status' => ucfirst($appointment->status),
                         'days_until' => $daysUntil,
                         'type' => 'appointment',
@@ -613,13 +616,17 @@ class ClientPortalDashboardController extends Controller
                 ->offset(($page - 1) * $perPage)
                 ->limit($perPage)
                 ->get()
-                ->map(function ($activity) {
+                ->map(function ($activity) use ($type) {
+                    // Sanitize subject and description for UTF-8 encoding before processing
+                    $sanitizedSubject = Utf8Helper::safeSanitize($activity->subject ?? '');
+                    $sanitizedDescription = Utf8Helper::safeSanitize($activity->description ?? '');
+                    
                     // Determine type based on task_group column and subject content
-                    $subject = strtolower($activity->subject ?? '');
+                    $subject = mb_strtolower($sanitizedSubject, 'UTF-8');
                     $taskGroupNotEmpty = !empty($activity->task_group);
                     
                     // Condition 1: task_group not null AND subject contains note keywords => Note
-                    if ($taskGroupNotEmpty && (strpos($subject, 'added a note') !== false || strpos($subject, 'updated a note') !== false)) {
+                    if ($taskGroupNotEmpty && (mb_strpos($subject, 'added a note', 0, 'UTF-8') !== false || mb_strpos($subject, 'updated a note', 0, 'UTF-8') !== false)) {
                         $activityType = 'Note';
                     }
                     // Condition 2: task_group not null AND subject does NOT contain note keywords => Action
@@ -627,11 +634,11 @@ class ClientPortalDashboardController extends Controller
                         $activityType = 'Action';
                     }
                     // Condition 3a: task_group is null AND subject contains document keywords => Document
-                    else if (strpos($subject, 'added migration document') !== false || strpos($subject, 'added personal document') !== false) {
+                    else if (mb_strpos($subject, 'added migration document', 0, 'UTF-8') !== false || mb_strpos($subject, 'added personal document', 0, 'UTF-8') !== false) {
                         $activityType = 'Document';
                     }
                     // Condition 3b: task_group is null AND subject contains email verification => Email
-                    else if (strpos($subject, 'email verification') !== false) {
+                    else if (mb_strpos($subject, 'email verification', 0, 'UTF-8') !== false) {
                         $activityType = 'Email';
                     }
                     // Condition 4: Else => Activity
@@ -645,12 +652,12 @@ class ClientPortalDashboardController extends Controller
                     }
                     
                     // Strip HTML tags and limit title to 1 line (approximately 50 characters)
-                    $title = strip_tags($activity->subject ?? 'Activity');
-                    $title = strlen($title) > 50 ? substr($title, 0, 50) . '...' : $title;
+                    $title = strip_tags($sanitizedSubject ?: 'Activity');
+                    $title = mb_strlen($title, 'UTF-8') > 50 ? mb_substr($title, 0, 50, 'UTF-8') . '...' : $title;
                     
                     // Strip HTML tags and limit description to 2 lines (approximately 100 characters)
-                    $description = strip_tags($activity->description ?? $activity->subject ?? '');
-                    $description = strlen($description) > 100 ? substr($description, 0, 100) . '...' : $description;
+                    $description = strip_tags($sanitizedDescription ?: $sanitizedSubject);
+                    $description = mb_strlen($description, 'UTF-8') > 100 ? mb_substr($description, 0, 100, 'UTF-8') . '...' : $description;
                     
                     return [
                         'id' => $activity->id,
@@ -691,16 +698,18 @@ class ClientPortalDashboardController extends Controller
                 })
                 ->get()
                 ->map(function ($activity) {
-                    $subject = strtolower($activity->subject ?? '');
+                    // Sanitize subject for UTF-8 encoding before processing
+                    $sanitizedSubject = Utf8Helper::safeSanitize($activity->subject ?? '');
+                    $subject = mb_strtolower($sanitizedSubject, 'UTF-8');
                     $taskGroupNotEmpty = !empty($activity->task_group);
                     
-                    if ($taskGroupNotEmpty && (strpos($subject, 'added a note') !== false || strpos($subject, 'updated a note') !== false)) {
+                    if ($taskGroupNotEmpty && (mb_strpos($subject, 'added a note', 0, 'UTF-8') !== false || mb_strpos($subject, 'updated a note', 0, 'UTF-8') !== false)) {
                         return 'Note';
                     } else if ($taskGroupNotEmpty) {
                         return 'Action';
-                    } else if (strpos($subject, 'added migration document') !== false || strpos($subject, 'added personal document') !== false) {
+                    } else if (mb_strpos($subject, 'added migration document', 0, 'UTF-8') !== false || mb_strpos($subject, 'added personal document', 0, 'UTF-8') !== false) {
                         return 'Document';
-                    } else if (strpos($subject, 'email verification') !== false) {
+                    } else if (mb_strpos($subject, 'email verification', 0, 'UTF-8') !== false) {
                         return 'Email';
                     } else {
                         return 'Activity';
@@ -823,16 +832,9 @@ class ClientPortalDashboardController extends Controller
      */
     private function getTotalAppointments($clientId)
     {
-        $totalAppointments = DB::table('appointments')
-            ->where('client_id', $clientId)
-            ->whereNotIn('status', [2, 4, 6, 7, 8])
-            ->where(function($query) {
-                $query->where('date', '>', now()->toDateString())
-                      ->orWhere(function($subQuery) {
-                          $subQuery->where('date', '=', now()->toDateString())
-                                   ->where('time', '>', now()->toTimeString());
-                      });
-            })
+        $totalAppointments = BookingAppointment::where('client_id', $clientId)
+            ->whereNotIn('status', ['cancelled', 'no_show', 'completed'])
+            ->where('appointment_datetime', '>', now())
             ->count();
 
         return $totalAppointments;
@@ -1036,34 +1038,30 @@ class ClientPortalDashboardController extends Controller
     private function getUpcomingDeadlines($clientId)
     {
         // Get upcoming appointments (after current datetime)
-        $appointmentsQuery = DB::table('appointments')
-            ->where('client_id', $clientId)
-            ->where(function($query) {
-                // Appointments on future dates
-                $query->where('date', '>', now()->toDateString())
-                      // OR appointments on today's date but after current time
-                      ->orWhere(function($subQuery) {
-                          $subQuery->where('date', '=', now()->toDateString())
-                                   ->where('time', '>', now()->toTimeString());
-                      });
-            })
-            ->whereNotIn('status', [2, 4, 6, 7, 8]);
+        $appointmentsQuery = BookingAppointment::where('client_id', $clientId)
+            ->where('appointment_datetime', '>', now())
+            ->whereNotIn('status', ['cancelled', 'no_show', 'completed']);
             
         $upcomingAppointments = $appointmentsQuery
-            ->orderBy('date', 'asc')
-            ->orderBy('time', 'asc')
+            ->orderBy('appointment_datetime', 'asc')
             ->limit(3)
             ->get()
             ->map(function ($appointment) {
-                $appointmentDate = \Carbon\Carbon::parse($appointment->date);
+                $appointmentDate = $appointment->appointment_datetime;
                 $daysUntil = $appointmentDate->diffInDays(now());
+                
+                // Use client_name or service_type as title
+                $title = $appointment->client_name;
+                if ($appointment->service_type) {
+                    $title .= ' - ' . $appointment->service_type;
+                }
                 
                 return [
                     'id' => $appointment->id,
-                    'title' => $appointment->title,
-                    'date' => $appointment->date,
-                    'time' => $appointment->time,
-                    'datetime' => $appointmentDate->format('M d, Y') . ($appointment->time ? ' at ' . \Carbon\Carbon::parse($appointment->time)->format('g:i A') : ''),
+                    'title' => $title,
+                    'date' => $appointmentDate->format('Y-m-d'),
+                    'time' => $appointmentDate->format('H:i:s'),
+                    'datetime' => $appointmentDate->format('M d, Y') . ' at ' . $appointmentDate->format('g:i A'),
                     'status' => ucfirst($appointment->status),
                     'days_until' => $daysUntil,
                     'type' => 'appointment'
@@ -1134,12 +1132,16 @@ class ClientPortalDashboardController extends Controller
             ->limit(3)
             ->get()
             ->map(function ($activity) {
+                // Sanitize subject and description for UTF-8 encoding before processing
+                $sanitizedSubject = Utf8Helper::safeSanitize($activity->subject ?? '');
+                $sanitizedDescription = Utf8Helper::safeSanitize($activity->description ?? '');
+                
                 // Determine type based on task_group column and subject content
-                $subject = strtolower($activity->subject ?? '');
+                $subject = mb_strtolower($sanitizedSubject, 'UTF-8');
                 $taskGroupNotEmpty = !empty($activity->task_group);
                 
                 // Condition 1: task_group not null AND subject contains note keywords => Note
-                if ($taskGroupNotEmpty && (strpos($subject, 'added a note') !== false || strpos($subject, 'updated a note') !== false)) {
+                if ($taskGroupNotEmpty && (mb_strpos($subject, 'added a note', 0, 'UTF-8') !== false || mb_strpos($subject, 'updated a note', 0, 'UTF-8') !== false)) {
                     $type = 'Note';
                 }
                 // Condition 2: task_group not null AND subject does NOT contain note keywords => Action
@@ -1147,11 +1149,11 @@ class ClientPortalDashboardController extends Controller
                     $type = 'Action';
                 }
                 // Condition 3a: task_group is null AND subject contains document keywords => Document
-                else if (strpos($subject, 'added migration document') !== false || strpos($subject, 'added personal document') !== false) {
+                else if (mb_strpos($subject, 'added migration document', 0, 'UTF-8') !== false || mb_strpos($subject, 'added personal document', 0, 'UTF-8') !== false) {
                     $type = 'Document';
                 }
                 // Condition 3b: task_group is null AND subject contains email verification => Email
-                else if (strpos($subject, 'email verification') !== false) {
+                else if (mb_strpos($subject, 'email verification', 0, 'UTF-8') !== false) {
                     $type = 'Email';
                 }
                 // Condition 4: Else => Activity
@@ -1160,12 +1162,12 @@ class ClientPortalDashboardController extends Controller
                 }
                 
                 // Strip HTML tags and limit title to 1 line (approximately 50 characters)
-                $title = strip_tags($activity->subject ?? 'Activity');
-                $title = strlen($title) > 50 ? substr($title, 0, 50) . '...' : $title;
+                $title = strip_tags($sanitizedSubject ?: 'Activity');
+                $title = mb_strlen($title, 'UTF-8') > 50 ? mb_substr($title, 0, 50, 'UTF-8') . '...' : $title;
                 
                 // Strip HTML tags and limit description to 2 lines (approximately 100 characters)
-                $description = strip_tags($activity->description ?? $activity->subject ?? '');
-                $description = strlen($description) > 100 ? substr($description, 0, 100) . '...' : $description;
+                $description = strip_tags($sanitizedDescription ?: $sanitizedSubject);
+                $description = mb_strlen($description, 'UTF-8') > 100 ? mb_substr($description, 0, 100, 'UTF-8') . '...' : $description;
                 
                 return [
                     'id' => $activity->id,

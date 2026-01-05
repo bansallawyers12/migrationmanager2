@@ -2749,9 +2749,54 @@ document.addEventListener('DOMContentLoaded', function() {
     if (nextStageBtn) {
         nextStageBtn.addEventListener('click', function() {
             const matterId = this.getAttribute('data-matter-id');
+            if (!matterId) {
+                alert('Error: Matter ID not found');
+                return;
+            }
+            
             if (confirm('Are you sure you want to proceed to the next stage?')) {
-                // TODO: Implement API call to move to next stage
-                alert('Proceed to next stage functionality will be implemented');
+                // Disable button to prevent double clicks
+                const btn = this;
+                const originalText = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                
+                // Make AJAX call to update stage
+                fetch('{{ route("clients.matter.update-next-stage") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    },
+                    body: JSON.stringify({
+                        matter_id: matterId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status) {
+                        // Success - reload the page to show updated stage
+                        alert(data.message || 'Matter has been successfully moved to the next stage.');
+                        window.location.reload();
+                    } else {
+                        // Error - show message and re-enable button
+                        alert(data.message || 'Failed to move to next stage. Please try again.');
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                        
+                        // If already at last stage, disable the button
+                        if (data.is_last_stage) {
+                            btn.disabled = true;
+                            btn.classList.add('disabled');
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while updating the stage. Please try again.');
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                });
             }
         });
     }

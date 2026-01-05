@@ -47,6 +47,7 @@ use App\Models\ClientTestScore; // Import the ClientAddress model
 use App\Models\ClientVisaCountry; // Import the ClientAddress model
 use App\Models\ClientOccupation; // Import the ClientAddress model
 use App\Models\ClientSpouseDetail; // Import the ClientAddress model
+use App\Models\AppointmentConsultant; // Import the AppointmentConsultant model
 
 use App\Models\EmailRecord;
 use App\Models\ClientPoint;
@@ -74,6 +75,7 @@ use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\PhpWord;
 use App\Mail\HubdocInvoiceMail;
 use App\Services\Sms\UnifiedSmsManager;
+use App\Services\BansalAppointmentSync\BansalApiClient;
 use App\Traits\ClientAuthorization;
 use App\Traits\ClientHelpers;
 use App\Traits\ClientQueries;
@@ -6772,8 +6774,52 @@ class ClientsController extends Controller
                     }
                 }
 
-                $email->preview_url = $previewUrl;
-                return $email;
+                // Ensure attachments and labels relationships are loaded
+                if (!$email->relationLoaded('attachments')) {
+                    $email->load('attachments');
+                }
+                if (!$email->relationLoaded('labels')) {
+                    $email->load('labels');
+                }
+
+                // Convert to array to ensure all relationships are properly serialized
+                $emailArray = $email->toArray();
+                
+                // Explicitly fetch attachments - try relationship first, then direct query as fallback
+                $attachments = $email->attachments;
+                
+                // If relationship is empty, try direct query (fallback for relationship issues)
+                if (!$attachments || (method_exists($attachments, 'count') && $attachments->count() === 0)) {
+                    $attachments = \App\Models\MailReportAttachment::where('mail_report_id', $email->id)->get();
+                }
+                
+                // Format attachments as array with all required fields
+                if ($attachments && method_exists($attachments, 'count') && $attachments->count() > 0) {
+                    $emailArray['attachments'] = $attachments->map(function ($attachment) {
+                        return [
+                            'id' => $attachment->id,
+                            'mail_report_id' => $attachment->mail_report_id,
+                            'filename' => $attachment->filename,
+                            'display_name' => $attachment->display_name ?? $attachment->filename,
+                            'content_type' => $attachment->content_type,
+                            'file_path' => $attachment->file_path,
+                            's3_key' => $attachment->s3_key,
+                            'file_size' => (int) $attachment->file_size,
+                            'content_id' => $attachment->content_id,
+                            'is_inline' => (bool) $attachment->is_inline, // Ensure boolean for frontend filtering
+                            'description' => $attachment->description,
+                            'extension' => $attachment->extension,
+                        ];
+                    })->values()->toArray(); // values() re-indexes the array
+                } else {
+                    // Ensure attachments key exists even if empty
+                    $emailArray['attachments'] = [];
+                }
+                
+                // Add preview_url to the array
+                $emailArray['preview_url'] = $previewUrl;
+                
+                return $emailArray;
             });
 
             return response()->json($emails, 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -6876,12 +6922,56 @@ class ClientsController extends Controller
 					$previewUrl = '';
 				}
 
-				$email->preview_url = $previewUrl;
-				$email->from_mail = $email->from_mail ?? '';
-				$email->to_mail = $email->to_mail ?? '';
-				$email->subject = $email->subject ?? '';
-				$email->message = $email->message ?? '';
-				return $email;
+				// Ensure attachments and labels relationships are loaded
+				if (!$email->relationLoaded('attachments')) {
+					$email->load('attachments');
+				}
+				if (!$email->relationLoaded('labels')) {
+					$email->load('labels');
+				}
+
+				// Convert to array to ensure all relationships are properly serialized
+				$emailArray = $email->toArray();
+				
+				// Explicitly fetch attachments - try relationship first, then direct query as fallback
+				$attachments = $email->attachments;
+				
+				// If relationship is empty, try direct query (fallback for relationship issues)
+				if (!$attachments || (method_exists($attachments, 'count') && $attachments->count() === 0)) {
+					$attachments = \App\Models\MailReportAttachment::where('mail_report_id', $email->id)->get();
+				}
+				
+				// Format attachments as array with all required fields
+				if ($attachments && method_exists($attachments, 'count') && $attachments->count() > 0) {
+					$emailArray['attachments'] = $attachments->map(function ($attachment) {
+						return [
+							'id' => $attachment->id,
+							'mail_report_id' => $attachment->mail_report_id,
+							'filename' => $attachment->filename,
+							'display_name' => $attachment->display_name ?? $attachment->filename,
+							'content_type' => $attachment->content_type,
+							'file_path' => $attachment->file_path,
+							's3_key' => $attachment->s3_key,
+							'file_size' => (int) $attachment->file_size,
+							'content_id' => $attachment->content_id,
+							'is_inline' => (bool) $attachment->is_inline, // Ensure boolean for frontend filtering
+							'description' => $attachment->description,
+							'extension' => $attachment->extension,
+						];
+					})->values()->toArray(); // values() re-indexes the array
+				} else {
+					// Ensure attachments key exists even if empty
+					$emailArray['attachments'] = [];
+				}
+				
+				// Add preview_url and ensure required fields have defaults
+				$emailArray['preview_url'] = $previewUrl;
+				$emailArray['from_mail'] = $emailArray['from_mail'] ?? '';
+				$emailArray['to_mail'] = $emailArray['to_mail'] ?? '';
+				$emailArray['subject'] = $emailArray['subject'] ?? '';
+				$emailArray['message'] = $emailArray['message'] ?? '';
+				
+				return $emailArray;
 			});
 
 			return response()->json($emails, 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -7058,11 +7148,13 @@ class ClientsController extends Controller
                     if( $client_matter_info ){ //dd($client_matter_info);
                         $matter_info_arr = DB::table('matters')->select('title','nick_name','Block_1_Description','Block_2_Description','Block_3_Description')->where('id', $client_matter_info->sel_matter_id )->first();
                     }
-                    $matter_info->title = $matter_info_arr->title;
-                    $matter_info->nick_name = $matter_info_arr->nick_name;
-                    $matter_info->Block_1_Description = $matter_info_arr->Block_1_Description;
-                    $matter_info->Block_2_Description = $matter_info_arr->Block_2_Description;
-                    $matter_info->Block_3_Description = $matter_info_arr->Block_3_Description;
+                    if( $matter_info_arr ) {
+                        $matter_info->title = $matter_info_arr->title ?? '';
+                        $matter_info->nick_name = $matter_info_arr->nick_name ?? '';
+                        $matter_info->Block_1_Description = $matter_info_arr->Block_1_Description ?? '';
+                        $matter_info->Block_2_Description = $matter_info_arr->Block_2_Description ?? '';
+                        $matter_info->Block_3_Description = $matter_info_arr->Block_3_Description ?? '';
+                    }
 
                 }
                 else
@@ -7077,58 +7169,58 @@ class ClientsController extends Controller
                 if ($matter_info)
                 { //dd($matter_info);
 
-                    $visa_subclass = $matter_info->title;
-                    $visa_stream = $matter_info->nick_name;
+                    $visa_subclass = $matter_info->title ?? '';
+                    $visa_stream = $matter_info->nick_name ?? '';
 
                     //$professional_fee = $matter_info->our_fee;
                     //$gst_fee = 0;
                     //$visa_application_charge = $matter_info->main_applicant_fee;
 
-                    $Block_1_Description = $matter_info->Block_1_Description;
-                    $Block_1_Ex_Tax = $matter_info->Block_1_Ex_Tax;
+                    $Block_1_Description = $matter_info->Block_1_Description ?? '';
+                    $Block_1_Ex_Tax = $matter_info->Block_1_Ex_Tax ?? 0;
 
-                    $Block_2_Description = $matter_info->Block_2_Description;
-                    $Block_2_Ex_Tax = $matter_info->Block_2_Ex_Tax;
+                    $Block_2_Description = $matter_info->Block_2_Description ?? '';
+                    $Block_2_Ex_Tax = $matter_info->Block_2_Ex_Tax ?? 0;
 
-                    $Block_3_Description = $matter_info->Block_3_Description;
-                    $Block_3_Ex_Tax = $matter_info->Block_3_Ex_Tax;
+                    $Block_3_Description = $matter_info->Block_3_Description ?? '';
+                    $Block_3_Ex_Tax = $matter_info->Block_3_Ex_Tax ?? 0;
 
                     $Blocktotalfeesincltax = floatval($Block_1_Ex_Tax) + floatval($Block_2_Ex_Tax) + floatval($Block_3_Ex_Tax);
                     $BlocktotalfeesincltaxFormated = number_format($Blocktotalfeesincltax, 2, '.', '');
                     //dd($BlocktotalfeesincltaxFormated);
 
-                    $DoHAMainApplicantChargePersonCount = $matter_info->Dept_Base_Application_Charge_no_of_person ."Person" ;
-                    $DoHAMainApplicantCharge = $matter_info->Dept_Base_Application_Charge_after_person;
-                    $DoHAMainApplicantSurcharge = $matter_info->Dept_Base_Application_Charge_after_person_surcharge;
+                    $DoHAMainApplicantChargePersonCount = ($matter_info->Dept_Base_Application_Charge_no_of_person ?? 0) ."Person" ;
+                    $DoHAMainApplicantCharge = $matter_info->Dept_Base_Application_Charge_after_person ?? 0;
+                    $DoHAMainApplicantSurcharge = $matter_info->Dept_Base_Application_Charge_after_person_surcharge ?? 0;
 
-                    $DoHAAdditionalApplicantCharge18PlusPersonCount = $matter_info->Dept_Additional_Applicant_Charge_18_Plus_no_of_person ."Person" ;
-                    $DoHAAdditionalApplicantCharge18Plus = $matter_info->Dept_Additional_Applicant_Charge_18_Plus_after_person;
-                    $DoHAAdditional18PlusSurcharge = $matter_info->Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge;
+                    $DoHAAdditionalApplicantCharge18PlusPersonCount = ($matter_info->Dept_Additional_Applicant_Charge_18_Plus_no_of_person ?? 0) ."Person" ;
+                    $DoHAAdditionalApplicantCharge18Plus = $matter_info->Dept_Additional_Applicant_Charge_18_Plus_after_person ?? 0;
+                    $DoHAAdditional18PlusSurcharge = $matter_info->Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge ?? 0;
 
-                    $DoHAAdditionalApplicantChargeUnder18PersonCount = $matter_info->Dept_Additional_Applicant_Charge_Under_18_no_of_person ."Person" ;
-                    $DoHAAdditionalApplicantChargeUnder18 = $matter_info->Dept_Additional_Applicant_Charge_Under_18_after_person;
-                    $DoHAAdditionalUnder18Surcharge = $matter_info->Dept_Additional_Applicant_Charge_Under_18_after_person_surcharge;
+                    $DoHAAdditionalApplicantChargeUnder18PersonCount = ($matter_info->Dept_Additional_Applicant_Charge_Under_18_no_of_person ?? 0) ."Person" ;
+                    $DoHAAdditionalApplicantChargeUnder18 = $matter_info->Dept_Additional_Applicant_Charge_Under_18_after_person ?? 0;
+                    $DoHAAdditionalUnder18Surcharge = $matter_info->Dept_Additional_Applicant_Charge_Under_18_after_person_surcharge ?? 0;
 
-                    $DoHASecondInstalmentMainPersonCount = $matter_info->Dept_Subsequent_Temp_Application_Charge_no_of_person ."Person" ;
-                    $DoHASecondInstalmentMain = $matter_info->Dept_Subsequent_Temp_Application_Charge_after_person;
-                    $DoHASecondInstalmentMainSurcharge = $matter_info->Dept_Subsequent_Temp_Application_Charge_after_person_surcharge;
+                    $DoHASecondInstalmentMainPersonCount = ($matter_info->Dept_Subsequent_Temp_Application_Charge_no_of_person ?? 0) ."Person" ;
+                    $DoHASecondInstalmentMain = $matter_info->Dept_Subsequent_Temp_Application_Charge_after_person ?? 0;
+                    $DoHASecondInstalmentMainSurcharge = $matter_info->Dept_Subsequent_Temp_Application_Charge_after_person_surcharge ?? 0;
 
-                    $DoHASubsequentApplicantCharge18PlusPersonCount = $matter_info->Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person ."Person" ;
-                    $DoHASubsequentApplicantCharge18Plus = $matter_info->Dept_Second_VAC_Instalment_Charge_18_Plus_after_person;
-                    $DoHASubsequentApplicantCharge18PlusSurcharge = $matter_info->Dept_Second_VAC_Instalment_Charge_18_Plus_after_person_surcharge;
+                    $DoHASubsequentApplicantCharge18PlusPersonCount = ($matter_info->Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person ?? 0) ."Person" ;
+                    $DoHASubsequentApplicantCharge18Plus = $matter_info->Dept_Second_VAC_Instalment_Charge_18_Plus_after_person ?? 0;
+                    $DoHASubsequentApplicantCharge18PlusSurcharge = $matter_info->Dept_Second_VAC_Instalment_Charge_18_Plus_after_person_surcharge ?? 0;
 
-                    $DoHASubsequentApplicantChargeUnder18PersonCount = $matter_info->Dept_Second_VAC_Instalment_Under_18_no_of_person ."Person" ;
-                    $DoHASubsequentTempAppCharge = $matter_info->Dept_Second_VAC_Instalment_Under_18_after_person;
-                    $DoHASubsequentTempAppSurcharge = $matter_info->Dept_Second_VAC_Instalment_Under_18_after_person_surcharge;
+                    $DoHASubsequentApplicantChargeUnder18PersonCount = ($matter_info->Dept_Second_VAC_Instalment_Under_18_no_of_person ?? 0) ."Person" ;
+                    $DoHASubsequentTempAppCharge = $matter_info->Dept_Second_VAC_Instalment_Under_18_after_person ?? 0;
+                    $DoHASubsequentTempAppSurcharge = $matter_info->Dept_Second_VAC_Instalment_Under_18_after_person_surcharge ?? 0;
 
-                    $DoHANonInternetChargePersonCount = $matter_info->Dept_Non_Internet_Application_Charge_no_of_person ."Person" ;
-                    $DoHANonInternetCharge = $matter_info->Dept_Non_Internet_Application_Charge_after_person;
-                    $DoHANonInternetSurcharge = $matter_info->Dept_Non_Internet_Application_Charge_after_person_surcharge;
+                    $DoHANonInternetChargePersonCount = ($matter_info->Dept_Non_Internet_Application_Charge_no_of_person ?? 0) ."Person" ;
+                    $DoHANonInternetCharge = $matter_info->Dept_Non_Internet_Application_Charge_after_person ?? 0;
+                    $DoHANonInternetSurcharge = $matter_info->Dept_Non_Internet_Application_Charge_after_person_surcharge ?? 0;
 
-                    $TotalDoHACharges = $matter_info->TotalDoHACharges;
-                    $TotalDoHASurcharges = $matter_info->TotalDoHASurcharges;
+                    $TotalDoHACharges = $matter_info->TotalDoHACharges ?? 0;
+                    $TotalDoHASurcharges = $matter_info->TotalDoHASurcharges ?? 0;
 
-                    $TotalEstimatedOtherCosts = $matter_info->additional_fee_1;
+                    $TotalEstimatedOtherCosts = $matter_info->additional_fee_1 ?? 0;
                     $GrandTotalFeesAndCosts = floatval($Blocktotalfeesincltax) + floatval($TotalDoHASurcharges) + floatval($TotalEstimatedOtherCosts);
                     $GrandTotalFeesAndCostsFormated = number_format($GrandTotalFeesAndCosts, 2, '.', '');
                 }
@@ -9358,8 +9450,9 @@ class ClientsController extends Controller
             $serviceId = $serviceIdMap[$requestData['service_id']] ?? 2;
 
             // Map NOE ID to service_type/enquiry_type
+            // Note: enquiry_type values must match what Bansal API expects (e.g., 'pr_complex' not 'pr')
             $noeToServiceType = [
-                1 => ['service_type' => 'Permanent Residency', 'enquiry_type' => 'pr'],
+                1 => ['service_type' => 'Permanent Residency', 'enquiry_type' => 'pr_complex'],  // API expects 'pr_complex'
                 2 => ['service_type' => 'Temporary Residency', 'enquiry_type' => 'tr'],
                 3 => ['service_type' => 'JRP/Skill Assessment', 'enquiry_type' => 'jrp'],
                 4 => ['service_type' => 'Tourist Visa', 'enquiry_type' => 'tourist'],
@@ -9368,7 +9461,7 @@ class ClientsController extends Controller
                 7 => ['service_type' => 'Visa Cancellation/NOICC/Refusals', 'enquiry_type' => 'cancellation'],
                 8 => ['service_type' => 'INDIA/UK/CANADA/EUROPE TO AUSTRALIA', 'enquiry_type' => 'international'],
             ];
-            $serviceTypeMapping = $noeToServiceType[$requestData['noe_id']] ?? ['service_type' => 'Other', 'enquiry_type' => 'other'];
+            $serviceTypeMapping = $noeToServiceType[$requestData['noe_id']] ?? ['service_type' => 'Other', 'enquiry_type' => 'pr_complex']; // Default to pr_complex
 
             // Map location
             $locationMap = [1 => 'adelaide', 2 => 'melbourne'];
@@ -9459,13 +9552,104 @@ class ClientsController extends Controller
                 ]);
             }
 
-            // Generate unique bansal_appointment_id for manually created appointments
-            // Use timestamp + random to ensure uniqueness (manual appointments start from 1000000)
-            $bansalAppointmentId = 1000000 + (time() % 900000) + mt_rand(1, 99999);
+            // Map service_id to specific_service for Bansal API
+            $specificServiceMap = [
+                1 => 'paid-consultation',  // Paid Migration Advice
+                2 => 'consultation',        // Free Consultation
+                3 => 'overseas-enquiry',    // Overseas Applicant Enquiry
+            ];
+            $specificService = $specificServiceMap[$serviceId] ?? 'consultation';
 
-            // Ensure uniqueness
-            while (BookingAppointment::where('bansal_appointment_id', $bansalAppointmentId)->exists()) {
-                $bansalAppointmentId = 1000000 + (time() % 900000) + mt_rand(1, 99999);
+            // Prepare appointment data for Bansal API
+            // Format appointment date and time separately as API expects
+            $appointmentDateForApi = $appointmentDateTime->copy()->setTimezone($timezone)->format('Y-m-d');
+            
+            // Format appointment time - API expects H:i format (without seconds) for validation
+            // Extract the time from the parsed datetime in the original timezone
+            $appointmentTimeForApi = $appointmentDateTime->copy()->setTimezone($timezone)->format('H:i');
+            
+            // Format appointment time slot for display (e.g., "1:00 PM-1:15 PM")
+            $appointmentTimeSlot = $requestData['appoint_time'];
+
+            // Build payload for Bansal API (matching the expected structure from API error response)
+            $bansalApiPayload = [
+                'full_name' => $clientName,
+                'email' => $clientEmail,
+                'phone' => $client->phone ?? '',
+                'appointment_date' => $appointmentDateForApi,  // Required: YYYY-MM-DD format
+                'appointment_time' => $appointmentTimeForApi, // Required: HH:MM:SS format
+                'appointment_datetime' => $appointmentDateTime->copy()->setTimezone($timezone)->format('Y-m-d H:i:s'),
+                'duration_minutes' => $durationMinutes,
+                'location' => $location,
+                'meeting_type' => $meetingType,
+                'preferred_language' => $requestData['preferred_language'],
+                'specific_service' => $specificService,
+                'enquiry_type' => $serviceTypeMapping['enquiry_type'], // Required: use enquiry_type not service_type
+                'service_type' => $serviceTypeMapping['service_type'],
+                'enquiry_details' => $requestData['description'],
+                'is_paid' => ($serviceId == 2) ? false : true,
+                'amount' => ($serviceId == 2) ? 0 : 150,
+                'final_amount' => ($serviceId == 2) ? 0 : 150,
+                'payment_status' => ($serviceId == 2) ? null : 'pending',
+            ];
+
+            // Call Bansal API to create appointment and get real bansal_appointment_id
+            $bansalAppointmentId = null;
+            $bansalApiError = null;
+            
+            try {
+                $bansalApiClient = app(BansalApiClient::class);
+                $bansalApiResponse = $bansalApiClient->createAppointment($bansalApiPayload);
+                
+                // Extract bansal_appointment_id from API response
+                if (isset($bansalApiResponse['data']['id'])) {
+                    $bansalAppointmentId = (int) $bansalApiResponse['data']['id'];
+                } elseif (isset($bansalApiResponse['data']['appointment_id'])) {
+                    $bansalAppointmentId = (int) $bansalApiResponse['data']['appointment_id'];
+                } elseif (isset($bansalApiResponse['appointment_id'])) {
+                    $bansalAppointmentId = (int) $bansalApiResponse['appointment_id'];
+                } else {
+                    throw new \Exception('Bansal API did not return appointment ID. Response: ' . json_encode($bansalApiResponse));
+                }
+                
+                \Log::info('Appointment created on Bansal website', [
+                    'bansal_appointment_id' => $bansalAppointmentId,
+                    'client_id' => $client->id,
+                    'client_email' => $clientEmail
+                ]);
+            } catch (\Exception $apiException) {
+                $bansalApiError = $apiException->getMessage();
+                \Log::error('Failed to create appointment on Bansal website via API', [
+                    'error' => $bansalApiError,
+                    'client_id' => $client->id,
+                    'client_email' => $clientEmail,
+                    'payload' => $bansalApiPayload,
+                    'trace' => $apiException->getTraceAsString()
+                ]);
+                
+                // If API call fails, we'll still create the appointment locally
+                // but with a temporary ID that indicates it needs to be synced
+                // This ensures existing functionality doesn't break
+                $bansalAppointmentId = null; // Will be set to a placeholder if API fails
+            }
+
+            // If API call failed, use a placeholder ID that indicates manual creation
+            // This allows the appointment to exist in CRM while we can retry API sync later
+            if ($bansalAppointmentId === null) {
+                // Generate temporary ID starting from 2000000 to distinguish from old system
+                // This will be replaced when API sync succeeds
+                $bansalAppointmentId = 2000000 + (time() % 900000) + mt_rand(1, 99999);
+                
+                // Ensure uniqueness
+                while (BookingAppointment::where('bansal_appointment_id', $bansalAppointmentId)->exists()) {
+                    $bansalAppointmentId = 2000000 + (time() % 900000) + mt_rand(1, 99999);
+                }
+                
+                \Log::warning('Using temporary bansal_appointment_id due to API failure', [
+                    'temporary_id' => $bansalAppointmentId,
+                    'api_error' => $bansalApiError,
+                    'client_id' => $client->id
+                ]);
             }
 
             // Create booking appointment
@@ -9507,29 +9691,40 @@ class ClientsController extends Controller
                 'confirmation_email_sent' => false,
                 'reminder_sms_sent' => false,
                 
+                // Sync status tracking
+                'sync_status' => $bansalApiError ? 'failed' : 'synced',
+                'sync_error' => $bansalApiError,
+                'last_synced_at' => $bansalApiError ? null : now(),
+                
                 'user_id' => Auth::id(),
             ]);
 
-            // Log activity
-            $activityLog = new ActivitiesLog();
-            $activityLog->client_id = $client->id;
-            $activityLog->created_by = Auth::id();
-            $activityLog->subject = 'Booking appointment created: ' . $serviceTypeMapping['service_type'];
-            $activityLog->description = $requestData['description'];
-            $activityLog->task_status = 0;
-            $activityLog->pin = 0;
-            $activityLog->save();
+            // Log activity with detailed appointment information
+            $this->createActivityLogForBookingAppointment($appointment, $serviceId, $requestData['noe_id']);
+
+            // Prepare response message
+            $successMessage = 'Appointment booked successfully';
+            if ($bansalApiError) {
+                $successMessage .= '. Note: Appointment created in CRM but could not be synced to Bansal website. Error: ' . $bansalApiError;
+                \Log::warning('Appointment created locally but Bansal API sync failed', [
+                    'appointment_id' => $appointment->id,
+                    'bansal_appointment_id' => $bansalAppointmentId,
+                    'api_error' => $bansalApiError
+                ]);
+            }
 
             // Return JSON response matching expected format
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
                     'status' => true,
                     'success' => true,
-                    'message' => 'Appointment booked successfully'
+                    'message' => $successMessage,
+                    'bansal_synced' => !$bansalApiError,
+                    'bansal_appointment_id' => $bansalAppointmentId
                 ]);
             }
 
-            return redirect()->back()->with('success', 'Appointment booked successfully');
+            return redirect()->back()->with($bansalApiError ? 'warning' : 'success', $successMessage);
             
         } catch (\Exception $e) {
             \Log::error('Error creating booking appointment: ' . $e->getMessage(), [
@@ -9685,6 +9880,159 @@ class ClientsController extends Controller
         </script>';
 
         return $html;
+    }
+
+    /**
+     * Create detailed activity log for booking appointment (manual creation from CRM)
+     * 
+     * @param BookingAppointment $appointment
+     * @param int $serviceId
+     * @param int $noeId
+     * @return void
+     */
+    protected function createActivityLogForBookingAppointment(BookingAppointment $appointment, int $serviceId, int $noeId): void
+    {
+        // Determine subject based on service type
+        $subject = 'scheduled an appointment';
+        $serviceTitle = 'Appointment';
+        
+        if ($serviceId == 2) {
+            $subject = 'scheduled an free appointment';
+            $serviceTitle = 'Free Consultation';
+        } elseif ($serviceId == 1) {
+            $subject = 'scheduled an paid appointment';
+            $serviceTitle = 'Comprehensive Migration Advice';
+        } elseif ($serviceId == 3) {
+            $subject = 'scheduled an paid appointment';
+            $serviceTitle = 'Overseas Applicant Enquiry';
+        }
+
+        // Determine enquiry title based on noe_id
+        $enquiryTitle = 'Appointment';
+        if ($noeId == 1) {
+            $enquiryTitle = 'Permanent Residency Appointment';
+        } elseif ($noeId == 2) {
+            $enquiryTitle = 'Temporary Residency Appointment';
+        } elseif ($noeId == 3) {
+            $enquiryTitle = 'JRP/Skill Assessment';
+        } elseif ($noeId == 4) {
+            $enquiryTitle = 'Tourist Visa';
+        } elseif ($noeId == 5) {
+            $enquiryTitle = 'Education/Course Change/Student Visa/Student Dependent Visa';
+        } elseif ($noeId == 6) {
+            $enquiryTitle = 'Complex matters: AAT, Protection visa, Federal Case';
+        } elseif ($noeId == 7) {
+            $enquiryTitle = 'Visa Cancellation/ NOICC/ Visa refusals';
+        } elseif ($noeId == 8) {
+            $enquiryTitle = 'INDIA/UK/CANADA/EUROPE TO AUSTRALIA';
+        }
+
+        // Format meeting type
+        $appointmentDetails = '';
+        if ($appointment->meeting_type) {
+            $meetingType = strtolower($appointment->meeting_type);
+            if ($meetingType === 'in_person') {
+                $appointmentDetails = 'In Person';
+            } elseif ($meetingType === 'phone') {
+                $appointmentDetails = 'Phone';
+            } elseif ($meetingType === 'video') {
+                $appointmentDetails = 'Video Call';
+            }
+        }
+
+        // Format appointment date
+        $appointmentDate = $appointment->appointment_datetime;
+        if ($appointmentDate instanceof Carbon) {
+            $activityLogDate = $appointmentDate->format('Y-m-d');
+        } elseif ($appointmentDate) {
+            $activityLogDate = Carbon::parse($appointmentDate)->format('Y-m-d');
+        } else {
+            $activityLogDate = date('Y-m-d');
+        }
+        
+        // Format appointment time
+        $appointmentTime = $appointment->timeslot_full ?? '';
+        if (empty($appointmentTime) && $appointmentDate) {
+            if ($appointmentDate instanceof Carbon) {
+                $appointmentTime = $appointmentDate->format('h:i A');
+            } else {
+                $appointmentTime = Carbon::parse($appointmentDate)->format('h:i A');
+            }
+        }
+
+        // Get location display name
+        $locationDisplay = '';
+        if ($appointment->location) {
+            $locationDisplay = ucfirst($appointment->location);
+            if ($appointment->location === 'adelaide' && $appointment->service_id == 2) {
+                $locationDisplay = 'Adelaide Free PR';
+            } elseif ($appointment->location === 'melbourne' && $appointment->service_id == 2) {
+                $locationDisplay = 'Melbourne Free PR';
+            }
+        }
+
+        // Build description HTML (matching synced appointment format)
+        $description = '<div style="display: -webkit-inline-box;">
+                <span style="height: 60px; width: 60px; border: 1px solid rgb(3, 169, 244); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2px;overflow: hidden;">
+                    <span  style="flex: 1 1 0%; width: 100%; text-align: center; background: rgb(237, 237, 237); border-top-left-radius: 120px; border-top-right-radius: 120px; font-size: 12px;line-height: 24px;">
+                        ' . date('d M', strtotime($activityLogDate)) . '
+                    </span>
+                    <span style="background: rgb(84, 178, 75); color: rgb(255, 255, 255); flex: 1 1 0%; width: 100%; border-bottom-left-radius: 120px; border-bottom-right-radius: 120px; text-align: center;font-size: 12px; line-height: 21px;">
+                        ' . date('Y', strtotime($activityLogDate)) . '
+                    </span>
+                </span>
+            </div>
+            <div style="display:inline-grid;">
+                <span class="text-semi-bold">' . e($enquiryTitle) . '</span> 
+                <span class="text-semi-bold">' . e($serviceTitle) . '</span>';
+        
+        if ($appointmentDetails) {
+            $description .= '  <span class="text-semi-bold">' . e($appointmentDetails) . '</span>';
+        }
+        
+        if ($appointment->preferred_language) {
+            $description .= '  <span class="text-semi-bold">' . e($appointment->preferred_language) . '</span>';
+        }
+        
+        if ($appointment->enquiry_details) {
+            $description .= '  <span class="text-semi-bold">' . e($appointment->enquiry_details) . '</span>';
+        }
+        
+        if ($appointmentTime) {
+            $description .= '  <p class="text-semi-light-grey col-v-1">@ ' . e($appointmentTime) . '</p>';
+        }
+        
+        $description .= '</div>';
+
+        // Get client name for subject
+        $clientName = '';
+        if ($appointment->client_id) {
+            // Try to get client name from Admin model (first_name + last_name)
+            $client = Admin::where('id', $appointment->client_id)
+                ->where('role', 7) // Ensure it's a client
+                ->select('first_name', 'last_name')
+                ->first();
+            
+            if ($client) {
+                $clientName = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
+            }
+        }
+        
+        // Fallback to client_name field if Admin lookup didn't work
+        if (empty($clientName) && $appointment->client_name) {
+            $clientName = trim($appointment->client_name);
+        }
+
+        // Create activity log entry
+        ActivitiesLog::create([
+            'client_id' => $appointment->client_id,
+            'created_by' => Auth::id(),
+            'subject' => $subject,
+            'description' => $description,
+            'activity_type' => 'activity',
+            'task_status' => 0,
+            'pin' => 0,
+        ]);
     }
 
 }

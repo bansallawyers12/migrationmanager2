@@ -1914,11 +1914,19 @@ class ClientPersonalDetailsController extends Controller
                     // Skip duplicate check for placeholder numbers
                     if (!$validation['is_placeholder']) {
                         // Check for duplicate phone numbers within the same client
-                        $duplicatePhone = ClientContact::where('phone', $phone)
+                        // Convert empty string to null for proper handling
+                        $contactIdForCheck = !empty($phoneData['id']) ? $phoneData['id'] : null;
+                        
+                        $duplicatePhoneQuery = ClientContact::where('phone', $phone)
                             ->where('country_code', $countryCode)
-                            ->where('client_id', $client->id)
-                            ->where('id', '!=', $phoneData['id'] ?? null)
-                            ->first();
+                            ->where('client_id', $client->id);
+                        
+                        // Only exclude current contact ID if it's a valid ID (not empty/null)
+                        if ($contactIdForCheck) {
+                            $duplicatePhoneQuery->where('id', '!=', $contactIdForCheck);
+                        }
+                        
+                        $duplicatePhone = $duplicatePhoneQuery->first();
 
                         if ($duplicatePhone) {
                             return response()->json([
@@ -1946,7 +1954,8 @@ class ClientPersonalDetailsController extends Controller
             $processedPhones = [];
             foreach ($phoneNumbers as $phoneData) {
                 if (!empty($phoneData['phone'])) {
-                    $contactId = $phoneData['id'] ?? null;
+                    // Convert empty string to null for proper handling
+                    $contactId = !empty($phoneData['id']) ? $phoneData['id'] : null;
                     $contactType = $phoneData['contact_type'] ?? null;
                     $phone = $phoneData['phone'];
                     $countryCode = $phoneData['country_code'] ?? '';

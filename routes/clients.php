@@ -198,7 +198,7 @@ Route::post('/clients/isAnyInvoiceNoExistInDB', 'CRM\ClientAccountsController@is
 Route::post('/clients/listOfInvoice', 'CRM\ClientAccountsController@listOfInvoice')->name('clients.listOfInvoice');
 Route::post('/clients/getTopReceiptValInDB', 'CRM\ClientAccountsController@getTopReceiptValInDB')->name('clients.getTopReceiptValInDB');
 Route::post('/clients/getInfoByReceiptId', 'CRM\ClientAccountsController@getInfoByReceiptId')->name('clients.getInfoByReceiptId');
-Route::get('/clients/genInvoice/{id}', 'CRM\ClientAccountsController@genInvoice');
+Route::get('/clients/genInvoice/{id}/{client_id?}', 'CRM\ClientAccountsController@genInvoice');
 Route::post('/clients/sendToHubdoc/{id}', 'CRM\ClientAccountsController@sendToHubdoc')->name('clients.sendToHubdoc');
 Route::get('/clients/checkHubdocStatus/{id}', 'CRM\ClientAccountsController@checkHubdocStatus')->name('clients.checkHubdocStatus');
 Route::get('/clients/printPreview/{id}', 'CRM\ClientAccountsController@printPreview');

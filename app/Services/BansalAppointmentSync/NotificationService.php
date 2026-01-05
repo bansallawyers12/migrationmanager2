@@ -80,7 +80,14 @@ class NotificationService
                 return false;
             }
 
-            $message = "BANSAL IMMIGRATION: Reminder - You have an appointment tomorrow at {$appointment->timeslot_full} at our {$appointment->location} office. Please be on time. If you need to reschedule, call us at 1300 859 368.";
+            // Get office phone number based on location
+            $officePhone = match($appointment->location) {
+                'adelaide' => '08 8317 1340',
+                'melbourne' => '03 9602 1330',
+                default => '1300 859 368' // Fallback to original number
+            };
+
+            $message = "BANSAL IMMIGRATION: Reminder - You have an appointment tomorrow at {$appointment->timeslot_full} at our {$appointment->location} office. Please be on time. If you need to reschedule, call us at {$officePhone}.";
 
             $result = $this->smsManager->sendSms($phone, $message, 'reminder', [
                 'appointment_id' => $appointment->id,

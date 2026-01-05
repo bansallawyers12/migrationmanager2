@@ -482,10 +482,10 @@
                                             </span>
                                             <div class="dropdown-menu" aria-labelledby="dropdownInvoice{{$inc_val->id}}">
                                                 <?php if($inc_val->save_type == 'final') { ?>
-                                                <a class="dropdown-item" href="{{URL::to('/clients/genInvoice')}}/{{$inc_val->receipt_id}}" target="_blank">
+                                                <a class="dropdown-item" href="{{URL::to('/clients/genInvoice')}}/{{$inc_val->receipt_id}}/{{$fetchedData->id}}" target="_blank">
                                                     <i class="fas fa-eye"></i> View Invoice
                                                 </a>
-                                                <a class="dropdown-item" href="{{URL::to('/clients/genInvoice')}}/{{$inc_val->receipt_id}}?download=1">
+                                                <a class="dropdown-item" href="{{URL::to('/clients/genInvoice')}}/{{$inc_val->receipt_id}}/{{$fetchedData->id}}?download=1">
                                                     <i class="fas fa-download"></i> Download PDF
                                                 </a>
                                                 <div class="dropdown-divider"></div>

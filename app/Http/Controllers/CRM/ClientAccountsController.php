@@ -2694,8 +2694,33 @@ class ClientAccountsController extends Controller
       }
   }
 
-  public function genInvoice(Request $request, $id){
-      $record_get = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$id)->get();
+  public function genInvoice(Request $request, $id, $client_id = null){ 
+      // ============= BACKWARD COMPATIBILITY: Get client_id if not provided =============
+      $queryClientId = $client_id;
+      if (empty($queryClientId)) {
+          // Try to get from account_all_invoice_receipts first (by receipt_id only)
+          $tempRecord = DB::table('account_all_invoice_receipts')
+              ->where('receipt_type', 3)
+              ->where('receipt_id', $id)
+              ->first();
+          
+          if ($tempRecord && !empty($tempRecord->client_id)) {
+              $queryClientId = $tempRecord->client_id;
+          }
+      }
+      
+      // Validate that we have a client_id (either provided or found)
+      if (empty($queryClientId)) {
+          abort(404, 'Invoice not found or client_id could not be determined');
+      }
+      // ============= END BACKWARD COMPATIBILITY =============
+      
+      $record_get = DB::table('account_all_invoice_receipts')
+          ->where('receipt_type', 3)
+          ->where('receipt_id', $id)
+          ->where('client_id', $queryClientId)
+          ->get();
+      
       // Validate invoice exists
       if ($record_get->isEmpty()) {
           abort(404, 'Invoice not found');
@@ -2704,6 +2729,7 @@ class ClientAccountsController extends Controller
       // Get receipt_id entry from account_client_receipts to check for cached PDF
       $receipt_entry = DB::table('account_client_receipts')
           ->where('receipt_id', $id)
+          ->where('client_id', $queryClientId)
           ->where('receipt_type', 3)
           ->first();
 
@@ -2718,12 +2744,52 @@ class ClientAccountsController extends Controller
           if ($existingPdf && !empty($existingPdf->myfile)) {
            // PDF exists in AWS, return it
            if ($request->has('download')) {
-               // Force download with proper headers
-               $headers = [
-                   'Content-Type' => 'application/pdf',
-                   'Content-Disposition' => 'attachment; filename="' . $existingPdf->file_name . '"',
-               ];
-               return redirect()->away($existingPdf->myfile)->withHeaders($headers);
+               // Force download: fetch from S3 and stream with proper headers
+               try {
+                   $pdfContent = null;
+                   
+                   // Try to get file from S3 using the file key if available
+                   if (!empty($existingPdf->myfile_key)) {
+                       $s3Path = $existingPdf->myfile_key;
+                       
+                       // If myfile_key is just filename, construct full path
+                       if (strpos($s3Path, '/') === false) {
+                           // Get client_id from receipt_entry or record_get
+                           $clientIdForPath = null;
+                           if ($receipt_entry && !empty($receipt_entry->client_id)) {
+                               $clientIdForPath = $receipt_entry->client_id;
+                           } elseif (!empty($record_get) && count($record_get) > 0 && !empty($record_get[0]->client_id)) {
+                               $clientIdForPath = $record_get[0]->client_id;
+                           }
+                           
+                           if ($clientIdForPath) {
+                               $client_info = DB::table('admins')->select('client_id')->where('id', $clientIdForPath)->first();
+                               $client_unique_id = $client_info->client_id ?? 'unknown';
+                               // Use doc_type from document if available, otherwise default to 'invoices'
+                               $docType = $existingPdf->doc_type ?? 'invoices';
+                               $s3Path = $client_unique_id . '/' . $docType . '/' . $s3Path;
+                           }
+                       }
+                       
+                       // Try to get from S3
+                       if (Storage::disk('s3')->exists($s3Path)) {
+                           $pdfContent = Storage::disk('s3')->get($s3Path);
+                       }
+                   }
+                   
+                   // Fallback: download from URL if S3 get failed or key not available
+                   if (empty($pdfContent)) {
+                       $pdfContent = file_get_contents($existingPdf->myfile);
+                   }
+                   
+                   return response($pdfContent, 200)
+                       ->header('Content-Type', 'application/pdf')
+                       ->header('Content-Disposition', 'attachment; filename="' . $existingPdf->file_name . '"');
+               } catch (\Exception $e) {
+                   // If S3 download fails, fallback to redirect (but won't force download)
+                   Log::warning('Failed to download PDF from S3 for invoice ' . $id . ': ' . $e->getMessage());
+                   return redirect()->away($existingPdf->myfile);
+               }
            } else {
                // Stream in browser
                return redirect()->away($existingPdf->myfile);
@@ -2733,20 +2799,21 @@ class ClientAccountsController extends Controller
       
       // ============= PDF DATA PREPARATION =============
 
-      $record_get_Professional_Fee_cnt = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Professional Fee')->count();
-      $record_get_Department_Charges_cnt = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Department Charges')->count();
-      $record_get_Surcharge_cnt = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Surcharge')->count();
-      $record_get_Disbursements_cnt = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Disbursements')->count();
-      $record_get_Other_Cost_cnt = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Other Cost')->count();
-      $record_get_Discount_cnt = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Discount')->count();
-      $record_get_Professional_Fee = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Professional Fee')->get();
-      $record_get_Department_Charges = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Department Charges')->get();
-      $record_get_Surcharge = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Surcharge')->get();
-      $record_get_Disbursements = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Disbursements')->get();
-      $record_get_Other_Cost = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Other Cost')->get();
-      $record_get_Discount = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Discount')->get();
+      $record_get_Professional_Fee_cnt = DB::table('account_all_invoice_receipts')->where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Professional Fee')->count();
+      $record_get_Department_Charges_cnt = DB::table('account_all_invoice_receipts')->where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Department Charges')->count();
+      $record_get_Surcharge_cnt = DB::table('account_all_invoice_receipts')->where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Surcharge')->count();
+      $record_get_Disbursements_cnt = DB::table('account_all_invoice_receipts')->where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Disbursements')->count();
+      $record_get_Other_Cost_cnt = DB::table('account_all_invoice_receipts')->where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Other Cost')->count();
+      $record_get_Discount_cnt = DB::table('account_all_invoice_receipts')->where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Discount')->count();
+      $record_get_Professional_Fee = DB::table('account_all_invoice_receipts')->where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Professional Fee')->get();
+      $record_get_Department_Charges = DB::table('account_all_invoice_receipts')->where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Department Charges')->get();
+      $record_get_Surcharge = DB::table('account_all_invoice_receipts')->where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Surcharge')->get();
+      $record_get_Disbursements = DB::table('account_all_invoice_receipts')->where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Disbursements')->get();
+      $record_get_Other_Cost = DB::table('account_all_invoice_receipts')->where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Other Cost')->get();
+      $record_get_Discount = DB::table('account_all_invoice_receipts')->where('client_id', $queryClientId)->where('receipt_type',3)->where('receipt_id',$id)->where('payment_type','Discount')->get();
       //Calculate Gross Amount
       $total_Gross_Amount = DB::table('account_all_invoice_receipts')
+          ->where('client_id', $queryClientId)
           ->where('receipt_type', 3)
           ->where('receipt_id', $id)
           ->sum(DB::raw("
@@ -2760,6 +2827,7 @@ class ClientAccountsController extends Controller
 
       //Total Invoice Amount
       $total_Invoice_Amount = DB::table('account_all_invoice_receipts')
+          ->where('client_id', $queryClientId)
           ->where('receipt_type', 3)
           ->where('receipt_id', $id)
           ->sum(DB::raw("CASE
@@ -2771,17 +2839,23 @@ class ClientAccountsController extends Controller
       $total_GST_amount =  $total_Invoice_Amount - $total_Gross_Amount;
 
       //Total Pending Amount
-      $total_Pending_amount  = DB::table('account_client_receipts')
-      ->where('receipt_type', 3) // Invoice
-      ->where('receipt_id', $id)
-      ->where(function ($query) {
-          $query->whereIn('invoice_status', [0, 2])
-           ->orWhere(function ($q) {
-               $q->where('invoice_status', 1)
-                   ->where('balance_amount', '!=', 0);
-           });
-      })
-      ->sum('balance_amount');
+      $total_Pending_amount = DB::table('account_client_receipts')
+        ->where('receipt_type', 3)
+        ->where('receipt_id', $id)
+        ->where('client_id', $queryClientId)
+        ->where(function ($query) {
+            $query->whereIn('invoice_status', [0, 2])
+                ->orWhere(function ($q) {
+                    $q->where('invoice_status', 1)
+                        ->whereRaw('balance_amount <> 0::numeric');
+                });
+        })
+        ->sum('balance_amount');  
+    Log::info('Total Pending Amount: ' . $total_Pending_amount);
+
+      if ($total_Pending_amount === null) {
+          $total_Pending_amount = 0.00;
+      }
 
       $clientname = DB::table('admins')->where('id',$record_get[0]->client_id)->first();
       
@@ -2942,18 +3016,15 @@ class ClientAccountsController extends Controller
           DB::table('account_client_receipts')
            ->where('receipt_id', $id)
            ->where('receipt_type', 3)
+           ->where('client_id', $queryClientId)
            ->update(['pdf_document_id' => $document->id]);
           
           // Return appropriate response
           if ($request->has('download')) {
-           // Force download
-           $headers = [
-               'Content-Type' => 'application/pdf',
-               'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
-           ];
-           return redirect()->away($s3Url)->withHeaders($headers);
+           // Force download: return PDF directly with download headers
+           return $pdf->download($fileName);
           } else {
-           // Stream in browser
+           // Stream in browser (redirect to S3 URL for preview)
            return redirect()->away($s3Url);
           }
           
@@ -2995,7 +3066,13 @@ class ClientAccountsController extends Controller
            'client_matter_display'
           ]));
           
-          return $pdf->stream('Invoice-' . ($record_get[0]->invoice_no ?? $id) . '.pdf');
+          // Return appropriate response based on download parameter
+          $pdfFileName = 'Invoice-' . ($record_get[0]->invoice_no ?? $id) . '.pdf';
+          if ($request->has('download')) {
+              return $pdf->download($pdfFileName);
+          } else {
+              return $pdf->stream($pdfFileName);
+          }
       }
       
       // ============= END CACHING LOGIC =============
