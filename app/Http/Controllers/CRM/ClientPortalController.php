@@ -343,7 +343,7 @@ class ClientPortalController extends Controller
                         'updated_at' => now()
                     ]);
 
-                    // Broadcast message via Pusher if event exists
+                    // Broadcast message via Laravel Reverb (configured via BROADCAST_DRIVER in .env)
                     if (class_exists('\App\Events\MessageSent')) {
                         $messageForBroadcast = [
                             'id' => $messageId,
@@ -359,9 +359,26 @@ class ClientPortalController extends Controller
                             ]]
                         ];
 
-                        broadcast(new \App\Events\MessageSent($messageForBroadcast, $clientId));
+                        try {
+                            broadcast(new \App\Events\MessageSent($messageForBroadcast, $clientId));
+                        } catch (\Exception $e) {
+                            Log::warning('Failed to broadcast message to client', [
+                                'client_id' => $clientId,
+                                'message_id' => $messageId,
+                                'error' => $e->getMessage()
+                            ]);
+                        }
+                        
                         if ($senderId) {
-                            broadcast(new \App\Events\MessageSent($messageForBroadcast, $senderId));
+                            try {
+                                broadcast(new \App\Events\MessageSent($messageForBroadcast, $senderId));
+                            } catch (\Exception $e) {
+                                Log::warning('Failed to broadcast message to sender', [
+                                    'sender_id' => $senderId,
+                                    'message_id' => $messageId,
+                                    'error' => $e->getMessage()
+                                ]);
+                            }
                         }
                     }
                 }
@@ -497,7 +514,7 @@ class ClientPortalController extends Controller
                         'updated_at' => now()
                     ]);
 
-                    // Broadcast message via Pusher if event exists
+                    // Broadcast message via Laravel Reverb (configured via BROADCAST_DRIVER in .env)
                     if (class_exists('\App\Events\MessageSent')) {
                         $messageForBroadcast = [
                             'id' => $messageId,
@@ -513,9 +530,26 @@ class ClientPortalController extends Controller
                             ]]
                         ];
 
-                        broadcast(new \App\Events\MessageSent($messageForBroadcast, $clientId));
+                        try {
+                            broadcast(new \App\Events\MessageSent($messageForBroadcast, $clientId));
+                        } catch (\Exception $e) {
+                            Log::warning('Failed to broadcast message to client', [
+                                'client_id' => $clientId,
+                                'message_id' => $messageId,
+                                'error' => $e->getMessage()
+                            ]);
+                        }
+                        
                         if ($senderId) {
-                            broadcast(new \App\Events\MessageSent($messageForBroadcast, $senderId));
+                            try {
+                                broadcast(new \App\Events\MessageSent($messageForBroadcast, $senderId));
+                            } catch (\Exception $e) {
+                                Log::warning('Failed to broadcast message to sender', [
+                                    'sender_id' => $senderId,
+                                    'message_id' => $messageId,
+                                    'error' => $e->getMessage()
+                                ]);
+                            }
                         }
                     }
                 }
@@ -2151,7 +2185,7 @@ class ClientPortalController extends Controller
 					'updated_at' => now()
 				]);
 
-				// Broadcast message via Pusher
+				// Broadcast message via Laravel Reverb (configured via BROADCAST_DRIVER in .env)
 				$messageForBroadcast = [
 					'id' => $messageId,
 					'message' => $message,
@@ -2167,10 +2201,28 @@ class ClientPortalController extends Controller
 					]]
 				];
 
-				// Broadcast to client and sender
+				// Broadcast to client and sender (with error handling)
 				if (class_exists('\App\Events\MessageSent')) {
-					broadcast(new \App\Events\MessageSent($messageForBroadcast, $clientId));
-					broadcast(new \App\Events\MessageSent($messageForBroadcast, $senderId));
+					try {
+						broadcast(new \App\Events\MessageSent($messageForBroadcast, $clientId));
+					} catch (\Exception $e) {
+						Log::warning('Failed to broadcast message to client', [
+							'client_id' => $clientId,
+							'message_id' => $messageId,
+							'error' => $e->getMessage(),
+							'broadcast_driver' => config('broadcasting.default')
+						]);
+					}
+					
+					try {
+						broadcast(new \App\Events\MessageSent($messageForBroadcast, $senderId));
+					} catch (\Exception $e) {
+						Log::warning('Failed to broadcast message to sender', [
+							'sender_id' => $senderId,
+							'message_id' => $messageId,
+							'error' => $e->getMessage()
+						]);
+					}
 				}
 
 				return response()->json([

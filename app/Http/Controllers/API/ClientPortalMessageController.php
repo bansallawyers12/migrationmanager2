@@ -13,6 +13,7 @@ use App\Events\MessageReceived;
 use App\Events\MessageDeleted;
 use App\Events\MessageUpdated;
 use App\Events\UnreadCountUpdated;
+use App\Services\FCMService;
 
 class ClientPortalMessageController extends Controller
 {
@@ -150,11 +151,29 @@ class ClientPortalMessageController extends Controller
                     'recipient_count' => 1
                 ];
 
-                // Broadcast to the client only
-                broadcast(new MessageSent($messageForBroadcast, $clientId));
+                // Broadcast to the client only (with error handling)
+                try {
+                    broadcast(new MessageSent($messageForBroadcast, $clientId));
+                } catch (\Exception $e) {
+                    Log::warning('Failed to broadcast message to client', [
+                        'client_id' => $clientId,
+                        'message_id' => $messageId,
+                        'error' => $e->getMessage(),
+                        'broadcast_driver' => config('broadcasting.default'),
+                        'hint' => 'Check BROADCAST_DRIVER in .env and ensure Reverb server is running: php artisan reverb:start'
+                    ]);
+                }
 
                 // Also broadcast to sender (so they see their own message)
-                broadcast(new MessageSent($messageForBroadcast, $senderId));
+                try {
+                    broadcast(new MessageSent($messageForBroadcast, $senderId));
+                } catch (\Exception $e) {
+                    Log::warning('Failed to broadcast message to sender', [
+                        'sender_id' => $senderId,
+                        'message_id' => $messageId,
+                        'error' => $e->getMessage()
+                    ]);
+                }
 
                 // Send notification to client
                 $notificationMessage = 'New message from ' . ($sender ? $sender->first_name . ' ' . $sender->last_name : 'Agent') . ' for matter ' . ($clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatterId);
@@ -173,12 +192,55 @@ class ClientPortalMessageController extends Controller
                     'seen' => 0
                 ]);
 
+                // Send push notification to client
+                try {
+                    $fcmService = new FCMService();
+                    $senderName = $sender ? $sender->first_name . ' ' . $sender->last_name : 'Agent';
+                    $matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatterId) : 'ID: ' . $clientMatterId;
+                    
+                    // Prepare notification title and body
+                    $notificationTitle = 'New Message';
+                    $notificationBody = $message ? (strlen($message) > 100 ? substr($message, 0, 100) . '...' : $message) : 'You have a new message';
+                    
+                    // Prepare notification data payload
+                    $notificationData = [
+                        'type' => 'chat',
+                        'userId' => (string)$senderId,
+                        'messageId' => (string)$messageId,
+                        'clientMatterId' => (string)$clientMatterId,
+                        'senderName' => $senderName,
+                        'matterNo' => $matterNo
+                    ];
+                    
+                    // Send push notification to client
+                    try {
+                        $fcmService->sendToUser($clientId, $notificationTitle, $notificationBody, $notificationData);
+                    } catch (\Exception $e) {
+                        // Log error but don't fail the message sending
+                        Log::warning('Failed to send push notification to client', [
+                            'client_id' => $clientId,
+                            'message_id' => $messageId,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    // Log error but don't fail the message sending
+                    Log::error('Failed to send push notification', [
+                        'message_id' => $messageId,
+                        'client_id' => $clientId,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                }
+
                 // Create activity log
                 DB::table('activities_logs')->insert([
                     'client_id' => $senderId,
                     'created_by' => $senderId,
                     'subject' => 'Message sent to client',
                     'description' => 'Message sent from web page to client ' . $recipientUser->full_name . ' for matter ID: ' . $clientMatterId,
+                    'task_status' => 0, // Required NOT NULL field (0 = activity, 1 = task)
+                    'pin' => 0, // Required NOT NULL field (0 = not pinned, 1 = pinned)
                     'created_at' => now(),
                     'updated_at' => now()
                 ]);
@@ -375,13 +437,40 @@ class ClientPortalMessageController extends Controller
                     'recipient_count' => count($targetRecipients)
                 ];
 
-                // Broadcast to each recipient
-                foreach ($targetRecipients as $recipientId) {
-                    broadcast(new MessageSent($messageForBroadcast, $recipientId));
-                }
+                // Broadcast to each recipient (with error handling)
+                try {
+                    foreach ($targetRecipients as $recipientId) {
+                        try {
+                            broadcast(new MessageSent($messageForBroadcast, $recipientId));
+                        } catch (\Exception $e) {
+                            // Log error but continue with other recipients
+                            Log::warning('Failed to broadcast message to recipient', [
+                                'recipient_id' => $recipientId,
+                                'message_id' => $messageId,
+                                'error' => $e->getMessage()
+                            ]);
+                        }
+                    }
 
-                // Also broadcast to sender (so they see their own message)
-                broadcast(new MessageSent($messageForBroadcast, $clientId));
+                    // Also broadcast to sender (so they see their own message)
+                    try {
+                        broadcast(new MessageSent($messageForBroadcast, $clientId));
+                    } catch (\Exception $e) {
+                        Log::warning('Failed to broadcast message to sender', [
+                            'sender_id' => $clientId,
+                            'message_id' => $messageId,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    // Log error but don't fail the message sending
+                    Log::error('Broadcast error (message still saved)', [
+                        'message_id' => $messageId,
+                        'error' => $e->getMessage(),
+                        'broadcast_driver' => config('broadcasting.default'),
+                        'hint' => 'Check BROADCAST_DRIVER in .env and ensure Reverb server is running: php artisan reverb:start'
+                    ]);
+                }
 
                 // Send notifications to recipients (excluding sender)
                 foreach ($targetRecipients as $recipientId) {
@@ -404,12 +493,58 @@ class ClientPortalMessageController extends Controller
                     }
                 }
 
+                // Send push notifications to recipients (excluding sender)
+                try {
+                    $fcmService = new FCMService();
+                    $senderName = $sender ? $sender->first_name . ' ' . $sender->last_name : 'Client';
+                    $matterNo = $clientMatter ? $clientMatter->client_unique_matter_no : 'ID: ' . $clientMatterId;
+                    
+                    // Prepare notification title and body
+                    $notificationTitle = 'New Message';
+                    $notificationBody = $message ? (strlen($message) > 100 ? substr($message, 0, 100) . '...' : $message) : 'You have a new message';
+                    
+                    // Prepare notification data payload
+                    $notificationData = [
+                        'type' => 'chat',
+                        'userId' => (string)$clientId,
+                        'messageId' => (string)$messageId,
+                        'clientMatterId' => (string)$clientMatterId,
+                        'senderName' => $senderName,
+                        'matterNo' => $matterNo
+                    ];
+                    
+                    // Send push notification to each recipient
+                    foreach ($targetRecipients as $recipientId) {
+                        if ($recipientId != $clientId) {
+                            try {
+                                $fcmService->sendToUser($recipientId, $notificationTitle, $notificationBody, $notificationData);
+                            } catch (\Exception $e) {
+                                // Log error but don't fail the message sending
+                                Log::warning('Failed to send push notification to recipient', [
+                                    'recipient_id' => $recipientId,
+                                    'message_id' => $messageId,
+                                    'error' => $e->getMessage()
+                                ]);
+                            }
+                        }
+                    }
+                } catch (\Exception $e) {
+                    // Log error but don't fail the message sending
+                    Log::error('Failed to send push notifications', [
+                        'message_id' => $messageId,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                }
+
                 // Create activity log
                 DB::table('activities_logs')->insert([
                     'client_id' => $clientId,
                     'created_by' => $clientId,
                     'subject' => 'Message sent',
                     'description' => 'Message sent by Client Portal Mobile App for matter ID: ' . $clientMatterId . ' to ' . count($targetRecipients) . ' recipient(s)',
+                    'task_status' => 0, // Required NOT NULL field (0 = activity, 1 = task)
+                    'pin' => 0, // Required NOT NULL field (0 = not pinned, 1 = pinned)
                     'created_at' => now(),
                     'updated_at' => now()
                 ]);
@@ -788,18 +923,41 @@ class ClientPortalMessageController extends Controller
                     'client_matter_id' => $message->client_matter_id
                 ];
 
-                // Broadcast message update to sender (so they know it was read)
-                broadcast(new MessageUpdated($messageForBroadcast, $message->sender_id));
+                // Broadcast message update to sender (so they know it was read) - with error handling
+                try {
+                    broadcast(new MessageUpdated($messageForBroadcast, $message->sender_id));
+                } catch (\Exception $e) {
+                    Log::warning('Failed to broadcast message update to sender', [
+                        'sender_id' => $message->sender_id,
+                        'message_id' => $id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
 
-                // Broadcast read status to sender
-                broadcast(new MessageReceived($id, $message->sender_id));
+                // Broadcast read status to sender - with error handling
+                try {
+                    broadcast(new MessageReceived($id, $message->sender_id));
+                } catch (\Exception $e) {
+                    Log::warning('Failed to broadcast read status to sender', [
+                        'sender_id' => $message->sender_id,
+                        'message_id' => $id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
                 
-                // Broadcast unread count update for current user
-                $unreadCount = DB::table('message_recipients')
-                    ->where('recipient_id', $clientId)
-                    ->where('is_read', false)
-                    ->count();
-                broadcast(new UnreadCountUpdated($clientId, $unreadCount));
+                // Broadcast unread count update for current user - with error handling
+                try {
+                    $unreadCount = DB::table('message_recipients')
+                        ->where('recipient_id', $clientId)
+                        ->where('is_read', false)
+                        ->count();
+                    broadcast(new UnreadCountUpdated($clientId, $unreadCount));
+                } catch (\Exception $e) {
+                    Log::warning('Failed to broadcast unread count update', [
+                        'user_id' => $clientId,
+                        'error' => $e->getMessage()
+                    ]);
+                }
             }
 
             return response()->json([
