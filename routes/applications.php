@@ -35,6 +35,7 @@ Route::post('/load-application-insert-update-data', [ClientPortalController::cla
 Route::get('/updatestage', [ClientPortalController::class, 'updatestage']);
 Route::get('/completestage', [ClientPortalController::class, 'completestage']);
 Route::get('/updatebackstage', [ClientPortalController::class, 'updatebackstage']);
+Route::post('/clients/matter/update-next-stage', [ClientPortalController::class, 'updateClientMatterNextStage'])->name('clients.matter.update-next-stage');
 Route::get('/get-applications-logs', [ClientPortalController::class, 'getapplicationslogs']);
 Route::get('/get-applications', [ClientPortalController::class, 'getapplications']);
 
