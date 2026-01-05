@@ -1443,11 +1443,25 @@ class ClientAccountsController extends Controller
           $requestData = $request->all();
           $response = [];
           
-          // Validate required fields
+          // FIX #4: Validate required fields including loggedin_userid
           if (empty($requestData['client_id'])) {
               return response()->json([
                   'status' => false,
                   'message' => 'Client ID is required',
+                  'requestData' => [],
+                  'awsUrl' => ""
+              ], 400);
+          }
+          
+          // FIX #4: Validate user_id is present
+          if (empty($requestData['loggedin_userid'])) {
+              \Log::error('Missing loggedin_userid in office receipt request', [
+                  'client_id' => $requestData['client_id'],
+                  'request_data' => $request->except(['document_upload'])
+              ]);
+              return response()->json([
+                  'status' => false,
+                  'message' => 'User authentication failed. Please refresh the page and try again.',
                   'requestData' => [],
                   'awsUrl' => ""
               ], 400);
@@ -1497,6 +1511,7 @@ class ClientAccountsController extends Controller
       $finalArr = [];
       $saved = false;
       $processedInvoices = []; // Track invoices that need status updates
+      $insertErrors = []; // FIX #1: Track errors to report to user
 
       // Validate trans_date exists and is an array with at least one entry
       if (!isset($requestData['trans_date']) || !is_array($requestData['trans_date']) || empty($requestData['trans_date'])) {
@@ -1508,56 +1523,43 @@ class ClientAccountsController extends Controller
           ], 400);
       }
 
-      // Handle office receipt processing (receipt_type=2 only)
-      $is_record_exist = DB::table('account_client_receipts')->select('receipt_id')->where('receipt_type', 2)->orderBy('receipt_id', 'desc')->first();
-      $receipt_id = !$is_record_exist ? 1 : $is_record_exist->receipt_id + 1;
+      // FIX #2 & #3: Use database transaction with locking to prevent race conditions
+      DB::beginTransaction();
+      
+      try {
+          // FIX #2: Generate receipt_id with row locking to prevent race condition
+          $is_record_exist = DB::table('account_client_receipts')
+              ->select('receipt_id')
+              ->where('receipt_type', 2)
+              ->orderBy('receipt_id', 'desc')
+              ->lockForUpdate() // Locks the row until transaction completes
+              ->first();
+          $receipt_id = !$is_record_exist ? 1 : $is_record_exist->receipt_id + 1;
 
-      // Process each transaction individually (no invoice grouping)
-      $savedIds = []; // Track all saved receipt IDs
-      for ($i = 0; $i < count($requestData['trans_date']); $i++) {
-          // Validate required fields for this transaction
-          if (empty($requestData['trans_date'][$i]) || empty($requestData['deposit_amount'][$i])) {
-              \Log::warning('Skipping office receipt entry due to missing required fields', [
-                  'index' => $i,
-                  'trans_date' => $requestData['trans_date'][$i] ?? 'missing',
-                  'deposit_amount' => $requestData['deposit_amount'][$i] ?? 'missing'
-              ]);
-              continue; // Skip this entry but continue with others
-          }
+          // Process each transaction individually (no invoice grouping)
+          $savedIds = []; // Track all saved receipt IDs
+          for ($i = 0; $i < count($requestData['trans_date']); $i++) {
+              // Validate required fields for this transaction
+              if (empty($requestData['trans_date'][$i]) || empty($requestData['deposit_amount'][$i])) {
+                  \Log::warning('Skipping office receipt entry due to missing required fields', [
+                      'index' => $i,
+                      'trans_date' => $requestData['trans_date'][$i] ?? 'missing',
+                      'deposit_amount' => $requestData['deposit_amount'][$i] ?? 'missing'
+                  ]);
+                  continue; // Skip this entry but continue with others
+              }
 
-          $trans_no = $this->generateTransNo();
-          $invoiceNo = isset($requestData['invoice_no'][$i]) && $requestData['invoice_no'][$i] !== '' ? $requestData['invoice_no'][$i] : null;
+              // FIX #3: Generate trans_no with locking to prevent race condition
+              $trans_no = $this->generateTransNoLocked();
+              $invoiceNo = isset($requestData['invoice_no'][$i]) && $requestData['invoice_no'][$i] !== '' ? $requestData['invoice_no'][$i] : null;
 
-          try {
-              $insertedId = DB::table('account_client_receipts')->insertGetId([
-                  'user_id' => $requestData['loggedin_userid'],
-                  'client_id' => $requestData['client_id'],
-                  'client_matter_id' => $requestData['client_matter_id'] ?? null,
-                  'receipt_id' => $receipt_id,
-                  'receipt_type' => 2, // Only office receipts
-                  'trans_date' => $requestData['trans_date'][$i],
-                  'entry_date' => $requestData['entry_date'][$i] ?? $requestData['trans_date'][$i],
-                  'trans_no' => $trans_no,
-                  'invoice_no' => $invoiceNo,
-                  'payment_method' => $requestData['payment_method'][$i] ?? '',
-                  'description' => $requestData['description'][$i] ?? '',
-                  'deposit_amount' => $requestData['deposit_amount'][$i],
-                  'uploaded_doc_id' => $insertedDocId,
-                  'save_type' => $saveType, // Track if draft or final
-                  'validate_receipt' => 0,
-                  'void_invoice' => 0,
-                  'invoice_status' => 0,
-                  'hubdoc_sent' => 0,
-                  'created_at' => now(),
-                  'updated_at' => now(),
-              ]);
-
-              // Mark as saved if we got an ID back
-              if ($insertedId) {
-                  $saved = true;
-                  $savedIds[] = $insertedId;
-
-                  $finalArr[] = [
+              try {
+                  $insertedId = DB::table('account_client_receipts')->insertGetId([
+                      'user_id' => $requestData['loggedin_userid'],
+                      'client_id' => $requestData['client_id'],
+                      'client_matter_id' => $requestData['client_matter_id'] ?? null,
+                      'receipt_id' => $receipt_id,
+                      'receipt_type' => 2, // Only office receipts
                       'trans_date' => $requestData['trans_date'][$i],
                       'entry_date' => $requestData['entry_date'][$i] ?? $requestData['trans_date'][$i],
                       'trans_no' => $trans_no,
@@ -1565,38 +1567,90 @@ class ClientAccountsController extends Controller
                       'payment_method' => $requestData['payment_method'][$i] ?? '',
                       'description' => $requestData['description'][$i] ?? '',
                       'deposit_amount' => $requestData['deposit_amount'][$i],
-                  ];
+                      'uploaded_doc_id' => $insertedDocId,
+                      'save_type' => $saveType, // Track if draft or final
+                      'validate_receipt' => 0,
+                      'void_invoice' => 0,
+                      'invoice_status' => 0,
+                      'hubdoc_sent' => 0,
+                      'created_at' => now(),
+                      'updated_at' => now(),
+                  ]);
 
-                  // Track invoices that need status updates (only for final receipts with invoice_no)
-                  if ($saveType == 'final' && !empty($invoiceNo)) {
-                      if (!isset($processedInvoices[$invoiceNo])) {
-                          $processedInvoices[$invoiceNo] = [];
-                      }
-                      $processedInvoices[$invoiceNo][] = [
-                          'receipt_id' => $insertedId,
-                          'amount' => floatval($requestData['deposit_amount'][$i])
+                  // Mark as saved if we got an ID back
+                  if ($insertedId) {
+                      $saved = true;
+                      $savedIds[] = $insertedId;
+
+                      $finalArr[] = [
+                          'trans_date' => $requestData['trans_date'][$i],
+                          'entry_date' => $requestData['entry_date'][$i] ?? $requestData['trans_date'][$i],
+                          'trans_no' => $trans_no,
+                          'invoice_no' => $invoiceNo,
+                          'payment_method' => $requestData['payment_method'][$i] ?? '',
+                          'description' => $requestData['description'][$i] ?? '',
+                          'deposit_amount' => $requestData['deposit_amount'][$i],
                       ];
-                  }
-              }
-          } catch (\Exception $e) {
-              \Log::error('Error inserting office receipt entry', [
-                  'index' => $i,
-                  'error' => $e->getMessage(),
-                  'trace' => $e->getTraceAsString()
-              ]);
-              // Continue processing other entries even if one fails
-          }
-      }
 
-      // If no receipts were saved, return error
-      if (!$saved || empty($finalArr)) {
-          return response()->json([
-              'status' => false,
-              'message' => 'Failed to save office receipt. Please check that all required fields are filled and try again.',
-              'requestData' => [],
-              'awsUrl' => ""
-          ], 400);
-      }
+                      // Track invoices that need status updates (only for final receipts with invoice_no)
+                      if ($saveType == 'final' && !empty($invoiceNo)) {
+                          if (!isset($processedInvoices[$invoiceNo])) {
+                              $processedInvoices[$invoiceNo] = [];
+                          }
+                          $processedInvoices[$invoiceNo][] = [
+                              'receipt_id' => $insertedId,
+                              'amount' => floatval($requestData['deposit_amount'][$i])
+                          ];
+                      }
+                  }
+              } catch (\Exception $e) {
+                  // FIX #1: Collect detailed error information instead of just logging
+                  $errorDetails = [
+                      'index' => $i,
+                      'trans_no' => $trans_no,
+                      'error' => $e->getMessage(),
+                      'trans_date' => $requestData['trans_date'][$i] ?? 'N/A',
+                      'amount' => $requestData['deposit_amount'][$i] ?? 'N/A',
+                  ];
+                  $insertErrors[] = $errorDetails;
+                  
+                  \Log::error('Error inserting office receipt entry', array_merge($errorDetails, [
+                      'trace' => $e->getTraceAsString()
+                  ]));
+                  
+                  // Rollback transaction on any insert error
+                  DB::rollBack();
+                  
+                  // FIX #1: Return specific error message to user
+                  return response()->json([
+                      'status' => false,
+                      'message' => 'Failed to save office receipt entry #' . ($i + 1) . ': ' . $e->getMessage(),
+                      'requestData' => [],
+                      'awsUrl' => "",
+                      'error_details' => $errorDetails
+                  ], 500);
+              }
+          }
+
+          // If no receipts were saved, rollback and return error
+          if (!$saved || empty($finalArr)) {
+              DB::rollBack();
+              
+              $errorMessage = 'Failed to save office receipt. ';
+              if (!empty($insertErrors)) {
+                  $errorMessage .= 'Errors: ' . implode('; ', array_column($insertErrors, 'error'));
+              } else {
+                  $errorMessage .= 'Please check that all required fields are filled and try again.';
+              }
+              
+              return response()->json([
+                  'status' => false,
+                  'message' => $errorMessage,
+                  'requestData' => [],
+                  'awsUrl' => "",
+                  'insert_errors' => $insertErrors
+              ], 400);
+          }
 
       // Process invoice matching for all affected invoices (only for final receipts)
       if ($saveType == 'final' && !empty($processedInvoices)) {
@@ -1770,16 +1824,23 @@ class ClientAccountsController extends Controller
           $response['message'] = 'Please try again';
       }
 
+      // FIX #2 & #3: Commit the transaction
+      DB::commit();
+      
       return response()->json($response, 200);
       } catch (\Exception $e) {
+          // FIX #2 & #3: Rollback transaction on any error
+          DB::rollBack();
+          
           \Log::error('Error in saveofficereport: ' . $e->getMessage(), [
               'request_data' => $request->except(['document_upload']),
               'trace' => $e->getTraceAsString()
           ]);
           
+          // FIX #1: Return detailed error message to user
           return response()->json([
               'status' => false,
-              'message' => 'An error occurred while saving the office receipt. Please try again.',
+              'message' => 'An error occurred while saving the office receipt: ' . $e->getMessage(),
               'requestData' => [],
               'awsUrl' => ""
           ], 500);
@@ -1793,6 +1854,30 @@ class ClientAccountsController extends Controller
           ->select('trans_no')
           ->where('receipt_type', 2)
           ->orderBy('id', 'desc')
+          ->first();
+
+      if (!$latestTrans) {
+          $nextNumber = 1;
+      } else {
+          $lastTransNo = explode('-', $latestTrans->trans_no);
+          $lastNumber = isset($lastTransNo[1]) ? (int)$lastTransNo[1] : 0;
+          $nextNumber = $lastNumber + 1;
+      }
+
+      return 'REC-' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+  }
+
+  /**
+   * FIX #3: Generate trans_no with row locking to prevent race condition
+   * This method should be called within a transaction
+   */
+  private function generateTransNoLocked()
+  {
+      $latestTrans = DB::table('account_client_receipts')
+          ->select('trans_no')
+          ->where('receipt_type', 2)
+          ->orderBy('id', 'desc')
+          ->lockForUpdate() // Locks the row until transaction completes
           ->first();
 
       if (!$latestTrans) {
@@ -1894,7 +1979,93 @@ class ClientAccountsController extends Controller
           // Get the updated receipt
           $receipt = DB::table('account_client_receipts')->where('id', $id)->first();
           
-          // If invoice_no was updated, recalculate invoice payment status
+          // BUG FIX #2: Check if this is a re-allocation (invoice_no changed)
+          $oldInvoiceNo = $originalReceipt->invoice_no;
+          $newInvoiceNo = $request->input('invoice_no');
+          $isReallocation = !empty($oldInvoiceNo) && $oldInvoiceNo != $newInvoiceNo && !empty($newInvoiceNo);
+          
+          // If this is a re-allocation, update the old invoice first
+          if ($isReallocation) {
+              Log::info('Office receipt re-allocation detected', [
+                  'receipt_id' => $id,
+                  'receipt_no' => $originalReceipt->trans_no,
+                  'old_invoice_no' => $oldInvoiceNo,
+                  'new_invoice_no' => $newInvoiceNo
+              ]);
+              
+              // Get the old invoice
+              $oldInvoice = DB::table('account_client_receipts')
+                  ->where('receipt_type', 3)
+                  ->where('invoice_no', $oldInvoiceNo)
+                  ->where('client_id', $receipt->client_id)
+                  ->first();
+              
+              if ($oldInvoice) {
+                  // BUG FIX #1: Calculate total payments including BOTH office receipts AND fee transfers
+                  $totalPaidOfficeOld = DB::table('account_client_receipts')
+                      ->where('receipt_type', 2)
+                      ->where('invoice_no', $oldInvoiceNo)
+                      ->where('client_id', $receipt->client_id)
+                      ->where('save_type', 'final')
+                      ->sum('deposit_amount');
+                  
+                  $totalPaidFeeTransferOld = DB::table('account_client_receipts')
+                      ->where('receipt_type', 1)
+                      ->where('client_fund_ledger_type', 'Fee Transfer')
+                      ->where('invoice_no', $oldInvoiceNo)
+                      ->where('client_id', $receipt->client_id)
+                      ->where(function($q) {
+                          $q->whereNull('void_fee_transfer')
+                            ->orWhere('void_fee_transfer', 0);
+                      })
+                      ->sum('withdraw_amount');
+                  
+                  $totalPaidOld = $totalPaidOfficeOld + $totalPaidFeeTransferOld;
+                  $invoiceAmountOld = floatval($oldInvoice->withdraw_amount);
+                  $newBalanceOld = $invoiceAmountOld - $totalPaidOld;
+                  
+                  // Determine new status for old invoice: 0=Unpaid, 1=Paid, 2=Partial
+                  $newStatusOld = 0; // Unpaid
+                  if ($newBalanceOld <= 0) {
+                      $newStatusOld = 1; // Paid
+                  } elseif ($totalPaidOld > 0) {
+                      $newStatusOld = 2; // Partial
+                  }
+                  
+                  // Update old invoice status and balance
+                  DB::table('account_client_receipts')
+                      ->where('receipt_type', 3)
+                      ->where('invoice_no', $oldInvoiceNo)
+                      ->where('client_id', $receipt->client_id)
+                      ->update([
+                          'invoice_status' => $newStatusOld,
+                          'partial_paid_amount' => $totalPaidOld,
+                          'balance_amount' => max(0, $newBalanceOld),
+                          'updated_at' => now(),
+                      ]);
+                  
+                  // Also update in account_all_invoice_receipts if it exists
+                  DB::table('account_all_invoice_receipts')
+                      ->where('receipt_type', 3)
+                      ->where('invoice_no', $oldInvoiceNo)
+                      ->where('client_id', $receipt->client_id)
+                      ->update([
+                          'invoice_status' => $newStatusOld,
+                          'updated_at' => now(),
+                      ]);
+                  
+                  Log::info('Old invoice status updated after office receipt re-allocation', [
+                      'old_invoice_no' => $oldInvoiceNo,
+                      'total_paid_office' => $totalPaidOfficeOld,
+                      'total_paid_fee_transfer' => $totalPaidFeeTransferOld,
+                      'total_paid' => $totalPaidOld,
+                      'new_balance' => $newBalanceOld,
+                      'new_status' => $newStatusOld
+                  ]);
+              }
+          }
+          
+          // If invoice_no was updated, recalculate NEW invoice payment status
           if ($request->has('invoice_no') && !empty($request->input('invoice_no'))) {
               $invoiceNo = $request->input('invoice_no');
               
@@ -1968,13 +2139,26 @@ class ClientAccountsController extends Controller
                       $receipt = DB::table('account_client_receipts')->where('id', $id)->first();
                   }
                   
-                  // Calculate total payments for this invoice (after potential split)
-                  $totalPaid = DB::table('account_client_receipts')
+                  // BUG FIX #1: Calculate total payments including BOTH office receipts AND fee transfers
+                  $totalPaidOffice = DB::table('account_client_receipts')
                       ->where('receipt_type', 2)
                       ->where('invoice_no', $invoiceNo)
                       ->where('client_id', $receipt->client_id)
                       ->where('save_type', 'final')
                       ->sum('deposit_amount');
+                  
+                  $totalPaidFeeTransfer = DB::table('account_client_receipts')
+                      ->where('receipt_type', 1)
+                      ->where('client_fund_ledger_type', 'Fee Transfer')
+                      ->where('invoice_no', $invoiceNo)
+                      ->where('client_id', $receipt->client_id)
+                      ->where(function($q) {
+                          $q->whereNull('void_fee_transfer')
+                            ->orWhere('void_fee_transfer', 0);
+                      })
+                      ->sum('withdraw_amount');
+                  
+                  $totalPaid = $totalPaidOffice + $totalPaidFeeTransfer;
                   
                   $newBalance = $invoiceAmount - $totalPaid;
                   
@@ -2009,12 +2193,15 @@ class ClientAccountsController extends Controller
                           'updated_at' => now(),
                       ]);
                   
-                  Log::info('Invoice status updated after receipt allocation', [
+                  Log::info('New invoice status updated after receipt allocation', [
                       'invoice_no' => $invoiceNo,
+                      'total_paid_office' => $totalPaidOffice,
+                      'total_paid_fee_transfer' => $totalPaidFeeTransfer,
                       'total_paid' => $totalPaid,
                       'new_balance' => $newBalance,
                       'new_status' => $newStatus,
-                      'residual_created' => $isOverpayment
+                      'residual_created' => $isOverpayment,
+                      'was_reallocation' => $isReallocation
                   ]);
               }
           }
