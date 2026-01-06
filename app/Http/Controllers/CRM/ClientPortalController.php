@@ -20,6 +20,7 @@ use App\Events\MessageSent;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Broadcast;
+use App\Services\FCMService;
 
 /**
  * ClientPortalController
@@ -2223,6 +2224,46 @@ class ClientPortalController extends Controller
 							'error' => $e->getMessage()
 						]);
 					}
+				}
+
+				// Send push notification to client
+				try {
+					$fcmService = new FCMService();
+					$matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatterId) : 'ID: ' . $clientMatterId;
+					
+					// Prepare notification title and body
+					$notificationTitle = 'New Message';
+					$notificationBody = $message ? (strlen($message) > 100 ? substr($message, 0, 100) . '...' : $message) : 'You have a new message';
+					
+					// Prepare notification data payload
+					$notificationData = [
+						'type' => 'chat',
+						'userId' => (string)$senderId,
+						'messageId' => (string)$messageId,
+						'clientMatterId' => (string)$clientMatterId,
+						'senderName' => $senderName,
+						'matterNo' => $matterNo
+					];
+					
+					// Send push notification to client
+					try {
+						$fcmService->sendToUser($clientId, $notificationTitle, $notificationBody, $notificationData);
+					} catch (\Exception $e) {
+						// Log error but don't fail the message sending
+						Log::warning('Failed to send push notification to client', [
+							'client_id' => $clientId,
+							'message_id' => $messageId,
+							'error' => $e->getMessage()
+						]);
+					}
+				} catch (\Exception $e) {
+					// Log error but don't fail the message sending
+					Log::error('Failed to send push notification', [
+						'message_id' => $messageId,
+						'client_id' => $clientId,
+						'error' => $e->getMessage(),
+						'trace' => $e->getTraceAsString()
+					]);
 				}
 
 				return response()->json([

@@ -2810,8 +2810,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Store client matter ID and user info for messages
     const clientMatterId = @json(($selectedMatter && isset($selectedMatter->id)) ? $selectedMatter->id : null);
     const currentUserId = @json(Auth::guard('admin')->id() ?? null);
-    const pusherAppKey = '{{ config("broadcasting.connections.pusher.key") }}';
-    const pusherCluster = '{{ config("broadcasting.connections.pusher.options.cluster", "ap2") }}';
+    // Use Reverb configuration (compatible with Pusher protocol)
+    const pusherAppKey = '{{ config("broadcasting.connections.reverb.key") ?: config("broadcasting.connections.pusher.key") }}';
+    const pusherCluster = '{{ config("broadcasting.connections.reverb.options.cluster") ?: config("broadcasting.connections.pusher.options.cluster", "ap2") }}';
+    const reverbHost = '{{ config("broadcasting.connections.reverb.options.host", "127.0.0.1") }}';
+    const reverbPort = {{ config("broadcasting.connections.reverb.options.port", 8080) }};
+    const reverbScheme = '{{ config("broadcasting.connections.reverb.options.scheme", "http") }}';
     
     // Debug logging
     console.log('Messages Tab Initialization:', {
@@ -3054,10 +3058,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function initializePusher() {
         try {
+            // Check if using Reverb (local WebSocket server) or Pusher Cloud
+            const isReverb = reverbHost && reverbPort && reverbScheme;
+            
             const pusherConfig = {
                 cluster: pusherCluster,
-                forceTLS: true,
-                encrypted: true,
+                forceTLS: reverbScheme === 'https',
+                encrypted: reverbScheme === 'https',
                 authEndpoint: '/broadcasting/auth',
                 auth: {
                     headers: {
@@ -3067,10 +3074,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             };
             
+            // If using Reverb, configure custom host and port
+            if (isReverb) {
+                pusherConfig.wsHost = reverbHost;
+                pusherConfig.wsPort = reverbPort;
+                pusherConfig.wssPort = reverbPort;
+                pusherConfig.disableStats = true;
+                pusherConfig.enabledTransports = ['ws', 'wss'];
+                console.log('🔌 Configuring for Laravel Reverb:', { host: reverbHost, port: reverbPort, scheme: reverbScheme });
+            }
+            
             pusher = new Pusher(pusherAppKey, pusherConfig);
             
             pusher.connection.bind('connected', () => {
-                console.log('✅ Connected to Pusher');
+                console.log('✅ Connected to ' + (isReverb ? 'Laravel Reverb' : 'Pusher'));
                 subscribeToChannel();
             });
             
@@ -3269,7 +3286,26 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.ok && data.success) {
                 input.value = '';
                 input.style.height = 'auto';
-                // Message will appear via Pusher event
+                
+                // Immediately add the message to the UI (optimistic update) - no page refresh needed
+                if (data.data && data.data.message) {
+                    const messageData = data.data.message;
+                    // Format message for display
+                    const formattedMessage = {
+                        id: messageData.id || data.data.message_id,
+                        message: messageData.message || messageText,
+                        sender: messageData.sender || messageData.sender_name || 'You',
+                        sender_id: messageData.sender_id || currentUserId,
+                        sender_shortname: messageData.sender_initials || messageData.sender_shortname || 'AD',
+                        sent_at: messageData.sent_at || messageData.created_at || new Date().toISOString(),
+                        client_matter_id: messageData.client_matter_id || clientMatterId,
+                        is_sent: true
+                    };
+                    addMessageToDisplay(formattedMessage, true, true);
+                    scrollToBottom();
+                    console.log('✅ Message added to UI immediately');
+                }
+                // Message will also appear via Reverb/Pusher event (for other users and as backup)
             } else {
                 alert('Failed to send message: ' + (data.message || 'Unknown error'));
             }
