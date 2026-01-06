@@ -47,6 +47,20 @@ class FCMService
         }
 
         $this->projectId = $this->serviceAccountData['project_id'] ?? null;
+        
+        // Log service account loading for debugging
+        if ($this->projectId) {
+            Log::info('FCM service account loaded successfully', [
+                'project_id' => $this->projectId,
+                'client_email' => $this->serviceAccountData['client_email'] ?? 'N/A',
+                'service_account_path' => $this->serviceAccountPath
+            ]);
+        } else {
+            Log::error('FCM service account loaded but project_id is missing', [
+                'service_account_path' => $this->serviceAccountPath,
+                'keys_in_json' => array_keys($this->serviceAccountData ?? [])
+            ]);
+        }
     }
 
     /**
@@ -118,11 +132,26 @@ class FCMService
             ->toArray();
 
         if (empty($deviceTokens)) {
-            Log::warning('No active device tokens found for user', ['user_id' => $userId]);
+            Log::warning('No active device tokens found for user', [
+                'user_id' => $userId,
+                'project_id' => $this->projectId
+            ]);
             return false;
         }
 
-        return $this->sendToMultipleDevices($deviceTokens, $title, $body, $data);
+        $result = $this->sendToMultipleDevices($deviceTokens, $title, $body, $data);
+        
+        // Log summary if there were issues
+        if (!$result) {
+            Log::warning('FCM notification send failed for user', [
+                'user_id' => $userId,
+                'token_count' => count($deviceTokens),
+                'project_id' => $this->projectId,
+                'hint' => 'Check logs above for specific token errors. If UNREGISTERED, verify mobile app uses Firebase project: ' . $this->projectId
+            ]);
+        }
+        
+        return $result;
     }
 
     /**
@@ -237,6 +266,14 @@ class FCMService
         try {
             $url = "https://fcm.googleapis.com/v1/projects/{$this->projectId}/messages:send";
             
+            // Log the request details for debugging
+            Log::debug('Sending FCM notification', [
+                'project_id' => $this->projectId,
+                'url' => $url,
+                'token_preview' => substr($deviceToken, 0, 20) . '...',
+                'has_access_token' => !empty($accessToken)
+            ]);
+            
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $accessToken,
                 'Content-Type' => 'application/json',
@@ -261,21 +298,35 @@ class FCMService
                 }
             }
             
-            Log::error('FCM v1 API request failed', [
+            // Enhanced error logging with project mismatch detection
+            $logContext = [
                 'error' => $errorMessage,
                 'error_code' => $errorCode,
                 'fcm_error_code' => $fcmErrorCode,
                 'status_code' => $response->status(),
-                'response_body' => $response->body(),
+                'project_id' => $this->projectId,
                 'token' => substr($deviceToken, 0, 20) . '...'
-            ]);
+            ];
+            
+            // Detect project mismatch (UNREGISTERED usually means token from different project)
+            if ($fcmErrorCode === 'UNREGISTERED') {
+                $logContext['issue'] = 'PROJECT_MISMATCH';
+                $logContext['message'] = 'Token appears to be from a different Firebase project. Verify mobile app uses project_id: ' . $this->projectId;
+                $logContext['solution'] = 'Check mobile app google-services.json (Android) or GoogleService-Info.plist (iOS) matches project: ' . $this->projectId;
+                
+                Log::error('FCM v1 API request failed - Project Mismatch Detected', $logContext);
+            } else {
+                Log::error('FCM v1 API request failed', $logContext);
+            }
             
             return [
                 'success' => false,
                 'error' => $errorMessage,
                 'code' => $errorCode,
                 'fcm_error_code' => $fcmErrorCode,
-                'status_code' => $response->status()
+                'status_code' => $response->status(),
+                'project_id' => $this->projectId,
+                'project_mismatch' => $fcmErrorCode === 'UNREGISTERED'
             ];
         } catch (\Exception $e) {
             Log::error('FCM v1 API request failed', [
@@ -357,7 +408,50 @@ class FCMService
             $deactivationReason = '';
             
             if ($isInvalidTokenError) {
-                if ($recentlyUpdated) {
+                // Special handling for UNREGISTERED (project mismatch)
+                if ($fcmErrorCode === 'UNREGISTERED') {
+                    if ($recentlyUpdated) {
+                        // Token was recently updated - likely project mismatch, not deactivating
+                        Log::warning('FCM reports UNREGISTERED token - Project Mismatch (Grace Period Active)', [
+                            'device_token' => substr($deviceToken, 0, 20) . '...',
+                            'error' => $error,
+                            'fcm_error_code' => $fcmErrorCode,
+                            'status_code' => $statusCode,
+                            'failure_count' => $failureCount,
+                            'project_id' => $this->projectId,
+                            'updated_at' => $tokenRecord->updated_at,
+                            'minutes_since_update' => $tokenRecord->updated_at->diffInMinutes(now()),
+                            'issue' => 'Token likely from different Firebase project',
+                            'solution' => 'Verify mobile app uses Firebase project: ' . $this->projectId,
+                            'reason' => 'Token recently updated - may be project configuration mismatch'
+                        ]);
+                    } elseif ($failureCount >= 3) {
+                        // Multiple consecutive UNREGISTERED failures - likely project mismatch
+                        $shouldDeactivate = true;
+                        $deactivationReason = "FCM reports UNREGISTERED token after {$failureCount} consecutive failures - likely project mismatch";
+                        
+                        Log::error('Deactivating token due to persistent UNREGISTERED errors - Project Mismatch', [
+                            'device_token' => substr($deviceToken, 0, 20) . '...',
+                            'failure_count' => $failureCount,
+                            'project_id' => $this->projectId,
+                            'issue' => 'Token does not belong to Firebase project: ' . $this->projectId,
+                            'solution' => 'User needs to re-register token from mobile app configured with correct Firebase project'
+                        ]);
+                    } else {
+                        // First or second UNREGISTERED failure - likely project mismatch
+                        Log::warning('FCM reports UNREGISTERED token - Possible Project Mismatch', [
+                            'device_token' => substr($deviceToken, 0, 20) . '...',
+                            'error' => $error,
+                            'fcm_error_code' => $fcmErrorCode,
+                            'status_code' => $statusCode,
+                            'failure_count' => $failureCount,
+                            'project_id' => $this->projectId,
+                            'issue' => 'Token likely from different Firebase project',
+                            'solution' => 'Verify mobile app google-services.json matches project: ' . $this->projectId,
+                            'reason' => "Waiting for {$failureCount}/3 failures before deactivation"
+                        ]);
+                    }
+                } elseif ($recentlyUpdated) {
                     // Token was recently updated - don't deactivate yet, might be config issue
                     Log::warning('FCM reports invalid token but token was recently updated - not deactivating (grace period)', [
                         'device_token' => substr($deviceToken, 0, 20) . '...',
