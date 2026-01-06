@@ -113,6 +113,12 @@ class UserController extends Controller
 				$obj->tax_number = @$requestData['tax_number'];
 			}
 
+			// Set required NOT NULL fields with default values (PostgreSQL doesn't apply DB defaults on explicit INSERT)
+			$obj->australian_study = isset($requestData['australian_study']) ? (int)$requestData['australian_study'] : 0;
+			$obj->specialist_education = isset($requestData['specialist_education']) ? (int)$requestData['specialist_education'] : 0;
+			$obj->regional_study = isset($requestData['regional_study']) ? (int)$requestData['regional_study'] : 0;
+			$obj->cp_status = isset($requestData['cp_status']) ? (int)$requestData['cp_status'] : 0;
+			$obj->cp_code_verify = isset($requestData['cp_code_verify']) ? (int)$requestData['cp_code_verify'] : 0;
 
             //Script start for generate client_id
             if( $requestData['role'] == 7 ) { //if user is of client type
@@ -394,6 +400,14 @@ class UserController extends Controller
 			$obj->gst_no	=	@$requestData['gst_no'];
 			$obj->verified	=	1;
 			$obj->role	=	7;
+			
+			// Set required NOT NULL fields with default values (PostgreSQL doesn't apply DB defaults on explicit INSERT)
+			$obj->australian_study = isset($requestData['australian_study']) ? (int)$requestData['australian_study'] : 0;
+			$obj->specialist_education = isset($requestData['specialist_education']) ? (int)$requestData['specialist_education'] : 0;
+			$obj->regional_study = isset($requestData['regional_study']) ? (int)$requestData['regional_study'] : 0;
+			$obj->cp_status = isset($requestData['cp_status']) ? (int)$requestData['cp_status'] : 0;
+			$obj->cp_code_verify = isset($requestData['cp_code_verify']) ? (int)$requestData['cp_code_verify'] : 0;
+			
 			/* Profile Image Upload Function Start */
 					if($request->hasfile('profile_img'))
 					{

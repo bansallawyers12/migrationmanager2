@@ -50,6 +50,8 @@ class Admin extends Authenticatable
         'service_token', 'token_generated_at',
         // Client Portal (for staff access)
         'cp_status', 'cp_random_code', 'cp_code_verify', 'cp_token_generated_at',
+        // EOI Qualification Fields (for immigration points calculation)
+        'australian_study', 'australian_study_date', 'specialist_education', 'specialist_education_date', 'regional_study', 'regional_study_date',
         // Verification (staff can verify documents)
         'visa_expiry_verified_at', 'visa_expiry_verified_by',
         // Permissions

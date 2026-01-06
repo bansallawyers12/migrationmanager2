@@ -162,7 +162,9 @@ class FCMService
             } else {
                 $failedTokens[] = [
                     'token' => $token,
-                    'error' => $result['error'] ?? 'Unknown error'
+                    'error' => $result['error'] ?? 'Unknown error',
+                    'code' => $result['code'] ?? null,
+                    'status_code' => $result['status_code'] ?? null
                 ];
             }
         }
@@ -251,7 +253,8 @@ class FCMService
             return [
                 'success' => false,
                 'error' => $errorMessage,
-                'code' => $errorCode
+                'code' => $errorCode,
+                'status_code' => $response->status()
             ];
         } catch (\Exception $e) {
             Log::error('FCM v1 API request failed', [
@@ -270,22 +273,45 @@ class FCMService
         foreach ($failedTokens as $failedToken) {
             $deviceToken = $failedToken['token'];
             $error = $failedToken['error'] ?? '';
+            $errorCode = $failedToken['code'] ?? null;
+            $statusCode = $failedToken['status_code'] ?? null;
             
-            // Deactivate invalid tokens based on error codes
-            // FCM v1 API error codes: NOT_FOUND, INVALID_ARGUMENT, UNREGISTERED, etc.
-            if (
-                str_contains($error, 'NOT_FOUND') ||
-                str_contains($error, 'UNREGISTERED') ||
-                str_contains($error, 'INVALID_ARGUMENT') ||
-                str_contains($error, 'registration-token-not-registered')
+            // Check if token should be deactivated based on error code or error message
+            // FCM v1 API error codes: 400 (INVALID_ARGUMENT), 404 (UNREGISTERED/NOT_FOUND)
+            $shouldDeactivate = false;
+            
+            // Check by HTTP status code (most reliable)
+            if ($statusCode == 400 || $statusCode == 404) {
+                $shouldDeactivate = true;
+            }
+            // Check by FCM error code
+            elseif ($errorCode == 400 || $errorCode == 404) {
+                $shouldDeactivate = true;
+            }
+            // Check by error message patterns (fallback for cases where code is missing)
+            elseif (
+                str_contains(strtolower($error), 'not a valid fcm registration token') ||
+                str_contains(strtolower($error), 'invalid_argument') ||
+                str_contains(strtolower($error), 'requested entity was not found') ||
+                str_contains(strtolower($error), 'not found') ||
+                str_contains(strtolower($error), 'unregistered') ||
+                str_contains(strtolower($error), 'registration-token-not-registered')
             ) {
-                DeviceToken::where('device_token', $deviceToken)
+                $shouldDeactivate = true;
+            }
+            
+            if ($shouldDeactivate) {
+                $updated = DeviceToken::where('device_token', $deviceToken)
                     ->update(['is_active' => false]);
                 
-                Log::info('Deactivated invalid device token (v1 API)', [
-                    'device_token' => substr($deviceToken, 0, 20) . '...',
-                    'error' => $error
-                ]);
+                if ($updated) {
+                    Log::info('Deactivated invalid device token (v1 API)', [
+                        'device_token' => substr($deviceToken, 0, 20) . '...',
+                        'error' => $error,
+                        'error_code' => $errorCode,
+                        'status_code' => $statusCode
+                    ]);
+                }
             }
         }
     }
