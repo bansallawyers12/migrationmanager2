@@ -466,6 +466,26 @@ class FCMController extends Controller
             $title = $data['title'] ?? 'Notification';
             $body = $data['body'] ?? '';
             
+            // Check if the device token is registered and active
+            $token = DeviceToken::where('device_token', $deviceToken)->first();
+            
+            if (!$token) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Device token is not registered. Please register the token first.',
+                    'error' => 'Token not found in database'
+                ], 404);
+            }
+            
+            if (!$token->is_active) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Device token is not active. The token has been unregistered.',
+                    'error' => 'Token is inactive',
+                    'token_status' => 'unregistered'
+                ], 400);
+            }
+            
             // Remove title and body from data payload (they go in notification)
             $notificationData = $data;
             unset($notificationData['title'], $notificationData['body']);
