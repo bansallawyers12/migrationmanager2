@@ -119,6 +119,9 @@ class UserController extends Controller
 			$obj->regional_study = isset($requestData['regional_study']) ? (int)$requestData['regional_study'] : 0;
 			$obj->cp_status = isset($requestData['cp_status']) ? (int)$requestData['cp_status'] : 0;
 			$obj->cp_code_verify = isset($requestData['cp_code_verify']) ? (int)$requestData['cp_code_verify'] : 0;
+			
+			// Set status field - default to 1 (active) for new users, but allow override from request
+			$obj->status = isset($requestData['status']) ? (int)$requestData['status'] : 1;
 
             //Script start for generate client_id
             if( $requestData['role'] == 7 ) { //if user is of client type
