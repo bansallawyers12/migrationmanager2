@@ -59,6 +59,7 @@ class MatterController extends Controller
             $obj->title = $requestData['title'];
             $obj->nick_name = $requestData['nick_name'];
             $obj->surcharge = $requestData['surcharge'];
+            $obj->status = $requestData['status'] ?? 1; // Set default status to 1 (active)
 
             $obj->Dept_Base_Application_Charge = $requestData['Dept_Base_Application_Charge'] ?? '0.00';
             $obj->Dept_Non_Internet_Application_Charge = $requestData['Dept_Non_Internet_Application_Charge'] ?? '0.00';
