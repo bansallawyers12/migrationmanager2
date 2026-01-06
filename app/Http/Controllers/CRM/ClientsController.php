@@ -7901,41 +7901,47 @@ class ClientsController extends Controller
 
     //save reference
     public function savereferences(Request $request)
-    {  //dd($request->all());
+    { 
+        // Step 1: Validate required fields - client_id is mandatory
         $validated = $request->validate([
+            'client_id' => 'required|integer|exists:admins,id',
             'department_reference' => 'nullable|string|max:255',
             'other_reference' => 'nullable|string|max:255',
+            'client_matter_id' => 'nullable|integer|exists:client_matters,id',
+            'client_unique_matter_no' => 'nullable|string|max:255',
         ]);
 
-        // Step 2: Find the matter - use EXACT same logic as page load (detail.blade.php lines 252-267)
+        // Step 2: Find the matter - ALWAYS filter by client_id first for security
         // Priority: 1) Use client_unique_matter_no from URL (id1), 2) Use client_matter_id from dropdown, 3) Get latest active matter
         $matter = null;
         $lookupMethod = '';
+        $clientId = (int)$request->client_id; // Ensure integer type
         
         if ($request->has('client_unique_matter_no') && !empty($request->client_unique_matter_no)) {
-            // Priority 1: Use client_unique_matter_no from URL (id1) - EXACT match to page load logic
-            $matter = \App\Models\ClientMatter::where('client_id', $request->client_id)
+            // Priority 1: Use client_unique_matter_no from URL (id1) - MUST match client_id
+            $matter = \App\Models\ClientMatter::where('client_id', $clientId)
                 ->where('client_unique_matter_no', $request->client_unique_matter_no)
                 ->first();
             $lookupMethod = 'client_unique_matter_no: ' . $request->client_unique_matter_no;
         } elseif ($request->has('client_matter_id') && !empty($request->client_matter_id)) {
-            // Priority 2: Use the matter ID from dropdown
-            $matter = \App\Models\ClientMatter::where('client_id', $request->client_id)
-                ->where('id', $request->client_matter_id)
+            // Priority 2: Use the matter ID from dropdown - MUST match client_id
+            $matter = \App\Models\ClientMatter::where('client_id', $clientId)
+                ->where('id', (int)$request->client_matter_id)
                 ->first();
             $lookupMethod = 'client_matter_id: ' . $request->client_matter_id;
         } else {
-            // Priority 3: Fallback - Get latest active matter (EXACT match to page load logic)
-            $matter = \App\Models\ClientMatter::where('client_id', $request->client_id)
+            // Priority 3: Fallback - Get latest active matter - MUST match client_id
+            $matter = \App\Models\ClientMatter::where('client_id', $clientId)
                 ->where('matter_status', 1)
                 ->orderBy('id', 'desc')
                 ->first();
             $lookupMethod = 'latest active matter';
         }
 
+        // Step 3: Verify matter exists and belongs to the client_id (double security check)
         if (!$matter) {
             \Log::error('References save - Matter not found', [
-                'client_id' => $request->client_id,
+                'client_id' => $clientId,
                 'client_unique_matter_no' => $request->client_unique_matter_no ?? 'not provided',
                 'client_matter_id' => $request->client_matter_id ?? 'not provided',
                 'lookup_method' => $lookupMethod
@@ -7944,6 +7950,19 @@ class ClientsController extends Controller
                 'status' => 'error',
                 'message' => 'Record not found for given client_id and matter information.'
             ], 404);
+        }
+        
+        // Additional security check: Ensure the found matter actually belongs to the client_id
+        if ($matter->client_id != $clientId) {
+            \Log::error('References save - Security violation: Matter does not belong to client', [
+                'matter_id' => $matter->id,
+                'matter_client_id' => $matter->client_id,
+                'requested_client_id' => $clientId
+            ]);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Security violation: Matter does not belong to the specified client.'
+            ], 403);
         }
         
         \Log::info('References save - Matter found', [

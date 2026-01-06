@@ -325,6 +325,13 @@
             // Get matter ID from URL if available (matches page load logic)
             let matterIdFromUrl = window.ClientDetailConfig.matterId || '';
 
+            // Validation: Ensure client_id is present (required for security)
+            if (!client_id || client_id === '' || client_id === 'null' || client_id === null) {
+                alert('Error: Client ID is missing. Please refresh the page and try again.');
+                console.error('Client ID is missing:', client_id);
+                return;
+            }
+
             // Only require at least ONE reference (not both)
             if(department_reference.trim() == '' && other_reference.trim() == ''){
 
@@ -344,11 +351,11 @@
 
                         other_reference: other_reference,
 
-                        client_id: client_id,
+                        client_id: client_id, // Required - always sent
 
-                        client_matter_id: selectedMatter,
+                        client_matter_id: selectedMatter || null,
                         
-                        client_unique_matter_no: matterIdFromUrl,
+                        client_unique_matter_no: matterIdFromUrl || null,
 
                         _token: window.ClientDetailConfig.csrfToken
 
@@ -17896,29 +17903,80 @@ Bansal Immigration`;
         // Show saving indicator
         $('.sidebar-references').addClass('saving');
         
-        // Trigger the EXISTING save button click
-        $('.saveReferenceValue').click();
+        // Get values for AJAX call
+        let department_reference = $('#department_reference').val() || '';
+        let other_reference = $('#other_reference').val() || '';
+        let client_id = window.ClientDetailConfig.clientId;
+        let selectedMatter = $('#sel_matter_id_client_detail').val();
+        let matterIdFromUrl = window.ClientDetailConfig.matterId || '';
         
-        // Hide saving indicator after delay
-        setTimeout(function() {
+        // Validation: Ensure client_id is present (required for security)
+        if (!client_id || client_id === '' || client_id === 'null' || client_id === null) {
             $('.sidebar-references').removeClass('saving');
-            
-            // Reset state
+            alert('Error: Client ID is missing. Please refresh the page and try again.');
+            console.error('Client ID is missing:', client_id);
             resetInputState();
-            
-            // Re-render chips
-            renderReferences();
-            
-            // Show success (the existing handler might also show this)
-            if (typeof iziToast !== 'undefined') {
-                iziToast.success({
-                    title: 'Saved',
-                    message: 'Reference saved',
-                    position: 'topRight',
-                    timeout: 2000
-                });
+            return;
+        }
+        
+        // Make AJAX call directly (button doesn't exist, so call directly)
+        $.ajax({
+            url: window.ClientDetailConfig.urls.referencesStore,
+            type: 'POST',
+            data: {
+                department_reference: department_reference,
+                other_reference: other_reference,
+                client_id: client_id, // Required - always sent
+                client_matter_id: selectedMatter || null,
+                client_unique_matter_no: matterIdFromUrl || null,
+                _token: window.ClientDetailConfig.csrfToken
+            },
+            success: function (response) {
+                console.log('References saved:', response);
+                
+                // Hide saving indicator
+                $('.sidebar-references').removeClass('saving');
+                
+                // Reset state
+                resetInputState();
+                
+                // Re-render chips
+                renderReferences();
+                
+                // Show success
+                if (typeof iziToast !== 'undefined') {
+                    iziToast.success({
+                        title: 'Saved',
+                        message: 'Reference saved successfully',
+                        position: 'topRight',
+                        timeout: 2000
+                    });
+                }
+            },
+            error: function (xhr) {
+                $('.sidebar-references').removeClass('saving');
+                console.error('Error saving references:', xhr.responseText);
+                
+                let errorMessage = 'Error saving data';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+                
+                if (typeof iziToast !== 'undefined') {
+                    iziToast.error({
+                        title: 'Error',
+                        message: errorMessage,
+                        position: 'topRight',
+                        timeout: 3000
+                    });
+                } else {
+                    alert(errorMessage);
+                }
+                
+                // Reset state on error
+                resetInputState();
             }
-        }, 800);
+        });
     }
     
     // Cancel input
