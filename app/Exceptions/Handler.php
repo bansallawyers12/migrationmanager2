@@ -73,10 +73,26 @@ class Handler extends ExceptionHandler
 
 	protected function unauthenticated($request, AuthenticationException $exception)
 	{
-		if ($request->expectsJson())
+		// Check if this is an API request
+		// API routes should always return JSON 401, not HTML redirects
+		$isApiRoute = $request->is('api/*');
+		
+		// Also check if Authorization header with Bearer token is present
+		// This indicates an API authentication attempt
+		$hasBearerToken = $request->hasHeader('Authorization') && 
+						  str_starts_with($request->header('Authorization', ''), 'Bearer ');
+		
+		// Return JSON 401 for API routes or requests with bearer tokens
+		if ($request->expectsJson() || $isApiRoute || $hasBearerToken)
 		{
-			return response()->json(['error' => 'Unauthenticated.'],401);
+			return response()->json([
+				'success' => false,
+				'message' => 'Unauthenticated.',
+				'error' => 'Invalid or expired authentication token.'
+			], 401);
 		}
+		
+		// For web routes, redirect to login page
 		$guard = Arr::get($exception->guards(), 0);
 
 		switch ($guard)
