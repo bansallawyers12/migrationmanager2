@@ -159,11 +159,19 @@ class FCMService
             $result = $this->sendToSingleDevice($token, $title, $body, $data, $accessToken);
             if ($result['success']) {
                 $successCount++;
+                // Reset failure count on successful send
+                $cacheKey = 'fcm_failure_count_' . md5($token);
+                \Illuminate\Support\Facades\Cache::forget($cacheKey);
+                
+                // Update last_used_at timestamp
+                DeviceToken::where('device_token', $token)
+                    ->update(['last_used_at' => now()]);
             } else {
                 $failedTokens[] = [
                     'token' => $token,
                     'error' => $result['error'] ?? 'Unknown error',
                     'code' => $result['code'] ?? null,
+                    'fcm_error_code' => $result['fcm_error_code'] ?? null,
                     'status_code' => $result['status_code'] ?? null
                 ];
             }
@@ -242,9 +250,21 @@ class FCMService
             $errorMessage = $responseData['error']['message'] ?? $response->body();
             $errorCode = $responseData['error']['code'] ?? null;
             
+            // Extract FCM-specific error code from details (e.g., "UNREGISTERED", "INVALID_ARGUMENT")
+            $fcmErrorCode = null;
+            if (isset($responseData['error']['details']) && is_array($responseData['error']['details'])) {
+                foreach ($responseData['error']['details'] as $detail) {
+                    if (isset($detail['errorCode'])) {
+                        $fcmErrorCode = $detail['errorCode'];
+                        break;
+                    }
+                }
+            }
+            
             Log::error('FCM v1 API request failed', [
                 'error' => $errorMessage,
                 'error_code' => $errorCode,
+                'fcm_error_code' => $fcmErrorCode,
                 'status_code' => $response->status(),
                 'response_body' => $response->body(),
                 'token' => substr($deviceToken, 0, 20) . '...'
@@ -254,6 +274,7 @@ class FCMService
                 'success' => false,
                 'error' => $errorMessage,
                 'code' => $errorCode,
+                'fcm_error_code' => $fcmErrorCode,
                 'status_code' => $response->status()
             ];
         } catch (\Exception $e) {
@@ -267,6 +288,8 @@ class FCMService
 
     /**
      * Handle failed device tokens for v1 API
+     * Only deactivates tokens when FCM explicitly indicates they are invalid
+     * AND after multiple consecutive failures (to avoid deactivating valid tokens due to config issues)
      */
     private function handleFailedTokensV1($failedTokens)
     {
@@ -274,30 +297,105 @@ class FCMService
             $deviceToken = $failedToken['token'];
             $error = $failedToken['error'] ?? '';
             $errorCode = $failedToken['code'] ?? null;
+            $fcmErrorCode = $failedToken['fcm_error_code'] ?? null;
             $statusCode = $failedToken['status_code'] ?? null;
             
-            // Check if token should be deactivated based on error code or error message
-            // FCM v1 API error codes: 400 (INVALID_ARGUMENT), 404 (UNREGISTERED/NOT_FOUND)
-            $shouldDeactivate = false;
+            // Get the device token record to check its status
+            $tokenRecord = DeviceToken::where('device_token', $deviceToken)->first();
             
-            // Check by HTTP status code (most reliable)
-            if ($statusCode == 400 || $statusCode == 404) {
-                $shouldDeactivate = true;
+            if (!$tokenRecord) {
+                Log::warning('Device token not found in database', [
+                    'device_token' => substr($deviceToken, 0, 20) . '...'
+                ]);
+                continue;
             }
-            // Check by FCM error code
-            elseif ($errorCode == 400 || $errorCode == 404) {
-                $shouldDeactivate = true;
+            
+            // Check if token was recently registered/updated (grace period: 2 hours)
+            // This prevents deactivating tokens that might have config issues but are actually valid
+            $gracePeriodMinutes = 120; // 2 hours
+            $recentlyUpdated = $tokenRecord->updated_at && 
+                             $tokenRecord->updated_at->diffInMinutes(now()) < $gracePeriodMinutes;
+            
+            // Track consecutive failures using cache (expires after 24 hours)
+            $cacheKey = 'fcm_failure_count_' . md5($deviceToken);
+            $failureCount = \Illuminate\Support\Facades\Cache::get($cacheKey, 0);
+            $failureCount++;
+            
+            // Only deactivate tokens when FCM explicitly indicates they are invalid
+            // FCM error codes that indicate invalid tokens:
+            // - UNREGISTERED: Token is no longer valid (app uninstalled, token expired)
+            // - INVALID_ARGUMENT: Token format is invalid
+            $isInvalidTokenError = false;
+            
+            // Primary check: FCM-specific error code (most reliable indicator)
+            if ($fcmErrorCode) {
+                $fcmErrorCodeUpper = strtoupper($fcmErrorCode);
+                if (in_array($fcmErrorCodeUpper, ['UNREGISTERED', 'INVALID_ARGUMENT'])) {
+                    $isInvalidTokenError = true;
+                }
             }
-            // Check by error message patterns (fallback for cases where code is missing)
-            elseif (
-                str_contains(strtolower($error), 'not a valid fcm registration token') ||
-                str_contains(strtolower($error), 'invalid_argument') ||
-                str_contains(strtolower($error), 'requested entity was not found') ||
-                str_contains(strtolower($error), 'not found') ||
-                str_contains(strtolower($error), 'unregistered') ||
-                str_contains(strtolower($error), 'registration-token-not-registered')
-            ) {
-                $shouldDeactivate = true;
+            // Secondary check: HTTP 400 with specific error message patterns (for cases where FCM error code is missing)
+            elseif ($statusCode == 400) {
+                $errorLower = strtolower($error);
+                if (
+                    str_contains($errorLower, 'not a valid fcm registration token') ||
+                    str_contains($errorLower, 'invalid_argument') ||
+                    str_contains($errorLower, 'invalid registration token')
+                ) {
+                    $isInvalidTokenError = true;
+                }
+            }
+            
+            // Store failure count in cache (expires in 24 hours)
+            \Illuminate\Support\Facades\Cache::put($cacheKey, $failureCount, now()->addHours(24));
+            
+            // Only deactivate if:
+            // 1. FCM explicitly indicates invalid token error
+            // 2. Token was NOT recently updated (outside grace period)
+            // 3. We have multiple consecutive failures (at least 3) OR it's been failing for a while
+            $shouldDeactivate = false;
+            $deactivationReason = '';
+            
+            if ($isInvalidTokenError) {
+                if ($recentlyUpdated) {
+                    // Token was recently updated - don't deactivate yet, might be config issue
+                    Log::warning('FCM reports invalid token but token was recently updated - not deactivating (grace period)', [
+                        'device_token' => substr($deviceToken, 0, 20) . '...',
+                        'error' => $error,
+                        'fcm_error_code' => $fcmErrorCode,
+                        'status_code' => $statusCode,
+                        'failure_count' => $failureCount,
+                        'updated_at' => $tokenRecord->updated_at,
+                        'minutes_since_update' => $tokenRecord->updated_at->diffInMinutes(now()),
+                        'reason' => 'Token recently updated - may be configuration issue'
+                    ]);
+                } elseif ($failureCount >= 3) {
+                    // Multiple consecutive failures - likely truly invalid
+                    $shouldDeactivate = true;
+                    $deactivationReason = "FCM reports invalid token after {$failureCount} consecutive failures";
+                } else {
+                    // First or second failure - wait for more attempts
+                    Log::warning('FCM reports invalid token but waiting for more failures before deactivating', [
+                        'device_token' => substr($deviceToken, 0, 20) . '...',
+                        'error' => $error,
+                        'fcm_error_code' => $fcmErrorCode,
+                        'status_code' => $statusCode,
+                        'failure_count' => $failureCount,
+                        'reason' => "Waiting for {$failureCount}/3 failures before deactivation"
+                    ]);
+                }
+            } else {
+                // Not an invalid token error - reset failure count on next success
+                // For now, just log it
+                Log::warning('FCM request failed but not an invalid token error - may be temporary issue', [
+                    'device_token' => substr($deviceToken, 0, 20) . '...',
+                    'error' => $error,
+                    'error_code' => $errorCode,
+                    'fcm_error_code' => $fcmErrorCode,
+                    'status_code' => $statusCode,
+                    'failure_count' => $failureCount,
+                    'reason' => 'No explicit invalid token indication from FCM'
+                ]);
             }
             
             if ($shouldDeactivate) {
@@ -305,11 +403,17 @@ class FCMService
                     ->update(['is_active' => false]);
                 
                 if ($updated) {
+                    // Clear failure count cache after deactivation
+                    \Illuminate\Support\Facades\Cache::forget($cacheKey);
+                    
                     Log::info('Deactivated invalid device token (v1 API)', [
                         'device_token' => substr($deviceToken, 0, 20) . '...',
                         'error' => $error,
                         'error_code' => $errorCode,
-                        'status_code' => $statusCode
+                        'fcm_error_code' => $fcmErrorCode,
+                        'status_code' => $statusCode,
+                        'failure_count' => $failureCount,
+                        'reason' => $deactivationReason
                     ]);
                 }
             }
