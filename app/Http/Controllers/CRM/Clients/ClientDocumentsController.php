@@ -113,10 +113,7 @@ class ClientDocumentsController extends Controller
                 {
                     if($request->type == 'client'){
                         $checklistCount = count($checklistArray);
-                        $matterRef = $this->getMatterReference($clientid);
-                        $subject = !empty($matterRef) 
-                            ? "added Personal Checklist - {$matterRef}"
-                            : "added Personal Checklist";
+                        $subject = "added Personal Checklist";
                         $description = "<p>Added {$checklistCount} document checklist items in '{$request->folder_name}' category: " . implode(', ', array_slice($checklistArray, 0, 3)) . ($checklistCount > 3 ? '...' : '') . "</p>";
                         
                         $this->logClientActivity(
