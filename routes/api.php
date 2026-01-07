@@ -32,6 +32,7 @@ Route::post('/admin-login', [ClientPortalController::class, 'adminLogin']);
 Route::post('/refresh', [ClientPortalController::class, 'refresh']);
 Route::post('/forgot-password', [ClientPortalController::class, 'forgotPassword']);
 Route::post('/reset-password', [ClientPortalController::class, 'resetPassword']);
+Route::post('/expire-token', [ClientPortalController::class, 'expireToken']);
 
 // Countries API (public route)
 Route::get('/countries', [ClientPortalCommonListingController::class, 'getCountries']);

@@ -514,7 +514,7 @@
 			]
 		},
 		{
-			"name": "5. Forgot Password",
+			"name": "6. Forgot Password",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -578,7 +578,7 @@
 			]
 		},
 		{
-			"name": "6. Reset Password",
+			"name": "7. Reset Password",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -6850,6 +6850,142 @@
 				"description": "Send a push notification message to a specific device token.\n\n**Required Fields:**\n- `message`: Object containing message data\n  - `message.token`: FCM device token (string, max 500 chars)\n  - `message.data`: Object containing notification data\n    - `message.data.title`: Notification title (string, max 255 chars)\n    - `message.data.body`: Notification body (string)\n\n**Optional Fields in message.data:**\n- `type`: Message type (e.g., \"chat\", \"notification\", etc.)\n- `userId`: User ID associated with the message\n- Any other custom data fields\n\n**Response:**\n- `200`: Notification sent successfully\n- `422`: Validation error\n- `401`: Unauthorized\n- `500`: Failed to send notification (check logs for details)\n\n**Example Request:**\n```json\n{\n  \"message\": {\n    \"token\": \"fcm_device_token_here\",\n    \"data\": {\n      \"title\": \"New Message\",\n      \"body\": \"You have a new message\",\n      \"type\": \"chat\",\n      \"userId\": \"123\"\n    }\n  }\n}\n```"
 			},
 			"response": []
+		},
+		{
+			"name": "Expire Token",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"token\": \"{{auth_token}}\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/expire-token",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"expire-token"
+					]
+				},
+				"description": "Expire a specific access token by updating its expires_at column in personal_access_tokens table"
+			},
+			"response": [
+				{
+					"name": "Success Response",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"token\": \"{{auth_token}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/expire-token",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"expire-token"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": true,\n    \"message\": \"Token expired successfully\",\n    \"data\": {\n        \"token_id\": 123,\n        \"user_id\": 36464,\n        \"expires_at\": \"2026-01-07 22:30:00\",\n        \"status\": \"expired\"\n    }\n}"
+				},
+				{
+					"name": "Token Not Found",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"token\": \"invalid_token_here\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/expire-token",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"expire-token"
+							]
+						}
+					},
+					"status": "Not Found",
+					"code": 404,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": false,\n    \"message\": \"Token not found or invalid\"\n}"
+				},
+				{
+					"name": "Already Expired",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"token\": \"{{auth_token}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/expire-token",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"expire-token"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": true,\n    \"message\": \"Token is already expired\",\n    \"data\": {\n        \"token_id\": 123,\n        \"user_id\": 36464,\n        \"expires_at\": \"2026-01-06 22:21:37\",\n        \"status\": \"already_expired\"\n    }\n}"
+				}
+			]
 		}
 	],
 	"event": [

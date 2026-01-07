@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class ClientPortalController extends Controller
 {
@@ -728,6 +729,88 @@ class ClientPortalController extends Controller
                 'user_id' => $userId,
                 'device_token' => substr($deviceToken, 0, 20) . '...'
             ]);
+        }
+    }
+
+    /**
+     * Expire Token
+     * POST /api/expire-token
+     * 
+     * Expires a specific access token by updating its expires_at column
+     */
+    public function expireToken(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'token' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            // Find the token using Sanctum's findToken method
+            $accessToken = PersonalAccessToken::findToken($request->token);
+
+            if (!$accessToken) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Token not found or invalid'
+                ], 404);
+            }
+
+            // Check if token is already expired
+            if ($accessToken->expires_at && $accessToken->expires_at < Carbon::now()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Token is already expired',
+                    'data' => [
+                        'token_id' => $accessToken->id,
+                        'user_id' => $accessToken->tokenable_id,
+                        'expires_at' => $accessToken->expires_at,
+                        'status' => 'already_expired'
+                    ]
+                ], 200);
+            }
+
+            // Update expires_at to current time (expire immediately)
+            $accessToken->update([
+                'expires_at' => Carbon::now()
+            ]);
+
+            Log::info('Token expired via API', [
+                'token_id' => $accessToken->id,
+                'user_id' => $accessToken->tokenable_id,
+                'expires_at' => $accessToken->expires_at
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Token expired successfully',
+                'data' => [
+                    'token_id' => $accessToken->id,
+                    'user_id' => $accessToken->tokenable_id,
+                    'expires_at' => $accessToken->expires_at,
+                    'status' => 'expired'
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to expire token', [
+                'error' => $e->getMessage(),
+                'token_preview' => substr($request->token, 0, 20) . '...',
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to expire token',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+            ], 500);
         }
     }
 
