@@ -145,10 +145,18 @@ class ClientPersonalDetailsController extends Controller
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $url . '?' . $params);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30); // Increased to 30 seconds
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10); // Connection timeout
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // For local dev
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
             curl_close($ch);
+            
+            // Log curl errors for debugging
+            if ($curlError) {
+                \Log::error('Google Places Autocomplete API CURL Error: ' . $curlError);
+            }
             
             $data = json_decode($response, true);
             
@@ -455,19 +463,28 @@ class ClientPersonalDetailsController extends Controller
         if ($apiKey) {
             $url = 'https://maps.googleapis.com/maps/api/place/details/json';
             
+            // Request all address fields including postal_code
             $params = http_build_query([
                 'place_id' => $placeId,
                 'key' => $apiKey,
-                'fields' => 'address_components,formatted_address'
+                'fields' => 'address_components,formatted_address,name'
             ]);
             
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $url . '?' . $params);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30); // Increased to 30 seconds
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10); // Connection timeout
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // For local dev
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
             curl_close($ch);
+            
+            // Log curl errors for debugging
+            if ($curlError) {
+                \Log::error('Google Places Details API CURL Error: ' . $curlError);
+            }
             
             $data = json_decode($response, true);
             

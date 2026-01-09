@@ -199,7 +199,7 @@
             $.ajax({
                 url: config.searchRoute,
                 method: 'POST',
-                timeout: 15000, // 15 seconds timeout (backend has 10s, allow buffer for processing)
+                timeout: 35000, // 35 seconds timeout (backend has 30s, allow buffer)
                 data: { 
                     query: query,
                     _token: config.csrfToken
@@ -334,7 +334,7 @@
         $.ajax({
             url: config.detailsRoute,
             method: 'POST',
-            timeout: 15000, // 15 seconds timeout (backend has 10s, allow buffer for processing)
+            timeout: 35000, // 35 seconds timeout (backend has 30s, allow buffer)
             data: { 
                 place_id: placeId,
                 description: description, // Include description for fallback
@@ -416,15 +416,27 @@
         // Log all components for debugging
         console.log('📍 Address components:', components);
         
+        // First pass: collect all components
+        let unitNumber = '';
+        let streetNumber = '';
+        let streetName = '';
+        
         components.forEach(function(component) {
             console.log('🔍 Processing component:', component.long_name, 'Types:', component.types);
             
-            // Street number and route (traditional address)
-            if (component.types.includes('street_number')) {
-                addressLine1 += component.long_name + ' ';
+            // Unit/Apartment number (subpremise) - will be combined with address
+            if (component.types.includes('subpremise')) {
+                unitNumber = component.long_name;
             }
+            
+            // Street number
+            if (component.types.includes('street_number')) {
+                streetNumber = component.long_name;
+            }
+            
+            // Street name (route)
             if (component.types.includes('route')) {
-                addressLine1 += component.long_name;
+                streetName = component.long_name;
             }
             
             // For airports and POIs, use the establishment name as address line 1
@@ -447,9 +459,15 @@
                 state = component.short_name || component.long_name;
             }
             
-            // Postcode
+            // Postcode - check both postal_code and postal_code_prefix
             if (component.types.includes('postal_code')) {
                 postcode = component.long_name;
+                console.log('📮 Postcode found in address_components:', postcode);
+            }
+            // Some addresses might have postal_code_prefix instead
+            if (!postcode && component.types.includes('postal_code_prefix')) {
+                postcode = component.long_name;
+                console.log('📮 Postcode prefix found:', postcode);
             }
             
             // Country
@@ -457,6 +475,22 @@
                 country = component.long_name;
             }
         });
+        
+        // Build Address Line 1 with proper formatting
+        // If we have a unit number, format as "Unit/StreetNumber StreetName"
+        if (unitNumber && streetNumber && streetName) {
+            addressLine1 = unitNumber + '/' + streetNumber + ' ' + streetName;
+            console.log('🏠 Address with unit: ' + addressLine1);
+        } else if (streetNumber && streetName) {
+            // No unit, just street number and name
+            addressLine1 = streetNumber + ' ' + streetName;
+        } else if (unitNumber && streetName) {
+            // Unit but no street number (unusual case)
+            addressLine1 = unitNumber + '/' + streetName;
+        } else if (streetName) {
+            // Only street name
+            addressLine1 = streetName;
+        }
         
         // If we still don't have an address line 1, try to extract from formatted address
         if (!addressLine1.trim() && result.formatted_address) {
@@ -480,13 +514,38 @@
             }
         }
         
-        // Fallback postcode extraction from formatted_address
+        // Enhanced fallback postcode extraction from formatted_address
         if (!postcode && result.formatted_address) {
-            // Try to extract 4-digit Australian postcode from formatted address
-            const postcodeMatch = result.formatted_address.match(/\b(\d{4})\b/);
-            if (postcodeMatch) {
+            console.log('🔍 Attempting to extract postcode from formatted_address:', result.formatted_address);
+            
+            // Try multiple patterns for Australian postcodes
+            // Pattern 1: 4-digit number (standard Australian postcode)
+            let postcodeMatch = result.formatted_address.match(/\b(\d{4})\b/);
+            
+            // Pattern 2: Look for postcode after state abbreviation (e.g., "NSW 2000")
+            if (!postcodeMatch) {
+                postcodeMatch = result.formatted_address.match(/\b(NSW|VIC|QLD|SA|WA|TAS|NT|ACT)\s+(\d{4})\b/i);
+                if (postcodeMatch && postcodeMatch[2]) {
+                    postcode = postcodeMatch[2];
+                    console.log('📮 Postcode extracted after state:', postcode);
+                }
+            } else {
                 postcode = postcodeMatch[1];
                 console.log('📮 Postcode extracted from formatted address:', postcode);
+            }
+            
+            // Pattern 3: Look for postcode at the end before country
+            if (!postcode) {
+                const parts = result.formatted_address.split(',');
+                for (let i = parts.length - 1; i >= 0; i--) {
+                    const part = parts[i].trim();
+                    const match = part.match(/\b(\d{4})\b/);
+                    if (match && !part.match(/^(Australia|AU)$/i)) {
+                        postcode = match[1];
+                        console.log('📮 Postcode extracted from end part:', postcode);
+                        break;
+                    }
+                }
             }
         }
         
@@ -499,19 +558,45 @@
             }
         }
         
+        // Final check: if still no postcode, log warning
+        if (!postcode) {
+            console.warn('⚠️ WARNING: No postcode found in address components or formatted address');
+            console.warn('Address components:', components);
+            console.warn('Formatted address:', result.formatted_address);
+        }
+        
         console.log('🏠 Final address mapping:', {
             addressLine1: addressLine1.trim(),
+            addressLine2: addressLine2,
             suburb: suburb,
             state: state,
             postcode: postcode,
-            country: country
+            country: country,
+            hasUnit: !!unitNumber
         });
         
         // Populate form fields
         $wrapper.find('input[name="address_line_1[]"]').val(addressLine1.trim());
+        $wrapper.find('input[name="address_line_2[]"]').val(addressLine2);
         $wrapper.find('input[name="suburb[]"]').val(suburb);
         $wrapper.find('input[name="state[]"]').val(state);
-        $wrapper.find('input[name="zip[]"]').val(postcode);
+        
+        // Set postcode - try multiple field name variations
+        const $postcodeField = $wrapper.find('input[name="zip[]"]');
+        if ($postcodeField.length > 0) {
+            $postcodeField.val(postcode);
+            console.log('📮 Postcode set to field:', postcode, 'Field found:', $postcodeField.length);
+        } else {
+            // Try alternative field names
+            const $altPostcode = $wrapper.find('input[name="postcode[]"]');
+            if ($altPostcode.length > 0) {
+                $altPostcode.val(postcode);
+                console.log('📮 Postcode set to alternative field:', postcode);
+            } else {
+                console.warn('⚠️ Postcode field not found! Available inputs:', $wrapper.find('input').map(function() { return $(this).attr('name'); }).get());
+            }
+        }
+        
         $wrapper.find('input[name="country[]"]').val(country);
         
         // Auto-calculate regional code
