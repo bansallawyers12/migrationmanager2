@@ -1143,12 +1143,23 @@ document.addEventListener('DOMContentLoaded', function() {
         applyAllFilters();
     });
     
-    // Initialize datepickers for account date filters
-    if ($('.account-datepicker').length) {
-        $('.account-datepicker').datepicker({
-            format: 'dd/mm/yyyy',
-            autoclose: true,
-            todayHighlight: true
+    // Initialize Flatpickr for account date filters
+    if (typeof flatpickr !== 'undefined' && $('.account-datepicker').length) {
+        $('.account-datepicker').each(function() {
+            var $this = $(this);
+            if (!$this.data('flatpickr')) {
+                flatpickr(this, {
+                    dateFormat: 'd/m/Y', // dd/mm/yyyy format
+                    allowInput: true,
+                    clickOpens: true,
+                    defaultDate: $this.val() || null,
+                    locale: { firstDayOfWeek: 1 },
+                    onChange: function(selectedDates, dateStr, instance) {
+                        $this.val(dateStr);
+                        $this.trigger('change');
+                    }
+                });
+            }
         });
     }
     
@@ -2996,12 +3007,25 @@ $(document).ready(function() {
             $('#edit_office_deposit_amount').val(deposit);
             $('#edit_office_description').val(description);
             
-            // Initialize datepickers
-            $('#edit_office_trans_date, #edit_office_entry_date').datepicker({
-                format: 'dd/mm/yyyy',
-                autoclose: true,
-                todayHighlight: true
-            });
+            // Initialize Flatpickr for office receipt dates
+            if (typeof flatpickr !== 'undefined') {
+                $('#edit_office_trans_date, #edit_office_entry_date').each(function() {
+                    var $this = $(this);
+                    if (!$this.data('flatpickr')) {
+                        flatpickr(this, {
+                            dateFormat: 'd/m/Y', // dd/mm/yyyy format
+                            allowInput: true,
+                            clickOpens: true,
+                            defaultDate: $this.val() || null,
+                            locale: { firstDayOfWeek: 1 },
+                            onChange: function(selectedDates, dateStr, instance) {
+                                $this.val(dateStr);
+                                $this.trigger('change');
+                            }
+                        });
+                    }
+                });
+            }
             
             // Load invoices for the matter and select the current one
             loadInvoicesForEdit(matterId, invoiceNo);

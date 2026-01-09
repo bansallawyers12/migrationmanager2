@@ -19,6 +19,8 @@
     <link rel="stylesheet" href="{{asset('css/client-forms.css')}}">
     <link rel="stylesheet" href="{{asset('css/clients/edit-client-components.css')}}">
     <link rel="stylesheet" href="{{asset('css/anzsco-admin.css')}}">
+    {{-- Flatpickr CSS for date pickers in address autocomplete --}}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 @endpush
 
 @section('content')
@@ -1383,12 +1385,18 @@
                         <!-- Summary View -->
                         <div id="partnerEoiInfoSummary" class="summary-view">
                             @php
-                                $activePartners = $clientPartners->whereIn('relationship_type', ['Husband', 'Wife', 'Defacto'])->where('related_client_id', '!=', null);
+                                // Get all partners (Husband, Wife, Defacto) regardless of related_client_id
+                                $allPartners = $clientPartners->whereIn('relationship_type', ['Husband', 'Wife', 'Defacto']);
+                                // Get partners with linked client profiles (for EOI data fetching)
+                                $activePartners = $allPartners->where('related_client_id', '!=', null);
                                 $partnerSpouseDetail = $fetchedData->partner;
+                                // Normalize marital status to handle both "Defacto" and "De Facto"
+                                $isMarriedOrDefacto = $fetchedData->marital_status && in_array($fetchedData->marital_status, ['Married', 'De Facto', 'Defacto']);
                             @endphp
                             
-                            @if($fetchedData->marital_status && in_array($fetchedData->marital_status, ['Married', 'De Facto']))
-                                @if($activePartners->count() > 0 && $partnerSpouseDetail)
+                            @if($isMarriedOrDefacto)
+                                @if($allPartners->count() > 0)
+                                    @if($activePartners->count() > 0 && $partnerSpouseDetail)
                                     <div class="summary-grid">
                                         <div class="summary-item">
                                             <span class="summary-label">Partner Selected:</span>
@@ -1443,10 +1451,35 @@
                                             </div>
                                         @endif
                                     </div>
+                                    @else
+                                        <div class="alert alert-warning">
+                                            <i class="fas fa-exclamation-triangle"></i> 
+                                            <strong>Partner EOI Data Not Available</strong>
+                                            <br><br>
+                                            @if($activePartners->count() == 0 && $allPartners->count() > 0)
+                                                <p>You have added a partner, but they are not linked to an existing client profile.</p>
+                                                <p><strong>Current partner(s):</strong></p>
+                                                <ul style="margin-left: 20px;">
+                                                    @foreach($allPartners as $partner)
+                                                        <li>{{ $partner->details ?: $partner->relationship_type }}</li>
+                                                    @endforeach
+                                                </ul>
+                                                <p><strong>To use partner data for EOI calculation:</strong></p>
+                                                <ol style="margin-left: 20px;">
+                                                    <li>Make sure the partner exists as a separate client in your system</li>
+                                                    <li>Click the <strong>Edit</strong> button on the "Partner" section above</li>
+                                                    <li>Link the partner to their existing client profile</li>
+                                                    <li>Save and return to this section</li>
+                                                </ol>
+                                            @else
+                                                <p>No active partner selected for EOI calculation. Please add a partner in the Partner section above and ensure they are linked to an existing client profile.</p>
+                                            @endif
+                                        </div>
+                                    @endif
                                 @else
                                     <div class="alert alert-info">
                                         <i class="fas fa-info-circle"></i> 
-                                        No active partner selected for EOI calculation. Please add a partner in the Partner section above and ensure they are linked to an existing client profile.
+                                        No partner added yet. Please add a partner in the Partner section above.
                                     </div>
                                 @endif
                             @else
@@ -1460,31 +1493,163 @@
 
                         <!-- Edit View -->
                         <div id="partnerEoiInfoEdit" class="edit-view" style="display: none;">
-                            @if($fetchedData->marital_status && in_array($fetchedData->marital_status, ['Married', 'De Facto']))
+                            @php
+                                // Normalize marital status to handle both "Defacto" and "De Facto"
+                                $isMarriedOrDefacto = $fetchedData->marital_status && in_array($fetchedData->marital_status, ['Married', 'De Facto', 'Defacto']);
+                            @endphp
+                            @if($isMarriedOrDefacto)
                                 <div class="content-grid">
                                     <div class="form-group">
                                         <label for="selectedPartner">Select Partner for EOI Calculation</label>
                                         <select id="selectedPartner" name="selected_partner_id">
                                             <option value="">Select Partner</option>
-                                            @foreach($activePartners as $partner)
-                                                <option value="{{ $partner->related_client_id }}" 
-                                                    {{ $partnerSpouseDetail && $partnerSpouseDetail->related_client_id == $partner->related_client_id ? 'selected' : '' }}>
-                                                    @if($partner->relatedClient)
-                                                        {{ $partner->relatedClient->first_name }} {{ $partner->relatedClient->last_name }} ({{ $partner->relatedClient->client_id }})
-                                                    @else
-                                                        {{ $partner->details }}
-                                                    @endif
-                                                </option>
+                                            @foreach($allPartners as $partner)
+                                                @if($partner->related_client_id)
+                                                    <option value="{{ $partner->related_client_id }}" 
+                                                        {{ $partnerSpouseDetail && $partnerSpouseDetail->related_client_id == $partner->related_client_id ? 'selected' : '' }}>
+                                                        @if($partner->relatedClient)
+                                                            {{ $partner->relatedClient->first_name }} {{ $partner->relatedClient->last_name }} ({{ $partner->relatedClient->client_id }})
+                                                        @else
+                                                            {{ $partner->details }}
+                                                        @endif
+                                                    </option>
+                                                @else
+                                                    <option value="" disabled style="color: #999;">
+                                                        {{ $partner->details ?: 'Partner' }} - ⚠️ Not linked to client profile
+                                                    </option>
+                                                @endif
                                             @endforeach
                                         </select>
-                                        <small class="form-text text-muted">Select which partner to use for EOI points calculation. Data will be auto-populated from their profile.</small>
+                                        <small class="form-text text-muted">
+                                            Select which partner to use for EOI points calculation. Data will be auto-populated from their profile.
+                                            @if($allPartners->where('related_client_id', null)->count() > 0)
+                                                <br><strong style="color: #dc3545;">⚠️ Warning:</strong> Some partners are not linked to client profiles and cannot be selected. Please edit the partner record and link them to an existing client.
+                                            @endif
+                                        </small>
                                     </div>
                                 </div>
                                 
-                                <div id="partnerEoiAutoData" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px;">
-                                    <h5><i class="fas fa-sync"></i> Auto-Populated Partner Data</h5>
-                                    <div id="partnerDataDisplay">
-                                        <p style="color: #666666;">Select a partner above to see their EOI information</p>
+                                <!-- Partner EOI Form Fields - Auto-populated from partner's profile -->
+                                <div id="partnerEoiFormFields" style="margin-top: 20px; display: none;">
+                                    <h5 style="margin-bottom: 20px; color: #495057; font-weight: 600;">
+                                        <i class="fas fa-user-check"></i> Partner EOI Information
+                                    </h5>
+                                    
+                                    <!-- Basic Information -->
+                                    <div class="content-grid" style="margin-bottom: 20px;">
+                                        <div class="form-group">
+                                            <label>Partner Name</label>
+                                            <input type="text" id="partner_name" class="form-control" readonly style="background-color: #e9ecef;">
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label>Date of Birth</label>
+                                            <input type="text" id="partner_dob" class="form-control" readonly style="background-color: #e9ecef;">
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label>Age</label>
+                                            <input type="text" id="partner_age" class="form-control" readonly style="background-color: #e9ecef;">
+                                        </div>
+                                    </div>
+
+                                    <!-- Citizenship & PR Status -->
+                                    <div class="content-grid" style="margin-bottom: 20px;">
+                                        <div class="form-group">
+                                            <label>Is Australian Citizen</label>
+                                            <select id="partner_is_citizen" class="form-control" disabled style="background-color: #e9ecef;">
+                                                <option value="0">No</option>
+                                                <option value="1">Yes</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label>Has Permanent Residency</label>
+                                            <select id="partner_has_pr" class="form-control" disabled style="background-color: #e9ecef;">
+                                                <option value="0">No</option>
+                                                <option value="1">Yes</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <!-- English Test Section -->
+                                    <div style="margin-top: 25px; padding-top: 20px; border-top: 2px solid #dee2e6;">
+                                        <h6 style="margin-bottom: 15px; color: #495057; font-weight: 600;">
+                                            <i class="fas fa-language"></i> English Test Scores
+                                        </h6>
+                                        
+                                        <div class="content-grid" style="margin-bottom: 15px;">
+                                            <div class="form-group">
+                                                <label>Test Type</label>
+                                                <input type="text" id="partner_test_type" class="form-control" readonly style="background-color: #e9ecef;" placeholder="Not set">
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label>Test Date</label>
+                                                <input type="text" id="partner_test_date" class="form-control" readonly style="background-color: #e9ecef;" placeholder="Not set">
+                                            </div>
+                                        </div>
+
+                                        <div class="content-grid">
+                                            <div class="form-group">
+                                                <label>Listening</label>
+                                                <input type="text" id="partner_listening" class="form-control" readonly style="background-color: #e9ecef;" placeholder="Not set">
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label>Reading</label>
+                                                <input type="text" id="partner_reading" class="form-control" readonly style="background-color: #e9ecef;" placeholder="Not set">
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label>Writing</label>
+                                                <input type="text" id="partner_writing" class="form-control" readonly style="background-color: #e9ecef;" placeholder="Not set">
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label>Speaking</label>
+                                                <input type="text" id="partner_speaking" class="form-control" readonly style="background-color: #e9ecef;" placeholder="Not set">
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label>Overall Score</label>
+                                                <input type="text" id="partner_overall" class="form-control" readonly style="background-color: #e9ecef;" placeholder="Not set">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Skills Assessment Section -->
+                                    <div style="margin-top: 25px; padding-top: 20px; border-top: 2px solid #dee2e6;">
+                                        <h6 style="margin-bottom: 15px; color: #495057; font-weight: 600;">
+                                            <i class="fas fa-briefcase"></i> Skills Assessment
+                                        </h6>
+                                        
+                                        <div class="content-grid">
+                                            <div class="form-group">
+                                                <label>Has Skills Assessment</label>
+                                                <input type="text" id="partner_has_assessment" class="form-control" readonly style="background-color: #e9ecef;" placeholder="Not set">
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label>Nominated Occupation</label>
+                                                <input type="text" id="partner_occupation" class="form-control" readonly style="background-color: #e9ecef;" placeholder="Not set">
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label>Assessment Date</label>
+                                                <input type="text" id="partner_assessment_date" class="form-control" readonly style="background-color: #e9ecef;" placeholder="Not set">
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label>Status</label>
+                                                <input type="text" id="partner_assessment_status" class="form-control" readonly style="background-color: #e9ecef;" placeholder="Not set">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="alert alert-info" style="margin-top: 20px;">
+                                        <i class="fas fa-info-circle"></i> 
+                                        <strong>Note:</strong> This information is automatically fetched from the partner's client profile and is read-only. To update, please edit the partner's individual client profile.
                                     </div>
                                 </div>
                             @else
@@ -2003,6 +2168,8 @@
         // Pass countries data to JavaScript
         window.countriesData = @json($countries);
     </script>
+    {{-- Flatpickr JS for date pickers in address autocomplete --}}
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="{{asset('js/clients/edit-client.js')}}"></script>
     <script src="{{asset('js/clients/english-proficiency.js')}}"></script>
     <script src="{{asset('js/address-autocomplete.js')}}"></script>

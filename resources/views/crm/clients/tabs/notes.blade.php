@@ -60,6 +60,12 @@
                             position: relative;
                             overflow: visible;
                         }
+                        .note-card-redesign .dropdown-menu {
+                            z-index: 1000;
+                            position: absolute;
+                            right: 0;
+                            left: auto;
+                        }
                         .note-type-label {
                             display: inline-block;
                             font-size: 0.75rem;
@@ -119,10 +125,11 @@
                         .date-time-menu-container {
                             position: absolute;
                             top: 22px;
-                            right: -22px;
+                            right: 0px;
                             display: flex;
                             align-items: center;
                             gap: 8px;
+                            z-index: 10;
                         }
                         .author-updated-date-time {
                             font-size: 0.75rem;
@@ -379,5 +386,23 @@
                         console.log('Page load - All tab activated and notes filtered');
                     }
                 }, 200);
+                
+                // SAFE FIX: Ensure dropdown menus close properly to prevent overlay issues
+                $(document).on('click', function(e) {
+                    // Close dropdown if clicking outside
+                    if (!$(e.target).closest('.note-toggle-btn-div').length && 
+                        !$(e.target).closest('.dropdown-menu').length) {
+                        $('.note-card-redesign .dropdown-menu').removeClass('show').css('display', 'none');
+                        $('.note-card-redesign .dropdown-toggle').attr('aria-expanded', 'false');
+                    }
+                });
+                
+                // Close dropdowns when clicking on dropdown items
+                $(document).on('click', '.note-card-redesign .dropdown-item', function() {
+                    setTimeout(function() {
+                        $('.note-card-redesign .dropdown-menu').removeClass('show').css('display', 'none');
+                        $('.note-card-redesign .dropdown-toggle').attr('aria-expanded', 'false');
+                    }, 100);
+                });
             });
             </script>

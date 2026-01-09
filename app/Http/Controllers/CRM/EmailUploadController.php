@@ -73,6 +73,20 @@ class EmailUploadController extends Controller
                 ], 400);
             }
 
+            // Check maximum file limit (10 emails max)
+            $emailFiles = $request->file('email_files');
+            $fileCount = is_array($emailFiles) ? count($emailFiles) : 0;
+            
+            if ($fileCount > 10) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Maximum 10 email files allowed per upload. Please select 10 or fewer files.',
+                    'uploaded' => 0,
+                    'failed' => 0,
+                    'errors' => []
+                ], 422);
+            }
+
             $uploadedCount = 0;
             $failedCount = 0;
             $errors = [];
@@ -118,25 +132,31 @@ class EmailUploadController extends Controller
 
             // Build user-friendly message
             $message = '';
+            $status = true;
+            
             if ($uploadedCount > 0 && $failedCount == 0) {
                 $message = "Successfully uploaded {$uploadedCount} email" . ($uploadedCount > 1 ? 's' : '');
+                $status = true;
             } elseif ($uploadedCount > 0 && $failedCount > 0) {
                 $message = "Partially successful: {$uploadedCount} email" . ($uploadedCount > 1 ? 's' : '') . " uploaded, {$failedCount} failed";
+                $status = true; // Partial success is still considered success
             } elseif ($failedCount > 0) {
                 $message = "Upload failed: {$failedCount} email" . ($failedCount > 1 ? 's' : '') . " could not be processed";
+                $status = false;
             } else {
                 $message = "No emails were processed";
+                $status = false;
             }
             
-            // Return response
+            // Return response with proper status
             return response()->json([
-                'status' => true,
+                'status' => $status,
                 'message' => $message,
                 'uploaded' => $uploadedCount,
                 'failed' => $failedCount,
                 'errors' => $errors,
                 'total_files' => $uploadedCount + $failedCount
-            ]);
+            ], $status ? 200 : 400);
 
         } catch (\Exception $e) {
             $errorMessage = $e->getMessage();
@@ -195,6 +215,20 @@ class EmailUploadController extends Controller
                 ], 400);
             }
 
+            // Check maximum file limit (10 emails max)
+            $emailFiles = $request->file('email_files');
+            $fileCount = is_array($emailFiles) ? count($emailFiles) : 0;
+            
+            if ($fileCount > 10) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Maximum 10 email files allowed per upload. Please select 10 or fewer files.',
+                    'uploaded' => 0,
+                    'failed' => 0,
+                    'errors' => []
+                ], 422);
+            }
+
             $uploadedCount = 0;
             $failedCount = 0;
             $errors = [];
@@ -209,29 +243,61 @@ class EmailUploadController extends Controller
                         $failedCount++;
                         $errors[] = [
                             'filename' => $file->getClientOriginalName(),
-                            'error' => $result['error']
+                            'error' => $result['error'] ?? 'Unknown error occurred while processing email'
                         ];
                     }
                 } catch (\Exception $e) {
                     $failedCount++;
+                    $fileName = $file->getClientOriginalName();
+                    $errorMsg = $e->getMessage();
+                    
+                    // Extract user-friendly error if available
+                    $userError = $errorMsg;
+                    if (is_array($errorMsg) && isset($errorMsg['error'])) {
+                        $userError = $errorMsg['error'];
+                    }
+                    
                     $errors[] = [
-                        'filename' => $file->getClientOriginalName(),
-                        'error' => $e->getMessage()
+                        'filename' => $fileName,
+                        'error' => $userError,
+                        'file_size' => $file->getSize(),
+                        'file_type' => $file->getMimeType()
                     ];
                     Log::error('Email upload error', [
-                        'file' => $file->getClientOriginalName(),
-                        'error' => $e->getMessage()
+                        'file' => $fileName,
+                        'file_size' => $file->getSize(),
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
                     ]);
                 }
             }
 
+            // Build user-friendly message
+            $message = '';
+            $status = true;
+            
+            if ($uploadedCount > 0 && $failedCount == 0) {
+                $message = "Successfully uploaded {$uploadedCount} email" . ($uploadedCount > 1 ? 's' : '');
+                $status = true;
+            } elseif ($uploadedCount > 0 && $failedCount > 0) {
+                $message = "Partially successful: {$uploadedCount} email" . ($uploadedCount > 1 ? 's' : '') . " uploaded, {$failedCount} failed";
+                $status = true; // Partial success is still considered success
+            } elseif ($failedCount > 0) {
+                $message = "Upload failed: {$failedCount} email" . ($failedCount > 1 ? 's' : '') . " could not be processed";
+                $status = false;
+            } else {
+                $message = "No emails were processed";
+                $status = false;
+            }
+
             return response()->json([
-                'status' => true,
-                'message' => "Successfully uploaded {$uploadedCount} email(s)" . ($failedCount > 0 ? ", {$failedCount} failed" : ""),
+                'status' => $status,
+                'message' => $message,
                 'uploaded' => $uploadedCount,
                 'failed' => $failedCount,
-                'errors' => $errors
-            ]);
+                'errors' => $errors,
+                'total_files' => $uploadedCount + $failedCount
+            ], $status ? 200 : 400);
 
         } catch (\Exception $e) {
             Log::error('Sent email upload error', [
@@ -271,11 +337,40 @@ class EmailUploadController extends Controller
             $sanitizedClientId = preg_replace('/[^a-zA-Z0-9\-_\.]/', '_', $clientUniqueId);
             $filePath = $sanitizedClientId . '/' . $docType . '/' . $mailType . '/' . $uniqueFileName;
             
-            // Upload to S3
-            Storage::disk('s3')->put($filePath, file_get_contents($file->getPathname()));
+            // Upload to S3 with error handling
+            try {
+                $fileContents = file_get_contents($file->getPathname());
+                if ($fileContents === false) {
+                    throw new \Exception('Failed to read email file contents');
+                }
+                
+                $uploadResult = Storage::disk('s3')->put($filePath, $fileContents);
+                if (!$uploadResult) {
+                    throw new \Exception('Failed to upload file to storage. Please check storage configuration.');
+                }
+            } catch (\Exception $s3Exception) {
+                Log::error('S3 upload failed for email', [
+                    'file' => $fileName,
+                    's3_path' => $filePath,
+                    'error' => $s3Exception->getMessage()
+                ]);
+                throw new \Exception('File storage error: ' . $s3Exception->getMessage());
+            }
             
             // Generate S3 URL - use Storage method which handles encoding properly
-            $fileUrl = Storage::disk('s3')->url($filePath);
+            try {
+                $fileUrl = Storage::disk('s3')->url($filePath);
+                if (empty($fileUrl)) {
+                    throw new \Exception('Failed to generate file URL');
+                }
+            } catch (\Exception $urlException) {
+                Log::error('S3 URL generation failed', [
+                    'file' => $fileName,
+                    's3_path' => $filePath,
+                    'error' => $urlException->getMessage()
+                ]);
+                throw new \Exception('File URL generation error: ' . $urlException->getMessage());
+            }
 
             // 2. Parse email using Python microservice
             $parsedData = $this->parseEmailWithPython($file);

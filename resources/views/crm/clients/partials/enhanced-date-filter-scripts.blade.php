@@ -1,9 +1,51 @@
 <!-- Enhanced Date Filter Scripts -->
-// Initialize datepickers for custom date range
-$('.datepicker').datepicker({
-    format: 'dd/mm/yyyy',
-    autoclose: true,
-    todayHighlight: true
+{{-- Flatpickr CSS and JS should be loaded before this script --}}
+@if(!isset($flatpickr_loaded))
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    @php $flatpickr_loaded = true; @endphp
+@endif
+
+<script>
+// Initialize Flatpickr for custom date range
+$(document).ready(function() {
+    if (typeof flatpickr !== 'undefined') {
+        // Initialize From Date
+        if ($('#from_date').length && !$('#from_date').data('flatpickr')) {
+            flatpickr('#from_date', {
+                dateFormat: 'd/m/Y',
+                allowInput: true,
+                clickOpens: true,
+                defaultDate: $('#from_date').val() || null,
+                locale: {
+                    firstDayOfWeek: 1 // Monday
+                },
+                onChange: function(selectedDates, dateStr, instance) {
+                    $('#from_date').val(dateStr);
+                    $('#from_date').trigger('change');
+                }
+            });
+        }
+        
+        // Initialize To Date
+        if ($('#to_date').length && !$('#to_date').data('flatpickr')) {
+            flatpickr('#to_date', {
+                dateFormat: 'd/m/Y',
+                allowInput: true,
+                clickOpens: true,
+                defaultDate: $('#to_date').val() || null,
+                locale: {
+                    firstDayOfWeek: 1 // Monday
+                },
+                onChange: function(selectedDates, dateStr, instance) {
+                    $('#to_date').val(dateStr);
+                    $('#to_date').trigger('change');
+                }
+            });
+        }
+    } else {
+        console.warn('⚠️ Flatpickr not loaded for date filter');
+    }
 });
 
 // Quick Filter Chips Functionality
@@ -82,9 +124,16 @@ $('#filterForm').on('submit', function(e) {
     }
 });
 
-// Helper function to parse dd/mm/yyyy format
+// Helper function to parse d/m/Y format (DD/MM/YYYY)
 function parseDate(dateStr) {
+    if (!dateStr) return null;
     var parts = dateStr.split('/');
+    if (parts.length !== 3) return null;
     // month is 0-based in JavaScript Date
-    return new Date(parts[2], parts[1] - 1, parts[0]);
+    // Format: day/month/year
+    var day = parseInt(parts[0], 10);
+    var month = parseInt(parts[1], 10) - 1; // 0-based
+    var year = parseInt(parts[2], 10);
+    return new Date(year, month, day);
 }
+</script>

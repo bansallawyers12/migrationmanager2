@@ -31,20 +31,41 @@ $(function () {
   // TinyMCE is initialized in scripts.js for .summernote-simple and .tinymce-editor classes
   // $('.textarea').summernote() // Removed - using TinyMCE now
 
-  $('.daterange').daterangepicker({
-    ranges   : {
-      'Today'       : [moment(), moment()],
-      'Yesterday'   : [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-      'Last 7 Days' : [moment().subtract(6, 'days'), moment()],
-      'Last 30 Days': [moment().subtract(29, 'days'), moment()],
-      'This Month'  : [moment().startOf('month'), moment().endOf('month')],
-      'Last Month'  : [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
-    },
-    startDate: moment().subtract(29, 'days'),
-    endDate  : moment()
-  }, function (start, end) {
-    window.alert('You chose: ' + start.format('MMMM D, YYYY') + ' - ' + end.format('MMMM D, YYYY'))
-  })
+  // Initialize Flatpickr for date range picker
+  if (typeof flatpickr !== 'undefined' && $('.daterange').length) {
+    var today = new Date();
+    var last30Days = new Date();
+    last30Days.setDate(today.getDate() - 29);
+    
+    $('.daterange').each(function() {
+      var $this = $(this);
+      if (!$this.data('flatpickr')) {
+        flatpickr(this, {
+          mode: 'range',
+          dateFormat: 'Y-m-d', // YYYY-MM-DD format
+          allowInput: true,
+          clickOpens: true,
+          defaultDate: [last30Days, today],
+          locale: { firstDayOfWeek: 1 },
+          onChange: function(selectedDates, dateStr, instance) {
+            if (selectedDates.length === 2) {
+              var startDate = instance.formatDate(selectedDates[0], 'Y-m-d');
+              var endDate = instance.formatDate(selectedDates[1], 'Y-m-d');
+              var startFormatted = instance.formatDate(selectedDates[0], 'F j, Y');
+              var endFormatted = instance.formatDate(selectedDates[1], 'F j, Y');
+              $this.val(startDate + ' - ' + endDate);
+              window.alert('You chose: ' + startFormatted + ' - ' + endFormatted);
+            } else if (selectedDates.length === 1) {
+              $this.val(dateStr);
+            } else {
+              $this.val('');
+            }
+            $this.trigger('change');
+          }
+        });
+      }
+    });
+  }
 
   /* jQueryKnob */
   /* $('.knob').knob() */

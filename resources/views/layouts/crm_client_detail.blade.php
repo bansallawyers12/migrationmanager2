@@ -26,7 +26,7 @@
     <link rel="stylesheet" href="{{asset('css/custom.css')}}">
     <link rel="stylesheet" href="{{asset('css/dataTables_min_latest.css')}}">
     <link rel="stylesheet" href="{{asset('icons/font-awesome/css/all.min.css')}}">
-    <script src="{{asset('js/jquery_min_latest.js')}}"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
     <style>
         /* Broadcast Notification Box - Top Right Corner */
@@ -1619,7 +1619,11 @@
     <script src="{{asset('js/tinymce/js/tinymce/tinymce.min.js')}}"></script>
     {{-- <script src="{{asset('js/daterangepicker.js')}}"></script> --}} {{-- ❌ REMOVED: Conflicts with bootstrap-datepicker on client detail --}}
     <script src="{{asset('js/bootstrap-timepicker.min.js')}}"></script>
-    <script src="{{asset('js/bootstrap-datepicker.min.js')}}"></script> {{-- ✅ ONLY datepicker for client detail pages --}}
+    {{-- Flatpickr JS for date pickers (migrating from bootstrap-datepicker) --}}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    {{-- Bootstrap datepicker kept temporarily during migration --}}
+    <script src="{{asset('js/bootstrap-datepicker.min.js')}}"></script> {{-- ⚠️ TEMPORARY: Will be removed after full migration --}}
     <script src="{{asset('js/select2.full.min.js')}}"></script>
     <script src="{{asset('js/bootstrap-formhelpers.min.js')}}"></script>
     <script src="{{asset('js/intlTelInput.js')}}"></script>

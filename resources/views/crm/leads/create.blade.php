@@ -4,6 +4,8 @@
     <link rel="stylesheet" href="{{asset('css/client-forms.css')}}">
     <link rel="stylesheet" href="{{asset('css/clients/edit-client-components.css')}}">
     <link rel="stylesheet" href="{{asset('css/leads/lead-form.css')}}">
+    {{-- Flatpickr CSS for date pickers --}}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     
     <style>
         /* Compact Error Display Styles */
@@ -481,21 +483,8 @@
 @push('scripts')
     <script src="{{ asset('js/leads/lead-form-navigation.js') }}"></script>
     <script src="{{ asset('js/leads/lead-form.js') }}"></script>
-    
-    <!-- Ensure Daterangepicker is loaded -->
-    <script>
-        // Fallback: Load daterangepicker if not already loaded
-        if (typeof $.fn.daterangepicker === 'undefined') {
-            console.log('Loading Daterangepicker...');
-            $.getScript('{{ asset("js/daterangepicker.js") }}', function() {
-                console.log('✅ Daterangepicker loaded via fallback');
-                // Initialize after loading
-                setTimeout(initDatePicker, 100);
-            }).fail(function() {
-                console.error('❌ Failed to load Daterangepicker');
-            });
-        }
-    </script>
+    {{-- Flatpickr JS for date pickers --}}
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -670,7 +659,7 @@
         }
     });
     
-    // Initialize datepicker after all scripts are loaded
+    // Initialize Flatpickr after all scripts are loaded
     $(document).ready(function() {
         // Wait a bit for all scripts to load
         setTimeout(function() {
@@ -794,49 +783,45 @@
         });
     }
     
-    // Function to initialize daterangepicker (same as client edit page)
+    // Function to initialize Flatpickr for DOB field
     function initDatePicker() {
         try {
-            // Check if jQuery and daterangepicker are available
-            if (typeof $ !== 'undefined' && typeof $.fn.daterangepicker !== 'undefined') {
+            // Check if Flatpickr is available
+            if (typeof flatpickr !== 'undefined') {
                 const dobInput = document.getElementById('dob');
                 const ageInput = document.getElementById('age');
                 
                 if (dobInput && ageInput) {
-                    // Initialize daterangepicker (same as client edit page)
-                    $(dobInput).daterangepicker({
-                        singleDatePicker: true,
-                        showDropdowns: true,
-                        locale: {
-                            format: 'DD/MM/YYYY',
-                            applyLabel: 'Apply',
-                            cancelLabel: 'Cancel',
-                            daysOfWeek: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
-                            monthNames: [
-                                'January', 'February', 'March', 'April', 'May', 'June',
-                                'July', 'August', 'September', 'October', 'November', 'December'
-                            ],
-                            firstDay: 1
-                        },
-                        autoApply: true,
+                    // Check if already initialized
+                    if ($(dobInput).data('flatpickr')) {
+                        return;
+                    }
+                    
+                    // Initialize Flatpickr for DOB field
+                    flatpickr(dobInput, {
+                        dateFormat: 'd/m/Y',
+                        allowInput: true,
+                        clickOpens: true,
+                        defaultDate: dobInput.value || null,
+                        maxDate: 'today', // DOB cannot be in the future
                         minDate: '01/01/1000',
-                        minYear: 1000,
-                        maxYear: parseInt(moment().format('YYYY')) + 50
-                    }).on('apply.daterangepicker', function(ev, picker) {
-                        // Update age when date is selected (same as client edit page)
-                        const dobValue = dobInput.value;
-                        ageInput.value = calculateAge(dobValue);
+                        locale: {
+                            firstDayOfWeek: 1 // Monday
+                        },
+                        onChange: function(selectedDates, dateStr, instance) {
+                            // Update age when date is selected
+                            dobInput.value = dateStr;
+                            ageInput.value = calculateAge(dateStr);
+                        }
                     });
                     
-                    console.log('✅ DOB Daterangepicker initialized successfully');
+                    console.log('✅ DOB Flatpickr initialized successfully');
                 }
             } else {
-                console.warn('⚠️ jQuery or Daterangepicker not available');
-                console.log('jQuery available:', typeof $ !== 'undefined');
-                console.log('Daterangepicker available:', typeof $.fn.daterangepicker !== 'undefined');
+                console.warn('⚠️ Flatpickr not available');
             }
         } catch(e) {
-            console.error('❌ Daterangepicker initialization failed:', e.message);
+            console.error('❌ Flatpickr initialization failed:', e.message);
         }
     }
     
