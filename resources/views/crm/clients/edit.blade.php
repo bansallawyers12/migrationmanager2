@@ -1387,9 +1387,11 @@
                             @php
                                 $activePartners = $clientPartners->whereIn('relationship_type', ['Husband', 'Wife', 'Defacto'])->where('related_client_id', '!=', null);
                                 $partnerSpouseDetail = $fetchedData->partner;
+                                // Normalize marital status to handle both "Defacto" and "De Facto"
+                                $isMarriedOrDefacto = $fetchedData->marital_status && in_array($fetchedData->marital_status, ['Married', 'De Facto', 'Defacto']);
                             @endphp
                             
-                            @if($fetchedData->marital_status && in_array($fetchedData->marital_status, ['Married', 'De Facto']))
+                            @if($isMarriedOrDefacto)
                                 @if($activePartners->count() > 0 && $partnerSpouseDetail)
                                     <div class="summary-grid">
                                         <div class="summary-item">
@@ -1462,7 +1464,11 @@
 
                         <!-- Edit View -->
                         <div id="partnerEoiInfoEdit" class="edit-view" style="display: none;">
-                            @if($fetchedData->marital_status && in_array($fetchedData->marital_status, ['Married', 'De Facto']))
+                            @php
+                                // Normalize marital status to handle both "Defacto" and "De Facto"
+                                $isMarriedOrDefacto = $fetchedData->marital_status && in_array($fetchedData->marital_status, ['Married', 'De Facto', 'Defacto']);
+                            @endphp
+                            @if($isMarriedOrDefacto)
                                 <div class="content-grid">
                                     <div class="form-group">
                                         <label for="selectedPartner">Select Partner for EOI Calculation</label>

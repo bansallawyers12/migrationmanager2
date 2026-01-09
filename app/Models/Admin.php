@@ -208,4 +208,44 @@ class Admin extends Authenticatable
     {
         return $this->hasMany(\App\Models\ClientEoiReference::class, 'client_id');
     }
+
+    // ============================================================
+    // CLIENT RELATIONSHIPS (For Immigration/EOI Data)
+    // ============================================================
+
+    /**
+     * Get the partner/spouse details for this client
+     * Used for EOI points calculation
+     */
+    public function partner()
+    {
+        return $this->hasOne(\App\Models\ClientSpouseDetail::class, 'client_id');
+    }
+
+    /**
+     * Get the test scores (IELTS, PTE, TOEFL, etc.) for this client
+     * Used for English proficiency points calculation
+     */
+    public function testScores(): HasMany
+    {
+        return $this->hasMany(\App\Models\ClientTestScore::class, 'client_id');
+    }
+
+    /**
+     * Get the occupations/skills assessments for this client
+     * Used for occupation and work experience points calculation
+     */
+    public function occupations(): HasMany
+    {
+        return $this->hasMany(\App\Models\ClientOccupation::class, 'client_id');
+    }
+
+    /**
+     * Get the relationships (partner, children, parents, etc.) for this client
+     * Used for family member information
+     */
+    public function relationships(): HasMany
+    {
+        return $this->hasMany(\App\Models\ClientRelationship::class, 'client_id');
+    }
 }

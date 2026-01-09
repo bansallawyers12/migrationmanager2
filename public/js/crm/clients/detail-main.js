@@ -2327,11 +2327,11 @@ $(document).ready(function() {
 
                         url: window.ClientDetailConfig.urls.getApplicationDetail,
 
-                        type:'GET',
+                        type: 'GET',
 
-                        data:{id: appliid},
+                        data: {id: appliid},
 
-                        success:function(response){
+                        success: function(response){
 
                             // Display the response directly in the application tab
 
@@ -2407,7 +2407,7 @@ $(document).ready(function() {
 
                                 });
 
-                            });
+                            }); */
 
 
 
@@ -2449,7 +2449,7 @@ $(document).ready(function() {
 
                                 });
 
-                            });
+                            }); */
 
 
 
@@ -2503,7 +2503,7 @@ $(document).ready(function() {
 
                                 });
 
-                            });
+                            }); */
 
 
 
@@ -2557,7 +2557,7 @@ $(document).ready(function() {
 
                                 });
 
-                            });
+                            }); */
 
 
 
@@ -14843,7 +14843,7 @@ Bansal Immigration`;
 
                         });
 
-                    });
+                    }); */
 
 
 

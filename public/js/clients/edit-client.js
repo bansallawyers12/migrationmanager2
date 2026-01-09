@@ -1598,7 +1598,8 @@ function toggleSpouseDetailsSection() {
 
     // Check if the spouseDetailsSection element exists before trying to access its style
     if (spouseDetailsSection) {
-        if (maritalStatus === 'Married' || maritalStatus === 'Defacto') {
+        // Handle both "Defacto" and "De Facto" for consistency
+        if (maritalStatus === 'Married' || maritalStatus === 'Defacto' || maritalStatus === 'De Facto') {
             spouseDetailsSection.style.display = 'block';
         } else {
             spouseDetailsSection.style.display = 'none';
@@ -1606,7 +1607,7 @@ function toggleSpouseDetailsSection() {
     }
 
     // Reinitialize datepickers when showing spouse details
-    if (maritalStatus === 'Married' || maritalStatus === 'Defacto') {
+    if (maritalStatus === 'Married' || maritalStatus === 'Defacto' || maritalStatus === 'De Facto') {
         initializeDatepickers();
     }
 }

@@ -41,8 +41,11 @@ class ClientEditService
      */
     public function getClientEditData(int $clientId): array
     {
+        // Get client data with partner relationship eager loaded
+        $clientData = $this->getClientData($clientId);
+        
         return [
-            'fetchedData' => $this->getClientData($clientId),
+            'fetchedData' => $clientData,
             'clientContacts' => $this->getClientContacts($clientId),
             'emails' => $this->getClientEmails($clientId),
             'visaCountries' => $this->getVisaCountries($clientId),
@@ -51,7 +54,7 @@ class ClientEditService
             'experiences' => $this->getExperiences($clientId),
             'clientOccupations' => $this->getOccupations($clientId),
             'testScores' => $this->getTestScores($clientId),
-            'ClientSpouseDetail' => $this->getSpouseDetail($clientId),
+            'ClientSpouseDetail' => $this->getSpouseDetail($clientId), // Keep for backward compatibility
             'clientPassports' => $this->getPassports($clientId),
             'clientTravels' => $this->getTravels($clientId),
             'clientCharacters' => $this->getCharacters($clientId),
@@ -65,11 +68,12 @@ class ClientEditService
     }
 
     /**
-     * Get client basic data
+     * Get client basic data with partner relationship eager loaded
+     * This prevents N+1 query when accessing $fetchedData->partner in blade
      */
     protected function getClientData(int $clientId)
     {
-        return Admin::find($clientId);
+        return Admin::with('partner')->find($clientId);
     }
 
     /**
