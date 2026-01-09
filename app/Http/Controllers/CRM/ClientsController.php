@@ -455,10 +455,9 @@ class ClientsController extends Controller
     //     return view('crm.prospects.index');
     // }
 
-	public function create(Request $request)
-	{
-		return view('crm.clients.create');
-	}
+    // NOTE: Client creation is done via lead conversion, not direct creation
+    // The create() method has been removed as clients are created by converting leads
+    // See: LeadConversionController for lead-to-client conversion
 
     public function store(Request $request)
     {   //dd($request->all());

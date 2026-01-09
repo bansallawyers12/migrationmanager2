@@ -173,34 +173,13 @@ Remove old libraries and CSS files.
 
 ## **PAGE 5: Clients Create Page**
 
-**File:** `resources/views/crm/clients/create.blade.php`  
-**JS File:** (Inline JavaScript in blade file)
+**Status:** ❌ **REMOVED** - This page has been removed as clients are created via lead conversion, not direct creation.
 
-**Current Usage:**
-- Multiple date fields (visa expiry dates, dynamic fields)
-- Daterangepicker initialization in multiple places (lines 844-878)
-- Dynamic field generation with datepickers
+**Note:** Clients in this system are created by converting leads (see `LeadConversionController`). The direct client creation page (`resources/views/crm/clients/create.blade.php`) and route have been removed to align with the workflow: **Lead → Client Conversion**.
 
-**Migration Steps:**
-1. ✅ Identify all date fields:
-   - Visa expiry dates (dynamic array) - line 222, 834
-   - Education/employment dates (if any)
-   - Other date fields
-2. ✅ Replace `initializeDatepickers()` function with Flatpickr version
-3. ✅ Update dynamic field generation to use Flatpickr
-4. ✅ Update format from `DD/MM/YYYY` to `d/m/Y`
-5. ✅ Test static and dynamic date fields
+**Migration Steps:** N/A - File removed
 
-**Test Checklist:**
-- [ ] Static visa expiry date field works
-- [ ] Add new visa field → datepicker initializes
-- [ ] Remove visa field → no errors
-- [ ] All date formats display as DD/MM/YYYY
-- [ ] Form submission works
-- [ ] Validation errors display correctly
-- [ ] Tab navigation preserves datepicker functionality
-
-**Estimated Time:** 1-1.5 hours  
+**Estimated Time:** N/A  
 **Risk Level:** ⭐⭐⭐ Medium-High
 
 ---

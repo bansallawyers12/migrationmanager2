@@ -97,7 +97,10 @@ function isNumberKey1(evt)
 console.log(timestring);
         document.getElementById("popoverdate").value = dateinput;
         document.getElementById("popovertime").value = timestring;
-        $('#embeddingDatePicker').datepicker('update' , datinput );
+        // Update Flatpickr date programmatically
+        if (typeof flatpickr !== 'undefined' && $('#embeddingDatePicker').data('flatpickr')) {
+            $('#embeddingDatePicker').data('flatpickr').setDate(datinput, false);
+        }
 
         var d = new Date(datearray[2], datearray[1], datearray[0] , datearray[3] ,datearray[4] );
         var realdate = convertDateFormat(d , "yyyy-mm-dd");
@@ -147,7 +150,10 @@ console.log(timestring);
                          console.log("Date can not be less than today's date");
                         return false;
                     }
-                    $('#embeddingDatePicker').datepicker('update' , val );
+                    // Update Flatpickr date programmatically
+                    if (typeof flatpickr !== 'undefined' && $('#embeddingDatePicker').data('flatpickr')) {
+                        $('#embeddingDatePicker').data('flatpickr').setDate(val, false);
+                    }
 
 
                     var currentdateformt = convertDateFormat(updatedate , "yyyy-mm-dd");
@@ -203,7 +209,10 @@ console.log(timestring);
                         var realdatestring = convertDateFormat(updatedate , "yyyy-mm-dd");
                         var inputdateString = convertDateFormat(updatedate,"ddyyyy-mm-dd");
                         $("#popoverdate").val(inputdateString);
-                        $('#embeddingDatePicker').datepicker('update' , inputdateString );
+                        // Update Flatpickr date programmatically
+                        if (typeof flatpickr !== 'undefined' && $('#embeddingDatePicker').data('flatpickr')) {
+                            $('#embeddingDatePicker').data('flatpickr').setDate(inputdateString, false);
+                        }
                         var datevalue = realdatestring+" "+hours+":"+minutes+":00";
                         $("#popoverrealdate").val(datevalue);
                     }
@@ -375,32 +384,50 @@ console.log(timestring);
         $("#popovertime").val(timeformat);
         $("#popoverrealdate").val(realdateinput+" "+hoursval+":"+minutesval+":00");
 
-        $('#embeddingDatePicker').datepicker('update' , popoverdatinput );
+        // Update Flatpickr date programmatically
+        if (typeof flatpickr !== 'undefined' && $('#embeddingDatePicker').data('flatpickr')) {
+            $('#embeddingDatePicker').data('flatpickr').setDate(popoverdatinput, false);
+        }
         $("#hrs2").wrap("<b></b>");
 
         var date = new Date();
         date.setDate(date.getDate() - 0);
 
+        // Initialize Flatpickr for embeddingDatePicker
+        if (typeof flatpickr !== 'undefined') {
+            const embeddingDatePicker = document.getElementById('embeddingDatePicker');
+            if (embeddingDatePicker && !$(embeddingDatePicker).data('flatpickr')) {
+                flatpickr(embeddingDatePicker, {
+                    dateFormat: 'm/d/Y', // mm/dd/yyyy format for this popover
+                    allowInput: true,
+                    clickOpens: true,
+                    minDate: date,
+                    defaultDate: date,
+                    locale: { firstDayOfWeek: 1 },
+                    onChange: function(selectedDates, dateStr, instance) {
+                        // Set the value for the date input
+                        var datestring = dateStr.split("/");
+                        $("#popoverdate").val(datestring[2]+"-"+datestring[0]+"-"+datestring[1]);
+                        var d = new Date();
+                        var selectedDate = selectedDates[0];
+                        var realdate = convertDateFormat(selectedDate, "yyyy-mm-dd");
+                        var hours = d.getHours();
+                        var minutes = d.getMinutes();
 
-        $('#embeddingDatePicker').datepicker({startDate: date,})
-        .on('changeDate', function(e) {
-            // Set the value for the date input
-            console.log(e);
-            var datestring = $("#embeddingDatePicker").datepicker('getFormattedDate');
-                datestring = datestring.split("/")
-            $("#popoverdate").val(datestring[2]+"-"+datestring[0]+"-"+datestring[1]);
-            var d = new Date();
-            var realdate = convertDateFormat(e.date , "yyyy-mm-dd");
-            var hours = d.getHours() ;
-            var minutes = d.getMinutes();
-
-            $("#popovertime").val(formatAMPM(hours,minutes));
-            hours = hours < 10 ? '0'+hours : hours;
-            minutes = minutes < 10 ? '0'+minutes : minutes;
-            $("#popoverrealdate").val(realdate+" "+hours+":"+minutes+":00");
-            //$("#popoverrealdate").val(realdate);
-
-        });
+                        $("#popovertime").val(formatAMPM(hours,minutes));
+                        hours = hours < 10 ? '0'+hours : hours;
+                        minutes = minutes < 10 ? '0'+minutes : minutes;
+                        $("#popoverrealdate").val(realdate+" "+hours+":"+minutes+":00");
+                    }
+                });
+            }
+        }
+        
+        // Old datepicker code removed - using Flatpickr above
+        /* $('#embeddingDatePicker').datepicker({startDate: date,})
+            .on('changeDate', function(e) {
+                // ... old code ...
+            }); */
     });
 
 

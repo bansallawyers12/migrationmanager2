@@ -677,164 +677,232 @@ $(function () {
                              $('.client-navigation-sidebar').length > 0;
     
     if (isClientDetailPage) {
-      console.log('✅ Client detail page detected - bootstrap-datepicker will handle dates');
-      // Skip daterangepicker initialization on client detail pages
+      console.log('✅ Client detail page detected - Flatpickr will handle dates');
+      // Skip Flatpickr initialization on client detail pages (handled by detail-main.js)
     } else {
-      // Initialize daterangepicker for all other pages
-      if ($(".datepicker").length) {
-        $(".datepicker").daterangepicker({
-          locale: { cancelLabel: 'Clear',format: "YYYY-MM-DD" },
-          singleDatePicker: true,
-          autoUpdateInput: false,
-          showDropdowns: true
-        }).on("apply.daterangepicker", function (e, picker) {
-          picker.element.val(picker.startDate.format(picker.locale.format));
+      // Initialize Flatpickr for all other pages
+      if ($(".datepicker").length && typeof flatpickr !== 'undefined') {
+        $(".datepicker").each(function() {
+          var $this = $(this);
+          if (!$this.data('flatpickr')) {
+            flatpickr(this, {
+              dateFormat: 'Y-m-d', // YYYY-MM-DD format for backend
+              allowInput: true,
+              clickOpens: true,
+              locale: { firstDayOfWeek: 1 },
+              onChange: function(selectedDates, dateStr, instance) {
+                $this.val(dateStr);
+                $this.trigger('change');
+              }
+            });
+          }
         });
       }
     }
     
-    // These are safe - they don't conflict with bootstrap-datepicker
-    if ($(".dobdatepicker").length) {
-      $(".dobdatepicker").daterangepicker({
-        locale: { cancelLabel: 'Clear',format: "DD/MM/YYYY" },
-        singleDatePicker: true,
-		autoUpdateInput: false,
-        showDropdowns: true
-      }).on("apply.daterangepicker", function (e, picker) {
-        picker.element.val(picker.startDate.format(picker.locale.format));
-    });
+    // Initialize Flatpickr for DOB datepickers
+    if ($(".dobdatepicker").length && typeof flatpickr !== 'undefined') {
+      $(".dobdatepicker").each(function() {
+        var $this = $(this);
+        if (!$this.data('flatpickr')) {
+          flatpickr(this, {
+            dateFormat: 'd/m/Y', // DD/MM/YYYY format
+            allowInput: true,
+            clickOpens: true,
+            maxDate: 'today',
+            minDate: '01/01/1900',
+            locale: { firstDayOfWeek: 1 },
+            onChange: function(selectedDates, dateStr, instance) {
+              $this.val(dateStr);
+              $this.trigger('change');
+            }
+          });
+        }
+      });
     }
-    if ($(".dobdatepickers").length) {
-      $(".dobdatepickers").daterangepicker({
-        locale: { cancelLabel: 'Clear',format: "DD/MM/YYYY" },
-        singleDatePicker: true,
-		autoUpdateInput: false,
-        showDropdowns: true
-      }).on("apply.daterangepicker", function (e, picker) {
-         picker.element.val(picker.startDate.format(picker.locale.format));
-        var dob = picker.startDate.format('MM/DD/YYYY');
-        function getAge(dateString) {
-  var now = new Date();
-  var today = new Date(now.getYear(),now.getMonth(),now.getDate());
-
-  var yearNow = now.getYear();
-  var monthNow = now.getMonth();
-  var dateNow = now.getDate();
-
-  var dob = new Date(dateString.substring(6,10),
-                     dateString.substring(0,2)-1,                   
-                     dateString.substring(3,5)                  
-                     );
-
-  var yearDob = dob.getYear();
-  var monthDob = dob.getMonth();
-  var dateDob = dob.getDate();
-  var age = {};
-  var ageString = "";
-  var yearString = "";
-  var monthString = "";
-  var dayString = "";
-
-
-  var yearAge = yearNow - yearDob;
-
-  if (monthNow >= monthDob)
-    var monthAge = monthNow - monthDob;
-  else {
-    yearAge--;
-    var monthAge = 12 + monthNow -monthDob;
-  }
-
-  if (dateNow >= dateDob)
-    var dateAge = dateNow - dateDob;
-  else {
-    monthAge--;
-    var dateAge = 31 + dateNow - dateDob;
-
-    if (monthAge < 0) {
-      monthAge = 11;
-      yearAge--;
+    // Initialize Flatpickr for DOB datepickers with age calculation
+    if ($(".dobdatepickers").length && typeof flatpickr !== 'undefined') {
+      $(".dobdatepickers").each(function() {
+        var $this = $(this);
+        if (!$this.data('flatpickr')) {
+          flatpickr(this, {
+            dateFormat: 'd/m/Y', // DD/MM/YYYY format
+            allowInput: true,
+            clickOpens: true,
+            maxDate: 'today',
+            minDate: '01/01/1900',
+            locale: { firstDayOfWeek: 1 },
+            onChange: function(selectedDates, dateStr, instance) {
+              $this.val(dateStr);
+              $this.trigger('change');
+              
+              // Calculate age
+              if (dateStr && $('input[name="age"]').length) {
+                var age = calculateAgeFromDDMMYYYY(dateStr);
+                $('input[name="age"]').val(age);
+              }
+            }
+          });
+        }
+      });
     }
-  }
-
-  age = {
-      years: yearAge,
-      months: monthAge,
-      days: dateAge
-      };
-
-  if ( age.years > 1 ) yearString = " years";
-  else yearString = " year";
-  if ( age.months> 1 ) monthString = " months";
-  else monthString = " month";
-  if ( age.days > 1 ) dayString = " days";
-  else dayString = " day";
-
-
-  if ( (age.years > 0) && (age.months > 0) && (age.days > 0) )
-    ageString = age.years + yearString + " " + age.months + monthString;
-  else if ( (age.years == 0) && (age.months == 0) && (age.days > 0) )
-    ageString = age.days;
-  else if ( (age.years > 0) && (age.months == 0) && (age.days == 0) )
-    ageString = age.years + yearString;
-  else if ( (age.years > 0) && (age.months > 0) && (age.days == 0) )
-    ageString = age.years + yearString + " " + age.months + monthString;
-  else if ( (age.years == 0) && (age.months > 0) && (age.days > 0) )
-    ageString = age.months + monthString;
-  else if ( (age.years > 0) && (age.months == 0) && (age.days > 0) )
-    ageString = age.years + yearString;
-  else if ( (age.years == 0) && (age.months > 0) && (age.days == 0) )
-    ageString = age.months + monthString;
-  else ageString = "Oops! Could not calculate age!";
-
-  return ageString;
-}
- $('input[name="age"]').val(getAge(dob));
-
-    });
+    
+    // Helper function to calculate age from DD/MM/YYYY format
+    function calculateAgeFromDDMMYYYY(dateStr) {
+      if (!dateStr || !/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return '';
+      
+      try {
+        var parts = dateStr.split('/');
+        var day = parseInt(parts[0], 10);
+        var month = parseInt(parts[1], 10) - 1; // 0-based
+        var year = parseInt(parts[2], 10);
+        
+        var now = new Date();
+        var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        var dob = new Date(year, month, day);
+        
+        if (isNaN(dob.getTime())) return '';
+        
+        var yearNow = now.getFullYear();
+        var monthNow = now.getMonth();
+        var dateNow = now.getDate();
+        
+        var yearDob = dob.getFullYear();
+        var monthDob = dob.getMonth();
+        var dateDob = dob.getDate();
+        
+        var yearAge = yearNow - yearDob;
+        var monthAge, dateAge;
+        
+        if (monthNow >= monthDob) {
+          monthAge = monthNow - monthDob;
+        } else {
+          yearAge--;
+          monthAge = 12 + monthNow - monthDob;
+        }
+        
+        if (dateNow >= dateDob) {
+          dateAge = dateNow - dateDob;
+        } else {
+          monthAge--;
+          dateAge = 31 + dateNow - dateDob;
+          if (monthAge < 0) {
+            monthAge = 11;
+            yearAge--;
+          }
+        }
+        
+        var ageString = "";
+        var yearString = (yearAge > 1) ? " years" : " year";
+        var monthString = (monthAge > 1) ? " months" : " month";
+        var dayString = (dateAge > 1) ? " days" : " day";
+        
+        if (yearAge > 0 && monthAge > 0 && dateAge > 0) {
+          ageString = yearAge + yearString + " " + monthAge + monthString;
+        } else if (yearAge == 0 && monthAge == 0 && dateAge > 0) {
+          ageString = dateAge + dayString;
+        } else if (yearAge > 0 && monthAge == 0 && dateAge == 0) {
+          ageString = yearAge + yearString;
+        } else if (yearAge > 0 && monthAge > 0 && dateAge == 0) {
+          ageString = yearAge + yearString + " " + monthAge + monthString;
+        } else if (yearAge == 0 && monthAge > 0 && dateAge > 0) {
+          ageString = monthAge + monthString;
+        } else if (yearAge > 0 && monthAge == 0 && dateAge > 0) {
+          ageString = yearAge + yearString;
+        } else if (yearAge == 0 && monthAge > 0 && dateAge == 0) {
+          ageString = monthAge + monthString;
+        } else {
+          ageString = "Oops! Could not calculate age!";
+        }
+        
+        return ageString;
+      } catch (e) {
+        console.error('Age calculation error:', e);
+        return '';
+      }
     }
-    if ($(".filterdatepicker").length) {
-      $(".filterdatepicker").daterangepicker({
-        locale: { cancelLabel: 'Clear',format: "YYYY-MM-DD" },
-        singleDatePicker: true,
-		autoUpdateInput: false,
-        showDropdowns: true,
-       
-      }).on("apply.daterangepicker", function (e, picker) {
-        picker.element.val(picker.startDate.format(picker.locale.format));
-    });;
+    // Initialize Flatpickr for filter datepickers
+    if ($(".filterdatepicker").length && typeof flatpickr !== 'undefined') {
+      $(".filterdatepicker").each(function() {
+        var $this = $(this);
+        if (!$this.data('flatpickr')) {
+          flatpickr(this, {
+            dateFormat: 'Y-m-d', // YYYY-MM-DD format for backend
+            allowInput: true,
+            clickOpens: true,
+            locale: { firstDayOfWeek: 1 },
+            onChange: function(selectedDates, dateStr, instance) {
+              $this.val(dateStr);
+              $this.trigger('change');
+            }
+          });
+        }
+      });
     }
-    if ($(".contract_expiry").length) {
-      $(".contract_expiry").daterangepicker({
-        locale: { cancelLabel: 'Clear',format: "YYYY-MM-DD" },
-        singleDatePicker: true,
-         autoUpdateInput: false,
-		cancelLabel: 'Clear',
-        showDropdowns: true
-      }).on("apply.daterangepicker", function (e, picker) {
-        picker.element.val(picker.startDate.format(picker.locale.format));
-    });
-	 
+    // Initialize Flatpickr for contract expiry datepickers
+    if ($(".contract_expiry").length && typeof flatpickr !== 'undefined') {
+      $(".contract_expiry").each(function() {
+        var $this = $(this);
+        if (!$this.data('flatpickr')) {
+          flatpickr(this, {
+            dateFormat: 'Y-m-d', // YYYY-MM-DD format for backend
+            allowInput: true,
+            clickOpens: true,
+            locale: { firstDayOfWeek: 1 },
+            onChange: function(selectedDates, dateStr, instance) {
+              $this.val(dateStr);
+              $this.trigger('change');
+            }
+          });
+        }
+      });
     }
-    if ($(".datetimepicker").length) {
-      $(".datetimepicker").daterangepicker({
-        locale: { format: "YYYY-MM-DD hh:mm" },
-        singleDatePicker: true,
-        timePicker: true,
-         autoUpdateInput: false,
-        timePicker24Hour: true
-      }).on("apply.daterangepicker", function (e, picker) {
-        picker.element.val(picker.startDate.format(picker.locale.format));
-    });
+    // Initialize Flatpickr for datetime pickers
+    if ($(".datetimepicker").length && typeof flatpickr !== 'undefined') {
+      $(".datetimepicker").each(function() {
+        var $this = $(this);
+        if (!$this.data('flatpickr')) {
+          flatpickr(this, {
+            dateFormat: 'Y-m-d H:i', // YYYY-MM-DD HH:mm format
+            allowInput: true,
+            clickOpens: true,
+            enableTime: true,
+            time_24hr: true, // 24-hour format
+            locale: { firstDayOfWeek: 1 },
+            onChange: function(selectedDates, dateStr, instance) {
+              $this.val(dateStr);
+              $this.trigger('change');
+            }
+          });
+        }
+      });
     }
-    if ($(".daterange").length) {
-      $(".daterange").daterangepicker({
-        locale: { format: "YYYY-MM-DD" },
-        drops: "down",
-         autoUpdateInput: false,
-        opens: "right"
-      }).on("apply.daterangepicker", function (e, picker) {
-        picker.element.val(picker.startDate.format(picker.locale.format));
+    // Initialize Flatpickr for date range pickers
+    if ($(".daterange").length && typeof flatpickr !== 'undefined') {
+      $(".daterange").each(function() {
+        var $this = $(this);
+        if (!$this.data('flatpickr')) {
+          flatpickr(this, {
+            mode: 'range', // Enable range selection
+            dateFormat: 'Y-m-d', // YYYY-MM-DD format for backend
+            allowInput: true,
+            clickOpens: true,
+            locale: { firstDayOfWeek: 1 },
+            onChange: function(selectedDates, dateStr, instance) {
+              if (selectedDates.length === 2) {
+                // Format as "YYYY-MM-DD - YYYY-MM-DD"
+                var startDate = instance.formatDate(selectedDates[0], 'Y-m-d');
+                var endDate = instance.formatDate(selectedDates[1], 'Y-m-d');
+                $this.val(startDate + ' - ' + endDate);
+              } else if (selectedDates.length === 1) {
+                $this.val(dateStr);
+              } else {
+                $this.val('');
+              }
+              $this.trigger('change');
+            }
+          });
+        }
       });
     }
   } // End: if (isClientDetailPage) check

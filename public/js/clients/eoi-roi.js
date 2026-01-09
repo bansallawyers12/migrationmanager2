@@ -83,10 +83,34 @@
     }
 
     function initializeDatepickers() {
-        $('.eoi-datepicker').datepicker({
-            format: 'dd/mm/yyyy',
-            autoclose: true,
-            todayHighlight: true
+        if (typeof flatpickr === 'undefined') {
+            console.warn('⚠️ Flatpickr not loaded, skipping datepicker initialization');
+            return;
+        }
+
+        $('.eoi-datepicker').each(function() {
+            const element = this;
+            const $this = $(this);
+            
+            // Skip if already initialized
+            if ($this.data('flatpickr')) {
+                return;
+            }
+            
+            // Initialize Flatpickr
+            flatpickr(element, {
+                dateFormat: 'd/m/Y',
+                allowInput: true,
+                clickOpens: true,
+                defaultDate: $this.val() || null,
+                locale: {
+                    firstDayOfWeek: 1 // Monday
+                },
+                onChange: function(selectedDates, dateStr, instance) {
+                    $this.val(dateStr);
+                    $this.trigger('change');
+                }
+            });
         });
     }
 

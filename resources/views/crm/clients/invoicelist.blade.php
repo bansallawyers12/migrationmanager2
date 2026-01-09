@@ -1398,8 +1398,9 @@
 </div>
 @endsection
 @push('scripts')
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/css/bootstrap-datepicker.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/js/bootstrap-datepicker.min.js"></script>
+{{-- Bootstrap-datepicker removed - using Flatpickr --}}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
 jQuery(document).ready(function($){
      $('.listing-container .filter_btn').on('click', function(){
@@ -1436,12 +1437,25 @@ jQuery(document).ready(function($){
         window.location.href = currentUrl.toString();
     });
 
-    // Initialize datepickers for custom date range
-    $('.datepicker').datepicker({
-        format: 'dd/mm/yyyy',
-        autoclose: true,
-        todayHighlight: true
-    });
+    // Initialize Flatpickr for custom date range
+    if (typeof flatpickr !== 'undefined') {
+        $('.datepicker').each(function() {
+            var $this = $(this);
+            if (!$this.data('flatpickr')) {
+                flatpickr(this, {
+                    dateFormat: 'd/m/Y', // dd/mm/yyyy format
+                    allowInput: true,
+                    clickOpens: true,
+                    defaultDate: $this.val() || null,
+                    locale: { firstDayOfWeek: 1 },
+                    onChange: function(selectedDates, dateStr, instance) {
+                        $this.val(dateStr);
+                        $this.trigger('change');
+                    }
+                });
+            }
+        });
+    }
 
     // Quick Filter Chips Functionality
     $('.quick-filter-chip').on('click', function() {

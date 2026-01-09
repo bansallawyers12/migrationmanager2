@@ -926,12 +926,19 @@ function addAnotherAddress() {
         // Fallback: Re-initialize everything (less efficient but works)
         initAddressAutocomplete();
     } else {
-        // Last resort: Just initialize datepickers manually
-        if (typeof $ !== 'undefined' && typeof $.fn.datepicker !== 'undefined' && newWrapper) {
-            $(newWrapper).find('.date-picker').datepicker({
-                format: 'dd/mm/yyyy',
-                autoclose: true,
-                todayHighlight: true
+        // Last resort: Just initialize Flatpickr manually
+        if (typeof flatpickr !== 'undefined' && newWrapper) {
+            $(newWrapper).find('.date-picker').each(function() {
+                if (!$(this).data('flatpickr')) {
+                    flatpickr(this, {
+                        dateFormat: 'd/m/Y',
+                        allowInput: true,
+                        clickOpens: true,
+                        locale: {
+                            firstDayOfWeek: 1
+                        }
+                    });
+                }
             });
         }
     }
@@ -1541,46 +1548,44 @@ async function addVisaDetail() {
 }
 
 /**
- * Initialize Datepickers for both empty and non-empty fields
+ * Initialize Flatpickr datepickers for both empty and non-empty fields
  */
 function initializeDatepickers() {
+    if (typeof flatpickr === 'undefined') {
+        console.warn('⚠️ Flatpickr not loaded, skipping datepicker initialization');
+        return;
+    }
+
     $('.date-picker').each(function() {
         const $this = $(this);
+        const element = this;
         const currentValue = $this.val(); // Get the current value of the field
 
-        // Initialize the datepicker regardless of whether the field is empty
-        $this.daterangepicker({
-            singleDatePicker: true,
-            showDropdowns: true,
-            autoUpdateInput: false, // Prevent the datepicker from auto-filling the field
-            locale: {
-                format: 'DD/MM/YYYY',
-                applyLabel: 'Apply',
-                cancelLabel: 'Cancel',
-                daysOfWeek: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
-                monthNames: [
-                    'January', 'February', 'March', 'April', 'May', 'June',
-                    'July', 'August', 'September', 'October', 'November', 'December'
-                ],
-                firstDay: 1
-            },
+        // Skip if already initialized
+        if ($this.data('flatpickr')) {
+            return;
+        }
+
+        // Initialize Flatpickr
+        const fp = flatpickr(element, {
+            dateFormat: 'd/m/Y',
+            allowInput: true,
+            clickOpens: true,
+            defaultDate: currentValue || null,
             minDate: '01/01/1000',
-            minYear: 1000,
-            maxYear: parseInt(moment().format('YYYY')) + 50,
-            startDate: currentValue ? moment(currentValue, 'DD/MM/YYYY') : undefined, // Use existing value if present, otherwise no default date
-            endDate: undefined
-        }).on('apply.daterangepicker', function(ev, picker) {
-            // On apply, set the selected date
-            $this.val(picker.startDate.format('DD/MM/YYYY'));
-        }).on('cancel.daterangepicker', function(ev, picker) {
-            // On cancel, clear the field
-            $this.val('');
+            maxDate: new Date().getFullYear() + 50 + '-12-31',
+            locale: {
+                firstDayOfWeek: 1 // Monday
+            },
+            onChange: function(selectedDates, dateStr, instance) {
+                // Update the input value when date is selected
+                $this.val(dateStr);
+                $this.trigger('change'); // Trigger change event for any listeners
+            }
         });
 
-        // If the field was empty, ensure it remains empty after initialization
-        if (!currentValue) {
-            $this.val('');
-        }
+        // Store instance for later reference
+        $this.data('flatpickr', fp);
     });
 }
 
@@ -4169,30 +4174,33 @@ $(document).ready(function() {
         // Handle manual input changes (e.g., typing or pasting)
         dobInput.addEventListener('input', updateAge);
 
-        // Ensure datepicker is initialized and handle datepicker changes
-        $(dobInput).daterangepicker({
-            singleDatePicker: true,
-            showDropdowns: true,
-            locale: {
-                format: 'DD/MM/YYYY',
-                applyLabel: 'Apply',
-                cancelLabel: 'Cancel',
-                daysOfWeek: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
-                monthNames: [
-                    'January', 'February', 'March', 'April', 'May', 'June',
-                    'July', 'August', 'September', 'October', 'November', 'December'
-                ],
-                firstDay: 1
-            },
-            autoApply: true,
-            minDate: '01/01/1000',
-            minYear: 1000,
-            maxYear: parseInt(moment().format('YYYY')) + 50
-        }).on('apply.daterangepicker', function(ev, picker) {
-            // Update the input value and calculate age when a date is selected
-            dobInput.value = picker.startDate.format('DD/MM/YYYY');
-            updateAge();
-        }).on('change', updateAge); // Fallback for any direct changes
+        // Initialize Flatpickr for DOB field with age calculation
+        if (typeof flatpickr !== 'undefined') {
+            // Check if already initialized
+            if (!$(dobInput).data('flatpickr')) {
+                flatpickr(dobInput, {
+                    dateFormat: 'd/m/Y',
+                    allowInput: true,
+                    clickOpens: true,
+                    defaultDate: dobInput.value || null,
+                    maxDate: 'today', // DOB cannot be in the future
+                    minDate: '01/01/1000',
+                    locale: {
+                        firstDayOfWeek: 1 // Monday
+                    },
+                    onChange: function(selectedDates, dateStr, instance) {
+                        // Update the input value and calculate age when a date is selected
+                        dobInput.value = dateStr;
+                        updateAge();
+                    }
+                });
+            }
+        } else {
+            console.warn('⚠️ Flatpickr not loaded for DOB field');
+        }
+        
+        // Fallback for any direct changes
+        $(dobInput).on('change', updateAge);
     }
 
     // Password toggle functionality

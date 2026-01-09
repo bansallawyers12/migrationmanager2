@@ -56,7 +56,7 @@
 											<i class="fas fa-calendar-alt"></i>
 										</div>
 									</div>
-									<input type="text" name="course_start" class="form-control datepicker" data-valid="" autocomplete="off" placeholder="Select Date">
+									<input type="text" name="course_start" class="form-control date-picker" data-valid="" autocomplete="off" placeholder="Select Date">
 									@if ($errors->has('course_start'))
 										<span class="custom-error" role="alert">
 											<strong>{{ @$errors->first('course_start') }}</strong>
@@ -74,7 +74,7 @@
 											<i class="fas fa-calendar-alt"></i>
 										</div>
 									</div>
-									<input type="text" name="course_end" class="form-control datepicker" data-valid="" autocomplete="off" placeholder="Select Date">
+									<input type="text" name="course_end" class="form-control date-picker" data-valid="" autocomplete="off" placeholder="Select Date">
 									@if ($errors->has('course_end'))
 										<span class="custom-error" role="alert">
 											<strong>{{ @$errors->first('course_end') }}</strong>

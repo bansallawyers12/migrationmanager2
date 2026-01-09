@@ -415,10 +415,10 @@ The system includes Python-based document conversion:
 - `GET /dashboard` - CRM dashboard with key metrics
 - **Clients:**
   - `GET /clients` - List all clients
-  - `GET /clients/create` - Create new client
   - `GET /clients/{id}` - View client details
   - `GET /clients/{id}/edit` - Edit client
   - `DELETE /clients/{id}` - Delete client
+  - Note: Clients are created by converting leads (see Lead Conversion below)
   
 - **Applications:**
   - `GET /applications` - List all applications
