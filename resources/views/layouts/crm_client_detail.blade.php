@@ -26,7 +26,7 @@
     <link rel="stylesheet" href="{{asset('css/custom.css')}}">
     <link rel="stylesheet" href="{{asset('css/dataTables_min_latest.css')}}">
     <link rel="stylesheet" href="{{asset('icons/font-awesome/css/all.min.css')}}">
-    <script src="{{asset('js/jquery_min_latest.js')}}"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
     <style>
         /* Broadcast Notification Box - Top Right Corner */

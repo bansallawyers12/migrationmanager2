@@ -49,18 +49,30 @@
         // Get configuration from data attributes (should be same as initial config)
         const config = getAutocompleteConfig();
         
-        // Initialize date pickers for the new field only (if Bootstrap datepicker supports it)
+        // Initialize date pickers for the new field only (using Flatpickr)
         try {
-            if (typeof $.fn.datepicker !== 'undefined') {
-                $newFieldWrapper.find('.date-picker').datepicker({
-                    format: 'dd/mm/yyyy',
-                    autoclose: true,
-                    todayHighlight: true
+            if (typeof flatpickr !== 'undefined') {
+                $newFieldWrapper.find('.date-picker').each(function() {
+                    // Check if already initialized
+                    if ($(this).data('flatpickr')) {
+                        return;
+                    }
+                    
+                    flatpickr(this, {
+                        dateFormat: 'd/m/Y',
+                        allowInput: true,
+                        clickOpens: true,
+                        locale: {
+                            firstDayOfWeek: 1 // Monday
+                        }
+                    });
                 });
-                console.log('✅ Datepicker initialized for new field');
+                console.log('✅ Flatpickr initialized for new field');
+            } else {
+                console.warn('⚠️ Flatpickr not available for new field');
             }
         } catch(e) {
-            console.warn('⚠️ Datepicker initialization failed for new field:', e.message);
+            console.warn('⚠️ Flatpickr initialization failed for new field:', e.message);
         }
         
         // Note: Event listeners don't need re-binding because they use delegation
@@ -119,22 +131,32 @@
     }
     
     /**
-     * Initialize Bootstrap datepickers with error handling
+     * Initialize Flatpickr datepickers with error handling
      */
     function initDatePickers() {
         try {
-            if (typeof $.fn.datepicker !== 'undefined') {
-                $('.date-picker').datepicker({
-                    format: 'dd/mm/yyyy',
-                    autoclose: true,
-                    todayHighlight: true
+            if (typeof flatpickr !== 'undefined') {
+                $('.date-picker').each(function() {
+                    // Check if already initialized
+                    if ($(this).data('flatpickr')) {
+                        return;
+                    }
+                    
+                    flatpickr(this, {
+                        dateFormat: 'd/m/Y',
+                        allowInput: true,
+                        clickOpens: true,
+                        locale: {
+                            firstDayOfWeek: 1 // Monday
+                        }
+                    });
                 });
-                console.log('✅ Datepicker initialized');
+                console.log('✅ Flatpickr initialized for .date-picker fields');
             } else {
-                console.warn('⚠️ Datepicker not available, skipping...');
+                console.warn('⚠️ Flatpickr not available, skipping...');
             }
         } catch(e) {
-            console.warn('⚠️ Datepicker initialization failed:', e.message);
+            console.warn('⚠️ Flatpickr initialization failed:', e.message);
         }
     }
     

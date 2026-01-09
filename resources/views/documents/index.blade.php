@@ -161,24 +161,25 @@
         </div>
     </div>
 
-    <div id="preview_email_modal"  data-backdrop="static" data-keyboard="false" class="modal fade custom_modal" tabindex="-1" role="dialog" aria-labelledby="clientModalLabel" aria-hidden="true">
+    <div id="preview_email_modal"  data-bs-backdrop="static" data-bs-keyboard="false" class="modal fade custom_modal" tabindex="-1" role="dialog" aria-labelledby="clientModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="clientModalLabel">Preview and Send</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <?php
-                $client_matter_info_arr = \App\Models\ClientMatter::select('sel_matter_id')->where('id',$selectedDocument->client_matter_id)->first();
+                $client_matter_info_arr = null;
+                if ($selectedDocument && $selectedDocument->client_matter_id) {
+                    $client_matter_info_arr = \App\Models\ClientMatter::select('sel_matter_id')->where('id',$selectedDocument->client_matter_id)->first();
+                }
                 ?>
                 <div class="modal-body">
                     <form method="POST" action="{{ route('documents.sendSigningLink', $selectedDocument->id) }}" class="w-full sm:w-auto" enctype="multipart/form-data">
                         @csrf
                         <input type="hidden" name="client_id" id="mail_client_id" value="{{$selectedDocument->client_id}}">
                         <input type="hidden" name="client_matter_id" id="mail_client_matter_id" value="{{$selectedDocument->client_matter_id}}">
-                        <input type="hidden" name="sel_matter_id" id="mail_sel_matter_id" value="{{$client_matter_info_arr->sel_matter_id}}">
+                        <input type="hidden" name="sel_matter_id" id="mail_sel_matter_id" value="{{$client_matter_info_arr->sel_matter_id ?? ''}}">
                         <input type="hidden" name="doc_type" id="mail_doc_type" value="{{$selectedDocument->doc_type}}">
                         <?php
                         $cost_assignment_cnt = \App\Models\CostAssignmentForm::where('client_id',$selectedDocument->client_id)->where('client_matter_id',$selectedDocument->client_matter_id)->count();
@@ -186,21 +187,36 @@
                         if($cost_assignment_cnt >0) {
                             $matter_info = \App\Models\CostAssignmentForm::where('client_id',$selectedDocument->client_id)->where('client_matter_id',$selectedDocument->client_matter_id)->first();
                             //Get matter name
-                            $matter_get = \App\Models\Matter::select('title')->where('id',$client_matter_info_arr->sel_matter_id)->first();
-                            if($matter_get){
-                                $matter_info->title = $matter_get->title;
+                            if ($client_matter_info_arr && $client_matter_info_arr->sel_matter_id) {
+                                $matter_get = \App\Models\Matter::select('title')->where('id',$client_matter_info_arr->sel_matter_id)->first();
+                                if($matter_get){
+                                    $matter_info->title = $matter_get->title;
+                                } else {
+                                    $matter_info->title = 'NA';
+                                }
                             } else {
                                 $matter_info->title = 'NA';
                             }
                         } else {
-                            $matter_info = \App\Models\Matter::where('id',$client_matter_info_arr->sel_matter_id)->first();
+                            if ($client_matter_info_arr && $client_matter_info_arr->sel_matter_id) {
+                                $matter_info = \App\Models\Matter::where('id',$client_matter_info_arr->sel_matter_id)->first();
+                            } else {
+                                $matter_info = null;
+                            }
                         }
-                        $mattertotalpayablefeeL = floatval($matter_info->TotalBLOCKFEE) + floatval($matter_info->TotalDoHASurcharges) + floatval($matter_info->additional_fee_1);
-                        $mattertotalpayablefee = number_format($mattertotalpayablefeeL, 2, '.', '');
+                        if ($matter_info) {
+                            $mattertotalpayablefeeL = floatval($matter_info->TotalBLOCKFEE) + floatval($matter_info->TotalDoHASurcharges) + floatval($matter_info->additional_fee_1);
+                            $mattertotalpayablefee = number_format($mattertotalpayablefeeL, 2, '.', '');
+                        } else {
+                            $mattertotalpayablefee = '0.00';
+                        }
                         ?>
                         <?php
-
-                        $fetchedData = \App\Models\Admin::where('id',$selectedDocument->client_id )->first();
+                        // Fetch client data if client_id exists
+                        $fetchedData = null;
+                        if ($selectedDocument->client_id) {
+                            $fetchedData = \App\Models\Admin::where('id',$selectedDocument->client_id )->first();
+                        }
                         ?>
                         <div class="row">
                             <input type="hidden" name="email_from" value="info@bansalimmigration.com.au">
@@ -208,7 +224,7 @@
                             <div class="col-12 col-md-6 col-lg-6">
                                 <div class="form-group">
                                     <label for="signer_email">Signer Email <span class="span_req">*</span></label>
-                                    <input type="email" name="signer_email" value="{{$fetchedData->email}}" placeholder="Signer Email" class="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50" required>
+                                    <input type="email" name="signer_email" value="{{ $fetchedData ? $fetchedData->email : '' }}" placeholder="Signer Email" class="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50" required>
                                 </div>
                             </div>
 
@@ -216,7 +232,7 @@
                             <div class="col-12 col-md-6 col-lg-6">
                                 <div class="form-group">
                                     <label for="signer_email">Signer Name <span class="span_req">*</span></label>
-                                    <input type="text" name="signer_name" value="{{$fetchedData->first_name.' '.$fetchedData->last_name}}" placeholder="Signer Name" class="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50" required>
+                                    <input type="text" name="signer_name" value="{{ $fetchedData ? ($fetchedData->first_name.' '.$fetchedData->last_name) : '' }}" placeholder="Signer Name" class="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50" required>
                                 </div>
                             </div>
 
@@ -231,9 +247,11 @@
                                     <input type="hidden" name="pdf_sign_token" value="{{$token}}">
                                     <select class="form-control select2 selecttemplate" name="template" data-clientid="{{@$fetchedData->id}}" data-clientfirstname="{{@$fetchedData->first_name}}" data-clientvisaExpiry="{{@$fetchedData->visaExpiry}}" data-clientreference_number="{{@$fetchedData->client_id}}" data-clientassignee_name="{{@$fetchedData->first_name}}" data-mattertotalprofessionalfee="{{@$matter_info->TotalBLOCKFEE}}" data-mattertotaldepartmentfee="{{@$matter_info->additional_fee_1}}" data-mattertotalsurchargefee="{{@$matter_info->TotalDoHASurcharges}}" data-mattertotalpayablefee="{{@$mattertotalpayablefee}}" data-pdfurlforsign="{{@$pdfurlforsign}}" data-mattertitle="{{@$matter_info->title}}" required>
                                         <option value="">Select</option>
-                                        @foreach( \App\Models\MatterEmailTemplate::where('matter_id',$client_matter_info_arr->sel_matter_id)->orderBy('id', 'asc')->get() as $list)
-                                            <option value="{{$list->id}}">{{$list->name}}</option>
-                                        @endforeach
+                                        @if($client_matter_info_arr && isset($client_matter_info_arr->sel_matter_id))
+                                            @foreach( \App\Models\MatterEmailTemplate::where('matter_id',$client_matter_info_arr->sel_matter_id)->orderBy('id', 'asc')->get() as $list)
+                                                <option value="{{$list->id}}">{{$list->name}}</option>
+                                            @endforeach
+                                        @endif
                                     </select>
                                 </div>
                             </div>
@@ -280,13 +298,15 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach(\App\Models\UploadChecklist::where('matter_id', $client_matter_info_arr->sel_matter_id)->get() as $uclist)
-                                            <tr>
-                                                <td><input type="checkbox" name="checklistfile[]" value="<?php echo $uclist->id; ?>"></td>
-                                                <td><?php echo $uclist->name; ?></td>
-                                                <td><a target="_blank" href="<?php echo URL::to('/checklists/'.$uclist->file); ?>"><?php echo $uclist->name; ?></a></td>
-                                            </tr>
-                                            @endforeach
+                                            @if($client_matter_info_arr && isset($client_matter_info_arr->sel_matter_id))
+                                                @foreach(\App\Models\UploadChecklist::where('matter_id', $client_matter_info_arr->sel_matter_id)->get() as $uclist)
+                                                <tr>
+                                                    <td><input type="checkbox" name="checklistfile[]" value="<?php echo $uclist->id; ?>"></td>
+                                                    <td><?php echo $uclist->name; ?></td>
+                                                    <td><a target="_blank" href="<?php echo URL::to('/checklists/'.$uclist->file); ?>"><?php echo $uclist->name; ?></a></td>
+                                                </tr>
+                                                @endforeach
+                                            @endif
                                         </tbody>
                                     </table>
                                 </div>
@@ -294,7 +314,7 @@
 
                             <div class="col-12 col-md-12 col-lg-12">
                                 <button type="submit" class="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition">Send Signing Link</button>
-                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                             </div>
                         </div>
                     </form>
@@ -303,11 +323,11 @@
         </div>
     </div>
 
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- TinyMCE is self-hosted and loaded per page as needed -->
     <link rel="stylesheet" href="{{asset('css/dataTables_min_latest.css')}}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
     <!-- TinyMCE is self-hosted and loaded per page as needed -->
     <script src="{{asset('js/tinymce/js/tinymce/tinymce.min.js')}}"></script>
 

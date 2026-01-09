@@ -64,7 +64,7 @@
 		</div>
 		
 		<!-- Apnamentor necessary plugins-->
-			<script src="{{asset('public/js/jquery/js/jquery.min.js')}}"></script>
+			<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 			<script src="{{asset('public/js/popper.js/js/popper.min.js')}}"></script>
 			<script src="{{asset('public/js/bootstarp/js/bootstrap.min.js')}}"></script>
 			<script src="{{asset('public/js/pace-progress/js/pace.min.js')}}"></script>

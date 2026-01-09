@@ -19,6 +19,8 @@
     <link rel="stylesheet" href="{{asset('css/client-forms.css')}}">
     <link rel="stylesheet" href="{{asset('css/clients/edit-client-components.css')}}">
     <link rel="stylesheet" href="{{asset('css/anzsco-admin.css')}}">
+    {{-- Flatpickr CSS for date pickers in address autocomplete --}}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 @endpush
 
 @section('content')
@@ -2003,6 +2005,8 @@
         // Pass countries data to JavaScript
         window.countriesData = @json($countries);
     </script>
+    {{-- Flatpickr JS for date pickers in address autocomplete --}}
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="{{asset('js/clients/edit-client.js')}}"></script>
     <script src="{{asset('js/clients/english-proficiency.js')}}"></script>
     <script src="{{asset('js/address-autocomplete.js')}}"></script>
