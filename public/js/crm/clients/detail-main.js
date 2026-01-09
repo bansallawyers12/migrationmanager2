@@ -8219,14 +8219,11 @@ Bansal Immigration`;
 
             if (surcharge === 'Yes') {
                 // Calculate surcharge based on applicable charges
-                // Typically surcharge is a percentage (usually 2% or 4%) of certain charges
-                // For now, we'll calculate it based on the total DoHA charges
-                // You may need to adjust this formula based on your business logic
+                // Surcharge is 1.4% of the total DoHA charges
                 var totalCharges = parseFloat($('#TotalDoHACharges').val()) || 0;
                 
-                // Common surcharge rates: 2% or 4% depending on visa type
-                // Using 2% as default - adjust if needed
-                var surchargeRate = 0.02; // 2%
+                // Surcharge rate: 1.4%
+                var surchargeRate = 0.014; // 1.4%
                 totalSurcharges = totalCharges * surchargeRate;
             }
 
