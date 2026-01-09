@@ -1489,10 +1489,127 @@
                                     </div>
                                 </div>
                                 
-                                <div id="partnerEoiAutoData" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px;">
-                                    <h5><i class="fas fa-sync"></i> Auto-Populated Partner Data</h5>
-                                    <div id="partnerDataDisplay">
-                                        <p style="color: #666666;">Select a partner above to see their EOI information</p>
+                                <!-- Partner EOI Form Fields - Auto-populated from partner's profile -->
+                                <div id="partnerEoiFormFields" style="margin-top: 20px; display: none;">
+                                    <h5 style="margin-bottom: 20px; color: #495057; font-weight: 600;">
+                                        <i class="fas fa-user-check"></i> Partner EOI Information
+                                    </h5>
+                                    
+                                    <!-- Basic Information -->
+                                    <div class="content-grid" style="margin-bottom: 20px;">
+                                        <div class="form-group">
+                                            <label>Partner Name</label>
+                                            <input type="text" id="partner_name" class="form-control" readonly style="background-color: #e9ecef;">
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label>Date of Birth</label>
+                                            <input type="text" id="partner_dob" class="form-control" readonly style="background-color: #e9ecef;">
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label>Age</label>
+                                            <input type="text" id="partner_age" class="form-control" readonly style="background-color: #e9ecef;">
+                                        </div>
+                                    </div>
+
+                                    <!-- Citizenship & PR Status -->
+                                    <div class="content-grid" style="margin-bottom: 20px;">
+                                        <div class="form-group">
+                                            <label>Is Australian Citizen</label>
+                                            <select id="partner_is_citizen" class="form-control" disabled style="background-color: #e9ecef;">
+                                                <option value="0">No</option>
+                                                <option value="1">Yes</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label>Has Permanent Residency</label>
+                                            <select id="partner_has_pr" class="form-control" disabled style="background-color: #e9ecef;">
+                                                <option value="0">No</option>
+                                                <option value="1">Yes</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <!-- English Test Section -->
+                                    <div style="margin-top: 25px; padding-top: 20px; border-top: 2px solid #dee2e6;">
+                                        <h6 style="margin-bottom: 15px; color: #495057; font-weight: 600;">
+                                            <i class="fas fa-language"></i> English Test Scores
+                                        </h6>
+                                        
+                                        <div class="content-grid" style="margin-bottom: 15px;">
+                                            <div class="form-group">
+                                                <label>Test Type</label>
+                                                <input type="text" id="partner_test_type" class="form-control" readonly style="background-color: #e9ecef;" placeholder="Not set">
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label>Test Date</label>
+                                                <input type="text" id="partner_test_date" class="form-control" readonly style="background-color: #e9ecef;" placeholder="Not set">
+                                            </div>
+                                        </div>
+
+                                        <div class="content-grid">
+                                            <div class="form-group">
+                                                <label>Listening</label>
+                                                <input type="text" id="partner_listening" class="form-control" readonly style="background-color: #e9ecef;" placeholder="Not set">
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label>Reading</label>
+                                                <input type="text" id="partner_reading" class="form-control" readonly style="background-color: #e9ecef;" placeholder="Not set">
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label>Writing</label>
+                                                <input type="text" id="partner_writing" class="form-control" readonly style="background-color: #e9ecef;" placeholder="Not set">
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label>Speaking</label>
+                                                <input type="text" id="partner_speaking" class="form-control" readonly style="background-color: #e9ecef;" placeholder="Not set">
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label>Overall Score</label>
+                                                <input type="text" id="partner_overall" class="form-control" readonly style="background-color: #e9ecef;" placeholder="Not set">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Skills Assessment Section -->
+                                    <div style="margin-top: 25px; padding-top: 20px; border-top: 2px solid #dee2e6;">
+                                        <h6 style="margin-bottom: 15px; color: #495057; font-weight: 600;">
+                                            <i class="fas fa-briefcase"></i> Skills Assessment
+                                        </h6>
+                                        
+                                        <div class="content-grid">
+                                            <div class="form-group">
+                                                <label>Has Skills Assessment</label>
+                                                <input type="text" id="partner_has_assessment" class="form-control" readonly style="background-color: #e9ecef;" placeholder="Not set">
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label>Nominated Occupation</label>
+                                                <input type="text" id="partner_occupation" class="form-control" readonly style="background-color: #e9ecef;" placeholder="Not set">
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label>Assessment Date</label>
+                                                <input type="text" id="partner_assessment_date" class="form-control" readonly style="background-color: #e9ecef;" placeholder="Not set">
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label>Status</label>
+                                                <input type="text" id="partner_assessment_status" class="form-control" readonly style="background-color: #e9ecef;" placeholder="Not set">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="alert alert-info" style="margin-top: 20px;">
+                                        <i class="fas fa-info-circle"></i> 
+                                        <strong>Note:</strong> This information is automatically fetched from the partner's client profile and is read-only. To update, please edit the partner's individual client profile.
                                     </div>
                                 </div>
                             @else

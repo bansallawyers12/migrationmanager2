@@ -1906,6 +1906,32 @@ window.toggleEditMode = function(sectionType) {
             setTimeout(function() {
                 initializeEmailSectionPolling();
             }, 100);
+        } else if (sectionType === 'partnerEoiInfo') {
+            // Attach partner selection event listener when opening partner EOI section
+            console.log('👫 Opening partner EOI section - attaching event listener');
+            setTimeout(function() {
+                const partnerSelect = document.querySelector('select[name="selected_partner_id"]');
+                if (partnerSelect) {
+                    // Remove any existing event listeners to avoid duplicates
+                    const newSelect = partnerSelect.cloneNode(true);
+                    partnerSelect.parentNode.replaceChild(newSelect, partnerSelect);
+                    
+                    // Attach the change event listener
+                    newSelect.addEventListener('change', function() {
+                        console.log('Partner selected:', this.value);
+                        fetchPartnerEoiData(this.value);
+                    });
+                    
+                    // If a partner is already selected, load their data
+                    if (newSelect.value) {
+                        console.log('Auto-loading partner data for:', newSelect.value);
+                        fetchPartnerEoiData(newSelect.value);
+                    }
+                    console.log('✅ Partner selection event listener attached');
+                } else {
+                    console.error('❌ Partner select dropdown not found');
+                }
+            }, 100);
         } else if (sectionType === 'relatedFilesInfo') {
             // Reinitialize Select2 when opening related files edit mode
             console.log('🔗 Opening related files section - reinitializing Select2');
@@ -3700,14 +3726,27 @@ window.savePartnerEoiInfo = function() {
 
 // Function to fetch and display partner EOI data when partner is selected
 function fetchPartnerEoiData(partnerId) {
+    const formFields = document.getElementById('partnerEoiFormFields');
+    
     if (!partnerId) {
-        // Reset display when no partner is selected
-        document.getElementById('partnerDataDisplay').innerHTML = '<p style="color: #666666;">Select a partner above to see their EOI information</p>';
+        // Hide form fields when no partner is selected
+        if (formFields) {
+            formFields.style.display = 'none';
+        }
         return;
     }
 
-    // Show loading state
-    document.getElementById('partnerDataDisplay').innerHTML = '<p style="color: #666666;"><i class="fas fa-spinner fa-spin"></i> Loading partner data...</p>';
+    // Show form fields and display loading in all fields
+    if (formFields) {
+        formFields.style.display = 'block';
+        // Show loading in each field
+        const inputs = formFields.querySelectorAll('input, select');
+        inputs.forEach(input => {
+            if (input.tagName === 'INPUT') {
+                input.value = 'Loading...';
+            }
+        });
+    }
 
     // Fetch partner data
     fetch(`/clients/partner-eoi-data/${partnerId}`, {
@@ -3723,130 +3762,92 @@ function fetchPartnerEoiData(partnerId) {
         if (data.success) {
             displayPartnerEoiData(data.data);
         } else {
-            document.getElementById('partnerDataDisplay').innerHTML = `<p style="color: #dc3545;">Error: ${data.message}</p>`;
+            // Show error and clear fields
+            alert('Error: ' + data.message);
+            if (formFields) {
+                formFields.style.display = 'none';
+            }
         }
     })
     .catch(error => {
         console.error('Error fetching partner EOI data:', error);
-        document.getElementById('partnerDataDisplay').innerHTML = '<p style="color: #dc3545;">Error loading partner data. Please try again.</p>';
+        alert('Error loading partner data. Please try again.');
+        if (formFields) {
+            formFields.style.display = 'none';
+        }
     });
 }
 
-// Function to display partner EOI data in a formatted way
+// Function to display partner EOI data in form fields
 function displayPartnerEoiData(partnerData) {
-    let html = `
-        <div style="background: white; padding: 15px; border-radius: 6px; border: 1px solid #dee2e6;">
-            <h6 style="color: #495057; margin-bottom: 15px; font-weight: 600;">
-                <i class="fas fa-user"></i> ${partnerData.partner_name}
-            </h6>
-            
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                <div class="summary-item">
-                    <span style="font-weight: 600; color: #6c757d; font-size: 0.85em;">DATE OF BIRTH:</span><br>
-                    <span style="color: #212529; font-weight: 500;">${partnerData.dob}</span>
-                </div>
-                
-                <div class="summary-item">
-                    <span style="font-weight: 600; color: #6c757d; font-size: 0.85em;">CITIZENSHIP:</span><br>
-                    <span style="color: #212529; font-weight: 500;">${partnerData.is_citizen ? 'Yes' : 'No'}</span>
-                </div>
-                
-                <div class="summary-item">
-                    <span style="font-weight: 600; color: #6c757d; font-size: 0.85em;">PERMANENT RESIDENCY:</span><br>
-                    <span style="color: #212529; font-weight: 500;">${partnerData.has_pr ? 'Yes' : 'No'}</span>
-                </div>
-            </div>
-    `;
+    // Show the form fields section
+    const formFields = document.getElementById('partnerEoiFormFields');
+    if (formFields) {
+        formFields.style.display = 'block';
+    }
 
-    // Add English Test section if available
+    // Populate basic information
+    document.getElementById('partner_name').value = partnerData.partner_name || '';
+    document.getElementById('partner_dob').value = partnerData.dob || 'Not set';
+    
+    // Calculate and display age
+    if (partnerData.dob && partnerData.dob !== 'Not set') {
+        try {
+            const dobParts = partnerData.dob.split('/');
+            const dob = new Date(dobParts[2], dobParts[1] - 1, dobParts[0]);
+            const today = new Date();
+            let age = today.getFullYear() - dob.getFullYear();
+            const monthDiff = today.getMonth() - dob.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+                age--;
+            }
+            document.getElementById('partner_age').value = age + ' years old';
+        } catch (e) {
+            document.getElementById('partner_age').value = 'Not set';
+        }
+    } else {
+        document.getElementById('partner_age').value = 'Not set';
+    }
+    
+    // Populate citizenship and PR status
+    document.getElementById('partner_is_citizen').value = partnerData.is_citizen ? '1' : '0';
+    document.getElementById('partner_has_pr').value = partnerData.has_pr ? '1' : '0';
+    
+    // Populate English test scores
     if (partnerData.english_test) {
-        html += `
-            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #dee2e6;">
-                <h6 style="color: #495057; margin-bottom: 10px; font-weight: 600;">
-                    <i class="fas fa-language"></i> English Test Results
-                </h6>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;">
-                    <div class="summary-item">
-                        <span style="font-weight: 600; color: #6c757d; font-size: 0.8em;">TEST TYPE:</span><br>
-                        <span style="color: #212529; font-weight: 500;">${partnerData.english_test.test_type}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span style="font-weight: 600; color: #6c757d; font-size: 0.8em;">LISTENING:</span><br>
-                        <span style="color: #212529; font-weight: 500;">${partnerData.english_test.listening}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span style="font-weight: 600; color: #6c757d; font-size: 0.8em;">READING:</span><br>
-                        <span style="color: #212529; font-weight: 500;">${partnerData.english_test.reading}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span style="font-weight: 600; color: #6c757d; font-size: 0.8em;">WRITING:</span><br>
-                        <span style="color: #212529; font-weight: 500;">${partnerData.english_test.writing}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span style="font-weight: 600; color: #6c757d; font-size: 0.8em;">SPEAKING:</span><br>
-                        <span style="color: #212529; font-weight: 500;">${partnerData.english_test.speaking}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span style="font-weight: 600; color: #6c757d; font-size: 0.8em;">OVERALL:</span><br>
-                        <span style="color: #212529; font-weight: 500;">${partnerData.english_test.overall}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span style="font-weight: 600; color: #6c757d; font-size: 0.8em;">TEST DATE:</span><br>
-                        <span style="color: #212529; font-weight: 500;">${partnerData.english_test.test_date}</span>
-                    </div>
-                </div>
-            </div>
-        `;
+        document.getElementById('partner_test_type').value = partnerData.english_test.test_type || 'Not set';
+        document.getElementById('partner_test_date').value = partnerData.english_test.test_date || 'Not set';
+        document.getElementById('partner_listening').value = partnerData.english_test.listening || 'Not set';
+        document.getElementById('partner_reading').value = partnerData.english_test.reading || 'Not set';
+        document.getElementById('partner_writing').value = partnerData.english_test.writing || 'Not set';
+        document.getElementById('partner_speaking').value = partnerData.english_test.speaking || 'Not set';
+        document.getElementById('partner_overall').value = partnerData.english_test.overall || 'Not set';
+    } else {
+        document.getElementById('partner_test_type').value = 'Not set';
+        document.getElementById('partner_test_date').value = 'Not set';
+        document.getElementById('partner_listening').value = 'Not set';
+        document.getElementById('partner_reading').value = 'Not set';
+        document.getElementById('partner_writing').value = 'Not set';
+        document.getElementById('partner_speaking').value = 'Not set';
+        document.getElementById('partner_overall').value = 'Not set';
     }
-
-    // Add Skills Assessment section if available
+    
+    // Populate skills assessment
     if (partnerData.skills_assessment) {
-        html += `
-            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #dee2e6;">
-                <h6 style="color: #495057; margin-bottom: 10px; font-weight: 600;">
-                    <i class="fas fa-briefcase"></i> Skills Assessment
-                </h6>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
-                    <div class="summary-item">
-                        <span style="font-weight: 600; color: #6c757d; font-size: 0.8em;">HAS ASSESSMENT:</span><br>
-                        <span style="color: #212529; font-weight: 500;">${partnerData.skills_assessment.has_assessment}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span style="font-weight: 600; color: #6c757d; font-size: 0.8em;">OCCUPATION:</span><br>
-                        <span style="color: #212529; font-weight: 500;">${partnerData.skills_assessment.occupation}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span style="font-weight: 600; color: #6c757d; font-size: 0.8em;">ASSESSMENT DATE:</span><br>
-                        <span style="color: #212529; font-weight: 500;">${partnerData.skills_assessment.assessment_date}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span style="font-weight: 600; color: #6c757d; font-size: 0.8em;">STATUS:</span><br>
-                        <span style="color: #212529; font-weight: 500;">${partnerData.skills_assessment.status}</span>
-                    </div>
-                </div>
-            </div>
-        `;
+        document.getElementById('partner_has_assessment').value = partnerData.skills_assessment.has_assessment || 'Not set';
+        document.getElementById('partner_occupation').value = partnerData.skills_assessment.occupation || 'Not set';
+        document.getElementById('partner_assessment_date').value = partnerData.skills_assessment.assessment_date || 'Not set';
+        document.getElementById('partner_assessment_status').value = partnerData.skills_assessment.status || 'Not set';
+    } else {
+        document.getElementById('partner_has_assessment').value = 'No';
+        document.getElementById('partner_occupation').value = 'Not set';
+        document.getElementById('partner_assessment_date').value = 'Not set';
+        document.getElementById('partner_assessment_status').value = 'Not set';
     }
-
-    html += '</div>';
-
-    document.getElementById('partnerDataDisplay').innerHTML = html;
 }
 
-// Add event listener for partner selection dropdown
-document.addEventListener('DOMContentLoaded', function() {
-    const partnerSelect = document.querySelector('select[name="selected_partner_id"]');
-    if (partnerSelect) {
-        partnerSelect.addEventListener('change', function() {
-            fetchPartnerEoiData(this.value);
-        });
-        
-        // If a partner is already selected, load their data
-        if (partnerSelect.value) {
-            fetchPartnerEoiData(partnerSelect.value);
-        }
-    }
-});
+// Partner selection event listener is now attached in toggleEditMode('partnerEoiInfo')
+// This ensures the dropdown is visible before attaching the listener
 
 /**
  * Save EOI information and update summary
