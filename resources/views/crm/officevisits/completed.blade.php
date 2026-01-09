@@ -292,8 +292,7 @@ body, html {
 														$client = \App\Models\Admin::where('role', '=', '7')->where('id', '=', $list->client_id)->first();
 														?>
 										    			<a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$client->id)))}}">{{@$client->first_name}} {{@$client->last_name}}</a>
-										    
-														<br>{{--@$client->email--}}
+										    			<br>{{@$client->email}}
 													</td>
 													<td style="white-space: initial;">{{$list->contact_type}}</td>
 													<td style="white-space: initial;">{{$list->visit_purpose}}</td>
