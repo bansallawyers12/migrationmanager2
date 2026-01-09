@@ -3728,7 +3728,7 @@ window.savePartnerEoiInfo = function() {
 function fetchPartnerEoiData(partnerId) {
     const formFields = document.getElementById('partnerEoiFormFields');
     
-    if (!partnerId) {
+    if (!partnerId || partnerId === '') {
         // Hide form fields when no partner is selected
         if (formFields) {
             formFields.style.display = 'none';
@@ -3757,23 +3757,40 @@ function fetchPartnerEoiData(partnerId) {
             'Content-Type': 'application/json'
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
             displayPartnerEoiData(data.data);
         } else {
-            // Show error and clear fields
-            alert('Error: ' + data.message);
+            // Show error message
             if (formFields) {
-                formFields.style.display = 'none';
+                formFields.innerHTML = `
+                    <div class="alert alert-danger" style="margin-top: 20px;">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        <strong>Error Loading Partner Data</strong>
+                        <p>${data.message}</p>
+                        <p><small>The partner may not have a complete profile or required data for EOI calculation.</small></p>
+                    </div>
+                `;
             }
         }
     })
     .catch(error => {
         console.error('Error fetching partner EOI data:', error);
-        alert('Error loading partner data. Please try again.');
         if (formFields) {
-            formFields.style.display = 'none';
+            formFields.innerHTML = `
+                <div class="alert alert-danger" style="margin-top: 20px;">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    <strong>Error Loading Partner Data</strong>
+                    <p>Unable to fetch partner information. Please try again.</p>
+                    <p><small>Error: ${error.message}</small></p>
+                </div>
+            `;
         }
     });
 }

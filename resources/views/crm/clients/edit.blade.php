@@ -1385,14 +1385,18 @@
                         <!-- Summary View -->
                         <div id="partnerEoiInfoSummary" class="summary-view">
                             @php
-                                $activePartners = $clientPartners->whereIn('relationship_type', ['Husband', 'Wife', 'Defacto'])->where('related_client_id', '!=', null);
+                                // Get all partners (Husband, Wife, Defacto) regardless of related_client_id
+                                $allPartners = $clientPartners->whereIn('relationship_type', ['Husband', 'Wife', 'Defacto']);
+                                // Get partners with linked client profiles (for EOI data fetching)
+                                $activePartners = $allPartners->where('related_client_id', '!=', null);
                                 $partnerSpouseDetail = $fetchedData->partner;
                                 // Normalize marital status to handle both "Defacto" and "De Facto"
                                 $isMarriedOrDefacto = $fetchedData->marital_status && in_array($fetchedData->marital_status, ['Married', 'De Facto', 'Defacto']);
                             @endphp
                             
                             @if($isMarriedOrDefacto)
-                                @if($activePartners->count() > 0 && $partnerSpouseDetail)
+                                @if($allPartners->count() > 0)
+                                    @if($activePartners->count() > 0 && $partnerSpouseDetail)
                                     <div class="summary-grid">
                                         <div class="summary-item">
                                             <span class="summary-label">Partner Selected:</span>
@@ -1447,10 +1451,35 @@
                                             </div>
                                         @endif
                                     </div>
+                                    @else
+                                        <div class="alert alert-warning">
+                                            <i class="fas fa-exclamation-triangle"></i> 
+                                            <strong>Partner EOI Data Not Available</strong>
+                                            <br><br>
+                                            @if($activePartners->count() == 0 && $allPartners->count() > 0)
+                                                <p>You have added a partner, but they are not linked to an existing client profile.</p>
+                                                <p><strong>Current partner(s):</strong></p>
+                                                <ul style="margin-left: 20px;">
+                                                    @foreach($allPartners as $partner)
+                                                        <li>{{ $partner->details ?: $partner->relationship_type }}</li>
+                                                    @endforeach
+                                                </ul>
+                                                <p><strong>To use partner data for EOI calculation:</strong></p>
+                                                <ol style="margin-left: 20px;">
+                                                    <li>Make sure the partner exists as a separate client in your system</li>
+                                                    <li>Click the <strong>Edit</strong> button on the "Partner" section above</li>
+                                                    <li>Link the partner to their existing client profile</li>
+                                                    <li>Save and return to this section</li>
+                                                </ol>
+                                            @else
+                                                <p>No active partner selected for EOI calculation. Please add a partner in the Partner section above and ensure they are linked to an existing client profile.</p>
+                                            @endif
+                                        </div>
+                                    @endif
                                 @else
                                     <div class="alert alert-info">
                                         <i class="fas fa-info-circle"></i> 
-                                        No active partner selected for EOI calculation. Please add a partner in the Partner section above and ensure they are linked to an existing client profile.
+                                        No partner added yet. Please add a partner in the Partner section above.
                                     </div>
                                 @endif
                             @else
@@ -1474,18 +1503,29 @@
                                         <label for="selectedPartner">Select Partner for EOI Calculation</label>
                                         <select id="selectedPartner" name="selected_partner_id">
                                             <option value="">Select Partner</option>
-                                            @foreach($activePartners as $partner)
-                                                <option value="{{ $partner->related_client_id }}" 
-                                                    {{ $partnerSpouseDetail && $partnerSpouseDetail->related_client_id == $partner->related_client_id ? 'selected' : '' }}>
-                                                    @if($partner->relatedClient)
-                                                        {{ $partner->relatedClient->first_name }} {{ $partner->relatedClient->last_name }} ({{ $partner->relatedClient->client_id }})
-                                                    @else
-                                                        {{ $partner->details }}
-                                                    @endif
-                                                </option>
+                                            @foreach($allPartners as $partner)
+                                                @if($partner->related_client_id)
+                                                    <option value="{{ $partner->related_client_id }}" 
+                                                        {{ $partnerSpouseDetail && $partnerSpouseDetail->related_client_id == $partner->related_client_id ? 'selected' : '' }}>
+                                                        @if($partner->relatedClient)
+                                                            {{ $partner->relatedClient->first_name }} {{ $partner->relatedClient->last_name }} ({{ $partner->relatedClient->client_id }})
+                                                        @else
+                                                            {{ $partner->details }}
+                                                        @endif
+                                                    </option>
+                                                @else
+                                                    <option value="" disabled style="color: #999;">
+                                                        {{ $partner->details ?: 'Partner' }} - ⚠️ Not linked to client profile
+                                                    </option>
+                                                @endif
                                             @endforeach
                                         </select>
-                                        <small class="form-text text-muted">Select which partner to use for EOI points calculation. Data will be auto-populated from their profile.</small>
+                                        <small class="form-text text-muted">
+                                            Select which partner to use for EOI points calculation. Data will be auto-populated from their profile.
+                                            @if($allPartners->where('related_client_id', null)->count() > 0)
+                                                <br><strong style="color: #dc3545;">⚠️ Warning:</strong> Some partners are not linked to client profiles and cannot be selected. Please edit the partner record and link them to an existing client.
+                                            @endif
+                                        </small>
                                     </div>
                                 </div>
                                 
