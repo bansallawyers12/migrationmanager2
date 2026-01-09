@@ -9022,66 +9022,75 @@ class ClientsController extends Controller
      */
     public function personalfollowup(Request $request)
     {
-        $requestData = $request->all();
-        
-        // Decode the client ID - handle empty/null for personal tasks
-        $clientId = null;
-        $encodedClientId = null;
-        
-        if (!empty($requestData['client_id'])) {
-            // Extract just the encoded part (format: "ENCODED/Matter/NO" or "ENCODED/Client")
-            $clientIdParts = explode('/', $requestData['client_id']);
-            $encodedClientId = $clientIdParts[0];
-            $clientId = $this->decodeString($encodedClientId);
-        }
-
-        // Generate unique task ID
-        $taskUniqueId = 'group_' . uniqid('', true);
-
-        // Handle single or multiple assignees
-        $assignees = is_array($requestData['rem_cat']) ? $requestData['rem_cat'] : [$requestData['rem_cat']];
-
-        // Loop through each assignee and create a task
-        foreach ($assignees as $assigneeId) {
-            // Create a new task note for each assignee
-            $task = new \App\Models\Note;
-            $task->client_id = $clientId;
-            $task->user_id = Auth::user()->id;
-            $task->description = @$requestData['description'];
-            $task->unique_group_id = $taskUniqueId;
-            $task->folloup = 1;
-            $task->type = 'client';
-            $task->task_group = @$requestData['task_group'];
-            $task->assigned_to = $assigneeId;
-            $task->status = '0'; // Not completed
+        try {
+            $requestData = $request->all();
             
-            if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
-                $task->followup_date = @$requestData['followup_datetime'];
+            // Decode the client ID - handle empty/null for personal tasks
+            $clientId = null;
+            $encodedClientId = null;
+            
+            if (!empty($requestData['client_id'])) {
+                // Extract just the encoded part (format: "ENCODED/Matter/NO" or "ENCODED/Client")
+                $clientIdParts = explode('/', $requestData['client_id']);
+                $encodedClientId = $clientIdParts[0];
+                $clientId = $this->decodeString($encodedClientId);
             }
 
-            $saved = $task->save();
+            // Generate unique task ID
+            $taskUniqueId = 'group_' . uniqid('', true);
 
-            if ($saved) {
-                // Create a notification for the assignee
-                $notification = new \App\Models\Notification;
-                $notification->sender_id = Auth::user()->id;
-                $notification->receiver_id = $assigneeId;
-                $notification->module_id = $clientId;
+            // Handle single or multiple assignees
+            $assignees = is_array($requestData['rem_cat']) ? $requestData['rem_cat'] : [$requestData['rem_cat']];
+
+            // Loop through each assignee and create a task
+            foreach ($assignees as $assigneeId) {
+                // Create a new task note for each assignee
+                $task = new \App\Models\Note;
+                $task->client_id = $clientId;
+                $task->user_id = Auth::user()->id;
+                $task->description = @$requestData['description'];
+                $task->unique_group_id = $taskUniqueId;
+                $task->folloup = 1;
+                $task->type = 'client';
+                $task->task_group = @$requestData['task_group'];
+                $task->assigned_to = $assigneeId;
+                $task->status = '0'; // Not completed
+                $task->pin = 0; // Required field - default to not pinned
                 
-                // Set URL based on whether client exists
-                if (!empty($requestData['client_id'])) {
-                    $notification->url = \URL::to('/clients/detail/' . $requestData['client_id']);
-                } else {
-                    $notification->url = \URL::to('/action');
+                if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
+                    $task->followup_date = @$requestData['followup_datetime'];
                 }
-                
-                $notification->message = 'assigned you a task';
-                $notification->seen = 0;
-                $notification->save();
-            }
-        }
 
-        return response()->json(['success' => true, 'message' => 'Task created successfully']);
+                $saved = $task->save();
+
+                if ($saved) {
+                    // Create a notification for the assignee
+                    $notification = new \App\Models\Notification;
+                    $notification->sender_id = Auth::user()->id;
+                    $notification->receiver_id = $assigneeId;
+                    $notification->module_id = $clientId;
+                    
+                    // Set URL based on whether client exists
+                    if (!empty($requestData['client_id'])) {
+                        $notification->url = \URL::to('/clients/detail/' . $requestData['client_id']);
+                    } else {
+                        $notification->url = \URL::to('/action');
+                    }
+                    
+                    $notification->message = 'assigned you a task';
+                    $notification->seen = 0;
+                    $notification->save();
+                }
+            }
+
+            return response()->json(['success' => true, 'message' => 'Task created successfully']);
+        } catch (\Exception $e) {
+            \Log::error('Error in personalfollowup: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
+            return response()->json(['success' => false, 'message' => 'Error creating task: ' . $e->getMessage()], 500);
+        }
     }
 
     /**
@@ -9148,58 +9157,67 @@ class ClientsController extends Controller
      */
     public function reassignfollowupstore(Request $request)
     {
-        $requestData = $request->all();
-        
-        // Decode the client ID - handle empty/null for personal tasks
-        $clientId = null;
-        if (!empty($requestData['client_id'])) {
-            // Extract just the encoded part (format: "ENCODED/Matter/NO" or "ENCODED/Client")
-            $clientIdParts = explode('/', $requestData['client_id']);
-            $encodedClientId = $clientIdParts[0];
-            $clientId = $this->decodeString($encodedClientId);
-        }
-
-        // Generate unique task ID
-        $taskUniqueId = 'group_' . uniqid('', true);
-
-        // Create a new task
-        $task = new \App\Models\Note;
-        $task->client_id = $clientId;
-        $task->user_id = Auth::user()->id;
-        $task->description = @$requestData['description'];
-        $task->unique_group_id = $taskUniqueId;
-        $task->folloup = 1;
-        $task->type = 'client';
-        $task->task_group = @$requestData['task_group'];
-        $task->assigned_to = @$requestData['rem_cat'];
-        $task->status = '0'; // Not completed
-        
-        if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
-            $task->followup_date = @$requestData['followup_datetime'];
-        }
-
-        $saved = $task->save();
-
-        if ($saved) {
-            // Create a notification for the assignee
-            $notification = new \App\Models\Notification;
-            $notification->sender_id = Auth::user()->id;
-            $notification->receiver_id = $task->assigned_to;
-            $notification->module_id = $clientId;
+        try {
+            $requestData = $request->all();
             
-            // Set URL based on whether client exists
+            // Decode the client ID - handle empty/null for personal tasks
+            $clientId = null;
             if (!empty($requestData['client_id'])) {
-                $notification->url = \URL::to('/clients/detail/' . $requestData['client_id']);
-            } else {
-                $notification->url = \URL::to('/action');
+                // Extract just the encoded part (format: "ENCODED/Matter/NO" or "ENCODED/Client")
+                $clientIdParts = explode('/', $requestData['client_id']);
+                $encodedClientId = $clientIdParts[0];
+                $clientId = $this->decodeString($encodedClientId);
             }
-            
-            $notification->message = 'assigned you a task';
-            $notification->seen = 0;
-            $notification->save();
-        }
 
-        return response()->json(['success' => true, 'message' => 'Task created successfully']);
+            // Generate unique task ID
+            $taskUniqueId = 'group_' . uniqid('', true);
+
+            // Create a new task
+            $task = new \App\Models\Note;
+            $task->client_id = $clientId;
+            $task->user_id = Auth::user()->id;
+            $task->description = @$requestData['description'];
+            $task->unique_group_id = $taskUniqueId;
+            $task->folloup = 1;
+            $task->type = 'client';
+            $task->task_group = @$requestData['task_group'];
+            $task->assigned_to = @$requestData['rem_cat'];
+            $task->status = '0'; // Not completed
+            $task->pin = 0; // Required field - default to not pinned
+            
+            if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
+                $task->followup_date = @$requestData['followup_datetime'];
+            }
+
+            $saved = $task->save();
+
+            if ($saved) {
+                // Create a notification for the assignee
+                $notification = new \App\Models\Notification;
+                $notification->sender_id = Auth::user()->id;
+                $notification->receiver_id = $task->assigned_to;
+                $notification->module_id = $clientId;
+                
+                // Set URL based on whether client exists
+                if (!empty($requestData['client_id'])) {
+                    $notification->url = \URL::to('/clients/detail/' . $requestData['client_id']);
+                } else {
+                    $notification->url = \URL::to('/action');
+                }
+                
+                $notification->message = 'assigned you a task';
+                $notification->seen = 0;
+                $notification->save();
+            }
+
+            return response()->json(['success' => true, 'message' => 'Task created successfully']);
+        } catch (\Exception $e) {
+            \Log::error('Error in reassignfollowupstore: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
+            return response()->json(['success' => false, 'message' => 'Error creating task: ' . $e->getMessage()], 500);
+        }
     }
 
     /**

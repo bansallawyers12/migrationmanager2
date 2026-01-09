@@ -3013,8 +3013,8 @@ $(document).ready(function() {
 
             }
 
-            // Initialize calculation handlers for the subtab form
-            initializeCostAssignmentCalculations();
+            // Note: initializeCostAssignmentCalculations() will be called after data loads
+            // in getCostAssignmentMigrationAgentDetail() success callback
 
         }
 
@@ -7906,12 +7906,8 @@ Bansal Immigration`;
                 }
             }
 
-            // Initialize calculation handlers
-            setTimeout(function() {
-                if (typeof window.initializeCostAssignmentCalculations === 'function') {
-                    window.initializeCostAssignmentCalculations();
-                }
-            }, 200);
+            // Note: initializeCostAssignmentCalculations() will be called after data loads
+            // in getCostAssignmentMigrationAgentDetail() success callback
 
         });
 
@@ -7980,7 +7976,7 @@ Bansal Immigration`;
 
                         if(obj.cost_assignment_matterInfo){
 
-                            $('#surcharge').val(obj.cost_assignment_matterInfo.surcharge);
+                            $('#surcharge').val(obj.cost_assignment_matterInfo.surcharge).trigger('change');
 
                             $('#Dept_Base_Application_Charge').val(obj.cost_assignment_matterInfo.Dept_Base_Application_Charge);
 
@@ -8008,7 +8004,7 @@ Bansal Immigration`;
 
                             $('#Dept_Subsequent_Temp_Application_Charge').val(obj.cost_assignment_matterInfo.Dept_Subsequent_Temp_Application_Charge);
 
-                            $('#Dept_Subsequent_Temp_Application_Charge_no_of_person').val(obj.cost_assignment_matterInfo.Dept_Additional_Applicant_Charge_Under_18_no_of_person);
+                            $('#Dept_Subsequent_Temp_Application_Charge_no_of_person').val(obj.cost_assignment_matterInfo.Dept_Subsequent_Temp_Application_Charge_no_of_person);
 
 
 
@@ -8050,7 +8046,7 @@ Bansal Immigration`;
 
                         } else {
 
-                            $('#surcharge').val(obj.matterInfo.surcharge);
+                            $('#surcharge').val(obj.matterInfo.surcharge).trigger('change');
 
                             $('#Dept_Base_Application_Charge').val(obj.matterInfo.Dept_Base_Application_Charge);
 
@@ -8090,8 +8086,11 @@ Bansal Immigration`;
 
                         }
 
-                        // Trigger calculations after data is loaded
+                        // Initialize calculation handlers and trigger calculations after data is loaded
                         setTimeout(function() {
+                            if (typeof window.initializeCostAssignmentCalculations === 'function') {
+                                window.initializeCostAssignmentCalculations();
+                            }
                             if (typeof window.calculateTotalBlockFee === 'function') {
                                 window.calculateTotalBlockFee();
                             }
