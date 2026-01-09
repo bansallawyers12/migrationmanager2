@@ -10078,9 +10078,17 @@ Bansal Immigration`;
 
             $('.popuploader').show();
 
+            // Determine the correct URL based on delhref
+            var deleteUrl;
+            if(delhref == 'deletenote'){
+                deleteUrl = window.ClientDetailConfig.urls.deleteNote;
+            } else {
+                deleteUrl = window.ClientDetailConfig.urls.admin + '/documents/delete';
+            }
+
             $.ajax({
 
-                url: window.ClientDetailConfig.urls.admin + '/documents/delete',
+                url: deleteUrl,
 
                 type:'GET',
 
@@ -10188,6 +10196,12 @@ Bansal Immigration`;
                             $('.checklistuploadcount').html(res.applicationuploadcount);
 
                             $('.'+res.type+'_checklists').html(res.checklistdata);
+
+                        } else if(delhref == 'deletenote'){
+
+                            getallnotes();
+
+                            
 
                         } else {
 
