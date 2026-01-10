@@ -955,17 +955,55 @@
                 const fallbackText = document.getElementById('fallback-signature').value.trim();
                 if (fallbackText) {
                     const canvas = document.createElement('canvas');
-                    // Keep original canvas size
-                    canvas.width = 400;
-                    canvas.height = 200;
                     const ctx = canvas.getContext('2d');
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    ctx.fillStyle = 'black';
-                    // Increased font size to 110px for much bigger signature
-                    ctx.font = '110px "Brush Script MT", "Lucida Handwriting", cursive, sans-serif';
+                    
+                    // Set font properties first to measure text
+                    const baseFontSize = 110;
+                    const fontFamily = '"Brush Script MT", "Lucida Handwriting", cursive, sans-serif';
+                    ctx.font = `${baseFontSize}px ${fontFamily}`;
                     ctx.textBaseline = 'middle';
                     ctx.textAlign = 'center';
+                    ctx.fillStyle = 'black';
+                    
+                    // Measure text width to determine appropriate canvas size
+                    const textMetrics = ctx.measureText(fallbackText);
+                    const textWidth = textMetrics.width;
+                    const textHeight = baseFontSize;
+                    
+                    // Calculate canvas dimensions with padding
+                    // Add 40px padding on each side (80px total) to prevent clipping
+                    const padding = 80;
+                    const minWidth = 400;
+                    const minHeight = 200;
+                    
+                    // Calculate canvas width - ensure it fits the text with padding
+                    let canvasWidth = Math.max(minWidth, textWidth + padding);
+                    let canvasHeight = Math.max(minHeight, textHeight + 100); // Extra vertical padding
+                    
+                    // For very long signatures, scale down font if needed
+                    let fontSize = baseFontSize;
+                    if (textWidth > 800) {
+                        // Scale font size proportionally for very long text
+                        const maxWidth = 1000; // Maximum reasonable canvas width
+                        fontSize = Math.floor((baseFontSize * (maxWidth - padding)) / textWidth);
+                        // Re-measure with new font size
+                        ctx.font = `${fontSize}px ${fontFamily}`;
+                        const newTextMetrics = ctx.measureText(fallbackText);
+                        canvasWidth = Math.max(minWidth, Math.min(maxWidth, newTextMetrics.width + padding));
+                    }
+                    
+                    // Set final canvas dimensions
+                    canvas.width = canvasWidth;
+                    canvas.height = canvasHeight;
+                    
+                    // Clear and redraw with correct font
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.font = `${fontSize}px ${fontFamily}`;
+                    ctx.textBaseline = 'middle';
+                    ctx.textAlign = 'center';
+                    ctx.fillStyle = 'black';
                     ctx.fillText(fallbackText, canvas.width / 2, canvas.height / 2);
+                    
                     signatureData = canvas.toDataURL('image/png');
                 } else {
                     alert('Please type your signature first.');
