@@ -14,6 +14,7 @@ use App\Http\Controllers\API\ClientPortalMessageController;
 use App\Http\Controllers\API\ClientPortalPersonalDetailsController;
 use App\Http\Controllers\API\ClientPortalCommonListingController;
 use App\Http\Controllers\API\FCMController;
+use App\Http\Controllers\API\OthersController;
 
 /*
 |--------------------------------------------------------------------------
@@ -189,6 +190,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/fcm/unregister-token', [FCMController::class, 'unregisterToken']);
     Route::post('/fcm/test', [FCMController::class, 'testNotification']);
     Route::post('/fcm/send-message', [FCMController::class, 'sendMessage']);
+    
+    // Blog routes
+    Route::get('/blogs/list', [OthersController::class, 'getBlogList']);
+    Route::get('/blogs/detail/{id}', [OthersController::class, 'getBlogDetail']);
     
 });
 
