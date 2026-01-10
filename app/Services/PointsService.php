@@ -16,11 +16,13 @@ use Illuminate\Support\Facades\Log;
 class PointsService
 {
     // Points thresholds for age brackets
+    // Format: [min_age_inclusive, max_age_exclusive, points]
+    // e.g., [18, 25, 25] means ages 18.0 to 24.999... get 25 points
     const AGE_BRACKETS = [
-        [18, 24, 25],
-        [25, 32, 30],
-        [33, 39, 25],
-        [40, 44, 15],
+        [18, 25, 25],  // 18 to less than 25
+        [25, 33, 30],  // 25 to less than 33
+        [33, 40, 25],  // 33 to less than 40
+        [40, 45, 15],  // 40 to less than 45
     ];
 
     // English level points
@@ -139,8 +141,9 @@ class PointsService
         // Calculate total age in years for points calculation
         $age = $ageYears + ($ageMonths / 12);
         
+        // Check age brackets (upper bound is exclusive)
         foreach (self::AGE_BRACKETS as [$min, $max, $points]) {
-            if ($age >= $min && $age <= $max) {
+            if ($age >= $min && $age < $max) {
                 return [
                     'detail' => "{$ageYears} years {$ageMonths} months",
                     'points' => $points,
@@ -410,18 +413,31 @@ class PointsService
 
     /**
      * Get qualification level for sorting
+     * Higher number = higher qualification level
      */
     protected function getQualificationLevel(string $level): int
     {
         $levels = [
-            'Doctorate' => 4,
-            'PhD' => 4,
-            'Masters' => 3,
-            'Bachelor' => 2,
+            'Doctorate' => 5,
+            'Doctoral' => 5,
+            'PhD' => 5,
+            'Masters' => 4,
+            'Graduate Diploma' => 3,
+            'Graduate Certificate' => 3,
+            'Bachelor Honours' => 3,
+            'Bachelor' => 3,
+            'Associate Degree' => 2,
+            'Advanced Diploma' => 2,
             'Diploma' => 1,
+            'Certificate IV' => 1,   // Same level as Diploma (10 points)
+            'Certificate III' => 1,  // Same level as Diploma (10 points)
             'Trade' => 1,
+            'Certificate II' => 0,   // Below Diploma level (0 points)
+            'Certificate I' => 0,    // Below Diploma level (0 points)
         ];
         
+        // Check in order - longer strings first to avoid false matches
+        // e.g., "Certificate IV" should match before "Certificate I"
         foreach ($levels as $key => $value) {
             if (stripos($level, $key) !== false) {
                 return $value;
@@ -433,19 +449,41 @@ class PointsService
 
     /**
      * Get points for qualification level
+     * Based on Australian skilled migration points test
      */
     protected function getQualificationPoints(string $level): int
     {
-        if (stripos($level, 'Doctorate') !== false || stripos($level, 'PhD') !== false) {
+        // Highest level qualifications (20 points)
+        if (stripos($level, 'Doctorate') !== false || 
+            stripos($level, 'Doctoral') !== false ||
+            stripos($level, 'PhD') !== false) {
             return 20;
         }
         
-        if (stripos($level, 'Bachelor') !== false || stripos($level, 'Masters') !== false) {
+        // Bachelor/Masters level (15 points)
+        if (stripos($level, 'Bachelor') !== false || 
+            stripos($level, 'Masters') !== false) {
             return 15;
         }
         
-        if (stripos($level, 'Diploma') !== false || stripos($level, 'Trade') !== false) {
+        // Diploma/Trade/Certificate III & IV level (10 points)
+        // IMPORTANT: Check Certificate IV and III BEFORE Certificate I and II
+        // to avoid false matches (e.g., "Certificate IV" contains "Certificate I")
+        if (stripos($level, 'Certificate IV') !== false || 
+            stripos($level, 'Certificate III') !== false ||
+            stripos($level, 'Diploma') !== false || 
+            stripos($level, 'Trade') !== false ||
+            stripos($level, 'Advanced Diploma') !== false ||
+            stripos($level, 'Associate Degree') !== false ||
+            stripos($level, 'Graduate Certificate') !== false ||
+            stripos($level, 'Graduate Diploma') !== false) {
             return 10;
+        }
+        
+        // Certificate I and II (0 points)
+        if (stripos($level, 'Certificate I') !== false || 
+            stripos($level, 'Certificate II') !== false) {
+            return 0;
         }
         
         return 0;
@@ -586,20 +624,32 @@ class PointsService
         // Partner with skills assessment (use actual field name)
         $hasSkills = ($partner->spouse_has_skill_assessment ?? 0) == 1;
         
-        // Partner English level - derive from scores if has test
+        // Partner English level - calculate proficiency level using EnglishProficiencyService
         $hasEnglish = false;
         if (($partner->spouse_has_english_score ?? 0) == 1) {
-            // Check if scores meet competent threshold (e.g., IELTS 6.0 or PTE 50)
-            $overallScore = $partner->spouse_overall_score ?? 0;
+            // Use EnglishProficiencyService to properly calculate proficiency level
+            // This checks all 4 components (Listening, Reading, Writing, Speaking)
+            $englishService = new \App\Services\EnglishProficiencyService();
             
-            // Simplified check - in production, should check each component
-            if ($partner->spouse_test_type === 'IELTS') {
-                $hasEnglish = $overallScore >= 6.0; // Competent English
-            } elseif ($partner->spouse_test_type === 'PTE') {
-                $hasEnglish = $overallScore >= 50; // Competent English
-            } elseif ($partner->spouse_test_type === 'TOEFL iBT') {
-                $hasEnglish = $overallScore >= 60; // Competent English
-            }
+            $scores = [
+                'listening' => $partner->spouse_listening_score ?? 0,
+                'reading' => $partner->spouse_reading_score ?? 0,
+                'writing' => $partner->spouse_writing_score ?? 0,
+                'speaking' => $partner->spouse_speaking_score ?? 0,
+                'overall' => $partner->spouse_overall_score ?? 0,
+            ];
+            
+            $proficiency = $englishService->calculateProficiency(
+                $partner->spouse_test_type ?? '',
+                $scores,
+                $partner->spouse_test_date ?? null
+            );
+            
+            // Check if proficiency level is at least "Competent English"
+            // Valid levels for partner skills: Competent, Proficient, Superior
+            // Vocational and below do not qualify
+            $level = strtolower($proficiency['level'] ?? '');
+            $hasEnglish = in_array($level, ['competent english', 'proficient english', 'superior english']);
         }
         
         // Get partner age if DOB exists
@@ -752,8 +802,9 @@ class PointsService
      */
     protected function getAgePoints(int $age): int
     {
+        // Check age brackets (upper bound is exclusive)
         foreach (self::AGE_BRACKETS as [$min, $max, $points]) {
-            if ($age >= $min && $age <= $max) {
+            if ($age >= $min && $age < $max) {
                 return $points;
             }
         }

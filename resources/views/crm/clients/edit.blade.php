@@ -1436,8 +1436,48 @@
                                                 <span class="summary-value">{{ $partnerSpouseDetail->spouse_test_type ?: 'Not set' }}</span>
                                             </div>
                                             <div class="summary-item">
-                                                <span class="summary-label">Overall Score:</span>
-                                                <span class="summary-value">{{ $partnerSpouseDetail->spouse_overall_score ?: 'Not set' }}</span>
+                                                <span class="summary-label">Proficiency Level:</span>
+                                                <span class="summary-value">
+                                                    @php
+                                                        // Calculate proficiency level for partner
+                                                        $englishService = new \App\Services\EnglishProficiencyService();
+                                                        $partnerScores = [
+                                                            'listening' => $partnerSpouseDetail->spouse_listening_score ?? 0,
+                                                            'reading' => $partnerSpouseDetail->spouse_reading_score ?? 0,
+                                                            'writing' => $partnerSpouseDetail->spouse_writing_score ?? 0,
+                                                            'speaking' => $partnerSpouseDetail->spouse_speaking_score ?? 0,
+                                                            'overall' => $partnerSpouseDetail->spouse_overall_score ?? 0,
+                                                        ];
+                                                        $partnerProficiency = $englishService->calculateProficiency(
+                                                            $partnerSpouseDetail->spouse_test_type ?? '',
+                                                            $partnerScores,
+                                                            $partnerSpouseDetail->spouse_test_date ?? null
+                                                        );
+                                                        $proficiencyLevel = $partnerProficiency['level'] ?? 'Not calculated';
+                                                        
+                                                        // Color coding based on level
+                                                        $levelColor = '#6c757d'; // default gray
+                                                        if (str_contains(strtolower($proficiencyLevel), 'superior')) {
+                                                            $levelColor = '#28a745'; // green
+                                                        } elseif (str_contains(strtolower($proficiencyLevel), 'proficient')) {
+                                                            $levelColor = '#007bff'; // blue
+                                                        } elseif (str_contains(strtolower($proficiencyLevel), 'competent')) {
+                                                            $levelColor = '#17a2b8'; // cyan
+                                                        } elseif (str_contains(strtolower($proficiencyLevel), 'vocational')) {
+                                                            $levelColor = '#ffc107'; // yellow
+                                                        } elseif (str_contains(strtolower($proficiencyLevel), 'functional')) {
+                                                            $levelColor = '#fd7e14'; // orange
+                                                        } elseif (str_contains(strtolower($proficiencyLevel), 'below')) {
+                                                            $levelColor = '#dc3545'; // red
+                                                        }
+                                                    @endphp
+                                                    <span style="color: {{ $levelColor }}; font-weight: bold;">
+                                                        {{ $proficiencyLevel }}
+                                                    </span>
+                                                    <small style="color: #6c757d; margin-left: 10px;">
+                                                        (Overall: {{ $partnerSpouseDetail->spouse_overall_score ?: 'N/A' }})
+                                                    </small>
+                                                </span>
                                             </div>
                                         @endif
                                         <div class="summary-item">

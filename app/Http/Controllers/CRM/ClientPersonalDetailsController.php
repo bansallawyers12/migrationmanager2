@@ -1467,6 +1467,37 @@ class ClientPersonalDetailsController extends Controller
         foreach ($requestData['delete_partner_ids'] as $partnerId) {
             $partner = ClientPartner::find($partnerId);
             if ($partner && $partner->client_id == $obj->id) {
+                // Check if this partner is used for EOI calculation
+                // Match by related_client_id in client_spouse_details
+                $spouseDetail = ClientSpouseDetail::where('client_id', $obj->id)
+                    ->where('related_client_id', $partner->related_client_id)
+                    ->first();
+                
+                if ($spouseDetail) {
+                    // Clear EOI data since partner is being deleted
+                    $spouseDetail->delete();
+                    
+                    // Clear points cache to recalculate without partner
+                    if (class_exists('\App\Services\PointsService')) {
+                        $pointsService = new \App\Services\PointsService();
+                        $pointsService->clearCache($obj->id);
+                    }
+                    
+                    \Log::info('Cleared partner EOI data for deleted partner', [
+                        'partner_id' => $partnerId,
+                        'related_client_id' => $partner->related_client_id,
+                        'client_id' => $obj->id
+                    ]);
+                    
+                    // Log activity for audit trail
+                    $this->logClientActivity(
+                        $obj->id,
+                        'cleared partner EOI information',
+                        "Partner removed from EOI calculation (partner deleted from family section)",
+                        'activity'
+                    );
+                }
+                
                 // Delete reciprocal relationship if exists
                 if ($partner->related_client_id) {
                     ClientPartner::where('client_id', $partner->related_client_id)
@@ -1474,6 +1505,8 @@ class ClientPersonalDetailsController extends Controller
                         ->delete();
                     \Log::info('Deleted reciprocal relationship for partner:', ['partner_id' => $partnerId, 'related_client_id' => $partner->related_client_id]);
                 }
+                
+                // Delete the partner record
                 $partner->delete();
                 \Log::info('Deleted partner:', ['partner_id' => $partnerId]);
             } else {
@@ -3995,6 +4028,37 @@ class ClientPersonalDetailsController extends Controller
             }
 
             $spouseDetail->save();
+
+            // Also create/update ClientPartner record to keep both tables in sync
+            // This ensures the summary view displays correctly
+            $partnerRelationship = ClientPartner::where('client_id', $client->id)
+                ->where('related_client_id', $selectedPartnerId)
+                ->first();
+
+            if (!$partnerRelationship) {
+                // Determine relationship type from client's marital status
+                $relationshipType = 'Partner'; // Default
+                if ($client->marital_status === 'Married') {
+                    // Determine if Husband or Wife based on client's gender if available
+                    $relationshipType = 'Partner'; // Use generic Partner for married
+                } elseif (in_array($client->marital_status, ['De Facto', 'Defacto'])) {
+                    $relationshipType = 'Defacto';
+                }
+                
+                // Create new ClientPartner record
+                ClientPartner::create([
+                    'client_id' => $client->id,
+                    'related_client_id' => $selectedPartnerId,
+                    'relationship_type' => $relationshipType,
+                    'details' => $partnerClient->first_name . ' ' . $partnerClient->last_name,
+                ]);
+                
+                \Log::info('Created ClientPartner record for EOI synchronization', [
+                    'client_id' => $client->id,
+                    'partner_id' => $selectedPartnerId,
+                    'relationship_type' => $relationshipType
+                ]);
+            }
 
             // Clear points cache when partner EOI data changes
             if (class_exists('\App\Services\PointsService')) {
