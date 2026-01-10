@@ -27,7 +27,6 @@ use App\Models\ClientRelationship;
 use App\Models\ClientEoiReference;
 use App\Models\ClientMatter;
 use App\Models\ActivitiesLog;
-use App\Models\ClientPartner;
 use Illuminate\Support\Facades\Log;
 use App\Traits\LogsClientActivity;
 use Auth;
@@ -1465,7 +1464,7 @@ class ClientPersonalDetailsController extends Controller
     if (isset($requestData['delete_partner_ids']) && is_array($requestData['delete_partner_ids'])) {
         \Log::info('Deleting partners:', ['delete_partner_ids' => $requestData['delete_partner_ids']]);
         foreach ($requestData['delete_partner_ids'] as $partnerId) {
-            $partner = ClientPartner::find($partnerId);
+            $partner = ClientRelationship::find($partnerId);
             if ($partner && $partner->client_id == $obj->id) {
                 // Check if this partner is used for EOI calculation
                 // Match by related_client_id in client_spouse_details
@@ -1500,7 +1499,7 @@ class ClientPersonalDetailsController extends Controller
                 
                 // Delete reciprocal relationship if exists
                 if ($partner->related_client_id) {
-                    ClientPartner::where('client_id', $partner->related_client_id)
+                    ClientRelationship::where('client_id', $partner->related_client_id)
                         ->where('related_client_id', $obj->id)
                         ->delete();
                     \Log::info('Deleted reciprocal relationship for partner:', ['partner_id' => $partnerId, 'related_client_id' => $partner->related_client_id]);
@@ -1572,7 +1571,7 @@ class ClientPersonalDetailsController extends Controller
 
             if ($partnerId && is_numeric($partnerId)) {
                 // Update existing partner
-                $existingPartner = ClientPartner::find($partnerId);
+                $existingPartner = ClientRelationship::find($partnerId);
                 if ($existingPartner && $existingPartner->client_id == $obj->id) {
                     $existingPartner->update($partnerData);
                     \Log::info('Updated existing partner:', ['partner_id' => $partnerId, 'data' => $partnerData]);
@@ -1588,7 +1587,7 @@ class ClientPersonalDetailsController extends Controller
                             'last_name' => null,
                             'phone' => null,
                         ];
-                        ClientPartner::where('client_id', $existingPartner->related_client_id)
+                        ClientRelationship::where('client_id', $existingPartner->related_client_id)
                             ->where('related_client_id', $obj->id)
                             ->update($reciprocalData);
                         \Log::info('Updated reciprocal relationship for partner:', ['partner_id' => $partnerId, 'reciprocal_data' => $reciprocalData]);
@@ -1598,7 +1597,7 @@ class ClientPersonalDetailsController extends Controller
                 }
             } else {
                 // Create new partner
-                $newPartner = ClientPartner::create($partnerData);
+                $newPartner = ClientRelationship::create($partnerData);
                 \Log::info('Created new partner:', ['new_partner_id' => $newPartner->id, 'data' => $partnerData]);
 
                 // Create reciprocal relationship if related_client_id is set
@@ -1616,7 +1615,7 @@ class ClientPersonalDetailsController extends Controller
                             'last_name' => null,
                             'phone' => null,
                         ];
-                        ClientPartner::create($reciprocalData);
+                        ClientRelationship::create($reciprocalData);
                         \Log::info('Created reciprocal relationship for new partner:', ['new_partner_id' => $newPartner->id, 'reciprocal_data' => $reciprocalData]);
                     } else {
                         \Log::warning('Related client not found for reciprocal relationship:', ['related_client_id' => $relatedClientId]);
@@ -1626,7 +1625,7 @@ class ClientPersonalDetailsController extends Controller
         }
 
         // Debug: Log the number of partners saved
-        $savedPartners = ClientPartner::where('client_id', $obj->id)->count();
+        $savedPartners = ClientRelationship::where('client_id', $obj->id)->count();
         \Log::info('Total partners saved for client:', ['client_id' => $obj->id, 'count' => $savedPartners]);
     } else {
         \Log::info('No partner data provided to process.');
@@ -4031,7 +4030,7 @@ class ClientPersonalDetailsController extends Controller
 
             // Also create/update ClientPartner record to keep both tables in sync
             // This ensures the summary view displays correctly
-            $partnerRelationship = ClientPartner::where('client_id', $client->id)
+            $partnerRelationship = ClientRelationship::where('client_id', $client->id)
                 ->where('related_client_id', $selectedPartnerId)
                 ->first();
 
@@ -4046,7 +4045,7 @@ class ClientPersonalDetailsController extends Controller
                 }
                 
                 // Create new ClientPartner record
-                ClientPartner::create([
+                ClientRelationship::create([
                     'client_id' => $client->id,
                     'related_client_id' => $selectedPartnerId,
                     'relationship_type' => $relationshipType,
