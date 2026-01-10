@@ -362,6 +362,73 @@ class SignatureDashboardController extends Controller
         }
     }
 
+    public function cancelSignature(Request $request, $id)
+    {
+        $document = Document::findOrFail($id);
+        
+        // Check authorization
+        $this->authorize('sendReminder', $document);
+        
+        // Validate request
+        $request->validate([
+            'signer_id' => 'required|integer|exists:signers,id'
+        ]);
+        
+        $signerId = $request->signer_id;
+        $signer = $document->signers()->findOrFail($signerId);
+        
+        // Verify signer belongs to this document
+        if ($signer->document_id !== $document->id) {
+            return back()->with('error', 'Invalid signer for this document.');
+        }
+        
+        // Check if already signed - cannot cancel signed documents
+        if ($signer->status === 'signed') {
+            return back()->with('error', 'Cannot cancel signature. Document has already been signed.');
+        }
+        
+        // Check if already cancelled
+        if ($signer->status === 'cancelled') {
+            return back()->with('info', 'Signature has already been cancelled.');
+        }
+        
+        // Only allow cancellation of pending signatures
+        if ($signer->status !== 'pending') {
+            return back()->with('error', 'Can only cancel pending signatures.');
+        }
+        
+        try {
+            // Update signer status to cancelled
+            $signer->update([
+                'status' => 'cancelled',
+                'cancelled_at' => now()
+            ]);
+            
+            // Create activity log entry
+            \App\Models\DocumentNote::create([
+                'document_id' => $document->id,
+                'created_by' => auth('admin')->id(),
+                'note' => "Signature cancelled for {$signer->name} ({$signer->email})",
+                'action_type' => 'signature_cancelled',
+                'metadata' => [
+                    'signer_id' => $signer->id,
+                    'signer_name' => $signer->name,
+                    'signer_email' => $signer->email,
+                    'cancelled_at' => now()->toIso8601String()
+                ]
+            ]);
+            
+            return back()->with('success', 'Signature cancelled successfully. The signer will no longer be able to sign this document.');
+        } catch (\Exception $e) {
+            \Log::error('Error cancelling signature', [
+                'document_id' => $document->id,
+                'signer_id' => $signerId,
+                'error' => $e->getMessage()
+            ]);
+            return back()->with('error', 'An error occurred while cancelling the signature. Please try again.');
+        }
+    }
+
     public function sendForSignature(Request $request, $id)
     {
         $document = Document::findOrFail($id);

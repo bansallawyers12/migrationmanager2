@@ -69,8 +69,8 @@ class PublicDocumentController extends Controller
                 $signer = $document->signers()->where('token', $token)->first();
             }
 
-            if (!$signer || $signer->status === 'signed') {
-                Log::warning('Invalid signer or already signed', [
+            if (!$signer || $signer->status === 'signed' || $signer->status === 'cancelled') {
+                Log::warning('Invalid signer, already signed, or cancelled', [
                     'document_id' => $documentId,
                     'signer_exists' => !is_null($signer),
                     'signer_status' => $signer ? $signer->status : 'none'
@@ -80,7 +80,12 @@ class PublicDocumentController extends Controller
                     return redirect()->route('public.documents.thankyou', ['id' => $document->id])
                         ->with('info', 'This document has already been signed.');
                 }
-                abort(403, 'Invalid or expired signing link.');
+                // If cancelled, show proper error page (don't use abort to avoid redirect to login)
+                if ($signer && $signer->status === 'cancelled') {
+                    return $this->showCancelledError($document);
+                }
+                // For invalid signer, show error page
+                return $this->showErrorPage('Invalid Signing Link', 'Invalid or expired signing link. Please contact the document sender for assistance.', $document ?? null);
             }
 
             // Track when document was opened
@@ -224,6 +229,15 @@ class PublicDocumentController extends Controller
                 ]);
                 return redirect()->route('public.documents.thankyou', ['id' => $document->id])
                     ->with('info', 'This document has already been signed. You can download the signed copy below.');
+            }
+            
+            // Check if signature has been cancelled
+            if ($signer->status === 'cancelled') {
+                Log::warning('Signer attempting to sign cancelled document', [
+                    'signer_id' => $signer->id,
+                    'document_id' => $document->id
+                ]);
+                return redirect('/')->with('error', 'This signing link has been cancelled. Please contact the document sender for assistance.');
             }
             
             if ($signer->token !== null && $signer->status === 'pending') {
@@ -1327,6 +1341,40 @@ class PublicDocumentController extends Controller
                 'entity_id' => $entity->id
             ]);
         }
+    }
+
+    /**
+     * Show cancelled signature error page
+     * 
+     * @param Document|null $document
+     * @return \Illuminate\View\View
+     */
+    private function showCancelledError($document = null)
+    {
+        return $this->showErrorPage(
+            'Signature Cancelled',
+            'This signing link has been cancelled. Please contact the document sender for assistance.',
+            $document
+        );
+    }
+
+    /**
+     * Show error page for public document access
+     * 
+     * @param string $title
+     * @param string $message
+     * @param Document|null $document
+     * @return \Illuminate\View\View
+     */
+    private function showErrorPage($title, $message, $document = null)
+    {
+        // Use 200 status to avoid any middleware redirects to login page
+        // The error is shown in the page content, not via HTTP status
+        return response()->view('documents.error', [
+            'title' => $title,
+            'message' => $message,
+            'document' => $document
+        ], 200);
     }
 }
 

@@ -17,6 +17,7 @@ class Signer extends Authenticatable
         'status', 
         'signed_at',
         'opened_at',
+        'cancelled_at',
         'last_reminder_sent_at',
         'reminder_count',
         'email_template',
@@ -28,6 +29,7 @@ class Signer extends Authenticatable
     protected $casts = [
         'signed_at' => 'datetime',
         'opened_at' => 'datetime',
+        'cancelled_at' => 'datetime',
         'last_reminder_sent_at' => 'datetime',
     ];
 
@@ -40,6 +42,8 @@ class Signer extends Authenticatable
     {
         if ($this->status === 'signed') {
             return 'Signed';
+        } elseif ($this->status === 'cancelled') {
+            return 'Cancelled';
         } elseif ($this->opened_at && $this->status === 'pending') {
             return 'Opened - Not Signed';
         } elseif ($this->status === 'pending') {
@@ -52,6 +56,8 @@ class Signer extends Authenticatable
     {
         if ($this->status === 'signed') {
             return 'green';
+        } elseif ($this->status === 'cancelled') {
+            return 'red';
         } elseif ($this->opened_at && $this->status === 'pending') {
             return 'yellow';
         } elseif ($this->status === 'pending') {

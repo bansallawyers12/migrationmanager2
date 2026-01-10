@@ -62,6 +62,7 @@ Route::prefix('signatures')->group(function () {
     
     Route::get('/{id}', [SignatureDashboardController::class, 'show'])->name('signatures.show');
     Route::post('/{id}/reminder', [SignatureDashboardController::class, 'sendReminder'])->name('signatures.reminder');
+    Route::post('/{id}/cancel', [SignatureDashboardController::class, 'cancelSignature'])->name('signatures.cancel');
     Route::post('/{id}/send', [SignatureDashboardController::class, 'sendForSignature'])->name('signatures.send');
     Route::get('/{id}/copy-link', [SignatureDashboardController::class, 'copyLink'])->name('signatures.copy-link');
     
@@ -279,6 +280,7 @@ Route::prefix('signatures')->group(function () {
     
     Route::get('/{id}', [SignatureDashboardController::class, 'show'])->name('signatures.show');
     Route::post('/{id}/reminder', [SignatureDashboardController::class, 'sendReminder'])->name('signatures.reminder');
+    Route::post('/{id}/cancel', [SignatureDashboardController::class, 'cancelSignature'])->name('signatures.cancel');
     Route::post('/{id}/send', [SignatureDashboardController::class, 'sendForSignature'])->name('signatures.send');
     Route::get('/{id}/copy-link', [SignatureDashboardController::class, 'copyLink'])->name('signatures.copy-link');
     

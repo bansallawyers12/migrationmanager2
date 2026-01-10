@@ -186,6 +186,16 @@ class SignatureService
     public function remind(Signer $signer, array $options = []): bool
     {
         try {
+            // Check if signature is cancelled - cannot send reminders to cancelled signers
+            if ($signer->status === 'cancelled') {
+                throw new \Exception('Cannot send reminder. Signature has been cancelled.');
+            }
+            
+            // Check if already signed - no need to send reminders
+            if ($signer->status === 'signed') {
+                throw new \Exception('Cannot send reminder. Document has already been signed.');
+            }
+            
             // Check reminder limits
             if ($signer->reminder_count >= 3) {
                 throw new \Exception('Maximum reminders already sent');

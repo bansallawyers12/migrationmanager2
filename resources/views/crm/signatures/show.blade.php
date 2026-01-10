@@ -941,6 +941,8 @@
                             <span class="signer-status {{ $signer->opened_at && $signer->status === 'pending' ? 'opened' : $signer->status }}">
                                 @if($signer->status === 'signed')
                                     <i class="fas fa-check-circle"></i> Signed
+                                @elseif($signer->status === 'cancelled')
+                                    <i class="fas fa-times-circle"></i> Cancelled
                                 @elseif($signer->opened_at && $signer->status === 'pending')
                                     <i class="fas fa-eye"></i> Opened - Not Signed
                                 @else
@@ -961,6 +963,12 @@
                         </div>
                         @endif
 
+                        @if($signer->cancelled_at)
+                        <div style="margin-top: 5px; font-size: 13px; color: #dc3545;">
+                            <i class="fas fa-times"></i> Cancelled: {{ $signer->cancelled_at->format('M d, Y g:i A') }}
+                        </div>
+                        @endif
+
                         @if($signer->status === 'pending')
                         <div class="signer-actions">
                             <form action="{{ route('signatures.reminder', $document->id) }}" method="POST" style="display: inline;">
@@ -976,6 +984,14 @@
                             <button type="button" class="btn btn-secondary" onclick="copySigningLink('{{ url("/sign/{$document->id}/{$signer->token}") }}')">
                                 <i class="fas fa-copy"></i> Copy Link
                             </button>
+
+                            <form action="{{ route('signatures.cancel', $document->id) }}" method="POST" style="display: inline;" onsubmit="return confirmCancelSignature()">
+                                @csrf
+                                <input type="hidden" name="signer_id" value="{{ $signer->id }}">
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-times"></i> Cancel Signature
+                                </button>
+                            </form>
                         </div>
                         
                         <div style="margin-top: 10px; font-size: 12px; color: #6c757d;">
@@ -1140,10 +1156,20 @@
                                     'type' => 'signed'
                                 ]);
                             }
+                            
+                            // Signature cancelled
+                            if ($signer->cancelled_at) {
+                                $activities->push([
+                                    'date' => $signer->cancelled_at,
+                                    'text' => "Signature cancelled for {$signer->name}",
+                                    'icon' => 'fas fa-times-circle',
+                                    'type' => 'signature_cancelled'
+                                ]);
+                            }
                         }
                         
                         // Email delivery activities from DocumentNote
-                        foreach ($document->notes()->whereIn('action_type', ['email_sent', 'email_failed', 'email_delivered'])->get() as $note) {
+                        foreach ($document->notes()->whereIn('action_type', ['email_sent', 'email_failed', 'email_delivered', 'signature_cancelled'])->get() as $note) {
                             $metadata = $note->metadata ?? [];
                             $signerName = $metadata['signer_name'] ?? 'Unknown';
                             $signerEmail = $metadata['signer_email'] ?? '';
@@ -1175,6 +1201,14 @@
                                     'type' => 'email_delivered',
                                     'note' => $note
                                 ]);
+                            } elseif ($note->action_type === 'signature_cancelled') {
+                                $activities->push([
+                                    'date' => $note->created_at,
+                                    'text' => $note->note ?? "Signature cancelled for {$signerName}",
+                                    'icon' => 'fas fa-times-circle',
+                                    'type' => 'signature_cancelled',
+                                    'note' => $note
+                                ]);
                             }
                         }
                         
@@ -1184,13 +1218,13 @@
                     
                     @if($activities->count() > 0)
                         @foreach($activities as $activity)
-                        <div class="timeline-item {{ $activity['type'] }}" style="{{ $activity['type'] === 'email_failed' ? 'border-left: 3px solid #dc3545;' : ($activity['type'] === 'email_sent' ? 'border-left: 3px solid #28a745;' : ($activity['type'] === 'email_delivered' ? 'border-left: 3px solid #17a2b8;' : '')) }}">
-                            <div class="timeline-icon" style="{{ $activity['type'] === 'email_failed' ? 'background-color: #dc3545;' : ($activity['type'] === 'email_sent' ? 'background-color: #28a745;' : ($activity['type'] === 'email_delivered' ? 'background-color: #17a2b8;' : '')) }}">
+                        <div class="timeline-item {{ $activity['type'] }}" style="{{ $activity['type'] === 'email_failed' || $activity['type'] === 'signature_cancelled' ? 'border-left: 3px solid #dc3545;' : ($activity['type'] === 'email_sent' ? 'border-left: 3px solid #28a745;' : ($activity['type'] === 'email_delivered' ? 'border-left: 3px solid #17a2b8;' : '')) }}">
+                            <div class="timeline-icon" style="{{ $activity['type'] === 'email_failed' || $activity['type'] === 'signature_cancelled' ? 'background-color: #dc3545;' : ($activity['type'] === 'email_sent' ? 'background-color: #28a745;' : ($activity['type'] === 'email_delivered' ? 'background-color: #17a2b8;' : '')) }}">
                                 <i class="{{ $activity['icon'] }}"></i>
                             </div>
                             <div class="timeline-content">
                                 <div class="timeline-date">{{ $activity['date']->format('M d, Y g:i A') }}</div>
-                                <div class="timeline-text" style="{{ $activity['type'] === 'email_failed' ? 'color: #dc3545; font-weight: 500;' : '' }}">{{ $activity['text'] }}</div>
+                                <div class="timeline-text" style="{{ $activity['type'] === 'email_failed' || $activity['type'] === 'signature_cancelled' ? 'color: #dc3545; font-weight: 500;' : '' }}">{{ $activity['text'] }}</div>
                                 @if(isset($activity['error']))
                                 <div style="margin-top: 5px; padding: 6px 10px; background-color: #fee; border-left: 3px solid #dc3545; border-radius: 4px; font-size: 12px; color: #721c24;">
                                     <strong>Error:</strong> {{ \Illuminate\Support\Str::limit($activity['error'], 150) }}
@@ -1572,6 +1606,10 @@ function copySigningLink(url) {
         console.error('Failed to copy: ', err);
         prompt('Copy this link:', url);
     });
+}
+
+function confirmCancelSignature() {
+    return confirm('Are you sure you want to cancel this signature? The signer will no longer be able to sign this document. This action cannot be undone.');
 }
 
 function viewDocument() {
