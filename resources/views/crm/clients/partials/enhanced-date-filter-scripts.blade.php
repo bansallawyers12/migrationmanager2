@@ -1,12 +1,4 @@
-<!-- Enhanced Date Filter Scripts -->
-{{-- Flatpickr CSS and JS should be loaded before this script --}}
-@if(!isset($flatpickr_loaded))
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    @php $flatpickr_loaded = true; @endphp
-@endif
-
-<script>
+{{-- Enhanced Date Filter Scripts - JavaScript only (Flatpickr already loaded in layout) --}}
 // Initialize Flatpickr for custom date range
 $(document).ready(function() {
     if (typeof flatpickr !== 'undefined') {
@@ -136,4 +128,3 @@ function parseDate(dateStr) {
     var year = parseInt(parts[2], 10);
     return new Date(year, month, day);
 }
-</script>
