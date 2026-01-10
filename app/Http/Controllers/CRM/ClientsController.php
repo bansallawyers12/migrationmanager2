@@ -7036,17 +7036,57 @@ class ClientsController extends Controller
                 Log::info('Created templates directory: ' . $templatesDir);
             }
             
-            $templatePath = storage_path('app/templates/agreement_template.docx'); //dd($templatePath);
+            // Determine template filename based on matter type (nick_name)
+            $templateFileName = 'agreement_template.docx'; // Default template
+            $matterNickName = null;
+            
+            // Get matter info to determine which template to use
+            if (isset($request->client_matter_id) && $request->client_matter_id != '') {
+                $client_matter_info = DB::table('client_matters')->select('sel_matter_id')->where('id', $request->client_matter_id)->first();
+                if ($client_matter_info && $client_matter_info->sel_matter_id) {
+                    $matter_info_temp = DB::table('matters')->select('nick_name')->where('id', $client_matter_info->sel_matter_id)->first();
+                    if ($matter_info_temp && !empty($matter_info_temp->nick_name)) {
+                        $matterNickName = strtolower(trim($matter_info_temp->nick_name));
+                        
+                        // Map matter nick_name to template filename
+                        // Only ART, skillassessment, and JRP have specific templates
+                        // Everything else uses the default template
+                        $templateMapping = [
+                            'art' => 'agreement_template-ART.docx',
+                            'skillassessment' => 'agreement_template-skillassment.docx',
+                            'skillassment' => 'agreement_template-skillassment.docx', // Handle variant spelling
+                            'jrp' => 'agreement_template-JRP.docx',
+                        ];
+                        
+                        if (isset($templateMapping[$matterNickName])) {
+                            $templateFileName = $templateMapping[$matterNickName];
+                        }
+                        // For all other matter types (including GN), use default template
+                    }
+                }
+            }
+            
+            $templatePath = storage_path('app/templates/' . $templateFileName);
 
             if (!file_exists($templatePath)) {
                 Log::error('Agreement template file not found at: ' . $templatePath);
-                return response()->json([
-                    'success' => false,
-                    'error' => 'Template file not found.',
-                    'message' => 'The agreement template file (agreement_template.docx) is missing. Please ensure the template file is placed at: storage/app/templates/agreement_template.docx',
-                    'template_path' => $templatePath,
-                    'help' => 'Contact your system administrator to upload the agreement template file.'
-                ], 404);
+                // Try fallback to default template if specific template doesn't exist
+                $defaultTemplatePath = storage_path('app/templates/agreement_template.docx');
+                if (file_exists($defaultTemplatePath)) {
+                    $templatePath = $defaultTemplatePath;
+                    $templateFileName = 'agreement_template.docx';
+                    Log::info('Using default template as fallback. Matter type: ' . ($matterNickName ?? 'unknown'));
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'Template file not found.',
+                        'message' => 'The agreement template file (' . $templateFileName . ') is missing. Please ensure the template file is placed at: storage/app/templates/' . $templateFileName,
+                        'template_path' => $templatePath,
+                        'help' => 'Contact your system administrator to upload the agreement template file.'
+                    ], 404);
+                }
+            } else {
+                Log::info('Using template: ' . $templateFileName . ' for matter type: ' . ($matterNickName ?? 'default'));
             }
 
             $templateProcessor = new TemplateProcessor($templatePath);

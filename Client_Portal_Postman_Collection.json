@@ -6986,6 +6986,208 @@
 					"body": "{\n    \"success\": true,\n    \"message\": \"Token is already expired\",\n    \"data\": {\n        \"token_id\": 123,\n        \"user_id\": 36464,\n        \"expires_at\": \"2026-01-06 22:21:37\",\n        \"status\": \"already_expired\"\n    }\n}"
 				}
 			]
+		},
+		{
+			"name": "Get Blog List",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text",
+						"description": "Use token from login response"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/blogs/list?page=1",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"blogs",
+						"list"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "1",
+							"description": "Page number (default: 1)",
+							"disabled": false
+						},
+						{
+							"key": "q",
+							"value": "",
+							"description": "Search query (optional) - search in blog title and content",
+							"disabled": true
+						},
+						{
+							"key": "featured",
+							"value": "1",
+							"description": "Filter by featured posts (optional) - set to 1 for featured only",
+							"disabled": true
+						}
+					]
+				},
+				"description": "Get a paginated list of blogs from the external Bansal API.\n\n**Query Parameters:**\n- `page` (optional): Page number for pagination (default: 1)\n- `q` (optional): Search query - search in blog title and content\n- `featured` (optional): Filter by featured posts - set to 1 for featured only\n\n**Response:**\n- `200`: Blog list retrieved successfully\n- `401`: Unauthorized\n- `500`: API configuration error or external API failure\n\n**Note:** This endpoint proxies requests to `https://www.bansalimmigration.com.au/api/crm/blogs/list`"
+			},
+			"response": [
+				{
+					"name": "Success Response",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/blogs/list?page=1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"blogs",
+								"list"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": true,\n    \"data\": {\n        \"blogs\": [\n            {\n                \"id\": 1,\n                \"title\": \"Blog Title 1\",\n                \"content\": \"Blog content...\",\n                \"created_at\": \"2026-01-07T00:00:00Z\"\n            }\n        ],\n        \"current_page\": 1,\n        \"total_pages\": 10\n    }\n}"
+				}
+			]
+		},
+		{
+			"name": "Get Blog Detail",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text",
+						"description": "Use token from login response"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/blogs/detail/1",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"blogs",
+						"detail",
+						"1"
+					]
+				},
+				"description": "Get detailed information about a specific blog by ID from the external Bansal API.\n\n**Path Parameters:**\n- `id` (required): Blog ID (integer)\n\n**Response:**\n- `200`: Blog detail retrieved successfully\n- `400`: Invalid blog ID\n- `401`: Unauthorized\n- `404`: Blog not found\n- `500`: API configuration error or external API failure\n\n**Note:** This endpoint proxies requests to `https://www.bansalimmigration.com.au/api/crm/blogs/detail/{id}`"
+			},
+			"response": [
+				{
+					"name": "Success Response",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/blogs/detail/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"blogs",
+								"detail",
+								"1"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": true,\n    \"data\": {\n        \"id\": 1,\n        \"title\": \"Blog Title\",\n        \"content\": \"Full blog content here...\",\n        \"author\": \"Author Name\",\n        \"created_at\": \"2026-01-07T00:00:00Z\",\n        \"updated_at\": \"2026-01-07T00:00:00Z\"\n    }\n}"
+				},
+				{
+					"name": "Blog Not Found",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/blogs/detail/999",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"blogs",
+								"detail",
+								"999"
+							]
+						}
+					},
+					"status": "Not Found",
+					"code": 404,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": false,\n    \"message\": \"Failed to fetch blog detail from external API\",\n    \"error\": \"Blog not found\"\n}"
+				}
+			]
 		}
 	],
 	"event": [
