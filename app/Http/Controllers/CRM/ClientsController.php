@@ -8466,6 +8466,8 @@ class ClientsController extends Controller
         $doc->file_size = $size;
         $doc->doc_type = 'agreement';
         $doc->client_matter_id = $requestData['clientmatterid'];
+        // PostgreSQL NOT NULL constraint - signer_count is required (default: 1 for regular documents)
+        $doc->signer_count = 1;
         $saved = $doc->save();
 
         //6. Log activity if saved
