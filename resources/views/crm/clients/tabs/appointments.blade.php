@@ -1,6 +1,11 @@
            <!-- Appointment Tab -->
            <div class="tab-pane" id="appointments-tab">
-                <!-- Add Appointment button removed - old appointment system has been removed -->
+                <!-- Add Appointment Button -->
+                <div class="mb-3 text-right" style="padding: 0 15px;">
+                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#create_appoint" style="background-color: #0056b3; border-color: #0056b3;">
+                        <i class="fas fa-calendar-plus mr-2"></i>Add Appointment
+                    </button>
+                </div>
                 <div class="appointmentlist">
                     <div class="row">
                         <div class="col-md-5 appointment_grid_list">
