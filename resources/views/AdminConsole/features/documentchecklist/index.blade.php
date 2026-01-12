@@ -1,6 +1,65 @@
 @extends('layouts.crm_client_detail')
 @section('title', 'Document Checklist')
 
+@section('styles')
+<style>
+    /* Ensure dropdown menu is visible and not clipped */
+    .table-responsive.common_table {
+        overflow: visible !important;
+    }
+    
+    .table-responsive.common_table .table td {
+        overflow: visible !important;
+    }
+    
+    .table-responsive.common_table .dropdown {
+        position: relative;
+        overflow: visible !important;
+    }
+    
+    /* Ensure dropdown menu is fully visible */
+    .table-responsive.common_table .dropdown-menu {
+        position: absolute !important;
+        top: 100% !important;
+        right: 0 !important;
+        left: auto !important;
+        z-index: 9999 !important;
+        display: none !important;
+        min-width: 180px !important;
+    }
+    
+    .table-responsive.common_table .dropdown-menu.show {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    /* Ensure all dropdown items are visible */
+    .table-responsive.common_table .dropdown-menu .dropdown-item {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        white-space: nowrap !important;
+        padding: 0.5rem 1rem !important;
+        height: auto !important;
+        min-height: 2.25rem !important;
+        line-height: 1.5 !important;
+        width: 100% !important;
+    }
+    
+    .table-responsive.common_table .dropdown-item.has-icon {
+        display: flex !important;
+        align-items: center !important;
+    }
+    
+    .table-responsive.common_table .dropdown-item.has-icon i {
+        margin-right: 8px !important;
+        width: 16px !important;
+        text-align: center !important;
+    }
+</style>
+@endsection
+
 @section('content')
 
 <!-- Main Content -->
