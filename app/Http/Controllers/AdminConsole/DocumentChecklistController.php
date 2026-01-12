@@ -56,6 +56,7 @@ class DocumentChecklistController extends Controller
             $obj = new DocumentChecklist;
             $obj->name = $requestData['name'];
             $obj->doc_type = $requestData['doc_type'];
+            $obj->status = 1; // Set default status to 1 (active)
             $saved = $obj->save();
             if (!$saved) {
                 return redirect()->back()->with('error', config('constants.server_error'));
