@@ -204,6 +204,10 @@ Route::controller(BookingAppointmentsController::class)
             ->name('appointments.update-consultant')
             ->whereNumber('id');
         
+        Route::post('/appointments/{id}/update-meeting-type', 'updateMeetingType')
+            ->name('appointments.update-meeting-type')
+            ->whereNumber('id');
+        
         Route::post('/appointments/{id}/update-datetime', 'update')
             ->name('appointments.update-datetime')
             ->whereNumber('id');

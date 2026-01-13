@@ -381,7 +381,17 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <div class="col-md-6">
                             <p><strong>Location:</strong> ${props.location ? props.location.charAt(0).toUpperCase() + props.location.slice(1) : 'N/A'}</p>
-                            <p><strong>Meeting Type:</strong> ${meetingTypeDisplay}</p>
+                            <p><strong>Meeting Type:</strong> 
+                                <span id="meetingTypeDisplay-${event.id}" style="cursor: pointer; color: #007bff; text-decoration: underline;" onclick="showMeetingTypeDropdown(${event.id}, '${props.meeting_type}')" title="Click to change meeting type">
+                                    ${meetingTypeDisplay}
+                                    <i class="fas fa-edit ml-1" style="font-size: 0.8em;"></i>
+                                </span>
+                                <select id="meetingTypeSelect-${event.id}" class="form-control form-control-sm d-none" style="max-width: 200px; display: inline-block;" onchange="updateAppointmentMeetingType(${event.id}, this.value)" data-is-paid="${props.is_paid}">
+                                    <option value="in_person" ${props.meeting_type === 'in_person' ? 'selected' : ''}>In Person</option>
+                                    <option value="phone" ${props.meeting_type === 'phone' ? 'selected' : ''}>Phone</option>
+                                    ${props.is_paid ? `<option value="video" ${props.meeting_type === 'video' ? 'selected' : ''}>Video</option>` : ''}
+                                </select>
+                            </p>
                             <p><strong>Preferred Language:</strong> ${props.preferred_language ? props.preferred_language.charAt(0).toUpperCase() + props.preferred_language.slice(1).toLowerCase() : 'English'}</p>
                             <p><strong>Consultant:</strong> ${props.consultant}</p>
                             <p><strong>Status:</strong> <span class="badge badge-${getStatusClass(props.status)}" id="statusBadge">${props.status.toUpperCase()}</span></p>
@@ -668,6 +678,136 @@ document.addEventListener('DOMContentLoaded', function() {
                 showAlert('danger', 'Failed to update consultant. Please try again.');
             }
             
+            select.value = originalValue;
+        })
+        .finally(() => {
+            select.disabled = false;
+        });
+    };
+    
+    // Meeting Type functions
+    window.showMeetingTypeDropdown = function(appointmentId, currentMeetingType) {
+        const display = document.getElementById(`meetingTypeDisplay-${appointmentId}`);
+        const select = document.getElementById(`meetingTypeSelect-${appointmentId}`);
+        
+        if (display && select) {
+            display.classList.add('d-none');
+            select.classList.remove('d-none');
+            select.focus();
+            
+            // Store original value for potential cancellation
+            select.setAttribute('data-original-value', currentMeetingType);
+            
+            // Add click outside handler to close dropdown if user clicks elsewhere
+            setTimeout(() => {
+                const clickOutsideHandler = function(e) {
+                    if (!select.contains(e.target) && !display.contains(e.target)) {
+                        // Only close if value hasn't changed (user clicked away without selecting)
+                        if (select.value === currentMeetingType) {
+                            display.classList.remove('d-none');
+                            select.classList.add('d-none');
+                        }
+                        document.removeEventListener('click', clickOutsideHandler);
+                    }
+                };
+                // Use setTimeout to avoid immediate trigger
+                setTimeout(() => {
+                    document.addEventListener('click', clickOutsideHandler);
+                }, 100);
+            }, 10);
+        }
+    };
+    
+    window.updateAppointmentMeetingType = function(appointmentId, newMeetingType) {
+        if (!newMeetingType) {
+            return;
+        }
+        
+        // Show loading state
+        const select = document.getElementById(`meetingTypeSelect-${appointmentId}`);
+        const display = document.getElementById(`meetingTypeDisplay-${appointmentId}`);
+        const originalValue = select.getAttribute('data-original-value') || select.value;
+        
+        // Disable select and show loading
+        select.disabled = true;
+        const originalSelectHtml = select.innerHTML;
+        select.innerHTML = '<option>Updating...</option>';
+        
+        fetch(`/booking/appointments/${appointmentId}/update-meeting-type`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                meeting_type: newMeetingType
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(errorData => {
+                    throw { status: response.status, data: errorData };
+                }).catch(() => {
+                    throw { status: response.status, message: 'Server error occurred' };
+                });
+            }
+            
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Response is not JSON');
+            }
+            
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Update the display text
+                if (display && select) {
+                    // Format the new meeting type for display
+                    const newDisplay = newMeetingType.split('_').map(word => 
+                        word.charAt(0).toUpperCase() + word.slice(1)
+                    ).join(' ');
+                    
+                    // Update display text
+                    display.innerHTML = `${newDisplay} <i class="fas fa-edit ml-1" style="font-size: 0.8em;"></i>`;
+                    
+                    // Update select value
+                    select.value = newMeetingType;
+                    select.setAttribute('data-original-value', newMeetingType);
+                    
+                    // Hide dropdown and show display
+                    display.classList.remove('d-none');
+                    select.classList.add('d-none');
+                }
+                
+                // Refresh calendar to update event display
+                calendar.refetchEvents();
+                
+                // Show success message
+                showAlert('success', 'Meeting type updated successfully!');
+            } else {
+                showAlert('danger', 'Failed to update meeting type: ' + (data.message || 'Unknown error'));
+                select.value = originalValue;
+            }
+        })
+        .catch(error => {
+            console.error('Error updating meeting type:', error);
+            
+            if (error.status === 422) {
+                const errorMsg = error.data?.message || 'Validation failed';
+                showAlert('danger', errorMsg);
+            } else if (error.status === 404) {
+                showAlert('danger', 'Appointment not found');
+            } else if (error.status === 500) {
+                const errorMsg = error.data?.message || 'Server error occurred';
+                showAlert('danger', errorMsg + ' Please try again later.');
+            } else {
+                showAlert('danger', 'Failed to update meeting type. Please try again.');
+            }
+            
+            // Restore original select options and value
+            select.innerHTML = originalSelectHtml;
             select.value = originalValue;
         })
         .finally(() => {

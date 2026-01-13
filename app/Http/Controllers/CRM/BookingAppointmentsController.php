@@ -575,6 +575,78 @@ class BookingAppointmentsController extends Controller
     }
 
     /**
+     * Update meeting type
+     */
+    public function updateMeetingType(Request $request, $id)
+    {
+        try {
+            $appointment = BookingAppointment::findOrFail($id);
+            
+            $request->validate([
+                'meeting_type' => 'required|in:in_person,phone,video'
+            ]);
+
+            // Validate: Video meeting type is only allowed for paid appointments
+            if ($request->meeting_type === 'video' && !$appointment->is_paid) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Video meeting type is only available for paid appointments.'
+                ], 422);
+            }
+
+            $oldMeetingType = $appointment->meeting_type;
+            $appointment->meeting_type = $request->meeting_type;
+            $appointment->save();
+
+            // Log activity using existing codebase pattern (only if client exists)
+            if ($appointment->client_id) {
+                $oldDisplay = ucfirst(str_replace('_', ' ', $oldMeetingType));
+                $newDisplay = ucfirst(str_replace('_', ' ', $request->meeting_type));
+                
+                $activityLog = new ActivitiesLog;
+                $activityLog->client_id = $appointment->client_id;
+                $activityLog->created_by = Auth::id();
+                $activityLog->subject = 'Booking appointment meeting type updated';
+                $activityLog->description = '<p><strong>Meeting type changed:</strong> ' . $oldDisplay . ' → ' . $newDisplay . '</p>';
+                $activityLog->task_status = 0;
+                $activityLog->pin = 0;
+                $activityLog->save();
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Meeting type updated successfully',
+                'meeting_type' => $appointment->meeting_type
+            ]);
+            
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+            
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Appointment not found'
+            ], 404);
+            
+        } catch (\Exception $e) {
+            Log::error('Error updating meeting type', [
+                'appointment_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while updating meeting type. Please try again.'
+            ], 500);
+        }
+    }
+
+    /**
      * Update appointment date and time.
      */
     public function update(Request $request, $id)
