@@ -513,11 +513,29 @@ $(document).ready(function() {
             return;
         }
         
+        // If cancelling, require cancellation reason
+        let cancellationReason = null;
+        if (newStatus === 'cancelled') {
+            cancellationReason = prompt('Please enter cancellation reason (required):');
+            if (!cancellationReason || cancellationReason.trim() === '') {
+                alert('Cancellation reason is required. Operation cancelled.');
+                return;
+            }
+        }
+        
         // Show loading state
         const button = event.target;
         const originalText = button.innerHTML;
         button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
         button.disabled = true;
+        
+        const requestData = {
+            status: newStatus
+        };
+        
+        if (cancellationReason) {
+            requestData.cancellation_reason = cancellationReason.trim();
+        }
         
         $.ajax({
             url: `/booking/appointments/${appointmentId}/update-status`,
@@ -525,9 +543,7 @@ $(document).ready(function() {
             headers: {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             },
-            data: {
-                status: newStatus
-            },
+            data: requestData,
             success: function(data) {
                 if (data.success) {
                     // Update the status badge in the modal

@@ -545,11 +545,29 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        // If cancelling, require cancellation reason
+        let cancellationReason = null;
+        if (newStatus === 'cancelled') {
+            cancellationReason = prompt('Please enter cancellation reason (required):');
+            if (!cancellationReason || cancellationReason.trim() === '') {
+                alert('Cancellation reason is required. Operation cancelled.');
+                return;
+            }
+        }
+        
         // Show loading state
         const button = event.target;
         const originalText = button.innerHTML;
         button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
         button.disabled = true;
+        
+        const requestData = {
+            status: newStatus
+        };
+        
+        if (cancellationReason) {
+            requestData.cancellation_reason = cancellationReason.trim();
+        }
         
         fetch(`/booking/appointments/${appointmentId}/update-status`, {
             method: 'POST',
@@ -557,9 +575,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             },
-            body: JSON.stringify({
-                status: newStatus
-            })
+            body: JSON.stringify(requestData)
         })
         .then(response => response.json())
         .then(data => {

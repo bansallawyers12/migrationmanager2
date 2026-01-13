@@ -363,7 +363,7 @@ class BookingAppointmentsController extends Controller
         
         $request->validate([
             'status' => 'required|in:pending,paid,confirmed,completed,cancelled,no_show,rescheduled',
-            'cancellation_reason' => 'nullable|string'
+            'cancellation_reason' => 'required_if:status,cancelled|nullable|string'
         ]);
 
         $oldStatus = $appointment->status;
@@ -379,9 +379,8 @@ class BookingAppointmentsController extends Controller
                 break;
             case 'cancelled':
                 $appointment->cancelled_at = now();
-                if ($request->filled('cancellation_reason')) {
-                    $appointment->cancellation_reason = $request->cancellation_reason;
-                }
+                // Cancellation reason is now required when status is cancelled
+                $appointment->cancellation_reason = $request->cancellation_reason ?? null;
                 break;
         }
 

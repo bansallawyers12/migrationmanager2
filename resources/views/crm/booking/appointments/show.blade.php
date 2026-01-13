@@ -499,8 +499,11 @@ function updateStatus(newStatus) {
 }
 
 function cancelAppointment() {
-    const reason = prompt('Please enter cancellation reason:');
-    if (!reason) return;
+    const reason = prompt('Please enter cancellation reason (required):');
+    if (!reason || reason.trim() === '') {
+        alert('Cancellation reason is required. Operation cancelled.');
+        return;
+    }
     
     $.ajax({
         url: '{{ route("booking.appointments.update-status", $appointment->id) }}',
@@ -508,7 +511,7 @@ function cancelAppointment() {
         data: {
             _token: '{{ csrf_token() }}',
             status: 'cancelled',
-            cancellation_reason: reason
+            cancellation_reason: reason.trim()
         },
         success: function(response) {
             if (response.success) {
