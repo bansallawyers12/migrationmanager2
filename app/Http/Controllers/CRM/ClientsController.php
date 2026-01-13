@@ -9758,11 +9758,17 @@ class ClientsController extends Controller
                 'service_type' => $serviceTypeMapping['service_type'],
                 'enquiry_details' => $requestData['description'],
                 
-                'status' => 'pending',
+                // Determine status based on service type and payment status
+                // Case 1: Free appointment (serviceId == 2) -> status = 'confirmed'
+                // Case 2: Paid appointment (serviceId != 2) -> status = 'paid' if payment successful, 'pending' if payment failed
+                'status' => ($serviceId == 2) 
+                    ? 'confirmed' 
+                    : (($requestData['payment_status'] ?? 'pending') === 'completed' ? 'paid' : 'pending'),
+                'confirmed_at' => ($serviceId == 2) ? now() : null, // Set confirmed_at for free appointments
                 'is_paid' => ($serviceId == 2) ? false : true, // Free service is not paid
                 'amount' => ($serviceId == 2) ? 0 : 150, // Set appropriate amounts
                 'final_amount' => ($serviceId == 2) ? 0 : 150,
-                'payment_status' => ($serviceId == 2) ? null : 'pending',
+                'payment_status' => ($serviceId == 2) ? null : ($requestData['payment_status'] ?? 'pending'),
                 
                 // Boolean fields with default values
                 'follow_up_required' => false,
