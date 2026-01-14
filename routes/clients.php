@@ -118,6 +118,7 @@ Route::post('/convert-activity-to-note', 'CRM\ClientsController@convertActivityT
 
 /*---------- Client Status & Archive ----------*/
 Route::get('/archived', 'CRM\ClientsController@archived')->name('clients.archived');
+Route::post('/unarchive/{id}', 'CRM\ClientsController@unarchive')->name('clients.unarchive');
 Route::get('/change-client-status', 'CRM\ClientsController@updateclientstatus')->name('clients.updateclientstatus');
 Route::get('/get-activities', 'CRM\ClientsController@activities')->name('clients.activities');
 Route::get('/deletecostagreement', [ClientsController::class, 'deletecostagreement'])->name('clients.deletecostagreement');

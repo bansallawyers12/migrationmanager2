@@ -13,8 +13,8 @@ use App\Models\Admin;
 use App\Models\Lead;
 use App\Models\ActivitiesLog;
 use App\Models\OnlineForm;
-use Auth;
-use PDF;
+use Illuminate\Support\Facades\Auth;
+use Barryvdh\DomPDF\Facade as PDF;
 use App\Models\CheckinLog;
 use App\Models\Note;
 use App\Models\BookingAppointment;
@@ -27,6 +27,7 @@ use App\Models\Branch;
 
 use App\Models\FileStatus;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Mail;
 use App\Services\ClientReferenceService;
 
@@ -447,6 +448,66 @@ class ClientsController extends Controller
         $totalData 	= $query->count();	//for all data
         $lists		= $query->sortable(['id' => 'desc'])->paginate(20);
         return view('crm.archived.index', compact(['lists', 'totalData']));
+    }
+
+    /**
+     * Unarchive a client
+     * Sets is_archived = 0 for the specified client
+     *
+     * @param Request $request
+     * @param int $id Client ID
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
+     */
+    public function unarchive(Request $request, $id)
+    {
+        try {
+            // Find the client (including archived ones)
+            $client = Admin::where('id', $id)
+                ->where('role', 7)
+                ->first();
+            
+            if (!$client) {
+                $message = 'Client not found.';
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json(['status' => 0, 'message' => $message], 404);
+                }
+                return redirect()->route('clients.archived')
+                    ->with('error', $message);
+            }
+            
+            // Check if already unarchived
+            if ($client->is_archived == 0) {
+                $message = 'Client is already unarchived.';
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json(['status' => 0, 'message' => $message], 200);
+                }
+                return redirect()->route('clients.archived')
+                    ->with('info', $message);
+            }
+            
+            // Unarchive the client
+            $client->is_archived = 0;
+            $client->save();
+            
+            $message = 'Client has been unarchived successfully.';
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['status' => 1, 'message' => $message], 200);
+            }
+            
+            return redirect()->route('clients.archived')
+                ->with('success', $message);
+                
+        } catch (\Exception $e) {
+            Log::error('Error unarchiving client: ' . $e->getMessage());
+            $message = 'An error occurred while unarchiving the client. Please try again.';
+            
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['status' => 0, 'message' => $message], 500);
+            }
+            
+            return redirect()->route('clients.archived')
+                ->with('error', $message);
+        }
     }
 
 	// REMOVED - prospects method
@@ -1416,7 +1477,7 @@ class ClientsController extends Controller
             DB::rollBack();
 
             // Log the error for debugging
-            \Log::error('Lead/Client creation failed: ' . $e->getMessage());
+            Log::error('Lead/Client creation failed: ' . $e->getMessage());
 
             // Redirect back with error message
             if ($validated['type'] === 'lead') {
@@ -1445,11 +1506,15 @@ class ClientsController extends Controller
             $filePath = $admin->client_id.'/'.$fetchd->doc_type.'/'.$fetchd->myfile;
         }
         // Get the image URL from S3
-        $imageUrl = Storage::disk('s3')->url($filePath); //dd($imageUrl);
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = Storage::disk('s3');
+        $imageUrl = $disk->url($filePath); //dd($imageUrl);
 
         $data = ['title' => 'Welcome to codeplaners.com','image' => $imageUrl];
-        // Generate the PDF
-        $pdf = PDF::loadView('myPDF', compact('imageUrl'));
+        // Generate the PDF using service container to avoid facade type issues
+        /** @var \Barryvdh\DomPDF\PDF $pdf */
+        $pdf = app('dompdf.wrapper');
+        $pdf = $pdf->loadView('myPDF', compact('imageUrl'));
 
         // Return the generated PDF
         return $pdf->stream('codeplaners.pdf');
@@ -2324,7 +2389,7 @@ class ClientsController extends Controller
                         $obj->age = $dobDate->diff(\Carbon\Carbon::now())->format('%y years %m months');
                     } catch (\Exception $e) {
                         // If calculation fails, keep existing age
-                        \Log::warning("Failed to recalculate age for client {$obj->id} during DOB verification: " . $e->getMessage());
+                        Log::warning("Failed to recalculate age for client {$obj->id} during DOB verification: " . $e->getMessage());
                     }
                 }
             } else {
@@ -3313,7 +3378,7 @@ class ClientsController extends Controller
                 }
 
                 // Debug: Log the incoming data to verify all entries are received
-                \Log::info('Occupation Data Received:', [
+                Log::info('Occupation Data Received:', [
 
                     'nomi_occupation' => $requestData['nomi_occupation'],
                     'occupation_code' => $requestData['occupation_code'] ?? [],
@@ -3375,7 +3440,7 @@ class ClientsController extends Controller
 
                 // Debug: Log the number of occupations saved
                 $savedOccupations = ClientOccupation::where('client_id', $obj->id)->count();
-                \Log::info('Occupations Saved:', ['count' => $savedOccupations]);
+                Log::info('Occupations Saved:', ['count' => $savedOccupations]);
             }
 
             // Test Score Handling
@@ -3445,7 +3510,7 @@ class ClientsController extends Controller
                 try {
                     (new \App\Services\PointsService())->clearCache($obj->id);
                 } catch (\Throwable $th) {
-                    \Log::warning('Failed to clear points cache after test score update', [
+                    Log::warning('Failed to clear points cache after test score update', [
                         'client_id' => $obj->id,
                         'error' => $th->getMessage(),
                     ]);
@@ -4198,7 +4263,7 @@ class ClientsController extends Controller
                     
                     ClientPassportInformation::create([
                         'client_id' => $client->id,
-                        'admin_id' => \Auth::user()->id,
+                        'admin_id' => Auth::user()->id,
                         'passport_country' => $passportCountry,
                         'passport' => $passportData['passport_number'],
                         'passport_issue_date' => $issueDate,
@@ -4235,7 +4300,7 @@ class ClientsController extends Controller
             // Update client's visa expiry verified status using existing system
             if ($visaExpiryVerified === '1') {
                 $client->visa_expiry_verified_at = now();
-                $client->visa_expiry_verified_by = \Auth::user()->id;
+                $client->visa_expiry_verified_by = Auth::user()->id;
             } else {
                 $client->visa_expiry_verified_at = null;
                 $client->visa_expiry_verified_by = null;
@@ -4264,7 +4329,7 @@ class ClientsController extends Controller
                     
                     ClientVisaCountry::create([
                         'client_id' => $client->id,
-                        'admin_id' => \Auth::user()->id,
+                        'admin_id' => Auth::user()->id,
                         'visa_country' => $client->country_passport ?? '',
                         'visa_type' => $visaData['visa_type_hidden'],
                         'visa_expiry_date' => $expiryDate,
@@ -5138,7 +5203,7 @@ class ClientsController extends Controller
             $results = [];
             
             // Log the search query for debugging
-            \Log::info('Header search query: ' . $squery);
+            Log::info('Header search query: ' . $squery);
 
             /**
              * 1. Search for composite references (client_id + matter_no format like "SHAL2500295-JRP_1")
@@ -5157,6 +5222,7 @@ class ClientsController extends Controller
                         ->join('client_matters', 'admins.id', '=', 'client_matters.client_id')
                         ->where('admins.role', 7)
                         ->whereNull('admins.is_deleted')
+                        ->where('admins.is_archived', 0)
                         ->whereRaw('LOWER(admins.client_id) LIKE ?', ["%{$clientIdPartLower}%"])
                         ->whereRaw('LOWER(client_matters.client_unique_matter_no) LIKE ?', ["%{$matterNoPartLower}%"])
                         ->select(
@@ -5190,6 +5256,7 @@ class ClientsController extends Controller
                 ->join('admins', 'client_matters.client_id', '=', 'admins.id')
                 ->where('admins.role', 7)
                 ->whereNull('admins.is_deleted')
+                ->where('admins.is_archived', 0)
                 ->where(function($query) use ($squery) {
                     $query->where('client_matters.department_reference', 'LIKE', "%{$squery}%")
                           ->orWhere('client_matters.other_reference', 'LIKE', "%{$squery}%")
@@ -5207,7 +5274,7 @@ class ClientsController extends Controller
                 ->get();
             
             // Log matter matches for debugging
-            \Log::info('Matter matches found: ' . count($matterMatches) . ' for query: ' . $squery);
+            Log::info('Matter matches found: ' . count($matterMatches) . ' for query: ' . $squery);
 
             foreach ($matterMatches as $matter) {
                 $results[] = [
@@ -5237,6 +5304,7 @@ class ClientsController extends Controller
             $clientsQuery = \App\Models\Admin::query()
                 ->where('admins.role', 7)
                 ->whereNull('admins.is_deleted')
+                ->where('admins.is_archived', 0)
                 ->leftJoin('client_contacts', function($join) use ($squery) {
                     $squeryLower = strtolower($squery);
                     $join->on('client_contacts.client_id', '=', 'admins.id')
@@ -5436,7 +5504,7 @@ class ClientsController extends Controller
 				$response['message']	=	'Client not found';
 			}
 		} catch (\Exception $e) {
-			\Log::error('Error fetching activities (Exception): ' . $e->getMessage(), [
+			Log::error('Error fetching activities (Exception): ' . $e->getMessage(), [
 				'client_id' => $request->id ?? 'N/A',
 				'file' => $e->getFile(),
 				'line' => $e->getLine(),
@@ -5446,7 +5514,7 @@ class ClientsController extends Controller
 			$response['message'] = 'Exception: ' . $e->getMessage();
 		} catch (\Throwable $e) {
 			// Catch fatal errors
-			\Log::error('Fatal error fetching activities (Throwable): ' . $e->getMessage(), [
+			Log::error('Fatal error fetching activities (Throwable): ' . $e->getMessage(), [
 				'client_id' => $request->id ?? 'N/A',
 				'file' => $e->getFile(),
 				'line' => $e->getLine(),
@@ -5522,12 +5590,19 @@ class ClientsController extends Controller
             $obj->client_matter_id = $request->client_matter_id;
 			$saved = $obj->save();
 			if($saved){
+				// Fetch related data for activity log
+				$productdetail = DB::table('services')->where('id', $product)->first();
+				$partnerdetail = DB::table('representing_partners')->where('id', $partner)->first();
+				$PartnerBranch = \App\Models\Branch::find($branch);
 
 				$subject = 'has started an application';
 				$objs = new ActivitiesLog;
 				$objs->client_id = $request->client_id;
 				$objs->created_by = Auth::user()->id;
-				$objs->description = '<span class="text-semi-bold">'.@$productdetail->name.'</span><p>'.@$partnerdetail->partner_name.' ('.@$PartnerBranch->name.')</p>';
+				$productName = $productdetail ? ($productdetail->name ?? '') : '';
+				$partnerName = $partnerdetail ? ($partnerdetail->partner_name ?? '') : '';
+				$branchName = $PartnerBranch ? ($PartnerBranch->name ?? '') : '';
+				$objs->description = '<span class="text-semi-bold">'.$productName.'</span><p>'.$partnerName.' ('.$branchName.')</p>';
 				$objs->subject = $subject;
 				$objs->task_status = 0;
 				$objs->pin = 0;
@@ -5552,11 +5627,18 @@ class ClientsController extends Controller
 			$data = array();
 			ob_start();
 			foreach($applications as $alist){
+				// Fetch related data for each application
+				$productdetail = DB::table('services')->where('id', $alist->product_id)->first();
+				$partnerdetail = DB::table('representing_partners')->where('id', $alist->partner_id)->first();
+				$PartnerBranch = \App\Models\Branch::find($alist->branch);
 
 				$workflow = \App\Models\Workflow::where('id', $alist->workflow)->first();
+				$productName = $productdetail ? ($productdetail->name ?? '') : '';
+				$partnerName = $partnerdetail ? ($partnerdetail->partner_name ?? '') : '';
+				$branchName = $PartnerBranch ? ($PartnerBranch->name ?? '') : '';
 				?>
 				<tr id="id_<?php echo $alist->id; ?>">
-				<td><a class="openapplicationdetail" data-id="<?php echo $alist->id; ?>" href="javascript:;" style="display:block;"><?php echo @$productdetail->name; ?></a> <small><?php echo @$partnerdetail->partner_name; ?>(<?php echo @$PartnerBranch->name; ?>)</small></td>
+				<td><a class="openapplicationdetail" data-id="<?php echo $alist->id; ?>" href="javascript:;" style="display:block;"><?php echo $productName; ?></a> <small><?php echo $partnerName; ?>(<?php echo $branchName; ?>)</small></td>
 				<td><?php echo @$workflow->name; ?></td>
 				<td><?php echo @$alist->stage; ?></td>
 				<td>
@@ -5648,7 +5730,9 @@ class ClientsController extends Controller
 
                 //$obj->myfile = $name;
                 // Get the full URL of the uploaded file
-                $fileUrl = Storage::disk('s3')->url($filePath);
+                /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+                $disk = Storage::disk('s3');
+                $fileUrl = $disk->url($filePath);
                 $obj->myfile = $fileUrl;
                 $obj->myfile_key = $name;
 
@@ -5767,7 +5851,9 @@ class ClientsController extends Controller
 
                 //$obj->myfile = $name;
                 // Get the full URL of the uploaded file
-                $fileUrl = Storage::disk('s3')->url($filePath);
+                /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+                $disk = Storage::disk('s3');
+                $fileUrl = $disk->url($filePath);
                 $obj->myfile = $fileUrl;
                 $obj->myfile_key = $name;
 
@@ -6823,7 +6909,7 @@ class ClientsController extends Controller
 
             return response()->json($emails, 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         } catch (\Exception $e) {
-            \Log::error('Error in filterEmails: ' . $e->getMessage());
+            Log::error('Error in filterEmails: ' . $e->getMessage());
 
             return response()->json([
                 'status' => 'error',
@@ -7369,7 +7455,9 @@ class ClientsController extends Controller
                 
                 if ($uploadResult) {
                     // Get the S3 URL
-                    $downloadUrl = Storage::disk('s3')->url($s3Path);
+                    /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+                    $disk = Storage::disk('s3');
+                    $downloadUrl = $disk->url($s3Path);
                     
                     // Verify the URL is not empty
                     if (!empty($downloadUrl)) {
@@ -7979,7 +8067,7 @@ class ClientsController extends Controller
 
         // Step 3: Verify matter exists and belongs to the client_id (double security check)
         if (!$matter) {
-            \Log::error('References save - Matter not found', [
+            Log::error('References save - Matter not found', [
                 'client_id' => $clientId,
                 'client_unique_matter_no' => $request->client_unique_matter_no ?? 'not provided',
                 'client_matter_id' => $request->client_matter_id ?? 'not provided',
@@ -7993,7 +8081,7 @@ class ClientsController extends Controller
         
         // Additional security check: Ensure the found matter actually belongs to the client_id
         if ($matter->client_id != $clientId) {
-            \Log::error('References save - Security violation: Matter does not belong to client', [
+            Log::error('References save - Security violation: Matter does not belong to client', [
                 'matter_id' => $matter->id,
                 'matter_client_id' => $matter->client_id,
                 'requested_client_id' => $clientId
@@ -8004,7 +8092,7 @@ class ClientsController extends Controller
             ], 403);
         }
         
-        \Log::info('References save - Matter found', [
+        Log::info('References save - Matter found', [
             'matter_id' => $matter->id,
             'client_id' => $matter->client_id,
             'client_unique_matter_no' => $matter->client_unique_matter_no,
@@ -8035,7 +8123,7 @@ class ClientsController extends Controller
         $matter->refresh();
 
         // Log for debugging
-        \Log::info('References saved', [
+        Log::info('References saved', [
             'matter_id' => $matter->id,
             'client_id' => $request->client_id,
             'client_unique_matter_no' => $matter->client_unique_matter_no,
@@ -8451,14 +8539,16 @@ class ClientsController extends Controller
         $s3Path = $clientUniqueId . '/agreement/' . $timestampedName;
 
         //4. Upload directly to S3
-        \Storage::disk('s3')->put($s3Path, file_get_contents($pdfFile));
+        Storage::disk('s3')->put($s3Path, file_get_contents($pdfFile));
 
         //5. Save document details in DB
         $originalInfo = pathinfo($originalName);
         $doc = new \App\Models\Document;
         $doc->file_name = $originalInfo['filename']; // e.g., "passport" (without extension)
         $doc->filetype = 'pdf';
-        $doc->myfile = Storage::disk('s3')->url($s3Path);
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = Storage::disk('s3');
+        $doc->myfile = $disk->url($s3Path);
         $doc->myfile_key = $timestampedName;
         $doc->user_id = Auth::user()->id;
         $doc->client_id = $admin->id;
@@ -8560,7 +8650,7 @@ class ClientsController extends Controller
 			}
 
 		} catch (\Exception $e) {
-			\Log::error('Error converting activity to note: ' . $e->getMessage());
+			Log::error('Error converting activity to note: ' . $e->getMessage());
 			return response()->json([
 				'success' => false,
 				'message' => 'An error occurred while converting activity to note'
@@ -8601,7 +8691,7 @@ class ClientsController extends Controller
 			]);
 			
 		} catch (\Exception $e) {
-			\Log::error('Error fetching client matters: ' . $e->getMessage());
+			Log::error('Error fetching client matters: ' . $e->getMessage());
 			return response()->json([
 				'success' => false,
 				'message' => 'An error occurred while fetching client matters'
@@ -8733,7 +8823,9 @@ class ClientsController extends Controller
         $filePath = 'https://bansalcrmdemo.s3.ap-southeast-2.amazonaws.com/ARTI2400003/conversion_email_fetch/1724409625172329274417231216441723035319Request received – Reference Number NPRS-1773829 (1).msg';
         try {
             // Parse the .msg file
-            $message = Msg::fromFile($filePath); dd($message);
+            // Using fully qualified namespace for Intelephense recognition
+            /** @var \Hfig\MAPI\Message\Msg $message */
+            $message = \Hfig\MAPI\Message\Msg::fromFile($filePath); dd($message);
             $htmlContent = $this->convertMsgToHtml($message);
   
             return view('preview', ['content' => $htmlContent]);
@@ -8925,7 +9017,7 @@ class ClientsController extends Controller
                     $o->sender_id = Auth::user()->id;
                     $o->receiver_id = $assigneeId;
                     $o->module_id = $clientId;
-                    $o->url = \URL::to('/clients/detail/' . $requestData['client_id']);
+                    $o->url = URL::to('/clients/detail/' . $requestData['client_id']);
                     $o->notification_type = 'client';
                     $o->receiver_status = 0; // Unread
                     $o->seen = 0; // Not seen
@@ -9036,7 +9128,7 @@ class ClientsController extends Controller
                                 // Create new tag
                                 $newTag = new \App\Models\Tag();
                                 $newTag->name = $tagValue;
-                                $newTag->created_by = auth()->id();
+                                $newTag->created_by = Auth::id();
                                 $newTag->save();
                                 $tagIds[] = $newTag->id;
                             }
@@ -9052,7 +9144,7 @@ class ClientsController extends Controller
             return redirect()->back()->with('success', 'Tags saved successfully');
 
         } catch (\Exception $e) {
-            \Log::error('Error saving tags: ' . $e->getMessage());
+            Log::error('Error saving tags: ' . $e->getMessage());
             return redirect()->back()->with('error', 'An error occurred while saving tags');
         }
     }
@@ -9113,9 +9205,9 @@ class ClientsController extends Controller
                     
                     // Set URL based on whether client exists
                     if (!empty($requestData['client_id'])) {
-                        $notification->url = \URL::to('/clients/detail/' . $requestData['client_id']);
+                        $notification->url = URL::to('/clients/detail/' . $requestData['client_id']);
                     } else {
-                        $notification->url = \URL::to('/action');
+                        $notification->url = URL::to('/action');
                     }
                     
                     $notification->message = 'assigned you a task';
@@ -9126,7 +9218,7 @@ class ClientsController extends Controller
 
             return response()->json(['success' => true, 'message' => 'Task created successfully']);
         } catch (\Exception $e) {
-            \Log::error('Error in personalfollowup: ' . $e->getMessage(), [
+            Log::error('Error in personalfollowup: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
                 'request_data' => $request->all()
             ]);
@@ -9176,9 +9268,9 @@ class ClientsController extends Controller
                 
                 // Set URL based on whether client exists
                 if (!empty($requestData['client_id'])) {
-                    $notification->url = \URL::to('/clients/detail/' . $requestData['client_id']);
+                    $notification->url = URL::to('/clients/detail/' . $requestData['client_id']);
                 } else {
-                    $notification->url = \URL::to('/action');
+                    $notification->url = URL::to('/action');
                 }
                 
                 $notification->message = 'updated your task';
@@ -9241,9 +9333,9 @@ class ClientsController extends Controller
                 
                 // Set URL based on whether client exists
                 if (!empty($requestData['client_id'])) {
-                    $notification->url = \URL::to('/clients/detail/' . $requestData['client_id']);
+                    $notification->url = URL::to('/clients/detail/' . $requestData['client_id']);
                 } else {
-                    $notification->url = \URL::to('/action');
+                    $notification->url = URL::to('/action');
                 }
                 
                 $notification->message = 'assigned you a task';
@@ -9253,7 +9345,7 @@ class ClientsController extends Controller
 
             return response()->json(['success' => true, 'message' => 'Task created successfully']);
         } catch (\Exception $e) {
-            \Log::error('Error in reassignfollowupstore: ' . $e->getMessage(), [
+            Log::error('Error in reassignfollowupstore: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
                 'request_data' => $request->all()
             ]);
@@ -9373,7 +9465,7 @@ class ClientsController extends Controller
                 'message' => 'Validation error: ' . implode(', ', $e->errors())
             ], 422);
         } catch (\Exception $e) {
-            \Log::error('Error updating matter office: ' . $e->getMessage());
+            Log::error('Error updating matter office: ' . $e->getMessage());
             
             return response()->json([
                 'success' => false,
@@ -9456,7 +9548,7 @@ class ClientsController extends Controller
             return redirect()->back()->with('success', 'Appointment created successfully');
             
         } catch (\Exception $e) {
-            \Log::error('Error creating appointment: ' . $e->getMessage());
+            Log::error('Error creating appointment: ' . $e->getMessage());
             
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
@@ -9622,7 +9714,7 @@ class ClientsController extends Controller
 
             // Consultant is nullable, but log if not found
             if (!$consultant) {
-                \Log::warning('No consultant assigned for appointment', [
+                Log::warning('No consultant assigned for appointment', [
                     'noe_id' => $requestData['noe_id'],
                     'service_id' => $serviceId,
                     'location' => $location,
@@ -9690,14 +9782,14 @@ class ClientsController extends Controller
                     throw new \Exception('Bansal API did not return appointment ID. Response: ' . json_encode($bansalApiResponse));
                 }
                 
-                \Log::info('Appointment created on Bansal website', [
+                Log::info('Appointment created on Bansal website', [
                     'bansal_appointment_id' => $bansalAppointmentId,
                     'client_id' => $client->id,
                     'client_email' => $clientEmail
                 ]);
             } catch (\Exception $apiException) {
                 $bansalApiError = $apiException->getMessage();
-                \Log::error('Failed to create appointment on Bansal website via API', [
+                Log::error('Failed to create appointment on Bansal website via API', [
                     'error' => $bansalApiError,
                     'client_id' => $client->id,
                     'client_email' => $clientEmail,
@@ -9723,7 +9815,7 @@ class ClientsController extends Controller
                     $bansalAppointmentId = 2000000 + (time() % 900000) + mt_rand(1, 99999);
                 }
                 
-                \Log::warning('Using temporary bansal_appointment_id due to API failure', [
+                Log::warning('Using temporary bansal_appointment_id due to API failure', [
                     'temporary_id' => $bansalAppointmentId,
                     'api_error' => $bansalApiError,
                     'client_id' => $client->id
@@ -9790,7 +9882,7 @@ class ClientsController extends Controller
             $successMessage = 'Appointment booked successfully';
             if ($bansalApiError) {
                 $successMessage .= '. Note: Appointment created in CRM but could not be synced to Bansal website. Error: ' . $bansalApiError;
-                \Log::warning('Appointment created locally but Bansal API sync failed', [
+                Log::warning('Appointment created locally but Bansal API sync failed', [
                     'appointment_id' => $appointment->id,
                     'bansal_appointment_id' => $bansalAppointmentId,
                     'api_error' => $bansalApiError
@@ -9811,7 +9903,7 @@ class ClientsController extends Controller
             return redirect()->back()->with($bansalApiError ? 'warning' : 'success', $successMessage);
             
         } catch (\Exception $e) {
-            \Log::error('Error creating booking appointment: ' . $e->getMessage(), [
+            Log::error('Error creating booking appointment: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
                 'request_data' => $request->all()
             ]);

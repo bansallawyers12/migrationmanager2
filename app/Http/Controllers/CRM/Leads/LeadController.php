@@ -998,4 +998,50 @@ class LeadController extends Controller
         
         return false;
     }
+
+    /**
+     * Archive a lead
+     * Sets is_archived = 1 for the specified lead
+     *
+     * @param Request $request
+     * @param string $id Encoded lead ID
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function archive(Request $request, $id)
+    {
+        try {
+            // Decode the lead ID
+            $decodedId = $this->decodeString($id);
+            
+            if (!$decodedId) {
+                return redirect()->route('leads.index')
+                    ->with('error', config('constants.decode_string') ?? 'Invalid lead ID.');
+            }
+            
+            // Find the lead (using withArchived to include archived leads)
+            $lead = Lead::withArchived()->where('id', $decodedId)->first();
+            
+            if (!$lead) {
+                return redirect()->route('leads.index')
+                    ->with('error', 'Lead not found.');
+            }
+            
+            // Check if already archived
+            if ($lead->is_archived == 1) {
+                return redirect()->route('leads.index')
+                    ->with('info', 'Lead is already archived.');
+            }
+            
+            // Archive the lead
+            $lead->archive();
+            
+            return redirect()->route('leads.index')
+                ->with('success', 'Lead has been archived successfully.');
+                
+        } catch (\Exception $e) {
+            Log::error('Error archiving lead: ' . $e->getMessage());
+            return redirect()->route('leads.index')
+                ->with('error', 'An error occurred while archiving the lead. Please try again.');
+        }
+    }
 }

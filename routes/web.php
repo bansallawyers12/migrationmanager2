@@ -199,6 +199,9 @@ Route::middleware(['auth:admin'])->group(function() {
         Route::post('/bulk-convert', [LeadConversionController::class, 'bulkConvertToClient'])->name('bulk_convert');
         Route::get('/conversion-stats', [LeadConversionController::class, 'getConversionStats'])->name('conversion_stats');
         
+        // Archive operations
+        Route::post('/archive/{id}', [LeadController::class, 'archive'])->name('archive');
+        
         // Analytics (Admin/Team Lead only)
         Route::prefix('analytics')->name('analytics.')->group(function () {
             Route::get('/', [LeadAnalyticsController::class, 'index'])->name('index');

@@ -21,6 +21,7 @@
         color: white !important;
         text-decoration: none;
         box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+        margin-right: 8px;
     }
 
     .btn-edit-icon:hover {
@@ -39,6 +40,46 @@
     .btn-edit-icon i {
         font-size: 14px;
         color: white;
+    }
+
+    /* Archive Icon Button Styling */
+    .btn-archive-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        border: none;
+        border-radius: 8px;
+        color: white !important;
+        text-decoration: none;
+        box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
+        cursor: pointer;
+    }
+
+    .btn-archive-icon:hover {
+        background: linear-gradient(135deg, #e58e0a 0%, #c26505 100%);
+        box-shadow: 0 4px 8px rgba(245, 158, 11, 0.3);
+        color: white !important;
+        text-decoration: none;
+    }
+
+    .btn-archive-icon:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25);
+        color: white !important;
+    }
+
+    .btn-archive-icon i {
+        font-size: 14px;
+        color: white;
+    }
+
+    .action-buttons {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
     }
 
     .listing-container .card-header {
@@ -448,9 +489,17 @@
                                             </span>
                                         </td>
                                         <td>
-                                            <a href="{{route('clients.edit', base64_encode(convert_uuencode(@$list->id)))}}" class="btn-edit-icon" title="Edit Lead">
-                                                <i class="fa fa-edit"></i>
-                                            </a>
+                                            <div class="action-buttons">
+                                                <a href="{{route('clients.edit', base64_encode(convert_uuencode(@$list->id)))}}" class="btn-edit-icon" title="Edit Lead">
+                                                    <i class="fa fa-edit"></i>
+                                                </a>
+                                                <form action="{{ route('leads.archive', base64_encode(convert_uuencode(@$list->id))) }}" method="POST" class="archive-lead-form" style="display: inline-block;">
+                                                    @csrf
+                                                    <button type="button" class="btn-archive-icon" title="Archive Lead" onclick="confirmArchive(event, '{{ @$list->first_name }} {{ @$list->last_name }}');">
+                                                        <i class="fa fa-archive"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
                                         </td>
                                     </tr>
                                     <?php $i++; ?>
@@ -842,6 +891,46 @@
             return repo.name || repo.text;
         }
     });
+</script>
+<script>
+    // Archive lead confirmation function - Global scope
+    function confirmArchive(event, leadName) {
+        // Prevent default button behavior
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        
+        // Find the form - try multiple methods for compatibility
+        var form = null;
+        if (event && event.target) {
+            form = event.target.closest('form');
+            if (!form && typeof jQuery !== 'undefined') {
+                form = jQuery(event.target).closest('.archive-lead-form')[0];
+            }
+        }
+        
+        // If still no form found, try to find by button
+        if (!form && event && event.target) {
+            var button = event.target.closest('button') || event.target;
+            if (button) {
+                form = button.closest('form');
+            }
+        }
+        
+        var confirmMessage = 'Are you sure you want to archive the lead "' + (leadName || 'this lead') + '"?\n\nThis will move the lead to the archived list.';
+        
+        if (confirm(confirmMessage)) {
+            if (form) {
+                form.submit();
+            } else {
+                alert('Error: Could not find the form to submit. Please try again.');
+                console.error('Archive form not found');
+            }
+        }
+        
+        return false;
+    }
 </script>
 @endpush
 
