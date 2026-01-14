@@ -195,6 +195,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/blogs/list', [OthersController::class, 'getBlogList']);
     Route::get('/blogs/detail/{id}', [OthersController::class, 'getBlogDetail']);
     
+    // PR Point Calculator routes
+    Route::get('/pr-point-calc-lists', [OthersController::class, 'getPrPointCalcLists']);
+    Route::post('/pr-point-calc-result', [OthersController::class, 'calculatePrPointsResult']);
+    
+    // Student Calculator routes
+    Route::get('/student-calc-lists', [OthersController::class, 'getStudentCalcLists']);
+    Route::post('/student-calc-result', [OthersController::class, 'calculateStudentFinancialRequirements']);
+    
 });
 
 // Broadcasting auth route for WebSocket authentication

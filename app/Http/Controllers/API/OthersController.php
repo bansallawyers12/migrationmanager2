@@ -12,15 +12,30 @@ use Exception;
 class OthersController extends Controller
 {
     /**
+     * Get Bansal API configuration
+     * 
+     * @return array Returns array with 'baseUrl', 'apiToken', and 'timeout'
+     */
+    private function getBansalApiConfig()
+    {
+        return [
+            'baseUrl' => config('services.bansal_api.url', 'https://www.bansalimmigration.com.au/api/crm'),
+            'apiToken' => config('services.bansal_api.token'),
+            'timeout' => config('services.bansal_api.timeout', 30)
+        ];
+    }
+
+    /**
      * Get Blog List
      * GET /api/blogs/list
      */
     public function getBlogList(Request $request)
     {
         try {
-            $baseUrl = config('services.bansal_api.url', 'https://www.bansalimmigration.com.au/api/crm');
-            $apiToken = config('services.bansal_api.token');
-            $timeout = config('services.bansal_api.timeout', 30);
+            $config = $this->getBansalApiConfig();
+            $baseUrl = $config['baseUrl'];
+            $apiToken = $config['apiToken'];
+            $timeout = $config['timeout'];
 
             if (empty($apiToken)) {
                 return response()->json([
@@ -131,9 +146,10 @@ class OthersController extends Controller
     public function getBlogDetail(Request $request, $id)
     {
         try {
-            $baseUrl = config('services.bansal_api.url', 'https://www.bansalimmigration.com.au/api/crm');
-            $apiToken = config('services.bansal_api.token');
-            $timeout = config('services.bansal_api.timeout', 30);
+            $config = $this->getBansalApiConfig();
+            $baseUrl = $config['baseUrl'];
+            $apiToken = $config['apiToken'];
+            $timeout = $config['timeout'];
 
             if (empty($apiToken)) {
                 return response()->json([
@@ -213,6 +229,354 @@ class OthersController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'An unexpected error occurred while fetching blog detail',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get PR Point Calculator Lists
+     * GET /api/pr-point-calc-lists
+     */
+    public function getPrPointCalcLists(Request $request)
+    {
+        try {
+            $config = $this->getBansalApiConfig();
+            $baseUrl = $config['baseUrl'];
+            $apiToken = $config['apiToken'];
+            $timeout = $config['timeout'];
+
+            if (empty($apiToken)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bansal API token not configured. Set BANSAL_API_TOKEN in .env'
+                ], 500);
+            }
+
+            // Make API call to Bansal API
+            $response = Http::timeout($timeout)
+                ->withToken($apiToken)
+                ->acceptJson()
+                ->get("{$baseUrl}/pr-point-calc-lists");
+
+            if ($response->failed()) {
+                Log::error('Bansal API PR Point Calculator Lists Error', [
+                    'method' => 'getPrPointCalcLists',
+                    'status' => $response->status(),
+                    'body' => $response->body()
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to fetch PR Point Calculator lists from external API',
+                    'error' => $response->status() === 404 ? 'PR Point Calculator lists not found' : 'API request failed'
+                ], $response->status());
+            }
+
+            $data = $response->json();
+
+            // Return the response as-is from the external API
+            return response()->json($data, $response->status());
+
+        } catch (RequestException $e) {
+            $response = $e->response;
+            $responseBody = $response?->json();
+            $message = null;
+
+            if (is_array($responseBody)) {
+                $message = $responseBody['message']
+                    ?? ($responseBody['error']['message'] ?? null);
+            }
+
+            $message = $message ?: $response?->body() ?: $e->getMessage();
+
+            Log::error('Bansal API PR Point Calculator Lists Request Error', [
+                'method' => 'getPrPointCalcLists',
+                'status' => $response?->status(),
+                'body' => $response?->body(),
+                'error' => $message
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $message ?: 'Failed to fetch PR Point Calculator lists',
+                'error' => 'API request failed'
+            ], $response?->status() ?: 500);
+
+        } catch (Exception $e) {
+            Log::error('Bansal API PR Point Calculator Lists Error', [
+                'method' => 'getPrPointCalcLists',
+                'error_type' => get_class($e),
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An unexpected error occurred while fetching PR Point Calculator lists',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Calculate PR Points Result
+     * POST /api/pr-point-calc-result
+     */
+    public function calculatePrPointsResult(Request $request)
+    {
+        try {
+            $config = $this->getBansalApiConfig();
+            $baseUrl = $config['baseUrl'];
+            $apiToken = $config['apiToken'];
+            $timeout = $config['timeout'];
+
+            if (empty($apiToken)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bansal API token not configured. Set BANSAL_API_TOKEN in .env'
+                ], 500);
+            }
+
+            // Get request body data
+            $requestData = $request->all();
+
+            // Make API call to Bansal API
+            $response = Http::timeout($timeout)
+                ->withToken($apiToken)
+                ->acceptJson()
+                ->post("{$baseUrl}/pr-point-calc-result", $requestData);
+
+            if ($response->failed()) {
+                Log::error('Bansal API Calculate PR Points Result Error', [
+                    'method' => 'calculatePrPointsResult',
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                    'request_data' => $requestData
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to calculate PR Points result from external API',
+                    'error' => $response->status() === 404 ? 'PR Points calculation not found' : 'API request failed'
+                ], $response->status());
+            }
+
+            $data = $response->json();
+
+            // Return the response as-is from the external API
+            return response()->json($data, $response->status());
+
+        } catch (RequestException $e) {
+            $response = $e->response;
+            $responseBody = $response?->json();
+            $message = null;
+
+            if (is_array($responseBody)) {
+                $message = $responseBody['message']
+                    ?? ($responseBody['error']['message'] ?? null);
+            }
+
+            $message = $message ?: $response?->body() ?: $e->getMessage();
+
+            Log::error('Bansal API Calculate PR Points Result Request Error', [
+                'method' => 'calculatePrPointsResult',
+                'status' => $response?->status(),
+                'body' => $response?->body(),
+                'error' => $message,
+                'request_data' => $request->all()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $message ?: 'Failed to calculate PR Points result',
+                'error' => 'API request failed'
+            ], $response?->status() ?: 500);
+
+        } catch (Exception $e) {
+            Log::error('Bansal API Calculate PR Points Result Error', [
+                'method' => 'calculatePrPointsResult',
+                'error_type' => get_class($e),
+                'error' => $e->getMessage(),
+                'request_data' => $request->all()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An unexpected error occurred while calculating PR Points result',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get Student Calculator Lists
+     * GET /api/student-calc-lists
+     */
+    public function getStudentCalcLists(Request $request)
+    {
+        try {
+            $config = $this->getBansalApiConfig();
+            $baseUrl = $config['baseUrl'];
+            $apiToken = $config['apiToken'];
+            $timeout = $config['timeout'];
+
+            if (empty($apiToken)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bansal API token not configured. Set BANSAL_API_TOKEN in .env'
+                ], 500);
+            }
+
+            // Make API call to Bansal API
+            $response = Http::timeout($timeout)
+                ->withToken($apiToken)
+                ->acceptJson()
+                ->get("{$baseUrl}/student-calc-lists");
+
+            if ($response->failed()) {
+                Log::error('Bansal API Student Calculator Lists Error', [
+                    'method' => 'getStudentCalcLists',
+                    'status' => $response->status(),
+                    'body' => $response->body()
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to fetch Student Calculator lists from external API',
+                    'error' => $response->status() === 404 ? 'Student Calculator lists not found' : 'API request failed'
+                ], $response->status());
+            }
+
+            $data = $response->json();
+
+            // Return the response as-is from the external API
+            return response()->json($data, $response->status());
+
+        } catch (RequestException $e) {
+            $response = $e->response;
+            $responseBody = $response?->json();
+            $message = null;
+
+            if (is_array($responseBody)) {
+                $message = $responseBody['message']
+                    ?? ($responseBody['error']['message'] ?? null);
+            }
+
+            $message = $message ?: $response?->body() ?: $e->getMessage();
+
+            Log::error('Bansal API Student Calculator Lists Request Error', [
+                'method' => 'getStudentCalcLists',
+                'status' => $response?->status(),
+                'body' => $response?->body(),
+                'error' => $message
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $message ?: 'Failed to fetch Student Calculator lists',
+                'error' => 'API request failed'
+            ], $response?->status() ?: 500);
+
+        } catch (Exception $e) {
+            Log::error('Bansal API Student Calculator Lists Error', [
+                'method' => 'getStudentCalcLists',
+                'error_type' => get_class($e),
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An unexpected error occurred while fetching Student Calculator lists',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Calculate Student Financial Requirements
+     * POST /api/student-calc-result
+     */
+    public function calculateStudentFinancialRequirements(Request $request)
+    {
+        try {
+            $config = $this->getBansalApiConfig();
+            $baseUrl = $config['baseUrl'];
+            $apiToken = $config['apiToken'];
+            $timeout = $config['timeout'];
+
+            if (empty($apiToken)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bansal API token not configured. Set BANSAL_API_TOKEN in .env'
+                ], 500);
+            }
+
+            // Get request body data
+            $requestData = $request->all();
+
+            // Make API call to Bansal API
+            $response = Http::timeout($timeout)
+                ->withToken($apiToken)
+                ->acceptJson()
+                ->post("{$baseUrl}/student-calc-result", $requestData);
+
+            if ($response->failed()) {
+                Log::error('Bansal API Calculate Student Financial Requirements Error', [
+                    'method' => 'calculateStudentFinancialRequirements',
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                    'request_data' => $requestData
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to calculate Student Financial Requirements from external API',
+                    'error' => $response->status() === 404 ? 'Student Financial Requirements calculation not found' : 'API request failed'
+                ], $response->status());
+            }
+
+            $data = $response->json();
+
+            // Return the response as-is from the external API
+            return response()->json($data, $response->status());
+
+        } catch (RequestException $e) {
+            $response = $e->response;
+            $responseBody = $response?->json();
+            $message = null;
+
+            if (is_array($responseBody)) {
+                $message = $responseBody['message']
+                    ?? ($responseBody['error']['message'] ?? null);
+            }
+
+            $message = $message ?: $response?->body() ?: $e->getMessage();
+
+            Log::error('Bansal API Calculate Student Financial Requirements Request Error', [
+                'method' => 'calculateStudentFinancialRequirements',
+                'status' => $response?->status(),
+                'body' => $response?->body(),
+                'error' => $message,
+                'request_data' => $request->all()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $message ?: 'Failed to calculate Student Financial Requirements',
+                'error' => 'API request failed'
+            ], $response?->status() ?: 500);
+
+        } catch (Exception $e) {
+            Log::error('Bansal API Calculate Student Financial Requirements Error', [
+                'method' => 'calculateStudentFinancialRequirements',
+                'error_type' => get_class($e),
+                'error' => $e->getMessage(),
+                'request_data' => $request->all()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An unexpected error occurred while calculating Student Financial Requirements',
                 'error' => $e->getMessage()
             ], 500);
         }

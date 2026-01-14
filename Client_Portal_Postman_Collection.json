@@ -7188,6 +7188,322 @@
 					"body": "{\n    \"success\": false,\n    \"message\": \"Failed to fetch blog detail from external API\",\n    \"error\": \"Blog not found\"\n}"
 				}
 			]
+		},
+		{
+			"name": "Get PR Point Calculator Lists",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text",
+						"description": "Use token from login response"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/pr-point-calc-lists",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"pr-point-calc-lists"
+					]
+				},
+				"description": "Get PR Point Calculator lists from the external Bansal API.\n\n**Response:**\n- `200`: PR Point Calculator lists retrieved successfully\n- `401`: Unauthorized\n- `500`: API configuration error or external API failure\n\n**Note:** This endpoint proxies requests to `https://www.bansalimmigration.com.au/api/crm/pr-point-calc-lists`"
+			},
+			"response": [
+				{
+					"name": "Success Response",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/pr-point-calc-lists",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"pr-point-calc-lists"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": true,\n    \"data\": {\n        \"lists\": []\n    }\n}"
+				}
+			]
+		},
+		{
+			"name": "Calculate PR Points Result",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text",
+						"description": "Use token from login response"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"age\": 30,\n    \"english_language_proficiency\": 20,\n    \"educational_qualifications\": 15,\n    \"skilled_employment_overseas\": 10,\n    \"skilled_employment_australia\": 0,\n    \"additional_points\": [5, 5],\n    \"partner_spouse_status\": 10\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/pr-point-calc-result",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"pr-point-calc-result"
+					]
+				},
+				"description": "Calculate PR Points Result based on provided criteria from the external Bansal API.\n\n**Request Body:**\n- `age` (required): Age in years (integer)\n- `english_language_proficiency` (required): English language proficiency points (integer)\n- `educational_qualifications` (required): Educational qualifications points (integer)\n- `skilled_employment_overseas` (required): Skilled employment overseas points (integer)\n- `skilled_employment_australia` (required): Skilled employment in Australia points (integer)\n- `additional_points` (optional): Array of additional points (array of integers)\n- `partner_spouse_status` (required): Partner/spouse status points (integer)\n\n**Response:**\n- `200`: PR Points calculated successfully\n- `401`: Unauthorized\n- `500`: API configuration error or external API failure\n\n**Note:** This endpoint proxies requests to `https://www.bansalimmigration.com.au/api/crm/pr-point-calc-result`"
+			},
+			"response": [
+				{
+					"name": "Success Response",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"age\": 30,\n    \"english_language_proficiency\": 20,\n    \"educational_qualifications\": 15,\n    \"skilled_employment_overseas\": 10,\n    \"skilled_employment_australia\": 0,\n    \"additional_points\": [5, 5],\n    \"partner_spouse_status\": 10\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/pr-point-calc-result",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"pr-point-calc-result"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": true,\n    \"data\": {\n        \"total_points\": 90,\n        \"breakdown\": {}\n    }\n}"
+				}
+			]
+		},
+		{
+			"name": "Get Student Calculator Lists",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text",
+						"description": "Use token from login response"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/student-calc-lists",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"student-calc-lists"
+					]
+				},
+				"description": "Get Student Calculator lists from the external Bansal API.\n\n**Response:**\n- `200`: Student Calculator lists retrieved successfully\n- `401`: Unauthorized\n- `500`: API configuration error or external API failure\n\n**Note:** This endpoint proxies requests to `https://www.bansalimmigration.com.au/api/crm/student-calc-lists`"
+			},
+			"response": [
+				{
+					"name": "Success Response",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/student-calc-lists",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"student-calc-lists"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": true,\n    \"data\": {\n        \"lists\": []\n    }\n}"
+				}
+			]
+		},
+		{
+			"name": "Calculate Student Financial Requirements",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text",
+						"description": "Use token from login response"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"course_duration\": 2,\n    \"annual_tuition_fee\": 30000,\n    \"partner_spouse\": 1,\n    \"dependent_children\": 1,\n    \"school_age_children\": 1,\n    \"additional_accommodation\": 20000,\n    \"oshc_type\": 1800,\n    \"travel_expenses\": 2000\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/student-calc-result",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"student-calc-result"
+					]
+				},
+				"description": "Calculate Student Financial Requirements based on provided criteria from the external Bansal API.\n\n**Request Body:**\n- `course_duration` (required): Course duration in years (integer)\n- `annual_tuition_fee` (required): Annual tuition fee (integer)\n- `partner_spouse` (required): Number of partner/spouse (integer)\n- `dependent_children` (required): Number of dependent children (integer)\n- `school_age_children` (required): Number of school age children (integer)\n- `additional_accommodation` (required): Additional accommodation cost (integer)\n- `oshc_type` (required): OSHC (Overseas Student Health Cover) type cost (integer)\n- `travel_expenses` (required): Travel expenses (integer)\n\n**Response:**\n- `200`: Student Financial Requirements calculated successfully\n- `401`: Unauthorized\n- `500`: API configuration error or external API failure\n\n**Note:** This endpoint proxies requests to `https://www.bansalimmigration.com.au/api/crm/student-calc-result`"
+			},
+			"response": [
+				{
+					"name": "Success Response",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"course_duration\": 2,\n    \"annual_tuition_fee\": 30000,\n    \"partner_spouse\": 1,\n    \"dependent_children\": 1,\n    \"school_age_children\": 1,\n    \"additional_accommodation\": 20000,\n    \"oshc_type\": 1800,\n    \"travel_expenses\": 2000\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/student-calc-result",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"student-calc-result"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": true,\n    \"data\": {\n        \"total_requirements\": 0,\n        \"breakdown\": {}\n    }\n}"
+				}
+			]
 		}
 	],
 	"event": [
