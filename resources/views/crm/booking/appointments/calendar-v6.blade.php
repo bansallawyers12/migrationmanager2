@@ -368,6 +368,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 ? props.meeting_type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
                 : 'N/A';
             
+            // Format date and time for input fields in Melbourne timezone
+            const melbourneDate = utcDate.toLocaleDateString('en-CA', {
+                timeZone: 'Australia/Melbourne'
+            });
+            const melbourneTime = utcDate.toLocaleTimeString('en-US', {
+                timeZone: 'Australia/Melbourne',
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
             const modalBody = `
                 <div class="appointment-details">
                     <div class="row">
@@ -397,6 +408,38 @@ document.addEventListener('DOMContentLoaded', function() {
                             <p><strong>Status:</strong> <span class="badge badge-${getStatusClass(props.status)}" id="statusBadge">${props.status.toUpperCase()}</span></p>
                             <p><strong>Payment:</strong> <span class="badge badge-${props.is_paid ? 'success' : 'secondary'}">${props.payment_status}</span></p>
                             ${props.is_paid ? `<p><strong>Amount:</strong> $${props.final_amount ? parseFloat(props.final_amount).toFixed(2) : '0.00'}</p>` : ''}
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Reschedule Date & Time Section -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <h6><i class="fas fa-calendar-alt"></i> Reschedule Date & Time</h6>
+                            <div class="form-row">
+                                <div class="form-group col-md-4">
+                                    <label for="rescheduleDate-${event.id}" class="small">Appointment Date</label>
+                                    <input type="date" class="form-control form-control-sm" id="rescheduleDate-${event.id}" 
+                                           value="${melbourneDate}" 
+                                           data-original-date="${melbourneDate}"
+                                           onchange="validateWeekendDate(this, ${event.id})">
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label for="rescheduleTime-${event.id}" class="small">Appointment Time</label>
+                                    <input type="time" class="form-control form-control-sm" id="rescheduleTime-${event.id}" 
+                                           value="${melbourneTime}" 
+                                           data-original-time="${melbourneTime}">
+                                </div>
+                                <div class="form-group col-md-4 d-flex align-items-end">
+                                    <button type="button" class="btn btn-sm btn-primary w-100" onclick="rescheduleAppointmentDateTime(${event.id}, '${props.meeting_type || 'in_person'}', '${props.preferred_language || 'English'}')">
+                                        <i class="fas fa-save"></i> Update Date & Time
+                                    </button>
+                                </div>
+                            </div>
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle"></i> Changes will sync with the Bansal website if the appointment is linked.
+                            </small>
                         </div>
                     </div>
                     
@@ -698,6 +741,170 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .finally(() => {
             select.disabled = false;
+        });
+    };
+    
+    // Validate weekend date function
+    window.validateWeekendDate = function(dateInput, appointmentId) {
+        if (!dateInput.value) {
+            return;
+        }
+        
+        const selectedDate = new Date(dateInput.value);
+        const dayOfWeek = selectedDate.getDay(); // 0 = Sunday, 6 = Saturday
+        
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+            // Weekend selected - reset to original date
+            const originalDate = dateInput.getAttribute('data-original-date');
+            dateInput.value = originalDate;
+            
+            showAlert('warning', 'Weekends (Saturday and Sunday) are not available for appointments. Please select a weekday.');
+            return false;
+        }
+        
+        return true;
+    };
+    
+    // Reschedule Date & Time function
+    window.rescheduleAppointmentDateTime = function(appointmentId, meetingType, preferredLanguage) {
+        const dateInput = document.getElementById(`rescheduleDate-${appointmentId}`);
+        const timeInput = document.getElementById(`rescheduleTime-${appointmentId}`);
+        
+        if (!dateInput || !timeInput) {
+            showAlert('danger', 'Date and time inputs not found.');
+            return;
+        }
+        
+        const newDate = dateInput.value;
+        const newTime = timeInput.value;
+        const originalDate = dateInput.getAttribute('data-original-date');
+        const originalTime = timeInput.getAttribute('data-original-time');
+        
+        // Check if date or time has changed
+        if (newDate === originalDate && newTime === originalTime) {
+            showAlert('info', 'No changes detected. Date and time remain the same.');
+            return;
+        }
+        
+        if (!newDate || !newTime) {
+            showAlert('danger', 'Please select both date and time.');
+            return;
+        }
+        
+        // Validate that the selected date is not a weekend
+        const selectedDate = new Date(newDate);
+        const dayOfWeek = selectedDate.getDay(); // 0 = Sunday, 6 = Saturday
+        
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+            showAlert('warning', 'Weekends (Saturday and Sunday) are not available for appointments. Please select a weekday.');
+            // Reset to original date
+            dateInput.value = originalDate;
+            return;
+        }
+        
+        if (!confirm(`Are you sure you want to reschedule this appointment to ${newDate} at ${newTime}?`)) {
+            // Reset to original values
+            dateInput.value = originalDate;
+            timeInput.value = originalTime;
+            return;
+        }
+        
+        // Show loading state
+        const button = event.target;
+        const originalButtonHtml = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+        button.disabled = true;
+        dateInput.disabled = true;
+        timeInput.disabled = true;
+        
+        // Prepare form data (using FormData for PUT request with _method)
+        const formData = new FormData();
+        formData.append('_method', 'PUT');
+        formData.append('appointment_date', newDate);
+        formData.append('appointment_time', newTime);
+        formData.append('meeting_type', meetingType);
+        formData.append('preferred_language', preferredLanguage);
+        
+        fetch(`/booking/appointments/${appointmentId}`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(errorData => {
+                    throw { status: response.status, data: errorData };
+                }).catch(() => {
+                    throw { status: response.status, message: 'Server error occurred' };
+                });
+            }
+            
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                // If response is not JSON (e.g., redirect), consider it success
+                return { success: true, message: 'Appointment updated successfully' };
+            }
+            
+            return response.json();
+        })
+        .then(data => {
+            if (data.success !== false) {
+                // Update original values
+                dateInput.setAttribute('data-original-date', newDate);
+                dateInput.setAttribute('data-original-time', newTime);
+                
+                // Close the modal and refresh calendar
+                $('#eventModal').modal('hide');
+                calendar.refetchEvents();
+                
+                // Show success message
+                const message = data.message || 'Appointment date and time updated successfully!';
+                showAlert('success', message);
+            } else {
+                showAlert('danger', 'Failed to update appointment: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error rescheduling appointment:', error);
+            
+            // Handle different error types
+            if (error.status === 422) {
+                // Validation error
+                const errorMsg = error.data?.message || 'Validation failed';
+                const errors = error.data?.errors || {};
+                let errorDetails = errorMsg;
+                
+                if (Object.keys(errors).length > 0) {
+                    const errorList = Object.values(errors).flat().join(', ');
+                    errorDetails = errorMsg + ': ' + errorList;
+                }
+                
+                showAlert('danger', errorDetails);
+            } else if (error.status === 404) {
+                showAlert('danger', 'Appointment not found');
+            } else if (error.status === 500) {
+                const errorMsg = error.data?.message || 'Server error occurred';
+                showAlert('danger', errorMsg + ' Please try again later.');
+            } else if (error instanceof SyntaxError && error.message.includes('JSON')) {
+                showAlert('danger', 'Server returned invalid response. Please check server logs or try again.');
+                console.error('Server returned non-JSON response. Check network tab.');
+            } else {
+                showAlert('danger', 'Failed to reschedule appointment. Please try again.');
+            }
+            
+            // Reset to original values on error
+            dateInput.value = originalDate;
+            timeInput.value = originalTime;
+        })
+        .finally(() => {
+            // Restore button and input states
+            button.innerHTML = originalButtonHtml;
+            button.disabled = false;
+            dateInput.disabled = false;
+            timeInput.disabled = false;
         });
     };
     

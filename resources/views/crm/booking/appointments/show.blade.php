@@ -385,11 +385,29 @@ html, body {
                                         <div class="row">
                                             <div class="col-5 info-label">Sync Status:</div>
                                             <div class="col-7 info-value">
-                                                @if($appointment->sync_status === 'success')
-                                                    <span class="badge badge-success">Success</span>
-                                                @else
-                                                    <span class="badge badge-danger">{{ ucfirst($appointment->sync_status ?? 'Unknown') }}</span>
-                                                @endif
+                                                @php
+                                                    $syncStatus = $appointment->sync_status ?? 'new';
+                                                    $syncStatusClass = 'secondary';
+                                                    $syncStatusText = ucfirst($syncStatus);
+                                                    
+                                                    switch($syncStatus) {
+                                                        case 'synced':
+                                                            $syncStatusClass = 'success';
+                                                            $syncStatusText = 'Synced';
+                                                            break;
+                                                        case 'error':
+                                                            $syncStatusClass = 'danger';
+                                                            $syncStatusText = 'Error';
+                                                            break;
+                                                        case 'new':
+                                                            $syncStatusClass = 'warning';
+                                                            $syncStatusText = 'New';
+                                                            break;
+                                                        default:
+                                                            $syncStatusClass = 'secondary';
+                                                    }
+                                                @endphp
+                                                <span class="badge badge-{{ $syncStatusClass }}">{{ $syncStatusText }}</span>
                                             </div>
                                         </div>
                                     </div>

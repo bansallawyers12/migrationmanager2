@@ -52,7 +52,7 @@ class PushBansalAppointmentStatusJob implements ShouldQueue
             ])->save();
         } catch (Exception $e) {
             $appointment->forceFill([
-                'sync_status' => 'failed',
+                'sync_status' => 'error',
                 'sync_error' => $e->getMessage(),
             ])->save();
 

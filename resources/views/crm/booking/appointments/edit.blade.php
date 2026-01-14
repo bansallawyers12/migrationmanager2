@@ -62,7 +62,7 @@
                         <div class="form-row">
                             <div class="form-group col-md-4">
                                 <label for="appointment-date">Appointment Date</label>
-                                <input type="date" class="form-control" id="appointment-date" name="appointment_date" value="{{ old('appointment_date', $appointment->appointment_datetime->format('Y-m-d')) }}" required>
+                                <input type="date" class="form-control" id="appointment-date" name="appointment_date" value="{{ old('appointment_date', $appointment->appointment_datetime->format('Y-m-d')) }}" required onchange="validateWeekendDate(this)" data-original-date="{{ $appointment->appointment_datetime->format('Y-m-d') }}">
                                 <div class="invalid-feedback">
                                     Please select a valid appointment date.
                                 </div>
@@ -155,20 +155,22 @@
                                 <label class="font-weight-bold">Sync Status</label>
                                 <p class="mb-0">
                                     @php
-                                        $syncStatus = $appointment->sync_status ?? 'pending';
+                                        $syncStatus = $appointment->sync_status ?? 'new';
                                         $syncStatusClass = 'secondary';
                                         $syncStatusText = ucfirst($syncStatus);
                                         
                                         switch($syncStatus) {
-                                            case 'success':
                                             case 'synced':
                                                 $syncStatusClass = 'success';
+                                                $syncStatusText = 'Synced';
                                                 break;
-                                            case 'failed':
+                                            case 'error':
                                                 $syncStatusClass = 'danger';
+                                                $syncStatusText = 'Error';
                                                 break;
-                                            case 'pending':
+                                            case 'new':
                                                 $syncStatusClass = 'warning';
+                                                $syncStatusText = 'New';
                                                 break;
                                             default:
                                                 $syncStatusClass = 'secondary';
@@ -239,5 +241,26 @@
         });
     }, false);
 })();
+
+// Validate weekend date function
+window.validateWeekendDate = function(dateInput, appointmentId) {
+    if (!dateInput.value) {
+        return;
+    }
+    
+    const selectedDate = new Date(dateInput.value);
+    const dayOfWeek = selectedDate.getDay(); // 0 = Sunday, 6 = Saturday
+    
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+        // Weekend selected - reset to original date
+        const originalDate = dateInput.getAttribute('data-original-date') || '{{ $appointment->appointment_datetime->format("Y-m-d") }}';
+        dateInput.value = originalDate;
+        
+        alert('Weekends (Saturday and Sunday) are not available for appointments. Please select a weekday.');
+        return false;
+    }
+    
+    return true;
+};
 </script>
 @endsection

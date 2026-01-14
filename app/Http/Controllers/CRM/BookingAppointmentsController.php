@@ -414,7 +414,7 @@ class BookingAppointmentsController extends Controller
                     ]);
 
                     $appointment->forceFill([
-                        'sync_status' => 'failed',
+                        'sync_status' => 'error',
                         'sync_error' => $syncError,
                     ])->save();
                 }
@@ -743,7 +743,7 @@ class BookingAppointmentsController extends Controller
                 if ($apiResponse['success'] ?? false) {
                     $apiSynced = true;
                     $appointment->last_synced_at = now();
-                    $appointment->sync_status = 'success';
+                    $appointment->sync_status = 'synced';
                     $appointment->sync_error = null;
                 } else {
                     $errorMessage = $apiResponse['message'] ?? 'Failed to update appointment on website.';
@@ -761,17 +761,17 @@ class BookingAppointmentsController extends Controller
                                 // Update appointment with new bansal_appointment_id
                                 $appointment->bansal_appointment_id = $newBansalAppointmentId;
                                 $appointment->last_synced_at = now();
-                                $appointment->sync_status = 'success';
+                                $appointment->sync_status = 'synced';
                                 $appointment->sync_error = null;
                                 $apiSynced = true;
                             } else {
                                 $syncError = 'Failed to create appointment on website. Original error: ' . $errorMessage;
-                                $appointment->sync_status = 'failed';
+                                $appointment->sync_status = 'error';
                                 $appointment->sync_error = $syncError;
                             }
                         } catch (Exception $createException) {
                             $syncError = 'Failed to create appointment on website: ' . $createException->getMessage();
-                            $appointment->sync_status = 'failed';
+                            $appointment->sync_status = 'error';
                             $appointment->sync_error = $syncError;
                             
                             Log::warning('Failed to create appointment via API after invalid ID error', [
@@ -783,7 +783,7 @@ class BookingAppointmentsController extends Controller
                     } else {
                         // Other API error (not invalid ID)
                         $syncError = $errorMessage;
-                        $appointment->sync_status = 'failed';
+                        $appointment->sync_status = 'error';
                         $appointment->sync_error = $syncError;
                     }
                 }
@@ -800,13 +800,13 @@ class BookingAppointmentsController extends Controller
                             // Update appointment with new bansal_appointment_id
                             $appointment->bansal_appointment_id = $newBansalAppointmentId;
                             $appointment->last_synced_at = now();
-                            $appointment->sync_status = 'success';
+                            $appointment->sync_status = 'synced';
                             $appointment->sync_error = null;
                             $apiSynced = true;
                             $syncError = null; // Clear error since we successfully created new appointment
                         } else {
                             $syncError = 'Failed to create appointment on website. Original error: ' . $syncError;
-                            $appointment->sync_status = 'failed';
+                            $appointment->sync_status = 'error';
                             $appointment->sync_error = $syncError;
                         }
                     } catch (Exception $createException) {
@@ -823,7 +823,7 @@ class BookingAppointmentsController extends Controller
                             $syncError = 'Failed to create appointment on website: ' . $createErrorMessage;
                         }
                         
-                        $appointment->sync_status = 'failed';
+                        $appointment->sync_status = 'error';
                         $appointment->sync_error = $syncError;
                         
                         Log::warning('Failed to create appointment via API after invalid ID error', [
@@ -836,7 +836,7 @@ class BookingAppointmentsController extends Controller
                     }
                 } else {
                     // Other exception (not invalid ID)
-                    $appointment->sync_status = 'failed';
+                    $appointment->sync_status = 'error';
                     $appointment->sync_error = $syncError;
                     
                     // Log other exceptions (not invalid ID errors)
@@ -854,7 +854,7 @@ class BookingAppointmentsController extends Controller
         } else {
             // No bansal_appointment_id, so just update locally
             if ($datetimeChanged || $meetingTypeChanged || $preferredLanguageChanged) {
-                $appointment->sync_status = 'pending';
+                $appointment->sync_status = 'new';
                 $appointment->sync_error = null;
             }
         }

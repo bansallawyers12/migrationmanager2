@@ -9868,7 +9868,7 @@ class ClientsController extends Controller
                 'reminder_sms_sent' => false,
                 
                 // Sync status tracking
-                'sync_status' => $bansalApiError ? 'failed' : 'synced',
+                'sync_status' => $bansalApiError ? 'error' : 'synced',
                 'sync_error' => $bansalApiError,
                 'last_synced_at' => $bansalApiError ? null : now(),
                 
