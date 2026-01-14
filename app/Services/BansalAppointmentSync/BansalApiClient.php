@@ -235,14 +235,26 @@ class BansalApiClient
     /**
      * Reschedule an appointment on the Bansal API.
      */
-    public function rescheduleAppointment(int $appointmentId, string $date, string $time): array
+    public function rescheduleAppointment(int $appointmentId, string $date, string $time, ?string $meetingType = null, ?string $preferredLanguage = null): array
     {
         try {
-            $response = $this->client()->post("{$this->baseUrl}/appointments/update-appointment", [
+            $payload = [
                 'appointment_id' => $appointmentId,
                 'appointment_date' => $date,
                 'appointment_time' => $time,
-            ]);
+            ];
+
+            // Add meeting_type if provided
+            if ($meetingType !== null) {
+                $payload['meeting_type'] = $meetingType;
+            }
+
+            // Add preferred_language if provided
+            if ($preferredLanguage !== null) {
+                $payload['preferred_language'] = $preferredLanguage;
+            }
+
+            $response = $this->client()->post("{$this->baseUrl}/appointments/update-appointment", $payload);
 
             return $response->json();
         } catch (RequestException $e) {
@@ -255,6 +267,8 @@ class BansalApiClient
                 'appointment_id' => $appointmentId,
                 'date' => $date,
                 'time' => $time,
+                'meeting_type' => $meetingType,
+                'preferred_language' => $preferredLanguage,
                 'status' => $response?->status(),
                 'body' => $response?->body(),
                 'error' => $message,
@@ -267,6 +281,8 @@ class BansalApiClient
                 'appointment_id' => $appointmentId,
                 'date' => $date,
                 'time' => $time,
+                'meeting_type' => $meetingType,
+                'preferred_language' => $preferredLanguage,
                 'error' => $e->getMessage(),
             ]);
 

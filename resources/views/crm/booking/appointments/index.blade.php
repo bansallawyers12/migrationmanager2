@@ -228,7 +228,7 @@ html, body {
                         <table class="table table-striped table-hover" id="appointments-table">
                             <thead>
                                 <tr>
-                                    <th width="120">Bansal Website Appointment ID</th>
+                                    <th width="120">CRM ID</th>
                                     <th>Client</th>
                                     <th>Appointment</th>
                                     <th>Service</th>
@@ -242,7 +242,8 @@ html, body {
                             <tbody>
                                 @forelse($appointments as $appointment)
                                 <tr>
-                                    <td>{{ $appointment->bansal_appointment_id ?? $appointment->id }}</td>
+                                    <td>{{ $appointment->id ?? $appointment->id }}</td>
+                                    
                                     <td>
                                         @if($appointment->client_id)
                                             @php
