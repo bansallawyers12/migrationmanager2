@@ -28,6 +28,10 @@ window.CRM_Flatpickr = {
             return;
         }
 
+        // Calculate maxDate as Date object to avoid format mismatch issues
+        var maxYear = new Date().getFullYear() + 50;
+        var maxDateObj = new Date(maxYear, 11, 31); // Month is 0-indexed, so 11 = December
+        
         var defaults = {
             dateFormat: 'd/m/Y', // DD/MM/YYYY display format
             allowInput: true,
@@ -36,7 +40,7 @@ window.CRM_Flatpickr = {
                 firstDayOfWeek: 1 // Monday
             },
             minDate: '01/01/1900',
-            maxDate: new Date().getFullYear() + 50 + '-12-31'
+            maxDate: maxDateObj
         };
         
         var config = $.extend({}, defaults, options || {});

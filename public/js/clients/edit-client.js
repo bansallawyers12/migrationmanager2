@@ -1567,13 +1567,17 @@ function initializeDatepickers() {
         }
 
         // Initialize Flatpickr
+        // Calculate maxDate as Date object to avoid format mismatch issues
+        const maxYear = new Date().getFullYear() + 50;
+        const maxDateObj = new Date(maxYear, 11, 31); // Month is 0-indexed, so 11 = December
+        
         const fp = flatpickr(element, {
             dateFormat: 'd/m/Y',
             allowInput: true,
             clickOpens: true,
             defaultDate: currentValue || null,
             minDate: '01/01/1000',
-            maxDate: new Date().getFullYear() + 50 + '-12-31',
+            maxDate: maxDateObj,
             locale: {
                 firstDayOfWeek: 1 // Monday
             },
