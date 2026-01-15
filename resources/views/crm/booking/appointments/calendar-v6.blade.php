@@ -37,6 +37,10 @@
                        class="btn btn-sm {{ $type === 'adelaide' ? 'btn-primary' : 'btn-outline-primary' }}">
                         <i class="fas fa-city"></i> Adelaide
                     </a>
+                    <a href="{{ route('booking.appointments.calendar', ['type' => 'ajay']) }}" 
+                       class="btn btn-sm {{ $type === 'ajay' ? 'btn-primary' : 'btn-outline-primary' }}">
+                        <i class="fas fa-calendar-alt"></i> Ajay Calendar
+                    </a>
                 </div>
             </div>
 
@@ -168,6 +172,20 @@ function waitForFullCalendar(callback, maxAttempts = 50) {
         }
     }, 100); // Check every 100ms
 }
+
+// Make consultants available to JavaScript
+@php
+// Ensure unique consultants by ID using groupBy and take first of each group
+$consultantsArray = $consultants->groupBy('id')->map(function($group) {
+    $consultant = $group->first();
+    return [
+        'id' => $consultant->id,
+        'name' => $consultant->name,
+        'calendar_type' => $consultant->calendar_type,
+    ];
+})->values()->toArray();
+@endphp
+const consultantsData = @json($consultantsArray);
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Waiting for FullCalendar v6 to load...');
@@ -478,13 +496,25 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="col-md-6">
                             <h6><i class="fas fa-exchange-alt"></i> Change Calendar Type</h6>
                             <div class="form-group">
-                                <select class="form-control form-control-sm" id="consultantSelect" onchange="updateAppointmentConsultant(${event.id}, this.value)">
+                                <select class="form-control form-control-sm" id="consultantSelect-${event.id}" onchange="updateAppointmentConsultant(${event.id}, this.value)">
                                     <option value="">Select Consultant...</option>
-                                    <option value="1" ${props.consultant.includes('Arun') ? 'selected' : ''}>Arun Kumar (Pr_complex matters)</option>
-                                    <option value="2" ${props.consultant.includes('Shubham') ? 'selected' : ''}>Shubham/Yadwinder (JRP)</option>
-                                    <option value="3" ${props.consultant.includes('Education') ? 'selected' : ''}>Education Team</option>
-                                    <option value="4" ${props.consultant.includes('Tourist') ? 'selected' : ''}>Tourist Visa Team</option>
-                                    <option value="5" ${props.consultant.includes('Adelaide') ? 'selected' : ''}>Adelaide Office</option>
+                                    ${(() => {
+                                        // Deduplicate consultants by ID to prevent duplicates
+                                        const uniqueConsultants = [];
+                                        const seenIds = new Set();
+                                        if (Array.isArray(consultantsData)) {
+                                            consultantsData.forEach(consultant => {
+                                                if (consultant && consultant.id && !seenIds.has(consultant.id)) {
+                                                    seenIds.add(consultant.id);
+                                                    uniqueConsultants.push(consultant);
+                                                }
+                                            });
+                                        }
+                                        return uniqueConsultants.map(consultant => {
+                                            const isSelected = props.consultant && props.consultant.includes(consultant.name);
+                                            return `<option value="${consultant.id}" ${isSelected ? 'selected' : ''}>${consultant.name} (${consultant.calendar_type})</option>`;
+                                        }).join('');
+                                    })()}
                                 </select>
                             </div>
                             <div class="mt-2">
@@ -658,13 +688,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (!confirm('Are you sure you want to change the consultant? This will move the appointment to a different calendar.')) {
             // Reset the select to previous value
-            const select = document.getElementById('consultantSelect');
-            select.value = '';
+            const select = document.getElementById('consultantSelect-' + appointmentId);
+            if (select) select.value = '';
             return;
         }
         
         // Show loading state
-        const select = document.getElementById('consultantSelect');
+        const select = document.getElementById('consultantSelect-' + appointmentId);
+        if (!select) return;
         const originalValue = select.value;
         select.disabled = true;
         
@@ -709,7 +740,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 showAlert('success', 'Consultant updated successfully! The appointment has been moved to the new calendar.');
             } else {
                 showAlert('danger', 'Failed to update consultant: ' + (data.message || 'Unknown error'));
-                select.value = originalValue;
+                if (select) select.value = originalValue;
             }
         })
         .catch(error => {
@@ -737,10 +768,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 showAlert('danger', 'Failed to update consultant. Please try again.');
             }
             
-            select.value = originalValue;
+            if (select) select.value = originalValue;
         })
         .finally(() => {
-            select.disabled = false;
+            if (select) select.disabled = false;
         });
     };
     

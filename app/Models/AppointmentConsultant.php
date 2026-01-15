@@ -99,6 +99,7 @@ class AppointmentConsultant extends Model
                 'education' => 'Education/Student Visa',
                 'tourist' => 'Tourist Visa',
                 'adelaide' => 'Adelaide Office',
+                'ajay' => 'Ajay Calendar',
                 default => ucfirst($this->calendar_type)
             }
         );

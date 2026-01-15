@@ -193,7 +193,7 @@ Route::controller(BookingAppointmentsController::class)
         // Calendar Views (by type)
         Route::get('/calendar/{type}', 'calendar')
             ->name('appointments.calendar')
-            ->whereIn('type', ['paid', 'jrp', 'education', 'tourist', 'adelaide']);
+            ->whereIn('type', ['paid', 'jrp', 'education', 'tourist', 'adelaide', 'ajay']);
         
         // Update Actions
         Route::post('/appointments/{id}/update-status', 'updateStatus')

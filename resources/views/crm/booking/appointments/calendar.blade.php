@@ -215,6 +215,11 @@ html, body {
                        style="{{ $type === 'adelaide' ? '' : 'color: #007bff !important; border-color: #007bff !important;' }}">
                         <i class="fas fa-city"></i> Adelaide
                     </a>
+                    <a href="{{ route('booking.appointments.calendar', ['type' => 'ajay']) }}" 
+                       class="btn btn-sm {{ $type === 'ajay' ? 'btn-primary' : 'btn-outline-primary' }}" 
+                       style="{{ $type === 'ajay' ? '' : 'color: #007bff !important; border-color: #007bff !important;' }}">
+                        <i class="fas fa-calendar-alt"></i> Ajay Calendar
+                    </a>
                 </div>
             </div>
 

@@ -289,7 +289,7 @@ class BookingAppointmentsController extends Controller
      */
     public function calendar($type)
     {
-        $validTypes = ['paid', 'jrp', 'education', 'tourist', 'adelaide'];
+        $validTypes = ['paid', 'jrp', 'education', 'tourist', 'adelaide', 'ajay'];
         
         if (!in_array($type, $validTypes)) {
             abort(404);
@@ -311,6 +311,7 @@ class BookingAppointmentsController extends Controller
             'education' => 'Education/Student Visa',
             'tourist' => 'Tourist Visa',
             'adelaide' => 'Adelaide Office',
+            'ajay' => 'Ajay Calendar',
             default => ucfirst($type)
         };
         
@@ -350,8 +351,12 @@ class BookingAppointmentsController extends Controller
                 ->count(),
         ];
 
+        // Get all active consultants for transfer dropdown (including Ajay calendar for transfers)
+        // Use distinct() to ensure no duplicates
+        $consultants = AppointmentConsultant::active()->distinct()->get();
+
         // Use FullCalendar v6 version
-        return view('crm.booking.appointments.calendar-v6', compact('type', 'appointments', 'calendarTitle', 'stats'));
+        return view('crm.booking.appointments.calendar-v6', compact('type', 'appointments', 'calendarTitle', 'stats', 'consultants'));
     }
 
     /**
