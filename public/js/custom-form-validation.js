@@ -2860,15 +2860,31 @@ function customValidate(formName, savetype = '')
 							$('.custom-error-msg').html('<span class="alert alert-danger">Form not found. Please refresh the page and try again.</span>');
 							return false;
 						}
+						
+						// Get CSRF token from meta tag (most current source)
+						var csrfToken = $('meta[name="csrf-token"]').attr('content');
+						if (!csrfToken || csrfToken.length === 0) {
+							$('.popuploader').hide();
+							$('.custom-error-msg').html('<span class="alert alert-danger">Security token missing. Please refresh the page and try again.</span>');
+							return false;
+						}
+						
+						// Create FormData from form
 						var fd = new FormData(myform);
+						// Explicitly set the CSRF token in FormData (overwrites any stale token from form)
+						fd.set('_token', csrfToken);
+						
 						$.ajax({
 							type:'post',
 							url:$("form[name="+formName+"]").attr('action'),
 							processData: false,
 							contentType: false,
 							data: fd,
+							xhrFields: {
+								withCredentials: true  // Ensure session cookies are sent
+							},
 							headers: {
-								'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+								'X-CSRF-TOKEN': csrfToken  // Use same token in header
 							},
 							success: function(response){
 								$('.popuploader').hide();
@@ -2891,6 +2907,19 @@ function customValidate(formName, savetype = '')
 								var errorMessage = 'Failed to send email. Please try again.';
 								
 								if(xhr.status === 403){
+									// Check if it's a CSRF token issue
+									var responseText = xhr.responseText || '';
+									var responseJSON = xhr.responseJSON || {};
+									
+									if(responseText.includes('CSRF') || responseText.includes('csrf') || 
+									   responseJSON.message && (responseJSON.message.includes('CSRF') || responseJSON.message.includes('csrf'))){
+										// CSRF token expired - refresh page to get new token
+										$('.custom-error-msg').html('<span class="alert alert-warning">Your session has expired. Refreshing page...</span>');
+										setTimeout(function(){
+											location.reload();
+										}, 1500);
+										return;
+									}
 									errorMessage = 'Access denied. Your session may have expired. Please refresh the page and try again.';
 								} else if(xhr.status === 422){
 									var errors = xhr.responseJSON && xhr.responseJSON.errors ? xhr.responseJSON.errors : {};
