@@ -78,9 +78,9 @@ class BookingAppointmentsController extends Controller
             });
         }
         
-        // Paginate appointments ordered by latest Bansal appointment ID
+        // Paginate appointments ordered by ID (descending - newest first)
         // Preserve filter parameters in pagination links
-        $appointments = $query->orderByDesc('bansal_appointment_id')
+        $appointments = $query->orderByDesc('id')
             ->paginate(20)
             ->appends($request->except('page'));
 
@@ -210,8 +210,8 @@ class BookingAppointmentsController extends Controller
             ]);
         }
 
-        // Default: Return DataTables format ordered by latest Bansal appointment ID
-        $query->orderByDesc('bansal_appointment_id');
+        // Default: Return DataTables format ordered by ID (descending - newest first)
+        $query->orderByDesc('id');
 
         return DataTables::of($query)
             ->addColumn('client_info', function ($appointment) {
