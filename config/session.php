@@ -162,6 +162,9 @@ return [
     | to the server if the browser has a HTTPS connection. This will keep
     | the cookie from being sent to you if it can not be done securely.
     |
+    | IMPORTANT: For production (HTTPS), set SESSION_SECURE_COOKIE=true in .env
+    | For local development (HTTP), set SESSION_SECURE_COOKIE=false or leave unset
+    |
     */
 
     'secure' => env('SESSION_SECURE_COOKIE', false),
@@ -185,13 +188,14 @@ return [
     |--------------------------------------------------------------------------
     |
     | This option determines how your cookies behave when cross-site requests
-    | take place, and can be used to mitigate CSRF attacks. By default, we
-    | do not enable this as other CSRF protection services are in place.
+    | take place, and can be used to mitigate CSRF attacks. 
     |
-    | Supported: "lax", "strict"
+    | Supported: "lax", "strict", "none"
+    | Default: "lax" - Allows cookies to be sent in top-level navigations and same-site requests
+    | Set to "none" if you need cross-site cookies (requires secure=true)
     |
     */
 
-    'same_site' => null,
+    'same_site' => env('SESSION_SAME_SITE', 'lax'),
 
 ];
