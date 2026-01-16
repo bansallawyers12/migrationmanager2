@@ -1292,8 +1292,24 @@ class CRMUtilityController extends Controller
                     $ccarray
                 );
 
+                // Return JSON response for AJAX requests, redirect for regular form submissions
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'status' => true,
+                        'success' => true,
+                        'message' => 'Email sent successfully!'
+                    ]);
+                }
                 return redirect()->back()->with('success', 'Email sent successfully!');
             } catch (\Exception $e) {
+                // Return JSON response for AJAX requests, redirect for regular form submissions
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'status' => false,
+                        'success' => false,
+                        'message' => 'Failed to send email: ' . $e->getMessage()
+                    ], 422);
+                }
                 return redirect()->back()->with('error', 'Failed to send email: ' . $e->getMessage())->withInput();
             }
         }
@@ -1301,8 +1317,24 @@ class CRMUtilityController extends Controller
             unset($array['file']);
         }
         if(!$saved) {
+            // Return JSON response for AJAX requests, redirect for regular form submissions
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'status' => false,
+                    'success' => false,
+                    'message' => config('constants.server_error')
+                ], 500);
+            }
             return redirect()->back()->with('error', config('constants.server_error'));
         } else {
+            // Return JSON response for AJAX requests, redirect for regular form submissions
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'status' => true,
+                    'success' => true,
+                    'message' => 'Email Sent Successfully'
+                ]);
+            }
             return redirect()->back()->with('success', 'Email Sent Successfully');
         }
 	}

@@ -2853,6 +2853,64 @@ function customValidate(formName, savetype = '')
 						});
                     }
 
+					else if(formName == 'sendmail'){
+						var myform = document.querySelector('form[name="sendmail"]');
+						if(!myform){
+							$('.popuploader').hide();
+							$('.custom-error-msg').html('<span class="alert alert-danger">Form not found. Please refresh the page and try again.</span>');
+							return false;
+						}
+						var fd = new FormData(myform);
+						$.ajax({
+							type:'post',
+							url:$("form[name="+formName+"]").attr('action'),
+							processData: false,
+							contentType: false,
+							data: fd,
+							headers: {
+								'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+							},
+							success: function(response){
+								$('.popuploader').hide();
+								// Handle both JSON string and object responses
+								var obj = typeof response === 'string' ? $.parseJSON(response) : response;
+								
+								if(obj.status || (response.success !== undefined && response.success)){
+									$('#emailmodal').modal('hide');
+									$('.custom-error-msg').html('<span class="alert alert-success">'+(obj.message || response.message || 'Email sent successfully!')+'</span>');
+									// Reload page or refresh email list if needed
+									setTimeout(function(){
+										location.reload();
+									}, 1500);
+								}else{
+									$('.custom-error-msg').html('<span class="alert alert-danger">'+(obj.message || response.message || 'Failed to send email. Please try again.')+'</span>');
+								}
+							},
+							error: function(xhr, status, error){
+								$('.popuploader').hide();
+								var errorMessage = 'Failed to send email. Please try again.';
+								
+								if(xhr.status === 403){
+									errorMessage = 'Access denied. Your session may have expired. Please refresh the page and try again.';
+								} else if(xhr.status === 422){
+									var errors = xhr.responseJSON && xhr.responseJSON.errors ? xhr.responseJSON.errors : {};
+									var errorHtml = '<span class="alert alert-danger">Validation errors:<ul>';
+									for(var field in errors){
+										if(errors.hasOwnProperty(field)){
+											errorHtml += '<li>'+errors[field][0]+'</li>';
+										}
+									}
+									errorHtml += '</ul></span>';
+									$('.custom-error-msg').html(errorHtml);
+									return;
+								} else if(xhr.responseJSON && xhr.responseJSON.message){
+									errorMessage = xhr.responseJSON.message;
+								}
+								
+								$('.custom-error-msg').html('<span class="alert alert-danger">'+errorMessage+'</span>');
+							}
+						});
+					}
 					else if(formName == 'checkinmodalsave')
 					{
 						// Validate that utype is set before submitting
