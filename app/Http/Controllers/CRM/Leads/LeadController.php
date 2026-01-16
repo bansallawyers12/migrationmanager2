@@ -66,10 +66,33 @@ class LeadController extends Controller
             });
 
             $query->when($request->filled('email'), function ($q) use ($request) {
-                return $q->where('email', $request->input('email'));
+                $email = $request->input('email');
+                // For universal email (demo@gmail.com), also search for timestamped versions
+                if ($email === 'demo@gmail.com') {
+                    $emailLower = strtolower($email);
+                    return $q->where(function($subQuery) use ($email, $emailLower) {
+                        $subQuery->whereRaw('LOWER(email) = ?', [$emailLower])
+                                 ->orWhereRaw('LOWER(email) LIKE ?', ['demo_%@gmail.com']);
+                    });
+                }
+                return $q->where('email', $email);
             });
 
             $query->when($request->filled('phone'), function ($q) use ($request) {
+                $phone = $request->input('phone');
+                // For universal phone (4444444444), also search for timestamped versions
+                if ($phone === '4444444444') {
+                    return $q->where(function ($subQuery) use ($phone) {
+                        $subQuery->where(function($phoneQuery) use ($phone) {
+                            $phoneQuery->where('phone', $phone)
+                                      ->orWhere('phone', 'LIKE', $phone . '_%');
+                        })
+                        ->orWhere(function($attPhoneQuery) use ($phone) {
+                            $attPhoneQuery->where('att_phone', 'LIKE', '%' . $phone . '%')
+                                         ->orWhere('att_phone', 'LIKE', '%' . $phone . '_%');
+                        });
+                    });
+                }
                 return $q->where(function ($subQuery) use ($request) {
                     $subQuery->where('phone', 'LIKE', '%' . $request->input('phone') . '%')
                              ->orWhere('att_phone', 'LIKE', '%' . $request->input('phone') . '%');
@@ -301,21 +324,39 @@ class LeadController extends Controller
             
            
 
-            // Custom validation for uniqueness of phone and email fields
-            $errors = [];
+            // Handle special cases for duplicate email and phone (Option 2: Auto-modify with timestamp)
+            $timestamp = time();
+            $phoneModified = false;
+            $emailModified = false;
 
             // Validate uniqueness for phone number (check both admins table and client_contacts table)
             if ($primaryPhone) {
                 // Check in admins table (primary phone) - check all records regardless of role/type
                 $existingPhone = Admin::where('phone', $primaryPhone)->first();
                 if ($existingPhone) {
-                    $errors["phone.0"] = "This phone number is already registered.";
+                    // Special case: allow 4444444444 to be duplicated with timestamp
+                    if ($primaryPhone === '4444444444') {
+                        $primaryPhone = $primaryPhone . '_' . $timestamp;
+                        $phoneModified = true;
+                        Log::info('Phone number modified to: ' . $primaryPhone);
+                    } else {
+                        $errors["phone.0"] = "This phone number is already registered.";
+                    }
                 }
                 
-                // Check in client_contacts table (all phone numbers)
-                $existingContact = ClientContact::where('phone', $primaryPhone)->first();
-                if ($existingContact) {
-                    $errors["phone.0"] = "This phone number is already registered.";
+                // Check in client_contacts table (all phone numbers) - only if not already modified
+                if (!$phoneModified) {
+                    $existingContact = ClientContact::where('phone', $primaryPhone)->first();
+                    if ($existingContact) {
+                        // Special case: allow 4444444444 to be duplicated with timestamp
+                        if ($primaryPhone === '4444444444') {
+                            $primaryPhone = $primaryPhone . '_' . $timestamp;
+                            $phoneModified = true;
+                            Log::info('Phone number modified to: ' . $primaryPhone);
+                        } else {
+                            $errors["phone.0"] = "This phone number is already registered.";
+                        }
+                    }
                 }
             }
 
@@ -324,13 +365,37 @@ class LeadController extends Controller
                 // Check in admins table (primary email) - check all records regardless of role/type
                 $existingEmail = Admin::where('email', $primaryEmail)->first();
                 if ($existingEmail) {
-                    $errors["email.0"] = "This email address is already registered.";
+                    // Special case: allow demo@gmail.com to be duplicated with timestamp
+                    if ($primaryEmail === 'demo@gmail.com') {
+                        // Add timestamp to local part (before @ symbol)
+                        $emailParts = explode('@', $primaryEmail);
+                        $localPart = $emailParts[0];
+                        $domainPart = $emailParts[1];
+                        $primaryEmail = $localPart . '_' . $timestamp . '@' . $domainPart;
+                        $emailModified = true;
+                        Log::info('Email address modified to: ' . $primaryEmail);
+                    } else {
+                        $errors["email.0"] = "This email address is already registered.";
+                    }
                 }
                 
-                // Check in client_emails table (all email addresses)
-                $existingClientEmail = ClientEmail::where('email', $primaryEmail)->first();
-                if ($existingClientEmail) {
-                    $errors["email.0"] = "This email address is already registered.";
+                // Check in client_emails table (all email addresses) - only if not already modified
+                if (!$emailModified) {
+                    $existingClientEmail = ClientEmail::where('email', $primaryEmail)->first();
+                    if ($existingClientEmail) {
+                        // Special case: allow demo@gmail.com to be duplicated with timestamp
+                        if ($primaryEmail === 'demo@gmail.com') {
+                            // Add timestamp to local part (before @ symbol)
+                            $emailParts = explode('@', $primaryEmail);
+                            $localPart = $emailParts[0];
+                            $domainPart = $emailParts[1];
+                            $primaryEmail = $localPart . '_' . $timestamp . '@' . $domainPart;
+                            $emailModified = true;
+                            Log::info('Email address modified to: ' . $primaryEmail);
+                        } else {
+                            $errors["email.0"] = "This email address is already registered.";
+                        }
+                    }
                 }
             }
 
@@ -597,30 +662,91 @@ class LeadController extends Controller
                 ->withErrors(['email' => 'At least one email address is required.']);
         }
 
-        // Check for duplicate phones (excluding current lead)
-        foreach ($requestData['phone'] as $phone) {
+        // Handle special cases for duplicate email and phone (Option 2: Add timestamp only when duplicate exists)
+        $timestamp = time();
+        $phoneModifiedFlags = []; // Track which phone indices were modified
+        $emailModifiedFlags = []; // Track which email indices were modified
+
+        // Check for duplicate phones (excluding current lead) - with universal number handling
+        foreach ($requestData['phone'] as $index => $phone) {
             if (!empty($phone)) {
-                $existingPhone = Lead::where('phone', $phone)
+                // Check in admins table (all leads and clients)
+                $existingPhone = Admin::where('phone', $phone)
                     ->where('id', '!=', $id)
                     ->first();
                 if ($existingPhone) {
-                    return redirect()->back()
-                        ->withInput()
-                        ->withErrors(['phone' => "Phone number {$phone} is already registered."]);
+                    // Special case: allow 4444444444 to be duplicated with timestamp
+                    if ($phone === '4444444444') {
+                        $requestData['phone'][$index] = $phone . '_' . $timestamp;
+                        $phoneModifiedFlags[$index] = true;
+                        Log::info('Phone number modified to: ' . $requestData['phone'][$index]);
+                    } else {
+                        return redirect()->back()
+                            ->withInput()
+                            ->withErrors(['phone' => "Phone number {$phone} is already registered."]);
+                    }
+                } else {
+                    // Check in client_contacts table
+                    $existingContact = ClientContact::where('phone', $phone)
+                        ->where('client_id', '!=', $id)
+                        ->first();
+                    if ($existingContact) {
+                        // Special case: allow 4444444444 to be duplicated with timestamp
+                        if ($phone === '4444444444') {
+                            $requestData['phone'][$index] = $phone . '_' . $timestamp;
+                            $phoneModifiedFlags[$index] = true;
+                            Log::info('Phone number modified to: ' . $requestData['phone'][$index]);
+                        } else {
+                            return redirect()->back()
+                                ->withInput()
+                                ->withErrors(['phone' => "Phone number {$phone} is already registered."]);
+                        }
+                    }
                 }
             }
         }
 
-        // Check for duplicate emails (excluding current lead)
-        foreach ($requestData['email'] as $email) {
+        // Check for duplicate emails (excluding current lead) - with universal number handling
+        foreach ($requestData['email'] as $index => $email) {
             if (!empty($email)) {
-                $existingEmail = Lead::where('email', $email)
+                // Check in admins table (all leads and clients)
+                $existingEmail = Admin::where('email', $email)
                     ->where('id', '!=', $id)
                     ->first();
                 if ($existingEmail) {
-                    return redirect()->back()
-                        ->withInput()
-                        ->withErrors(['email' => "Email {$email} is already registered."]);
+                    // Special case: allow demo@gmail.com to be duplicated with timestamp
+                    if ($email === 'demo@gmail.com') {
+                        $emailParts = explode('@', $email);
+                        $localPart = $emailParts[0];
+                        $domainPart = $emailParts[1];
+                        $requestData['email'][$index] = $localPart . '_' . $timestamp . '@' . $domainPart;
+                        $emailModifiedFlags[$index] = true;
+                        Log::info('Email address modified to: ' . $requestData['email'][$index]);
+                    } else {
+                        return redirect()->back()
+                            ->withInput()
+                            ->withErrors(['email' => "Email {$email} is already registered."]);
+                    }
+                } else {
+                    // Check in client_emails table
+                    $existingClientEmail = ClientEmail::where('email', $email)
+                        ->where('client_id', '!=', $id)
+                        ->first();
+                    if ($existingClientEmail) {
+                        // Special case: allow demo@gmail.com to be duplicated with timestamp
+                        if ($email === 'demo@gmail.com') {
+                            $emailParts = explode('@', $email);
+                            $localPart = $emailParts[0];
+                            $domainPart = $emailParts[1];
+                            $requestData['email'][$index] = $localPart . '_' . $timestamp . '@' . $domainPart;
+                            $emailModifiedFlags[$index] = true;
+                            Log::info('Email address modified to: ' . $requestData['email'][$index]);
+                        } else {
+                            return redirect()->back()
+                                ->withInput()
+                                ->withErrors(['email' => "Email {$email} is already registered."]);
+                        }
+                    }
                 }
             }
         }

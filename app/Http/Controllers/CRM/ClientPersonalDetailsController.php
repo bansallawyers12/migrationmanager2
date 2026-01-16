@@ -1999,6 +1999,9 @@ class ClientPersonalDetailsController extends Controller
             }
             $oldPhoneDisplayStr = !empty($oldPhoneDisplay) ? implode(', ', $oldPhoneDisplay) : '(empty)';
 
+            // Handle special cases for duplicate phone (Option 2: Add timestamp only when duplicate exists)
+            $timestamp = time();
+
             // Process phone numbers with proper update/insert logic (like the old working system)
             $processedPhones = [];
             foreach ($phoneNumbers as $phoneData) {
@@ -2008,6 +2011,44 @@ class ClientPersonalDetailsController extends Controller
                     $contactType = $phoneData['contact_type'] ?? null;
                     $phone = $phoneData['phone'];
                     $countryCode = $phoneData['country_code'] ?? '';
+                    
+                    // Check for duplicates across all clients and handle universal number (4444444444)
+                    // Check in admins table (excluding current client)
+                    $existingPhoneInAdmins = Admin::where('phone', $phone)
+                        ->where('id', '!=', $client->id)
+                        ->first();
+                    
+                    // Check in client_contacts table (excluding current client and current contact)
+                    $existingPhoneInContacts = ClientContact::where('phone', $phone)
+                        ->where('country_code', $countryCode)
+                        ->where('client_id', '!=', $client->id)
+                        ->when($contactId, function($q) use ($contactId) {
+                            return $q->where('id', '!=', $contactId);
+                        })
+                        ->first();
+                    
+                    // If duplicate exists and it's a universal number, add timestamp
+                    if (($existingPhoneInAdmins || $existingPhoneInContacts) && $phone === '4444444444') {
+                        $phone = $phone . '_' . $timestamp;
+                        Log::info('Phone number modified to: ' . $phone);
+                    } else if ($existingPhoneInAdmins || $existingPhoneInContacts) {
+                        // Non-universal duplicate - check if it's within the same client (allowed)
+                        $duplicateInSameClient = ClientContact::where('phone', $phone)
+                            ->where('country_code', $countryCode)
+                            ->where('client_id', $client->id)
+                            ->when($contactId, function($q) use ($contactId) {
+                                return $q->where('id', '!=', $contactId);
+                            })
+                            ->first();
+                        
+                        // Only error if duplicate is in a different client
+                        if (!$duplicateInSameClient) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => "Phone number '{$countryCode}{$phoneData['phone']}' is already registered for another client."
+                            ], 422);
+                        }
+                    }
 
                     if ($contactId) {
                         // Update existing contact if ID is provided
@@ -2044,11 +2085,27 @@ class ClientPersonalDetailsController extends Controller
             }
 
             // Update client's primary phone info (like the old system)
+            // Get the last phone from processed contacts (to ensure we use modified values if any)
             $lastPhone = null;
             $lastContactType = null;
             $lastCountryCode = null;
             
-            if (!empty($phoneNumbers)) {
+            if (!empty($processedPhones)) {
+                // Get the last processed phone contact to use its values (which may have been modified)
+                $lastContact = ClientContact::where('client_id', $client->id)
+                    ->whereIn('id', $processedPhones)
+                    ->orderBy('id', 'desc')
+                    ->first();
+                
+                if ($lastContact) {
+                    $lastPhone = $lastContact->phone;
+                    $lastContactType = $lastContact->contact_type;
+                    $lastCountryCode = $lastContact->country_code;
+                }
+            }
+            
+            // Fallback to last phone in array if no processed phones found
+            if (!$lastPhone && !empty($phoneNumbers)) {
                 $lastPhoneData = end($phoneNumbers);
                 if (!empty($lastPhoneData['phone'])) {
                     $lastPhone = $lastPhoneData['phone'];
@@ -2130,6 +2187,9 @@ class ClientPersonalDetailsController extends Controller
             }
             $oldEmailDisplayStr = !empty($oldEmailDisplay) ? implode(', ', $oldEmailDisplay) : '(empty)';
 
+            // Handle special cases for duplicate email (Option 2: Add timestamp only when duplicate exists)
+            $timestamp = time();
+
             // Track which email IDs should be kept (both updated and newly created)
             $emailIdsToKeep = [];
             $primaryEmail = null;
@@ -2138,17 +2198,57 @@ class ClientPersonalDetailsController extends Controller
             // Process each email record (update existing or create new)
             foreach ($emails as $emailData) {
                 if (!empty($emailData['email'])) {
+                    $email = $emailData['email'];
                     $emailId = $emailData['id'] ?? null;
                     $emailId = !empty($emailId) ? (int)$emailId : null;
                     
+                    // Check for duplicates and handle universal number (demo@gmail.com)
+                    // Check in admins table (excluding current client)
+                    $existingEmailInAdmins = Admin::where('email', $email)
+                        ->where('id', '!=', $client->id)
+                        ->first();
+                    
+                    // Check in client_emails table (excluding current client and current email)
+                    $existingEmailInClientEmails = ClientEmail::where('email', $email)
+                        ->where('client_id', '!=', $client->id)
+                        ->when($emailId, function($q) use ($emailId) {
+                            return $q->where('id', '!=', $emailId);
+                        })
+                        ->first();
+                    
+                    // If duplicate exists and it's a universal number, add timestamp
+                    if (($existingEmailInAdmins || $existingEmailInClientEmails) && $email === 'demo@gmail.com') {
+                        $emailParts = explode('@', $email);
+                        $localPart = $emailParts[0];
+                        $domainPart = $emailParts[1];
+                        $email = $localPart . '_' . $timestamp . '@' . $domainPart;
+                        Log::info('Email address modified to: ' . $email);
+                    } else if ($existingEmailInAdmins || $existingEmailInClientEmails) {
+                        // Non-universal duplicate - check if it's within the same client (allowed)
+                        $duplicateInSameClient = ClientEmail::where('email', $email)
+                            ->where('client_id', $client->id)
+                            ->when($emailId, function($q) use ($emailId) {
+                                return $q->where('id', '!=', $emailId);
+                            })
+                            ->first();
+                        
+                        // Only error if duplicate is in a different client
+                        if (!$duplicateInSameClient) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => "Email address '{$emailData['email']}' is already registered for another client."
+                            ], 422);
+                        }
+                    }
+                    
                     if ($emailId) {
-                        // Update existing email
+                        // Update existing email if ID is provided
                         $existingEmail = ClientEmail::find($emailId);
                         if ($existingEmail && $existingEmail->client_id == $client->id) {
                             $existingEmail->update([
                                 'admin_id' => Auth::user()->id,
                                 'email_type' => $emailData['email_type'],
-                                'email' => $emailData['email']
+                                'email' => $email // Use potentially modified email
                             ]);
                             $emailIdsToKeep[] = $emailId;
                         } else {
@@ -2157,7 +2257,7 @@ class ClientPersonalDetailsController extends Controller
                                 'client_id' => $client->id,
                                 'admin_id' => Auth::user()->id,
                                 'email_type' => $emailData['email_type'],
-                                'email' => $emailData['email'],
+                                'email' => $email, // Use potentially modified email
                                 'is_verified' => false
                             ]);
                             $emailIdsToKeep[] = $newEmail->id;
@@ -2168,15 +2268,15 @@ class ClientPersonalDetailsController extends Controller
                             'client_id' => $client->id,
                             'admin_id' => Auth::user()->id,
                             'email_type' => $emailData['email_type'],
-                            'email' => $emailData['email'],
+                            'email' => $email, // Use potentially modified email
                             'is_verified' => false
                         ]);
                         $emailIdsToKeep[] = $newEmail->id;
                     }
                     
-                    // Set primary email for admins table update
+                    // Set primary email for admins table update (use potentially modified email)
                     if ($emailData['email_type'] === 'Personal' || empty($primaryEmail)) {
-                        $primaryEmail = $emailData['email'];
+                        $primaryEmail = $email;
                         $primaryEmailType = $emailData['email_type'];
                     }
                 }
@@ -5274,9 +5374,20 @@ class ClientPersonalDetailsController extends Controller
 
         // Search for client by email first (most reliable)
         if ($email) {
-            $client = Admin::where('role', '7')
-                ->where('email', $email)
-                ->first();
+            // For universal email (demo@gmail.com), also search for timestamped versions
+            if ($email === 'demo@gmail.com') {
+                $emailLower = strtolower($email);
+                $client = Admin::where('role', '7')
+                    ->where(function($q) use ($email, $emailLower) {
+                        $q->whereRaw('LOWER(email) = ?', [$emailLower])
+                          ->orWhereRaw('LOWER(email) LIKE ?', ['demo_%@gmail.com']);
+                    })
+                    ->first();
+            } else {
+                $client = Admin::where('role', '7')
+                    ->where('email', $email)
+                    ->first();
+            }
             if ($client) {
                 return $client;
             }
@@ -5294,9 +5405,19 @@ class ClientPersonalDetailsController extends Controller
 
         // Search by phone if email and client_id not found
         if ($phone) {
-            $client = Admin::where('role', '7')
-                ->where('phone', $phone)
-                ->first();
+            // For universal phone (4444444444), also search for timestamped versions
+            if ($phone === '4444444444') {
+                $client = Admin::where('role', '7')
+                    ->where(function($q) use ($phone) {
+                        $q->where('phone', $phone)
+                          ->orWhere('phone', 'LIKE', $phone . '_%');
+                    })
+                    ->first();
+            } else {
+                $client = Admin::where('role', '7')
+                    ->where('phone', $phone)
+                    ->first();
+            }
             if ($client) {
                 return $client;
             }

@@ -5301,28 +5301,64 @@ class ClientsController extends Controller
 
             // Optimized: Use LEFT JOINs instead of correlated subqueries
             // Use EXISTS or LEFT JOINs instead of IN subqueries
+            $squeryLower = strtolower($squery);
+            $isUniversalEmail = ($squery === 'demo@gmail.com');
+            $isUniversalPhone = ($squery === '4444444444');
+            
             $clientsQuery = \App\Models\Admin::query()
                 ->where('admins.role', 7)
                 ->whereNull('admins.is_deleted')
                 ->where('admins.is_archived', 0)
-                ->leftJoin('client_contacts', function($join) use ($squery) {
-                    $squeryLower = strtolower($squery);
-                    $join->on('client_contacts.client_id', '=', 'admins.id')
-                         ->whereRaw('LOWER(client_contacts.phone) LIKE ?', ["%{$squeryLower}%"]);
+                ->leftJoin('client_contacts', function($join) use ($squery, $squeryLower, $isUniversalPhone) {
+                    $join->on('client_contacts.client_id', '=', 'admins.id');
+                    if ($isUniversalPhone) {
+                        // For universal phone (4444444444), also search for timestamped versions
+                        $join->where(function($phoneQuery) use ($squery, $squeryLower) {
+                            $phoneQuery->whereRaw('LOWER(client_contacts.phone) LIKE ?', ["%{$squeryLower}%"])
+                                      ->orWhereRaw('LOWER(client_contacts.phone) LIKE ?', ["%{$squery}_%"]);
+                        });
+                    } else {
+                        $join->whereRaw('LOWER(client_contacts.phone) LIKE ?', ["%{$squeryLower}%"]);
+                    }
                 })
-                ->leftJoin('client_emails', function($join) use ($squery) {
-                    $squeryLower = strtolower($squery);
-                    $join->on('client_emails.client_id', '=', 'admins.id')
-                         ->whereRaw('LOWER(client_emails.email) LIKE ?', ["%{$squeryLower}%"]);
+                ->leftJoin('client_emails', function($join) use ($squery, $squeryLower, $isUniversalEmail) {
+                    $join->on('client_emails.client_id', '=', 'admins.id');
+                    if ($isUniversalEmail) {
+                        // For universal email (demo@gmail.com), also search for timestamped versions
+                        $join->where(function($emailQuery) use ($squeryLower) {
+                            $emailQuery->whereRaw('LOWER(client_emails.email) LIKE ?', ["%{$squeryLower}%"])
+                                      ->orWhereRaw('LOWER(client_emails.email) LIKE ?', ['demo_%@gmail.com']);
+                        });
+                    } else {
+                        $join->whereRaw('LOWER(client_emails.email) LIKE ?', ["%{$squeryLower}%"]);
+                    }
                 })
-                ->where(function ($query) use ($squery, $d) {
-                    $squeryLower = strtolower($squery);
-                    $query->whereRaw('LOWER(admins.email) LIKE ?', ["%$squeryLower%"])
-                        ->orWhereRaw('LOWER(admins.first_name) LIKE ?', ["%$squeryLower%"])
+                ->where(function ($query) use ($squery, $squeryLower, $d, $isUniversalEmail, $isUniversalPhone) {
+                    // Handle universal email search in admins.email
+                    if ($isUniversalEmail) {
+                        $query->where(function($emailSubQuery) use ($squeryLower) {
+                            $emailSubQuery->whereRaw('LOWER(admins.email) LIKE ?', ["%{$squeryLower}%"])
+                                          ->orWhereRaw('LOWER(admins.email) LIKE ?', ['demo_%@gmail.com']);
+                        });
+                    } else {
+                        $query->whereRaw('LOWER(admins.email) LIKE ?', ["%$squeryLower%"]);
+                    }
+                    
+                    $query->orWhereRaw('LOWER(admins.first_name) LIKE ?', ["%$squeryLower%"])
                         ->orWhereRaw('LOWER(admins.last_name) LIKE ?', ["%$squeryLower%"])
-                        ->orWhereRaw('LOWER(admins.client_id) LIKE ?', ["%$squeryLower%"])
-                        ->orWhereRaw('LOWER(admins.phone) LIKE ?', ["%$squeryLower%"])
-                        ->orWhereRaw("LOWER(COALESCE(admins.first_name, '') || ' ' || COALESCE(admins.last_name, '')) LIKE ?", ["%$squeryLower%"])
+                        ->orWhereRaw('LOWER(admins.client_id) LIKE ?', ["%$squeryLower%"]);
+                    
+                    // Handle universal phone search in admins.phone
+                    if ($isUniversalPhone) {
+                        $query->orWhere(function($phoneSubQuery) use ($squery, $squeryLower) {
+                            $phoneSubQuery->whereRaw('LOWER(admins.phone) LIKE ?', ["%{$squeryLower}%"])
+                                          ->orWhereRaw('LOWER(admins.phone) LIKE ?', ["%{$squery}_%"]);
+                        });
+                    } else {
+                        $query->orWhereRaw('LOWER(admins.phone) LIKE ?', ["%$squeryLower%"]);
+                    }
+                    
+                    $query->orWhereRaw("LOWER(COALESCE(admins.first_name, '') || ' ' || COALESCE(admins.last_name, '')) LIKE ?", ["%$squeryLower%"])
                         ->orWhereNotNull('client_contacts.client_id')  // Matches phone search
                         ->orWhereNotNull('client_emails.client_id');    // Matches email search
 
@@ -5334,6 +5370,7 @@ class ClientsController extends Controller
                     'admins.*'
                 )
                 ->distinct()
+                ->orderBy('admins.created_at', 'desc')
                 ->get();
 
             // Get client IDs for batch loading of related data

@@ -71,18 +71,39 @@ trait ClientQueries
         if ($request->has('email')) {
             $email = $request->input('email');
             if (trim($email) != '') {
-                $query->where('email', $email);
+                // For universal email (demo@gmail.com), also search for timestamped versions
+                if ($email === 'demo@gmail.com') {
+                    $emailLower = strtolower($email);
+                    $query->where(function($q) use ($email, $emailLower) {
+                        $q->whereRaw('LOWER(email) = ?', [$emailLower])
+                          ->orWhereRaw('LOWER(email) LIKE ?', ['demo_%@gmail.com']);
+                    });
+                } else {
+                    $query->where('email', $email);
+                }
             }
         }
 
         if ($request->has('phone')) {
             $phone = trim($request->input('phone'));
             if ($phone != '') {
-                $query->where(function ($q) use ($phone) {
-                    $q->where('phone', 'LIKE', '%' . $phone . '%')
-                      ->orWhere('country_code', 'LIKE', '%' . $phone . '%')
-                      ->orWhereRaw("(COALESCE(country_code, '') || COALESCE(phone, '')) LIKE ?", ["%{$phone}%"]);
-                });
+                // For universal phone (4444444444), also search for timestamped versions
+                if ($phone === '4444444444') {
+                    $query->where(function ($q) use ($phone) {
+                        $q->where(function($phoneQuery) use ($phone) {
+                            $phoneQuery->where('phone', $phone)
+                                      ->orWhere('phone', 'LIKE', $phone . '_%');
+                        })
+                        ->orWhere('country_code', 'LIKE', '%' . $phone . '%')
+                        ->orWhereRaw("(COALESCE(country_code, '') || COALESCE(phone, '')) LIKE ?", ["%{$phone}%"]);
+                    });
+                } else {
+                    $query->where(function ($q) use ($phone) {
+                        $q->where('phone', 'LIKE', '%' . $phone . '%')
+                          ->orWhere('country_code', 'LIKE', '%' . $phone . '%')
+                          ->orWhereRaw("(COALESCE(country_code, '') || COALESCE(phone, '')) LIKE ?", ["%{$phone}%"]);
+                    });
+                }
             }
         }
 
