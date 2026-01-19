@@ -581,5 +581,372 @@ class OthersController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Search Occupation (Occupation Finder)
+     * GET /api/occupation-finder
+     * 
+     * Query Parameters:
+     * - q: Search query - occupation name or ANZSCO code (required)
+     * - limit: Number of results (optional, default: 20)
+     * 
+     * Response includes:
+     * - anzsco_code: ANZSCO occupation code
+     * - occupation_title: Title of the occupation
+     * - skill_level: Skill level (1-5)
+     * - assessing_authority: Skills assessing authority (e.g., ACS, VETASSESS)
+     * - assessment_validity_years: Validity period of skill assessment
+     * - occupation_lists: Array of occupation lists (e.g., MLTSSL, CSOL)
+     * - alternate_titles: Alternative job titles
+     * - additional_info: Additional information about the occupation
+     */
+    public function searchOccupation(Request $request)
+    {
+        try {
+            $config = $this->getBansalApiConfig();
+            $baseUrl = $config['baseUrl'];
+            $apiToken = $config['apiToken'];
+            $timeout = $config['timeout'];
+
+            if (empty($apiToken)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bansal API token not configured. Set BANSAL_API_TOKEN in .env'
+                ], 500);
+            }
+
+            // Get query parameters from request
+            $searchQuery = $request->get('q');
+            $limit = $request->get('limit', 20);
+
+            // Validate search query
+            if (empty($searchQuery)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Search query (q) is required'
+                ], 400);
+            }
+
+            // Build query parameters array
+            $queryParams = [
+                'q' => $searchQuery,
+                'limit' => $limit
+            ];
+
+            // Make API call to Bansal API
+            $response = Http::timeout($timeout)
+                ->withToken($apiToken)
+                ->acceptJson()
+                ->get("{$baseUrl}/occupation-finder", $queryParams);
+
+            if ($response->failed()) {
+                Log::error('Bansal API Search Occupation Error', [
+                    'method' => 'searchOccupation',
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                    'query_params' => $queryParams
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to search occupations from external API',
+                    'error' => $response->status() === 404 ? 'Occupation finder not found' : 'API request failed'
+                ], $response->status());
+            }
+
+            $data = $response->json();
+
+            // Return the response as-is from the external API
+            return response()->json($data, $response->status());
+
+        } catch (RequestException $e) {
+            $response = $e->response;
+            $responseBody = $response?->json();
+            $message = null;
+
+            if (is_array($responseBody)) {
+                $message = $responseBody['message']
+                    ?? ($responseBody['error']['message'] ?? null);
+            }
+
+            $message = $message ?: $response?->body() ?: $e->getMessage();
+
+            Log::error('Bansal API Search Occupation Request Error', [
+                'method' => 'searchOccupation',
+                'status' => $response?->status(),
+                'body' => $response?->body(),
+                'error' => $message,
+                'query_params' => [
+                    'q' => $request->get('q'),
+                    'limit' => $request->get('limit', 20)
+                ]
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $message ?: 'Failed to search occupations',
+                'error' => 'API request failed'
+            ], $response?->status() ?: 500);
+
+        } catch (Exception $e) {
+            Log::error('Bansal API Search Occupation Error', [
+                'method' => 'searchOccupation',
+                'error_type' => get_class($e),
+                'error' => $e->getMessage(),
+                'query_params' => [
+                    'q' => $request->get('q'),
+                    'limit' => $request->get('limit', 20)
+                ]
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An unexpected error occurred while searching occupations',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Search Matching Postcodes
+     * GET /api/postcode-search
+     * 
+     * Query Parameters:
+     * - q: Search query - postcode number (e.g., "3000") (required)
+     * - limit: Number of results (optional, default: 20)
+     * 
+     * Returns a list of matching postcodes with suburb information
+     */
+    public function searchPostcode(Request $request)
+    {
+        try {
+            $config = $this->getBansalApiConfig();
+            $baseUrl = $config['baseUrl'];
+            $apiToken = $config['apiToken'];
+            $timeout = $config['timeout'];
+
+            if (empty($apiToken)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bansal API token not configured. Set BANSAL_API_TOKEN in .env'
+                ], 500);
+            }
+
+            // Get query parameters from request
+            $searchQuery = $request->get('q');
+            $limit = $request->get('limit', 20);
+
+            // Validate search query
+            if (empty($searchQuery)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Search query (q) is required'
+                ], 400);
+            }
+
+            // Build query parameters array
+            $queryParams = [
+                'q' => $searchQuery
+            ];
+
+            // Add limit if provided
+            if ($limit) {
+                $queryParams['limit'] = $limit;
+            }
+
+            // Make API call to Bansal API
+            $response = Http::timeout($timeout)
+                ->withToken($apiToken)
+                ->acceptJson()
+                ->get("{$baseUrl}/postcode-search", $queryParams);
+
+            if ($response->failed()) {
+                Log::error('Bansal API Search Postcode Error', [
+                    'method' => 'searchPostcode',
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                    'query_params' => $queryParams
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to search postcodes from external API',
+                    'error' => $response->status() === 404 ? 'Postcode search not found' : 'API request failed'
+                ], $response->status());
+            }
+
+            $data = $response->json();
+
+            // Return the response as-is from the external API
+            return response()->json($data, $response->status());
+
+        } catch (RequestException $e) {
+            $response = $e->response;
+            $responseBody = $response?->json();
+            $message = null;
+
+            if (is_array($responseBody)) {
+                $message = $responseBody['message']
+                    ?? ($responseBody['error']['message'] ?? null);
+            }
+
+            $message = $message ?: $response?->body() ?: $e->getMessage();
+
+            Log::error('Bansal API Search Postcode Request Error', [
+                'method' => 'searchPostcode',
+                'status' => $response?->status(),
+                'body' => $response?->body(),
+                'error' => $message,
+                'query_params' => [
+                    'q' => $request->get('q'),
+                    'limit' => $request->get('limit', 20)
+                ]
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $message ?: 'Failed to search postcodes',
+                'error' => 'API request failed'
+            ], $response?->status() ?: 500);
+
+        } catch (Exception $e) {
+            Log::error('Bansal API Search Postcode Error', [
+                'method' => 'searchPostcode',
+                'error_type' => get_class($e),
+                'error' => $e->getMessage(),
+                'query_params' => [
+                    'q' => $request->get('q'),
+                    'limit' => $request->get('limit', 20)
+                ]
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An unexpected error occurred while searching postcodes',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get Postcode Result
+     * GET /api/postcode-result
+     * 
+     * Query Parameters:
+     * - postcode: Postcode number (required, integer e.g., 3002)
+     * - suburb: Suburb name (optional - if provided, filters result for specific suburb)
+     * 
+     * Returns detailed information for the specified postcode/suburb
+     */
+    public function getPostcodeResult(Request $request)
+    {
+        try {
+            $config = $this->getBansalApiConfig();
+            $baseUrl = $config['baseUrl'];
+            $apiToken = $config['apiToken'];
+            $timeout = $config['timeout'];
+
+            if (empty($apiToken)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bansal API token not configured. Set BANSAL_API_TOKEN in .env'
+                ], 500);
+            }
+
+            // Get query parameters from request
+            $postcode = $request->get('postcode');
+            $suburb = $request->get('suburb');
+
+            // Validate postcode
+            if (empty($postcode)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Postcode is required'
+                ], 400);
+            }
+
+            // Build query parameters array
+            $queryParams = [
+                'postcode' => $postcode
+            ];
+
+            // Add suburb if provided
+            if ($suburb !== null && $suburb !== '') {
+                $queryParams['suburb'] = $suburb;
+            }
+
+            // Make API call to Bansal API
+            $response = Http::timeout($timeout)
+                ->withToken($apiToken)
+                ->acceptJson()
+                ->get("{$baseUrl}/postcode-result", $queryParams);
+
+            if ($response->failed()) {
+                Log::error('Bansal API Get Postcode Result Error', [
+                    'method' => 'getPostcodeResult',
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                    'query_params' => $queryParams
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to get postcode result from external API',
+                    'error' => $response->status() === 404 ? 'Postcode not found' : 'API request failed'
+                ], $response->status());
+            }
+
+            $data = $response->json();
+
+            // Return the response as-is from the external API
+            return response()->json($data, $response->status());
+
+        } catch (RequestException $e) {
+            $response = $e->response;
+            $responseBody = $response?->json();
+            $message = null;
+
+            if (is_array($responseBody)) {
+                $message = $responseBody['message']
+                    ?? ($responseBody['error']['message'] ?? null);
+            }
+
+            $message = $message ?: $response?->body() ?: $e->getMessage();
+
+            Log::error('Bansal API Get Postcode Result Request Error', [
+                'method' => 'getPostcodeResult',
+                'status' => $response?->status(),
+                'body' => $response?->body(),
+                'error' => $message,
+                'query_params' => [
+                    'postcode' => $request->get('postcode'),
+                    'suburb' => $request->get('suburb')
+                ]
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $message ?: 'Failed to get postcode result',
+                'error' => 'API request failed'
+            ], $response?->status() ?: 500);
+
+        } catch (Exception $e) {
+            Log::error('Bansal API Get Postcode Result Error', [
+                'method' => 'getPostcodeResult',
+                'error_type' => get_class($e),
+                'error' => $e->getMessage(),
+                'query_params' => [
+                    'postcode' => $request->get('postcode'),
+                    'suburb' => $request->get('suburb')
+                ]
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An unexpected error occurred while getting postcode result',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
 

@@ -203,6 +203,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/student-calc-lists', [OthersController::class, 'getStudentCalcLists']);
     Route::post('/student-calc-result', [OthersController::class, 'calculateStudentFinancialRequirements']);
     
+    // Occupation Finder route
+    Route::get('/occupation-finder', [OthersController::class, 'searchOccupation']);
+    
+    // Postcode Checker routes
+    Route::get('/postcode-search', [OthersController::class, 'searchPostcode']);
+    Route::get('/postcode-result', [OthersController::class, 'getPostcodeResult']);
+    
 });
 
 // Broadcasting auth route for WebSocket authentication
