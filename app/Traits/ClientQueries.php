@@ -28,9 +28,7 @@ trait ClientQueries
      */
     protected function getEmptyClientQuery()
     {
-        return Admin::where('id', '=', '')
-            ->where('role', '=', '7')
-            ->whereNull('is_deleted');
+        return Admin::whereRaw('1 = 0');
     }
 
     /**
