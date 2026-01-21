@@ -1377,7 +1377,7 @@ class ClientDocumentsController extends Controller
             $request->validate([
                 'document_id' => 'required|integer',
                 'target_type' => 'required|in:personal,visa',
-                'target_id' => 'required|integer', // Category ID for personal, Matter ID for visa
+                'target_id' => 'required|integer', // Category ID for both personal and visa
             ]);
             
             $documentId = $request->document_id;
@@ -1422,20 +1422,20 @@ class ClientDocumentsController extends Controller
                 $targetName = $category->title;
                 
             } elseif ($targetType === 'visa') {
-                // Moving to Visa Documents
-                // Verify target matter exists
-                $matter = \App\Models\ClientMatter::find($targetId);
-                if (!$matter) {
-                    $response['message'] = 'Target matter not found';
+                // Moving to Visa Documents - targetId is the CATEGORY ID
+                // Get the category to find its matter
+                $category = \App\Models\VisaDocumentType::find($targetId);
+                if (!$category) {
+                    $response['message'] = 'Target visa category not found';
                     return response()->json($response);
                 }
                 
                 $document->doc_type = 'visa';
-                $document->folder_name = null; // Clear category for visa docs
-                $document->client_matter_id = $targetId;
+                $document->folder_name = $targetId; // Category ID
+                $document->client_matter_id = $category->client_matter_id; // Set matter from category
                 // Keep checklist name if available
                 
-                $targetName = $matter->client_unique_matter_no ?? "Matter ID {$targetId}";
+                $targetName = $category->title;
             }
             
             $document->updated_at = now();
@@ -1490,6 +1490,54 @@ class ClientDocumentsController extends Controller
         }
         
         return response()->json($response);
+    }
+
+    /**
+     * BUGFIX #3: Get visa categories for a specific matter
+     * Returns all visa document categories for the given client and matter
+     */
+    public function getVisaCategories(Request $request) {
+        try {
+            $clientId = $request->client_id;
+            $matterId = $request->matter_id;
+            
+            if (!$clientId || !$matterId) {
+                return response()->json([]);
+            }
+            
+            // Get visa document categories for this client and matter
+            $categories = \App\Models\VisaDocumentType::select('id', 'title', 'client_id', 'client_matter_id')
+                ->where('status', 1)
+                ->where(function($query) use ($clientId, $matterId) {
+                    $query->where(function($q) {
+                            // Global categories (both NULL)
+                            $q->whereNull('client_id')
+                              ->whereNull('client_matter_id');
+                        })
+                        ->orWhere(function($q) use ($clientId) {
+                            // Client-specific categories (matter NULL)
+                            $q->where('client_id', $clientId)
+                              ->whereNull('client_matter_id');
+                        })
+                        ->orWhere(function($q) use ($clientId, $matterId) {
+                            // Matter-specific categories
+                            $q->where('client_id', $clientId)
+                              ->where('client_matter_id', $matterId);
+                        });
+                })
+                ->orderBy('id', 'ASC')
+                ->get();
+            
+            return response()->json($categories);
+            
+        } catch (\Exception $e) {
+            Log::error('Error getting visa categories', [
+                'client_id' => $request->client_id ?? null,
+                'matter_id' => $request->matter_id ?? null,
+                'error' => $e->getMessage()
+            ]);
+            return response()->json([]);
+        }
     }
 
 

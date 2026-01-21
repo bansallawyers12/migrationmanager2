@@ -236,6 +236,9 @@
                 <div class="context-menu-item" onclick="handleContextAction('rename-doc')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">
                     <i class="fa fa-file-text" style="margin-right: 8px;"></i> Rename File Name
                 </div>
+                <div class="context-menu-item" onclick="handleContextAction('move')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">
+                    <i class="fa fa-arrows-alt" style="margin-right: 8px;"></i> Move Document
+                </div>
                 <div class="context-menu-item" onclick="handleContextAction('preview')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">
                     <i class="fa fa-eye" style="margin-right: 8px;"></i> Preview
                 </div>
@@ -247,6 +250,59 @@
                 </div>
                 <div class="context-menu-item" onclick="handleContextAction('not-used')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">
                     <i class="fa fa-trash" style="margin-right: 8px;"></i> Not Used
+                </div>
+            </div>
+
+            <!-- Move Document Modal -->
+            <div class="modal fade" id="moveDocumentModal" tabindex="-1" role="dialog">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Move Document</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label>Move to:</label>
+                                <select id="moveTargetType" class="form-control" style="margin-bottom: 15px;">
+                                    <option value="">-- Select Destination --</option>
+                                    <option value="personal">Personal Documents</option>
+                                    <option value="visa">Visa Documents</option>
+                                </select>
+                            </div>
+                            
+                            <!-- For Personal Documents: Show Categories -->
+                            <div class="form-group" id="movePersonalCategoryContainer" style="display: none;">
+                                <label>Select Personal Category:</label>
+                                <select id="movePersonalCategoryId" class="form-control">
+                                    <option value="">-- Select Category --</option>
+                                </select>
+                            </div>
+                            
+                            <!-- For Visa Documents: Show Matters first, then Categories -->
+                            <div class="form-group" id="moveVisaMatterContainer" style="display: none;">
+                                <label>Select Visa Matter:</label>
+                                <select id="moveVisaMatterId" class="form-control" style="margin-bottom: 15px;">
+                                    <option value="">-- Select Matter --</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group" id="moveVisaCategoryContainer" style="display: none;">
+                                <label>Select Visa Category:</label>
+                                <select id="moveVisaCategoryId" class="form-control">
+                                    <option value="">-- Select Category --</option>
+                                </select>
+                            </div>
+                            
+                            <div id="moveDocumentError" class="alert alert-danger" style="display: none; margin-top: 10px;"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary" id="confirmMoveDocument">Move Document</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -805,6 +861,9 @@
                         case 'rename-doc':
                             $('.renamedoc[data-id="' + currentContextFile + '"]').click();
                             break;
+                        case 'move':
+                            openMoveDocumentModal(currentContextFile, 'personal');
+                            break;
                         case 'preview':
                             window.open(currentContextData.fileUrl, '_blank');
                             break;
@@ -831,6 +890,204 @@
                             break;
                     }
                 }
+
+                // ============================================================================
+                // MOVE DOCUMENT FUNCTIONALITY
+                // ============================================================================
+                let currentMoveDocumentId = null;
+                let currentMoveDocumentType = null;
+
+                function openMoveDocumentModal(documentId, currentType) {
+                    currentMoveDocumentId = documentId;
+                    currentMoveDocumentType = currentType;
+                    
+                    // Reset modal
+                    $('#moveTargetType').val('');
+                    $('#movePersonalCategoryContainer').hide();
+                    $('#moveVisaMatterContainer').hide();
+                    $('#moveVisaCategoryContainer').hide();
+                    $('#movePersonalCategoryId').empty().append('<option value="">-- Select Category --</option>');
+                    $('#moveVisaMatterId').empty().append('<option value="">-- Select Matter --</option>');
+                    $('#moveVisaCategoryId').empty().append('<option value="">-- Select Category --</option>');
+                    $('#moveDocumentError').hide();
+                    
+                    // Show modal
+                    $('#moveDocumentModal').modal('show');
+                }
+
+                // Handle target type change
+                $(document).on('change', '#moveTargetType', function() {
+                    const targetType = $(this).val();
+                    
+                    // Hide all containers first
+                    $('#movePersonalCategoryContainer').hide();
+                    $('#moveVisaMatterContainer').hide();
+                    $('#moveVisaCategoryContainer').hide();
+                    $('#moveDocumentError').hide();
+                    
+                    if (!targetType) {
+                        return;
+                    }
+                    
+                    if (targetType === 'personal') {
+                        // Load personal document categories
+                        const categories = [];
+                        $('.subtab2-button').each(function() {
+                            const catId = $(this).data('subtab2');
+                            const catTitle = $(this).text().trim();
+                            if (catId && catTitle) {
+                                categories.push({ id: catId, title: catTitle });
+                            }
+                        });
+                        
+                        $('#movePersonalCategoryId').empty().append('<option value="">-- Select Category --</option>');
+                        categories.forEach(cat => {
+                            $('#movePersonalCategoryId').append(`<option value="${cat.id}">${cat.title}</option>`);
+                        });
+                        $('#movePersonalCategoryContainer').show();
+                        
+                    } else if (targetType === 'visa') {
+                        // Load visa matters first
+                        const clientId = '<?= $clientId ?? "" ?>';
+                        if (!clientId) {
+                            $('#moveDocumentError').text('Error: Client ID not found').show();
+                            return;
+                        }
+                        
+                        $('#moveVisaMatterId').empty().append('<option value="">Loading...</option>');
+                        $('#moveVisaMatterContainer').show();
+                        
+                        // Fetch matters via AJAX
+                        $.ajax({
+                            url: '{{ URL::to('/get-client-matters') }}/' + clientId,
+                            type: 'GET',
+                            success: function(response) {
+                                $('#moveVisaMatterId').empty().append('<option value="">-- Select Matter --</option>');
+                                if (response && response.length > 0) {
+                                    response.forEach(matter => {
+                                        const matterLabel = matter.client_unique_matter_no || ('Matter #' + matter.id);
+                                        $('#moveVisaMatterId').append(`<option value="${matter.id}">${matterLabel}</option>`);
+                                    });
+                                } else {
+                                    $('#moveVisaMatterId').empty().append('<option value="">No matters found</option>');
+                                }
+                            },
+                            error: function() {
+                                $('#moveVisaMatterId').empty().append('<option value="">Error loading matters</option>');
+                            }
+                        });
+                    }
+                });
+
+                // Handle visa matter selection - load categories for that matter
+                $(document).on('change', '#moveVisaMatterId', function() {
+                    const matterId = $(this).val();
+                    $('#moveVisaCategoryContainer').hide();
+                    $('#moveDocumentError').hide();
+                    
+                    if (!matterId) {
+                        return;
+                    }
+                    
+                    const clientId = '<?= $clientId ?? "" ?>';
+                    $('#moveVisaCategoryId').empty().append('<option value="">Loading...</option>');
+                    $('#moveVisaCategoryContainer').show();
+                    
+                    // Fetch visa categories for this matter via AJAX
+                    $.ajax({
+                        url: '{{ URL::to('/get-visa-categories') }}',
+                        type: 'GET',
+                        data: {
+                            client_id: clientId,
+                            matter_id: matterId
+                        },
+                        success: function(response) {
+                            $('#moveVisaCategoryId').empty().append('<option value="">-- Select Category --</option>');
+                            if (response && response.length > 0) {
+                                response.forEach(category => {
+                                    $('#moveVisaCategoryId').append(`<option value="${category.id}">${category.title}</option>`);
+                                });
+                            } else {
+                                $('#moveVisaCategoryId').append('<option value="">No categories found</option>');
+                            }
+                        },
+                        error: function() {
+                            $('#moveVisaCategoryId').empty().append('<option value="">Error loading categories</option>');
+                        }
+                    });
+                });
+
+                // Handle move document confirmation
+                $(document).on('click', '#confirmMoveDocument', function() {
+                    const targetType = $('#moveTargetType').val();
+                    let targetId = null;
+                    const $error = $('#moveDocumentError');
+                    const $btn = $(this);
+                    
+                    // Validate based on target type
+                    if (!targetType) {
+                        $error.text('Please select a destination type').show();
+                        return;
+                    }
+                    
+                    if (targetType === 'personal') {
+                        targetId = $('#movePersonalCategoryId').val();
+                        if (!targetId) {
+                            $error.text('Please select a personal category').show();
+                            return;
+                        }
+                    } else if (targetType === 'visa') {
+                        targetId = $('#moveVisaCategoryId').val();
+                        if (!targetId) {
+                            $error.text('Please select a visa category').show();
+                            return;
+                        }
+                    }
+                    
+                    // Disable button and show loading
+                    $btn.prop('disabled', true).text('Moving...');
+                    $error.hide();
+                    
+                    // Make AJAX request
+                    $.ajax({
+                        url: '{{ URL::to('/documents/move') }}',
+                        type: 'POST',
+                        data: {
+                            _token: '{{ csrf_token() }}',
+                            document_id: currentMoveDocumentId,
+                            target_type: targetType,
+                            target_id: targetId
+                        },
+                        success: function(response) {
+                            if (response.status) {
+                                // Close modal
+                                $('#moveDocumentModal').modal('hide');
+                                
+                                // Show success message using alert
+                                alert(response.message || 'Document moved successfully');
+                                
+                                // Reload the page to refresh document lists
+                                location.reload();
+                            } else {
+                                $error.text(response.message || 'Failed to move document').show();
+                                $btn.prop('disabled', false).text('Move Document');
+                            }
+                        },
+                        error: function(xhr) {
+                            let errorMsg = 'An error occurred while moving the document';
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMsg = xhr.responseJSON.message;
+                            }
+                            $error.text(errorMsg).show();
+                            $btn.prop('disabled', false).text('Move Document');
+                        }
+                    });
+                });
+
+                // Reset button state when modal is closed
+                $('#moveDocumentModal').on('hidden.bs.modal', function() {
+                    $('#confirmMoveDocument').prop('disabled', false).text('Move Document');
+                });
 
                 // Hide context menu on escape key
                 document.addEventListener('keydown', function(e) {
