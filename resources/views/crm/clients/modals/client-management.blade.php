@@ -269,7 +269,7 @@
     .enhanced-dropdown-input {
         width: 100%;
         border: none;
-        padding: 12px 40px 12px 45px;
+        padding: 12px 40px 12px 50px;
         background: transparent;
         color: #2d3748;
         font-size: 0.95rem;
@@ -288,7 +288,7 @@
 
     .selected-users-display {
         position: absolute;
-        left: 45px;
+        left: 50px;
         top: 50%;
         transform: translateY(-50%);
         color: #2d3748;
@@ -312,6 +312,33 @@
 
     .enhanced-dropdown-input-wrapper.has-selection .enhanced-dropdown-input::placeholder {
         color: transparent;
+        opacity: 0;
+        visibility: hidden;
+    }
+
+    /* Ensure placeholder is completely hidden when users are selected */
+    .enhanced-dropdown-input-wrapper.has-selection .enhanced-dropdown-input::-webkit-input-placeholder {
+        color: transparent;
+        opacity: 0;
+        visibility: hidden;
+    }
+
+    .enhanced-dropdown-input-wrapper.has-selection .enhanced-dropdown-input::-moz-placeholder {
+        color: transparent;
+        opacity: 0;
+        visibility: hidden;
+    }
+
+    .enhanced-dropdown-input-wrapper.has-selection .enhanced-dropdown-input:-ms-input-placeholder {
+        color: transparent;
+        opacity: 0;
+        visibility: hidden;
+    }
+
+    .enhanced-dropdown-input-wrapper.has-selection .enhanced-dropdown-input:-moz-placeholder {
+        color: transparent;
+        opacity: 0;
+        visibility: hidden;
     }
 
     .dropdown-chevron-icon {
@@ -605,7 +632,7 @@
                                            placeholder="Search or select users..." 
                                            autocomplete="off"
                                            aria-haspopup="true" 
-                                           aria-expanded="false">
+                                           aria-expanded="false" style="padding-left: 38px !important;">
                                     <span id="selected-users-display" class="selected-users-display"></span>
                                     <i class="fas fa-chevron-down dropdown-chevron-icon"></i>
                                 </div>

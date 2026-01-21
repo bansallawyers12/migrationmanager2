@@ -71,10 +71,25 @@ $(document).ready(function() {
     // Initialize the multi-select dropdown functionality
     initializeMultiSelectDropdown();
 
+    // Timer for smart auto-close functionality
+    var autoCloseTimer = null;
+
     // Handle checkbox changes
     $('.checkbox-item').on('change', function() {
         updateSelectedUsers();
         updateHiddenSelect();
+        
+        // Clear any existing timer
+        if (autoCloseTimer) {
+            clearTimeout(autoCloseTimer);
+        }
+        
+        // Start a new 3-second timer for auto-close
+        // This allows users to select multiple items quickly
+        autoCloseTimer = setTimeout(function() {
+            closeDropdown();
+            autoCloseTimer = null; // Reset timer reference
+        }, 3000); // 3 seconds delay
     });
 
     // Handle search functionality in main input
@@ -122,38 +137,73 @@ $(document).ready(function() {
     // Close dropdown when clicking outside
     $(document).on('click', function(e) {
         if (!$(e.target).closest('.dropdown-multi-select').length) {
-            $('#userDropdownMenu').removeClass('show');
-            $('#user-search-input').attr('aria-expanded', 'false');
-            // Clear search when closing
-            $('#user-search-input').val('');
-            filterUsers('');
+            // Clear any pending auto-close timer
+            if (autoCloseTimer) {
+                clearTimeout(autoCloseTimer);
+                autoCloseTimer = null;
+            }
+            closeDropdown();
         }
     });
 
-    // Prevent dropdown from closing when clicking inside
+    // Prevent dropdown from closing when clicking on specific elements (but NOT checkboxes)
     $('#userDropdownMenu').on('click', function(e) {
+        // Allow checkboxes to close the dropdown - don't stop propagation
+        if ($(e.target).hasClass('checkbox-item') || $(e.target).hasClass('modern-checkbox')) {
+            return; // Let the click propagate to close the dropdown
+        }
+        
+        // Prevent closing for other elements (buttons, labels, scrollbar, etc.)
         e.stopPropagation();
     });
 
-    // Handle select all button
-    $('#select-all-users').on('click', function() {
+    // Handle select all button - prevent closing for bulk operations
+    $('#select-all-users').on('click', function(e) {
+        e.stopPropagation(); // Keep dropdown open for bulk operations
+        
+        // Clear any existing auto-close timer when using bulk operations
+        if (autoCloseTimer) {
+            clearTimeout(autoCloseTimer);
+            autoCloseTimer = null;
+        }
+        
         $('.checkbox-item:visible').prop('checked', true).trigger('change');
     });
 
-    // Handle select none button
-    $('#select-none-users').on('click', function() {
+    // Handle select none button - prevent closing for bulk operations
+    $('#select-none-users').on('click', function(e) {
+        e.stopPropagation(); // Keep dropdown open for bulk operations
+        
+        // Clear any existing auto-close timer when using bulk operations
+        if (autoCloseTimer) {
+            clearTimeout(autoCloseTimer);
+            autoCloseTimer = null;
+        }
+        
         $('.checkbox-item:visible').prop('checked', false).trigger('change');
-    });
-
-    // Prevent dropdown from closing when clicking inside
-    $('.dropdown-menu').on('click', function(e) {
-        e.stopPropagation();
     });
 });
 
 function initializeMultiSelectDropdown() {
     // Update the button text initially
     updateSelectedUsers();
+}
+
+function closeDropdown() {
+    $('#userDropdownMenu').removeClass('show');
+    $('#user-search-input').attr('aria-expanded', 'false');
+    // Clear search when closing
+    $('#user-search-input').val('');
+    filterUsers('');
+    
+    // Show selected users if any are selected
+    var $wrapper = $('.enhanced-dropdown-input-wrapper');
+    if ($('.checkbox-item:checked').length > 0) {
+        $wrapper.addClass('has-selection');
+        updateSelectedUsers();
+    } else {
+        $wrapper.removeClass('has-selection');
+    }
 }
 
 function updateSelectedUsers() {
@@ -287,6 +337,13 @@ $('#create_action_popup').on('show.bs.modal', function() {
 $('#create_action_popup').on('hidden.bs.modal', function() {
     $('.custom-error').remove();
     $('.popuploader').hide();
+    
+    // Clear any pending auto-close timer when modal is closed
+    if (typeof autoCloseTimer !== 'undefined' && autoCloseTimer) {
+        clearTimeout(autoCloseTimer);
+        autoCloseTimer = null;
+    }
+    
     // Reset form fields
     $('#assignnote').val('');
     $('#task_group').val('');
