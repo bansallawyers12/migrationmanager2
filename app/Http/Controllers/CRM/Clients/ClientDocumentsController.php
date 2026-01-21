@@ -1361,6 +1361,137 @@ class ClientDocumentsController extends Controller
         echo json_encode($response);
     }
 
+    /**
+     * BUGFIX #3: Move Document to different folder/category/matter
+     * Allows moving documents between:
+     * - Personal document categories
+     * - Visa document matters
+     * - Personal to Visa (with matter selection)
+     * - Visa to Personal (with category selection)
+     */
+    public function moveDocument(Request $request) {
+        $response = ['status' => false, 'message' => 'Please try again'];
+        
+        try {
+            // Validate required fields
+            $request->validate([
+                'document_id' => 'required|integer',
+                'target_type' => 'required|in:personal,visa',
+                'target_id' => 'required|integer', // Category ID for personal, Matter ID for visa
+            ]);
+            
+            $documentId = $request->document_id;
+            $targetType = $request->target_type;
+            $targetId = $request->target_id;
+            
+            // Get the document
+            $document = \App\Models\Document::find($documentId);
+            
+            if (!$document) {
+                $response['message'] = 'Document not found';
+                return response()->json($response);
+            }
+            
+            // Check user permission (basic check - user must be authenticated)
+            if (!Auth::check()) {
+                $response['message'] = 'Unauthorized';
+                return response()->json($response, 403);
+            }
+            
+            // Store old values for activity log
+            $oldType = $document->doc_type;
+            $oldFolderName = $document->folder_name;
+            $oldMatterId = $document->client_matter_id;
+            $oldChecklistName = $document->checklist;
+            
+            // Update document based on target type
+            if ($targetType === 'personal') {
+                // Moving to Personal Documents
+                // Verify target category exists
+                $category = \App\Models\PersonalDocumentType::find($targetId);
+                if (!$category) {
+                    $response['message'] = 'Target category not found';
+                    return response()->json($response);
+                }
+                
+                $document->doc_type = 'personal';
+                $document->folder_name = $targetId;
+                $document->client_matter_id = null; // Clear matter association
+                // Keep checklist name if moving from visa
+                
+                $targetName = $category->title;
+                
+            } elseif ($targetType === 'visa') {
+                // Moving to Visa Documents
+                // Verify target matter exists
+                $matter = \App\Models\ClientMatter::find($targetId);
+                if (!$matter) {
+                    $response['message'] = 'Target matter not found';
+                    return response()->json($response);
+                }
+                
+                $document->doc_type = 'visa';
+                $document->folder_name = null; // Clear category for visa docs
+                $document->client_matter_id = $targetId;
+                // Keep checklist name if available
+                
+                $targetName = $matter->client_unique_matter_no ?? "Matter ID {$targetId}";
+            }
+            
+            $document->updated_at = now();
+            $saved = $document->save();
+            
+            if ($saved) {
+                // Log activity
+                $documentName = $document->file_name ?? $document->checklist ?? 'Document';
+                $oldLocation = $oldType === 'personal' 
+                    ? ($oldFolderName ? "Personal (Category: {$oldFolderName})" : "Personal")
+                    : ($oldChecklistName ? "Visa ({$oldChecklistName})" : "Visa");
+                
+                $newLocation = $targetType === 'personal' ? "Personal ({$targetName})" : "Visa ({$targetName})";
+                
+                $matterRef = $this->getMatterReference($document->client_id, $document->client_matter_id);
+                $subject = !empty($matterRef) 
+                    ? "moved document: {$documentName} - {$matterRef}"
+                    : "moved document: {$documentName}";
+                $description = "<p>Document moved from <strong>{$oldLocation}</strong> to <strong>{$newLocation}</strong></p>";
+                
+                $this->logClientActivity(
+                    $document->client_id,
+                    $subject,
+                    $description,
+                    'document'
+                );
+                
+                $response['status'] = true;
+                $response['message'] = "Document moved successfully to {$newLocation}";
+                $response['document_id'] = $documentId;
+                $response['new_type'] = $targetType;
+                $response['new_location'] = $targetName;
+            } else {
+                $response['message'] = 'Failed to save document changes';
+            }
+            
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $response['message'] = 'Invalid input: ' . implode(', ', $e->errors());
+            Log::warning('Document move validation failed', [
+                'document_id' => $request->document_id ?? null,
+                'errors' => $e->errors()
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error moving document', [
+                'document_id' => $request->document_id ?? null,
+                'target_type' => $request->target_type ?? null,
+                'target_id' => $request->target_id ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            $response['message'] = 'An error occurred while moving the document: ' . $e->getMessage();
+        }
+        
+        return response()->json($response);
+    }
+
 
     /**
      * Get Visa Checklist

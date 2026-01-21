@@ -113,43 +113,50 @@ class ClientNotesController extends Controller
             $saved = $obj->save();
             
             if($saved){
-                if($request->vtype == 'client'){
+                // BUGFIX #5: Log activity for BOTH client and lead notes (not just client)
+                if($request->vtype == 'client' || $request->vtype == 'lead'){
                     try {
                         // Get note type for enhanced subject line with proper formatting
                         $taskGroup = $request->task_group ?? 'General';
                         $noteTypeFormatted = ucfirst(strtolower($taskGroup));
                         
-                        // Get matter reference (like TGV_1)
-                        $matterReference = '';
-                        if(isset($request->matter_id) && $request->matter_id != "") {
-                            $matter = ClientMatter::find($request->matter_id);
-                            if($matter && $matter->client_unique_matter_no) {
-                                $matterReference = $matter->client_unique_matter_no;
-                            }
-                        }
+                        // Determine the entity ID to use (client_id for client, lead_id for lead)
+                        $entityId = $request->vtype == 'client' ? $request->client_id : ($request->lead_id ?? $request->client_id);
                         
-                        // If no matter reference found, try to get the latest active matter for this client
-                        if(empty($matterReference)) {
-                            $latestMatter = ClientMatter::where('client_id', $request->client_id)
-                                ->where('matter_status', 1)
-                                ->orderBy('id', 'desc')
-                                ->first();
-                            if($latestMatter && $latestMatter->client_unique_matter_no) {
-                                $matterReference = $latestMatter->client_unique_matter_no;
+                        // Get matter reference (like TGV_1) - only for clients
+                        $matterReference = '';
+                        if($request->vtype == 'client') {
+                            if(isset($request->matter_id) && $request->matter_id != "") {
+                                $matter = ClientMatter::find($request->matter_id);
+                                if($matter && $matter->client_unique_matter_no) {
+                                    $matterReference = $matter->client_unique_matter_no;
+                                }
+                            }
+                            
+                            // If no matter reference found, try to get the latest active matter for this client
+                            if(empty($matterReference)) {
+                                $latestMatter = ClientMatter::where('client_id', $entityId)
+                                    ->where('matter_status', 1)
+                                    ->orderBy('id', 'desc')
+                                    ->first();
+                                if($latestMatter && $latestMatter->client_unique_matter_no) {
+                                    $matterReference = $latestMatter->client_unique_matter_no;
+                                }
                             }
                         }
                         
                         // Format subject line with action word
+                        $entityType = $request->vtype == 'client' ? 'Client' : 'Lead';
                         if($isUpdate) {
-                            // "updated Call Notes - TGV_1"
+                            // "updated Call Notes - TGV_1" or "updated Lead Call Notes"
                             $subjectLine = !empty($matterReference) 
                                 ? "updated {$noteTypeFormatted} Notes - {$matterReference}"
-                                : "updated {$noteTypeFormatted} Notes";
+                                : "updated {$entityType} {$noteTypeFormatted} Notes";
                                 
                             // Enhanced update logging with change tracking
                             if(!empty($changedFields)) {
                                 $this->logClientActivityWithChanges(
-                                    $request->client_id,
+                                    $entityId,
                                     $subjectLine,
                                     $changedFields,
                                     'note'
@@ -158,22 +165,22 @@ class ClientNotesController extends Controller
                                 // Log full description without truncation
                                 $description = $request->description;
                                 $this->logClientActivity(
-                                    $request->client_id,
+                                    $entityId,
                                     $subjectLine,
                                     $description,
                                     'note'
                                 );
                             }
                         } else {
-                            // "added Call Notes - TGV_1"
+                            // "added Call Notes - TGV_1" or "added Lead Call Notes"
                             $subjectLine = !empty($matterReference) 
                                 ? "added {$noteTypeFormatted} Notes - {$matterReference}"
-                                : "added {$noteTypeFormatted} Notes";
+                                : "added {$entityType} {$noteTypeFormatted} Notes";
                                 
                             // Enhanced create logging - Log full description without truncation
                             $description = $request->description;
                             $this->logClientActivity(
-                                $request->client_id,
+                                $entityId,
                                 $subjectLine,
                                 $description,
                                 'note'
@@ -183,7 +190,8 @@ class ClientNotesController extends Controller
                         // Log the error but don't fail the note creation
                         Log::warning('Error logging note activity: ' . $logError->getMessage(), [
                             'note_id' => $obj->id ?? null,
-                            'client_id' => $request->client_id,
+                            'entity_id' => $entityId ?? null,
+                            'vtype' => $request->vtype,
                             'trace' => $logError->getTraceAsString()
                         ]);
                     }

@@ -1968,13 +1968,29 @@ class ClientAccountsController extends Controller
                       $receipt = DB::table('account_client_receipts')->where('id', $id)->first();
                   }
                   
-                  // Calculate total payments for this invoice (after potential split)
-                  $totalPaid = DB::table('account_client_receipts')
+                  // BUGFIX #2: Calculate total payments INCLUDING fee transfers (not just office receipts)
+                  // Calculate total Office Receipts for this invoice
+                  $totalPaidOffice = DB::table('account_client_receipts')
                       ->where('receipt_type', 2)
                       ->where('invoice_no', $invoiceNo)
                       ->where('client_id', $receipt->client_id)
                       ->where('save_type', 'final')
                       ->sum('deposit_amount');
+                  
+                  // Calculate total Fee Transfers for this invoice (non-voided only)
+                  $totalPaidFeeTransfer = DB::table('account_client_receipts')
+                      ->where('receipt_type', 1)
+                      ->where('client_fund_ledger_type', 'Fee Transfer')
+                      ->where('invoice_no', $invoiceNo)
+                      ->where('client_id', $receipt->client_id)
+                      ->where(function($q) {
+                          $q->whereNull('void_fee_transfer')
+                            ->orWhere('void_fee_transfer', 0);
+                      })
+                      ->sum('withdraw_amount');
+                  
+                  // Combine both payment types
+                  $totalPaid = $totalPaidOffice + $totalPaidFeeTransfer;
                   
                   $newBalance = $invoiceAmount - $totalPaid;
                   

@@ -151,6 +151,8 @@ Route::post('/documents/add-visa-checklist', [ClientDocumentsController::class, 
 Route::post('/documents/upload-visa-document', [ClientDocumentsController::class, 'uploadvisadocument'])->name('clients.documents.uploadvisadocument');
 Route::post('/documents/rename', [ClientDocumentsController::class, 'renamedoc'])->name('clients.documents.renamedoc');
 Route::get('/documents/delete', [ClientDocumentsController::class, 'deletedocs'])->name('clients.documents.deletedocs');
+// BUGFIX #3: Add move document feature
+Route::post('/documents/move', [ClientDocumentsController::class, 'moveDocument'])->name('clients.documents.moveDocument');
 Route::get('/documents/get-visa-checklist', [ClientDocumentsController::class, 'getvisachecklist'])->name('clients.documents.getvisachecklist');
 Route::post('/documents/not-used', [ClientDocumentsController::class, 'notuseddoc'])->name('clients.documents.notuseddoc');
 Route::post('/documents/rename-checklist', [ClientDocumentsController::class, 'renamechecklistdoc'])->name('clients.documents.renamechecklistdoc');
