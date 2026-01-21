@@ -1512,5 +1512,77 @@
                     font-weight: bold;
                     color: #007bff;
                 }
+
+                /* Bulk Upload File List Styles */
+                #bulk-upload-mapping-table table tbody tr {
+                    border-bottom: 1px solid #dee2e6;
+                }
+
+                #bulk-upload-mapping-table table tbody tr td {
+                    padding: 15px 10px !important;
+                }
+
+                .bulk-upload-file-item {
+                    vertical-align: top;
+                }
+
+                .bulk-upload-file-item td {
+                    padding: 12px 8px !important;
+                    vertical-align: top !important;
+                }
+
+                .bulk-upload-file-item .file-info {
+                    display: flex;
+                    align-items: flex-start;
+                    gap: 10px;
+                    min-height: 40px;
+                }
+
+                .bulk-upload-file-item .file-info > div {
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 4px;
+                }
+
+                .bulk-upload-file-item .file-name {
+                    font-weight: 500;
+                    color: #333;
+                    word-break: break-word;
+                    overflow-wrap: break-word;
+                    white-space: normal;
+                    line-height: 1.4;
+                    display: block;
+                }
+
+                .bulk-upload-file-item .file-size {
+                    font-size: 12px;
+                    color: #999;
+                }
+
+                .bulk-upload-file-item .checklist-select {
+                    min-width: 200px;
+                }
+
+                .bulk-upload-file-item .match-status {
+                    font-size: 12px;
+                    padding: 2px 8px;
+                    border-radius: 3px;
+                }
+
+                .match-status.auto-matched {
+                    background-color: #d4edda;
+                    color: #155724;
+                }
+
+                .match-status.manual {
+                    background-color: #fff3cd;
+                    color: #856404;
+                }
+
+                .match-status.new-checklist {
+                    background-color: #cce5ff;
+                    color: #004085;
+                }
             </style>
 
