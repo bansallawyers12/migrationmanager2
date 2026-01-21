@@ -124,25 +124,17 @@ class ClientNotesController extends Controller
                         $entityId = $request->vtype == 'client' ? $request->client_id : ($request->lead_id ?? $request->client_id);
                         
                         // Get matter reference (like TGV_1) - only for clients
+                        // IMPORTANT: Only include matter reference if a specific matter was explicitly selected
                         $matterReference = '';
                         if($request->vtype == 'client') {
-                            if(isset($request->matter_id) && $request->matter_id != "") {
+                            if(isset($request->matter_id) && $request->matter_id != "" && $request->matter_id != null) {
                                 $matter = ClientMatter::find($request->matter_id);
                                 if($matter && $matter->client_unique_matter_no) {
                                     $matterReference = $matter->client_unique_matter_no;
                                 }
                             }
-                            
-                            // If no matter reference found, try to get the latest active matter for this client
-                            if(empty($matterReference)) {
-                                $latestMatter = ClientMatter::where('client_id', $entityId)
-                                    ->where('matter_status', 1)
-                                    ->orderBy('id', 'desc')
-                                    ->first();
-                                if($latestMatter && $latestMatter->client_unique_matter_no) {
-                                    $matterReference = $latestMatter->client_unique_matter_no;
-                                }
-                            }
+                            // DO NOT fetch latest matter automatically if no matter was selected
+                            // This was causing confusion in Activity Feed for general client notes
                         }
                         
                         // Format subject line with action word
