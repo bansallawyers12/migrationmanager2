@@ -7895,21 +7895,26 @@ class ClientsController extends Controller
             // Step 3: Final total after surcharge
             $Dept_Second_VAC_Instalment_Under_18_after_person_surcharge = $Dept_Second_VAC_Instalment_Under_18_Surcharge + $Dept_Second_VAC_Instalment_Under_18_after_person;
 
+            // Get Nomination and Sponsorship charges (no person multiplier for these)
+            $Dept_Nomination_Application_Charge = floatval($requestData['Dept_Nomination_Application_Charge'] ?? 0);
+            $Dept_Sponsorship_Application_Charge = floatval($requestData['Dept_Sponsorship_Application_Charge'] ?? 0);
+
             $TotalDoHACharges = $Dept_Base_Application_Charge_after_person
                                 + $Dept_Additional_Applicant_Charge_18_Plus_after_person
                                 + $Dept_Additional_Applicant_Charge_Under_18_after_person
                                 + $Dept_Subsequent_Temp_Application_Charge_after_person
                                 + $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person
                                 + $Dept_Second_VAC_Instalment_Under_18_after_person
-                                + $Dept_Non_Internet_Application_Charge_after_person;
+                                + $Dept_Non_Internet_Application_Charge_after_person
+                                + $Dept_Nomination_Application_Charge
+                                + $Dept_Sponsorship_Application_Charge;
 
-            $TotalDoHASurcharges = $Dept_Base_Application_Charge_after_person_surcharge
-                                    + $Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge
-                                    + $Dept_Additional_Applicant_Charge_Under_18_after_person_surcharge
-                                    + $Dept_Subsequent_Temp_Application_Charge_after_person_surcharge
-                                    + $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person_surcharge
-                                    + $Dept_Second_VAC_Instalment_Under_18_after_person_surcharge
-                                    + $Dept_Non_Internet_Application_Charge_after_person_surcharge;
+            // Calculate surcharge as 1.4% of total DoHA charges (matching frontend calculation)
+            if( $surcharge == 'Yes'){
+                $TotalDoHASurcharges = round($TotalDoHACharges * 0.014, 2);
+            } else {
+                $TotalDoHASurcharges = 0;
+            }
 
             $TotalBLOCKFEE = $requestData['Block_1_Ex_Tax'] + $requestData['Block_2_Ex_Tax'] +  $requestData['Block_3_Ex_Tax'];
 
@@ -8418,21 +8423,26 @@ class ClientsController extends Controller
                 // Step 3: Final total after surcharge
                 $Dept_Second_VAC_Instalment_Under_18_after_person_surcharge = $Dept_Second_VAC_Instalment_Under_18_Surcharge + $Dept_Second_VAC_Instalment_Under_18_after_person;
 
+                // Get Nomination and Sponsorship charges (no person multiplier for these)
+                $Dept_Nomination_Application_Charge = floatval($requestData['Dept_Nomination_Application_Charge'] ?? 0);
+                $Dept_Sponsorship_Application_Charge = floatval($requestData['Dept_Sponsorship_Application_Charge'] ?? 0);
+
                 $TotalDoHACharges = $Dept_Base_Application_Charge_after_person
                                     + $Dept_Additional_Applicant_Charge_18_Plus_after_person
                                     + $Dept_Additional_Applicant_Charge_Under_18_after_person
                                     + $Dept_Subsequent_Temp_Application_Charge_after_person
                                     + $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person
                                     + $Dept_Second_VAC_Instalment_Under_18_after_person
-                                    + $Dept_Non_Internet_Application_Charge_after_person;
+                                    + $Dept_Non_Internet_Application_Charge_after_person
+                                    + $Dept_Nomination_Application_Charge
+                                    + $Dept_Sponsorship_Application_Charge;
 
-                $TotalDoHASurcharges = $Dept_Base_Application_Charge_after_person_surcharge
-                                        + $Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge
-                                        + $Dept_Additional_Applicant_Charge_Under_18_after_person_surcharge
-                                        + $Dept_Subsequent_Temp_Application_Charge_after_person_surcharge
-                                        + $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person_surcharge
-                                        + $Dept_Second_VAC_Instalment_Under_18_after_person_surcharge
-                                        + $Dept_Non_Internet_Application_Charge_after_person_surcharge;
+                // Calculate surcharge as 1.4% of total DoHA charges (matching frontend calculation)
+                if( $surcharge == 'Yes'){
+                    $TotalDoHASurcharges = round($TotalDoHACharges * 0.014, 2);
+                } else {
+                    $TotalDoHASurcharges = 0;
+                }
 
                 $TotalBLOCKFEE = $requestData['Block_1_Ex_Tax'] + $requestData['Block_2_Ex_Tax'] +  $requestData['Block_3_Ex_Tax'];
 
