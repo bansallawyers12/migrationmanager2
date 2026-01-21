@@ -460,9 +460,14 @@ class PointsService
             return 20;
         }
         
-        // Bachelor/Masters level (15 points)
-        if (stripos($level, 'Bachelor') !== false || 
-            stripos($level, 'Masters') !== false) {
+        // Bachelor/Masters/Graduate qualifications (15 points)
+        // IMPORTANT: Check "Graduate Certificate" and "Graduate Diploma" BEFORE regular "Diploma"/"Certificate"
+        // to avoid false matches (e.g., "Graduate Certificate" contains "Certificate")
+        if (stripos($level, 'Graduate Certificate') !== false ||
+            stripos($level, 'Graduate Diploma') !== false ||
+            stripos($level, 'Bachelor') !== false || 
+            stripos($level, 'Masters') !== false ||
+            stripos($level, 'Master') !== false) {
             return 15;
         }
         
@@ -471,12 +476,10 @@ class PointsService
         // to avoid false matches (e.g., "Certificate IV" contains "Certificate I")
         if (stripos($level, 'Certificate IV') !== false || 
             stripos($level, 'Certificate III') !== false ||
-            stripos($level, 'Diploma') !== false || 
-            stripos($level, 'Trade') !== false ||
             stripos($level, 'Advanced Diploma') !== false ||
             stripos($level, 'Associate Degree') !== false ||
-            stripos($level, 'Graduate Certificate') !== false ||
-            stripos($level, 'Graduate Diploma') !== false) {
+            stripos($level, 'Diploma') !== false || 
+            stripos($level, 'Trade') !== false) {
             return 10;
         }
         
