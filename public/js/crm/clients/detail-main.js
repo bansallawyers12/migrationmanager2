@@ -7414,7 +7414,12 @@ Bansal Immigration`;
 
             var client_matter_id = $('#sel_matter_id_client_detail').val();
 
-
+            // FIX: Validate that a matter is selected before proceeding
+            // This prevents generating corrupted agreements without matter data
+            if (!client_matter_id || client_matter_id === '' || client_matter_id === null) {
+                alert('Please select a matter before generating the visa agreement.\n\nA matter is required to populate visa details, fees, and agent information.');
+                return false;
+            }
 
             // First check if cost assignment exists
 

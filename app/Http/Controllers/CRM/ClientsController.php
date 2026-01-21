@@ -7464,8 +7464,29 @@ class ClientsController extends Controller
 
             // Log each replacement
             foreach ($replacements as $key => $value) {
-                Log::info("Setting {$key} to: {$value}");
-                $templateProcessor->setValue($key, $value);
+                // FIX: Handle NULL values properly - convert to empty string
+                $safeValue = $value ?? '';
+                Log::info("Setting {$key} to: {$safeValue}");
+                $templateProcessor->setValue($key, $safeValue);
+            }
+
+            // FIX: Set ALL remaining template variables to empty string to prevent corruption
+            // This prevents unreplaced ${VariableName} placeholders from remaining in the document
+            // which causes Microsoft Word to show "cannot open file" error
+            try {
+                $allTemplateVars = $templateProcessor->getVariables();
+                $fixedVarsCount = 0;
+                foreach ($allTemplateVars as $templateVar) {
+                    // Only set if not already in replacements array
+                    if (!isset($replacements[$templateVar])) {
+                        $templateProcessor->setValue($templateVar, '');
+                        $fixedVarsCount++;
+                    }
+                }
+                Log::info("Fixed {$fixedVarsCount} unreplaced template variables to prevent document corruption");
+            } catch (\Exception $e) {
+                // Log error but don't fail - continue with document generation
+                Log::warning('Could not fix unreplaced variables: ' . $e->getMessage());
             }
 
             // Create the output directory if it doesn't exist - use public directory for web access
@@ -7479,6 +7500,26 @@ class ClientsController extends Controller
             $templateProcessor->saveAs($outputPath);
 
             Log::info('Document generated successfully at: ' . $outputPath);
+            
+            // FIX: Validate the generated document to ensure it's not corrupted
+            // This catches document corruption issues before user tries to open it
+            try {
+                $validationDoc = \PhpOffice\PhpWord\IOFactory::load($outputPath);
+                Log::info('Document validation passed - file is valid');
+                unset($validationDoc); // Free memory
+            } catch (\Exception $validationException) {
+                // Document is corrupted - delete it and return error
+                Log::error('Generated document failed validation: ' . $validationException->getMessage());
+                if (file_exists($outputPath)) {
+                    unlink($outputPath);
+                }
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Document validation failed.',
+                    'message' => 'The generated document appears to be corrupted. Please ensure all client matter and cost assignment data is complete before generating the agreement.',
+                    'technical_details' => $validationException->getMessage()
+                ], 500);
+            }
 
             // Upload to S3 and get download URL
             $fileName = 'agreement_' . $client->client_id . '_' . time() . '.docx';
