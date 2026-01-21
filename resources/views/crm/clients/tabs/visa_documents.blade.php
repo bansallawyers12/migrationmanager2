@@ -1198,7 +1198,7 @@
                     const tableContainer = $('#bulk-upload-mapping-table');
                     
                     let html = '<table class="table table-bordered" style="width: 100%;">';
-                    html += '<thead><tr><th style="width: 30%;">File Name</th><th style="width: 50%;">Checklist Assignment</th><th style="width: 20%;">Status</th></tr></thead>';
+                    html += '<thead><tr><th style="width: 25%;">File Name</th><th style="width: 45%;">Checklist Assignment</th><th style="width: 20%;">Status</th><th style="width: 10%; text-align: center;">Actions</th></tr></thead>';
                     html += '<tbody>';
                     
                     Array.from(files).forEach((file, index) => {
@@ -1216,7 +1216,7 @@
                             statusText = match.confidence === 'high' ? 'Auto-matched' : 'Suggested';
                         }
                         
-                        html += '<tr class="bulk-upload-file-item">';
+                        html += '<tr class="bulk-upload-file-item" data-file-index="' + index + '" data-file-name="' + escapeHtml(fileName) + '">';
                         html += '<td>';
                         html += '<div class="file-info">';
                         html += '<i class="fas fa-file" style="color: #4a90e2;"></i>';
@@ -1240,6 +1240,11 @@
                         html += '<td>';
                         html += '<span class="match-status ' + statusClass + '">' + statusText + '</span>';
                         html += '</td>';
+                        html += '<td style="text-align: center;">';
+                        html += '<button type="button" class="btn btn-sm btn-danger remove-bulk-file" data-file-index="' + index + '" title="Remove file">';
+                        html += '<i class="fas fa-trash-alt"></i>';
+                        html += '</button>';
+                        html += '</td>';
                         html += '</tr>';
                     });
                     
@@ -1262,6 +1267,53 @@
                             if (value) {
                                 $(this).closest('tr').find('.match-status').removeClass('new-checklist').addClass('manual').text('Manual selection');
                             }
+                        }
+                    });
+                    
+                    // Handle remove file button for visa documents
+                    $(document).off('click', '.remove-bulk-file').on('click', '.remove-bulk-file', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        const $row = $(this).closest('tr');
+                        const fileName = $row.data('file-name');
+                        const categoryId = currentVisaCategoryId;
+                        
+                        // Confirm before removing
+                        if (!confirm('Are you sure you want to remove "' + fileName + '" from the upload list?')) {
+                            return;
+                        }
+                        
+                        // Find and remove the file from the array by matching file name
+                        const fileArray = bulkUploadVisaFiles[categoryId];
+                        const fileIndex = fileArray.findIndex(f => f.name === fileName);
+                        
+                        if (fileIndex > -1) {
+                            fileArray.splice(fileIndex, 1);
+                        }
+                        
+                        // Remove the row
+                        $row.remove();
+                        
+                        // Update file count
+                        const remainingCount = fileArray.length;
+                        const container = $('#bulk-upload-visa-' + categoryId);
+                        container.find('.file-count-visa').text(remainingCount);
+                        
+                        // If no files left, hide the file list and modal
+                        if (remainingCount === 0) {
+                            $('#bulk-upload-mapping-modal').hide();
+                            container.find('.bulk-upload-file-list-visa').hide();
+                            container.find('.bulk-upload-files-container-visa').empty();
+                            alert('All files have been removed. Please select files again to upload.');
+                        } else {
+                            // Reindex remaining rows to maintain correct file indices
+                            $('#bulk-upload-mapping-table tbody tr').each(function(newIndex) {
+                                $(this).attr('data-file-index', newIndex);
+                                $(this).find('.checklist-select').attr('data-file-index', newIndex);
+                                $(this).find('.new-checklist-input').attr('data-file-index', newIndex);
+                                $(this).find('.remove-bulk-file').attr('data-file-index', newIndex);
+                            });
                         }
                     });
                     
@@ -1583,6 +1635,22 @@
                 .match-status.new-checklist {
                     background-color: #cce5ff;
                     color: #004085;
+                }
+
+                .remove-bulk-file {
+                    padding: 4px 8px;
+                    font-size: 14px;
+                    transition: all 0.2s ease;
+                }
+
+                .remove-bulk-file:hover {
+                    background-color: #c82333;
+                    border-color: #bd2130;
+                    transform: scale(1.1);
+                }
+
+                .remove-bulk-file i {
+                    pointer-events: none;
                 }
             </style>
 
