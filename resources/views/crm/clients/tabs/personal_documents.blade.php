@@ -1178,27 +1178,46 @@
                     background-color: #e8f5e9;
                 }
 
+                /* Bulk Upload Mapping Table Styles */
+                #bulk-upload-mapping-table table tbody tr {
+                    border-bottom: 1px solid #dee2e6;
+                }
+
+                #bulk-upload-mapping-table table tbody tr td {
+                    padding: 15px 10px !important;
+                }
+
                 .bulk-upload-file-item {
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                    padding: 10px;
-                    margin-bottom: 10px;
-                    background: white;
-                    border: 1px solid #ddd;
-                    border-radius: 4px;
+                    vertical-align: top;
+                }
+
+                .bulk-upload-file-item td {
+                    padding: 12px 8px !important;
+                    vertical-align: top !important;
                 }
 
                 .bulk-upload-file-item .file-info {
+                    display: flex;
+                    align-items: flex-start;
+                    gap: 10px;
+                    min-height: 40px;
+                }
+
+                .bulk-upload-file-item .file-info > div {
                     flex: 1;
                     display: flex;
-                    align-items: center;
-                    gap: 10px;
+                    flex-direction: column;
+                    gap: 4px;
                 }
 
                 .bulk-upload-file-item .file-name {
                     font-weight: 500;
                     color: #333;
+                    word-break: break-word;
+                    overflow-wrap: break-word;
+                    white-space: normal;
+                    line-height: 1.4;
+                    display: block;
                 }
 
                 .bulk-upload-file-item .file-size {
