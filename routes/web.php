@@ -262,7 +262,9 @@ Route::middleware(['auth:admin'])->group(function() {
 	Route::get('/fetch-TotalActivityCount', [CRMUtilityController::class, 'fetchTotalActivityCount']);
 
 	/*---------- Assignee Module ----------*/
-	Route::resource('/assignee', AssigneeController::class);
+	// Explicit routes for assignee module (replaced resource route to avoid deprecated methods)
+	Route::get('/assignee', [AssigneeController::class, 'index'])->name('assignee.index');
+	Route::delete('/assignee/{assignee}', [AssigneeController::class, 'destroy'])->name('assignee.destroy');
         Route::get('/assignee-completed', [AssigneeController::class, 'completed']); //completed list only
 
         Route::post('/update-action-completed', [AssigneeController::class, 'updateActionCompleted']); //update action to be completed

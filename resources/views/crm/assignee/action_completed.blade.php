@@ -519,19 +519,9 @@ jQuery(document).ready(function($){
         }
     });
 
-    $(document).delegate('.listing-container .openassigneview', 'click', function(){
-        $('#openassigneview').modal('show');
-        var v = $(this).attr('id');
-        $.ajax({
-            url: site_url + '/get-assigne-detail',
-            type: 'GET',
-            data: { id: v },
-            success: function(responses){
-                $('.popuploader').hide();
-                $('.taskview').html(responses);
-            }
-        });
-    });
+    // REMOVED: Deprecated appointment system functionality
+    // Open assignee view modal - endpoint /get-assigne-detail was removed
+    // $(document).delegate('.listing-container .openassigneview', 'click', function(){ ... });
 });
 </script>
 @endpush

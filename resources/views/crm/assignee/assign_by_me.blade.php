@@ -503,20 +503,9 @@
             }
         });
 
-        // Open assignee view modal
-        $(document).on('click', '.listing-container .openassigneview', function() {
-            $('#openassigneview').modal('show');
-            var v = $(this).attr('id');
-            $.ajax({
-                url: site_url + '/get-assigne-detail',
-                type: 'GET',
-                data: { id: v },
-                success: function(responses) {
-                    $('.popuploader').hide();
-                    $('.taskview').html(responses);
-                }
-            });
-        });
+        // REMOVED: Deprecated appointment system functionality
+        // Open assignee view modal - endpoint /get-assigne-detail was removed
+        // $(document).on('click', '.listing-container .openassigneview', function() { ... });
 
         // Delete task record
         $(document).on('click', '.listing-container .deleteNote', function(e) {
