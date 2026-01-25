@@ -1451,7 +1451,7 @@ $(document).ready(function() {
             getCostAssignmentAgentLead: '{{ URL::to("/clients/getCostAssignmentMigrationAgentDetailLead") }}',
             uploadAgreement: '{{ route("clients.uploadAgreement", $fetchedData->id) }}',
             fetchClientContactNo: '{{ URL::to("/clients/fetchClientContactNo") }}',
-            followupStore: '{{ URL::to("/clients/followup/store") }}',
+            followupStore: '{{ URL::to("/clients/action/store") }}',
             publishDoc: '{{ URL::to("/application/publishdoc") }}',
             deleteCostagreement: '{{ URL::to("/deletecostagreement") }}',
             deleteAction: '{{ URL::to("/delete_action") }}',

@@ -5,6 +5,21 @@ namespace App\Models;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Note Model
+ * 
+ * Represents both regular notes and actions (formerly called tasks/followups) in the system.
+ * 
+ * Database field clarifications for the Action feature:
+ * - folloup (field name preserved): When set to 1, this note is an Action item. 0 = regular note
+ * - task_group (field name preserved): The action category (Call, Checklist, Review, Query, Urgent, Personal Action)
+ * - followup_date (field name preserved): The scheduled date for the action
+ * - task_status (in ActivitiesLog): Action completion status (0 = incomplete, 1 = completed)
+ * - assigned_to: The user assigned to complete this action
+ * - status: '0' = active/incomplete, '1' = completed
+ * 
+ * Note: Field names contain "task" and "followup" for database compatibility but refer to Actions in the UI
+ */
 class Note extends Model
 {
     use Notifiable;

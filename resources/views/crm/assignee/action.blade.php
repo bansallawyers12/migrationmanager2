@@ -1655,7 +1655,7 @@ $(function () {
         
         $.ajax({
             type: 'post',
-            url: "{{URL::to('/')}}/update-task-completed",
+            url: "{{URL::to('/')}}/update-action-completed",
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
             data: {
                 id: currentTaskId, 
@@ -1721,7 +1721,7 @@ $(function () {
         if (flag) {
             $.ajax({
                 type: 'post',
-                url: "{{URL::to('/')}}/clients/personalfollowup/store",
+                url: "{{URL::to('/')}}/clients/action/personal/store",
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
                 dataType: 'json',
                 data: {

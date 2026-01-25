@@ -407,7 +407,7 @@
             
             $.ajax({
                 type: 'post',
-                url: "{{ URL::to('/') }}/update-task-completed",
+                url: "{{ URL::to('/') }}/update-action-completed",
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                 data: {
                     id: currentTaskId, 
@@ -466,7 +466,7 @@
             if (flag) {
                 $.ajax({
                     type: 'post',
-                    url: "{{ URL::to('/') }}/clients/updatefollowup/store",
+                    url: "{{ URL::to('/') }}/clients/action/update",
                     headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                     data: {
                         note_id: $('#assign_note_id').val(),

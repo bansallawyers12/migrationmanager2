@@ -1243,7 +1243,7 @@
         updateStage: "{{ route('dashboard.update-stage') }}",
         columnPreferences: "{{ route('dashboard.column-preferences') }}",
         extendDeadline: "{{ route('dashboard.extend-deadline') }}",
-        updateTaskCompleted: "{{ route('dashboard.update-task-completed') }}"
+        updateActionCompleted: "{{ route('dashboard.update-action-completed') }}"
     };
     
     window.dashboardData = {
@@ -1465,7 +1465,7 @@ $(function () {
             
             $.ajax({
                 type: 'post',
-                url: "{{URL::to('/')}}/clients/personalfollowup/store",
+                url: "{{URL::to('/')}}/clients/action/personal/store",
                 headers: { 
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
@@ -1599,7 +1599,7 @@ $(function () {
                         
                         $.ajax({
                             type: 'post',
-                            url: "{{URL::to('/')}}/clients/personalfollowup/store",
+                            url: "{{URL::to('/')}}/clients/action/personal/store",
                             headers: { 
                                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                             },

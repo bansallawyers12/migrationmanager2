@@ -7,6 +7,19 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Kyslik\ColumnSortable\Sortable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
+/**
+ * ActivitiesLog Model
+ * 
+ * Represents activity logs and action-related activities in the system.
+ * 
+ * Database field clarifications for the Action feature:
+ * - task_status (field name preserved): Action completion status (0 = incomplete action, 1 = completed action)
+ * - task_group (field name preserved): The action category (Call, Checklist, Review, Query, Urgent, Personal Action)
+ * - followup_date (field name preserved): The scheduled date for the action
+ * - activity_type: Can include 'followup_scheduled', 'followup_completed', etc. (these refer to Actions in the UI)
+ * 
+ * Note: Field names contain "task" and "followup" for database compatibility but refer to Actions in the UI
+ */
 class ActivitiesLog extends Authenticatable
 {
     use Notifiable;

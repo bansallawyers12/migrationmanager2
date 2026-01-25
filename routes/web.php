@@ -92,7 +92,7 @@ Route::middleware(['auth:admin'])->group(function() {
     Route::post('/dashboard/column-preferences', [DashboardController::class, 'saveColumnPreferences'])->name('dashboard.column-preferences');
     Route::post('/dashboard/update-stage', [DashboardController::class, 'updateStage'])->name('dashboard.update-stage');
     Route::post('/dashboard/extend-deadline', [DashboardController::class, 'extendDeadlineDate'])->name('dashboard.extend-deadline');
-    Route::post('/dashboard/update-task-completed', [DashboardController::class, 'updateTaskCompleted'])->name('dashboard.update-task-completed');
+    Route::post('/dashboard/update-action-completed', [DashboardController::class, 'updateActionCompleted'])->name('dashboard.update-action-completed');
     Route::get('/dashboard/fetch-notifications', [CRMUtilityController::class, 'fetchnotification'])->name('dashboard.fetch-notifications');
     Route::get('/dashboard/fetch-office-visit-notifications', [CRMUtilityController::class, 'fetchOfficeVisitNotifications'])->name('dashboard.fetch-office-visit-notifications');
     Route::post('/dashboard/mark-notification-seen', [CRMUtilityController::class, 'markNotificationSeen'])->name('dashboard.mark-notification-seen');
@@ -265,8 +265,8 @@ Route::middleware(['auth:admin'])->group(function() {
 	Route::resource('/assignee', AssigneeController::class);
         Route::get('/assignee-completed', [AssigneeController::class, 'completed']); //completed list only
 
-        Route::post('/update-task-completed', [AssigneeController::class, 'updatetaskcompleted']); //update task to be completed
-        Route::post('/update-task-not-completed', [AssigneeController::class, 'updatetasknotcompleted']); //update task to be not completed
+        Route::post('/update-action-completed', [AssigneeController::class, 'updateActionCompleted']); //update action to be completed
+        Route::post('/update-action-not-completed', [AssigneeController::class, 'updateActionNotCompleted']); //update action to be not completed
 
         Route::get('/assigned_by_me', [AssigneeController::class, 'assigned_by_me'])->name('assignee.assigned_by_me'); //assigned by me
         Route::get('/assigned_to_me', [AssigneeController::class, 'assigned_to_me'])->name('assignee.assigned_to_me'); //assigned to me
@@ -291,8 +291,8 @@ Route::middleware(['auth:admin'])->group(function() {
 	// Get assigne list
 	Route::post('/get_assignee_list', [AssigneeController::class, 'get_assignee_list']);
 
-	// Update task
-        Route::post('/update-task', [AssigneeController::class, 'updateTask']);
+	// Update action
+        Route::post('/update-action', [AssigneeController::class, 'updateAction']);
         Route::get('/action/counts', [AssigneeController::class, 'getActionCounts'])->name('action.counts');
 
 	// For datatable - Action list routes

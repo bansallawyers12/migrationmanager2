@@ -49,8 +49,8 @@ Route::prefix('clients/email')->name('clients.email.')->group(function () {
     Route::get('/status/{emailId}', [EmailVerificationController::class, 'getStatus'])->name('status');
 });
 
-/*---------- Client Follow-ups & Activities ----------*/
-Route::post('/clients/followup/store', [ClientsController::class, 'followupstore']);
+/*---------- Client Actions & Activities ----------*/
+Route::post('/clients/action/store', [ClientsController::class, 'actionStore']);
 Route::post('/clients/followup/retagfollowup', [ClientsController::class, 'retagfollowup']);
 Route::get('/clients/changetype/{id}/{type}', [ClientsController::class, 'changetype']);
 Route::get('/document/download/pdf/{id}', [ClientsController::class, 'downloadpdf']);
@@ -291,10 +291,10 @@ Route::get('/upload-checklists', 'CRM\UploadChecklistController@index')->name('u
 Route::get('/upload-checklists/matter/{matterId}', 'CRM\UploadChecklistController@showByMatter')->name('upload_checklists.matter');
 Route::post('/upload-checklists/store', 'CRM\UploadChecklistController@store')->name('upload_checklistsupload');
 
-/*---------- Client Sessions & Follow-ups ----------*/
-Route::post('/clients/personalfollowup/store', 'CRM\ClientsController@personalfollowup');
-Route::post('/clients/updatefollowup/store', 'CRM\ClientsController@updatefollowup');
-Route::post('/clients/reassignfollowup/store', 'CRM\ClientsController@reassignfollowupstore');
+/*---------- Client Sessions & Actions ----------*/
+Route::post('/clients/action/personal/store', 'CRM\ClientsController@storePersonalAction');
+Route::post('/clients/action/update', 'CRM\ClientsController@updateAction');
+Route::post('/clients/action/reassign', 'CRM\ClientsController@reassignAction');
 Route::post('/clients/update-session-completed', 'CRM\ClientsController@updatesessioncompleted')->name('clients.updatesessioncompleted');
 Route::post('/clients/getAllUser', 'CRM\ClientsController@getAllUser')->name('clients.getAllUser');
 

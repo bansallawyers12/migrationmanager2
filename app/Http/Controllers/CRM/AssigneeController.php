@@ -35,7 +35,7 @@ class AssigneeController extends Controller
          $this->middleware('auth:admin');
      }
 
-    //All task lists except completed = Closed
+    //All action lists except completed = Closed
     public function index(Request $request)
     {
         $query = QueryBuilder::for(Note::class)
@@ -55,7 +55,7 @@ class AssigneeController extends Controller
          ->with('i', (request()->input('page', 1) - 1) * 20);
     }
 
-    //All completed task lists
+    //All completed action lists
     public function completed(Request $request)
     {
         if(Auth::user()->role == 1){
@@ -67,8 +67,8 @@ class AssigneeController extends Controller
          ->with('i', (request()->input('page', 1) - 1) * 20);
     }
 
-    //Update task to be complete
-    public function updatetaskcompleted(Request $request)
+    //Update action to be complete
+    public function updateActionCompleted(Request $request)
     {
         $data = $request->all(); //dd($data);
         $note = Note::where('unique_group_id',$data['unique_group_id'])
@@ -106,7 +106,7 @@ class AssigneeController extends Controller
                 $objs = new ActivitiesLog;
                 $objs->client_id = $note_data['client_id'];
                 $objs->created_by = Auth::user()->id;
-                $objs->subject = 'completed task for '.@$assignee_name;
+                $objs->subject = 'completed action for '.@$assignee_name;
                 $objs->description = $description;
                 if(Auth::user()->id != @$note_data['assigned_to']){
                     $objs->use_for = @$note_data['assigned_to'];
@@ -115,12 +115,12 @@ class AssigneeController extends Controller
                 }
                 $objs->followup_date = @$note_data['updated_at'];
                 $objs->task_group = @$note_data['task_group'];
-                $objs->task_status = 1; //maked completed
+                $objs->task_status = 1; //marked completed
                 $objs->pin = 0;
                 $objs->save();
             }
             $response['status'] 	= 	true;
-            $response['message']	=	'Task completed successfully';
+            $response['message']	=	'Action completed successfully';
         } else {
             $response['status'] 	= 	false;
             $response['message']	=	'Please try again';
@@ -128,8 +128,8 @@ class AssigneeController extends Controller
         echo json_encode($response);
     }
 
-    //Update task to be not complete
-    public function updatetasknotcompleted(Request $request)
+    //Update action to be not complete
+    public function updateActionNotCompleted(Request $request)
     {
         $data = $request->all(); //dd($data['id']);
         $note = Note::where('unique_group_id',$data['unique_group_id'])
@@ -138,7 +138,7 @@ class AssigneeController extends Controller
                     ->update(['status'=>'0']);
         if($note){
             $response['status'] 	= 	true;
-            $response['message']	=	'Task updated successfully';
+            $response['message']	=	'Action updated successfully';
         } else {
             $response['status'] 	= 	false;
             $response['message']	=	'Please try again';
@@ -146,7 +146,7 @@ class AssigneeController extends Controller
         echo json_encode($response);
     }
 
-     //All assigned by me task list which r incomplete
+     //All assigned by me action list which r incomplete
      public function assigned_by_me(Request $request)
      {
         if(Auth::user()->role == 1){
@@ -159,7 +159,7 @@ class AssigneeController extends Controller
           ->with('i', (request()->input('page', 1) - 1) * 20);
      }
 
-    //All assigned to me task list
+    //All assigned to me action list
     public function assigned_to_me(Request $request)
     {
         if(Auth::user()->role == 1){
@@ -203,21 +203,21 @@ class AssigneeController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
-        // Get task group counts with single optimized query
-        $taskGroupCounts = $this->getCompletedTaskGroupCounts($user);
+        // Get action group counts with single optimized query
+        $taskGroupCounts = $this->getCompletedActionGroupCounts($user);
         
         //dd(count($assignees_completed));
         return view('crm.assignee.action_completed',compact('assignees_completed','task_group','taskGroupCounts'))->with('i', (request()->input('page', 1) - 1) * 20);
     }
 
     /**
-     * Get completed task counts grouped by task_group
+     * Get completed action counts grouped by task_group (field name kept for database compatibility)
      * Uses a single query with GROUP BY for better performance
      * 
      * @param \App\Models\Admin $user
      * @return array
      */
-    private function getCompletedTaskGroupCounts($user)
+    private function getCompletedActionGroupCounts($user)
     {
         $query = \App\Models\Note::where('status', 1)
             ->where('type', 'client')
@@ -237,7 +237,7 @@ class AssigneeController extends Controller
             ->pluck('count', 'task_group')
             ->toArray();
 
-        // Initialize all task groups with default count of 0
+        // Initialize all action groups with default count of 0
         $counts = [
             'All' => array_sum($groupedCounts),
             'Call' => $groupedCounts['Call'] ?? 0,
@@ -245,7 +245,7 @@ class AssigneeController extends Controller
             'Review' => $groupedCounts['Review'] ?? 0,
             'Query' => $groupedCounts['Query'] ?? 0,
             'Urgent' => $groupedCounts['Urgent'] ?? 0,
-            'Personal Task' => $groupedCounts['Personal Task'] ?? 0,
+            'Personal Action' => $groupedCounts['Personal Action'] ?? 0,
         ];
 
         return $counts;
@@ -291,14 +291,14 @@ class AssigneeController extends Controller
                     } elseif ($request->filter == 'completed') {
                         $query->where('notes.status', '1');
                     } else {
-                        // Handle special case for personal_task to convert underscore to space
-                        $taskGroup = $request->filter;
-                        if ($taskGroup == 'personal_task') {
-                            $taskGroup = 'Personal Task';
+                        // Handle special case for personal_action to convert underscore to space
+                        $actionGroup = $request->filter;
+                        if ($actionGroup == 'personal_action') {
+                            $actionGroup = 'Personal Action';
                         } else {
-                            $taskGroup = ucfirst($taskGroup);
+                            $actionGroup = ucfirst($actionGroup);
                         }
-                        $query->where('notes.task_group', $taskGroup);
+                        $query->where('notes.task_group', $actionGroup);
                     }
                 }
 
@@ -334,9 +334,9 @@ class AssigneeController extends Controller
 
                 $dataTable = DataTables::of($query)
                     ->addIndexColumn()
-                    ->addColumn('done_task', function($data) {
-                        $done_task = '<input type="radio" class="complete_task" data-toggle="tooltip" title="Mark Complete!" data-id="'.$data->id.'" data-unique_group_id="'.$data->unique_group_id.'">';
-                        return $done_task;
+                    ->addColumn('done_action', function($data) {
+                        $done_action = '<input type="radio" class="complete_task" data-toggle="tooltip" title="Mark Complete!" data-id="'.$data->id.'" data-unique_group_id="'.$data->unique_group_id.'">';
+                        return $done_action;
                     })
                     ->addColumn('assigner_name', function($data) {
                         try {
@@ -362,8 +362,8 @@ class AssigneeController extends Controller
                                 $client_encoded_id = base64_encode(convert_uuencode(@$data->client_id));
                                 $user_name .= '<a href="'.url('/clients/detail/'.$client_encoded_id).'" target="_blank">'.$clientId.'</a>';
                             } else {
-                                // Personal Task - no client assigned
-                                $user_name = '<span class="badge badge-info">Personal Task</span>';
+                                // Personal Action - no client assigned
+                                $user_name = '<span class="badge badge-info">Personal Action</span>';
                             }
                             return $user_name;
                         } catch (\Exception $e) {
@@ -412,12 +412,12 @@ class AssigneeController extends Controller
                             $actionBtn = '';
                             $current_date1 = $list->followup_date ?: date('Y-m-d');
 
-                            // Update Task button - available for all tasks including Personal Tasks
+                            // Update Action button - available for all actions including Personal Actions
                             // Use direct htmlspecialchars instead of Utf8Helper wrapper to avoid redundant sanitization
                             $safe_description = htmlspecialchars(Utf8Helper::safeSanitize($list->description ?? ''), ENT_QUOTES, 'UTF-8');
                             $safe_task_group = htmlspecialchars(Utf8Helper::safeSanitize($list->task_group ?? ''), ENT_QUOTES, 'UTF-8');
                             
-                            // For personal tasks, client_id will be null, so use empty string for encoded value
+                            // For personal actions, client_id will be null, so use empty string for encoded value
                             $encoded_client_id = $list->client_id ? base64_encode(convert_uuencode($list->client_id)) : '';
                             
                             $actionBtn .= '<button type="button" data-assignedto="'.$list->assigned_to.'" data-noteid="'.$safe_description.'" data-taskid="'.$list->id.'" data-taskgroupid="'.$safe_task_group.'" data-followupdate="'.$current_date1.'" data-clientid="'.$encoded_client_id.'" class="btn btn-primary btn-block update_task" data-toggle="popover" data-role="popover" title="" data-placement="left" style="width: 40px;display: inline;margin-top:0px;"><i class="fa fa-edit" aria-hidden="true"></i></button>';
@@ -430,7 +430,7 @@ class AssigneeController extends Controller
                             return '';
                         }
                     })
-                    ->rawColumns(['done_task', 'client_reference', 'note_description', 'action'])
+                    ->rawColumns(['done_action', 'client_reference', 'note_description', 'action'])
                     // Define how to filter computed columns
                     ->filterColumn('assigner_name', function($query, $keyword) {
                         $keywordLower = strtolower($keyword);
@@ -485,7 +485,7 @@ class AssigneeController extends Controller
             'review' => 0,
             'query' => 0,
             'urgent' => 0,
-            'personal_task' => 0
+            'personal_action' => 0
         ];
 
         $query = Note::where('status', '<>', '1')
@@ -502,7 +502,7 @@ class AssigneeController extends Controller
         $counts['review'] = (clone $query)->where('task_group', 'Review')->count();
         $counts['query'] = (clone $query)->where('task_group', 'Query')->count();
         $counts['urgent'] = (clone $query)->where('task_group', 'Urgent')->count();
-        $counts['personal_task'] = (clone $query)->where('task_group', 'Personal Task')->count();
+        $counts['personal_action'] = (clone $query)->where('task_group', 'Personal Action')->count();
 
         return response()->json($counts);
     }
@@ -793,26 +793,26 @@ class AssigneeController extends Controller
     }
 
     /**
-     * Update a task (Note) based on the provided data.
-     * This function marks the current task as complete and creates a new task with the provided information.
+     * Update an action (Note) based on the provided data.
+     * This function marks the current action as complete and creates a new action with the provided information.
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function updateTask(Request $request)
+    public function updateAction(Request $request)
     {
         // Validate the incoming request data
         $validated = $request->validate([
-            'id' => 'required|exists:notes,id', // Ensure the task ID exists in the notes table
-            'client_id' => 'nullable|string', // Client ID is optional for Personal Tasks
+            'id' => 'required|exists:notes,id', // Ensure the action ID exists in the notes table
+            'client_id' => 'nullable|string', // Client ID is optional for Personal Actions
             'assigned_to' => 'required|exists:admins,id', // Check against the admins table instead of users
             'description' => 'required|string',
-            'task_group' => 'required|string|in:Call,Checklist,Review,Query,Urgent,Personal Task', // Include Personal Task
+            'task_group' => 'required|string|in:Call,Checklist,Review,Query,Urgent,Personal Action', // Include Personal Action
         ]);
 
         try {
             // Log the incoming assigned_to value for debugging
-            Log::info('Updating task with assigned_to: ' . $validated['assigned_to']);
+            Log::info('Updating action with assigned_to: ' . $validated['assigned_to']);
 
             // Decode client_id if it was encoded and not empty
             $clientId = null;
@@ -820,30 +820,30 @@ class AssigneeController extends Controller
                 $clientId = convert_uudecode(base64_decode($validated['client_id']));
             }
 
-            // Find the current task (Note) by ID
-            $currentTask = Note::findOrFail($validated['id']);
+            // Find the current action (Note) by ID
+            $currentAction = Note::findOrFail($validated['id']);
 
             // Get assignee information for activity logs
-            $admin_data_old = Admin::where('id', $currentTask->assigned_to)->first();
+            $admin_data_old = Admin::where('id', $currentAction->assigned_to)->first();
             $assignee_name_old = $admin_data_old ? $admin_data_old->first_name . " " . $admin_data_old->last_name : 'N/A';
 
-            // Step 1: Mark the current task as complete
-            $currentTask->update(['status' => '1']);
+            // Step 1: Mark the current action as complete
+            $currentAction->update(['status' => '1']);
 
-            // Step 2: Create activity log for task completion (only if there's a client_id)
-            if ($currentTask->client_id) {
+            // Step 2: Create activity log for action completion (only if there's a client_id)
+            if ($currentAction->client_id) {
                 $completionLog = new ActivitiesLog;
-                $completionLog->client_id = $currentTask->client_id;
+                $completionLog->client_id = $currentAction->client_id;
                 $completionLog->created_by = Auth::user()->id;
-                $completionLog->subject = 'Task completed for ' . $assignee_name_old;
-                $completionLog->description = '<p>' . $currentTask->description . '</p>';
-                if (Auth::user()->id != $currentTask->assigned_to) {
-                    $completionLog->use_for = $currentTask->assigned_to;
+                $completionLog->subject = 'Action completed for ' . $assignee_name_old;
+                $completionLog->description = '<p>' . $currentAction->description . '</p>';
+                if (Auth::user()->id != $currentAction->assigned_to) {
+                    $completionLog->use_for = $currentAction->assigned_to;
                 } else {
                     $completionLog->use_for = null;
                 }
-                $completionLog->followup_date = $currentTask->updated_at;
-                $completionLog->task_group = $currentTask->task_group;
+                $completionLog->followup_date = $currentAction->updated_at;
+                $completionLog->task_group = $currentAction->task_group;
                 $completionLog->task_status = 1; // Marked as completed
                 $completionLog->pin = 0;
                 $completionLog->save();
@@ -852,55 +852,55 @@ class AssigneeController extends Controller
             $admin_data = Admin::where('id', $validated['assigned_to'])->first();
             $assignee_name = $admin_data ? $admin_data->first_name . " " . $admin_data->last_name : 'N/A';
 
-            // Use the original task's followup_date or today's date if not available
-            $followupDate = $currentTask->followup_date ?: date('Y-m-d');
+            // Use the original action's followup_date or today's date if not available
+            $followupDate = $currentAction->followup_date ?: date('Y-m-d');
 
-            // Step 3: Create a new task with the provided information
-            $newTask = new Note;
-            $newTask->user_id = Auth::user()->id;
-            $newTask->client_id = $clientId;
-            $newTask->assigned_to = $validated['assigned_to'];
-            $newTask->description = $validated['description'];
-            $newTask->followup_date = $followupDate;
-            $newTask->task_group = $validated['task_group'];
-            $newTask->type = 'client';
-            $newTask->folloup = 1;
-            $newTask->status = '0'; // New task is incomplete
-            $newTask->pin = 0; // Set pin to 0 (required field)
-            $taskUniqueId = 'group_' . uniqid('', true);
-            $newTask->unique_group_id = $taskUniqueId; // Generate unique group ID for the new task
-            $newTask->save();
+            // Step 3: Create a new action with the provided information
+            $newAction = new Note;
+            $newAction->user_id = Auth::user()->id;
+            $newAction->client_id = $clientId;
+            $newAction->assigned_to = $validated['assigned_to'];
+            $newAction->description = $validated['description'];
+            $newAction->followup_date = $followupDate;
+            $newAction->task_group = $validated['task_group'];
+            $newAction->type = 'client';
+            $newAction->folloup = 1;
+            $newAction->status = '0'; // New action is incomplete
+            $newAction->pin = 0; // Set pin to 0 (required field)
+            $actionUniqueId = 'group_' . uniqid('', true);
+            $newAction->unique_group_id = $actionUniqueId; // Generate unique group ID for the new action
+            $newAction->save();
 
-            // Step 4: Create activity log for new task creation (only if there's a client_id)
+            // Step 4: Create activity log for new action creation (only if there's a client_id)
             if ($clientId) {
-                $newTaskLog = new ActivitiesLog;
-                $newTaskLog->client_id = $clientId;
-                $newTaskLog->created_by = Auth::user()->id;
-                $newTaskLog->subject = 'New task assigned for ' . $assignee_name;
-                $newTaskLog->description = '<p>' . $validated['description'] . '</p>';
+                $newActionLog = new ActivitiesLog;
+                $newActionLog->client_id = $clientId;
+                $newActionLog->created_by = Auth::user()->id;
+                $newActionLog->subject = 'New action assigned for ' . $assignee_name;
+                $newActionLog->description = '<p>' . $validated['description'] . '</p>';
                 if (Auth::user()->id != $validated['assigned_to']) {
-                    $newTaskLog->use_for = $validated['assigned_to'];
+                    $newActionLog->use_for = $validated['assigned_to'];
                 } else {
-                    $newTaskLog->use_for = null;
+                    $newActionLog->use_for = null;
                 }
-                $newTaskLog->followup_date = $followupDate;
-                $newTaskLog->task_group = $validated['task_group'];
-                $newTaskLog->task_status = 0; // New task is incomplete
-                $newTaskLog->pin = 0;
-                $newTaskLog->save();
+                $newActionLog->followup_date = $followupDate;
+                $newActionLog->task_group = $validated['task_group'];
+                $newActionLog->task_status = 0; // New action is incomplete
+                $newActionLog->pin = 0;
+                $newActionLog->save();
             }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Task completed and new task created successfully.'
+                'message' => 'Action completed and new action created successfully.'
             ], 200);
 
         } catch (\Exception $e) {
             // Log the exception for debugging
-            Log::error('Error updating task: ' . $e->getMessage());
+            Log::error('Error updating action: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'An error occurred while updating the task: ' . $e->getMessage()
+                'message' => 'An error occurred while updating the action: ' . $e->getMessage()
             ], 500);
         }
     }

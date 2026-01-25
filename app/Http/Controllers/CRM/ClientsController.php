@@ -9009,14 +9009,14 @@ class ClientsController extends Controller
 	}
 
     /**
-     * Store follow-up note with assignee information
+     * Store action with assignee information
      * Handles the "Assign User" popup functionality
      * Supports both single and multiple assignees
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function followupstore(Request $request)
+    public function actionStore(Request $request)
     {
         try {
             $requestData = $request->all();
@@ -9049,49 +9049,49 @@ class ClientsController extends Controller
                 exit;
             }
             
-            // Get the next unique ID for this task
-            $taskUniqueId = 'group_' . uniqid('', true);
+            // Get the next unique ID for this action
+            $actionUniqueId = 'group_' . uniqid('', true);
 
-            // Loop through each assignee and create a follow-up note
+            // Loop through each assignee and create an action
             foreach ($remCat as $assigneeId) {
-                // Create a new followup note for each assignee
-                $followup = new \App\Models\Note;
-                $followup->client_id = $clientId;
-                $followup->user_id = Auth::user()->id;
-                $followup->description = $requestData['description'] ?? '';
-                $followup->unique_group_id = $taskUniqueId;
+                // Create a new action for each assignee
+                $action = new \App\Models\Note;
+                $action->client_id = $clientId;
+                $action->user_id = Auth::user()->id;
+                $action->description = $requestData['description'] ?? '';
+                $action->unique_group_id = $actionUniqueId;
 
                 // Set the title for the current assignee
                 $assigneeName = $this->getAssigneeName($assigneeId);
-                $followup->title = $requestData['remindersubject'] ?? 'Lead assigned to ' . $assigneeName;
+                $action->title = $requestData['remindersubject'] ?? 'Lead assigned to ' . $assigneeName;
 
                 // PostgreSQL NOT NULL constraints - must set these fields (Notes Table pattern)
-                $followup->folloup = 1; // This is a follow-up note
-                $followup->pin = 0; // Default to not pinned
-                $followup->status = '0'; // Default status (string '0' = active, '1' = completed)
-                $followup->type = 'client';
-                $followup->task_group = $requestData['task_group'] ?? null;
-                $followup->assigned_to = $assigneeId;
+                $action->folloup = 1; // This is an action (folloup field name kept for database compatibility)
+                $action->pin = 0; // Default to not pinned
+                $action->status = '0'; // Default status (string '0' = active, '1' = completed)
+                $action->type = 'client';
+                $action->task_group = $requestData['task_group'] ?? null;
+                $action->assigned_to = $assigneeId;
 
                 if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
-                    $followup->followup_date = $requestData['followup_datetime'];
+                    $action->followup_date = $requestData['followup_datetime'];
                 }
 
                 //add note deadline
                 if(isset($requestData['note_deadline_checkbox']) && $requestData['note_deadline_checkbox'] != ''){
                     if($requestData['note_deadline_checkbox'] == 1){
-                        $followup->note_deadline = $requestData['note_deadline'] ?? null;
+                        $action->note_deadline = $requestData['note_deadline'] ?? null;
                     } else {
-                        $followup->note_deadline = NULL;
+                        $action->note_deadline = NULL;
                     }
                 } else {
-                    $followup->note_deadline = NULL;
+                    $action->note_deadline = NULL;
                 }
 
-                $saved = $followup->save();
+                $saved = $action->save();
 
                 if ($saved) {
-                    // Update lead follow-up date
+                    // Update lead action date
                     if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
                         $Lead = Admin::find($clientId);
                         if ($Lead) {
@@ -9110,19 +9110,19 @@ class ClientsController extends Controller
                     $o->receiver_status = 0; // Unread
                     $o->seen = 0; // Not seen
                     
-                    $followupDateTime = $requestData['followup_datetime'] ?? now();
+                    $actionDateTime = $requestData['followup_datetime'] ?? now();
                     try {
-                        if (is_numeric($followupDateTime)) {
-                            $formattedDate = date('d/M/Y h:i A', $followupDateTime);
+                        if (is_numeric($actionDateTime)) {
+                            $formattedDate = date('d/M/Y h:i A', $actionDateTime);
                         } else {
-                            $timestamp = strtotime($followupDateTime);
+                            $timestamp = strtotime($actionDateTime);
                             $formattedDate = $timestamp !== false ? date('d/M/Y h:i A', $timestamp) : date('d/M/Y h:i A');
                         }
                     } catch (\Exception $dateEx) {
                         $formattedDate = date('d/M/Y h:i A');
                     }
                     
-                    $o->message = 'Followup Assigned by ' . Auth::user()->first_name . ' ' . Auth::user()->last_name . ' on ' . $formattedDate;
+                    $o->message = 'Action Assigned by ' . Auth::user()->first_name . ' ' . Auth::user()->last_name . ' on ' . $formattedDate;
                     $o->save();
 
                     // Log the activity for the current assignee
@@ -9150,11 +9150,11 @@ class ClientsController extends Controller
             exit;
             
         } catch (\Exception $e) {
-            Log::error('Error in followupstore: ' . $e->getMessage(), [
+            Log::error('Error in actionStore: ' . $e->getMessage(), [
                 'request_data' => $request->all(),
                 'trace' => $e->getTraceAsString()
             ]);
-            echo json_encode(array('success' => false, 'message' => 'Error saving follow-up. Please try again.'));
+            echo json_encode(array('success' => false, 'message' => 'Error saving action. Please try again.'));
             exit;
         }
     }
@@ -9238,15 +9238,15 @@ class ClientsController extends Controller
     }
 
     /**
-     * Store personal followup/task (Add My Task functionality)
+     * Store personal action (Add My Action functionality)
      * Used by: action.blade.php
      */
-    public function personalfollowup(Request $request)
+    public function storePersonalAction(Request $request)
     {
         try {
             $requestData = $request->all();
             
-            // Decode the client ID - handle empty/null for personal tasks
+            // Decode the client ID - handle empty/null for personal actions
             $clientId = null;
             $encodedClientId = null;
             
@@ -9257,32 +9257,32 @@ class ClientsController extends Controller
                 $clientId = $this->decodeString($encodedClientId);
             }
 
-            // Generate unique task ID
-            $taskUniqueId = 'group_' . uniqid('', true);
+            // Generate unique action ID
+            $actionUniqueId = 'group_' . uniqid('', true);
 
             // Handle single or multiple assignees
             $assignees = is_array($requestData['rem_cat']) ? $requestData['rem_cat'] : [$requestData['rem_cat']];
 
-            // Loop through each assignee and create a task
+            // Loop through each assignee and create an action
             foreach ($assignees as $assigneeId) {
-                // Create a new task note for each assignee
-                $task = new \App\Models\Note;
-                $task->client_id = $clientId;
-                $task->user_id = Auth::user()->id;
-                $task->description = @$requestData['description'];
-                $task->unique_group_id = $taskUniqueId;
-                $task->folloup = 1;
-                $task->type = 'client';
-                $task->task_group = @$requestData['task_group'];
-                $task->assigned_to = $assigneeId;
-                $task->status = '0'; // Not completed
-                $task->pin = 0; // Required field - default to not pinned
+                // Create a new action for each assignee
+                $action = new \App\Models\Note;
+                $action->client_id = $clientId;
+                $action->user_id = Auth::user()->id;
+                $action->description = @$requestData['description'];
+                $action->unique_group_id = $actionUniqueId;
+                $action->folloup = 1;
+                $action->type = 'client';
+                $action->task_group = @$requestData['task_group'];
+                $action->assigned_to = $assigneeId;
+                $action->status = '0'; // Not completed
+                $action->pin = 0; // Required field - default to not pinned
                 
                 if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
-                    $task->followup_date = @$requestData['followup_datetime'];
+                    $action->followup_date = @$requestData['followup_datetime'];
                 }
 
-                $saved = $task->save();
+                $saved = $action->save();
 
                 if ($saved) {
                     // Create a notification for the assignee
@@ -9298,35 +9298,35 @@ class ClientsController extends Controller
                         $notification->url = URL::to('/action');
                     }
                     
-                    $notification->message = 'assigned you a task';
+                    $notification->message = 'assigned you an action';
                     $notification->seen = 0;
                     $notification->save();
                 }
             }
 
-            return response()->json(['success' => true, 'message' => 'Task created successfully']);
+            return response()->json(['success' => true, 'message' => 'Action created successfully']);
         } catch (\Exception $e) {
-            Log::error('Error in personalfollowup: ' . $e->getMessage(), [
+            Log::error('Error in storePersonalAction: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
                 'request_data' => $request->all()
             ]);
-            return response()->json(['success' => false, 'message' => 'Error creating task: ' . $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Error creating action: ' . $e->getMessage()], 500);
         }
     }
 
     /**
-     * Update existing followup/task
+     * Update existing action
      * Used by: assign_by_me.blade.php
      */
-    public function updatefollowup(Request $request)
+    public function updateAction(Request $request)
     {
         $requestData = $request->all();
         
         try {
-            // Find the existing task
-            $task = \App\Models\Note::findOrFail($requestData['note_id']);
+            // Find the existing action
+            $action = \App\Models\Note::findOrFail($requestData['note_id']);
             
-            // Decode the client ID - handle empty/null for personal tasks
+            // Decode the client ID - handle empty/null for personal actions
             $clientId = null;
             if (!empty($requestData['client_id'])) {
                 // Extract just the encoded part (format: "ENCODED/Matter/NO" or "ENCODED/Client")
@@ -9335,23 +9335,23 @@ class ClientsController extends Controller
                 $clientId = $this->decodeString($encodedClientId);
             }
             
-            // Update task fields
-            $task->description = @$requestData['description'];
-            $task->client_id = $clientId;
-            $task->task_group = @$requestData['task_group'];
-            $task->assigned_to = @$requestData['rem_cat'];
+            // Update action fields
+            $action->description = @$requestData['description'];
+            $action->client_id = $clientId;
+            $action->task_group = @$requestData['task_group'];
+            $action->assigned_to = @$requestData['rem_cat'];
             
             if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
-                $task->followup_date = @$requestData['followup_datetime'];
+                $action->followup_date = @$requestData['followup_datetime'];
             }
             
-            $task->save();
+            $action->save();
 
             // Create notification for the assignee if changed
-            if ($task->assigned_to != $task->getOriginal('assigned_to')) {
+            if ($action->assigned_to != $action->getOriginal('assigned_to')) {
                 $notification = new \App\Models\Notification;
                 $notification->sender_id = Auth::user()->id;
-                $notification->receiver_id = $task->assigned_to;
+                $notification->receiver_id = $action->assigned_to;
                 $notification->module_id = $clientId;
                 
                 // Set URL based on whether client exists
@@ -9361,27 +9361,27 @@ class ClientsController extends Controller
                     $notification->url = URL::to('/action');
                 }
                 
-                $notification->message = 'updated your task';
+                $notification->message = 'updated your action';
                 $notification->seen = 0;
                 $notification->save();
             }
 
-            return response()->json(['success' => true, 'message' => 'Task updated successfully']);
+            return response()->json(['success' => true, 'message' => 'Action updated successfully']);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error updating task: ' . $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Error updating action: ' . $e->getMessage()], 500);
         }
     }
 
     /**
-     * Reassign followup/task (for completed tasks)
+     * Reassign action (for completed actions)
      * Used by: action_completed.blade.php
      */
-    public function reassignfollowupstore(Request $request)
+    public function reassignAction(Request $request)
     {
         try {
             $requestData = $request->all();
             
-            // Decode the client ID - handle empty/null for personal tasks
+            // Decode the client ID - handle empty/null for personal actions
             $clientId = null;
             if (!empty($requestData['client_id'])) {
                 // Extract just the encoded part (format: "ENCODED/Matter/NO" or "ENCODED/Client")
@@ -9390,33 +9390,33 @@ class ClientsController extends Controller
                 $clientId = $this->decodeString($encodedClientId);
             }
 
-            // Generate unique task ID
-            $taskUniqueId = 'group_' . uniqid('', true);
+            // Generate unique action ID
+            $actionUniqueId = 'group_' . uniqid('', true);
 
-            // Create a new task
-            $task = new \App\Models\Note;
-            $task->client_id = $clientId;
-            $task->user_id = Auth::user()->id;
-            $task->description = @$requestData['description'];
-            $task->unique_group_id = $taskUniqueId;
-            $task->folloup = 1;
-            $task->type = 'client';
-            $task->task_group = @$requestData['task_group'];
-            $task->assigned_to = @$requestData['rem_cat'];
-            $task->status = '0'; // Not completed
-            $task->pin = 0; // Required field - default to not pinned
+            // Create a new action
+            $action = new \App\Models\Note;
+            $action->client_id = $clientId;
+            $action->user_id = Auth::user()->id;
+            $action->description = @$requestData['description'];
+            $action->unique_group_id = $actionUniqueId;
+            $action->folloup = 1;
+            $action->type = 'client';
+            $action->task_group = @$requestData['task_group'];
+            $action->assigned_to = @$requestData['rem_cat'];
+            $action->status = '0'; // Not completed
+            $action->pin = 0; // Required field - default to not pinned
             
             if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
-                $task->followup_date = @$requestData['followup_datetime'];
+                $action->followup_date = @$requestData['followup_datetime'];
             }
 
-            $saved = $task->save();
+            $saved = $action->save();
 
             if ($saved) {
                 // Create a notification for the assignee
                 $notification = new \App\Models\Notification;
                 $notification->sender_id = Auth::user()->id;
-                $notification->receiver_id = $task->assigned_to;
+                $notification->receiver_id = $action->assigned_to;
                 $notification->module_id = $clientId;
                 
                 // Set URL based on whether client exists
@@ -9426,18 +9426,18 @@ class ClientsController extends Controller
                     $notification->url = URL::to('/action');
                 }
                 
-                $notification->message = 'assigned you a task';
+                $notification->message = 'assigned you an action';
                 $notification->seen = 0;
                 $notification->save();
             }
 
-            return response()->json(['success' => true, 'message' => 'Task created successfully']);
+            return response()->json(['success' => true, 'message' => 'Action created successfully']);
         } catch (\Exception $e) {
-            Log::error('Error in reassignfollowupstore: ' . $e->getMessage(), [
+            Log::error('Error in reassignAction: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
                 'request_data' => $request->all()
             ]);
-            return response()->json(['success' => false, 'message' => 'Error creating task: ' . $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Error creating action: ' . $e->getMessage()], 500);
         }
     }
 

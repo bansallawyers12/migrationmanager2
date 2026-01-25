@@ -489,7 +489,7 @@ jQuery(document).ready(function($){
         if(flag){
             $.ajax({
                 type: 'post',
-                url: "{{URL::to('/')}}/clients/reassignfollowup/store",
+                url: "{{URL::to('/')}}/clients/action/reassign",
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                 data: {
                     note_type: 'follow_up',
