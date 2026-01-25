@@ -99,7 +99,7 @@
                                 <div id='note-error' class='error-message'></div>
                             </div>
                             
-                            <input id='task_group' name='task_group' type='hidden' value='Personal Task'>
+                            <input id='task_group' name='task_group' type='hidden' value='Personal Action'>
                             
                             <div class='text-center'>
                                 <button type='button' class='btn btn-primary' id='add_my_task'>
@@ -180,7 +180,7 @@
                                 <div id='note-error' class='error-message'></div>
                             </div>
                             
-                            <input id='task_group' name='task_group' type='hidden' value='Personal Task'>
+                            <input id='task_group' name='task_group' type='hidden' value='Personal Action'>
                             
                             <div class='text-center'>
                                 <button type='button' class='btn btn-primary' id='add_my_task'>

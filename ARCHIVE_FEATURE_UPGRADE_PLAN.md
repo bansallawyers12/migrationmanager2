@@ -11,11 +11,12 @@
 
 This plan outlines the steps to upgrade the archive feature in `migrationmanager2` to match the more robust implementation found in `bansalcrm2`. The upgrade will add:
 
-- **Metadata Tracking**: `archived_on` and `archived_by` columns
+- **Metadata Tracking**: `archived_on`, `archived_by`, and `archive_reason` columns
 - **Advanced Filtering**: Date range and user-based filtering for archived clients
-- **Permanent Deletion**: Safe deletion of clients archived 6+ months
+- **Permanent Deletion**: Safe deletion of clients archived 6+ months (with complete cascade delete of all related data)
+- **Activity Logging**: All archive/unarchive/delete actions logged in ActivitiesLog
 - **Better Code Organization**: Trait-based query building
-- **Enhanced User Experience**: More comprehensive archive management
+- **Enhanced User Experience**: More comprehensive archive management with optional reason/notes
 
 ---
 
@@ -91,6 +92,8 @@ This plan outlines the steps to upgrade the archive feature in `migrationmanager
 
 ### Phase 1: Database Schema Updates
 
+**Total Migrations:** 3 new migrations required
+
 #### 1.1 Create Migration for `archived_on` Column
 **File:** `database/migrations/YYYY_MM_DD_HHMMSS_add_archived_on_to_admins_table.php`
 
@@ -152,14 +155,14 @@ ADD COLUMN archive_reason TEXT NULL;
 **File:** `app/Models/Admin.php`
 
 **Changes:**
-- Add `archived_on` and `archived_by` to `$fillable` array
+- Add `archived_on`, `archived_by`, and `archive_reason` to `$fillable` array
 - Add `archived_on` to `$dates` or `$casts` array (if using Carbon)
 - Add relationship method: `archivedBy()` - belongsTo relationship to Admin
 
 **Code Addition:**
 ```php
 // Add to $fillable array
-'archived_on', 'archived_by',
+'archived_on', 'archived_by', 'archive_reason',
 
 // Add relationship
 public function archivedBy()
@@ -216,12 +219,15 @@ if($requestData['table'] == 'admins' && $requestData['col'] == 'is_archived') {
     $response = DB::table($requestData['table'])->where('id', $requestData['id'])->update([
         'is_archived' => 0,
         'archived_on' => null,
-        'archived_by' => null
+        'archived_by' => null,
+        'archive_reason' => null
     ]);
 } else {
     $response = DB::table($requestData['table'])->where('id', $requestData['id'])->update([$requestData['col'] => 0]);
 }
 ```
+
+**Note:** Also add activity logging for unarchive action (optional but recommended for consistency)
 
 **Reference:** See `bansalcrm2/app/Http/Controllers/Admin/AdminController.php` lines 449-459
 
@@ -251,6 +257,9 @@ if($requestData['table'] == 'admins' && $requestData['col'] == 'is_archived') {
    public function archive(Request $request, $id)
    {
        try {
+           // Note: ClientsController unarchive() uses direct $id (not encoded)
+           // Leads use encoded IDs, but clients appear to use direct IDs
+           // Verify by checking existing routes - if clients use encoding, add decode logic
            $client = Admin::where('id', $id)->where('role', 7)->first();
            
            if (!$client) {
@@ -271,7 +280,7 @@ if($requestData['table'] == 'admins' && $requestData['col'] == 'is_archived') {
            $client->save();
            
            // Log archive action in ActivitiesLog
-           \App\Models\ActivitiesLog::create([
+           ActivitiesLog::create([
                'client_id' => $client->id,
                'created_by' => Auth::user()->id,
                'subject' => 'Client Archived',
@@ -290,6 +299,8 @@ if($requestData['table'] == 'admins' && $requestData['col'] == 'is_archived') {
        }
    }
    ```
+   
+   **Note:** Ensure `ActivitiesLog` is imported at top of file: `use App\Models\ActivitiesLog;` (already exists in ClientsController ✅)
 
 3. **Update `archived()` Method (Line 445):**
    - Replace simple query with `getArchivedClientQuery()`
@@ -308,7 +319,7 @@ if($requestData['table'] == 'admins' && $requestData['col'] == 'is_archived') {
    $client->save();
    
    // Log unarchive action in ActivitiesLog
-   \App\Models\ActivitiesLog::create([
+   ActivitiesLog::create([
        'client_id' => $client->id,
        'created_by' => Auth::user()->id,
        'subject' => 'Client Unarchived',
@@ -317,6 +328,8 @@ if($requestData['table'] == 'admins' && $requestData['col'] == 'is_archived') {
        'task_status' => 0,
        'pin' => 0,
    ]);
+   
+   **Note:** `ActivitiesLog` already imported in ClientsController ✅
    ```
 
 5. **Add New Method: `permanentDelete()` (NEW - OPTIONAL):**
@@ -359,7 +372,8 @@ if($requestData['table'] == 'admins' && $requestData['col'] == 'is_archived') {
 3. **Update Table Data Display:**
    - Fix line 246: Display `archived_by` user name instead of date
    - Fix line 247: Display `archived_on` date properly
-   - Add null checks for both fields
+   - Add null checks for both fields (show "N/A" or "-" if null for existing records)
+   - **Add new column:** Display `archive_reason` (if provided) - can be tooltip or separate column
    - **Add 6-month check logic** before the dropdown menu (see item 4 below)
 
 4. **Add Permanent Delete Option (CRITICAL - 6 Month Check):**
@@ -412,19 +426,49 @@ if($requestData['table'] == 'admins' && $requestData['col'] == 'is_archived') {
    ```php
    <form action="{{ route('clients.archive', $list->id) }}" method="POST" class="archive-client-form" style="display: inline-block;">
        @csrf
-       <button type="button" class="dropdown-item has-icon" onclick="confirmArchiveClient(event, '{{ $list->first_name }} {{ $list->last_name }}', {{$list->id}})">
+       <button type="button" class="dropdown-item has-icon" onclick="showArchiveModal(event, '{{ $list->first_name }} {{ $list->last_name }}', {{$list->id}})">
            <i class="fas fa-archive"></i> Archive
        </button>
    </form>
    ```
    
+   **Add Archive Modal (with reason field):**
+   ```html
+   <!-- Archive Modal -->
+   <div class="modal fade" id="archiveModal" tabindex="-1">
+       <div class="modal-dialog">
+           <div class="modal-content">
+               <div class="modal-header">
+                   <h5 class="modal-title">Archive Client</h5>
+                   <button type="button" class="close" data-dismiss="modal">&times;</button>
+               </div>
+               <form id="archiveForm" method="POST">
+                   @csrf
+                   <div class="modal-body">
+                       <p>Are you sure you want to archive <strong id="archiveClientName"></strong>?</p>
+                       <div class="form-group">
+                           <label for="archive_reason">Reason (Optional):</label>
+                           <textarea class="form-control" id="archive_reason" name="archive_reason" rows="3" placeholder="Enter reason for archiving..."></textarea>
+                       </div>
+                   </div>
+                   <div class="modal-footer">
+                       <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                       <button type="submit" class="btn btn-primary">Archive Client</button>
+                   </div>
+               </form>
+           </div>
+       </div>
+   </div>
+   ```
+   
    **Add JavaScript:**
    ```javascript
-   function confirmArchiveClient(event, clientName, clientId) {
+   function showArchiveModal(event, clientName, clientId) {
        event.preventDefault();
-       if (confirm('Are you sure you want to archive "' + clientName + '"?')) {
-           $(event.target).closest('form').submit();
-       }
+       $('#archiveClientName').text(clientName);
+       $('#archiveForm').attr('action', '{{ route("clients.archive", ":id") }}'.replace(':id', clientId));
+       $('#archive_reason').val('');
+       $('#archiveModal').modal('show');
    }
    ```
 
@@ -435,15 +479,24 @@ if($requestData['table'] == 'admins' && $requestData['col'] == 'is_archived') {
 ### Phase 6: Route Updates
 
 #### 6.1 Add Client Archive Route
-**File:** `routes/clients.php`
+**File:** `routes/clients.php` (add near line 120-121 with other archive routes)
 
 **Add Route:**
 ```php
 // Archive client
+Route::post('/clients/archive/{id}', [ClientsController::class, 'archive'])->name('clients.archive');
+```
+
+**Alternative (if following exact pattern from leads):**
+```php
 Route::post('/archive/{id}', [ClientsController::class, 'archive'])->name('clients.archive');
 ```
 
-**Note:** This follows the pattern already used for leads in `routes/leads.php`
+**Note:** Based on existing pattern in `routes/web.php` line 207: `Route::post('/archive/{id}', [LeadController::class, 'archive'])`, use:
+```php
+Route::post('/archive/{id}', [ClientsController::class, 'archive'])->name('clients.archive');
+```
+This matches the leads archive route pattern.
 
 #### 6.2 Add Permanent Delete Route
 **File:** `routes/web.php` (add near line 116 with other CRMUtilityController routes)
@@ -453,7 +506,9 @@ Route::post('/archive/{id}', [ClientsController::class, 'archive'])->name('clien
 Route::post('/permanent_delete_action', [CRMUtilityController::class, 'permanentDeleteAction']);
 ```
 
-**Note:** Following existing pattern - utility actions are in CRMUtilityController via web.php routes
+**Note:** Following existing pattern - utility actions are in CRMUtilityController via web.php routes (similar to `/move_action`, `/archive_action`, `/delete_action`)
+
+**Verify:** Check that route name doesn't conflict with existing routes
 
 ---
 
@@ -488,10 +543,11 @@ Route::post('/permanent_delete_action', [CRMUtilityController::class, 'permanent
 ### Phase 8: Testing Checklist
 
 #### 8.1 Database Tests
-- [ ] Migration runs successfully
+- [ ] Migration runs successfully (all 3 migrations: archived_on, archived_by, archive_reason)
 - [ ] Rollback works correctly
 - [ ] Foreign key constraint works (if enabled)
 - [ ] Indexes are created
+- [ ] Existing archived records remain functional (with NULL metadata)
 
 #### 8.2 Functionality Tests
 - [ ] **Archive client from clients list** sets `archived_on` and `archived_by`
@@ -511,6 +567,22 @@ Route::post('/permanent_delete_action', [CRMUtilityController::class, 'permanent
 - [ ] Permanent delete shows appropriate error for recent archives
 - [ ] Role-based access control works
 - [ ] **Archive button in clients list works** (critical - new functionality)
+- [ ] **Archive reason/notes field works** (optional field saves correctly)
+- [ ] **Activity logging works** (archive/unarchive/delete actions logged in ActivitiesLog)
+- [ ] **Permanent delete cascade works** (all related data deleted: matters, documents, appointments, contacts, emails, etc.)
+- [ ] **Deletion order correct** (child tables deleted before parent - no FK violations)
+- [ ] **Transaction atomicity** (all deletes succeed or all rollback - if transaction implemented)
+- [ ] **No orphaned records** (verify all related data is deleted)
+- [ ] **Activity log persists** (created before deletion, should remain after client deleted)
+- [ ] **All related tables deleted** (verify ~22+ tables are cascade deleted)
+- [ ] **No orphaned records** (check for any remaining references to deleted client)
+- [ ] **Transaction rollback works** (if transaction implemented, verify rollback on error)
+- [ ] **Performance acceptable** (cascade delete doesn't timeout for clients with lots of data)
+- [ ] **Permanent delete uses soft delete** (sets is_deleted timestamp, not hard delete)
+- [ ] **Existing archived records display correctly** (with NULL metadata showing as "N/A")
+- [ ] **moveAction clears archive_reason** (all metadata cleared on unarchive)
+- [ ] **Carbon date parsing works** (6-month check calculates correctly)
+- [ ] **Route accessibility** (both archive and permanent delete routes accessible)
 
 #### 8.3 Edge Cases
 - [ ] Archive client that's already archived (should handle gracefully)
@@ -548,20 +620,21 @@ Route::post('/permanent_delete_action', [CRMUtilityController::class, 'permanent
 
 1. `database/migrations/YYYY_MM_DD_HHMMSS_add_archived_on_to_admins_table.php`
 2. `database/migrations/YYYY_MM_DD_HHMMSS_add_archived_by_to_admins_table.php`
+3. `database/migrations/YYYY_MM_DD_HHMMSS_add_archive_reason_to_admins_table.php`
 
 **Note:** `app/Traits/ClientQueries.php` already exists - will be enhanced, not created
 
 ## 📝 Files to Modify
 
-1. `app/Models/Admin.php` - Add fillable fields and relationship
+1. `app/Models/Admin.php` - Add fillable fields (`archived_on`, `archived_by`, `archive_reason`) and relationship
 2. `app/Traits/ClientQueries.php` - Add missing methods (getArchivedClientQuery, applyArchivedFilters, etc.)
-3. `app/Http/Controllers/CRM/CRMUtilityController.php` - Update moveAction + add permanentDeleteAction
-4. `app/Http/Controllers/CRM/ClientsController.php` - Add archive method + update archived/unarchive methods  
-5. `resources/views/crm/archived/index.blade.php` - Add filters and fix data display
-6. `resources/views/crm/clients/index.blade.php` - Fix archive button (line 579-580)
+3. `app/Http/Controllers/CRM/CRMUtilityController.php` - Update moveAction (clear archive_reason) + add permanentDeleteAction + add imports (ActivitiesLog, Carbon)
+4. `app/Http/Controllers/CRM/ClientsController.php` - Add archive method + update archived/unarchive methods (ActivitiesLog already imported ✅)
+5. `resources/views/crm/archived/index.blade.php` - Add filters, fix data display, add 6-month check, show archive_reason
+6. `resources/views/crm/clients/index.blade.php` - Fix archive button (line 579-580) + add archive modal
 7. `routes/web.php` - Add permanent_delete_action route
-8. `routes/clients.php` - Add clients.archive route
-9. `public/js/custom.js` - Update movetoclientAction message + add permanentDeleteAction
+8. `routes/clients.php` OR `routes/web.php` - Add clients.archive route (verify pattern)
+9. `public/js/custom.js` - Update movetoclientAction message + add permanentDeleteAction function
 
 ## 🔍 Archive Exclusion Verification Required
 
@@ -598,7 +671,96 @@ Route::post('/permanent_delete_action', [CRMUtilityController::class, 'permanent
 - Add permanent delete as `permanentDeleteAction()` in CRMUtilityController
 - This maintains consistency with existing code structure
 
-### Decision 2: 6-Month Delete Safeguard Implementation
+### Decision 2: Permanent Delete Cascade Behavior
+**Requirement:** Delete all related data when permanently deleting client
+
+**Decision:** ✅ **CASCADE DELETE** - Delete all related data
+- All client-related tables will be deleted before client deletion
+- Deletion order respects foreign key constraints (child tables first)
+- Client record uses soft delete (`is_deleted` timestamp) for audit trail
+- Related data uses hard delete (actual database deletion)
+- Activity log created BEFORE deletion to preserve audit trail
+
+**Related Tables Identified:**
+- Client Matters, Documents, Contacts, Emails, Addresses
+- Test Scores, Occupations, Qualifications, Experiences
+- Spouse Details, Relationships, Visa Countries, Travel Info
+- Appointments, Check-in Logs, Notes, Activities Logs
+- Financial Data (Receipts, Invoices)
+- Service Data, Portal Audit, Forms, Messages
+- Document Types (Personal, Visa)
+
+**Total:** ~22+ related tables will be cascade deleted
+
+**Complete List of Tables Deleted (in deletion order):**
+
+**Group 1: Matter-Related Data**
+- `documents` (via client_matter_id)
+- `client_matters`
+
+**Group 2: Client Personal/Contact Data**
+- `client_contacts`
+- `client_emails`
+- `client_addresses`
+
+**Group 3: Immigration/EOI Data**
+- `client_testscore` (test scores)
+- `client_occupations`
+- `client_qualifications`
+- `client_experiences`
+- `client_spouse_details`
+- `client_relationships`
+- `client_visa_countries`
+- `client_travel_informations`
+- `client_passport_informations`
+- `client_characters`
+- `client_eoi_references`
+- `client_points`
+
+**Group 4: Direct Client References**
+- `documents` (direct client_id)
+- `booking_appointments`
+- `checkin_logs`
+- `notes`
+
+**Group 5: Activity & Audit Data**
+- `activities_logs` (created BEFORE deletion to preserve audit trail)
+
+**Group 6: Financial Data**
+- `account_client_receipts`
+- `invoices`
+
+**Group 7: Service & Portal Data**
+- `client_service_taken`
+- `clientportal_details_audit`
+
+**Group 8: Forms & Agreements**
+- `form956`
+- `cost_assignment_forms`
+
+**Group 9: Communication Data**
+- `mail_reports`
+- `messages` (where sender_id or recipient_id = client_id)
+
+**Group 10: Document Types**
+- `personal_document_types`
+- `visa_document_types`
+
+**Group 11: Communication & User Data**
+- `sms_logs`
+- `users` (if client has user account)
+
+**Group 12: Client Record (Final)**
+- `admins` (soft delete - sets is_deleted timestamp)
+
+**Deletion Order (Critical for FK Constraints):**
+- Child tables deleted first (documents, contacts, etc.)
+- Parent tables deleted last (client_matters, then client)
+- Client record uses soft delete (preserves audit trail)
+
+**Note:** If any deletion fails, consider rolling back entire transaction to prevent partial deletions
+
+### Decision 3: 6-Month Delete Safeguard Implementation
 **Requirement:** Permanent delete only available after 6 months
 
 **Implementation Strategy:**
@@ -614,7 +776,7 @@ Route::post('/permanent_delete_action', [CRMUtilityController::class, 'permanent
 
 **Decision:** Implement both frontend and backend checks (matches bansalcrm2 pattern)
 
-### Decision 3: Database vs Model for Archive Metadata
+### Decision 4: Database vs Model for Archive Metadata
 **Challenge:** When archiving clients, should we:
 - A) Update only in the view/controller (set when manually archiving)
 - B) Use database triggers
@@ -625,7 +787,7 @@ Route::post('/permanent_delete_action', [CRMUtilityController::class, 'permanent
 - Metadata would be set when archiving via UI actions
 - No need for complex observers for this simple use case
 
-### Decision 4: Foreign Key Constraints
+### Decision 5: Foreign Key Constraints
 **Challenge:** Should `archived_by` have FK constraint to `admins.id`?
 
 **Recommendation:** YES, but with `ON DELETE SET NULL`
@@ -654,10 +816,14 @@ Route::post('/permanent_delete_action', [CRMUtilityController::class, 'permanent
 ## ⚠️ Risks & Considerations
 
 ### High Priority Risks:
-1. **Data Loss Risk**: Permanent delete is irreversible - ensure proper backups
-2. **Foreign Key Constraints**: May need to handle if FK causing issues (use ON DELETE SET NULL)
+1. **Data Loss Risk**: Permanent delete is **IRREVERSIBLE** - cascade delete removes ALL related data permanently
+   - **CRITICAL:** Ensure proper backups before implementation
+   - **CRITICAL:** Test cascade delete thoroughly in staging
+   - **CRITICAL:** Consider transaction wrapper to prevent partial deletions
+2. **Foreign Key Constraints**: Deletion order must respect FK constraints (child tables before parent)
 3. **Existing Data**: Existing archived records won't have `archived_on`/`archived_by` - will show as blank/null
-4. **Performance**: Additional indexes may impact write performance slightly (minimal impact expected)
+4. **Performance**: Cascade delete may be slow for clients with lots of related data - consider transaction timeout
+5. **Cascade Delete Scope**: ~20+ tables will be deleted - verify all related tables are included
 
 ### Migration Considerations:
 1. **Backward Compatibility**: Ensure existing archive functionality continues to work
@@ -676,6 +842,17 @@ Route::post('/permanent_delete_action', [CRMUtilityController::class, 'permanent
   - The "Archived" button in clients list (line 580) calls `deleteAction()` which only toggles `status`
   - Clients can only be unarchived from the archived view via `moveAction()`
   - **CRITICAL GAP**: No way to set clients to archived from the clients list!
+
+### Handling Existing Archived Records:
+**Issue:** Existing archived clients won't have `archived_on`, `archived_by`, or `archive_reason`
+
+**Decision:** Leave as NULL (historical data)
+- Don't backfill with default values (would be inaccurate)
+- Display "N/A" or "-" in archived view for missing metadata
+- Only new archives will have complete metadata
+- This is acceptable - represents pre-upgrade archived records
+
+**Alternative (if needed):** Could add optional migration to set `archived_on` to `created_at` date for existing archived records, but not recommended (inaccurate).
 
 **Archiving Entry Points Identified:**
 1. ✅ `Lead::archive()` - model method (line 166) - sets `is_archived = 1`
@@ -735,29 +912,31 @@ If issues arise, rollback steps:
 
 ## 📅 Implementation Timeline
 
-**Estimated Time:** 5-7 hours (updated from 4-6 hours due to additional client archiving work)
+**Estimated Time:** 6-8 hours (updated - includes activity logging, archive reason, and comprehensive cascade delete)
 
-- **Phase 1 (Database):** 30 minutes
+- **Phase 1 (Database):** 45 minutes (3 migrations now)
 - **Phase 2 (Models):** 15 minutes
 - **Phase 3 (Trait):** 45 minutes
 - **Phase 4 (Controllers):** 2 hours (increased - includes new archive method)
 - **Phase 5 (Views):** 2 hours (increased - includes clients list fix)
 - **Phase 6 (Routes):** 20 minutes (two routes now)
 - **Phase 7 (JavaScript):** 45 minutes (includes archive confirmation)
-- **Phase 8 (Testing):** 1 hour
+- **Phase 8 (Testing):** 1.5 hours (increased - cascade delete requires thorough testing)
 
 ---
 
 ## ✅ Success Criteria
 
-1. ✅ All migrations run successfully
-2. ✅ Archive action tracks `archived_on` and `archived_by`
-3. ✅ Archived view displays all metadata correctly
-4. ✅ All filters work as expected
-5. ✅ Permanent delete works with proper safeguards
-6. ✅ No existing functionality is broken
-7. ✅ Code follows existing project patterns
-8. ✅ All tests pass
+1. ✅ All migrations run successfully (3 migrations)
+2. ✅ Archive action tracks `archived_on`, `archived_by`, and `archive_reason`
+3. ✅ Activity logging works for all archive/unarchive/delete actions
+4. ✅ Archived view displays all metadata correctly (with NULL handling)
+5. ✅ All filters work as expected
+6. ✅ Permanent delete works with proper safeguards and cascade handling
+7. ✅ Archive reason/notes field works (optional)
+8. ✅ No existing functionality is broken
+9. ✅ Code follows existing project patterns
+10. ✅ All tests pass
 
 ---
 
@@ -776,13 +955,16 @@ If issues arise, rollback steps:
 
 Before starting implementation:
 
-- [ ] **Backup database** - Critical, permanent delete is irreversible
+- [ ] **Backup database** - Critical, permanent delete is irreversible (even though it's soft delete)
 - [ ] **Backup code** - Git commit or create backup branch
 - [ ] **Review plan** with team/stakeholders
 - [ ] **Test in staging** environment first (highly recommended)
 - [ ] **Verify database type** - Confirmed MySQL
 - [ ] **Check existing archived clients** - Document how many exist without metadata
 - [ ] **Identify all archive entry points** - Completed in this review
+- [ ] **Verify imports** - Check if Carbon and ActivitiesLog are imported where needed
+- [ ] **Decide cascade behavior** - Choose Option A (prevent) or Option B (cascade) for permanent delete
+- [ ] **Verify route patterns** - Check existing route style in routes/clients.php vs routes/web.php
 
 ---
 
@@ -802,7 +984,14 @@ Before starting implementation:
 
 - This plan assumes MySQL database (confirmed from .env config)
 - Agent context is currently disabled (`isAgentContext()` returns false) - can be enabled later if needed
-- Consider adding audit logging for permanent deletions
+- **Activity logging included** - All archive/unarchive/permanent delete actions logged in ActivitiesLog
+- **Archive reason/notes** - Optional field for documenting why client was archived
+- **Existing archived records** - Will have NULL metadata (acceptable - represents pre-upgrade data)
+- **Permanent delete cascade** - ✅ **IMPLEMENTED** - All related data will be cascade deleted (~20+ tables, see Phase 4.2, item 5 for complete list)
+- **Cascade delete scope** - Matters, documents, contacts, emails, appointments, notes, financial data, forms, SMS logs, user accounts, and more (~22+ tables)
+- **Permanent delete method** - Uses soft delete (`is_deleted` timestamp) not hard delete - matches bansalcrm2 pattern
+- **Required imports** - Verify Carbon and ActivitiesLog imports in controllers
+- **Route verification** - Check existing route patterns before adding new routes
 - May want to add email notifications for permanent deletions (future enhancement)
 - **CRITICAL DISCOVERY**: Clients couldn't actually be archived from the UI before - the "Archived" button only toggled status, not `is_archived`. This plan fixes that fundamental issue.
 

@@ -183,7 +183,7 @@
                                                         @endif
                                                     </td>
                                                     <td>
-                                                        @if ($list->task_group != 'Personal Task')
+                                                        @if ($list->task_group != 'Personal Action')
                                                             <button type="button" data-noteid="{{ $list->description }}" data-taskid="{{ $list->id }}" data-taskgroupid="{{ $list->task_group }}" data-followupdate="{{ $list->followup_date }}" class="btn btn-primary btn-sm update_task" data-toggle="tooltip" title="Update Task" data-container="body" data-role="popover" data-placement="bottom" data-html="true" data-content='
                                                                 <div id="popover-content">
                                                                     <h4 class="text-center">Update Task</h4>
