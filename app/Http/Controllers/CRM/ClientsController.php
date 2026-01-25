@@ -77,6 +77,8 @@ use PhpOffice\PhpWord\PhpWord;
 use App\Mail\HubdocInvoiceMail;
 use App\Services\Sms\UnifiedSmsManager;
 use App\Services\BansalAppointmentSync\BansalApiClient;
+use App\Services\ClientExportService;
+use App\Services\ClientImportService;
 use App\Traits\ClientAuthorization;
 use App\Traits\ClientHelpers;
 use App\Traits\ClientQueries;
@@ -10306,6 +10308,132 @@ class ClientsController extends Controller
             'task_status' => 0,
             'pin' => 0,
         ]);
+    }
+
+    /**
+     * Export client data to JSON file
+     * 
+     * @param string $id Encoded client ID
+     * @return \Illuminate\Http\Response
+     */
+    public function export($id)
+    {
+        try {
+            // Decode the client ID
+            $clientId = $this->decodeString($id);
+            
+            if (!$clientId) {
+                return redirect()->route('clients.index')
+                    ->with('error', 'Invalid client ID.');
+            }
+
+            // Check if client exists
+            $client = Admin::where('id', $clientId)
+                ->where('role', 7)
+                ->first();
+
+            if (!$client) {
+                return redirect()->route('clients.index')
+                    ->with('error', 'Client not found.');
+            }
+
+            // Export client data
+            $exportService = app(ClientExportService::class);
+            $exportData = $exportService->exportClient($clientId);
+
+            // Generate filename
+            $filename = 'client_export_' . ($client->client_id ?? $clientId) . '_' . date('Y-m-d_His') . '.json';
+
+            // Return JSON file download
+            return response()->json($exportData, 200, [
+                'Content-Type' => 'application/json',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        } catch (\Exception $e) {
+            Log::error('Client export error: ' . $e->getMessage(), [
+                'client_id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->route('clients.index')
+                ->with('error', 'Failed to export client data: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Import client data from JSON file
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function import(Request $request)
+    {
+        try {
+            // Validate file upload
+            $request->validate([
+                'import_file' => 'required|file|mimes:json|max:10240', // Max 10MB
+            ]);
+
+            // Read and parse JSON file
+            $file = $request->file('import_file');
+            $jsonContent = file_get_contents($file->getRealPath());
+            $importData = json_decode($jsonContent, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return redirect()->back()
+                    ->withErrors(['import_file' => 'Invalid JSON file: ' . json_last_error_msg()])
+                    ->withInput();
+            }
+
+            // Validate import data structure
+            if (!isset($importData['client'])) {
+                return redirect()->back()
+                    ->withErrors(['import_file' => 'Invalid import file format: missing client data'])
+                    ->withInput();
+            }
+
+            // Check if client email is required (email is unique and NOT NULL in admins table)
+            if (empty($importData['client']['email'])) {
+                return redirect()->back()
+                    ->withErrors(['import_file' => 'Client email is required and cannot be empty'])
+                    ->withInput();
+            }
+
+            // Check if first_name is required
+            if (empty($importData['client']['first_name'])) {
+                return redirect()->back()
+                    ->withErrors(['import_file' => 'Client first name is required'])
+                    ->withInput();
+            }
+
+            // Import client
+            $skipDuplicates = $request->has('skip_duplicates');
+            $importService = app(ClientImportService::class);
+            $result = $importService->importClient($importData, $skipDuplicates);
+
+            if ($result['success']) {
+                return redirect()->route('clients.index')
+                    ->with('success', $result['message']);
+            } else {
+                return redirect()->back()
+                    ->withErrors(['import_file' => $result['message']])
+                    ->withInput();
+            }
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()
+                ->withErrors($e->validator)
+                ->withInput();
+        } catch (\Exception $e) {
+            Log::error('Client import error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->back()
+                ->withErrors(['import_file' => 'Failed to import client: ' . $e->getMessage()])
+                ->withInput();
+        }
     }
 
 }

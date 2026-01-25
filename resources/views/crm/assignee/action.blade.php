@@ -1136,8 +1136,8 @@ $(function () {
             {data: 'action', name: 'action', orderable: false, searchable: false}
         ],
         "fnDrawCallback": function() {
-            // Initialize popovers for dynamically added elements
-            $('[data-toggle="popover"]').popover({
+            // Initialize popovers for dynamically added elements (exclude update_task buttons which are initialized manually)
+            $('[data-toggle="popover"]').not('.update_task').popover({
                 html: true,
                 sanitize: false,
                 trigger: 'click',
