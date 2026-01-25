@@ -37,7 +37,7 @@ class ClientExportService
                 'exported_at' => now()->toIso8601String(),
                 'exported_from' => 'migrationmanager2',
                 'client' => $this->getClientBasicData($client),
-                'addresses' => $this->getClientAddresses($clientId),
+                // 'addresses' => $this->getClientAddresses($clientId), // Skipped: bansalcrm2 doesn't have separate client_addresses table - only primary address in admins table
                 'contacts' => $this->getClientContacts($clientId),
                 'emails' => $this->getClientEmails($clientId),
                 'passport' => $this->getClientPassport($clientId),
@@ -97,24 +97,11 @@ class ClientExportService
             'contact_type' => $client->contact_type ?? null,
             
             // Other
-            'naati_date' => $client->naati_date,
-            'nati_language' => $client->nati_language ?? null,
             'source' => $client->source,
             'type' => $client->type,
             'status' => $client->status,
             'profile_img' => $client->profile_img,
             'agent_id' => $client->agent_id ?? null,
-            
-            // Verification metadata (dates only, not staff IDs)
-            'dob_verified_date' => $client->dob_verified_date,
-            'dob_verify_document' => $client->dob_verify_document ?? null,
-            'phone_verified_date' => $client->phone_verified_date,
-            'visa_expiry_verified_at' => $client->visa_expiry_verified_at,
-            
-            // Emergency Contact
-            'emergency_country_code' => $client->emergency_country_code ?? null,
-            'emergency_contact_no' => $client->emergency_contact_no ?? null,
-            'emergency_contact_type' => $client->emergency_contact_type ?? null,
         ];
     }
 
