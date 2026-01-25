@@ -19,6 +19,7 @@ use App\Http\Controllers\CRM\BroadcastNotificationAjaxController;
 use App\Http\Controllers\CRM\BroadcastController;
 // use App\Http\Controllers\CRM\EmailTemplateController; // DISABLED: email_templates table has been deleted
 use App\Http\Controllers\CRM\AuditLogController;
+use App\Http\Controllers\CRM\ReportController;
 use App\Http\Controllers\Auth\AdminLoginController;
 
 /*
@@ -165,6 +166,9 @@ Route::middleware(['auth:admin'])->group(function() {
         Route::get('/top-users', [\App\Http\Controllers\CRM\UserLoginAnalyticsController::class, 'topUsers'])->name('top-users');
         Route::get('/trends', [\App\Http\Controllers\CRM\UserLoginAnalyticsController::class, 'trends'])->name('trends');
     });
+
+    /*---------- Reports Routes ----------*/
+    Route::get('/reports/visaexpires', [ReportController::class, 'visaexpires'])->name('reports.visaexpires');
 
 	/*---------- CRM & User Management Routes ----------*/
     // All user management routes moved to routes/adminconsole.php

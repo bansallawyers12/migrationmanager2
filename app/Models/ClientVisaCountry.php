@@ -25,4 +25,12 @@ class ClientVisaCountry extends Model
     {
         return $this->belongsTo(Matter::class, 'visa_type', 'id');
     }
+
+    /**
+     * Get the client (admin) for this visa
+     */
+    public function client()
+    {
+        return $this->belongsTo(Admin::class, 'client_id', 'id');
+    }
 }
