@@ -1566,7 +1566,7 @@ $(function () {
 
         $.ajax({
             type: 'post',
-            url: "{{URL::to('/')}}/update-task",
+            url: "{{URL::to('/')}}/update-action",
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
             data: {
                 id: taskId,

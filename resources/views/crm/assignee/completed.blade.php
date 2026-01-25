@@ -259,7 +259,7 @@
         if(row_id !=""){
             $.ajax({
 				type:'post',
-                url:"{{URL::to('/')}}/update-task-not-completed",
+                url:"{{URL::to('/')}}/update-action-not-completed",
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
                 data: {id:row_id,unique_group_id:row_unique_group_id },
                 success: function(response){
