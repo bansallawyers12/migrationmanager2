@@ -139,6 +139,93 @@ class PhoneValidationHelper
     }
 
     /**
+     * Format Australian phone number to standard display format
+     * Mobile: 04XX XXX XXX
+     * Landline: (0X) XXXX XXXX
+     * 
+     * @param string $phone The phone number
+     * @param string|null $countryCode The country code (e.g., '+61')
+     * @return string Formatted phone number
+     */
+    public static function formatAustralianPhone($phone, $countryCode = null)
+    {
+        // Check if it's a placeholder number - keep as-is
+        if (self::isPlaceholderNumber($phone)) {
+            return $phone;
+        }
+
+        // Remove any non-digit characters except +
+        $cleaned = preg_replace('/[^\d+]/', '', $phone);
+        
+        // Check if it's an Australian number
+        $isAustralian = false;
+        $digitsOnly = '';
+        
+        // Handle country code
+        if ($countryCode === '+61' || str_starts_with($cleaned, '+61')) {
+            $isAustralian = true;
+            // Remove +61 and any leading 0
+            $digitsOnly = preg_replace('/^\+61/', '', $cleaned);
+            $digitsOnly = preg_replace('/^0/', '', $digitsOnly);
+        } elseif (preg_match('/^0?[23478]/', $cleaned)) {
+            // Check if it starts with Australian area codes (02, 03, 04, 07, 08)
+            $isAustralian = true;
+            $digitsOnly = preg_replace('/[^\d]/', '', $cleaned);
+        }
+        
+        // If not Australian, return as-is with country code
+        if (!$isAustralian) {
+            if ($countryCode) {
+                return $countryCode . $cleaned;
+            }
+            return $cleaned;
+        }
+        
+        // Ensure we have digits only for formatting
+        if (empty($digitsOnly)) {
+            $digitsOnly = preg_replace('/[^\d]/', '', $cleaned);
+        }
+        
+        // Remove leading 0 if present (we'll add it back in the format)
+        if (strlen($digitsOnly) > 0 && $digitsOnly[0] === '0') {
+            $digitsOnly = substr($digitsOnly, 1);
+        }
+        
+        // Must be 9 digits for Australian numbers
+        if (strlen($digitsOnly) !== 9) {
+            // If not 9 digits, return formatted with country code
+            if ($countryCode) {
+                return $countryCode . $digitsOnly;
+            }
+            return $cleaned;
+        }
+        
+        // Determine if mobile (starts with 4) or landline (starts with 2, 3, 7, 8)
+        $firstDigit = $digitsOnly[0];
+        
+        if ($firstDigit === '4') {
+            // Mobile format: 0XXX XXX XXX (e.g., 0435 345 456)
+            $firstPart = substr($digitsOnly, 0, 3); // First 3 digits (e.g., 435)
+            $secondPart = substr($digitsOnly, 3, 3); // Next 3 digits (e.g., 345)
+            $lastPart = substr($digitsOnly, 6, 3); // Last 3 digits (e.g., 456)
+            return '0' . $firstPart . ' ' . $secondPart . ' ' . $lastPart;
+        } elseif (in_array($firstDigit, ['2', '3', '7', '8'])) {
+            // Landline format: (0X) XXXX XXXX
+            $areaCode = substr($digitsOnly, 0, 1); // First digit (e.g., 2)
+            $firstPart = substr($digitsOnly, 1, 4); // Next 4 digits (e.g., 9876)
+            $lastPart = substr($digitsOnly, 5, 4); // Last 4 digits (e.g., 5432)
+            return '(0' . $areaCode . ') ' . $firstPart . ' ' . $lastPart;
+        }
+        
+        // Fallback: return with country code if provided
+        if ($countryCode) {
+            return $countryCode . '0' . $digitsOnly;
+        }
+        
+        return '0' . $digitsOnly;
+    }
+
+    /**
      * Format phone number for SMS
      * Handles 9-10 digit Australian numbers:
      * - 0412345678 (10 digits with 0) → +61412345678

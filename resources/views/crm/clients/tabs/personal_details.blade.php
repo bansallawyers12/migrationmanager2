@@ -131,19 +131,22 @@
                                             $country_code = "";
                                         }
 
+                                        // Format phone number to Australian standard
+                                        $formattedPhone = \App\Helpers\PhoneValidationHelper::formatAustralianPhone($conVal->phone, $country_code);
+
                                         if( isset($conVal->contact_type) && $conVal->contact_type != "" ){
                                             // Show verification status for ALL contact types
                                             if ( $conVal->is_verified ) {
-                                                $phonenoStr .= $country_code."".$conVal->phone.' <i class="fas fa-check-circle verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
+                                                $phonenoStr .= $formattedPhone.' <i class="fas fa-check-circle verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
                                             } else {
-                                                $phonenoStr .= $country_code."".$conVal->phone.' <i class="far fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
+                                                $phonenoStr .= $formattedPhone.' <i class="far fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
                                             }
                                         } else {
                                             // For phones without type, still show verification status if available
                                             if ( isset($conVal->is_verified) && $conVal->is_verified ) {
-                                                $phonenoStr .= $country_code."".$conVal->phone.' <i class="fas fa-check-circle verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
+                                                $phonenoStr .= $formattedPhone.' <i class="fas fa-check-circle verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
                                             } else {
-                                                $phonenoStr .= $country_code."".$conVal->phone.' <i class="far fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
+                                                $phonenoStr .= $formattedPhone.' <i class="far fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
                                             }
                                         }
                                     }
