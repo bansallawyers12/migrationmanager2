@@ -1,6 +1,6 @@
 <div class="tab-pane active" id="personaldetails-tab">
                 <div class="content-grid">
-                    @if(isset($fetchedData->is_company) && $fetchedData->is_company)
+                    @if(isset($fetchedData->is_company) && $fetchedData->is_company && $fetchedData->company)
                         {{-- Company Information Card --}}
                         <div class="card" style="margin-bottom: 20px;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -13,38 +13,38 @@
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
                                 <div class="field-group">
                                     <span class="field-label">Company Name:</span>
-                                    <span class="field-value">{{ $fetchedData->company_name ?? 'N/A' }}</span>
+                                    <span class="field-value">{{ $fetchedData->company->company_name ?? 'N/A' }}</span>
                                 </div>
-                                @if(isset($fetchedData->trading_name) && $fetchedData->trading_name)
+                                @if($fetchedData->company->trading_name)
                                 <div class="field-group">
                                     <span class="field-label">Trading Name:</span>
-                                    <span class="field-value">{{ $fetchedData->trading_name }}</span>
+                                    <span class="field-value">{{ $fetchedData->company->trading_name }}</span>
                                 </div>
                                 @endif
-                                @if(isset($fetchedData->ABN_number) && $fetchedData->ABN_number)
+                                @if($fetchedData->company->ABN_number)
                                 <div class="field-group">
                                     <span class="field-label">ABN:</span>
-                                    <span class="field-value">{{ $fetchedData->ABN_number }}</span>
+                                    <span class="field-value">{{ $fetchedData->company->ABN_number }}</span>
                                 </div>
                                 @endif
-                                @if(isset($fetchedData->ACN) && $fetchedData->ACN)
+                                @if($fetchedData->company->ACN)
                                 <div class="field-group">
                                     <span class="field-label">ACN:</span>
-                                    <span class="field-value">{{ $fetchedData->ACN }}</span>
+                                    <span class="field-value">{{ $fetchedData->company->ACN }}</span>
                                 </div>
                                 @endif
-                                @if(isset($fetchedData->company_type) && $fetchedData->company_type)
+                                @if($fetchedData->company->company_type)
                                 <div class="field-group">
                                     <span class="field-label">Business Type:</span>
-                                    <span class="field-value">{{ $fetchedData->company_type }}</span>
+                                    <span class="field-value">{{ $fetchedData->company->company_type }}</span>
                                 </div>
                                 @endif
-                                @if(isset($fetchedData->company_website) && $fetchedData->company_website)
+                                @if($fetchedData->company->company_website)
                                 <div class="field-group">
                                     <span class="field-label">Website:</span>
                                     <span class="field-value">
-                                        <a href="{{ $fetchedData->company_website }}" target="_blank" rel="noopener noreferrer">
-                                            {{ $fetchedData->company_website }}
+                                        <a href="{{ $fetchedData->company->company_website }}" target="_blank" rel="noopener noreferrer">
+                                            {{ $fetchedData->company->company_website }}
                                         </a>
                                     </span>
                                 </div>
@@ -53,60 +53,55 @@
                         </div>
                         
                         {{-- Primary Contact Person Card --}}
-                        @if(isset($fetchedData->contact_person_id) && $fetchedData->contact_person_id)
-                            @php
-                                $contactPerson = \App\Models\Admin::find($fetchedData->contact_person_id);
-                            @endphp
-                            @if($contactPerson)
-                                <div class="card" style="margin-bottom: 20px;">
-                                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                                        <h3><i class="fas fa-user-tie"></i> Primary Contact Person</h3>
-                                        <a href="{{ route('clients.detail', base64_encode(convert_uuencode($contactPerson->id))) }}" 
-                                           class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-external-link-alt"></i> View Profile
-                                        </a>
-                                    </div>
-                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
-                                        <div class="field-group">
-                                            <span class="field-label">Name:</span>
-                                            <span class="field-value">
-                                                <a href="{{ route('clients.detail', base64_encode(convert_uuencode($contactPerson->id))) }}" 
-                                                   style="color: #007bff; text-decoration: none;">
-                                                    {{ $contactPerson->first_name }} {{ $contactPerson->last_name }}
-                                                </a>
-                                            </span>
-                                        </div>
-                                        @if(isset($fetchedData->contact_person_position) && $fetchedData->contact_person_position)
-                                        <div class="field-group">
-                                            <span class="field-label">Position:</span>
-                                            <span class="field-value">{{ $fetchedData->contact_person_position }}</span>
-                                        </div>
-                                        @endif
-                                        @if(isset($contactPerson->email) && $contactPerson->email)
-                                        <div class="field-group">
-                                            <span class="field-label">Email:</span>
-                                            <span class="field-value">
-                                                <a href="mailto:{{ $contactPerson->email }}" style="color: #007bff; text-decoration: none;">
-                                                    {{ $contactPerson->email }}
-                                                </a>
-                                            </span>
-                                        </div>
-                                        @endif
-                                        @if(isset($contactPerson->phone) && $contactPerson->phone)
-                                        <div class="field-group">
-                                            <span class="field-label">Phone:</span>
-                                            <span class="field-value">{{ $contactPerson->phone }}</span>
-                                        </div>
-                                        @endif
-                                        @if(isset($contactPerson->client_id) && $contactPerson->client_id)
-                                        <div class="field-group">
-                                            <span class="field-label">Client ID:</span>
-                                            <span class="field-value">{{ $contactPerson->client_id }}</span>
-                                        </div>
-                                        @endif
-                                    </div>
+                        @if($fetchedData->company->contactPerson)
+                            <div class="card" style="margin-bottom: 20px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <h3><i class="fas fa-user-tie"></i> Primary Contact Person</h3>
+                                    <a href="{{ route('clients.detail', base64_encode(convert_uuencode($fetchedData->company->contactPerson->id))) }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-external-link-alt"></i> View Profile
+                                    </a>
                                 </div>
-                            @endif
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
+                                    <div class="field-group">
+                                        <span class="field-label">Name:</span>
+                                        <span class="field-value">
+                                            <a href="{{ route('clients.detail', base64_encode(convert_uuencode($fetchedData->company->contactPerson->id))) }}" 
+                                               style="color: #007bff; text-decoration: none;">
+                                                {{ $fetchedData->company->contactPerson->first_name }} {{ $fetchedData->company->contactPerson->last_name }}
+                                            </a>
+                                        </span>
+                                    </div>
+                                    @if($fetchedData->company->contact_person_position)
+                                    <div class="field-group">
+                                        <span class="field-label">Position:</span>
+                                        <span class="field-value">{{ $fetchedData->company->contact_person_position }}</span>
+                                    </div>
+                                    @endif
+                                    @if($fetchedData->company->contactPerson->email)
+                                    <div class="field-group">
+                                        <span class="field-label">Email:</span>
+                                        <span class="field-value">
+                                            <a href="mailto:{{ $fetchedData->company->contactPerson->email }}" style="color: #007bff; text-decoration: none;">
+                                                {{ $fetchedData->company->contactPerson->email }}
+                                            </a>
+                                        </span>
+                                    </div>
+                                    @endif
+                                    @if($fetchedData->company->contactPerson->phone)
+                                    <div class="field-group">
+                                        <span class="field-label">Phone:</span>
+                                        <span class="field-value">{{ $fetchedData->company->contactPerson->phone }}</span>
+                                    </div>
+                                    @endif
+                                    @if($fetchedData->company->contactPerson->client_id)
+                                    <div class="field-group">
+                                        <span class="field-label">Client ID:</span>
+                                        <span class="field-value">{{ $fetchedData->company->contactPerson->client_id }}</span>
+                                    </div>
+                                    @endif
+                                </div>
+                            </div>
                         @endif
                     @endif
                     

@@ -43,33 +43,28 @@ use App\Http\Controllers\Controller;
                         }
                     } ?>
                 </h3>
-                @if(isset($fetchedData->is_company) && $fetchedData->is_company)
+                @if(isset($fetchedData->is_company) && $fetchedData->is_company && $fetchedData->company)
                     {{-- Company Lead Display --}}
                     <p class="client-name">
-                        {{ $fetchedData->company_name ?? 'Unnamed Company' }}
+                        {{ $fetchedData->company->company_name ?? 'Unnamed Company' }}
                         <a href="{{route('clients.edit', base64_encode(convert_uuencode(@$fetchedData->id)))}}" title="Edit" class="client-name-edit">
                             <i class="fa fa-edit"></i>
                         </a>
                     </p>
                     
                     {{-- Primary Contact Person Info --}}
-                    @if(isset($fetchedData->contact_person_id) && $fetchedData->contact_person_id)
-                        @php
-                            $contactPerson = \App\Models\Admin::find($fetchedData->contact_person_id);
-                        @endphp
-                        @if($contactPerson)
-                            <div class="contact-person-info" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #e0e0e0;">
-                                <small style="color: #6c757d; display: block; margin-bottom: 5px;">Primary Contact:</small>
-                                <a href="{{ route('clients.detail', base64_encode(convert_uuencode($contactPerson->id))) }}" 
-                                   class="contact-person-link" 
-                                   style="color: #007bff; text-decoration: none; font-weight: 500; font-size: 0.9em;">
-                                    {{ $contactPerson->first_name }} {{ $contactPerson->last_name }}
-                                </a>
-                                @if(isset($fetchedData->contact_person_position) && $fetchedData->contact_person_position)
-                                    <br><small style="color: #6c757d; font-size: 0.85em;">{{ $fetchedData->contact_person_position }}</small>
-                                @endif
-                            </div>
-                        @endif
+                    @if($fetchedData->company->contactPerson)
+                        <div class="contact-person-info" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #e0e0e0;">
+                            <small style="color: #6c757d; display: block; margin-bottom: 5px;">Primary Contact:</small>
+                            <a href="{{ route('clients.detail', base64_encode(convert_uuencode($fetchedData->company->contactPerson->id))) }}" 
+                               class="contact-person-link" 
+                               style="color: #007bff; text-decoration: none; font-weight: 500; font-size: 0.9em;">
+                                {{ $fetchedData->company->contactPerson->first_name }} {{ $fetchedData->company->contactPerson->last_name }}
+                            </a>
+                            @if($fetchedData->company->contact_person_position)
+                                <br><small style="color: #6c757d; font-size: 0.85em;">{{ $fetchedData->company->contact_person_position }}</small>
+                            @endif
+                        </div>
                     @endif
                 @else
                     {{-- Personal Lead Display (existing) --}}
@@ -86,8 +81,8 @@ use App\Http\Controllers\Controller;
                     <!-- Action Icons -->
                     <div class="client-actions">
                         <a href="javascript:;" class="create_note_d" datatype="note" title="Add Notes"><i class="fas fa-plus"></i></a>
-                        <a href="javascript:;" data-id="{{@$fetchedData->id}}" data-email="{{@$fetchedData->email}}" data-name="@if(isset($fetchedData->is_company) && $fetchedData->is_company){{ $fetchedData->company_name ?? 'Unnamed Company' }}@else{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}@endif" class="clientemail" title="Compose Mail"><i class="fa fa-envelope"></i></a>
-                        <a href="javascript:;" class="send-sms-btn" data-client-id="{{@$fetchedData->id}}" data-client-name="@if(isset($fetchedData->is_company) && $fetchedData->is_company){{ $fetchedData->company_name ?? 'Unnamed Company' }}@else{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}@endif" title="Send SMS"><i class="fas fa-sms"></i></a>
+                        <a href="javascript:;" data-id="{{@$fetchedData->id}}" data-email="{{@$fetchedData->email}}" data-name="@if(isset($fetchedData->is_company) && $fetchedData->is_company && $fetchedData->company){{ $fetchedData->company->company_name ?? 'Unnamed Company' }}@else{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}@endif" class="clientemail" title="Compose Mail"><i class="fa fa-envelope"></i></a>
+                        <a href="javascript:;" class="send-sms-btn" data-client-id="{{@$fetchedData->id}}" data-client-name="@if(isset($fetchedData->is_company) && $fetchedData->is_company && $fetchedData->company){{ $fetchedData->company->company_name ?? 'Unnamed Company' }}@else{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}@endif" title="Send SMS"><i class="fas fa-sms"></i></a>
                         <a href="javascript:;" datatype="not_picked_call" class="not_picked_call" title="Not Picked Call"><i class="fas fa-mobile-alt"></i></a>
                         <a href="javascript:;" data-toggle="modal" data-target="#create_appoint" title="Add Appointment"><i class="fas fa-calendar-plus"></i></a>
                     </div>

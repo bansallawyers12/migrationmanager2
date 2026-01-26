@@ -36,19 +36,39 @@ return new class extends Migration
                 ->comment('Position/Title of primary contact person (e.g., HR Manager, Director)');
             $table->timestamps();
             
-            // Foreign key constraints
-            $table->foreign('admin_id')->references('id')->on('admins')->onDelete('cascade');
-            $table->foreign('contact_person_id')->references('id')->on('admins')->onDelete('set null');
-            
-            // Indexes
+            // Indexes (create before foreign keys)
             $table->index('admin_id');
             $table->index('contact_person_id');
             $table->index('company_name');
         });
         
-        // For PostgreSQL, add partial index for better query performance
+        // For PostgreSQL, ensure primary key exists on admins.id before creating foreign keys
         if (DB::getDriverName() === 'pgsql') {
+            // Check if admins.id has a primary key constraint
+            $hasPrimaryKey = DB::selectOne("
+                SELECT COUNT(*) as count
+                FROM pg_constraint 
+                WHERE conrelid = 'admins'::regclass 
+                AND contype = 'p'
+            ");
+            
+            // If no primary key, create one
+            if ($hasPrimaryKey->count == 0) {
+                DB::statement('ALTER TABLE admins ADD PRIMARY KEY (id)');
+            }
+            
+            // Now create foreign keys using raw SQL for better PostgreSQL compatibility
+            DB::statement('ALTER TABLE companies ADD CONSTRAINT companies_admin_id_foreign FOREIGN KEY (admin_id) REFERENCES admins(id) ON DELETE CASCADE');
+            DB::statement('ALTER TABLE companies ADD CONSTRAINT companies_contact_person_id_foreign FOREIGN KEY (contact_person_id) REFERENCES admins(id) ON DELETE SET NULL');
+            
+            // Add partial index for better query performance
             DB::statement('CREATE INDEX IF NOT EXISTS idx_companies_contact_person_id ON companies(contact_person_id) WHERE contact_person_id IS NOT NULL');
+        } else {
+            // For MySQL/MariaDB, use standard Laravel foreign key syntax
+            Schema::table('companies', function (Blueprint $table) {
+                $table->foreign('admin_id')->references('id')->on('admins')->onDelete('cascade');
+                $table->foreign('contact_person_id')->references('id')->on('admins')->onDelete('set null');
+            });
         }
     }
 

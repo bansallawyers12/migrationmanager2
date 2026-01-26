@@ -1529,7 +1529,7 @@ class ClientsController extends Controller
         if (isset($id) && !empty($id)) {
             $id = $this->decodeString($id);
             if (Admin::where('id', '=', $id)->where('role', '=', 7)->exists()) {
-                $fetchedData = Admin::find($id);
+                $fetchedData = Admin::with('company.contactPerson')->find($id);
                 
                 // Route to appropriate edit page
                 if ($fetchedData && $fetchedData->is_company) {
@@ -4920,7 +4920,7 @@ class ClientsController extends Controller
             $activeTab = $tab ?? 'personaldetails';
 
             if (Admin::where('id', '=', $id)->where('role', '=', 7)->exists()) {
-                $fetchedData = Admin::find($id); //dd($fetchedData);
+                $fetchedData = Admin::with('company.contactPerson')->find($id); //dd($fetchedData);
                 
                 // Route to company detail page if this is a company
                 // For MVP, we'll use the same detail page with conditionals
