@@ -323,6 +323,10 @@ Route::post('/check-star-client', 'CRM\ClientsController@checkStarClient')->name
 Route::post('/merge_records','CRM\ClientsController@merge_records')->name('client.merge_records');
 
 
+/*---------- Contact Person Search (for Company Leads) ----------*/
+Route::get('/api/search-contact-person', [ClientsController::class, 'searchContactPerson'])
+    ->name('api.search.contact.person');
+
 /*---------- Visa Expiry Messages ----------*/
 Route::get('/fetch-visa_expiry_messages', 'CRM\CRMUtilityController@fetchvisaexpirymessages');
 

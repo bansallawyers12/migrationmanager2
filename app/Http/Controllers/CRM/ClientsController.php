@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 use App\Models\Admin;
+use App\Models\Company;
 use App\Models\Lead;
 use App\Models\ActivitiesLog;
 use App\Models\OnlineForm;
@@ -1528,11 +1529,21 @@ class ClientsController extends Controller
         if (isset($id) && !empty($id)) {
             $id = $this->decodeString($id);
             if (Admin::where('id', '=', $id)->where('role', '=', 7)->exists()) {
+                $fetchedData = Admin::find($id);
                 
-                // Use service to get all data with optimized queries (prevents N+1)
-                $data = app(\App\Services\ClientEditService::class)->getClientEditData($id);
-                
-                return view('crm.clients.edit', $data);
+                // Route to appropriate edit page
+                if ($fetchedData && $fetchedData->is_company) {
+                    // Use service to get all data with optimized queries (prevents N+1)
+                    $data = app(\App\Services\ClientEditService::class)->getClientEditData($id);
+                    
+                    // Use separate company edit page
+                    return view('crm.clients.company_edit', $data);
+                } else {
+                    // Use service to get all data with optimized queries (prevents N+1)
+                    $data = app(\App\Services\ClientEditService::class)->getClientEditData($id);
+                    
+                    return view('crm.clients.edit', $data);
+                }
             } else {
                 return Redirect::to('/clients')->with('error', 'Client does not exist.');
             }
@@ -1546,18 +1557,80 @@ class ClientsController extends Controller
         // Check authorization (assumed to be handled elsewhere)
         if ($request->isMethod('post')) {
             $requestData = $request->all();  //dd($requestData);
+            
+            $clientId = $requestData['id'];
+            $client = Admin::findOrFail($clientId);
+            $isCompany = $client->is_company;
 
             //Get Db values of related files
             $db_arr = Admin::select('related_files')->where('id', $requestData['id'])->get();
 
-            // Base validation rules
+            // Base validation rules - conditional based on company type
             $validationRules = [
-                'first_name' => 'required|max:255',
-                'last_name' => 'nullable|max:255',
-                'dob' => 'nullable|date_format:d/m/Y|after_or_equal:1000-01-01', // Updated to expect dd/mm/yyyy
                 'client_id' => 'required|max:255|unique:admins,client_id,' . $requestData['id'],
-                'gender' => 'nullable|in:Male,Female,Other',
-                'marital_status' => 'nullable|in:Single,Married,De Facto,Divorced,Widowed,Separated',
+            ];
+            
+            // Add conditional validation based on company type
+            if ($isCompany) {
+                // Get existing company record if it exists
+                $existingCompany = Company::where('admin_id', $clientId)->first();
+                $companyId = $existingCompany ? $existingCompany->id : null;
+                
+                $validationRules = array_merge($validationRules, [
+                    'company_name' => [
+                        'required',
+                        'max:255',
+                        'unique:companies,company_name,' . $companyId . ',id', // Unique in companies table, exclude current record
+                    ],
+                    'contact_person_id' => [
+                        'required',
+                        'exists:admins,id',
+                        function ($attribute, $value, $fail) {
+                            $contactPerson = Admin::find($value);
+                            if (!$contactPerson || $contactPerson->role != 7) {
+                                $fail('The selected contact person must be a client or lead.');
+                            }
+                            if ($contactPerson && $contactPerson->is_company) {
+                                $fail('A company cannot be selected as a contact person.');
+                            }
+                        },
+                    ],
+                    'contact_person_position' => 'nullable|max:255',
+                    'ABN_number' => [
+                        'nullable',
+                        function ($attribute, $value, $fail) {
+                            if (!empty($value)) {
+                                $cleanAbn = preg_replace('/\D/', '', $value);
+                                if (strlen($cleanAbn) !== 11) {
+                                    $fail('ABN must be exactly 11 digits.');
+                                }
+                            }
+                        },
+                    ],
+                    'ACN' => [
+                        'nullable',
+                        function ($attribute, $value, $fail) {
+                            if (!empty($value)) {
+                                $cleanAcn = preg_replace('/\D/', '', $value);
+                                if (strlen($cleanAcn) !== 9) {
+                                    $fail('ACN must be exactly 9 digits.');
+                                }
+                            }
+                        },
+                    ],
+                ]);
+            } else {
+                $validationRules = array_merge($validationRules, [
+                    'first_name' => 'required|max:255',
+                    'last_name' => 'nullable|max:255',
+                    'dob' => 'nullable|date_format:d/m/Y|after_or_equal:1000-01-01',
+                    'gender' => 'nullable|in:Male,Female,Other',
+                    'marital_status' => 'nullable|in:Single,Married,De Facto,Divorced,Widowed,Separated',
+                ]);
+            }
+            
+            // Add common validation rules
+            $validationRules = array_merge($validationRules, [
 
                 'visa_country' => 'nullable|string|max:255',
                 'passports.*.passport_number' => 'nullable|string|max:50',
@@ -2353,13 +2426,61 @@ class ClientsController extends Controller
                 return redirect()->back()->with('error', 'Client not found.');
             }
 
-            // Update basic information
-            $obj->first_name = $requestData['first_name'];
-            $obj->last_name = $requestData['last_name'] ?? null;
-            $obj->dob = $dob;
-            $obj->age = $age;
-            $obj->gender = $requestData['gender'] ?? null;
-            $obj->marital_status = $requestData['marital_status'] ?? null;
+            // Update basic information - conditional based on company type
+            if ($isCompany) {
+                // For companies, store contact person name in first_name/last_name
+                $obj->first_name = $requestData['contact_person_first_name'] ?? null;
+                $obj->last_name = $requestData['contact_person_last_name'] ?? null;
+                // DOB, gender, marital_status not required for companies
+                $obj->dob = null;
+                $obj->age = null;
+                $obj->gender = null;
+                $obj->marital_status = null;
+                
+                // Update or create company record
+                $company = Company::where('admin_id', $obj->id)->first();
+                if ($company) {
+                    // Update existing company
+                    $company->company_name = $requestData['company_name'] ?? null;
+                    $company->trading_name = $requestData['trading_name'] ?? null;
+                    $company->ABN_number = isset($requestData['ABN_number']) && !empty($requestData['ABN_number']) 
+                        ? preg_replace('/\D/', '', $requestData['ABN_number']) // Strip non-digits
+                        : null;
+                    $company->ACN = isset($requestData['ACN']) && !empty($requestData['ACN'])
+                        ? preg_replace('/\D/', '', $requestData['ACN']) // Strip non-digits
+                        : null;
+                    $company->company_type = $requestData['company_type'] ?? null;
+                    $company->company_website = $requestData['company_website'] ?? null;
+                    $company->contact_person_id = $requestData['contact_person_id'] ?? null;
+                    $company->contact_person_position = $requestData['contact_person_position'] ?? null;
+                    $company->save();
+                } else {
+                    // Create new company record
+                    Company::create([
+                        'admin_id' => $obj->id,
+                        'company_name' => $requestData['company_name'] ?? null,
+                        'trading_name' => $requestData['trading_name'] ?? null,
+                        'ABN_number' => isset($requestData['ABN_number']) && !empty($requestData['ABN_number']) 
+                            ? preg_replace('/\D/', '', $requestData['ABN_number'])
+                            : null,
+                        'ACN' => isset($requestData['ACN']) && !empty($requestData['ACN'])
+                            ? preg_replace('/\D/', '', $requestData['ACN'])
+                            : null,
+                        'company_type' => $requestData['company_type'] ?? null,
+                        'company_website' => $requestData['company_website'] ?? null,
+                        'contact_person_id' => $requestData['contact_person_id'] ?? null,
+                        'contact_person_position' => $requestData['contact_person_position'] ?? null,
+                    ]);
+                }
+            } else {
+                // Personal client fields
+                $obj->first_name = $requestData['first_name'];
+                $obj->last_name = $requestData['last_name'] ?? null;
+                $obj->dob = $dob;
+                $obj->age = $age;
+                $obj->gender = $requestData['gender'] ?? null;
+                $obj->marital_status = $requestData['marital_status'] ?? null;
+            }
             $obj->client_id = $requestData['client_id'];
             //$obj->city = $requestData['town_city'] ?? null;
             //$obj->state = $requestData['state_region'] ?? null;
@@ -4800,6 +4921,13 @@ class ClientsController extends Controller
 
             if (Admin::where('id', '=', $id)->where('role', '=', 7)->exists()) {
                 $fetchedData = Admin::find($id); //dd($fetchedData);
+                
+                // Route to company detail page if this is a company
+                // For MVP, we'll use the same detail page with conditionals
+                // Uncomment below if you want separate company_detail.blade.php
+                // if ($fetchedData->is_company) {
+                //     return view('crm.clients.company_detail', compact('fetchedData', 'id'));
+                // }
 
 
                 //Fetch other client-related data
@@ -10434,6 +10562,80 @@ class ClientsController extends Controller
                 ->withErrors(['import_file' => 'Failed to import client: ' . $e->getMessage()])
                 ->withInput();
         }
+    }
+
+    /**
+     * Search for contact persons (clients/leads) by email, phone, name, or client ID
+     * Used for company contact person selection
+     * 
+     * Search priority: Phone and Email are primary search fields
+     */
+    public function searchContactPerson(Request $request)
+    {
+        $query = $request->input('q', '');
+        $excludeId = $request->input('exclude_id'); // Exclude current lead/client being edited
+        
+        if (strlen($query) < 2) {
+            return response()->json(['results' => []]);
+        }
+        
+        // Use ILIKE for PostgreSQL, LIKE for MySQL
+        $likeOperator = DB::getDriverName() === 'pgsql' ? 'ILIKE' : 'LIKE';
+        
+        $results = Admin::where(function($q) use ($query, $likeOperator) {
+                // Primary search: Phone and Email (as per requirement)
+                $q->where('phone', $likeOperator, "%{$query}%")
+                  ->orWhere('email', $likeOperator, "%{$query}%")
+                  // Secondary search: Name and Client ID
+                  ->orWhere('first_name', $likeOperator, "%{$query}%")
+                  ->orWhere('last_name', $likeOperator, "%{$query}%")
+                  ->orWhere('client_id', $likeOperator, "%{$query}%");
+                
+                // For PostgreSQL, use CONCAT with ILIKE
+                if (DB::getDriverName() === 'pgsql') {
+                    $q->orWhereRaw("CONCAT(first_name, ' ', last_name) ILIKE ?", ["%{$query}%"]);
+                } else {
+                    // For MySQL, use CONCAT with LIKE
+                    $q->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$query}%"]);
+                }
+            })
+            ->where('role', 7) // Clients/Leads only
+            ->where(function($q) {
+                $q->where('type', 'client')
+                  ->orWhere('type', 'lead');
+            })
+            ->where('is_company', false) // Exclude companies from being contact persons
+            ->when($excludeId, function($q) use ($excludeId) {
+                $q->where('id', '!=', $excludeId);
+            })
+            ->select('id', 'first_name', 'last_name', 'email', 'phone', 'client_id', 'type')
+            ->limit(20)
+            ->get()
+            ->map(function($person) {
+                $fullName = trim($person->first_name . ' ' . $person->last_name);
+                // Show phone and email in display text
+                $displayText = "{$fullName}";
+                if ($person->email) {
+                    $displayText .= " ({$person->email})";
+                }
+                if ($person->phone) {
+                    $displayText .= " - {$person->phone}";
+                }
+                $displayText .= " - {$person->client_id}";
+                
+                return [
+                    'id' => $person->id,
+                    'text' => $displayText,
+                    'first_name' => $person->first_name,
+                    'last_name' => $person->last_name,
+                    'email' => $person->email,
+                    'phone' => $person->phone,
+                    'client_id' => $person->client_id,
+                    'type' => $person->type
+                ];
+            });
+        
+        return response()->json(['results' => $results]);
     }
 
 }

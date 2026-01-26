@@ -1619,6 +1619,80 @@ function clearContactPersonFields() { ... }
 
 ---
 
+## Implementation Checklist (Progress)
+
+Use this checklist to track implementation progress. Tick items as they are completed.
+
+**📊 Current Status:** Backend Complete (Phases 1-2) | Frontend Pending (Phases 3-7)
+
+**✅ Completed:**
+- Database migrations (3 migrations executed successfully)
+- Company model and relationships
+- Admin model updates (using separate `companies` table)
+- LeadController and ClientsController backend logic
+- Contact person search API endpoint
+- All validation rules and data persistence
+
+**⏳ Remaining:**
+- View updates (lead creation form, detail page, edit page)
+- JavaScript functionality (toggle, Select2 search)
+- Matter filtering in dropdowns
+- Testing and refinement
+
+### Phase 1: Database & Models
+- [x] Create migration: add `is_company` flag to `admins` table
+- [x] Create migration: create `companies` table (separate table approach)
+- [x] Create migration: add `is_for_company` to `matters`
+- [x] Run migrations and verify columns/indexes ✅ (Batch 76, 77, 78)
+- [x] Create `Company` model with relationships
+- [x] Update `Admin` model fillable, relations, accessors (uses `company` relationship)
+- [x] Update `Matter` model fillable and helper scope
+
+### Phase 2: API & Backend
+- [x] Add contact person search endpoint + route (`/api/search-contact-person`)
+- [x] Update `LeadController@store` (conditional validation/data, saves to `companies` table)
+- [x] Update `ClientsController@detail` and `@edit` routing (routes to `company_edit` for companies)
+- [x] Update `ClientsController@update` (conditional validation/data, updates `companies` table)
+- [ ] Update matter create/edit handling for `is_for_company` (backend ready, forms pending)
+- [x] Add context-aware validation messages
+
+### Phase 3: Lead Creation Form
+- [ ] Add lead type toggle UI in `create.blade.php`
+- [ ] Add company fields + contact person section
+- [ ] Add Select2 search + auto-fill JS
+- [ ] Toggle required fields correctly
+- [ ] Verify lead creation for personal and company
+
+### Phase 4: Client Detail Page
+- [ ] Update sidebar header for company display
+- [ ] Update tab labels and EOI/ROI visibility
+- [ ] Add company info card in `personal_details.blade.php`
+- [ ] Add contact person card and links
+
+### Phase 5: Matter Creation Updates
+- [ ] Add `is_for_company` to matter create form
+- [ ] Add `is_for_company` to matter edit form
+- [ ] Filter dropdowns in `detail.blade.php`
+- [ ] Filter dropdowns in `client-management.blade.php`
+- [ ] Filter dropdowns in `client_detail_info.blade.php` (all 4)
+- [ ] Verify matter filtering for company vs personal
+
+### Phase 6: Client Edit Page
+- [ ] Create `company_edit.blade.php`
+- [ ] Route company edits in `ClientsController@edit`
+- [ ] Save company fields in `ClientsController@update`
+- [ ] Add contact person search/auto-fill on edit page
+- [ ] Verify company edit workflow
+
+### Phase 7: Testing & Refinement
+- [ ] Complete lead creation tests
+- [ ] Complete client detail/edit tests
+- [ ] Complete matter creation/filtering tests
+- [ ] Validate edge cases (ABN/ACN, missing contact)
+- [ ] Run basic performance checks
+
+---
+
 ## Testing Checklist
 
 ### Lead Creation

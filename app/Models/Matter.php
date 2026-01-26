@@ -11,7 +11,7 @@ class Matter extends Model
 	protected $table = 'matters';
 	
 	protected $fillable = [
-		'id', 'title', 'nick_name', 'created_at', 'updated_at'
+		'id', 'title', 'nick_name', 'is_for_company', 'created_at', 'updated_at'
 	];
 	
 	public $sortable = ['id', 'title', 'nick_name', 'created_at', 'updated_at'];
@@ -20,5 +20,30 @@ class Matter extends Model
 	public function otherEmailTemplates()
 	{
 		return $this->hasMany('App\\Models\\MatterOtherEmailTemplate', 'matter_id');
+	}
+
+	/**
+	 * Check if this matter is for companies only
+	 */
+	public function isForCompany(): bool
+	{
+		return (bool) $this->is_for_company;
+	}
+
+	/**
+	 * Scope to filter matters by client type
+	 */
+	public function scopeForClientType($query, bool $isCompany)
+	{
+		if ($isCompany) {
+			// For companies: show only matters where is_for_company = true
+			return $query->where('is_for_company', true);
+		} else {
+			// For personal clients: show only matters where is_for_company = false or null
+			return $query->where(function($q) {
+				$q->where('is_for_company', false)
+				  ->orWhereNull('is_for_company');
+			});
+		}
 	}
 }

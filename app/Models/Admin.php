@@ -44,6 +44,8 @@ class Admin extends Authenticatable
         'company_name', 'company_website', 'primary_email',
         'gst_no', 'gstin', 'gst_date', 'is_business_gst',
         'ABN_number', 'company_fax',
+        // Company Lead/Client Flag (company data stored in companies table)
+        'is_company',
         // Email Configuration
         'smtp_host', 'smtp_port', 'smtp_enc', 'smtp_username', 'smtp_password',
         // API/Service Tokens
@@ -249,5 +251,62 @@ class Admin extends Authenticatable
     public function relationships(): HasMany
     {
         return $this->hasMany(\App\Models\ClientRelationship::class, 'client_id');
+    }
+
+    // ============================================================
+    // COMPANY LEAD/CLIENT RELATIONSHIPS
+    // ============================================================
+
+    /**
+     * Get the company data for this admin (if it's a company)
+     */
+    public function company()
+    {
+        return $this->hasOne(Company::class, 'admin_id', 'id');
+    }
+
+    /**
+     * Get companies where this person is the contact person
+     */
+    public function companiesAsContactPerson()
+    {
+        return $this->hasMany(Company::class, 'contact_person_id', 'id');
+    }
+
+    /**
+     * Check if this is a company
+     */
+    public function isCompany(): bool
+    {
+        return (bool) $this->is_company;
+    }
+
+    /**
+     * Get display name (company name or personal name)
+     * For companies: "Company Name (Contact: Person Name)"
+     * For personal: "First Name Last Name"
+     */
+    public function getDisplayNameAttribute(): string
+    {
+        if ($this->is_company && $this->company) {
+            $companyName = $this->company->company_name ?? 'Unnamed Company';
+            if ($this->company->contactPerson) {
+                $contactName = trim($this->company->contactPerson->first_name . ' ' . $this->company->contactPerson->last_name);
+                return "{$companyName} (Contact: {$contactName})";
+            }
+            return $companyName;
+        }
+        return trim($this->first_name . ' ' . $this->last_name);
+    }
+
+    /**
+     * Get company name or fallback to personal name
+     */
+    public function getCompanyNameOrPersonalNameAttribute(): string
+    {
+        if ($this->is_company && $this->company) {
+            return $this->company->company_name ?? 'Unnamed Company';
+        }
+        return trim($this->first_name . ' ' . $this->last_name);
     }
 }
