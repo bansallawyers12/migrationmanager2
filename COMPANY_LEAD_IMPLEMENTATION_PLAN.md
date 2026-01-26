@@ -1623,23 +1623,35 @@ function clearContactPersonFields() { ... }
 
 Use this checklist to track implementation progress. Tick items as they are completed.
 
-**📊 Current Status:** Backend Complete (Phases 1-2) | Frontend Pending (Phases 3-7)
+**📊 Current Status:** 
+- ✅ **Backend Complete** (Phases 1-2): Database, models, controllers, API endpoints
+- ✅ **Edit Page Complete** (Phase 6): `company_edit.blade.php` created and routed
+- ⏳ **Frontend Pending** (Phases 3-5, 7): Lead form, detail page, matter forms, testing
 
 **✅ Completed:**
-- Database migrations (3 migrations executed successfully)
-- Company model and relationships
-- Admin model updates (using separate `companies` table)
-- LeadController and ClientsController backend logic
-- Contact person search API endpoint
-- All validation rules and data persistence
+- Database migrations (3 migrations: `is_company` flag, `companies` table, `is_for_company` in matters)
+- Company model and relationships (`Company` model with `admin` and `contactPerson` relationships)
+- Admin model updates (using separate `companies` table via `company()` relationship)
+- LeadController and ClientsController backend logic (conditional validation, data handling)
+- Contact person search API endpoint (`/api/search-contact-person` with phone/email/name search)
+- All validation rules and data persistence (ABN/ACN normalization, company name uniqueness)
+- **Company Edit Page** (`company_edit.blade.php`) with:
+  - Company Information section
+  - Primary Contact Person section with Select2 search
+  - Business Address section
+  - Contacts section (Phone & Email)
+  - Other Information section
+- **Controller routing** for company edit page (`ClientsController@edit` routes to `company_edit`)
 
-**⏳ Remaining:**
-- View updates (lead creation form, detail page, edit page)
-- JavaScript functionality (toggle, Select2 search)
-- Matter filtering in dropdowns
-- Testing and refinement
+**⏳ Remaining Work:**
+1. **Phase 3: Lead Creation Form** - Add company toggle, fields, and contact person search
+2. **Phase 4: Client Detail Page** - Update sidebar, tabs, and company info display
+3. **Phase 5: Matter Creation Updates** - Add `is_for_company` toggle and filter dropdowns
+4. **Phase 7: Testing & Refinement** - Complete testing for all features
 
-### Phase 1: Database & Models
+**🎯 Next Priority:** Phase 3 (Lead Creation Form) - Critical for creating company leads
+
+### Phase 1: Database & Models ✅ COMPLETE
 - [x] Create migration: add `is_company` flag to `admins` table
 - [x] Create migration: create `companies` table (separate table approach)
 - [x] Create migration: add `is_for_company` to `matters`
@@ -1648,7 +1660,7 @@ Use this checklist to track implementation progress. Tick items as they are comp
 - [x] Update `Admin` model fillable, relations, accessors (uses `company` relationship)
 - [x] Update `Matter` model fillable and helper scope
 
-### Phase 2: API & Backend
+### Phase 2: API & Backend ✅ COMPLETE
 - [x] Add contact person search endpoint + route (`/api/search-contact-person`)
 - [x] Update `LeadController@store` (conditional validation/data, saves to `companies` table)
 - [x] Update `ClientsController@detail` and `@edit` routing (routes to `company_edit` for companies)
@@ -1656,33 +1668,37 @@ Use this checklist to track implementation progress. Tick items as they are comp
 - [ ] Update matter create/edit handling for `is_for_company` (backend ready, forms pending)
 - [x] Add context-aware validation messages
 
-### Phase 3: Lead Creation Form
-- [ ] Add lead type toggle UI in `create.blade.php`
-- [ ] Add company fields + contact person section
-- [ ] Add Select2 search + auto-fill JS
-- [ ] Toggle required fields correctly
+### Phase 3: Lead Creation Form ⏳ IN PROGRESS
+- [ ] Add lead type toggle UI in `create.blade.php` (company/personal radio buttons)
+- [ ] Add company fields section (company name, ABN, ACN, trading name, business type, website)
+- [ ] Add contact person search section with Select2
+- [ ] Add JavaScript toggle function (`toggleCompanyFields()`)
+- [ ] Add Select2 initialization and auto-fill functionality
+- [ ] Toggle required fields correctly (remove personal required when company, vice versa)
 - [ ] Verify lead creation for personal and company
 
-### Phase 4: Client Detail Page
-- [ ] Update sidebar header for company display
-- [ ] Update tab labels and EOI/ROI visibility
-- [ ] Add company info card in `personal_details.blade.php`
-- [ ] Add contact person card and links
+### Phase 4: Client Detail Page ⏳ PENDING
+- [ ] Update sidebar header for company display (show company name instead of personal name)
+- [ ] Add contact person info in sidebar (name, position, link to profile)
+- [ ] Update tab labels ("Company Details" vs "Personal Details")
+- [ ] Hide EOI/ROI tab for companies
+- [ ] Add company information card in `personal_details.blade.php` tab
+- [ ] Add contact person card with details and link to profile
 
-### Phase 5: Matter Creation Updates
-- [ ] Add `is_for_company` to matter create form
-- [ ] Add `is_for_company` to matter edit form
-- [ ] Filter dropdowns in `detail.blade.php`
-- [ ] Filter dropdowns in `client-management.blade.php`
-- [ ] Filter dropdowns in `client_detail_info.blade.php` (all 4)
-- [ ] Verify matter filtering for company vs personal
+### Phase 5: Matter Creation Updates ⏳ PENDING
+- [ ] Add `is_for_company` toggle to matter create form (`AdminConsole/features/matter/create.blade.php`)
+- [ ] Add `is_for_company` toggle to matter edit form (`AdminConsole/features/matter/edit.blade.php`)
+- [ ] Filter matter dropdown in `detail.blade.php` (sidebar matter selector)
+- [ ] Filter matter dropdown in `client-management.blade.php` (convert lead modal)
+- [ ] Filter matter dropdowns in `client_detail_info.blade.php` (all 4 locations: lines 773, 823, 897, 1005)
+- [ ] Verify matter filtering for company vs personal clients
 
-### Phase 6: Client Edit Page
-- [ ] Create `company_edit.blade.php`
-- [ ] Route company edits in `ClientsController@edit`
-- [ ] Save company fields in `ClientsController@update`
-- [ ] Add contact person search/auto-fill on edit page
-- [ ] Verify company edit workflow
+### Phase 6: Client Edit Page ✅ COMPLETE
+- [x] Create `company_edit.blade.php` with all company-specific sections
+- [x] Route company edits in `ClientsController@edit` (routes to `company_edit` view)
+- [x] Save company fields in `ClientsController@update` (already implemented)
+- [x] Add contact person search/auto-fill on edit page (Select2 with AJAX)
+- [ ] Verify company edit workflow (testing pending)
 
 ### Phase 7: Testing & Refinement
 - [ ] Complete lead creation tests
@@ -2187,11 +2203,30 @@ $messages = [
 
 ## Next Steps
 
-1. **Review this document** and answer clarification questions
-2. **Confirm approach** for each decision point
-3. **Start with Phase 1** (Database & Models)
-4. **Test incrementally** after each phase
-5. **Get feedback** before moving to next phase
+**Current Status:** Backend and Edit Page Complete ✅
+
+**Immediate Next Steps:**
+1. **Phase 3: Lead Creation Form** (HIGH PRIORITY)
+   - Add company/personal toggle in `create.blade.php`
+   - Add company fields section
+   - Add contact person search with Select2
+   - Add JavaScript toggle functionality
+   - Test lead creation for both types
+
+2. **Phase 4: Client Detail Page**
+   - Update sidebar to show company name
+   - Add contact person info in sidebar
+   - Update tab labels and hide EOI/ROI for companies
+   - Add company info cards in detail view
+
+3. **Phase 5: Matter Creation Updates**
+   - Add `is_for_company` toggle to matter forms
+   - Filter matter dropdowns based on client type
+
+4. **Phase 7: Testing & Refinement**
+   - Complete end-to-end testing
+   - Validate edge cases
+   - Performance checks
 
 ---
 
@@ -2206,6 +2241,16 @@ $messages = [
 
 ---
 
-**Document Version**: 1.0  
+**Document Version**: 1.1  
 **Last Updated**: 2026-01-26  
-**Status**: Ready for Review
+**Status**: In Progress
+
+**Progress Summary:**
+- ✅ Phases 1-2: Backend Complete (100%)
+- ✅ Phase 6: Company Edit Page Complete (100%)
+- ⏳ Phase 3: Lead Creation Form (0% - Next Priority)
+- ⏳ Phase 4: Client Detail Page (0%)
+- ⏳ Phase 5: Matter Creation Updates (0%)
+- ⏳ Phase 7: Testing & Refinement (0%)
+
+**Overall Progress: ~40% Complete**
