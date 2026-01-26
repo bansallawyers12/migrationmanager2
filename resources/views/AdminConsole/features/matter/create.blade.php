@@ -57,6 +57,27 @@
                                                 </div>
                                             </div>
                                             
+                                            <div class="row">
+                                                <div class="col-12 col-md-6 col-lg-6">
+                                                    <div class="form-group">
+                                                        <label for="is_for_company">Is this matter for companies? <span class="span_req">*</span></label>
+                                                        <select name="is_for_company" id="is_for_company" class="form-control" data-valid="required">
+                                                            <option value="0" {{ old('is_for_company', '0') == '0' ? 'selected' : '' }}>No (For Personal Clients)</option>
+                                                            <option value="1" {{ old('is_for_company') == '1' ? 'selected' : '' }}>Yes (For Company Clients Only)</option>
+                                                        </select>
+                                                        <small class="form-text text-muted">
+                                                            If "Yes", this matter will only be available when creating matters for company clients. 
+                                                            If "No", it will only be available for personal clients.
+                                                        </small>
+                                                        @if ($errors->has('is_for_company'))
+                                                            <span class="custom-error" role="alert">
+                                                                <strong>{{ $errors->first('is_for_company') }}</strong>
+                                                            </span>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
                                             <div style="margin-bottom: 15px;" class="accordion-header" role="button" data-toggle="collapse" data-target="#primary_info" aria-expanded="true">
                                                 <h4>Block Fee</h4>
                                             </div>

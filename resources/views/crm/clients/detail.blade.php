@@ -43,20 +43,51 @@ use App\Http\Controllers\Controller;
                         }
                     } ?>
                 </h3>
-                <p class="client-name">
-                    {{$fetchedData->first_name}} {{$fetchedData->last_name}} 
-                    <a href="{{route('clients.edit', base64_encode(convert_uuencode(@$fetchedData->id)))}}" title="Edit" class="client-name-edit">
-                        <i class="fa fa-edit"></i>
-                    </a>
-                </p>
+                @if(isset($fetchedData->is_company) && $fetchedData->is_company)
+                    {{-- Company Lead Display --}}
+                    <p class="client-name">
+                        {{ $fetchedData->company_name ?? 'Unnamed Company' }}
+                        <a href="{{route('clients.edit', base64_encode(convert_uuencode(@$fetchedData->id)))}}" title="Edit" class="client-name-edit">
+                            <i class="fa fa-edit"></i>
+                        </a>
+                    </p>
+                    
+                    {{-- Primary Contact Person Info --}}
+                    @if(isset($fetchedData->contact_person_id) && $fetchedData->contact_person_id)
+                        @php
+                            $contactPerson = \App\Models\Admin::find($fetchedData->contact_person_id);
+                        @endphp
+                        @if($contactPerson)
+                            <div class="contact-person-info" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #e0e0e0;">
+                                <small style="color: #6c757d; display: block; margin-bottom: 5px;">Primary Contact:</small>
+                                <a href="{{ route('clients.detail', base64_encode(convert_uuencode($contactPerson->id))) }}" 
+                                   class="contact-person-link" 
+                                   style="color: #007bff; text-decoration: none; font-weight: 500; font-size: 0.9em;">
+                                    {{ $contactPerson->first_name }} {{ $contactPerson->last_name }}
+                                </a>
+                                @if(isset($fetchedData->contact_person_position) && $fetchedData->contact_person_position)
+                                    <br><small style="color: #6c757d; font-size: 0.85em;">{{ $fetchedData->contact_person_position }}</small>
+                                @endif
+                            </div>
+                        @endif
+                    @endif
+                @else
+                    {{-- Personal Lead Display (existing) --}}
+                    <p class="client-name">
+                        {{$fetchedData->first_name}} {{$fetchedData->last_name}} 
+                        <a href="{{route('clients.edit', base64_encode(convert_uuencode(@$fetchedData->id)))}}" title="Edit" class="client-name-edit">
+                            <i class="fa fa-edit"></i>
+                        </a>
+                    </p>
+                @endif
                 
                 <!-- Action Icons (left) and Client Portal Toggle (right) -->
                 <div class="sidebar-actions-row">
                     <!-- Action Icons -->
                     <div class="client-actions">
                         <a href="javascript:;" class="create_note_d" datatype="note" title="Add Notes"><i class="fas fa-plus"></i></a>
-                        <a href="javascript:;" data-id="{{@$fetchedData->id}}" data-email="{{@$fetchedData->email}}" data-name="{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}" class="clientemail" title="Compose Mail"><i class="fa fa-envelope"></i></a>
-                        <a href="javascript:;" class="send-sms-btn" data-client-id="{{@$fetchedData->id}}" data-client-name="{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}" title="Send SMS"><i class="fas fa-sms"></i></a>
+                        <a href="javascript:;" data-id="{{@$fetchedData->id}}" data-email="{{@$fetchedData->email}}" data-name="@if(isset($fetchedData->is_company) && $fetchedData->is_company){{ $fetchedData->company_name ?? 'Unnamed Company' }}@else{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}@endif" class="clientemail" title="Compose Mail"><i class="fa fa-envelope"></i></a>
+                        <a href="javascript:;" class="send-sms-btn" data-client-id="{{@$fetchedData->id}}" data-client-name="@if(isset($fetchedData->is_company) && $fetchedData->is_company){{ $fetchedData->company_name ?? 'Unnamed Company' }}@else{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}@endif" title="Send SMS"><i class="fas fa-sms"></i></a>
                         <a href="javascript:;" datatype="not_picked_call" class="not_picked_call" title="Not Picked Call"><i class="fas fa-mobile-alt"></i></a>
                         <a href="javascript:;" data-toggle="modal" data-target="#create_appoint" title="Add Appointment"><i class="fas fa-calendar-plus"></i></a>
                     </div>
@@ -320,7 +351,13 @@ use App\Http\Controllers\Controller;
             ?>
                 <button class="client-nav-button active" data-tab="personaldetails">
                     <i class="fas fa-user"></i>
-                    <span>Personal Details</span>
+                    <span>
+                        @if(isset($fetchedData->is_company) && $fetchedData->is_company)
+                            Company Details
+                        @else
+                            Personal Details
+                        @endif
+                    </span>
                 </button>
                 <button class="client-nav-button" data-tab="noteterm">
                     <i class="fas fa-sticky-note"></i>
@@ -328,13 +365,19 @@ use App\Http\Controllers\Controller;
                 </button>
                 <button class="client-nav-button" data-tab="personaldocuments">
                     <i class="fas fa-folder-open"></i>
-                    <span>Personal Documents</span>
+                    <span>
+                        @if(isset($fetchedData->is_company) && $fetchedData->is_company)
+                            Company Documents
+                        @else
+                            Personal Documents
+                        @endif
+                    </span>
                 </button>
                 <button class="client-nav-button" data-tab="visadocuments">
                     <i class="fas fa-file-contract"></i>
                     <span>Visa Documents</span>
                 </button>
-                @if(isset($isEoiMatter) && $isEoiMatter)
+                @if(isset($isEoiMatter) && $isEoiMatter && (!isset($fetchedData->is_company) || !$fetchedData->is_company))
                 <button class="client-nav-button" data-tab="eoiroi">
                     <i class="fas fa-passport"></i>
                     <span>EOI / ROI</span>
@@ -378,7 +421,13 @@ use App\Http\Controllers\Controller;
             ?>
                 <button class="client-nav-button active" data-tab="personaldetails">
                     <i class="fas fa-user"></i>
-                    <span>Personal Details</span>
+                    <span>
+                        @if(isset($fetchedData->is_company) && $fetchedData->is_company)
+                            Company Details
+                        @else
+                            Personal Details
+                        @endif
+                    </span>
                 </button>
                 <button class="client-nav-button" data-tab="noteterm">
                     <i class="fas fa-sticky-note"></i>
@@ -386,7 +435,13 @@ use App\Http\Controllers\Controller;
                 </button>
                 <button class="client-nav-button" data-tab="personaldocuments">
                     <i class="fas fa-folder-open"></i>
-                    <span>Personal Documents</span>
+                    <span>
+                        @if(isset($fetchedData->is_company) && $fetchedData->is_company)
+                            Company Documents
+                        @else
+                            Personal Documents
+                        @endif
+                    </span>
                 </button>
                 <button class="client-nav-button" data-tab="formgenerationsL">
                     <i class="fas fa-file-alt"></i>

@@ -62,7 +62,23 @@
 
                                 <select data-valid="required" class="form-control select2" name="matter_id" id="sel_matter_id">
                                     <option value="">Select Matter</option>
-                                    @foreach(\App\Models\Matter::select('id','title')->where('status',1)->get() as $matterlist)
+                                    @php
+                                        // Filter matters based on client type
+                                        $matterQuery = \App\Models\Matter::select('id','title')->where('status',1);
+                                        
+                                        if (isset($fetchedData) && $fetchedData->is_company) {
+                                            // For companies: show only matters where is_for_company = true
+                                            $matterQuery->where('is_for_company', true);
+                                        } else {
+                                            // For personal clients: show only matters where is_for_company = false or null
+                                            $matterQuery->where(function($q) {
+                                                $q->where('is_for_company', false)
+                                                  ->orWhereNull('is_for_company');
+                                            });
+                                        }
+                                        $matterList = $matterQuery->get();
+                                    @endphp
+                                    @foreach($matterList as $matterlist)
                                         <option value="{{$matterlist->id}}">{{@$matterlist->title}}</option>
                                     @endforeach
                                 </select>

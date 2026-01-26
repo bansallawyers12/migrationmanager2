@@ -69,6 +69,38 @@
                 font-size: 12px;
             }
         }
+        
+        /* Company fields styling */
+        .company-lead-fields {
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        .personal-lead-fields {
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .contact-person-field {
+            background-color: #f8f9fa;
+            cursor: not-allowed;
+        }
+        
+        .contact-person-field.field-auto-filled {
+            background-color: #e7f3ff;
+            border-color: #0d6efd;
+        }
+        
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .select2-contact-person {
+            width: 100% !important;
+        }
     </style>
 @endpush
 
@@ -146,69 +178,273 @@
 
                     {{-- ==================== PERSONAL SECTION ==================== --}}
                     <section id="personalSection" class="content-section">
+                        <!-- Lead Type Toggle -->
+                        <section class="form-section" style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                            <div class="section-header">
+                                <h3><i class="fas fa-building"></i> Lead Type</h3>
+                            </div>
+                            
+                            <div class="content-grid">
+                                <div class="form-group full-width">
+                                    <label style="display: block; margin-bottom: 10px; font-weight: 600;">
+                                        Is this new lead a company?
+                                    </label>
+                                    <div style="display: flex; gap: 20px; align-items: center;">
+                                        <label style="display: flex; align-items: center; cursor: pointer;">
+                                            <input type="radio" name="is_company" value="no" id="is_company_no" 
+                                                   {{ old('is_company', 'no') == 'no' ? 'checked' : '' }} 
+                                                   onchange="toggleCompanyFields(false)" style="margin-right: 8px;">
+                                            <span>No (Personal Lead)</span>
+                                        </label>
+                                        <label style="display: flex; align-items: center; cursor: pointer;">
+                                            <input type="radio" name="is_company" value="yes" id="is_company_yes" 
+                                                   {{ old('is_company') == 'yes' ? 'checked' : '' }} 
+                                                   onchange="toggleCompanyFields(true)" style="margin-right: 8px;">
+                                            <span>Yes (Company Lead)</span>
+                                        </label>
+                                    </div>
+                                    @error('is_company')
+                                        <span class="text-danger">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            </div>
+                        </section>
+
                         <!-- Basic Information -->
                         <section class="form-section">
                             <div class="section-header">
                                 <h3><i class="fas fa-user-circle"></i> Basic Information</h3>
                             </div>
                             
-                            <div class="content-grid">
-                                <div class="form-group">
-                                    <label for="firstName">First Name <span class="text-danger">*</span></label>
-                                    <input type="text" id="firstName" name="first_name" value="{{ old('first_name') }}" required>
-                                    @error('first_name')
-                                        <span class="text-danger">{{ $message }}</span>
-                                    @enderror
-                                </div>
+                            {{-- Personal Information Fields (shown when is_company = no) --}}
+                            <div id="personalFields" class="personal-lead-fields">
+                                <div class="content-grid">
+                                    <div class="form-group">
+                                        <label for="firstName">First Name <span class="text-danger">*</span></label>
+                                        <input type="text" id="firstName" name="first_name" value="{{ old('first_name') }}" required>
+                                        @error('first_name')
+                                            <span class="text-danger">{{ $message }}</span>
+                                        @enderror
+                                    </div>
 
-                                <div class="form-group">
-                                    <label for="lastName">Last Name <span class="text-danger">*</span></label>
-                                    <input type="text" id="lastName" name="last_name" value="{{ old('last_name') }}" required>
-                                    @error('last_name')
-                                        <span class="text-danger">{{ $message }}</span>
-                                    @enderror
-                                </div>
+                                    <div class="form-group">
+                                        <label for="lastName">Last Name <span class="text-danger">*</span></label>
+                                        <input type="text" id="lastName" name="last_name" value="{{ old('last_name') }}" required>
+                                        @error('last_name')
+                                            <span class="text-danger">{{ $message }}</span>
+                                        @enderror
+                                    </div>
 
-                                <div class="form-group">
-                                    <label for="dob">Date of Birth <span class="text-danger">*</span></label>
-                                    <input type="text" id="dob" name="dob" value="{{ old('dob') }}" class="date-picker" placeholder="dd/mm/yyyy" required>
-                                    @error('dob')
-                                        <span class="text-danger">{{ $message }}</span>
-                                    @enderror
-                                </div>
+                                    <div class="form-group">
+                                        <label for="dob">Date of Birth <span class="text-danger">*</span></label>
+                                        <input type="text" id="dob" name="dob" value="{{ old('dob') }}" class="date-picker" placeholder="dd/mm/yyyy" required>
+                                        @error('dob')
+                                            <span class="text-danger">{{ $message }}</span>
+                                        @enderror
+                                    </div>
 
-                                <div class="form-group">
-                                    <label for="age">Age</label>
-                                    <input type="text" id="age" name="age" value="{{ old('age') }}" readonly>
-                                </div>
+                                    <div class="form-group">
+                                        <label for="age">Age</label>
+                                        <input type="text" id="age" name="age" value="{{ old('age') }}" readonly>
+                                    </div>
 
-                                <div class="form-group">
-                                    <label for="gender">Gender <span class="text-danger">*</span></label>
-                                    <select id="gender" name="gender" required>
-                                        <option value="">Select Gender</option>
-                                        <option value="Male" {{ old('gender') == 'Male' ? 'selected' : '' }}>Male</option>
-                                        <option value="Female" {{ old('gender') == 'Female' ? 'selected' : '' }}>Female</option>
-                                        <option value="Other" {{ old('gender') == 'Other' ? 'selected' : '' }}>Other</option>
-                                    </select>
-                                    @error('gender')
-                                        <span class="text-danger">{{ $message }}</span>
-                                    @enderror
-                                </div>
+                                    <div class="form-group">
+                                        <label for="gender">Gender <span class="text-danger">*</span></label>
+                                        <select id="gender" name="gender" required>
+                                            <option value="">Select Gender</option>
+                                            <option value="Male" {{ old('gender') == 'Male' ? 'selected' : '' }}>Male</option>
+                                            <option value="Female" {{ old('gender') == 'Female' ? 'selected' : '' }}>Female</option>
+                                            <option value="Other" {{ old('gender') == 'Other' ? 'selected' : '' }}>Other</option>
+                                        </select>
+                                        @error('gender')
+                                            <span class="text-danger">{{ $message }}</span>
+                                        @enderror
+                                    </div>
 
-                                <div class="form-group">
-                                    <label for="maritalStatus">Marital Status</label>
-                                    <select id="maritalStatus" name="marital_status">
-                                        <option value="">Select Marital Status</option>
-                                        <option value="Single" {{ old('marital_status') == 'Single' ? 'selected' : '' }}>Single</option>
-                                        <option value="Married" {{ old('marital_status') == 'Married' ? 'selected' : '' }}>Married</option>
-                                        <option value="Defacto" {{ (old('marital_status') == 'Defacto' || old('marital_status') == 'De Facto') ? 'selected' : '' }}>De Facto</option>
-                                        <option value="Separated" {{ old('marital_status') == 'Separated' ? 'selected' : '' }}>Separated</option>
-                                        <option value="Divorced" {{ old('marital_status') == 'Divorced' ? 'selected' : '' }}>Divorced</option>
-                                        <option value="Widowed" {{ old('marital_status') == 'Widowed' ? 'selected' : '' }}>Widowed</option>
-                                    </select>
-                                    @error('marital_status')
-                                        <span class="text-danger">{{ $message }}</span>
-                                    @enderror
+                                    <div class="form-group">
+                                        <label for="maritalStatus">Marital Status</label>
+                                        <select id="maritalStatus" name="marital_status">
+                                            <option value="">Select Marital Status</option>
+                                            <option value="Single" {{ old('marital_status') == 'Single' ? 'selected' : '' }}>Single</option>
+                                            <option value="Married" {{ old('marital_status') == 'Married' ? 'selected' : '' }}>Married</option>
+                                            <option value="Defacto" {{ (old('marital_status') == 'Defacto' || old('marital_status') == 'De Facto') ? 'selected' : '' }}>De Facto</option>
+                                            <option value="Separated" {{ old('marital_status') == 'Separated' ? 'selected' : '' }}>Separated</option>
+                                            <option value="Divorced" {{ old('marital_status') == 'Divorced' ? 'selected' : '' }}>Divorced</option>
+                                            <option value="Widowed" {{ old('marital_status') == 'Widowed' ? 'selected' : '' }}>Widowed</option>
+                                        </select>
+                                        @error('marital_status')
+                                            <span class="text-danger">{{ $message }}</span>
+                                        @enderror
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Company Information Fields (shown when is_company = yes) --}}
+                            <div id="companyFields" class="company-lead-fields" style="display: none;">
+                                <div class="content-grid">
+                                    <div class="form-group">
+                                        <label for="companyName">Company Name <span class="text-danger">*</span></label>
+                                        <input type="text" id="companyName" name="company_name" 
+                                               value="{{ old('company_name') }}" 
+                                               class="company-field" required>
+                                        @error('company_name')
+                                            <span class="text-danger">{{ $message }}</span>
+                                        @enderror
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="tradingName">Trading Name</label>
+                                        <input type="text" id="tradingName" name="trading_name" 
+                                               value="{{ old('trading_name') }}" 
+                                               class="company-field" 
+                                               placeholder="If different from company name">
+                                        @error('trading_name')
+                                            <span class="text-danger">{{ $message }}</span>
+                                        @enderror
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="abn">ABN</label>
+                                        <input type="text" id="abn" name="ABN_number" 
+                                               value="{{ old('ABN_number') }}" 
+                                               class="company-field" 
+                                               placeholder="12 345 678 901"
+                                               maxlength="14">
+                                        <small class="form-text text-muted">11 digits (spaces optional)</small>
+                                        @error('ABN_number')
+                                            <span class="text-danger">{{ $message }}</span>
+                                        @enderror
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="acn">ACN</label>
+                                        <input type="text" id="acn" name="ACN" 
+                                               value="{{ old('ACN') }}" 
+                                               class="company-field" 
+                                               placeholder="123 456 789"
+                                               maxlength="11">
+                                        <small class="form-text text-muted">9 digits (spaces optional)</small>
+                                        @error('ACN')
+                                            <span class="text-danger">{{ $message }}</span>
+                                        @enderror
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="companyType">Business Type</label>
+                                        <select id="companyType" name="company_type" class="company-field">
+                                            <option value="">Select Business Type</option>
+                                            <option value="Sole Trader" {{ old('company_type') == 'Sole Trader' ? 'selected' : '' }}>
+                                                Sole Trader
+                                            </option>
+                                            <option value="Partnership" {{ old('company_type') == 'Partnership' ? 'selected' : '' }}>
+                                                Partnership
+                                            </option>
+                                            <option value="Proprietary Company" {{ old('company_type') == 'Proprietary Company' ? 'selected' : '' }}>
+                                                Proprietary Company (Pty Ltd)
+                                            </option>
+                                            <option value="Public Company" {{ old('company_type') == 'Public Company' ? 'selected' : '' }}>
+                                                Public Company
+                                            </option>
+                                            <option value="Not-for-Profit" {{ old('company_type') == 'Not-for-Profit' ? 'selected' : '' }}>
+                                                Not-for-Profit Organization
+                                            </option>
+                                            <option value="Other" {{ old('company_type') == 'Other' ? 'selected' : '' }}>
+                                                Other
+                                            </option>
+                                        </select>
+                                        @error('company_type')
+                                            <span class="text-danger">{{ $message }}</span>
+                                        @enderror
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="companyWebsite">Company Website</label>
+                                        <input type="url" id="companyWebsite" name="company_website" 
+                                               value="{{ old('company_website') }}" 
+                                               class="company-field" 
+                                               placeholder="https://www.example.com">
+                                        @error('company_website')
+                                            <span class="text-danger">{{ $message }}</span>
+                                        @enderror
+                                    </div>
+                                </div>
+                                
+                                {{-- Primary Contact Person Section --}}
+                                <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e0e0e0;">
+                                    <h4 style="margin-bottom: 15px;">
+                                        <i class="fas fa-user-tie"></i> Primary Contact Person
+                                    </h4>
+                                    
+                                    <div class="content-grid">
+                                        <div class="form-group full-width">
+                                            <label for="contactPersonEmail">Search Contact Person <span class="text-danger">*</span></label>
+                                            <select id="contactPersonEmail" name="contact_person_id" 
+                                                    class="form-control select2-contact-person" 
+                                                    data-placeholder="Type phone, email, name, or client ID to search..."
+                                                    style="width: 100%;"
+                                                    required>
+                                                @if(old('contact_person_id'))
+                                                    @php
+                                                        $oldContactPerson = \App\Models\Admin::find(old('contact_person_id'));
+                                                    @endphp
+                                                    @if($oldContactPerson)
+                                                        <option value="{{ $oldContactPerson->id }}" selected>
+                                                            {{ $oldContactPerson->first_name }} {{ $oldContactPerson->last_name }} 
+                                                            ({{ $oldContactPerson->email }})
+                                                        </option>
+                                                    @endif
+                                                @endif
+                                            </select>
+                                            <small class="form-text text-muted">
+                                                Search existing clients/leads by email, name, phone, or client ID. Selected person's details will auto-fill below.
+                                            </small>
+                                            @error('contact_person_id')
+                                                <span class="text-danger">{{ $message }}</span>
+                                            @enderror
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label for="contactPersonFirstName">First Name <span class="text-danger">*</span></label>
+                                            <input type="text" id="contactPersonFirstName" name="contact_person_first_name" 
+                                                   value="{{ old('contact_person_first_name') }}" 
+                                                   class="company-field contact-person-field" required readonly>
+                                            <small class="form-text text-muted">Auto-filled from selected contact person</small>
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label for="contactPersonLastName">Last Name <span class="text-danger">*</span></label>
+                                            <input type="text" id="contactPersonLastName" name="contact_person_last_name" 
+                                                   value="{{ old('contact_person_last_name') }}" 
+                                                   class="company-field contact-person-field" required readonly>
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label for="contactPersonPosition">Position/Title</label>
+                                            <input type="text" id="contactPersonPosition" name="contact_person_position" 
+                                                   value="{{ old('contact_person_position') }}" 
+                                                   class="company-field" 
+                                                   placeholder="e.g., HR Manager, Director">
+                                            @error('contact_person_position')
+                                                <span class="text-danger">{{ $message }}</span>
+                                            @enderror
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label for="contactPersonPhone">Phone</label>
+                                            <input type="text" id="contactPersonPhone" name="contact_person_phone" 
+                                                   value="{{ old('contact_person_phone') }}" 
+                                                   class="company-field contact-person-field" readonly>
+                                            <small class="form-text text-muted">Auto-filled from selected contact person</small>
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label for="contactPersonEmailDisplay">Email</label>
+                                            <input type="email" id="contactPersonEmailDisplay" 
+                                                   value="{{ old('contact_person_email_display') }}" 
+                                                   class="company-field contact-person-field" readonly>
+                                            <small class="form-text text-muted">Auto-filled from selected contact person</small>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </section>
@@ -665,7 +901,183 @@
         setTimeout(function() {
             initDatePicker();
         }, 500);
+        
+        // Initialize company toggle functionality
+        initCompanyToggle();
+        
+        // Initialize contact person search if company fields are visible
+        @if(old('is_company') == 'yes')
+            initContactPersonSearch();
+        @endif
     });
+    
+    // Toggle between personal and company fields
+    function toggleCompanyFields(isCompany) {
+        const personalFields = document.getElementById('personalFields');
+        const companyFields = document.getElementById('companyFields');
+        const personalRequiredFields = personalFields ? personalFields.querySelectorAll('[required]') : [];
+        const companyRequiredFields = companyFields ? companyFields.querySelectorAll('[required]') : [];
+        
+        if (isCompany) {
+            // Show company fields, hide personal fields
+            if (personalFields) personalFields.style.display = 'none';
+            if (companyFields) companyFields.style.display = 'block';
+            
+            // Remove required from personal fields
+            personalRequiredFields.forEach(field => {
+                field.removeAttribute('required');
+            });
+            
+            // Add required to company fields
+            companyRequiredFields.forEach(field => {
+                field.setAttribute('required', 'required');
+            });
+            
+            // Clear personal field values (optional)
+            if (personalFields) {
+                personalFields.querySelectorAll('input, select').forEach(field => {
+                    if (field.type !== 'hidden' && field.id !== 'age') {
+                        field.value = '';
+                    }
+                });
+            }
+            
+            // Initialize contact person search when company fields are shown
+            setTimeout(function() {
+                initContactPersonSearch();
+            }, 100);
+        } else {
+            // Show personal fields, hide company fields
+            if (personalFields) personalFields.style.display = 'block';
+            if (companyFields) companyFields.style.display = 'none';
+            
+            // Remove required from company fields
+            companyRequiredFields.forEach(field => {
+                field.removeAttribute('required');
+            });
+            
+            // Add required to personal fields
+            personalRequiredFields.forEach(field => {
+                field.setAttribute('required', 'required');
+            });
+            
+            // Clear company field values (optional, but preserve contact person selection)
+            if (companyFields) {
+                companyFields.querySelectorAll('input, select').forEach(field => {
+                    if (field.type !== 'hidden' && field.id !== 'contactPersonEmail') {
+                        if (field.classList.contains('contact-person-field')) {
+                            field.value = '';
+                        } else {
+                            field.value = '';
+                        }
+                    }
+                });
+            }
+        }
+    }
+    
+    // Initialize company toggle on page load
+    function initCompanyToggle() {
+        const isCompanyRadio = document.querySelector('input[name="is_company"][value="yes"]');
+        const isPersonalRadio = document.querySelector('input[name="is_company"][value="no"]');
+        
+        // Set initial state based on old input or default
+        const isCompany = @json(old('is_company') == 'yes');
+        toggleCompanyFields(isCompany);
+        
+        // Add event listeners
+        if (isCompanyRadio) {
+            isCompanyRadio.addEventListener('change', function() {
+                if (this.checked) {
+                    toggleCompanyFields(true);
+                }
+            });
+        }
+        
+        if (isPersonalRadio) {
+            isPersonalRadio.addEventListener('change', function() {
+                if (this.checked) {
+                    toggleCompanyFields(false);
+                }
+            });
+        }
+    }
+    
+    // Initialize Select2 for contact person search
+    function initContactPersonSearch() {
+        const contactPersonSelect = $('#contactPersonEmail');
+        
+        // Check if Select2 is already initialized
+        if (contactPersonSelect.hasClass('select2-hidden-accessible')) {
+            return; // Already initialized
+        }
+        
+        // Check if Select2 library is available
+        if (typeof $.fn.select2 === 'undefined') {
+            console.warn('Select2 library not loaded. Contact person search will not work.');
+            return;
+        }
+        
+        contactPersonSelect.select2({
+            ajax: {
+                url: '{{ route("api.search.contact.person") }}',
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return {
+                        q: params.term, // search term
+                        exclude_id: null // Can exclude current lead if editing
+                    };
+                },
+                processResults: function (data) {
+                    return {
+                        results: data.results.map(function(item) {
+                            return {
+                                id: item.id,
+                                text: item.text,
+                                first_name: item.first_name,
+                                last_name: item.last_name,
+                                email: item.email,
+                                phone: item.phone,
+                                client_id: item.client_id
+                            };
+                        })
+                    };
+                },
+                cache: true
+            },
+            minimumInputLength: 2,
+            placeholder: 'Type phone, email, name, or client ID to search...',
+            allowClear: true,
+            width: '100%'
+        });
+        
+        // Auto-fill contact person details when selected
+        contactPersonSelect.on('select2:select', function (e) {
+            const data = e.params.data;
+            
+            // Auto-fill fields
+            $('#contactPersonFirstName').val(data.first_name || '');
+            $('#contactPersonLastName').val(data.last_name || '');
+            $('#contactPersonPhone').val(data.phone || '');
+            $('#contactPersonEmailDisplay').val(data.email || '');
+            
+            // Add visual indicator
+            $('.contact-person-field').addClass('field-auto-filled');
+            
+            // Store contact person ID (already in select value)
+            console.log('Contact person selected:', data);
+        });
+        
+        // Clear fields when selection is cleared
+        contactPersonSelect.on('select2:clear', function (e) {
+            $('#contactPersonFirstName').val('');
+            $('#contactPersonLastName').val('');
+            $('#contactPersonPhone').val('');
+            $('#contactPersonEmailDisplay').val('');
+            $('.contact-person-field').removeClass('field-auto-filled');
+        });
+    }
     
     // Function to display validation errors for each field
     function displayFieldErrors() {
