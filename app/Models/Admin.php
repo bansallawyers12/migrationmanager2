@@ -56,6 +56,8 @@ class Admin extends Authenticatable
         'visa_expiry_verified_at', 'visa_expiry_verified_by',
         // Permissions
         'show_dashboard_per',
+        // Archive fields
+        'is_archived', 'archived_by',
         // Personal (staff might need some personal info)
         'marital_status', 'time_zone',
         // Client/Lead Tags

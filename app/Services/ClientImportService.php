@@ -140,6 +140,8 @@ class ClientImportService
             $client->specialist_education = 0;
             $client->regional_study = 0;
             $client->is_archived = 0;
+            // Note: archived_by is not set during import - imported clients are not archived
+            // archived_by will be null for imported clients
             
             $client->save();
             $newClientId = $client->id;
