@@ -1885,7 +1885,7 @@ class ClientsController extends Controller
                 'partner_last_name.*' => 'nullable|string|max:255',
                 'partner_phone.*' => 'nullable|string|max:20',
 
-            ];
+            ]);
 
             // Update validation rules for new subsections
             $validationRules = array_merge($validationRules, [
@@ -4923,11 +4923,33 @@ class ClientsController extends Controller
                 $fetchedData = Admin::with('company.contactPerson')->find($id); //dd($fetchedData);
                 
                 // Route to company detail page if this is a company
-                // For MVP, we'll use the same detail page with conditionals
-                // Uncomment below if you want separate company_detail.blade.php
-                // if ($fetchedData->is_company) {
-                //     return view('crm.clients.company_detail', compact('fetchedData', 'id'));
-                // }
+                if ($fetchedData && $fetchedData->is_company) {
+                    // Fetch data needed for company detail page
+                    $clientAddresses = ClientAddress::where('client_id', $id)->orderBy('created_at', 'desc')->get();
+                    $clientContacts = ClientContact::where('client_id', $id)->get();
+                    $emails = ClientEmail::where('client_id', $id)->get() ?? [];
+                    
+                    $matter_cnt = \App\Models\ClientMatter::select('id')
+                        ->where('client_id',$id)
+                        ->where('matter_status',1)
+                        ->count();
+                    
+                    // Get current admin user data for SMS templates
+                    $currentAdmin = Auth::user();
+                    $staffName = $currentAdmin->first_name . ' ' . $currentAdmin->last_name;
+                    $matterNumber = $id1 ?? '';
+                    $officePhone = $currentAdmin->phone ?? $currentAdmin->att_phone ?? '';
+                    $officeCountryCode = $currentAdmin->att_country_code ?? '+61';
+                    
+                    $encodeId = base64_encode(convert_uuencode($id));
+                    $activeTab = $tab ?? 'companydetails';
+                    
+                    return view('crm.companies.detail', compact(
+                        'fetchedData', 'clientAddresses', 'clientContacts', 'emails',
+                        'encodeId', 'id1', 'activeTab',
+                        'staffName', 'matterNumber', 'officePhone', 'officeCountryCode'
+                    ));
+                }
 
 
                 //Fetch other client-related data

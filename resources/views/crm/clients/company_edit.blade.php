@@ -74,10 +74,6 @@
                         <i class="fas fa-phone"></i>
                         <span>Contacts</span>
                     </button>
-                    <button class="nav-item" onclick="scrollToSection('otherInformationSection')">
-                        <i class="fas fa-info-circle"></i>
-                        <span>Other Information</span>
-                    </button>
                 </nav>
                 
                 <!-- Back Button in Sidebar -->
@@ -494,75 +490,6 @@
                             <div class="edit-actions">
                                 <button type="button" class="btn btn-primary" onclick="saveEmailAddresses()">Save</button>
                                 <button type="button" class="btn btn-secondary" onclick="cancelEdit('emailAddresses')">Cancel</button>
-                            </div>
-                        </div>
-                    </section>
-                </section>
-
-                <!-- Other Information Section -->
-                <section id="otherInformationSection" class="content-section">
-                    <section class="form-section">
-                        <div class="section-header">
-                            <h3><i class="fas fa-info-circle"></i> Additional Information</h3>
-                            <div class="section-actions">
-                                <button type="button" class="edit-section-btn" onclick="toggleEditMode('additionalInfo')">
-                                    <i class="fas fa-pen"></i>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- Summary View -->
-                        <div id="additionalInfoSummary" class="summary-view">
-                            <div class="summary-grid">
-                                <div class="summary-item">
-                                    <span class="summary-label">NAATI/CCL Test:</span>
-                                    <span class="summary-value">{{ $fetchedData->naati_test ? 'Yes' : 'No' }}</span>
-                                </div>
-                                <div class="summary-item">
-                                    <span class="summary-label">NAATI/CCL Date:</span>
-                                    <span class="summary-value">{{ $fetchedData->naati_date ? date('d/m/Y', strtotime($fetchedData->naati_date)) : 'Not set' }}</span>
-                                </div>
-                                <div class="summary-item">
-                                    <span class="summary-label">Professional Year (PY):</span>
-                                    <span class="summary-value">{{ $fetchedData->py_test ? 'Yes' : 'No' }}</span>
-                                </div>
-                                <div class="summary-item">
-                                    <span class="summary-label">PY Completion Date:</span>
-                                    <span class="summary-value">{{ $fetchedData->py_date ? date('d/m/Y', strtotime($fetchedData->py_date)) : 'Not set' }}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Edit View -->
-                        <div id="additionalInfoEdit" class="edit-view hidden">
-                            <div class="content-grid">
-                                <div class="form-group">
-                                    <label for="naatiTest">NAATI/CCL Test</label>
-                                    <select id="naatiTest" name="naati_test">
-                                        <option value="0" {{ !$fetchedData->naati_test ? 'selected' : '' }}>No</option>
-                                        <option value="1" {{ $fetchedData->naati_test ? 'selected' : '' }}>Yes</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="naatiDate">NAATI/CCL Date</label>
-                                    <input type="text" id="naatiDate" name="naati_date" value="{{ $fetchedData->naati_date ? date('d/m/Y', strtotime($fetchedData->naati_date)) : '' }}" placeholder="dd/mm/yyyy" class="date-picker">
-                                </div>
-                                <div class="form-group">
-                                    <label for="pyTest">Professional Year (PY)</label>
-                                    <select id="pyTest" name="py_test">
-                                        <option value="0" {{ !$fetchedData->py_test ? 'selected' : '' }}>No</option>
-                                        <option value="1" {{ $fetchedData->py_test ? 'selected' : '' }}>Yes</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="pyDate">PY Completion Date</label>
-                                    <input type="text" id="pyDate" name="py_date" value="{{ $fetchedData->py_date ? date('d/m/Y', strtotime($fetchedData->py_date)) : '' }}" placeholder="dd/mm/yyyy" class="date-picker">
-                                </div>
-                            </div>
-                            
-                            <div class="edit-actions">
-                                <button type="button" class="btn btn-primary" onclick="saveAdditionalInfo()">Save</button>
-                                <button type="button" class="btn btn-secondary" onclick="cancelEdit('additionalInfo')">Cancel</button>
                             </div>
                         </div>
                     </section>

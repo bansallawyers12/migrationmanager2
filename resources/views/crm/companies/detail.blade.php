@@ -1,5 +1,5 @@
 @extends('layouts.crm_client_detail')
-@section('title', 'Client Detail')
+@section('title', 'Company Detail')
 
 @section('content')
 <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -43,21 +43,36 @@ use App\Http\Controllers\Controller;
                         }
                     } ?>
                 </h3>
-                {{-- Personal Lead Display --}}
+                {{-- Company Display --}}
                 <p class="client-name">
-                    {{$fetchedData->first_name}} {{$fetchedData->last_name}} 
+                    {{ $fetchedData->company->company_name ?? 'Unnamed Company' }}
                     <a href="{{route('clients.edit', base64_encode(convert_uuencode(@$fetchedData->id)))}}" title="Edit" class="client-name-edit">
                         <i class="fa fa-edit"></i>
                     </a>
                 </p>
+                
+                {{-- Primary Contact Person Info --}}
+                @if($fetchedData->company->contactPerson)
+                    <div class="contact-person-info" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #e0e0e0;">
+                        <small style="color: #6c757d; display: block; margin-bottom: 5px;">Primary Contact:</small>
+                        <a href="{{ route('clients.detail', base64_encode(convert_uuencode($fetchedData->company->contactPerson->id))) }}" 
+                           class="contact-person-link" 
+                           style="color: #007bff; text-decoration: none; font-weight: 500; font-size: 0.9em;">
+                            {{ $fetchedData->company->contactPerson->first_name }} {{ $fetchedData->company->contactPerson->last_name }}
+                        </a>
+                        @if($fetchedData->company->contact_person_position)
+                            <br><small style="color: #6c757d; font-size: 0.85em;">{{ $fetchedData->company->contact_person_position }}</small>
+                        @endif
+                    </div>
+                @endif
                 
                 <!-- Action Icons (left) and Client Portal Toggle (right) -->
                 <div class="sidebar-actions-row">
                     <!-- Action Icons -->
                     <div class="client-actions">
                         <a href="javascript:;" class="create_note_d" datatype="note" title="Add Notes"><i class="fas fa-plus"></i></a>
-                        <a href="javascript:;" data-id="{{@$fetchedData->id}}" data-email="{{@$fetchedData->email}}" data-name="{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}" class="clientemail" title="Compose Mail"><i class="fa fa-envelope"></i></a>
-                        <a href="javascript:;" class="send-sms-btn" data-client-id="{{@$fetchedData->id}}" data-client-name="{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}" title="Send SMS"><i class="fas fa-sms"></i></a>
+                        <a href="javascript:;" data-id="{{@$fetchedData->id}}" data-email="{{@$fetchedData->email}}" data-name="{{ $fetchedData->company->company_name ?? 'Unnamed Company' }}" class="clientemail" title="Compose Mail"><i class="fa fa-envelope"></i></a>
+                        <a href="javascript:;" class="send-sms-btn" data-client-id="{{@$fetchedData->id}}" data-client-name="{{ $fetchedData->company->company_name ?? 'Unnamed Company' }}" title="Send SMS"><i class="fas fa-sms"></i></a>
                         <a href="javascript:;" datatype="not_picked_call" class="not_picked_call" title="Not Picked Call"><i class="fas fa-mobile-alt"></i></a>
                         <a href="javascript:;" data-toggle="modal" data-target="#create_appoint" title="Add Appointment"><i class="fas fa-calendar-plus"></i></a>
                     </div>
@@ -308,7 +323,7 @@ use App\Http\Controllers\Controller;
             $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
             
             // Valid tab names that should NOT be treated as matter IDs
-            $validTabNames = ['personaldetails', 'noteterm', 'personaldocuments', 'visadocuments', 
+            $validTabNames = ['companydetails', 'noteterm', 'personaldocuments', 'visadocuments', 
                               'eoiroi', 'emails', 
                               'formgenerations', 'formgenerationsL', 'application','appointments'];
             
@@ -319,9 +334,9 @@ use App\Http\Controllers\Controller;
             if( $isMatterIdInUrl || $matter_cnt > 0 )
             {  //if client unique reference id is present in url
             ?>
-                <button class="client-nav-button active" data-tab="personaldetails">
-                    <i class="fas fa-user"></i>
-                    <span>Personal Details</span>
+                <button class="client-nav-button active" data-tab="companydetails">
+                    <i class="fas fa-building"></i>
+                    <span>Company Details</span>
                 </button>
                 <button class="client-nav-button" data-tab="noteterm">
                     <i class="fas fa-sticky-note"></i>
@@ -329,18 +344,8 @@ use App\Http\Controllers\Controller;
                 </button>
                 <button class="client-nav-button" data-tab="personaldocuments">
                     <i class="fas fa-folder-open"></i>
-                    <span>Personal Documents</span>
+                    <span>Company Documents</span>
                 </button>
-                <button class="client-nav-button" data-tab="visadocuments">
-                    <i class="fas fa-file-contract"></i>
-                    <span>Visa Documents</span>
-                </button>
-                @if(isset($isEoiMatter) && $isEoiMatter)
-                <button class="client-nav-button" data-tab="eoiroi">
-                    <i class="fas fa-passport"></i>
-                    <span>EOI / ROI</span>
-                </button>
-                @endif
                 <button class="client-nav-button" data-tab="account">
                     <i class="fas fa-file-invoice-dollar"></i>
                     <span>Account</span>
@@ -377,9 +382,9 @@ use App\Http\Controllers\Controller;
             else
             {  //If no matter is exist
             ?>
-                <button class="client-nav-button active" data-tab="personaldetails">
-                    <i class="fas fa-user"></i>
-                    <span>Personal Details</span>
+                <button class="client-nav-button active" data-tab="companydetails">
+                    <i class="fas fa-building"></i>
+                    <span>Company Details</span>
                 </button>
                 <button class="client-nav-button" data-tab="noteterm">
                     <i class="fas fa-sticky-note"></i>
@@ -387,7 +392,7 @@ use App\Http\Controllers\Controller;
                 </button>
                 <button class="client-nav-button" data-tab="personaldocuments">
                     <i class="fas fa-folder-open"></i>
-                    <span>Personal Documents</span>
+                    <span>Company Documents</span>
                 </button>
                 <button class="client-nav-button" data-tab="formgenerationsL">
                     <i class="fas fa-file-alt"></i>
@@ -413,7 +418,7 @@ use App\Http\Controllers\Controller;
         <div class="main-content-with-tabs">
             <!-- Tab Contents -->
             <div class="tab-content" id="tab-content">
-            @include('crm.clients.tabs.personal_details')
+            @include('crm.companies.tabs.company_details')
             
             @include('crm.clients.tabs.notes')
             
@@ -428,12 +433,6 @@ use App\Http\Controllers\Controller;
                 ->count();
             ?>
             @if((isset($id1) && $id1 != "") || $matter_cnt > 0)
-                @include('crm.clients.tabs.visa_documents')
-                
-                @if(isset($isEoiMatter) && $isEoiMatter)
-                    @include('crm.clients.tabs.eoi_roi')
-                @endif
-                
                 @include('crm.clients.tabs.account')
                 @include('crm.clients.tabs.emails')
                 @include('crm.clients.tabs.form_generation_client')
@@ -1401,7 +1400,7 @@ $(document).ready(function() {
         clientId: @json(($fetchedData->id ?? '')),
         encodeId: @json(($encodeId ?? '')),
         matterId: @json(($id1 ?? '')),
-        activeTab: @json(($activeTab ?? 'personaldetails')),
+        activeTab: @json(($activeTab ?? 'companydetails')),
         matterRefNo: @json(($id1 ?? '')),
         clientFirstName: @json(($fetchedData->first_name ?? 'user')),
         // SMS Template Variables

@@ -1023,6 +1023,9 @@
                 url: '{{ route("api.search.contact.person") }}',
                 dataType: 'json',
                 delay: 250,
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
                 data: function (params) {
                     return {
                         q: params.term, // search term
@@ -1030,19 +1033,47 @@
                     };
                 },
                 processResults: function (data) {
-                    return {
-                        results: data.results.map(function(item) {
-                            return {
-                                id: item.id,
-                                text: item.text,
-                                first_name: item.first_name,
-                                last_name: item.last_name,
-                                email: item.email,
-                                phone: item.phone,
-                                client_id: item.client_id
-                            };
-                        })
-                    };
+                    // Validate response format
+                    if (!data || typeof data !== 'object') {
+                        console.error('Invalid response format:', data);
+                        return { results: [] };
+                    }
+                    
+                    // Check if results array exists
+                    if (!data.results || !Array.isArray(data.results)) {
+                        console.warn('Response missing results array:', data);
+                        return { results: [] };
+                    }
+                    
+                    // Map results to Select2 format
+                    try {
+                        return {
+                            results: data.results.map(function(item) {
+                                return {
+                                    id: item.id,
+                                    text: item.text || (item.first_name + ' ' + item.last_name),
+                                    first_name: item.first_name || '',
+                                    last_name: item.last_name || '',
+                                    email: item.email || '',
+                                    phone: item.phone || '',
+                                    client_id: item.client_id || ''
+                                };
+                            })
+                        };
+                    } catch (error) {
+                        console.error('Error processing results:', error, data);
+                        return { results: [] };
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Contact person search error:', {
+                        status: status,
+                        error: error,
+                        response: xhr.responseText,
+                        statusCode: xhr.status
+                    });
+                    // Return empty results instead of showing error
+                    return { results: [] };
                 },
                 cache: true
             },
