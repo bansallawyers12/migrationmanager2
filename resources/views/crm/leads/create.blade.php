@@ -286,7 +286,7 @@
                                         <label for="companyName">Company Name <span class="text-danger">*</span></label>
                                         <input type="text" id="companyName" name="company_name" 
                                                value="{{ old('company_name') }}" 
-                                               class="company-field" required>
+                                               class="company-field company-required">
                                         @error('company_name')
                                             <span class="text-danger">{{ $message }}</span>
                                         @enderror
@@ -379,10 +379,9 @@
                                         <div class="form-group full-width">
                                             <label for="contactPersonEmail">Search Contact Person <span class="text-danger">*</span></label>
                                             <select id="contactPersonEmail" name="contact_person_id" 
-                                                    class="form-control select2-contact-person" 
+                                                    class="form-control select2-contact-person company-required" 
                                                     data-placeholder="Type phone, email, name, or client ID to search..."
-                                                    style="width: 100%;"
-                                                    required>
+                                                    style="width: 100%;">
                                                 @if(old('contact_person_id'))
                                                     @php
                                                         $oldContactPerson = \App\Models\Admin::find(old('contact_person_id'));
@@ -407,7 +406,7 @@
                                             <label for="contactPersonFirstName">First Name <span class="text-danger">*</span></label>
                                             <input type="text" id="contactPersonFirstName" name="contact_person_first_name" 
                                                    value="{{ old('contact_person_first_name') }}" 
-                                                   class="company-field contact-person-field" required readonly>
+                                                   class="company-field contact-person-field company-required" readonly>
                                             <small class="form-text text-muted">Auto-filled from selected contact person</small>
                                         </div>
                                         
@@ -415,7 +414,7 @@
                                             <label for="contactPersonLastName">Last Name <span class="text-danger">*</span></label>
                                             <input type="text" id="contactPersonLastName" name="contact_person_last_name" 
                                                    value="{{ old('contact_person_last_name') }}" 
-                                                   class="company-field contact-person-field" required readonly>
+                                                   class="company-field contact-person-field company-required" readonly>
                                         </div>
                                         
                                         <div class="form-group">
@@ -915,8 +914,12 @@
     function toggleCompanyFields(isCompany) {
         const personalFields = document.getElementById('personalFields');
         const companyFields = document.getElementById('companyFields');
+        
+        // Get all fields that should be required for personal leads
         const personalRequiredFields = personalFields ? personalFields.querySelectorAll('[required]') : [];
-        const companyRequiredFields = companyFields ? companyFields.querySelectorAll('[required]') : [];
+        
+        // Get all company required fields by class selector (more reliable than [required])
+        const companyRequiredFields = companyFields ? companyFields.querySelectorAll('.company-required') : [];
         
         if (isCompany) {
             // Show company fields, hide personal fields
