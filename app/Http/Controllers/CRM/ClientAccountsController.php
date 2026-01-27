@@ -1662,8 +1662,7 @@ class ClientAccountsController extends Controller
                               ]);
 
                           // Also update in account_all_invoice_receipts if it exists
-                          AccountAllInvoiceReceipt
-                              ->where('receipt_type', 3)
+                          AccountAllInvoiceReceipt::where('receipt_type', 3)
                               ->where('invoice_no', $invoiceNo)
                               ->where('client_id', $requestData['client_id'])
                               ->update([
@@ -2725,8 +2724,7 @@ class ClientAccountsController extends Controller
       }
       // ============= END BACKWARD COMPATIBILITY =============
       
-      $record_get = AccountAllInvoiceReceipt
-          ->where('receipt_type', 3)
+      $record_get = AccountAllInvoiceReceipt::where('receipt_type', 3)
           ->where('receipt_id', $id)
           ->where('client_id', $queryClientId)
           ->get();
@@ -2845,6 +2843,17 @@ class ClientAccountsController extends Controller
 
       //Calculate GST
       $total_GST_amount =  $total_Invoice_Amount - $total_Gross_Amount;
+
+      // FIX: Handle NULL values for amounts (prevent decimal casting errors in Blade template)
+      if ($total_Gross_Amount === null) {
+          $total_Gross_Amount = 0.00;
+      }
+      if ($total_Invoice_Amount === null) {
+          $total_Invoice_Amount = 0.00;
+      }
+      if ($total_GST_amount === null) {
+          $total_GST_amount = 0.00;
+      }
 
       //Total Pending Amount
       $total_Pending_amount = DB::table('account_client_receipts')
@@ -5358,6 +5367,20 @@ public function getInvoiceAmount(Request $request)
          })
          ->sum('balance_amount');
 
+         // FIX: Handle NULL values for amounts (prevent decimal casting errors in Blade template)
+         if ($total_Gross_Amount === null) {
+             $total_Gross_Amount = 0.00;
+         }
+         if ($total_Invoice_Amount === null) {
+             $total_Invoice_Amount = 0.00;
+         }
+         if ($total_GST_amount === null) {
+             $total_GST_amount = 0.00;
+         }
+         if ($total_Pending_amount === null) {
+             $total_Pending_amount = 0.00;
+         }
+
          // Get payment method
          $invoice_payment_method = '';
          if( !empty($record_get) && $record_get[0]->invoice_no != '') {
@@ -5572,7 +5595,17 @@ public function getInvoiceAmount(Request $request)
                 ->where('id', $record_get->client_id)
                 ->first();
 
-            if (!$clientname || empty($clientname->primary_email)) {
+            // FIX: Check both primary_email and email fields with fallback
+            $clientEmail = null;
+            if ($clientname) {
+                if (!empty($clientname->primary_email)) {
+                    $clientEmail = $clientname->primary_email;
+                } elseif (!empty($clientname->email)) {
+                    $clientEmail = $clientname->email;
+                }
+            }
+
+            if (!$clientname || empty($clientEmail)) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Client email not found'
@@ -5649,13 +5682,13 @@ public function getInvoiceAmount(Request $request)
                 'content' => $emailContent
             ];
 
-            Mail::to($clientname->primary_email)->queue(new \App\Mail\InvoiceEmailManager($invoiceArray));
+            Mail::to($clientEmail)->queue(new \App\Mail\InvoiceEmailManager($invoiceArray));
 
             // Log activity
             $objs = new ActivitiesLog;
             $objs->client_id = $record_get->client_id;
             $objs->created_by = Auth::user()->id;
-            $objs->description = 'Invoice #' . $invoiceNo . ' sent to client email: ' . $clientname->primary_email;
+            $objs->description = 'Invoice #' . $invoiceNo . ' sent to client email: ' . $clientEmail;
             $objs->subject = 'Invoice sent to client';
             $objs->task_status = 0;
             $objs->pin = 0;
@@ -5666,7 +5699,7 @@ public function getInvoiceAmount(Request $request)
 
             return response()->json([
                 'status' => true,
-                'message' => 'Invoice sent successfully to ' . $clientname->primary_email
+                'message' => 'Invoice sent successfully to ' . $clientEmail
             ]);
 
         } catch (\Exception $e) {
@@ -5702,7 +5735,17 @@ public function getInvoiceAmount(Request $request)
                 ->where('id', $record_get->client_id)
                 ->first();
 
-            if (!$clientname || empty($clientname->primary_email)) {
+            // FIX: Check both primary_email and email fields with fallback
+            $clientEmail = null;
+            if ($clientname) {
+                if (!empty($clientname->primary_email)) {
+                    $clientEmail = $clientname->primary_email;
+                } elseif (!empty($clientname->email)) {
+                    $clientEmail = $clientname->email;
+                }
+            }
+
+            if (!$clientname || empty($clientEmail)) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Client email not found'
@@ -5776,13 +5819,13 @@ public function getInvoiceAmount(Request $request)
                 'content' => $emailContent
             ];
 
-            Mail::to($clientname->primary_email)->queue(new \App\Mail\InvoiceEmailManager($invoiceArray));
+            Mail::to($clientEmail)->queue(new \App\Mail\InvoiceEmailManager($invoiceArray));
 
             // Log activity
             $objs = new ActivitiesLog;
             $objs->client_id = $record_get->client_id;
             $objs->created_by = Auth::user()->id;
-            $objs->description = 'Client fund receipt #' . $receiptNo . ' sent to client email: ' . $clientname->primary_email;
+            $objs->description = 'Client fund receipt #' . $receiptNo . ' sent to client email: ' . $clientEmail;
             $objs->subject = 'Client fund receipt sent to client';
             $objs->task_status = 0;
             $objs->pin = 0;
@@ -5790,7 +5833,7 @@ public function getInvoiceAmount(Request $request)
 
             return response()->json([
                 'status' => true,
-                'message' => 'Client fund receipt sent successfully to ' . $clientname->primary_email
+                'message' => 'Client fund receipt sent successfully to ' . $clientEmail
             ]);
 
         } catch (\Exception $e) {
@@ -5826,7 +5869,17 @@ public function getInvoiceAmount(Request $request)
                 ->where('id', $record_get->client_id)
                 ->first();
 
-            if (!$clientname || empty($clientname->primary_email)) {
+            // FIX: Check both primary_email and email fields with fallback
+            $clientEmail = null;
+            if ($clientname) {
+                if (!empty($clientname->primary_email)) {
+                    $clientEmail = $clientname->primary_email;
+                } elseif (!empty($clientname->email)) {
+                    $clientEmail = $clientname->email;
+                }
+            }
+
+            if (!$clientname || empty($clientEmail)) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Client email not found'
@@ -5900,13 +5953,13 @@ public function getInvoiceAmount(Request $request)
                 'content' => $emailContent
             ];
 
-            Mail::to($clientname->primary_email)->queue(new \App\Mail\InvoiceEmailManager($invoiceArray));
+            Mail::to($clientEmail)->queue(new \App\Mail\InvoiceEmailManager($invoiceArray));
 
             // Log activity
             $objs = new ActivitiesLog;
             $objs->client_id = $record_get->client_id;
             $objs->created_by = Auth::user()->id;
-            $objs->description = 'Office receipt #' . $receiptNo . ' sent to client email: ' . $clientname->primary_email;
+            $objs->description = 'Office receipt #' . $receiptNo . ' sent to client email: ' . $clientEmail;
             $objs->subject = 'Office receipt sent to client';
             $objs->task_status = 0;
             $objs->pin = 0;
@@ -5914,7 +5967,7 @@ public function getInvoiceAmount(Request $request)
 
             return response()->json([
                 'status' => true,
-                'message' => 'Office receipt sent successfully to ' . $clientname->primary_email
+                'message' => 'Office receipt sent successfully to ' . $clientEmail
             ]);
 
         } catch (\Exception $e) {

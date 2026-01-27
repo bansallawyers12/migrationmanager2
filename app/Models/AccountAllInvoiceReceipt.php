@@ -29,11 +29,13 @@ class AccountAllInvoiceReceipt extends Model
     ];
 
     protected $casts = [
-        'trans_date' => 'date',
-        'entry_date' => 'date',
-        'withdraw_amount' => 'decimal:2',
-        'withdraw_amount_before_void' => 'decimal:2',
-        'gst_included' => 'decimal:2',
+        // Removed all date and decimal casts to prevent parsing/casting errors
+        // All formatting is handled robustly in the view layer with proper NULL handling
+        // 'trans_date' => 'date',  // REMOVED: dates stored in d/m/Y format
+        // 'entry_date' => 'date',  // REMOVED: dates stored in d/m/Y format
+        // 'withdraw_amount' => 'decimal:2',  // REMOVED: causes cast errors on NULL
+        // 'withdraw_amount_before_void' => 'decimal:2',  // REMOVED: causes cast errors on NULL
+        // 'gst_included' => 'decimal:2',  // REMOVED: causes cast errors on NULL
     ];
 
     /**
