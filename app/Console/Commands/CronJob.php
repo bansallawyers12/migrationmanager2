@@ -4,9 +4,9 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use DB;
 use App\Models\Admin;
-use App\Models\InvoiceFollowup;
 // use App\Models\EmailTemplate; // REMOVED: email_templates table has been deleted
-use App\Models\ShareInvoice;
+// use App\Models\InvoiceFollowup; // REMOVED: InvoiceFollowup model has been deleted
+// use App\Models\ShareInvoice; // REMOVED: ShareInvoice model has been deleted
  use PDF;
  use DateTime;
  use App\Mail\CommonMail;

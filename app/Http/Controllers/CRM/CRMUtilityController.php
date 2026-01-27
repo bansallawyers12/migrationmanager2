@@ -11,7 +11,9 @@ use Illuminate\Support\Facades\Redirect;
 
 use App\Models\Lead;
 use App\Models\Admin;
+use App\Models\Country;
 // use App\Models\WebsiteSetting; // removed website settings dependency
+// use App\Models\State; // REMOVED: State model has been deleted
 use PDF;
 use App\Models\Setting;
 use Auth;
@@ -287,6 +289,10 @@ class CRMUtilityController extends Controller
 				}
 			/* Logoe Upload Function End */
 
+			// DISABLED: WebsiteSetting model has been removed
+			return redirect()->back()->with('error', 'Website settings functionality has been disabled - WebsiteSetting model has been removed');
+			
+			/* DISABLED CODE
 			if(!empty(@$requestData['id']))
 			{
 				$obj				= 	WebsiteSetting::find(@$requestData['id']);
@@ -310,12 +316,17 @@ class CRMUtilityController extends Controller
 			{
 				return Redirect::to('/website_setting')->with('success', 'Website Setting has been edited successfully.');
 			}
+			*/
 		}
 		else
 		{
+			// DISABLED: WebsiteSetting model has been removed
+			return redirect()->back()->with('error', 'Website settings functionality has been disabled - WebsiteSetting model has been removed');
+			
+			/* DISABLED CODE
 			$fetchedData = WebsiteSetting::first();
-
 			return view('crm.website_setting', compact(['fetchedData']));
+			*/
 		}
 	}
 
@@ -929,6 +940,12 @@ class CRMUtilityController extends Controller
 
 				if($recordExist)
 				{
+					// DISABLED: State model has been removed
+					$data = [];
+					$status = 0;
+					$message = 'State functionality has been disabled - State model has been removed';
+					
+					/* DISABLED CODE
 					$data 	= 	State::where('country_id', '=', $requestData['id'])->get();
 
 					if($data)
@@ -940,6 +957,7 @@ class CRMUtilityController extends Controller
 					{
 						$message = config('constants.server_error');
 					}
+					*/
 				}
 				else
 				{
@@ -1028,6 +1046,12 @@ class CRMUtilityController extends Controller
 
 				if($recordExist)
 				{
+					// DISABLED: State model has been removed
+					$data = [];
+					$status = 0;
+					$message = 'State functionality has been disabled - State model has been removed';
+					
+					/* DISABLED CODE
 					$data 	= 	State::where('country_id', '=', $requestData['id'])->get();
 
 					if($data)
@@ -1039,6 +1063,7 @@ class CRMUtilityController extends Controller
 					{
 						$message = config('constants.server_error');
 					}
+					*/
 				}
 				else
 				{

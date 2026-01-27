@@ -16,6 +16,8 @@ use App\Models\ActivitiesLog;
 use App\Models\ClientPortalDetailAudit;
 use App\Models\ClientMatter;
 use App\Models\WorkflowStage;
+use App\Models\Message;
+use App\Models\MessageRecipient;
 use App\Events\MessageSent;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
@@ -334,7 +336,7 @@ class ClientPortalController extends Controller
 
                 if ($messageId) {
                     // Insert recipient into pivot table
-                    DB::table('message_recipients')->insert([
+                    MessageRecipient->insert([
                         'message_id' => $messageId,
                         'recipient_id' => $clientId,
                         'recipient' => $client->first_name . ' ' . $client->last_name,
@@ -505,7 +507,7 @@ class ClientPortalController extends Controller
 
                 if ($messageId) {
                     // Insert recipient into pivot table
-                    DB::table('message_recipients')->insert([
+                    MessageRecipient->insert([
                         'message_id' => $messageId,
                         'recipient_id' => $clientId,
                         'recipient' => $client->first_name . ' ' . $client->last_name,
@@ -2007,7 +2009,7 @@ class ClientPortalController extends Controller
 					}
 
 					// Get all recipients for this message
-					$recipients = DB::table('message_recipients')
+					$recipients = MessageRecipient
 						->where('message_id', $message->id)
 						->get()
 						->map(function ($recipient) {
@@ -2176,7 +2178,7 @@ class ClientPortalController extends Controller
 
 			if ($messageId) {
 				// Insert recipient into pivot table
-				DB::table('message_recipients')->insert([
+				MessageRecipient->insert([
 					'message_id' => $messageId,
 					'recipient_id' => $clientId,
 					'recipient' => $recipientUser->full_name,

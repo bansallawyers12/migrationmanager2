@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Admin;
 use App\Models\Note;
 use App\Models\ActivitiesLog;
-use App\Models\OnlineForm;
+// use App\Models\OnlineForm; // REMOVED: OnlineForm model has been deleted
 use App\Models\ClientMatter;
 use App\Traits\LogsClientActivity;
 use Auth;
@@ -546,9 +546,15 @@ class ClientNotesController extends Controller
      * 
      * @param Request $request
      * @return redirect
+     * 
+     * REMOVED: OnlineForm model has been deleted - this method is disabled
      */
     public function saveonlineform(Request $request)
     {
+    	// DISABLED: OnlineForm model has been removed
+    	return redirect()->back()->with('error', 'Online form functionality has been disabled - OnlineForm model has been removed');
+    	
+    	/* DISABLED CODE - OnlineForm model removed
     	   $requestData 		= 	$request->all();
     	   if(OnlineForm::where('client_id', $requestData['client_id'])->where('type', $requestData['type'])->exists()){
     	     $OnlineForm =  OnlineForm::where('client_id', $requestData['client_id'])->where('type', $requestData['type'])->first();
@@ -617,6 +623,7 @@ class ClientNotesController extends Controller
     	     }else{
     	         return redirect()->back()->with('error', config('constants.server_error'));
     	     }
+    	*/
     	}
 }
 

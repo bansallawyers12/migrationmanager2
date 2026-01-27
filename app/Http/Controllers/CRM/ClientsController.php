@@ -13,7 +13,7 @@ use App\Models\Admin;
 use App\Models\Company;
 use App\Models\Lead;
 use App\Models\ActivitiesLog;
-use App\Models\OnlineForm;
+// use App\Models\OnlineForm; // REMOVED: OnlineForm model has been deleted
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade as PDF;
 use App\Models\CheckinLog;
@@ -26,7 +26,6 @@ use App\Models\Matter;
 use App\Models\ClientMatter;
 use App\Models\Branch;
 
-use App\Models\FileStatus;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Mail;
@@ -53,7 +52,6 @@ use App\Models\AppointmentConsultant; // Import the AppointmentConsultant model
 
 use App\Models\EmailRecord;
 use App\Models\ClientPoint;
-use App\Models\VisaDocChecklist;
 use Carbon\Carbon;
 use Illuminate\Validation\Rule;
 
