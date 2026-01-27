@@ -1,20 +1,6 @@
-<!-- Appointment Modal -->
-<div class="modal fade custom_modal" id="edit_appointment" tabindex="-1" role="dialog" aria-labelledby="create_interestModalLabel" aria-hidden="true">
-	<div class="modal-dialog modal-lg">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title" id="interestModalLabel">Edit Appointment</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-					<span aria-hidden="true">&times;</span>
-				</button> 
-			</div>
-			<div class="modal-body showappointmentdetail">
-				<h4>Please Wait ......</h4>
-			</div>
-			
-		</div>
-	</div>
-</div>
+<!-- REMOVED: Old appointment edit modal - no longer supported -->
+<!-- The current appointment system uses BookingAppointment model (synced from Bansal website) -->
+<!-- and does not have edit functionality through the CRM interface -->
 
 <!-- Note & Terms Modal -->
 <div class="modal fade custom_modal" id="edit_note" tabindex="-1" role="dialog" aria-labelledby="create_noteModalLabel" aria-hidden="true">
