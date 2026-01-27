@@ -297,9 +297,9 @@ class LeadController extends Controller
             $requestData = $request->all();
             
             // Check if this is a company lead
-            $isCompany = $request->input('is_company', false) == 'yes' || 
-                         $request->input('is_company') == true || 
-                         $request->input('is_company') == 1;
+            $isCompany = $request->input('is_company') === 'yes' || 
+                         $request->input('is_company') === true || 
+                         $request->input('is_company') === 1;
             
             // Extract phone and email (now only one of each)
             $primaryPhone = $requestData['phone'][0] ?? null;
