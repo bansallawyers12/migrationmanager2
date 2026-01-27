@@ -1316,6 +1316,11 @@ $(document).ready(function() {
         csrfToken: @json(csrf_token()),
         currentDate: @json(date('Y-m-d')),
         appId: @json(($_GET['appid'] ?? '')),
+        // AWS Configuration for document URLs
+        aws: {
+            bucket: @json(env('AWS_BUCKET', '')),
+            region: @json(env('AWS_DEFAULT_REGION', 'ap-southeast-2'))
+        },
         urls: {
             base: '{{ URL::to("/") }}',
             admin: '{{ URL::to("/") }}',

@@ -9182,43 +9182,99 @@ Bansal Immigration`;
                     $('#confirmNotUseDocModal').modal('hide');
 
                     if(res.status){
+                        console.log('✓ Document moved to Not Used tab successfully', {doc_id: res.doc_id, doc_type: res.doc_type});
 
+                        // Remove document from current tab (Personal or Visa)
                         if(res.doc_type == 'personal') {
-
                             $('.documnetlist_'+res.doc_category+' #id_'+res.doc_id).remove();
-
                         } else if( res.doc_type == 'visa') {
-
                             $('.migdocumnetlist1 #id_'+res.doc_id).remove();
-
                         }
 
-                        localStorage.setItem('activeTab', 'documentalls');
+                        // Add document to "Not Used" tab dynamically
+                        if(res.docInfo) {
+                            var doc = res.docInfo;
+                            
+                            // Construct file URL (same logic as blade template)
+                            var fileUrl = '';
+                            var filePreviewPath = '';
+                            if(doc.myfile_key && doc.myfile_key !== "") {
+                                // New file upload
+                                fileUrl = doc.myfile;
+                                filePreviewPath = doc.myfile;
+                            } else {
+                                // Old file upload
+                                var awsBucket = window.ClientDetailConfig?.aws?.bucket || '';
+                                var awsRegion = window.ClientDetailConfig?.aws?.region || 'ap-southeast-2';
+                                var clientId = window.ClientDetailConfig?.clientId || '';
+                                fileUrl = 'https://' + awsBucket + '.s3.' + awsRegion + '.amazonaws.com/' + clientId + '/' + doc.doc_type + '/' + doc.myfile;
+                                filePreviewPath = fileUrl;
+                            }
+                            
+                            // Build the row HTML matching the blade template structure
+                            var uploadedBy = res.Added_By || 'NA';
+                            var uploadedDate = doc.created_at ? new Date(doc.created_at).toLocaleString() : '';
+                            var uploadTitle = 'Uploaded by: ' + uploadedBy + (uploadedDate ? ' on ' + uploadedDate : '');
+                            var badgeClass = doc.doc_type === 'personal' ? 'primary' : 'success';
+                            var fileName = doc.file_name || 'document';
+                            var fileExt = doc.filetype || '';
+                            
+                            var trRow = '<tr class="drow" id="id_' + doc.id + '">' +
+                                '<td style="white-space: initial;">' +
+                                    '<span title="' + uploadTitle + '">' + (doc.checklist || 'N/A') + '</span>' +
+                                '</td>' +
+                                '<td style="white-space: initial;">' +
+                                    '<span class="badge badge-' + badgeClass + '">' + (doc.doc_type ? doc.doc_type.charAt(0).toUpperCase() + doc.doc_type.slice(1) : 'N/A') + '</span>' +
+                                '</td>' +
+                                '<td style="white-space: initial;">';
+                            
+                            if(fileName && fileName !== "") {
+                                trRow += '<div data-id="' + doc.id + '" data-name="' + fileName + '" class="doc-row" title="' + uploadTitle + '" ' +
+                                    'oncontextmenu="showNotUsedFileContextMenu(event, ' + doc.id + ', \'' + fileExt + '\', \'' + fileUrl + '\', \'' + doc.doc_type + '\', \'' + (doc.status || 'draft') + '\'); return false;">' +
+                                    '<a href="javascript:void(0);" onclick="previewFile(\'' + fileExt + '\',\'' + filePreviewPath + '\',\'preview-container-notuseddocumnetlist\')">' +
+                                        '<i class="fas fa-file-image"></i> <span>' + fileName + '.' + fileExt + '</span>' +
+                                    '</a>' +
+                                '</div>';
+                            } else {
+                                trRow += 'N/A';
+                            }
+                            
+                            trRow += '</td>' +
+                                '<td>' +
+                                    '<a data-id="' + doc.id + '" class="deletenote" data-doccategory="' + doc.doc_type + '" data-href="deletedocs" href="javascript:;" style="display: none;"></a>' +
+                                    '<a data-id="' + doc.id + '" class="backtodoc" data-doctype="' + doc.doc_type + '" data-href="backtodoc" href="javascript:;" style="display: none;"></a>' +
+                                '</td>' +
+                            '</tr>';
 
-                        location.reload();
-
-                        /*if(res.docInfo) {
-
-                            var subArray = res.docInfo;
-
-                            var trRow = "";
-
-                            trRow += "<tr class='drow' id='id_"+subArray.id+"'><td>"+subArray.checklist+"</td><td>"+subArray.doc_type+"</td><td>"+res.Added_By+"</td><td>"+res.Added_date+"</td><td><i class='fas fa-file-image'></i> <span>"+subArray.file_name+'.'+subArray.filetype+"</span></div></td><td>"+res.Verified_By+"</td><td>"+res.Verified_At+"</td></tr>";
-
+                            // Append to Not Used documents list
                             $('.notuseddocumnetlist').append(trRow);
+                            
+                            console.log('✓ Document row added to Not Used tab', {doc_id: doc.id});
+                        }
 
-                        }*/
-
+                        // Update activity log without page reload
                         getallactivities();
+                        
+                        // Show success message
+                        if(typeof toastr !== 'undefined') {
+                            toastr.success('Document moved to Not Used tab');
+                        }
 
+                    } else {
+                        console.error('✗ Failed to move document to Not Used tab', res);
+                        if(typeof toastr !== 'undefined') {
+                            toastr.error(res.message || 'Failed to move document');
+                        }
                     }
 
                 },
 
                 error: function(xhr, status, error) {
-
                     $('.popuploader').hide();
-
+                    console.error('✗ AJAX error moving document to Not Used tab', {status: status, error: error});
+                    if(typeof toastr !== 'undefined') {
+                        toastr.error('Error moving document. Please try again.');
+                    }
                 }
 
             });
@@ -9276,33 +9332,37 @@ Bansal Immigration`;
                     $('#confirmBackToDocModal').modal('hide');
 
                     if(res.status){
+                        console.log('✓ Document moved back from Not Used tab successfully', {doc_id: res.doc_id, doc_type: res.doc_type});
 
-                        //if(res.doc_type == 'documents') {
+                        // Remove document from "Not Used" tab
+                        $('.notuseddocumnetlist #id_'+res.doc_id).remove();
 
-                            $('.notuseddocumnetlist #id_'+res.doc_id).remove();
-
-                        //}
-
-                        localStorage.setItem('activeTab', 'documentalls');
-
-                        location.reload();
-
-                        /*if(res.docInfo) {
-
-                            var subArray = res.docInfo;
-
-                            var trRow = "";
-
-                            trRow += "<tr class='drow' id='id_"+subArray.id+"'><td>"+subArray.checklist+"</td><td>"+ res.Added_By + "<br>" + res.Added_date+"</td><td><i class='fas fa-file-image'></i> <span>"+subArray.file_name+'.'+subArray.filetype+"</span></div></td><td>"+res.Verified_By+ "<br>" +res.Verified_At+"</td></tr>";
-
-                            $('.notuseddocumnetlist').append(trRow);
-
-                        }*/
-
+                        // Update activity log without page reload
                         getallactivities();
+                        
+                        // Show success message with info
+                        var docTypeLabel = res.doc_type === 'personal' ? 'Personal Documents' : 'Visa Documents';
+                        if(typeof toastr !== 'undefined') {
+                            toastr.success('Document moved back to ' + docTypeLabel + ' tab');
+                        }
+                        
+                        console.log('✓ Document is now available in ' + docTypeLabel + ' tab');
 
+                    } else {
+                        console.error('✗ Failed to move document back', res);
+                        if(typeof toastr !== 'undefined') {
+                            toastr.error(res.message || 'Failed to move document back');
+                        }
                     }
 
+                },
+
+                error: function(xhr, status, error) {
+                    $('.popuploader').hide();
+                    console.error('✗ AJAX error moving document back', {status: status, error: error});
+                    if(typeof toastr !== 'undefined') {
+                        toastr.error('Error moving document back. Please try again.');
+                    }
                 }
 
             });
