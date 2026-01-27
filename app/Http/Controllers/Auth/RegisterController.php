@@ -95,18 +95,7 @@ class RegisterController extends Controller
 		
 		if($result)
 		{	
-			// DISABLED: VerifyUser model has been removed - email verification disabled
-			// $verifyUser = VerifyUser::create([
-			// 	'user_id' => $result->id,
-			// 	'token' => Str::random(40)
-			// ]);
-			// $tokenurl = \URL::to('/user/verify/'.$verifyUser->token);
-			// $replaceav = array('{company_logo}','{emailid}','{tokenemail}');
-			// $replace_withav = array(\URL::to('/').'/public/img/logo.png', @$result->email, $tokenurl);			
-			// // email_templates table has been deleted - using fallback subject
-			// $emailtemplate	= 	DB::table('email_templates')->where('alias', 'verify-email')->first();
-			// $subContentav 	= 	$emailtemplate ? $emailtemplate->subject : 'Please verify your email address';
-			// $issuccess = $this->send_email_template($replaceav, $replace_withav, 'verify-email', @$result->email,$subContentav, config('mail.from.address'));
+			// Email verification disabled - VerifyUser model has been removed
 			return $result;
 		}
     }
@@ -121,25 +110,7 @@ class RegisterController extends Controller
 	  */
 	 public function verifyUser($token)
     {
-        // DISABLED: VerifyUser model has been removed
+        // Email verification disabled - VerifyUser model has been removed
         return redirect()->route('dashboard')->with('warning', "Email verification has been disabled - VerifyUser model has been removed");
-        
-        /* DISABLED CODE
-        $verifyUser = VerifyUser::where('token', $token)->first();
-        if(isset($verifyUser) ){
-            $user = $verifyUser->user;
-            if($user->verified != 1) {
-                $verifyUser->user->verified = 1;
-                $verifyUser->user->save();
-                $status = "Your e-mail is verified. You can now login.";
-            }else{
-                $status = "Your e-mail is already verified. You can now login.";
-            }
-        }else{
-            return redirect()->route('dashboard')->with('warning', "Sorry your email cannot be identified.");
-        }
-
-        return redirect()->route('dashboard')->with('success', $status);
-        */
     }
 }

@@ -289,45 +289,14 @@ class CRMUtilityController extends Controller
 				}
 			/* Logoe Upload Function End */
 
-			// DISABLED: WebsiteSetting model has been removed
-			return redirect()->back()->with('error', 'Website settings functionality has been disabled - WebsiteSetting model has been removed');
-			
-			/* DISABLED CODE
-			if(!empty(@$requestData['id']))
-			{
-				$obj				= 	WebsiteSetting::find(@$requestData['id']);
-			}
-			else
-			{
-				$obj				= 	new WebsiteSetting;
-			}
-			$obj->phone				=	@$requestData['phone'];
-			$obj->ofc_timing		=	@$requestData['ofc_timing'];
-			$obj->email				=	@$requestData['email'];
-			$obj->logo				=	@$logo;
-
-			$saved							=	$obj->save();
-
-			if(!$saved)
-			{
-				return redirect()->back()->with('error', config('constants.server_error'));
-			}
-			else
-			{
-				return Redirect::to('/website_setting')->with('success', 'Website Setting has been edited successfully.');
-			}
-			*/
+		// Website settings functionality disabled - WebsiteSetting model has been removed
+		return redirect()->back()->with('error', 'Website settings functionality has been disabled - WebsiteSetting model has been removed');
 		}
-		else
-		{
-			// DISABLED: WebsiteSetting model has been removed
-			return redirect()->back()->with('error', 'Website settings functionality has been disabled - WebsiteSetting model has been removed');
-			
-			/* DISABLED CODE
-			$fetchedData = WebsiteSetting::first();
-			return view('crm.website_setting', compact(['fetchedData']));
-			*/
-		}
+	else
+	{
+		// Website settings functionality disabled - WebsiteSetting model has been removed
+		return redirect()->back()->with('error', 'Website settings functionality has been disabled - WebsiteSetting model has been removed');
+	}
 	}
 
 	public function editapi(Request $request)
@@ -938,31 +907,12 @@ class CRMUtilityController extends Controller
 			{
 				$recordExist = Country::where('id', $requestData['id'])->exists();
 
-				if($recordExist)
-				{
-					// DISABLED: State model has been removed
-					$data = [];
-					$status = 0;
-					$message = 'State functionality has been disabled - State model has been removed';
-					
-					/* DISABLED CODE
-					$data 	= 	State::where('country_id', '=', $requestData['id'])->get();
-
-					if($data)
-					{
-						$status = 1;
-						$message = 'Record has been fetched successfully.';
-					}
-					else
-					{
-						$message = config('constants.server_error');
-					}
-					*/
-				}
-				else
-				{
-					$message = 'ID does not exist, please check it once again.';
-				}
+			if($recordExist)
+			{
+				// State functionality disabled - State model has been removed
+				$data = [];
+				$status = 0;
+				$message = 'State functionality has been disabled - State model has been removed';
 			}
 			else
 			{
@@ -971,13 +921,18 @@ class CRMUtilityController extends Controller
 		}
 		else
 		{
-			$message = config('constants.post_method');
+			$message = 'ID does not exist, please check it once again.';
 		}
-		echo json_encode(array('status'=>$status, 'message'=>$message, 'data'=>$data));
-		die;
 	}
+	else
+	{
+		$message = config('constants.post_method');
+	}
+	echo json_encode(array('status'=>$status, 'message'=>$message, 'data'=>$data));
+	die;
+}
 
-	public function getChapters(Request $request)
+public function getChapters(Request $request)
 	{
 		$status 			= 	0;
 		$data				=	array();
@@ -1042,33 +997,14 @@ class CRMUtilityController extends Controller
 
 			if(isset($requestData['id']) && !empty($requestData['id']))
 			{
-				$recordExist = Country::where('id', $requestData['id'])->exists();
+			$recordExist = Country::where('id', $requestData['id'])->exists();
 
-				if($recordExist)
-				{
-					// DISABLED: State model has been removed
-					$data = [];
-					$status = 0;
-					$message = 'State functionality has been disabled - State model has been removed';
-					
-					/* DISABLED CODE
-					$data 	= 	State::where('country_id', '=', $requestData['id'])->get();
-
-					if($data)
-					{
-						$status = 1;
-						$message = 'Record has been fetched successfully.';
-					}
-					else
-					{
-						$message = config('constants.server_error');
-					}
-					*/
-				}
-				else
-				{
-					$message = 'ID does not exist, please check it once again.';
-				}
+			if($recordExist)
+			{
+				// State functionality disabled - State model has been removed
+				$data = [];
+				$status = 0;
+				$message = 'State functionality has been disabled - State model has been removed';
 			}
 			else
 			{
@@ -1077,13 +1013,18 @@ class CRMUtilityController extends Controller
 		}
 		else
 		{
-			$message = config('constants.post_method');
+			$message = 'ID does not exist, please check it once again.';
 		}
-		echo json_encode(array('status'=>$status, 'message'=>$message, 'data'=>$data));
-		die;
 	}
+	else
+	{
+		$message = config('constants.post_method');
+	}
+	echo json_encode(array('status'=>$status, 'message'=>$message, 'data'=>$data));
+	die;
+}
 
-	public function getpartnerbranch(Request $request){
+public function getpartnerbranch(Request $request){
 		$catid = $request->cat_id;
 		// Partner functionality removed - no partners available
 		ob_start();

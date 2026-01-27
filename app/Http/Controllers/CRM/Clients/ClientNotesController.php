@@ -551,79 +551,8 @@ class ClientNotesController extends Controller
      */
     public function saveonlineform(Request $request)
     {
-    	// DISABLED: OnlineForm model has been removed
+    	// Online form functionality disabled - OnlineForm model has been removed
     	return redirect()->back()->with('error', 'Online form functionality has been disabled - OnlineForm model has been removed');
-    	
-    	/* DISABLED CODE - OnlineForm model removed
-    	   $requestData 		= 	$request->all();
-    	   if(OnlineForm::where('client_id', $requestData['client_id'])->where('type', $requestData['type'])->exists()){
-    	     $OnlineForm =  OnlineForm::where('client_id', $requestData['client_id'])->where('type', $requestData['type'])->first();
-    	     $obj = OnlineForm::find($OnlineForm->id);
-    	   }else{
-    	       $obj = New OnlineForm;
-    	   }
-
-		   $parent_dob = '';
-	        if($requestData['parent_dob'] != ''){
-	           $dobs = explode('/', $requestData['parent_dob']);
-	          $parent_dob = $dobs[2].'-'.$dobs[1].'-'. $dobs[0];
-	        }
-
-			 $parent_dob_2 = '';
-	        if($requestData['parent_dob_2'] != ''){
-	           $dobs = explode('/', $requestData['parent_dob_2']);
-	          $parent_dob_2 = $dobs[2].'-'.$dobs[1].'-'. $dobs[0];
-	        }
-			$sibling_dob = '';
-	        if($requestData['sibling_dob'] != ''){
-	           $dobs = explode('/', $requestData['sibling_dob']);
-	          $sibling_dob = $dobs[2].'-'.$dobs[1].'-'. $dobs[0];
-	        }
-			$sibling_dob_2 = '';
-	        if($requestData['sibling_dob_2'] != ''){
-	           $dobs = explode('/', $requestData['sibling_dob_2']);
-	          $sibling_dob_2 = $dobs[2].'-'.$dobs[1].'-'. $dobs[0];
-	        }
-
-                $obj->client_id = $requestData['client_id'];
-                $obj->type = $requestData['type'];
-                $obj->info_name = $requestData['info_name'];
-                $obj->main_lang = implode(',', $requestData['main_lang']);
-                $obj->marital_status = $requestData['marital_status'];
-                $obj->mobile = $requestData['mobile'];
-                $obj->curr_address = $requestData['curr_address'];
-                $obj->email = $requestData['email'];
-                $obj->parent_name = $requestData['parent_name'];
-                $obj->parent_dob = $parent_dob;
-                $obj->parent_occ = $requestData['parent_occ'];
-                $obj->parent_country = $requestData['parent_country'];
-                $obj->parent_name_2 = $requestData['parent_name_2'];
-                $obj->parent_dob_2 = $parent_dob_2;
-                $obj->parent_occ_2 = $requestData['parent_occ_2'];
-                $obj->parent_country_2 = $requestData['parent_country_2'];
-                $obj->sibling_name = $requestData['sibling_name'];
-                $obj->sibling_dob = $sibling_dob;
-                $obj->sibling_occ = $requestData['sibling_occ'];
-                $obj->sibling_gender = $requestData['sibling_gender'];
-                $obj->sibling_country = $requestData['sibling_country'];
-                $obj->sibling_marital = $requestData['sibling_marital'];
-                $obj->sibling_name_2 = $requestData['sibling_name_2'];
-                $obj->sibling_dob_2 = $sibling_dob_2;
-                $obj->sibling_occ_2 = $requestData['sibling_occ_2'];
-                $obj->sibling_gender_2 = $requestData['sibling_gender_2'];
-                $obj->sibling_country_2 = $requestData['sibling_country_2'];
-                $obj->sibling_marital_2 = $requestData['sibling_marital_2'];
-                $obj->held_visa = $requestData['held_visa'];
-                $obj->visa_refused = $requestData['visa_refused'];
-                $obj->traveled = $requestData['traveled'];
-
-    	     $save = $obj->save();
-    	     if($save){
-    	         return Redirect::to('/clients/detail/'.base64_encode(convert_uuencode(@$requestData['client_id'])))->with('success', 'Record Updated Successfully');
-    	     }else{
-    	         return redirect()->back()->with('error', config('constants.server_error'));
-    	     }
-    	*/
     	}
 }
 

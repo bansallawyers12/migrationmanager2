@@ -6399,35 +6399,6 @@ class ClientsController extends Controller
                 }
             }
 
-            //accounts - DISABLED: invoices table has been deleted
-            /* $accounts = DB::table('invoices')->where('client_id', $request->merge_from)->get(); //dd($accounts);
-            if(!empty($accounts)){
-                foreach($accounts as $acckey=>$accval){
-                    DB::table('invoices')->insert(
-                        [
-                            'invoice_no'=> $accval->invoice_no,
-                            'user_id' => $accval->user_id,
-                            'client_id' => $request->merge_into,
-                            'application_id' => $accval->application_id,
-                            'type' => $accval->type,
-                            'invoice_date' => $accval->invoice_date,
-                            'due_date' => $accval->due_date,
-                            'discount' => $accval->discount,
-                            'discount_date' => $accval->discount_date,
-                            'net_fee_rec' => $accval->net_fee_rec,
-                            'notes' => $accval->notes,
-                            'payment_option' => $accval->payment_option,
-                            'attachments' => $accval->attachments,
-                            'status' => $accval->status,
-                            'currency' => $accval->currency,
-                            'created_at' => $accval->created_at,
-                            'updated_at' => $accval->updated_at,
-                            'profile' => $accval->profile
-                        ]
-                    );
-                }
-            } */
-
             // Email history (mail_reports)
             $conversations = DB::table('mail_reports')->where('client_id', $request->merge_from)->get(); //dd($conversations);
             if(!empty($conversations)){
@@ -6487,50 +6458,6 @@ class ClientsController extends Controller
             $prevHis = DB::table('admins')->where('id', $request->merge_from)->select('id','prev_visa')->get(); //dd($prevHis);
             if(!empty($prevHis)){
                DB::table('admins')->where('id',$request->merge_into)->update( array('prev_visa'=>$prevHis[0]->prev_visa) );
-            }
-
-            //Client Info Form
-            $clientInfo = DB::table('online_forms')->where('client_id', $request->merge_from)->get(); //dd($clientInfo);
-            if(!empty($clientInfo)){
-                foreach($clientInfo as $clientkey=>$clientval){
-                    DB::table('online_forms')->insert(
-                        [
-                             'client_id' => $request->merge_into,
-                             'type' => $clientval->type,
-                             'info_name' => $clientval->info_name,
-                             'main_lang' => $clientval->main_lang,
-                             'marital_status' => $clientval->marital_status,
-                             'mobile' => $clientval->mobile,
-                             'curr_address' => $clientval->curr_address,
-                             'email' => $clientval->email,
-                             'parent_name' => $clientval->parent_name,
-                             'parent_dob' => $clientval->parent_dob,
-                             'parent_occ' => $clientval->parent_occ,
-                             'parent_country' => $clientval->parent_country,
-                             'parent_name_2' => $clientval->parent_name_2,
-                             'parent_dob_2' => $clientval->parent_dob_2,
-                             'parent_occ_2' => $clientval->parent_occ_2,
-                             'parent_country_2' => $clientval->parent_country_2,
-                             'sibling_name' => $clientval->sibling_name,
-                             'sibling_dob' => $clientval->sibling_dob,
-                             'sibling_occ' => $clientval->sibling_occ,
-                             'sibling_gender' => $clientval->sibling_gender,
-                             'sibling_country' => $clientval->sibling_country,
-                             'sibling_marital' => $clientval->sibling_marital,
-                             'sibling_name_2' => $clientval->sibling_name_2,
-                             'sibling_dob_2' => $clientval->sibling_dob_2,
-                             'sibling_occ_2' => $clientval->sibling_occ_2,
-                             'sibling_gender_2' => $clientval->sibling_gender_2,
-                             'sibling_country_2' => $clientval->sibling_country_2,
-                             'sibling_marital_2' => $clientval->sibling_marital_2,
-                             'held_visa' => $clientval->held_visa,
-                             'visa_refused' => $clientval->visa_refused,
-                             'traveled' => $clientval->traveled,
-                             'created_at' => $clientval->created_at,
-                             'updated_at' => $clientval->updated_at
-                        ]
-                    );
-                }
             }
         }
         $response['status'] 	= 	true;
