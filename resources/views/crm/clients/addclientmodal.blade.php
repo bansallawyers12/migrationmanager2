@@ -8,8 +8,7 @@
 
 <!-- All Task-Related Modals removed - old Task system no longer used -->
 
-<!-- Education Modal moved to resources/views/Admin/clients/modals/education.blade.php -->
-@include('crm.clients.modals.education')
+<!-- Education Modal removed - education system deprecated (replaced by ClientQualification) -->
 
 <!-- Financial & Invoicing Modals moved to resources/views/Admin/clients/modals/financial.blade.php -->
 @include('crm.clients.modals.financial')

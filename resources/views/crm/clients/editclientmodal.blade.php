@@ -342,22 +342,7 @@
 </div>
 
 
-<!-- Education Modal -->
-<div class="modal fade  custom_modal" id="edit_education" tabindex="-1" role="dialog" aria-labelledby="create_educationModalLabel" aria-hidden="true">
-	<div class="modal-dialog modal-lg">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title" id="appliationModalLabel">Edit Education</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-					<span aria-hidden="true">&times;</span>
-				</button>
-			</div>
-			<div class="modal-body showeducationdetail">
-				<h4>Please wait ...</h4>
-			</div>
-		</div>
-	</div>
-</div> 
+<!-- Education Modal removed - education system deprecated (replaced by ClientQualification in edit.blade.php) -->
 
 <!-- Interested Service Modal -->
 <div class="modal fade  custom_modal" id="eidt_interested_service" tabindex="-1" role="dialog" aria-labelledby="create_interestModalLabel" aria-hidden="true">

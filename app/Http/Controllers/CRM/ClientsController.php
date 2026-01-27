@@ -19,7 +19,7 @@ use Barryvdh\DomPDF\Facade as PDF;
 use App\Models\CheckinLog;
 use App\Models\Note;
 use App\Models\BookingAppointment;
-use App\Models\clientServiceTaken;
+// clientServiceTaken model removed - table client_service_takens does not exist
 use App\Models\AccountClientReceipt;
 
 use App\Models\Matter;
@@ -3996,10 +3996,7 @@ class ClientsController extends Controller
                 return redirect()->back()->with('error', config('constants.server_error'));
             }
 
-            // Update service taken (unchanged)
-            if (DB::table('client_service_takens')->where('client_id', $requestData['id'])->exists()) {
-                DB::table('client_service_takens')->where('client_id', $requestData['id'])->update(['is_saved_db' => 1]);
-            }
+            // Update service taken - REMOVED (table client_service_takens does not exist)
 
             //simiar related files
             if(isset($requestData['related_files']))
@@ -6458,29 +6455,9 @@ class ClientsController extends Controller
                 }
             }
 
-            //Education
-            $educations = DB::table('education')->where('client_id', $request->merge_from)->get(); //dd($educations);
-            if(!empty($educations)){
-                foreach($educations as $edukey=>$eduval){
-                    DB::table('education')->insert(
-                        [
-                             'user_id' => $eduval->user_id,
-                             'client_id' => $request->merge_into,
-                             'degree_title' => $eduval->degree_title,
-                             'degree_level' => $eduval->degree_level,
-                             'institution' => $eduval->institution,
-                             'course_start' => $eduval->course_start,
-                             'course_end' => $eduval->course_end,
-                             'subject_area' => $eduval->subject_area,
-                             'subject' => $eduval->subject,
-                             'ac_score' => $eduval->ac_score,
-                             'score' => $eduval->score,
-                             'created_at' => $eduval->created_at,
-                             'updated_at' => $eduval->updated_at
-                        ]
-                    );
-                }
-            }
+            // Education table removed - system deprecated (replaced by ClientQualification)
+            // Table 'education' no longer exists in database - verified 2026-01-27
+            // Current qualification system uses 'client_qualifications' table with ClientQualification model
 
             //CheckinLogs
             $checkinLogs = DB::table('checkin_logs')->where('client_id', $request->merge_from)->get(); //dd($checkinLogs);
@@ -8959,99 +8936,12 @@ class ClientsController extends Controller
         return false;
     }
 
-    public function createservicetaken(Request $request)
-    {
-        $id = $request->logged_client_id;
-        if (\App\Models\Admin::where('id', $id)->exists()) {
-         $entity_type = $request->entity_type;
-         if ($entity_type == 'add') {
-             $obj = new clientServiceTaken;
-             $obj->client_id = $id;
-             $obj->service_type = $request->service_type;
-             $obj->mig_ref_no = $request->mig_ref_no;
-             $obj->mig_service = $request->mig_service;
-             $obj->mig_notes = $request->mig_notes;
-             $obj->edu_course = $request->edu_course;
-             $obj->edu_college = $request->edu_college;
-             $obj->edu_service_start_date = $request->edu_service_start_date;
-             $obj->edu_notes = $request->edu_notes;
-             $obj->is_saved_db = 0;
-             $saved = $obj->save();
-         } else if ($entity_type == 'edit') {
-             $saved = DB::table('client_service_takens')
-                 ->where('id', $request->entity_id)
-                 ->update([
-                     'service_type' => $request->service_type,
-                     'mig_ref_no' => $request->mig_ref_no,
-                     'mig_service' => $request->mig_service,
-                     'mig_notes' => $request->mig_notes,
-                     'edu_course' => $request->edu_course,
-                     'edu_college' => $request->edu_college,
-                     'edu_service_start_date' => $request->edu_service_start_date,
-                     'edu_notes' => $request->edu_notes
-                 ]);
-         }
-         if ($saved) {
-             $response['status'] = true;
-             $response['message'] = 'success';
-             $user_rec = DB::table('client_service_takens')->where('client_id', $id)->where('is_saved_db', 0)->orderBy('id', 'desc')->get();
-             $response['user_rec'] = $user_rec;
-         } else {
-             $response['status'] = true;
-             $response['message'] = 'success';
-             $response['user_rec'] = array();
-         }
-        } else {
-         $response['status'] = false;
-         $response['message'] = 'fail';
-         $response['result_str'] = array();
-        }
-        return response()->json($response);
-    }
+    // Service Taken methods REMOVED - client_service_takens table does not exist
+    // Model clientServiceTaken.php deleted, table was never created in database
+    // Methods removed: createservicetaken(), removeservicetaken(), getservicetaken()
+    // Routes removed from routes/clients.php
+    // Modals removed from detail.blade.php and companies/detail.blade.php
 
-    public function removeservicetaken(Request $request)
-    {
-        $sel_service_taken_id = $request->sel_service_taken_id;
-        if (DB::table('client_service_takens')->where('id', $sel_service_taken_id)->exists()) {
-         $res = DB::table('client_service_takens')->where('id', $sel_service_taken_id)->delete();
-         if ($res) {
-             $response['status'] = true;
-             $response['record_id'] = $sel_service_taken_id;
-             $response['message'] = 'Service removed successfully';
-         } else {
-             $response['status'] = false;
-             $response['record_id'] = $sel_service_taken_id;
-             $response['message'] = 'Service not removed';
-         }
-        } else {
-         $response['status'] = false;
-         $response['record_id'] = $sel_service_taken_id;
-         $response['message'] = 'Please try again';
-        }
-        return response()->json($response);
-    }
-
-    public function getservicetaken(Request $request)
-    {
-        $sel_service_taken_id = $request->sel_service_taken_id;
-        if (DB::table('client_service_takens')->where('id', $sel_service_taken_id)->exists()) {
-         $res = DB::table('client_service_takens')->where('id', $sel_service_taken_id)->first();
-         if ($res) {
-             $response['status'] = true;
-             $response['message'] = 'success';
-             $response['user_rec'] = $res;
-         } else {
-             $response['status'] = true;
-             $response['message'] = 'success';
-             $response['user_rec'] = array();
-         }
-        } else {
-         $response['status'] = false;
-         $response['message'] = 'fail';
-         $response['user_rec'] = array();
-        }
-        return response()->json($response);
-    }
     public function previewMsgFile($filename)
     {
         //$filePath = storage_path('app/public/msgfiles/' . $filename);

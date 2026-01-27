@@ -142,9 +142,9 @@ Route::get('/convertapplication', 'CRM\ClientsController@convertapplication')->n
 Route::get('/deleteservices', 'CRM\ClientsController@deleteservices')->name('clients.deleteservices');
 Route::post('/savetoapplication', 'CRM\ClientsController@savetoapplication');
 
-Route::post('/client/createservicetaken', 'CRM\ClientsController@createservicetaken');
-Route::post('/client/removeservicetaken', 'CRM\ClientsController@removeservicetaken');
-Route::post('/client/getservicetaken', 'CRM\ClientsController@getservicetaken');
+// Service Taken routes REMOVED - client_service_takens table does not exist
+// Model clientServiceTaken.php deleted, controller methods removed
+// Routes were: createservicetaken, removeservicetaken, getservicetaken
 
 /*---------- Client Documents Management ----------*/
 Route::post('/documents/add-edu-checklist', [ClientDocumentsController::class, 'addedudocchecklist'])->name('clients.documents.addedudocchecklist');

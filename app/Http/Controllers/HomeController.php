@@ -13,10 +13,9 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Client\RequestException;
 
 // use App\Models\WebsiteSetting; // removed website settings dependency
-use App\Models\Slider;
-use App\Models\OurService;
-use App\Models\Testimonial;
-use App\Models\HomeContent;
+// Website content models removed - tables dropped in migration 2025_12_23_180714
+// Models deleted: Slider, OurService, Testimonial, HomeContent
+// Tables dropped: sliders, our_services, testimonials, home_contents
 use App\Mail\CommonMail;
 
 use Illuminate\Support\Facades\Session;

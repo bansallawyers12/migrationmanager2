@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use App\Models\Admin;
 use App\Models\ActivitiesLog;
-use App\Models\clientServiceTaken;
+// clientServiceTaken model removed - table client_service_takens does not exist
 use App\Models\AccountClientReceipt;
 use App\Mail\HubdocInvoiceMail;
 use App\Services\FinancialStatsService;

@@ -11072,109 +11072,9 @@ Bansal Immigration`;
 
 
 
-        $(document).delegate('#intrested_partner','change', function(){
-
-            var v = $('#intrested_partner option:selected').val();
-
-            if(v != ''){
-
-                $('.popuploader').show();
-
-                $.ajax({
-
-                    url: window.ClientDetailConfig.urls.getProduct,
-
-                    type:'GET',
-
-                    data:{cat_id:v},
-
-                    success:function(response){
-
-                        $('.popuploader').hide();
-
-                        $('#intrested_product').html(response);
-
-                        $("#intrested_product").val('').trigger('change');
-
-                    $("#intrested_branch").val('').trigger('change');
-
-                    }
-
-                });
-
-            }
-
-        });
-
-
-
-        $(document).delegate('#edit_intrested_partner','change', function(){
-
-            var v = $('#edit_intrested_partner option:selected').val();
-
-            if(v != ''){
-
-                $('.popuploader').show();
-
-                $.ajax({
-
-                    url: window.ClientDetailConfig.urls.getProduct,
-
-                    type:'GET',
-
-                    data:{cat_id:v},
-
-                    success:function(response){
-
-                        $('.popuploader').hide();
-
-                        $('#edit_intrested_product').html(response);
-
-                        $("#edit_intrested_product").val('').trigger('change');
-
-                    $("#edit_intrested_branch").val('').trigger('change');
-
-                    }
-
-                });
-
-            }
-
-        });
-
-
-
-        $(document).delegate('#intrested_product','change', function(){
-
-            var v = $('#intrested_product option:selected').val();
-
-            if(v != ''){
-
-                $('.popuploader').show();
-
-                $.ajax({
-
-                    url: window.ClientDetailConfig.urls.getBranch,
-
-                    type:'GET',
-
-                    data:{cat_id:v},
-
-                    success:function(response){
-
-                        $('.popuploader').hide();
-
-                        $('#intrested_branch').html(response);
-
-                        $("#intrested_branch").val('').trigger('change');
-
-                    }
-
-                });
-
-            }
-
-        });
+        // REMOVED: Interested partner/product/branch dropdowns (orphaned - no routes exist)
+        // The add_interested_service modal exists but has no UI triggers
+        // Routes getProduct and getBranch were never implemented
 
 
 
@@ -13197,89 +13097,11 @@ Bansal Immigration`;
 
 
 
-        var eduid = '';
-
-        $(document).delegate('.deleteeducation', 'click', function(){
-
-            eduid = $(this).attr('data-id');
-
-            $('#confirmEducationModal').modal('show');
-
-        });
-
-
-
-        $(document).delegate('#confirmEducationModal .accepteducation', 'click', function(){
-
-            $('.popuploader').show();
-
-            $.ajax({
-
-                url: window.ClientDetailConfig.urls.deleteEducation,
-
-                type:'GET',
-
-                datatype:'json',
-
-                data:{edu_id:eduid},
-
-                success:function(response){
-
-                    $('.popuploader').hide();
-
-                    var res = JSON.parse(response);
-
-                    $('#confirmEducationModal').modal('hide');
-
-                    if(res.status){
-
-                        $('#edu_id_'+eduid).remove();
-
-                    }else{
-
-                        alert('Please try again')
-
-                    }
-
-                }
-
-            });
-
-        });
-
-
-
-        $(document).delegate('#educationform #subjectlist', 'change', function(){
-
-            var v = $('#educationform #subjectlist option:selected').val();
-
-            if(v != ''){
-
-                $('.popuploader').show();
-
-                $.ajax({
-
-                    url: window.ClientDetailConfig.urls.getSubjects,
-
-                    type:'GET',
-
-                    data:{cat_id:v},
-
-                    success:function(response){
-
-                        $('.popuploader').hide();
-
-                        $('#educationform #subject').html(response);
-
-                        $(".add_appliation #subject").val('').trigger('change');
-
-                    }
-
-                });
-
-            }
-
-        });
+        // REMOVED: Education system handlers (orphaned - replaced by ClientQualification)
+        // - deleteEducation route doesn't exist (no .deleteeducation buttons in UI)
+        // - getSubjects route doesn't exist (#subjectlist field removed from form)
+        // - Education table deprecated in favor of client_qualifications table
+        // - Current system uses ClientQualification model in edit.blade.php
 
 
 
@@ -13333,61 +13155,9 @@ Bansal Immigration`;
 
 
 
-        $(document).delegate('.editeducation', 'click', function(){
-
-            var v = $(this).attr('data-id');
-
-            $('.popuploader').show();
-
-            $('#edit_education').modal('show');
-
-            $.ajax({
-
-                url: window.ClientDetailConfig.urls.getEducationDetail,
-
-                type:'GET',
-
-                data:{id:v},
-
-                success:function(response){
-
-                    $('.popuploader').hide();
-
-                    $('.showeducationdetail').html(response);
-
-                    // Initialize Flatpickr for education modal date fields
-                    if (typeof flatpickr !== 'undefined') {
-                        $('.showeducationdetail .date-picker').each(function() {
-                            if (!$(this).data('flatpickr')) {
-                                flatpickr(this, {
-                                    dateFormat: 'd/m/Y',
-                                    allowInput: true,
-                                    clickOpens: true,
-                                    locale: {
-                                        firstDayOfWeek: 1
-                                    },
-                                    onChange: function(selectedDates, dateStr, instance) {
-                                        $(this.element).val(dateStr);
-                                    }
-                                });
-                            }
-                        });
-                    }
-
-                    // Old daterangepicker code removed - using Flatpickr above
-                    /* $(".datepicker").daterangepicker({
-                        locale: { format: "YYYY-MM-DD" },
-                        singleDatePicker: true,
-                        showDropdowns: true
-                    }); */
-
-
-
-                }
-
-            });
-
-        });
+        // REMOVED: Edit education handler (orphaned - no .editeducation buttons exist)
+        // - getEducationDetail route doesn't exist
+        // - Education editing now handled through ClientQualification in edit.blade.php
 
 
 
@@ -14577,49 +14347,9 @@ Bansal Immigration`;
 
 
 
-        $(document).delegate('.openpaymentschedule', 'click', function(){
-
-            var id = $(this).attr('data-id');
-
-            //$('#create_apppaymentschedule #application_id').val(id);
-
-            $('#addpaymentschedule').modal('show');
-
-            $('.popuploader').show();
-
-            $.ajax({
-
-                url: window.ClientDetailConfig.urls.addScheduleInvoiceDetail,
-
-                type: 'GET',
-
-                data: {id: $(this).attr('data-id')},
-
-                success: function(res){
-
-                    $('.popuploader').hide();
-
-                    $('.showpoppaymentscheduledata').html(res);
-
-                    // Initialize Flatpickr for appointment datepicker
-                    if (typeof flatpickr !== 'undefined') {
-                        $('.showappointmentdetail .datepicker').each(function() {
-                            if (!$(this).data('flatpickr')) {
-                                flatpickr(this, {
-                                    dateFormat: 'Y-m-d', // YYYY-MM-DD format
-                                    allowInput: true,
-                                    clickOpens: true,
-                                    locale: { firstDayOfWeek: 1 }
-                                });
-                            }
-                        });
-                    }
-
-                }
-
-            });
-
-        });
+        // REMOVED: Add payment schedule handler (orphaned - no .openpaymentschedule buttons exist)
+        // - addScheduleInvoiceDetail route doesn't exist
+        // - Payment schedule modal exists but no UI triggers found
 
 
 
@@ -15140,15 +14870,8 @@ Bansal Immigration`;
 
         });
 
-
-
-        $(document).delegate('.serviceTaken','click', function(){
-
-            $('#serviceTaken').modal('show');
-
-        });
-
-
+        // Service Taken handler REMOVED - modal deleted, table client_service_takens does not exist
+        // Handler was: .serviceTaken click -> open #serviceTaken modal
 
         $(document).delegate('.opensubagent', 'click', function(){
 
@@ -15555,53 +15278,9 @@ Bansal Immigration`;
 
 
 
-        $(document).delegate('.editpaymentschedule', 'click', function(){
-
-            $('#editpaymentschedule').modal('show');
-
-            $('.popuploader').show();
-
-            $.ajax({
-
-                url: window.ClientDetailConfig.urls.scheduleInvoiceDetail,
-
-                type: 'GET',
-
-                data: {id: $(this).attr('data-id'),t:'application'},
-
-                success: function(res){
-
-                    $('.popuploader').hide();
-
-                    $('.showeditmodule').html(res);
-
-                    $(".editclientname").select2({
-
-                        dropdownParent: $("#editpaymentschedule .modal-content")
-
-                    });
-
-
-
-                    // Initialize Flatpickr for appointment datepicker
-                    if (typeof flatpickr !== 'undefined') {
-                        $('.showappointmentdetail .datepicker').each(function() {
-                            if (!$(this).data('flatpickr')) {
-                                flatpickr(this, {
-                                    dateFormat: 'Y-m-d', // YYYY-MM-DD format
-                                    allowInput: true,
-                                    clickOpens: true,
-                                    locale: { firstDayOfWeek: 1 }
-                                });
-                            }
-                        });
-                    }
-
-                }
-
-            });
-
-        });
+        // REMOVED: Edit payment schedule handler (orphaned - no .editpaymentschedule buttons exist)
+        // - scheduleInvoiceDetail route doesn't exist
+        // - Payment schedule editing UI removed
 
 
 

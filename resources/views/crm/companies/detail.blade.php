@@ -1024,90 +1024,10 @@ use App\Http\Controllers\Controller;
 	</div>
 </div>
 
-<div class="modal fade custom_modal" id="serviceTaken" tabindex="-1" role="dialog" aria-labelledby="create_interestModalLabel" aria-hidden="true">
-	<div class="modal-dialog modal-lg">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title" id="interestModalLabel">Service Taken</h5>
-
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-					<span aria-hidden="true">&times;</span>
-				</button>
-			</div>
-			<div class="modal-body">
-                <form method="post" action="{{url('/client/createservicetaken')}}" name="createservicetaken" id="createservicetaken" autocomplete="off" enctype="multipart/form-data">
-				@csrf
-                    <input id="logged_client_id" name="logged_client_id"  type="hidden" value="<?php echo $fetchedData->id;?>">
-					<div class="row">
-						<div class="col-12 col-md-12 col-lg-12">
-
-							<div class="form-group">
-								<label style="display:block;" for="service_type">Select Service Type:</label>
-								<div class="form-check form-check-inline">
-									<input class="form-check-input" type="radio" id="Migration_inv" value="Migration" name="service_type" checked>
-									<label class="form-check-label" for="Migration_inv">Migration</label>
-								</div>
-								<div class="form-check form-check-inline">
-									<input class="form-check-input" type="radio" id="Eductaion_inv" value="Eductaion" name="service_type">
-									<label class="form-check-label" for="Eductaion_inv">Eductaion</label>
-								</div>
-								<span class="custom-error service_type_error" role="alert">
-									<strong></strong>
-								</span>
-							</div>
-						</div>
-
-						<div class="col-12 col-md-12 col-lg-12 is_Migration_inv">
-                            <div class="form-group">
-								<label for="mig_ref_no">Reference No: <span class="span_req">*</span></label>
-                                <input type="text" name="mig_ref_no" id="mig_ref_no" value="" class="form-control" data-valid="required">
-                            </div>
-
-                            <div class="form-group">
-								<label for="mig_service">Service: <span class="span_req">*</span></label>
-                                <input type="text" name="mig_service" id="mig_service" value="" class="form-control" data-valid="required">
-                            </div>
-
-                            <div class="form-group">
-								<label for="mig_notes">Notes: <span class="span_req">*</span></label>
-                                <input type="text" name="mig_notes" id="mig_notes" value="" class="form-control" data-valid="required">
-                            </div>
-                        </div>
-
-                        <div class="col-12 col-md-12 col-lg-12 is_Eductaion_inv" style="display:none;">
-                            <div class="form-group">
-								<label for="edu_course">Course: <span class="span_req">*</span></label>
-                                <input type="text" name="edu_course" id="edu_course" value="" class="form-control">
-                            </div>
-
-                            <div class="form-group">
-								<label for="edu_college">College: <span class="span_req">*</span></label>
-                                <input type="text" name="edu_college" id="edu_college" value="" class="form-control">
-                            </div>
-
-                            <div class="form-group">
-								<label for="edu_service_start_date">Service Start Date: <span class="span_req">*</span></label>
-                                <input type="text" name="edu_service_start_date" id="edu_service_start_date" value="" class="form-control">
-                            </div>
-
-                            <div class="form-group">
-								<label for="edu_notes">Notes: <span class="span_req">*</span></label>
-                                <input type="text" name="edu_notes" id="edu_notes" value="" class="form-control">
-                            </div>
-                        </div>
-
-                        <div class="col-12 col-md-12 col-lg-12">
-							<button onclick="customValidate('createservicetaken')" type="button" class="btn btn-primary">Save</button>
-							<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-						</div>
-					</div>
-				</form>
-			</div>
-		</div>
-	</div>
-</div>
-
-
+{{-- Service Taken Modal - REMOVED --}}
+{{-- Feature deprecated - client_service_takens table does not exist --}}
+{{-- Table was for tracking Migration/Education services taken by companies --}}
+{{-- Model clientServiceTaken.php deleted - no database backing --}}
 
 <div class="modal fade" id="inbox_reassignemail_modal">
 	<div class="modal-dialog modal-lg">
