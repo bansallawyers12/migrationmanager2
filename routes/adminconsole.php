@@ -21,6 +21,7 @@ use App\Http\Controllers\AdminConsole\Sms\SmsTemplateController;
 use App\Http\Controllers\AdminConsole\Sms\SmsWebhookController;
 use App\Http\Controllers\AdminConsole\ESignatureController;
 use App\Http\Controllers\AdminConsole\EmailLabelController;
+use App\Http\Controllers\AdminConsole\ActivitySearchController;
 
 /*
 |--------------------------------------------------------------------------
@@ -193,6 +194,11 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin'])
         
         // Client Email List route
         Route::get('/clientsemaillist', [\App\Http\Controllers\CRM\ClientsController::class, 'clientsemaillist'])->name('clientsemaillist');
+        
+        // Activity Search routes (Super Admin only)
+        Route::get('/activity-search', [ActivitySearchController::class, 'index'])->name('activity-search.index');
+        Route::get('/activity-search/export', [ActivitySearchController::class, 'export'])->name('activity-search.export');
+        Route::get('/activity-search/search-clients', [ActivitySearchController::class, 'searchClients'])->name('activity-search.search-clients');
         
     });
     

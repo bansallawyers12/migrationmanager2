@@ -89,5 +89,18 @@
 			?>
 			<li class="{{$esignatureclasstype}}"><a class="nav-link" href="{{route('adminconsole.features.esignature.index')}}">E-Signature</a></li>
 			
+			<?php
+			// Activity Search menu - Only for super admin (role = 1)
+			if(Auth::user()->role == 1) {
+				$activitySearchclasstype = '';
+				if(str_starts_with(Route::currentRouteName() ?? '', 'adminconsole.system.activity-search.')){
+					$activitySearchclasstype = 'active';
+				}
+			?>
+			<li class="{{$activitySearchclasstype}}"><a class="nav-link" href="{{route('adminconsole.system.activity-search.index')}}">Activity Search</a></li>
+			<?php
+			}
+			?>
+			
 		</ul>
 </div>
