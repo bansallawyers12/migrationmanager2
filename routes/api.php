@@ -214,6 +214,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/postcode-search', [OthersController::class, 'searchPostcode']);
     Route::get('/postcode-result', [OthersController::class, 'getPostcodeResult']);
     
+    // Appointment routes
+    Route::get('/appointments', [ClientPortalAppointmentController::class, 'getAppointmentList']);
+    Route::get('/appointments/{id}', [ClientPortalAppointmentController::class, 'getSingleAppointment']);
+    Route::post('/appointments', [ClientPortalAppointmentController::class, 'addAppointment']);
+    
 });
 
 // Broadcasting auth route for WebSocket authentication

@@ -3647,63 +3647,7 @@
 			]
 		},
 		{
-			"name": "36. Get Appointment Variable Lists",
-			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"url": {
-					"raw": "{{base_url}}/appointment-variable-lists",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"appointment-variable-lists"
-					]
-				},
-				"description": "Get all appointment variable lists including locations, meeting types, preferred languages, services, and service types. This endpoint returns all the options needed for the appointment booking system in the mobile app."
-			},
-			"response": [
-				{
-					"name": "Success Response",
-					"originalRequest": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"url": {
-							"raw": "{{base_url}}/appointment-variable-lists",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"appointment-variable-lists"
-							]
-						}
-					},
-					"status": "OK",
-					"code": 200,
-					"_postman_previewlanguage": "json",
-					"header": [
-						{
-							"key": "Content-Type",
-							"value": "application/json"
-						}
-					],
-					"cookie": [],
-					"body": "{\n    \"success\": true,\n    \"message\": \"Appointment variable lists retrieved successfully\",\n    \"data\": {\n        \"location\": [\n            {\n                \"id\": 1,\n                \"name\": \"Adelaide Office\",\n                \"address\": \"Unit 5, 55 Gawler Pl\",\n                \"city\": \"Adelaide\",\n                \"state\": \"SA\",\n                \"postcode\": \"5000\",\n                \"full_address\": \"Unit 5, 55 Gawler Pl Adelaide SA 5000\"\n            },\n            {\n                \"id\": 2,\n                \"name\": \"Melbourne Office\",\n                \"address\": \"Level 8/278 Collins St\",\n                \"city\": \"Melbourne\",\n                \"state\": \"VIC\",\n                \"postcode\": \"3000\",\n                \"full_address\": \"Level 8/278 Collins St Melbourne VIC 3000\"\n            }\n        ],\n        \"meeting_type\": [\n            {\n                \"id\": 1,\n                \"name\": \"Phone Call\",\n                \"description\": \"Speak directly with our experts\",\n                \"icon\": \"phone\"\n            },\n            {\n                \"id\": 2,\n                \"name\": \"In Person\",\n                \"description\": \"Visit our office\",\n                \"icon\": \"building\"\n            },\n            {\n                \"id\": 3,\n                \"name\": \"Video Call\",\n                \"description\": \"Online consultation\",\n                \"note\": \"Available for paid appointments only\",\n                \"icon\": \"video\"\n            }\n        ],\n        \"preferred_language\": [\n            {\n                \"id\": 1,\n                \"code\": \"en\",\n                \"name\": \"English\",\n                \"country_code\": \"AU\",\n                \"country_flag\": \"🇦🇺\"\n            },\n            {\n                \"id\": 2,\n                \"code\": \"hi\",\n                \"name\": \"Hindi\",\n                \"country_code\": \"IN\",\n                \"country_flag\": \"🇮🇳\"\n            },\n            {\n                \"id\": 3,\n                \"code\": \"pa\",\n                \"name\": \"Punjabi\",\n                \"country_code\": \"IN\",\n                \"country_flag\": \"🇮🇳\"\n            }\n        ],\n        \"select_your_service\": [\n            {\n                \"id\": 1,\n                \"name\": \"Permanent Residency Appointment\"\n            },\n            {\n                \"id\": 2,\n                \"name\": \"Temporary Residency Appointment\"\n            },\n            {\n                \"id\": 3,\n                \"name\": \"JRP/Skill Assessment\"\n            },\n            {\n                \"id\": 4,\n                \"name\": \"Tourist Visa\"\n            },\n            {\n                \"id\": 5,\n                \"name\": \"Education/Course Change/Student Visa/Student Dependent Visa (for education selection only)\"\n            },\n            {\n                \"id\": 6,\n                \"name\": \"Complex matters: ART, Protection visa, Federal Case\"\n            },\n            {\n                \"id\": 7,\n                \"name\": \"Visa Cancellation/ NOICC/ Visa refusals\"\n            },\n            {\n                \"id\": 8,\n                \"name\": \"INDIA/UK/CANADA/EUROPE TO AUSTRALIA\"\n            }\n        ],\n        \"service_type\": [\n            {\n                \"id\": 1,\n                \"name\": \"Free Consultation\",\n                \"price\": 0,\n                \"price_display\": \"FREE\",\n                \"duration\": 15,\n                \"duration_unit\": \"minutes\",\n                \"time_slots\": {\n                    \"start_time\": \"10:45\",\n                    \"end_time\": \"16:00\",\n                    \"time_format\": \"AM/PM\"\n                },\n                \"availability\": {\n                    \"days\": [\"Monday\", \"Tuesday\", \"Wednesday\", \"Thursday\", \"Friday\"],\n                    \"time_slots\": \"15-minute time slots\"\n                },\n                \"description\": \"Perfect for initial inquiries: Quick assessment of your immigration situation, basic visa pathway guidance, and preliminary advice. Available for clients currently within Australia only. Includes initial case evaluation and next steps recommendation.\",\n                \"includes_video_call\": false,\n                \"available_for_overseas\": false\n            },\n            {\n                \"id\": 2,\n                \"name\": \"Comprehensive Migration Advice\",\n                \"price\": 150,\n                \"price_display\": \"$150\",\n                \"duration\": 30,\n                \"duration_unit\": \"minutes\",\n                \"time_slots\": {\n                    \"start_time\": \"09:00\",\n                    \"end_time\": \"17:00\",\n                    \"time_format\": \"AM/PM\"\n                },\n                \"availability\": {\n                    \"days\": [\"Monday\", \"Tuesday\", \"Wednesday\", \"Thursday\", \"Friday\"],\n                    \"time_slots\": \"30-minute time slots\"\n                },\n                \"description\": \"In-depth professional consultation: Comprehensive case analysis, detailed migration strategy, complex visa applications, ART appeals, visa cancellations, protection visas, and personalized action plans. Suitable for overseas applicants and complex cases.\",\n                \"includes_video_call\": true,\n                \"available_for_overseas\": true\n            },\n            {\n                \"id\": 3,\n                \"name\": \"Overseas Applicant Enquiry\",\n                \"price\": 150,\n                \"price_display\": \"$150\",\n                \"duration\": 30,\n                \"duration_unit\": \"minutes\",\n                \"time_slots\": {\n                    \"start_time\": \"09:00\",\n                    \"end_time\": \"17:00\",\n                    \"time_format\": \"AM/PM\"\n                },\n                \"availability\": {\n                    \"days\": [\"Monday\", \"Tuesday\", \"Wednesday\", \"Thursday\", \"Friday\"],\n                    \"time_slots\": \"30-minute time slots\"\n                },\n                \"description\": \"Specialized consultation for overseas applicants: For applicants currently outside Australia or inquiring on behalf of someone overseas. Includes detailed assessment and personalized migration strategy.\",\n                \"includes_video_call\": true,\n                \"available_for_overseas\": true\n            }\n        ]\n    }\n}"
-				}
-			]
-		},
-		{
-			"name": "37. Update Client Passport Detail",
+			"name": "36. Update Client Passport Detail",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -7816,6 +7760,504 @@
 					],
 					"cookie": [],
 					"body": "{\n    \"success\": true,\n    \"data\": {\n        \"postcode\": \"3002\",\n        \"suburb\": \"EAST MELBOURNE\",\n        \"state\": \"VIC\",\n        \"regional_status\": false,\n        \"additional_info\": {}\n    }\n}"
+				}
+			]
+		},
+		{
+			"name": "Get Appointment Variable Lists",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/appointment-variable-lists",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"appointment-variable-lists"
+					]
+				},
+				"description": "Get all appointment variable lists including locations, meeting types, preferred languages, services, and service types. This endpoint returns all the options needed for the appointment booking system in the mobile app."
+			},
+			"response": [
+				{
+					"name": "Success Response",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/appointment-variable-lists",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"appointment-variable-lists"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": true,\n    \"message\": \"Appointment variable lists retrieved successfully\",\n    \"data\": {\n        \"location\": [\n            {\n                \"id\": 1,\n                \"name\": \"Adelaide Office\",\n                \"address\": \"Unit 5, 55 Gawler Pl\",\n                \"city\": \"Adelaide\",\n                \"state\": \"SA\",\n                \"postcode\": \"5000\",\n                \"full_address\": \"Unit 5, 55 Gawler Pl Adelaide SA 5000\"\n            },\n            {\n                \"id\": 2,\n                \"name\": \"Melbourne Office\",\n                \"address\": \"Level 8/278 Collins St\",\n                \"city\": \"Melbourne\",\n                \"state\": \"VIC\",\n                \"postcode\": \"3000\",\n                \"full_address\": \"Level 8/278 Collins St Melbourne VIC 3000\"\n            }\n        ],\n        \"meeting_type\": [\n            {\n                \"id\": 1,\n                \"name\": \"Phone Call\",\n                \"description\": \"Speak directly with our experts\",\n                \"icon\": \"phone\"\n            },\n            {\n                \"id\": 2,\n                \"name\": \"In Person\",\n                \"description\": \"Visit our office\",\n                \"icon\": \"building\"\n            },\n            {\n                \"id\": 3,\n                \"name\": \"Video Call\",\n                \"description\": \"Online consultation\",\n                \"note\": \"Available for paid appointments only\",\n                \"icon\": \"video\"\n            }\n        ],\n        \"preferred_language\": [\n            {\n                \"id\": 1,\n                \"code\": \"en\",\n                \"name\": \"English\",\n                \"country_code\": \"AU\",\n                \"country_flag\": \"🇦🇺\"\n            },\n            {\n                \"id\": 2,\n                \"code\": \"hi\",\n                \"name\": \"Hindi\",\n                \"country_code\": \"IN\",\n                \"country_flag\": \"🇮🇳\"\n            },\n            {\n                \"id\": 3,\n                \"code\": \"pa\",\n                \"name\": \"Punjabi\",\n                \"country_code\": \"IN\",\n                \"country_flag\": \"🇮🇳\"\n            }\n        ],\n        \"select_your_service\": [\n            {\n                \"id\": 1,\n                \"name\": \"Permanent Residency Appointment\"\n            },\n            {\n                \"id\": 2,\n                \"name\": \"Temporary Residency Appointment\"\n            },\n            {\n                \"id\": 3,\n                \"name\": \"JRP/Skill Assessment\"\n            },\n            {\n                \"id\": 4,\n                \"name\": \"Tourist Visa\"\n            },\n            {\n                \"id\": 5,\n                \"name\": \"Education/Course Change/Student Visa/Student Dependent Visa (for education selection only)\"\n            },\n            {\n                \"id\": 6,\n                \"name\": \"Complex matters: ART, Protection visa, Federal Case\"\n            },\n            {\n                \"id\": 7,\n                \"name\": \"Visa Cancellation/ NOICC/ Visa refusals\"\n            },\n            {\n                \"id\": 8,\n                \"name\": \"INDIA/UK/CANADA/EUROPE TO AUSTRALIA\"\n            }\n        ],\n        \"service_type\": [\n            {\n                \"id\": 1,\n                \"name\": \"Free Consultation\",\n                \"price\": 0,\n                \"price_display\": \"FREE\",\n                \"duration\": 15,\n                \"duration_unit\": \"minutes\",\n                \"time_slots\": {\n                    \"start_time\": \"10:45\",\n                    \"end_time\": \"16:00\",\n                    \"time_format\": \"AM/PM\"\n                },\n                \"availability\": {\n                    \"days\": [\"Monday\", \"Tuesday\", \"Wednesday\", \"Thursday\", \"Friday\"],\n                    \"time_slots\": \"15-minute time slots\"\n                },\n                \"description\": \"Perfect for initial inquiries: Quick assessment of your immigration situation, basic visa pathway guidance, and preliminary advice. Available for clients currently within Australia only. Includes initial case evaluation and next steps recommendation.\",\n                \"includes_video_call\": false,\n                \"available_for_overseas\": false\n            },\n            {\n                \"id\": 2,\n                \"name\": \"Comprehensive Migration Advice\",\n                \"price\": 150,\n                \"price_display\": \"$150\",\n                \"duration\": 30,\n                \"duration_unit\": \"minutes\",\n                \"time_slots\": {\n                    \"start_time\": \"09:00\",\n                    \"end_time\": \"17:00\",\n                    \"time_format\": \"AM/PM\"\n                },\n                \"availability\": {\n                    \"days\": [\"Monday\", \"Tuesday\", \"Wednesday\", \"Thursday\", \"Friday\"],\n                    \"time_slots\": \"30-minute time slots\"\n                },\n                \"description\": \"In-depth professional consultation: Comprehensive case analysis, detailed migration strategy, complex visa applications, ART appeals, visa cancellations, protection visas, and personalized action plans. Suitable for overseas applicants and complex cases.\",\n                \"includes_video_call\": true,\n                \"available_for_overseas\": true\n            },\n            {\n                \"id\": 3,\n                \"name\": \"Overseas Applicant Enquiry\",\n                \"price\": 150,\n                \"price_display\": \"$150\",\n                \"duration\": 30,\n                \"duration_unit\": \"minutes\",\n                \"time_slots\": {\n                    \"start_time\": \"09:00\",\n                    \"end_time\": \"17:00\",\n                    \"time_format\": \"AM/PM\"\n                },\n                \"availability\": {\n                    \"days\": [\"Monday\", \"Tuesday\", \"Wednesday\", \"Thursday\", \"Friday\"],\n                    \"time_slots\": \"30-minute time slots\"\n                },\n                \"description\": \"Specialized consultation for overseas applicants: For applicants currently outside Australia or inquiring on behalf of someone overseas. Includes detailed assessment and personalized migration strategy.\",\n                \"includes_video_call\": true,\n                \"available_for_overseas\": true\n            }\n        ]\n    }\n}"
+				}
+			]
+		},
+		{
+			"name": "Get Appointment List",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text",
+						"description": "Use token from login response"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/appointments?per_page=50&page=1",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"appointments"
+					],
+					"query": [
+						{
+							"key": "per_page",
+							"value": "50",
+							"description": "Results per page (default: 50, max: 100)",
+							"disabled": false
+						},
+						{
+							"key": "page",
+							"value": "1",
+							"description": "Page number",
+							"disabled": false
+						},
+						{
+							"key": "start_date",
+							"value": "2024-01-01",
+							"description": "Filter by start date (Y-m-d format)",
+							"disabled": true
+						},
+						{
+							"key": "end_date",
+							"value": "2024-12-31",
+							"description": "Filter by end date (Y-m-d format)",
+							"disabled": true
+						},
+						{
+							"key": "status",
+							"value": "confirmed",
+							"description": "Filter by status: pending, confirmed, completed, cancelled, no_show, rescheduled",
+							"disabled": true
+						},
+						{
+							"key": "location",
+							"value": "melbourne",
+							"description": "Filter by location: melbourne, adelaide",
+							"disabled": true
+						},
+						{
+							"key": "enquiry_type",
+							"value": "tr",
+							"description": "Filter by type: tr, tourist, education, pr, pr_complex, jrp, visa_cancellation, india_uk_canada_europe",
+							"disabled": true
+						}
+					]
+				},
+				"description": "Get paginated list of appointments for the authenticated client. Returns appointments from the booking_appointments table filtered by client_id. Supports filtering by status, date range, location, and enquiry type."
+			},
+			"response": [
+				{
+					"name": "Success Response",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/appointments?per_page=50&page=1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"appointments"
+							],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "50"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": true,\n    \"message\": \"Appointments retrieved successfully\",\n    \"data\": {\n        \"data\": [\n            {\n                \"id\": 1388,\n                \"full_name\": \"Annie Dang\",\n                \"email\": \"anniedang123.hp@gmail.com\",\n                \"phone\": \"434579969\",\n                \"location\": \"adelaide\",\n                \"meeting_type\": \"in_person\",\n                \"meeting_type_display\": \"In Person\",\n                \"preferred_language\": \"english\",\n                \"enquiry_type\": \"pr_complex\",\n                \"enquiry_type_display\": \"PR/Complex\",\n                \"service_type\": \"permanent-residency\",\n                \"specific_service\": \"consultation\",\n                \"enquiry_details\": \"I recently got not invited for 190/491 SA graduate stream and my 485 extension visa is expiring in 13/03/26. Just looking for other different options to see if there are any other possible pathways to PR?\",\n                \"appointment_date\": \"2026-01-28\",\n                \"appointment_time\": \"11:30:00\",\n                \"appointment_datetime\": \"2026-01-28T11:30:00.000000Z\",\n                \"duration_minutes\": 15,\n                \"status\": \"confirmed\",\n                \"status_display\": \"Confirmed\",\n                \"is_paid\": false,\n                \"amount\": \"0.00\",\n                \"discount_amount\": \"0.00\",\n                \"final_amount\": \"0.00\",\n                \"promo_code\": null,\n                \"assigned_admin\": null,\n                \"payment\": null,\n                \"admin_notes\": null,\n                \"client_notes\": null,\n                \"confirmed_at\": \"2026-01-27T11:53:44.000000Z\",\n                \"cancelled_at\": null,\n                \"cancellation_reason\": null,\n                \"created_at\": \"2026-01-27T11:53:44.000000Z\",\n                \"updated_at\": \"2026-01-27T11:53:44.000000Z\"\n            }\n        ],\n        \"pagination\": {\n            \"current_page\": 1,\n            \"per_page\": 50,\n            \"total\": 1,\n            \"last_page\": 1,\n            \"from\": 1,\n            \"to\": 1\n        }\n    }\n}"
+				}
+			]
+		},
+		{
+			"name": "Get Single Appointment",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text",
+						"description": "Use token from login response"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/appointments/:id",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"appointments",
+						":id"
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": "1388",
+							"description": "Appointment ID"
+						}
+					]
+				},
+				"description": "Get single appointment details by appointment ID. Returns appointment from the booking_appointments table for the authenticated client. The appointment must belong to the authenticated client."
+			},
+			"response": [
+				{
+					"name": "Success Response",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/appointments/1388",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"appointments",
+								"1388"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": true,\n    \"message\": \"Appointment retrieved successfully\",\n    \"data\": {\n        \"id\": 1388,\n        \"full_name\": \"Annie Dang\",\n        \"email\": \"anniedang123.hp@gmail.com\",\n        \"phone\": \"434579969\",\n        \"location\": \"adelaide\",\n        \"meeting_type\": \"in_person\",\n        \"meeting_type_display\": \"In Person\",\n        \"preferred_language\": \"english\",\n        \"enquiry_type\": \"pr_complex\",\n        \"enquiry_type_display\": \"PR/Complex\",\n        \"service_type\": \"permanent-residency\",\n        \"specific_service\": \"consultation\",\n        \"enquiry_details\": \"I recently got not invited for 190/491 SA graduate stream and my 485 extension visa is expiring in 13/03/26. Just looking for other different options to see if there are any other possible pathways to PR?\",\n        \"appointment_date\": \"2026-01-28\",\n        \"appointment_time\": \"11:30:00\",\n        \"appointment_datetime\": \"2026-01-28T11:30:00.000000Z\",\n        \"duration_minutes\": 15,\n        \"status\": \"confirmed\",\n        \"status_display\": \"Confirmed\",\n        \"is_paid\": false,\n        \"amount\": \"0.00\",\n        \"discount_amount\": \"0.00\",\n        \"final_amount\": \"0.00\",\n        \"promo_code\": null,\n        \"assigned_admin\": null,\n        \"payment\": null,\n        \"admin_notes\": null,\n        \"client_notes\": null,\n        \"confirmed_at\": \"2026-01-27T11:53:44.000000Z\",\n        \"cancelled_at\": null,\n        \"cancellation_reason\": null,\n        \"created_at\": \"2026-01-27T11:53:44.000000Z\",\n        \"updated_at\": \"2026-01-27T11:53:44.000000Z\"\n    }\n}"
+				},
+				{
+					"name": "Not Found",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/appointments/99999",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"appointments",
+								"99999"
+							]
+						}
+					},
+					"status": "Not Found",
+					"code": 404,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": false,\n    \"message\": \"Appointment not found\"\n}"
+				}
+			]
+		},
+		{
+			"name": "Add Appointment",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text",
+						"description": "Use token from login response"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"location\": \"melbourne\",\n    \"meeting_type\": \"video-call\",\n    \"preferred_language\": \"English\",\n    \"enquiry_type\": \"tourist\",\n    \"service_type\": \"tourist-visa\",\n    \"specific_service\": \"Subclass 600\",\n    \"enquiry_details\": \"Client wants to visit family in Melbourne.\",\n    \"appointment_date\": \"2024-12-10\",\n    \"appointment_time\": \"10:30\",\n    \"is_paid\": true\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/appointments",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"appointments"
+					]
+				},
+				"description": "Create a new appointment for the authenticated client. Client information (full_name, email, phone) is automatically retrieved from the authenticated user's profile (client_id). The appointment will be created in the booking_appointments table. For paid appointments (is_paid: true), status will be 'pending'. For free appointments (is_paid: false), status will be 'confirmed'. Video call meetings are only allowed for paid appointments. The slot_overwrite field is automatically set to 0."
+			},
+			"response": [
+				{
+					"name": "Success Response",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"location\": \"melbourne\",\n    \"meeting_type\": \"video-call\",\n    \"preferred_language\": \"English\",\n    \"enquiry_type\": \"tourist\",\n    \"service_type\": \"tourist-visa\",\n    \"specific_service\": \"Subclass 600\",\n    \"enquiry_details\": \"Client wants to visit family in Melbourne.\",\n    \"appointment_date\": \"2024-12-10\",\n    \"appointment_time\": \"10:30\",\n    \"is_paid\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/appointments",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"appointments"
+							]
+						}
+					},
+					"status": "Created",
+					"code": 201,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": true,\n    \"message\": \"Appointment created successfully\",\n    \"data\": {\n        \"id\": 1389,\n        \"full_name\": \"Jane Smith\",\n        \"email\": \"jane@example.com\",\n        \"phone\": \"+61 423 456 789\",\n        \"location\": \"melbourne\",\n        \"meeting_type\": \"video\",\n        \"meeting_type_display\": \"Video Call\",\n        \"preferred_language\": \"english\",\n        \"enquiry_type\": \"tourist\",\n        \"enquiry_type_display\": \"Tourist Visa\",\n        \"service_type\": \"tourist-visa\",\n        \"specific_service\": \"Subclass 600\",\n        \"enquiry_details\": \"Client wants to visit family in Melbourne.\",\n        \"appointment_date\": \"2024-12-10\",\n        \"appointment_time\": \"10:30:00\",\n        \"appointment_datetime\": \"2024-12-10T10:30:00.000000Z\",\n        \"duration_minutes\": 30,\n        \"status\": \"pending\",\n        \"status_display\": \"Pending\",\n        \"is_paid\": true,\n        \"amount\": \"150.00\",\n        \"discount_amount\": \"0.00\",\n        \"final_amount\": \"150.00\",\n        \"promo_code\": null,\n        \"assigned_admin\": null,\n        \"payment\": \"pending\",\n        \"admin_notes\": null,\n        \"client_notes\": null,\n        \"confirmed_at\": null,\n        \"cancelled_at\": null,\n        \"cancellation_reason\": null,\n        \"created_at\": \"2024-12-09T10:30:00.000000Z\",\n        \"updated_at\": \"2024-12-09T10:30:00.000000Z\"\n    }\n}"
+				},
+				{
+					"name": "Validation Error",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"location\": \"invalid\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/appointments",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"appointments"
+							]
+						}
+					},
+					"status": "Unprocessable Entity",
+					"code": 422,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": false,\n    \"message\": \"Validation failed\",\n    \"data\": {\n        \"location\": [\"The selected location is invalid.\"],\n        \"appointment_date\": [\"The appointment date field is required.\"],\n        \"appointment_time\": [\"The appointment time field is required.\"],\n        \"is_paid\": [\"The is paid field is required.\"]\n    }\n}"
+				},
+				{
+					"name": "Video Call Not Allowed for Free",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"location\": \"melbourne\",\n    \"meeting_type\": \"video-call\",\n    \"preferred_language\": \"English\",\n    \"enquiry_type\": \"tourist\",\n    \"service_type\": \"tourist-visa\",\n    \"specific_service\": \"Subclass 600\",\n    \"enquiry_details\": \"Client wants to visit family in Melbourne.\",\n    \"appointment_date\": \"2024-12-10\",\n    \"appointment_time\": \"10:30\",\n    \"is_paid\": false\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/appointments",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"appointments"
+							]
+						}
+					},
+					"status": "Unprocessable Entity",
+					"code": 422,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": false,\n    \"message\": \"Video call appointments are only available for paid services\"\n}"
 				}
 			]
 		}
