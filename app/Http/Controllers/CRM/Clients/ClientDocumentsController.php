@@ -1554,9 +1554,6 @@ class ClientDocumentsController extends Controller
         ];
         echo json_encode($response);
         return;
-        }
-        echo json_encode($response);
-        */
     }
 
     /**

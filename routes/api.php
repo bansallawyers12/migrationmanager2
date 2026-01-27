@@ -13,6 +13,7 @@ use App\Http\Controllers\API\ClientPortalWorkflowController;
 use App\Http\Controllers\API\ClientPortalMessageController;
 use App\Http\Controllers\API\ClientPortalPersonalDetailsController;
 use App\Http\Controllers\API\ClientPortalCommonListingController;
+use App\Http\Controllers\API\ClientPortalAppointmentController;
 use App\Http\Controllers\API\FCMController;
 use App\Http\Controllers\API\OthersController;
 
@@ -43,6 +44,9 @@ Route::get('/visa-types', [ClientPortalCommonListingController::class, 'getVisaT
 
 // Search Occupations API (public route)
 Route::get('/search-occupation', [ClientPortalCommonListingController::class, 'searchOccupationDetail']);
+
+// Appointment Variable Lists API (public route)
+Route::get('/appointment-variable-lists', [ClientPortalAppointmentController::class, 'getAppointmentVariableLists']);
 
 
 // Protected routes (authentication required)
