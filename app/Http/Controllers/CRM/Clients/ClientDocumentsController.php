@@ -1546,6 +1546,7 @@ class ClientDocumentsController extends Controller
      */
     public function getvisachecklist(Request $request) {
         // DISABLED: VisaDocChecklist model has been removed
+        // Visa checklist functionality disabled - VisaDocChecklist model has been removed
         $response = [
             'status' => false, 
             'message' => 'Visa checklist functionality has been disabled - VisaDocChecklist model has been removed', 
@@ -1553,45 +1554,6 @@ class ClientDocumentsController extends Controller
         ];
         echo json_encode($response);
         return;
-        
-        /* DISABLED CODE - VisaDocChecklist model removed
-        $response = ['status' => false, 'message' => 'Please try again', 'visaCheckListInfo' => []];
-
-        try {
-            if( ClientMatter::where('id', $request->client_matter_id)->exists()){
-                $clientMatterInfo = ClientMatter::select('sel_matter_id')->where('id',$request->client_matter_id)->first();
-                //dd($clientMatterInfo->sel_matter_id);
-                if( isset($clientMatterInfo) ){
-                    $visaCheckListInfo = VisaDocChecklist::select('id','name')->whereRaw("? = ANY(string_to_array(matter_id, ','))", [$clientMatterInfo->sel_matter_id])->get();
-                    //dd($visaCheckListInfo);
-                    if( !empty($visaCheckListInfo) && count($visaCheckListInfo)>0 ){
-                        $response['status'] 	= 	true;
-                        $response['message']	=	'Visa checklist is successfully fetched.';
-                        $response['visaCheckListInfo']	=	$visaCheckListInfo;
-                    } else {
-                        $response['status'] 	= 	false;
-                        $response['message']	=	'Please try again';
-                        $response['visaCheckListInfo'] = array();
-                    }
-                } else {
-                    $response['status'] 	= 	false;
-                    $response['message']	=	'Please try again';
-                    $response['visaCheckListInfo']	=	array();
-                }
-            } else {
-                $response['status'] 	= 	false;
-                $response['message']	=	'Please try again';
-                $response['visaCheckListInfo']	=	array();
-            }
-        } catch (\Exception $e) {
-            Log::error('Error getting visa checklist', [
-                'client_matter_id' => $request->client_matter_id ?? null,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            $response['status'] = false;
-            $response['message'] = 'An error occurred. Please try again.';
-            $response['visaCheckListInfo'] = [];
         }
         echo json_encode($response);
         */

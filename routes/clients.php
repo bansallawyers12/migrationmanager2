@@ -110,9 +110,7 @@ Route::get('/deletenote', [ClientNotesController::class, 'deletenote'])->name('c
 Route::get('/viewnotedetail', [ClientNotesController::class, 'viewnotedetail']);
 Route::get('/viewapplicationnote', [ClientNotesController::class, 'viewapplicationnote']);
 Route::post('/saveprevvisa', [ClientNotesController::class, 'saveprevvisa']);
-Route::post('/saveonlineprimaryform', [ClientNotesController::class, 'saveonlineform']);
-Route::post('/saveonlinesecform', [ClientNotesController::class, 'saveonlineform']);
-Route::post('/saveonlinechildform', [ClientNotesController::class, 'saveonlineform']);
+// REMOVED: saveonlineform routes - OnlineForm model deleted, no frontend calls these routes
 Route::get('/get-notes', [ClientNotesController::class, 'getnotes'])->name('clients.getnotes');
 Route::get('/pinnote', [ClientNotesController::class, 'pinnote']);
 
@@ -154,7 +152,7 @@ Route::get('/documents/delete', [ClientDocumentsController::class, 'deletedocs']
 Route::post('/documents/move', [ClientDocumentsController::class, 'moveDocument'])->name('clients.documents.moveDocument');
 // BUGFIX #3: Get visa categories for a specific matter
 Route::get('/get-visa-categories', [ClientDocumentsController::class, 'getVisaCategories'])->name('clients.documents.getVisaCategories');
-Route::get('/documents/get-visa-checklist', [ClientDocumentsController::class, 'getvisachecklist'])->name('clients.documents.getvisachecklist');
+// REMOVED: get-visa-checklist route - VisaDocChecklist model deleted, no frontend calls this route
 Route::post('/documents/not-used', [ClientDocumentsController::class, 'notuseddoc'])->name('clients.documents.notuseddoc');
 Route::post('/documents/rename-checklist', [ClientDocumentsController::class, 'renamechecklistdoc'])->name('clients.documents.renamechecklistdoc');
 Route::post('/documents/delete-checklist', [ClientDocumentsController::class, 'deleteChecklist'])->name('clients.documents.deleteChecklist');

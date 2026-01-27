@@ -47,8 +47,6 @@ FeeOptionType.php
 Form956.php
 FreeDownload.php
 HomeContent.php
-InvoiceDetail.php
-InvoicePayment.php
 Label.php
 Lead.php
 MailReport.php
