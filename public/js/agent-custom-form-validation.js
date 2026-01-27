@@ -368,56 +368,7 @@ function customValidate(formName, savetype = '')
 								}
 							}
 						});		
-					}else if(formName == 'educationform'){
-						var client_id = $('#educationform input[name="client_id"]').val();
-						var myform = document.getElementById('educationform');
-						var fd = new FormData(myform);	
-						$.ajax({
-							type:'post',
-							url:$("form[name="+formName+"]").attr('action'),
-							processData: false,
-							contentType: false,
-							data: fd,
-							success: function(response){
-								$('.popuploader').hide(); 
-								var obj = $.parseJSON(response);
-								$('.create_education').modal('hide');
-								if(obj.status){
-									$('#create_note').modal('hide');
-								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
-									$.ajax({
-										url: site_url+'/agent/get-educations',
-										type:'GET',
-										data:{clientid:client_id},
-										success: function(responses){
-											 
-											$('.education_list').html(responses);
-										}
-									});
-									/* $.ajax({
-										url: site_url+'/agent/get-activities',
-										type:'GET',
-										datatype:'json',
-										data:{id:client_id},
-										success: function(responses){
-											var ress = JSON.parse(responses);
-											var html = '';
-											$.each(ress.data, function(k, v) {
-												html += '<div class="activity"><div class="activity-icon bg-primary text-white"><span>'+v.createdname+'</span></div><div class="activity-detail"><div class="mb-2"><span class="text-job">'+v.date+'</span></div><p><b>'+v.name+'</b> '+v.subject+'</p>';
-												if(v.message != null){
-													html += '<p>'+v.message+'</p>';
-												}
-												html += '</div></div>';
-											});
-											$('.activities').html(html);
-										}
-									}); */
-								}else{
-									$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
-									
-								}
-							}
-						});		
+					// educationform validation REMOVED - form deleted in Phase 1 (education system deprecated)
 					}else if(formName == 'feeform'){
 						var product_id = $('#feeform input[name="product_id"]').val();
 						var myform = document.getElementById('feeform');
@@ -753,56 +704,7 @@ function customValidate(formName, savetype = '')
 								}
 							}
 						});		
-					}else if(formName == 'editeducationform'){
-						var client_id = $('#editeducationform input[name="client_id"]').val();
-						var myform = document.getElementById('editeducationform');
-						var fd = new FormData(myform);	
-						$.ajax({
-							type:'post',
-							url:$("form[name="+formName+"]").attr('action'),
-							processData: false,
-							contentType: false,
-							data: fd,
-							success: function(response){
-								$('.popuploader').hide(); 
-								var obj = $.parseJSON(response);
-							
-								if(obj.status){
-									$('#edit_education').modal('hide');
-								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
-									$.ajax({
-										url: site_url+'/agent/get-educations',
-										type:'GET',
-										data:{clientid:client_id},
-										success: function(responses){
-											 
-											$('.education_list').html(responses);
-										}
-									});
-									/* $.ajax({
-										url: site_url+'/agent/get-activities',
-										type:'GET',
-										datatype:'json',
-										data:{id:client_id},
-										success: function(responses){
-											var ress = JSON.parse(responses);
-											var html = '';
-											$.each(ress.data, function(k, v) {
-												html += '<div class="activity"><div class="activity-icon bg-primary text-white"><span>'+v.createdname+'</span></div><div class="activity-detail"><div class="mb-2"><span class="text-job">'+v.date+'</span></div><p><b>'+v.name+'</b> '+v.subject+'</p>';
-												if(v.message != null){
-													html += '<p>'+v.message+'</p>';
-												}
-												html += '</div></div>';
-											});
-											$('.activities').html(html);
-										}
-									}); */
-								}else{
-									$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
-									
-								}
-							}
-						});		
+					// editeducationform validation REMOVED - form deleted in Phase 1 (education system deprecated)
 					}else if(formName == 'testscoreform'){
 						var client_id = $('#testscoreform input[name="client_id"]').val();
 						var myform = document.getElementById('testscoreform');

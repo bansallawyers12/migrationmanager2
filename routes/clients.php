@@ -129,12 +129,9 @@ Route::post('/not-picked-call', [ClientsController::class, 'notpickedcall'])->na
 Route::get('/pinactivitylog', 'CRM\ClientsController@pinactivitylog');
 
 /*---------- Client Services ----------*/
-Route::post('/interested-service', 'CRM\ClientsController@interestedService');
-Route::post('/edit-interested-service', 'CRM\ClientsController@editinterestedService');
-Route::get('/get-services', 'CRM\ClientsController@getServices');
+// Interested Services routes REMOVED - feature deprecated (no UI access, modals deleted, controllers don't exist)
+// Routes removed: interested-service, edit-interested-service, get-services, getintrestedservice, getintrestedserviceedit
 Route::post('/servicesavefee', 'CRM\ClientsController@servicesavefee');
-Route::get('/getintrestedservice', 'CRM\ClientsController@getintrestedservice');
-Route::get('/getintrestedserviceedit', 'CRM\ClientsController@getintrestedserviceedit');
 
 Route::get('/get-application-lists', 'CRM\ClientsController@getapplicationlists')->name('clients.getapplicationlists');
 Route::post('/saveapplication', 'CRM\ClientsController@saveapplication')->name('clients.saveapplication');

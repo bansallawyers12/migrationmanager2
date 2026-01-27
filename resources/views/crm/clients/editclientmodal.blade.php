@@ -344,19 +344,4 @@
 
 <!-- Education Modal removed - education system deprecated (replaced by ClientQualification in edit.blade.php) -->
 
-<!-- Interested Service Modal -->
-<div class="modal fade  custom_modal" id="eidt_interested_service" tabindex="-1" role="dialog" aria-labelledby="create_interestModalLabel" aria-hidden="true">
-	<div class="modal-dialog modal-lg">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title" id="interestModalLabel">Edit Interested Services</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-					<span aria-hidden="true">&times;</span>
-				</button>
-			</div>
-			<div class="modal-body showinterestedserviceedit">
-				 
-			</div>
-		</div>
-	</div>
-</div>
+{{-- Interested Service Edit Modal REMOVED - feature deprecated (no UI triggers) --}}
