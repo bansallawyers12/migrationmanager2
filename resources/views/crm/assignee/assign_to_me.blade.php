@@ -495,7 +495,7 @@
         if(row_id !=""){
             $.ajax({
 				type:'post',
-                url:"{{URL::to('/')}}/update-task-not-completed",
+                url:"{{URL::to('/')}}/update-action-not-completed",
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
                 data: {id:row_id },
                 success: function(response){
@@ -544,7 +544,7 @@
         
         $.ajax({
             type: 'post',
-            url: "{{URL::to('/')}}/update-task-completed",
+            url: "{{URL::to('/')}}/update-action-completed",
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
             data: {
                 id: currentTaskId, 
@@ -608,7 +608,7 @@
 		if(flag){
 			$.ajax({
 				type:'post',
-					url:"{{URL::to('/')}}/clients/followup/store",
+					url:"{{URL::to('/')}}/clients/action/store",
 					headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
 
 					data: {note_type:'follow_up',description:$('#assignnote').val(),client_id:$('#assign_client_id').val(),followup_datetime:$('#popoverdatetime').val(),assignee_name:$('#rem_cat :selected').text(),rem_cat:$('#rem_cat option:selected').val(),task_group:$('#task_group option:selected').val()},
@@ -669,32 +669,13 @@
 			success: function(responses){
 				// $('.popuploader').hide();
 				$('.taskcomment').val('');
-				$.ajax({
-					url: site_url+'/get-assigne-detail',
-					type:'GET',
-					data:{id:appliid},
-					success: function(responses){
-						$('.popuploader').hide();
-						$('.taskview').html(responses);
-					}
-				});
-			}
-		});
-	});
-	$(document).delegate('.openassigneview', 'click', function(){
-	// $('.popuploader').hide();
-	$('#openassigneview').modal('show');
-	var v = $(this).attr('id');
-		$.ajax({
-			url: site_url+'/get-assigne-detail',
-			type:'GET',
-			data:{id:v},
-			success: function(responses){
+				// REMOVED: Deprecated endpoint /get-assigne-detail
 				$('.popuploader').hide();
-				$('.taskview').html(responses);
 			}
 		});
 	});
+	// REMOVED: Deprecated appointment system functionality
+	// $(document).delegate('.openassigneview', 'click', function(){ ... });
 
 	$(document).delegate('.changestatus', 'click', function(){
 		var appliid = $(this).attr('data-id');
@@ -713,15 +694,8 @@
 				    console.log(obj.status);
 				    $('.updatestatusview'+appliid).html(obj.viewstatus);
 				}
-				$.ajax({
-					url: site_url+'/get-assigne-detail',
-					type:'GET',
-					data:{id:appliid},
-					success: function(responses){
-						$('.popuploader').hide();
-						$('.taskview').html(responses);
-					}
-				});
+				// REMOVED: Deprecated endpoint /get-assigne-detail
+				$('.popuploader').hide();
 			}
 		});
 	});
@@ -773,15 +747,8 @@
 			type:'POST',
 			data:{"_token":$('meta[name="csrf-token"]').attr('content'),id: appliid,visit_purpose:visitpurpose},
 			success: function(responses){
-				$.ajax({
-					url: site_url+'/get-assigne-detail',
-					type:'GET',
-					data:{id:appliid},
-					success: function(responses){
-						$('.popuploader').hide();
-						$('.taskview').html(responses);
-					}
-				});
+				// REMOVED: Deprecated endpoint /get-assigne-detail
+				$('.popuploader').hide();
 
 			}
 		});

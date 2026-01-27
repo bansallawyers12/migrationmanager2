@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use App\Models\AccountAllInvoiceReceipt;
 use PDF;
 
 class SendHubdocInvoiceJob implements ShouldQueue
@@ -41,7 +42,7 @@ class SendHubdocInvoiceJob implements ShouldQueue
             set_time_limit(300); // 5 minutes
             
             // Get invoice data
-            $record_get = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$this->invoiceId)->get();
+            $record_get = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$this->invoiceId)->get();
             
             if(empty($record_get) || count($record_get) == 0) {
                 Log::error('Hubdoc Invoice Job: Invoice not found for ID: ' . $this->invoiceId);
@@ -52,8 +53,7 @@ class SendHubdocInvoiceJob implements ShouldQueue
             $clientname = DB::table('admins')->where('id',$record_get[0]->client_id)->first();
             
             // Calculate amounts
-            $total_Invoice_Amount = DB::table('account_all_invoice_receipts')
-                ->where('receipt_type', 3)
+            $total_Invoice_Amount = AccountAllInvoiceReceipt::where('receipt_type', 3)
                 ->where('receipt_id', $this->invoiceId)
                 ->sum(DB::raw("CASE
                     WHEN payment_type = 'Discount' THEN -withdraw_amount
@@ -61,22 +61,21 @@ class SendHubdocInvoiceJob implements ShouldQueue
                 END"));
 
             // Get all required data for PDF generation
-            $record_get_Professional_Fee_cnt = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Professional Fee')->count();
-            $record_get_Department_Charges_cnt = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Department Charges')->count();
-            $record_get_Surcharge_cnt = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Surcharge')->count();
-            $record_get_Disbursements_cnt = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Disbursements')->count();
-            $record_get_Other_Cost_cnt = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Other Cost')->count();
-            $record_get_Discount_cnt = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Discount')->count();
+            $record_get_Professional_Fee_cnt = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Professional Fee')->count();
+            $record_get_Department_Charges_cnt = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Department Charges')->count();
+            $record_get_Surcharge_cnt = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Surcharge')->count();
+            $record_get_Disbursements_cnt = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Disbursements')->count();
+            $record_get_Other_Cost_cnt = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Other Cost')->count();
+            $record_get_Discount_cnt = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Discount')->count();
 
-            $record_get_Professional_Fee = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Professional Fee')->get();
-            $record_get_Department_Charges = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Department Charges')->get();
-            $record_get_Surcharge = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Surcharge')->get();
-            $record_get_Disbursements = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Disbursements')->get();
-            $record_get_Other_Cost = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Other Cost')->get();
-            $record_get_Discount = DB::table('account_all_invoice_receipts')->where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Discount')->get();
+            $record_get_Professional_Fee = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Professional Fee')->get();
+            $record_get_Department_Charges = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Department Charges')->get();
+            $record_get_Surcharge = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Surcharge')->get();
+            $record_get_Disbursements = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Disbursements')->get();
+            $record_get_Other_Cost = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Other Cost')->get();
+            $record_get_Discount = AccountAllInvoiceReceipt::where('receipt_type',3)->where('receipt_id',$this->invoiceId)->where('payment_type','Discount')->get();
 
-            $total_Gross_Amount = DB::table('account_all_invoice_receipts')
-                ->where('receipt_type', 3)
+            $total_Gross_Amount = AccountAllInvoiceReceipt::where('receipt_type', 3)
                 ->where('receipt_id', $this->invoiceId)
                 ->sum(DB::raw("
                     CASE

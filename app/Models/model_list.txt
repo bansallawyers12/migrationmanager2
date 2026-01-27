@@ -8,7 +8,6 @@ Application.php
 ApplicationDocument.php
 ApplicationDocumentList.php
 Attachment.php
-AuditLog.php
 Branch.php
 CheckinHistory.php
 CheckinLog.php
@@ -34,7 +33,6 @@ ClientVisaCountry.php
 Contact.php
 CostAssignmentForm.php
 Country.php
-Course.php
 CrmEmailTemplate.php
 DeviceToken.php
 Document.php
@@ -44,17 +42,12 @@ EmailAccount.php
 EmailDraft.php
 EmailRecord.php
 EmailSignature.php
-EmailTemplate.php
 FeeOption.php
 FeeOptionType.php
-FileStatus.php
 Form956.php
 FreeDownload.php
-Group.php
 HomeContent.php
-Invoice.php
 InvoiceDetail.php
-InvoiceFollowup.php
 InvoicePayment.php
 Label.php
 Lead.php
@@ -64,8 +57,6 @@ MatterEmailTemplate.php
 MatterOtherEmailTemplate.php
 Note.php
 Notification.php
-OfficeVisit.php
-OnlineForm.php
 OurService.php
 PasswordResetLink.php
 PersonalDocumentType.php
@@ -76,11 +67,9 @@ Report.php
 RepresentingPartner.php
 Service.php
 Setting.php
-ShareInvoice.php
 SignatureField.php
 Signer.php
 Slider.php
-State.php
 Subject.php
 Tag.php
 TaxRate.php
@@ -92,9 +81,6 @@ User.php
 UserLog.php
 UserRole.php
 UserType.php
-VerifyUser.php
-VisaDocChecklist.php
 VisaDocumentType.php
-WebsiteSetting.php
 Workflow.php
 WorkflowStage.php

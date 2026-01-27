@@ -99,7 +99,7 @@
                                 <div id='note-error' class='error-message'></div>
                             </div>
                             
-                            <input id='task_group' name='task_group' type='hidden' value='Personal Task'>
+                            <input id='task_group' name='task_group' type='hidden' value='Personal Action'>
                             
                             <div class='text-center'>
                                 <button type='button' class='btn btn-primary' id='add_my_task'>
@@ -180,7 +180,7 @@
                                 <div id='note-error' class='error-message'></div>
                             </div>
                             
-                            <input id='task_group' name='task_group' type='hidden' value='Personal Task'>
+                            <input id='task_group' name='task_group' type='hidden' value='Personal Action'>
                             
                             <div class='text-center'>
                                 <button type='button' class='btn btn-primary' id='add_my_task'>
@@ -1243,7 +1243,7 @@
         updateStage: "{{ route('dashboard.update-stage') }}",
         columnPreferences: "{{ route('dashboard.column-preferences') }}",
         extendDeadline: "{{ route('dashboard.extend-deadline') }}",
-        updateTaskCompleted: "{{ route('dashboard.update-task-completed') }}"
+        updateActionCompleted: "{{ route('dashboard.update-action-completed') }}"
     };
     
     window.dashboardData = {
@@ -1465,7 +1465,7 @@ $(function () {
             
             $.ajax({
                 type: 'post',
-                url: "{{URL::to('/')}}/clients/personalfollowup/store",
+                url: "{{URL::to('/')}}/clients/action/personal/store",
                 headers: { 
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
@@ -1599,7 +1599,7 @@ $(function () {
                         
                         $.ajax({
                             type: 'post',
-                            url: "{{URL::to('/')}}/clients/personalfollowup/store",
+                            url: "{{URL::to('/')}}/clients/action/personal/store",
                             headers: { 
                                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                             },

@@ -43,6 +43,7 @@ use App\Http\Controllers\Controller;
                         }
                     } ?>
                 </h3>
+                {{-- Personal Lead Display --}}
                 <p class="client-name">
                     {{$fetchedData->first_name}} {{$fetchedData->last_name}} 
                     <a href="{{route('clients.edit', base64_encode(convert_uuencode(@$fetchedData->id)))}}" title="Edit" class="client-name-edit">
@@ -718,13 +719,7 @@ use App\Http\Controllers\Controller;
 	</div>
 </div>
 
-<div class="modal fade  custom_modal" id="interest_service_view" tabindex="-1" role="dialog" aria-labelledby="interest_serviceModalLabel">
-	<div class="modal-dialog modal-lg">
-		<div class="modal-content showinterestedservice">
-
-		</div>
-	</div>
-</div>
+{{-- interest_service_view modal REMOVED - Interested Services feature deprecated (no UI triggers) --}}
 
 <div id="confirmModal" tabindex="-1" role="dialog" aria-labelledby="confirmModalLabel" aria-hidden="false" class="modal fade" >
 	<div class="modal-dialog">
@@ -792,18 +787,7 @@ use App\Http\Controllers\Controller;
 	</div>
 </div>
 
-<div id="confirmEducationModal" tabindex="-1" role="dialog" aria-labelledby="confirmModalLabel" aria-hidden="false" class="modal fade" >
-	<div class="modal-dialog">
-		<div class="modal-content popUp">
-			<div class="modal-body text-center">
-				<button type="button" data-dismiss="modal" aria-label="Close" class="close"><span aria-hidden="true">&times;</span></button>
-				<h4 class="modal-title text-center message col-v-5">Do you want to delete this note?</h4>
-				<button type="submit" style="margin-top: 40px;" class="button btn btn-danger accepteducation">Delete</button>
-				<button type="button" style="margin-top: 40px;" data-dismiss="modal" class="button btn btn-secondary cancel">Cancel</button>
-			</div>
-		</div>
-	</div>
-</div>
+<!-- confirmEducationModal removed - education system deprecated (replaced by ClientQualification) -->
 
 <div id="confirmcompleteModal" tabindex="-1" role="dialog" aria-labelledby="confirmModalLabel" aria-hidden="false" class="modal fade" >
 	<div class="modal-dialog">
@@ -1024,90 +1008,11 @@ use App\Http\Controllers\Controller;
 	</div>
 </div>
 
-<div class="modal fade custom_modal" id="serviceTaken" tabindex="-1" role="dialog" aria-labelledby="create_interestModalLabel" aria-hidden="true">
-	<div class="modal-dialog modal-lg">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title" id="interestModalLabel">Service Taken</h5>
-
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-					<span aria-hidden="true">&times;</span>
-				</button>
-			</div>
-			<div class="modal-body">
-                <form method="post" action="{{url('/client/createservicetaken')}}" name="createservicetaken" id="createservicetaken" autocomplete="off" enctype="multipart/form-data">
-				@csrf
-                    <input id="logged_client_id" name="logged_client_id"  type="hidden" value="<?php echo $fetchedData->id;?>">
-					<div class="row">
-						<div class="col-12 col-md-12 col-lg-12">
-
-							<div class="form-group">
-								<label style="display:block;" for="service_type">Select Service Type:</label>
-								<div class="form-check form-check-inline">
-									<input class="form-check-input" type="radio" id="Migration_inv" value="Migration" name="service_type" checked>
-									<label class="form-check-label" for="Migration_inv">Migration</label>
-								</div>
-								<div class="form-check form-check-inline">
-									<input class="form-check-input" type="radio" id="Eductaion_inv" value="Eductaion" name="service_type">
-									<label class="form-check-label" for="Eductaion_inv">Eductaion</label>
-								</div>
-								<span class="custom-error service_type_error" role="alert">
-									<strong></strong>
-								</span>
-							</div>
-						</div>
-
-						<div class="col-12 col-md-12 col-lg-12 is_Migration_inv">
-                            <div class="form-group">
-								<label for="mig_ref_no">Reference No: <span class="span_req">*</span></label>
-                                <input type="text" name="mig_ref_no" id="mig_ref_no" value="" class="form-control" data-valid="required">
-                            </div>
-
-                            <div class="form-group">
-								<label for="mig_service">Service: <span class="span_req">*</span></label>
-                                <input type="text" name="mig_service" id="mig_service" value="" class="form-control" data-valid="required">
-                            </div>
-
-                            <div class="form-group">
-								<label for="mig_notes">Notes: <span class="span_req">*</span></label>
-                                <input type="text" name="mig_notes" id="mig_notes" value="" class="form-control" data-valid="required">
-                            </div>
-                        </div>
-
-                        <div class="col-12 col-md-12 col-lg-12 is_Eductaion_inv" style="display:none;">
-                            <div class="form-group">
-								<label for="edu_course">Course: <span class="span_req">*</span></label>
-                                <input type="text" name="edu_course" id="edu_course" value="" class="form-control">
-                            </div>
-
-                            <div class="form-group">
-								<label for="edu_college">College: <span class="span_req">*</span></label>
-                                <input type="text" name="edu_college" id="edu_college" value="" class="form-control">
-                            </div>
-
-                            <div class="form-group">
-								<label for="edu_service_start_date">Service Start Date: <span class="span_req">*</span></label>
-                                <input type="text" name="edu_service_start_date" id="edu_service_start_date" value="" class="form-control">
-                            </div>
-
-                            <div class="form-group">
-								<label for="edu_notes">Notes: <span class="span_req">*</span></label>
-                                <input type="text" name="edu_notes" id="edu_notes" value="" class="form-control">
-                            </div>
-                        </div>
-
-                        <div class="col-12 col-md-12 col-lg-12">
-							<button onclick="customValidate('createservicetaken')" type="button" class="btn btn-primary">Save</button>
-							<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-						</div>
-					</div>
-				</form>
-			</div>
-		</div>
-	</div>
-</div>
-
-
+{{-- Service Taken Modal - REMOVED --}}
+{{-- Feature deprecated - client_service_takens table does not exist --}}
+{{-- Table was for tracking Migration/Education services taken by clients --}}
+{{-- Model clientServiceTaken.php deleted - no database backing --}}
+{{-- Routes still exist but will fail: createservicetaken, removeservicetaken, getservicetaken --}}
 
 <div class="modal fade" id="inbox_reassignemail_modal">
 	<div class="modal-dialog modal-lg">
@@ -1437,8 +1342,6 @@ $(document).ready(function() {
             createNote: '{{ URL::to("/create-note") }}',
             getNoteDetail: '{{ URL::to("/getnotedetail") }}',
             deleteNote: '{{ URL::to("/deletenote") }}',
-            filterEmails: '{{ URL::to("/clients/filter/emails") }}',
-            filterSentMails: '{{ URL::to("/clients/filter/sentmails") }}',
             checkStarClient: '{{ route("check.star.client") }}',
             getInfoByReceiptId: '{{ URL::to("/clients/getInfoByReceiptId") }}',
             notPickedCall: '{{ URL::to("/not-picked-call") }}',
@@ -1451,7 +1354,7 @@ $(document).ready(function() {
             getCostAssignmentAgentLead: '{{ URL::to("/clients/getCostAssignmentMigrationAgentDetailLead") }}',
             uploadAgreement: '{{ route("clients.uploadAgreement", $fetchedData->id) }}',
             fetchClientContactNo: '{{ URL::to("/clients/fetchClientContactNo") }}',
-            followupStore: '{{ URL::to("/clients/followup/store") }}',
+            followupStore: '{{ URL::to("/clients/action/store") }}',
             publishDoc: '{{ URL::to("/application/publishdoc") }}',
             deleteCostagreement: '{{ URL::to("/deletecostagreement") }}',
             deleteAction: '{{ URL::to("/delete_action") }}',
@@ -1465,24 +1368,16 @@ $(document).ready(function() {
             changeClientStatus: '{{ URL::to("/change-client-status") }}',
             getTemplates: '{{ URL::to("/get-templates") }}',
             getPartner: '{{ URL::to("/getpartner") }}',
-            getProduct: '{{ URL::to("/getproduct") }}',
-            getBranch: '{{ URL::to("/getbranch") }}',
             convertApplication: '{{ URL::to("/convertapplication") }}',
             renameDoc: '{{ URL::to("/documents/rename") }}',
             renameChecklistDoc: '{{ URL::to("/documents/rename-checklist") }}',
-            deleteEducation: '{{ URL::to("/delete-education") }}',
-            getSubjects: '{{ URL::to("/getsubjects") }}',
-            getAppointmentDetail: '{{ URL::to("/getAppointmentdetail") }}',
-            getEducationDetail: '{{ URL::to("/getEducationdetail") }}',
             getInterestedService: '{{ URL::to("/getintrestedservice") }}',
             getInterestedServiceEdit: '{{ URL::to("/getintrestedserviceedit") }}',
             fetchClientMatterAssignee: '{{ URL::to("/clients/fetchClientMatterAssignee") }}',
-            addScheduleInvoiceDetail: '{{ URL::to("/addscheduleinvoicedetail") }}',
             updateStage: '{{ URL::to("/updatestage") }}',
             completeStage: '{{ URL::to("/completestage") }}',
             updateBackStage: '{{ URL::to("/updatebackstage") }}',
             getApplicationNotes: '{{ URL::to("/getapplicationnotes") }}',
-            scheduleInvoiceDetail: '{{ URL::to("/scheduleinvoicedetail") }}',
             checklistUpload: '{{ URL::to("/application/checklistupload") }}',
             sendToHubdoc: '{{ url("/clients/sendToHubdoc") }}',
             checkHubdocStatus: '{{ url("/clients/checkHubdocStatus") }}',

@@ -345,7 +345,7 @@
         
         $.ajax({
             type: 'post',
-            url: "{{URL::to('/')}}/update-task-completed",
+            url: "{{URL::to('/')}}/update-action-completed",
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
             data: {
                 id: currentTaskId, 
@@ -408,7 +408,7 @@
 		if(flag){
 			$.ajax({
 				type:'post',
-					url:"{{URL::to('/')}}/clients/followup/store",
+					url:"{{URL::to('/')}}/clients/action/store",
 					headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
 
 					data: {note_type:'follow_up',description:$('#assignnote').val(),client_id:$('#assign_client_id').val(),followup_datetime:$('#popoverdatetime').val(),assignee_name:$('#rem_cat :selected').text(),rem_cat:$('#rem_cat option:selected').val(),task_group:$('#task_group option:selected').val()},
@@ -434,67 +434,11 @@
 		}
 	});
 
-	$(document).delegate('.saveassignee', 'click', function(){
-        var appliid = $(this).attr('data-id');
-
-		var assinee= $('#changeassignee').val();
-		$('.popuploader').show();
-		// console.log($('#changeassignee').val());
-		$.ajax({
-			url: site_url+'/change_assignee',
-			type:'GET',
-			data:{id: appliid,assinee: assinee},
-			success: function(response){
-				// console.log(response);
-				 var obj = $.parseJSON(response);
-				if(obj.status){
-				    alert(obj.message);
-				location.reload();
-
-				}else{
-					alert(obj.message);
-				}
-			}
-		});
-    });
-
-	$(document).delegate('.savecomment', 'click', function(){
-		var visitcomment = $('.taskcomment').val();
-		var appliid = $(this).attr('data-id');
-		$('.popuploader').show();
-		$.ajax({
-			url: site_url+'/update_apppointment_comment',
-			type:'POST',
-			data:{"_token":$('meta[name="csrf-token"]').attr('content'),id: appliid,visit_comment:visitcomment},
-			success: function(responses){
-				// $('.popuploader').hide();
-				$('.taskcomment').val('');
-				$.ajax({
-					url: site_url+'/get-assigne-detail',
-					type:'GET',
-					data:{id:appliid},
-					success: function(responses){
-						$('.popuploader').hide();
-						$('.taskview').html(responses);
-					}
-				});
-			}
-		});
-	});
-	$(document).delegate('.openassigneview', 'click', function(){
-	// $('.popuploader').hide();
-	$('#openassigneview').modal('show');
-	var v = $(this).attr('id');
-		$.ajax({
-			url: site_url+'/get-assigne-detail',
-			type:'GET',
-			data:{id:v},
-			success: function(responses){
-				$('.popuploader').hide();
-				$('.taskview').html(responses);
-			}
-		});
-	});
+	// REMOVED: Deprecated appointment system functionality
+	// These endpoints were removed: /change_assignee, /update_apppointment_comment, /get-assigne-detail
+	// $(document).delegate('.saveassignee', 'click', function(){ ... });
+	// $(document).delegate('.savecomment', 'click', function(){ ... });
+	// $(document).delegate('.openassigneview', 'click', function(){ ... });
 
 	$(document).delegate('.changestatus', 'click', function(){
 		var appliid = $(this).attr('data-id');
@@ -513,15 +457,7 @@
 				    console.log(obj.status);
 				    $('.updatestatusview'+appliid).html(obj.viewstatus);
 				}
-				$.ajax({
-					url: site_url+'/get-assigne-detail',
-					type:'GET',
-					data:{id:appliid},
-					success: function(responses){
-						$('.popuploader').hide();
-						$('.taskview').html(responses);
-					}
-				});
+				// REMOVED: Deprecated endpoint /get-assigne-detail
 			}
 		});
 	});
@@ -539,17 +475,8 @@
 			success: function(responses){
 				$('.popuploader').hide();
 
-				$.ajax({
-					url: site_url+'/get-assigne-detail',
-					type:'GET',
-					data:{id:appliid},
-					success: function(responses){
-						$('.popuploader').hide();
-						console.log(responses);
-						$('.taskview').html(responses);
-
-					}
-				});
+				// REMOVED: Deprecated endpoint /get-assigne-detail
+				$('.popuploader').hide();
 			}
 		});
 	});
@@ -564,51 +491,10 @@
 		$('.desc_click').show();
 	});
 
-	$(document).delegate('.tasknewdesc', 'blur', function(){
-		var visitpurpose = $(this).val();
-		var appliid = $(this).attr('data-id');
-		$('.popuploader').show();
-		$.ajax({
-			url: site_url+'/update_apppointment_description',
-			type:'POST',
-			data:{"_token":$('meta[name="csrf-token"]').attr('content'),id: appliid,visit_purpose:visitpurpose},
-			success: function(responses){
-				$.ajax({
-					url: site_url+'/get-assigne-detail',
-					type:'GET',
-					data:{id:appliid},
-					success: function(responses){
-						$('.popuploader').hide();
-						$('.taskview').html(responses);
-					}
-				});
-
-			}
-		});
-	});
-
-	$(document).delegate('.taskdesc', 'blur', function(){
-		var visitpurpose = $(this).val();
-		var appliid = $(this).attr('data-id');
-		$('.popuploader').show();
-		$.ajax({
-			url: site_url+'/update_apppointment_description',
-			type:'POST',
-			data:{"_token":$('meta[name="csrf-token"]').attr('content'),id: appliid,visit_purpose:visitpurpose},
-			success: function(responses){
-				 $.ajax({
-					url: site_url+'/get-assigne-detail',
-					type:'GET',
-					data:{id:appliid},
-					success: function(responses){
-						$('.popuploader').hide();
-						$('.taskview').html(responses);
-					}
-				});
-
-			}
-		});
-	});
+	// REMOVED: Deprecated appointment system functionality
+	// These endpoints were removed: /update_apppointment_description, /get-assigne-detail
+	// $(document).delegate('.tasknewdesc', 'blur', function(){ ... });
+	// $(document).delegate('.taskdesc', 'blur', function(){ ... });
 });
 </script>
 @endpush

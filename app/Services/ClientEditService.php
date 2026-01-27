@@ -68,12 +68,12 @@ class ClientEditService
     }
 
     /**
-     * Get client basic data with partner relationship eager loaded
-     * This prevents N+1 query when accessing $fetchedData->partner in blade
+     * Get client basic data with partner and company relationships eager loaded
+     * This prevents N+1 query when accessing $fetchedData->partner or $fetchedData->company in blade
      */
     protected function getClientData(int $clientId)
     {
-        return Admin::with('partner')->find($clientId);
+        return Admin::with(['partner', 'company.contactPerson'])->find($clientId);
     }
 
     /**

@@ -129,39 +129,39 @@ class DashboardController extends Controller
     }
 
     /**
-     * Update task completion status
+     * Update action completion status
      */
-    public function updateTaskCompleted(Request $request)
+    public function updateActionCompleted(Request $request)
     {
         try {
-            Log::info('Update task completed request data:', $request->all());
+            Log::info('Update action completed request data:', $request->all());
             
             $this->validate($request, [
                 'id' => 'required|integer',
                 'unique_group_id' => 'required|string'
             ]);
 
-            $result = $this->dashboardService->updateTaskCompleted(
+            $result = $this->dashboardService->updateActionCompleted(
                 $request->id, 
                 $request->unique_group_id
             );
             
-            Log::info('Update task completed result:', $result);
+            Log::info('Update action completed result:', $result);
             
             return response()->json($result);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('Validation error in updateTaskCompleted:', $e->errors());
+            Log::error('Validation error in updateActionCompleted:', $e->errors());
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed: ' . implode(', ', array_flatten($e->errors()))
             ], 422);
         } catch (\Exception $e) {
-            Log::error('Error in updateTaskCompleted: ' . $e->getMessage(), [
+            Log::error('Error in updateActionCompleted: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
             return response()->json([
                 'success' => false,
-                'message' => 'An error occurred while updating task completion'
+                'message' => 'An error occurred while updating action completion'
             ], 500);
         }
     }

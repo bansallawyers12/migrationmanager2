@@ -565,7 +565,7 @@
                                 <div id='note-error' class='error-message'></div>
                             </div>
                             
-                            <input id='task_group' name='task_group' type='hidden' value='Personal Task'>
+                            <input id='task_group' name='task_group' type='hidden' value='Personal Action'>
                             
                             <div class='text-center'>
                                 <button class='btn btn-primary' id='add_my_task'>
@@ -586,7 +586,7 @@
                 <button class="tab-button" data-filter="review">Review <span class="badge" id="review-count">0</span></button>
                 <button class="tab-button" data-filter="query">Query <span class="badge" id="query-count">0</span></button>
                 <button class="tab-button" data-filter="urgent">Urgent <span class="badge" id="urgent-count">0</span></button>
-                <button class="tab-button" data-filter="personal_task">Personal Task <span class="badge" id="personal-task-count">0</span></button>
+                <button class="tab-button" data-filter="personal_action">Personal Action <span class="badge" id="personal-task-count">0</span></button>
             </div>
 
             <!-- Header Controls (Only Search Bar) -->
@@ -1127,7 +1127,7 @@ $(function () {
         },
         columns: [
             {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
-            {data: 'done_task', name: 'done', orderable: false, searchable: false},
+            {data: 'done_action', name: 'done', orderable: false, searchable: false},
             {data: 'assigner_name', name: 'assigner_name', orderable: true, searchable: true},
             {data: 'client_reference', name: 'client_reference', orderable: true, searchable: true},
             {data: 'assign_date', name: 'assign_date', orderable: true, searchable: true},
@@ -1136,8 +1136,8 @@ $(function () {
             {data: 'action', name: 'action', orderable: false, searchable: false}
         ],
         "fnDrawCallback": function() {
-            // Initialize popovers for dynamically added elements
-            $('[data-toggle="popover"]').popover({
+            // Initialize popovers for dynamically added elements (exclude update_task buttons which are initialized manually)
+            $('[data-toggle="popover"]').not('.update_task').popover({
                 html: true,
                 sanitize: false,
                 trigger: 'click',
@@ -1212,7 +1212,7 @@ $(function () {
                         <option value="Review" ${taskGroup == 'Review' ? 'selected' : ''}>📋 Review</option>
                         <option value="Query" ${taskGroup == 'Query' ? 'selected' : ''}>❓ Query</option>
                         <option value="Urgent" ${taskGroup == 'Urgent' ? 'selected' : ''}>🔥 Urgent</option>
-                        <option value="Personal Task" ${taskGroup == 'Personal Task' ? 'selected' : ''}>👤 Personal Task</option>
+                        <option value="Personal Action" ${taskGroup == 'Personal Action' ? 'selected' : ''}>👤 Personal Action</option>
                     </select>
                     <div id="task-group-error" class="error-message"></div>
                 </div>
@@ -1441,7 +1441,7 @@ $(function () {
                     $('#review-count').text(data.review || 0);
                     $('#query-count').text(data.query || 0);
                     $('#urgent-count').text(data.urgent || 0);
-                    $('#personal-task-count').text(data.personal_task || 0);
+                    $('#personal-task-count').text(data.personal_action || 0);
                 } else {
                     console.warn('Invalid badge count data received');
                 }
@@ -1566,7 +1566,7 @@ $(function () {
 
         $.ajax({
             type: 'post',
-            url: "{{URL::to('/')}}/update-task",
+            url: "{{URL::to('/')}}/update-action",
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
             data: {
                 id: taskId,
@@ -1655,7 +1655,7 @@ $(function () {
         
         $.ajax({
             type: 'post',
-            url: "{{URL::to('/')}}/update-task-completed",
+            url: "{{URL::to('/')}}/update-action-completed",
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
             data: {
                 id: currentTaskId, 
@@ -1721,7 +1721,7 @@ $(function () {
         if (flag) {
             $.ajax({
                 type: 'post',
-                url: "{{URL::to('/')}}/clients/personalfollowup/store",
+                url: "{{URL::to('/')}}/clients/action/personal/store",
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
                 dataType: 'json',
                 data: {

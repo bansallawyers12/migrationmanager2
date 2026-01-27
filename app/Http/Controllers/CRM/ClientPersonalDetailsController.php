@@ -1668,10 +1668,7 @@ class ClientPersonalDetailsController extends Controller
             $objs->save();
             return redirect()->route('assignee.index')->with('success','Assignee updated successfully');
         } else {
-            //If record exist then update service taken
-            if (DB::table('client_service_takens')->where('client_id',  $requestData['id'])->exists()) {
-                DB::table('client_service_takens')->where('client_id', $requestData['id'])->update(['is_saved_db' => 1 ]);
-            }
+            // Update service taken - REMOVED (table client_service_takens does not exist)
 
             $clientId = $requestData['id'];
             $encodedId = base64_encode(convert_uuencode($clientId));

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use App\Models\Admin;
+use App\Models\Company;
 use App\Models\Lead;
 use App\Models\ClientContact;
 use App\Models\ClientEmail;
@@ -295,27 +296,101 @@ class LeadController extends Controller
         if ($request->isMethod('post')) {
             $requestData = $request->all();
             
+            // Check if this is a company lead
+            $isCompany = $request->input('is_company', false) == 'yes' || 
+                         $request->input('is_company') == true || 
+                         $request->input('is_company') == 1;
+            
             // Extract phone and email (now only one of each)
             $primaryPhone = $requestData['phone'][0] ?? null;
             $primaryEmail = $requestData['email'][0] ?? null;
             
             Log::info('Primary phone: ' . $primaryPhone);
             Log::info('Primary email: ' . $primaryEmail);
+            Log::info('Is company: ' . ($isCompany ? 'yes' : 'no'));
 
-            // Validate required fields
+            // Conditional validation
             try {
-                $this->validate($request, [
-                    'first_name' => 'required|max:255',
-                    'last_name' => 'required|max:255',
-                    'gender' => 'required|max:255',
-                    'dob' => 'required',
-                    'phone.0' => 'required|max:255',
-                    'email.0' => 'required|email|max:255',
-                ], [
-                    'phone.0.required' => 'Phone number is required.',
-                    'email.0.required' => 'Email address is required.',
-                    'email.0.email' => 'Please enter a valid email address.',
-                ]);
+                if ($isCompany) {
+                    $validationRules = [
+                        'company_name' => [
+                            'required',
+                            'max:255',
+                            'unique:companies,company_name', // Unique in companies table
+                        ],
+                        'contact_person_id' => [
+                            'required',
+                            'exists:admins,id',
+                            function ($attribute, $value, $fail) {
+                                $contactPerson = Admin::find($value);
+                                if (!$contactPerson || $contactPerson->role != 7) {
+                                    $fail('The selected contact person must be a client or lead.');
+                                }
+                                if ($contactPerson && $contactPerson->is_company) {
+                                    $fail('A company cannot be selected as a contact person.');
+                                }
+                            },
+                        ],
+                        'contact_person_position' => 'nullable|max:255',
+                        'ABN_number' => [
+                            'nullable',
+                            function ($attribute, $value, $fail) {
+                                if (!empty($value)) {
+                                    // Strip non-digits and validate
+                                    $cleanAbn = preg_replace('/\D/', '', $value);
+                                    if (strlen($cleanAbn) !== 11) {
+                                        $fail('ABN must be exactly 11 digits.');
+                                    }
+                                }
+                            },
+                        ],
+                        'ACN' => [
+                            'nullable',
+                            function ($attribute, $value, $fail) {
+                                if (!empty($value)) {
+                                    // Strip non-digits and validate
+                                    $cleanAcn = preg_replace('/\D/', '', $value);
+                                    if (strlen($cleanAcn) !== 9) {
+                                        $fail('ACN must be exactly 9 digits.');
+                                    }
+                                }
+                            },
+                        ],
+                        'phone.0' => 'required|max:255',
+                        'email.0' => 'required|email|max:255',
+                    ];
+                    
+                    $validationMessages = [
+                        'company_name.required' => 'Company name is required for company leads.',
+                        'company_name.unique' => 'This company name is already registered.',
+                        'contact_person_id.required' => 'A contact person must be selected for company leads.',
+                        'contact_person_id.exists' => 'The selected contact person does not exist.',
+                        'phone.0.required' => 'Phone number is required.',
+                        'email.0.required' => 'Email address is required.',
+                        'email.0.email' => 'Please enter a valid email address.',
+                    ];
+                } else {
+                    $validationRules = [
+                        'first_name' => 'required|max:255',
+                        'last_name' => 'required|max:255',
+                        'gender' => 'required|max:255',
+                        'dob' => 'required',
+                        'phone.0' => 'required|max:255',
+                        'email.0' => 'required|email|max:255',
+                    ];
+                    
+                    $validationMessages = [
+                        'first_name.required' => 'First name is required for personal leads.',
+                        'last_name.required' => 'Last name is required for personal leads.',
+                        'gender.required' => 'Gender is required for personal leads.',
+                        'dob.required' => 'Date of birth is required for personal leads.',
+                        'phone.0.required' => 'Phone number is required.',
+                        'email.0.required' => 'Email address is required.',
+                        'email.0.email' => 'Please enter a valid email address.',
+                    ];
+                }
+                
+                $this->validate($request, $validationRules, $validationMessages);
                 Log::info('Validation passed');
             } catch (\Illuminate\Validation\ValidationException $e) {
                 Log::error('Validation failed: ' . json_encode($e->errors()));
@@ -428,7 +503,8 @@ class LeadController extends Controller
                 // Generate client_counter and client_id using centralized service
                 // This prevents race conditions and duplicate references
                 $referenceService = app(ClientReferenceService::class);
-                $reference = $referenceService->generateClientReference($requestData['first_name']);
+                $referenceName = $isCompany ? ($requestData['company_name'] ?? 'Company') : $requestData['first_name'];
+                $reference = $referenceService->generateClientReference($referenceName);
                 $client_id = $reference['client_id'];
                 $client_current_counter = $reference['client_counter'];
 
@@ -457,13 +533,27 @@ class LeadController extends Controller
                     'specialist_education' => 0, // Specialist education qualification (NOT NULL, default 0)
                     'regional_study' => 0, // Regional study qualification (NOT NULL, default 0)
                     
-                    // Form fields from simplified create form
-                    'first_name' => $requestData['first_name'],
-                    'last_name' => $requestData['last_name'],
-                    'gender' => $requestData['gender'],
-                    'dob' => $dob,
-                    'age' => $requestData['age'] ?? null,
-                    'marital_status' => $requestData['marital_status'] ?? null,
+                    // Company flag
+                    'is_company' => $isCompany ? 1 : 0,
+                    
+                    // Conditional field assignment
+                    ...($isCompany ? [
+                        // For company leads, store contact person name in first_name/last_name
+                        'first_name' => $requestData['contact_person_first_name'] ?? null,
+                        'last_name' => $requestData['contact_person_last_name'] ?? null,
+                        // DOB, gender, marital_status not required for companies
+                        'dob' => null,
+                        'gender' => null,
+                        'marital_status' => null,
+                        'age' => null,
+                    ] : [
+                        'first_name' => $requestData['first_name'],
+                        'last_name' => $requestData['last_name'],
+                        'gender' => $requestData['gender'],
+                        'dob' => $dob,
+                        'age' => $requestData['age'] ?? null,
+                        'marital_status' => $requestData['marital_status'] ?? null,
+                    ]),
                     
                     // Contact information
                     'contact_type' => $requestData['contact_type_hidden'][0] ?? null,
@@ -535,6 +625,28 @@ class LeadController extends Controller
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
+                }
+                
+                // Create company record if this is a company lead
+                if ($isCompany) {
+                    Company::create([
+                        'admin_id' => $admin->id,
+                        'company_name' => $requestData['company_name'],
+                        'trading_name' => $requestData['trading_name'] ?? null,
+                        'ABN_number' => isset($requestData['ABN_number']) && !empty($requestData['ABN_number']) 
+                            ? preg_replace('/\D/', '', $requestData['ABN_number']) // Strip non-digits
+                            : null,
+                        'ACN' => isset($requestData['ACN']) && !empty($requestData['ACN'])
+                            ? preg_replace('/\D/', '', $requestData['ACN']) // Strip non-digits
+                            : null,
+                        'company_type' => $requestData['company_type'] ?? null,
+                        'company_website' => $requestData['company_website'] ?? null,
+                        'contact_person_id' => $requestData['contact_person_id'] ?? null,
+                        'contact_person_position' => $requestData['contact_person_position'] ?? null,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    Log::info('Company record created for admin ID: ' . $admin->id);
                 }
                 
                 DB::commit();

@@ -183,7 +183,7 @@
                                                         @endif
                                                     </td>
                                                     <td>
-                                                        @if ($list->task_group != 'Personal Task')
+                                                        @if ($list->task_group != 'Personal Action')
                                                             <button type="button" data-noteid="{{ $list->description }}" data-taskid="{{ $list->id }}" data-taskgroupid="{{ $list->task_group }}" data-followupdate="{{ $list->followup_date }}" class="btn btn-primary btn-sm update_task" data-toggle="tooltip" title="Update Task" data-container="body" data-role="popover" data-placement="bottom" data-html="true" data-content='
                                                                 <div id="popover-content">
                                                                     <h4 class="text-center">Update Task</h4>
@@ -361,7 +361,7 @@
             if (row_id != "") {
                 $.ajax({
                     type: 'post',
-                    url: "{{ URL::to('/') }}/update-task-not-completed",
+                    url: "{{ URL::to('/') }}/update-action-not-completed",
                     headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                     data: { id: row_id, unique_group_id: row_unique_group_id },
                     success: function(response) {
@@ -407,7 +407,7 @@
             
             $.ajax({
                 type: 'post',
-                url: "{{ URL::to('/') }}/update-task-completed",
+                url: "{{ URL::to('/') }}/update-action-completed",
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                 data: {
                     id: currentTaskId, 
@@ -466,7 +466,7 @@
             if (flag) {
                 $.ajax({
                     type: 'post',
-                    url: "{{ URL::to('/') }}/clients/updatefollowup/store",
+                    url: "{{ URL::to('/') }}/clients/action/update",
                     headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                     data: {
                         note_id: $('#assign_note_id').val(),
@@ -503,20 +503,9 @@
             }
         });
 
-        // Open assignee view modal
-        $(document).on('click', '.listing-container .openassigneview', function() {
-            $('#openassigneview').modal('show');
-            var v = $(this).attr('id');
-            $.ajax({
-                url: site_url + '/get-assigne-detail',
-                type: 'GET',
-                data: { id: v },
-                success: function(responses) {
-                    $('.popuploader').hide();
-                    $('.taskview').html(responses);
-                }
-            });
-        });
+        // REMOVED: Deprecated appointment system functionality
+        // Open assignee view modal - endpoint /get-assigne-detail was removed
+        // $(document).on('click', '.listing-container .openassigneview', function() { ... });
 
         // Delete task record
         $(document).on('click', '.listing-container .deleteNote', function(e) {

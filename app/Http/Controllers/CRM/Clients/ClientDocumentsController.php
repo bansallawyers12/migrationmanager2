@@ -13,7 +13,7 @@ use App\Models\Admin;
 use App\Models\ActivitiesLog;
 use App\Models\Document;
 use App\Models\ClientMatter;
-use App\Models\VisaDocChecklist;
+// use App\Models\VisaDocChecklist; // REMOVED: VisaDocChecklist model has been deleted
 use App\Models\PersonalDocumentType;
 use App\Models\VisaDocumentType;
 
@@ -1545,6 +1545,16 @@ class ClientDocumentsController extends Controller
      * Get Visa Checklist
      */
     public function getvisachecklist(Request $request) {
+        // DISABLED: VisaDocChecklist model has been removed
+        $response = [
+            'status' => false, 
+            'message' => 'Visa checklist functionality has been disabled - VisaDocChecklist model has been removed', 
+            'visaCheckListInfo' => []
+        ];
+        echo json_encode($response);
+        return;
+        
+        /* DISABLED CODE - VisaDocChecklist model removed
         $response = ['status' => false, 'message' => 'Please try again', 'visaCheckListInfo' => []];
 
         try {
@@ -1584,6 +1594,7 @@ class ClientDocumentsController extends Controller
             $response['visaCheckListInfo'] = [];
         }
         echo json_encode($response);
+        */
     }
 
     /**

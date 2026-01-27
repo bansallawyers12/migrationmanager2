@@ -248,7 +248,7 @@
                                         <a href="{{URL::to('/action_completed?group_type=Urgent')}}" id="Urgent" class="group_type {{ $task_group == 'Urgent' ? 'active' : '' }}"><i class="fa fa-flag" aria-hidden="true"></i> Urgent <span class="countAction">{{ $taskGroupCounts['Urgent'] }}</span></a>
                                     </button>
                                     <button type="button">
-                                        <a href="{{URL::to('/action_completed?group_type=Personal Task')}}" id="Personal Task" class="group_type {{ $task_group == 'Personal Task' ? 'active' : '' }}"><i class="fa fa-tasks" aria-hidden="true"></i> Personal Task <span class="countAction">{{ $taskGroupCounts['Personal Task'] }}</span></a>
+                                        <a href="{{URL::to('/action_completed?group_type=Personal Action')}}" id="Personal Action" class="group_type {{ $task_group == 'Personal Action' ? 'active' : '' }}"><i class="fa fa-tasks" aria-hidden="true"></i> Personal Action <span class="countAction">{{ $taskGroupCounts['Personal Action'] }}</span></a>
                                     </button>
                                 </div>
                             </div>
@@ -305,7 +305,7 @@
                                                     </td>
                                                     <td>
                                                         <div class="action-buttons">
-                                                            @if($list->task_group != 'Personal Task')
+                                                            @if($list->task_group != 'Personal Action')
                                                                 <button type="button" data-noteid="{{ $list->description }}" data-taskid="{{ $list->id }}" data-taskgroupid="{{ $list->task_group }}" data-followupdate="{{ $list->followup_date }}" data-toggle="tooltip" title="Update Task" class="btn btn-primary update_task" data-container="body" data-role="popover" data-placement="bottom" data-html="true" data-content="<div id='popover-content'>
                                                                     <h4 class='text-center'>Update Task</h4>
                                                                     <div class='clearfix'></div>
@@ -450,7 +450,7 @@ jQuery(document).ready(function($){
         if(row_id != ""){
             $.ajax({
                 type: 'post',
-                url: "{{URL::to('/')}}/update-task-not-completed",
+                url: "{{URL::to('/')}}/update-action-not-completed",
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                 data: { id: row_id, unique_group_id: row_unique_group_id },
                 success: function(response){
@@ -489,7 +489,7 @@ jQuery(document).ready(function($){
         if(flag){
             $.ajax({
                 type: 'post',
-                url: "{{URL::to('/')}}/clients/reassignfollowup/store",
+                url: "{{URL::to('/')}}/clients/action/reassign",
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                 data: {
                     note_type: 'follow_up',
@@ -519,19 +519,9 @@ jQuery(document).ready(function($){
         }
     });
 
-    $(document).delegate('.listing-container .openassigneview', 'click', function(){
-        $('#openassigneview').modal('show');
-        var v = $(this).attr('id');
-        $.ajax({
-            url: site_url + '/get-assigne-detail',
-            type: 'GET',
-            data: { id: v },
-            success: function(responses){
-                $('.popuploader').hide();
-                $('.taskview').html(responses);
-            }
-        });
-    });
+    // REMOVED: Deprecated appointment system functionality
+    // Open assignee view modal - endpoint /get-assigne-detail was removed
+    // $(document).delegate('.listing-container .openassigneview', 'click', function(){ ... });
 });
 </script>
 @endpush

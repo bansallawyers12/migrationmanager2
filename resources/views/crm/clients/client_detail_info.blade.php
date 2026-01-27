@@ -770,7 +770,23 @@
                                                     <!--<option value="Student Visa" {{--$visaCountry->visa_type == 'Student Visa' ? 'selected' : ''--}}>Student Visa</option>
                                                     <option value="Work Visa" {{--$visaCountry->visa_type == 'Work Visa' ? 'selected' : ''--}}>Work Visa</option>
                                                     <option value="Tourist Visa" {{--$visaCountry->visa_type == 'Tourist Visa' ? 'selected' : ''--}}>Tourist Visa</option>-->
-                                                    @foreach(\App\Models\Matter::select('id','title','nick_name')->where('status',1)->orderby('id','ASC')->get() as $matterlist)
+                                                    @php
+                                                        // Filter matters based on client type
+                                                        $matterQuery = \App\Models\Matter::select('id','title','nick_name')
+                                                            ->where('status',1)
+                                                            ->orderby('id','ASC');
+                                                        
+                                                        if (isset($fetchedData) && $fetchedData->is_company) {
+                                                            $matterQuery->where('is_for_company', true);
+                                                        } else {
+                                                            $matterQuery->where(function($q) {
+                                                                $q->where('is_for_company', false)
+                                                                  ->orWhereNull('is_for_company');
+                                                            });
+                                                        }
+                                                        $matterList = $matterQuery->get();
+                                                    @endphp
+                                                    @foreach($matterList as $matterlist)
                                                     <option value="{{ $matterlist->id }}" {{ $visaCountry->visa_type == $matterlist->id ? 'selected' : '' }}>{{ $matterlist->title }} ({{ @$matterlist->nick_name }})</option>
                                                     @endforeach
                                                 </select>
@@ -820,7 +836,23 @@
                                             <!--<option value="Student Visa">Student Visa</option>
                                             <option value="Work Visa">Work Visa</option>
                                             <option value="Tourist Visa">Tourist Visa</option>-->
-                                            @foreach(\App\Models\Matter::select('id','title','nick_name')->where('status',1)->orderby('id','ASC')->get() as $matterlist)
+                                            @php
+                                                // Filter matters based on client type
+                                                $matterQuery = \App\Models\Matter::select('id','title','nick_name')
+                                                    ->where('status',1)
+                                                    ->orderby('id','ASC');
+                                                
+                                                if (isset($fetchedData) && $fetchedData->is_company) {
+                                                    $matterQuery->where('is_for_company', true);
+                                                } else {
+                                                    $matterQuery->where(function($q) {
+                                                        $q->where('is_for_company', false)
+                                                          ->orWhereNull('is_for_company');
+                                                    });
+                                                }
+                                                $matterList = $matterQuery->get();
+                                            @endphp
+                                            @foreach($matterList as $matterlist)
                                             <option value="{{ $matterlist->id }}">{{ $matterlist->title }} ({{ @$matterlist->nick_name }})</option>
                                             @endforeach
                                         </select>
@@ -894,7 +926,23 @@
                                                 <!--<option value="Student Visa">Student Visa</option>
                                                 <option value="Work Visa">Work Visa</option>
                                                 <option value="Tourist Visa">Tourist Visa</option>-->
-                                                @foreach(\App\Models\Matter::select('id','title','nick_name')->where('status',1)->orderby('id','ASC')->get() as $matterlist)
+                                                @php
+                                                    // Filter matters based on client type
+                                                    $matterQuery = \App\Models\Matter::select('id','title','nick_name')
+                                                        ->where('status',1)
+                                                        ->orderby('id','ASC');
+                                                    
+                                                    if (isset($fetchedData) && $fetchedData->is_company) {
+                                                        $matterQuery->where('is_for_company', true);
+                                                    } else {
+                                                        $matterQuery->where(function($q) {
+                                                            $q->where('is_for_company', false)
+                                                              ->orWhereNull('is_for_company');
+                                                        });
+                                                    }
+                                                    $matterList = $matterQuery->get();
+                                                @endphp
+                                                @foreach($matterList as $matterlist)
                                                 <option value="{{ $matterlist->id }}">{{ $matterlist->title }} ({{ @$matterlist->nick_name }})</option>
                                                 @endforeach
                                             </select>

@@ -10,22 +10,22 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 use App\Models\Admin;
+use App\Models\Company;
 use App\Models\Lead;
 use App\Models\ActivitiesLog;
-use App\Models\OnlineForm;
+// use App\Models\OnlineForm; // REMOVED: OnlineForm model has been deleted
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade as PDF;
 use App\Models\CheckinLog;
 use App\Models\Note;
 use App\Models\BookingAppointment;
-use App\Models\clientServiceTaken;
+// clientServiceTaken model removed - table client_service_takens does not exist
 use App\Models\AccountClientReceipt;
 
 use App\Models\Matter;
 use App\Models\ClientMatter;
 use App\Models\Branch;
 
-use App\Models\FileStatus;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Mail;
@@ -52,7 +52,6 @@ use App\Models\AppointmentConsultant; // Import the AppointmentConsultant model
 
 use App\Models\EmailRecord;
 use App\Models\ClientPoint;
-use App\Models\VisaDocChecklist;
 use Carbon\Carbon;
 use Illuminate\Validation\Rule;
 
@@ -77,6 +76,8 @@ use PhpOffice\PhpWord\PhpWord;
 use App\Mail\HubdocInvoiceMail;
 use App\Services\Sms\UnifiedSmsManager;
 use App\Services\BansalAppointmentSync\BansalApiClient;
+use App\Services\ClientExportService;
+use App\Services\ClientImportService;
 use App\Traits\ClientAuthorization;
 use App\Traits\ClientHelpers;
 use App\Traits\ClientQueries;
@@ -1526,11 +1527,21 @@ class ClientsController extends Controller
         if (isset($id) && !empty($id)) {
             $id = $this->decodeString($id);
             if (Admin::where('id', '=', $id)->where('role', '=', 7)->exists()) {
+                $fetchedData = Admin::with('company.contactPerson')->find($id);
                 
-                // Use service to get all data with optimized queries (prevents N+1)
-                $data = app(\App\Services\ClientEditService::class)->getClientEditData($id);
-                
-                return view('crm.clients.edit', $data);
+                // Route to appropriate edit page
+                if ($fetchedData && $fetchedData->is_company) {
+                    // Use service to get all data with optimized queries (prevents N+1)
+                    $data = app(\App\Services\ClientEditService::class)->getClientEditData($id);
+                    
+                    // Use separate company edit page
+                    return view('crm.clients.company_edit', $data);
+                } else {
+                    // Use service to get all data with optimized queries (prevents N+1)
+                    $data = app(\App\Services\ClientEditService::class)->getClientEditData($id);
+                    
+                    return view('crm.clients.edit', $data);
+                }
             } else {
                 return Redirect::to('/clients')->with('error', 'Client does not exist.');
             }
@@ -1544,18 +1555,80 @@ class ClientsController extends Controller
         // Check authorization (assumed to be handled elsewhere)
         if ($request->isMethod('post')) {
             $requestData = $request->all();  //dd($requestData);
+            
+            $clientId = $requestData['id'];
+            $client = Admin::findOrFail($clientId);
+            $isCompany = $client->is_company;
 
             //Get Db values of related files
             $db_arr = Admin::select('related_files')->where('id', $requestData['id'])->get();
 
-            // Base validation rules
+            // Base validation rules - conditional based on company type
             $validationRules = [
-                'first_name' => 'required|max:255',
-                'last_name' => 'nullable|max:255',
-                'dob' => 'nullable|date_format:d/m/Y|after_or_equal:1000-01-01', // Updated to expect dd/mm/yyyy
                 'client_id' => 'required|max:255|unique:admins,client_id,' . $requestData['id'],
-                'gender' => 'nullable|in:Male,Female,Other',
-                'marital_status' => 'nullable|in:Single,Married,De Facto,Divorced,Widowed,Separated',
+            ];
+            
+            // Add conditional validation based on company type
+            if ($isCompany) {
+                // Get existing company record if it exists
+                $existingCompany = Company::where('admin_id', $clientId)->first();
+                $companyId = $existingCompany ? $existingCompany->id : null;
+                
+                $validationRules = array_merge($validationRules, [
+                    'company_name' => [
+                        'required',
+                        'max:255',
+                        'unique:companies,company_name,' . $companyId . ',id', // Unique in companies table, exclude current record
+                    ],
+                    'contact_person_id' => [
+                        'required',
+                        'exists:admins,id',
+                        function ($attribute, $value, $fail) {
+                            $contactPerson = Admin::find($value);
+                            if (!$contactPerson || $contactPerson->role != 7) {
+                                $fail('The selected contact person must be a client or lead.');
+                            }
+                            if ($contactPerson && $contactPerson->is_company) {
+                                $fail('A company cannot be selected as a contact person.');
+                            }
+                        },
+                    ],
+                    'contact_person_position' => 'nullable|max:255',
+                    'ABN_number' => [
+                        'nullable',
+                        function ($attribute, $value, $fail) {
+                            if (!empty($value)) {
+                                $cleanAbn = preg_replace('/\D/', '', $value);
+                                if (strlen($cleanAbn) !== 11) {
+                                    $fail('ABN must be exactly 11 digits.');
+                                }
+                            }
+                        },
+                    ],
+                    'ACN' => [
+                        'nullable',
+                        function ($attribute, $value, $fail) {
+                            if (!empty($value)) {
+                                $cleanAcn = preg_replace('/\D/', '', $value);
+                                if (strlen($cleanAcn) !== 9) {
+                                    $fail('ACN must be exactly 9 digits.');
+                                }
+                            }
+                        },
+                    ],
+                ]);
+            } else {
+                $validationRules = array_merge($validationRules, [
+                    'first_name' => 'required|max:255',
+                    'last_name' => 'nullable|max:255',
+                    'dob' => 'nullable|date_format:d/m/Y|after_or_equal:1000-01-01',
+                    'gender' => 'nullable|in:Male,Female,Other',
+                    'marital_status' => 'nullable|in:Single,Married,De Facto,Divorced,Widowed,Separated',
+                ]);
+            }
+            
+            // Add common validation rules
+            $validationRules = array_merge($validationRules, [
 
                 'visa_country' => 'nullable|string|max:255',
                 'passports.*.passport_number' => 'nullable|string|max:50',
@@ -1810,7 +1883,7 @@ class ClientsController extends Controller
                 'partner_last_name.*' => 'nullable|string|max:255',
                 'partner_phone.*' => 'nullable|string|max:20',
 
-            ];
+            ]);
 
             // Update validation rules for new subsections
             $validationRules = array_merge($validationRules, [
@@ -2351,13 +2424,61 @@ class ClientsController extends Controller
                 return redirect()->back()->with('error', 'Client not found.');
             }
 
-            // Update basic information
-            $obj->first_name = $requestData['first_name'];
-            $obj->last_name = $requestData['last_name'] ?? null;
-            $obj->dob = $dob;
-            $obj->age = $age;
-            $obj->gender = $requestData['gender'] ?? null;
-            $obj->marital_status = $requestData['marital_status'] ?? null;
+            // Update basic information - conditional based on company type
+            if ($isCompany) {
+                // For companies, store contact person name in first_name/last_name
+                $obj->first_name = $requestData['contact_person_first_name'] ?? null;
+                $obj->last_name = $requestData['contact_person_last_name'] ?? null;
+                // DOB, gender, marital_status not required for companies
+                $obj->dob = null;
+                $obj->age = null;
+                $obj->gender = null;
+                $obj->marital_status = null;
+                
+                // Update or create company record
+                $company = Company::where('admin_id', $obj->id)->first();
+                if ($company) {
+                    // Update existing company
+                    $company->company_name = $requestData['company_name'] ?? null;
+                    $company->trading_name = $requestData['trading_name'] ?? null;
+                    $company->ABN_number = isset($requestData['ABN_number']) && !empty($requestData['ABN_number']) 
+                        ? preg_replace('/\D/', '', $requestData['ABN_number']) // Strip non-digits
+                        : null;
+                    $company->ACN = isset($requestData['ACN']) && !empty($requestData['ACN'])
+                        ? preg_replace('/\D/', '', $requestData['ACN']) // Strip non-digits
+                        : null;
+                    $company->company_type = $requestData['company_type'] ?? null;
+                    $company->company_website = $requestData['company_website'] ?? null;
+                    $company->contact_person_id = $requestData['contact_person_id'] ?? null;
+                    $company->contact_person_position = $requestData['contact_person_position'] ?? null;
+                    $company->save();
+                } else {
+                    // Create new company record
+                    Company::create([
+                        'admin_id' => $obj->id,
+                        'company_name' => $requestData['company_name'] ?? null,
+                        'trading_name' => $requestData['trading_name'] ?? null,
+                        'ABN_number' => isset($requestData['ABN_number']) && !empty($requestData['ABN_number']) 
+                            ? preg_replace('/\D/', '', $requestData['ABN_number'])
+                            : null,
+                        'ACN' => isset($requestData['ACN']) && !empty($requestData['ACN'])
+                            ? preg_replace('/\D/', '', $requestData['ACN'])
+                            : null,
+                        'company_type' => $requestData['company_type'] ?? null,
+                        'company_website' => $requestData['company_website'] ?? null,
+                        'contact_person_id' => $requestData['contact_person_id'] ?? null,
+                        'contact_person_position' => $requestData['contact_person_position'] ?? null,
+                    ]);
+                }
+            } else {
+                // Personal client fields
+                $obj->first_name = $requestData['first_name'];
+                $obj->last_name = $requestData['last_name'] ?? null;
+                $obj->dob = $dob;
+                $obj->age = $age;
+                $obj->gender = $requestData['gender'] ?? null;
+                $obj->marital_status = $requestData['marital_status'] ?? null;
+            }
             $obj->client_id = $requestData['client_id'];
             //$obj->city = $requestData['town_city'] ?? null;
             //$obj->state = $requestData['state_region'] ?? null;
@@ -3873,10 +3994,7 @@ class ClientsController extends Controller
                 return redirect()->back()->with('error', config('constants.server_error'));
             }
 
-            // Update service taken (unchanged)
-            if (DB::table('client_service_takens')->where('client_id', $requestData['id'])->exists()) {
-                DB::table('client_service_takens')->where('client_id', $requestData['id'])->update(['is_saved_db' => 1]);
-            }
+            // Update service taken - REMOVED (table client_service_takens does not exist)
 
             //simiar related files
             if(isset($requestData['related_files']))
@@ -4797,7 +4915,36 @@ class ClientsController extends Controller
             $activeTab = $tab ?? 'personaldetails';
 
             if (Admin::where('id', '=', $id)->where('role', '=', 7)->exists()) {
-                $fetchedData = Admin::find($id); //dd($fetchedData);
+                $fetchedData = Admin::with('company.contactPerson')->find($id); //dd($fetchedData);
+                
+                // Route to company detail page if this is a company
+                if ($fetchedData && $fetchedData->is_company) {
+                    // Fetch data needed for company detail page
+                    $clientAddresses = ClientAddress::where('client_id', $id)->orderBy('created_at', 'desc')->get();
+                    $clientContacts = ClientContact::where('client_id', $id)->get();
+                    $emails = ClientEmail::where('client_id', $id)->get() ?? [];
+                    
+                    $matter_cnt = \App\Models\ClientMatter::select('id')
+                        ->where('client_id',$id)
+                        ->where('matter_status',1)
+                        ->count();
+                    
+                    // Get current admin user data for SMS templates
+                    $currentAdmin = Auth::user();
+                    $staffName = $currentAdmin->first_name . ' ' . $currentAdmin->last_name;
+                    $matterNumber = $id1 ?? '';
+                    $officePhone = $currentAdmin->phone ?? $currentAdmin->att_phone ?? '';
+                    $officeCountryCode = $currentAdmin->att_country_code ?? '+61';
+                    
+                    $encodeId = base64_encode(convert_uuencode($id));
+                    $activeTab = $tab ?? 'companydetails';
+                    
+                    return view('crm.companies.detail', compact(
+                        'fetchedData', 'clientAddresses', 'clientContacts', 'emails',
+                        'encodeId', 'id1', 'activeTab',
+                        'staffName', 'matterNumber', 'officePhone', 'officeCountryCode'
+                    ));
+                }
 
 
                 //Fetch other client-related data
@@ -6306,29 +6453,9 @@ class ClientsController extends Controller
                 }
             }
 
-            //Education
-            $educations = DB::table('education')->where('client_id', $request->merge_from)->get(); //dd($educations);
-            if(!empty($educations)){
-                foreach($educations as $edukey=>$eduval){
-                    DB::table('education')->insert(
-                        [
-                             'user_id' => $eduval->user_id,
-                             'client_id' => $request->merge_into,
-                             'degree_title' => $eduval->degree_title,
-                             'degree_level' => $eduval->degree_level,
-                             'institution' => $eduval->institution,
-                             'course_start' => $eduval->course_start,
-                             'course_end' => $eduval->course_end,
-                             'subject_area' => $eduval->subject_area,
-                             'subject' => $eduval->subject,
-                             'ac_score' => $eduval->ac_score,
-                             'score' => $eduval->score,
-                             'created_at' => $eduval->created_at,
-                             'updated_at' => $eduval->updated_at
-                        ]
-                    );
-                }
-            }
+            // Education table removed - system deprecated (replaced by ClientQualification)
+            // Table 'education' no longer exists in database - verified 2026-01-27
+            // Current qualification system uses 'client_qualifications' table with ClientQualification model
 
             //CheckinLogs
             $checkinLogs = DB::table('checkin_logs')->where('client_id', $request->merge_from)->get(); //dd($checkinLogs);
@@ -8807,99 +8934,12 @@ class ClientsController extends Controller
         return false;
     }
 
-    public function createservicetaken(Request $request)
-    {
-        $id = $request->logged_client_id;
-        if (\App\Models\Admin::where('id', $id)->exists()) {
-         $entity_type = $request->entity_type;
-         if ($entity_type == 'add') {
-             $obj = new clientServiceTaken;
-             $obj->client_id = $id;
-             $obj->service_type = $request->service_type;
-             $obj->mig_ref_no = $request->mig_ref_no;
-             $obj->mig_service = $request->mig_service;
-             $obj->mig_notes = $request->mig_notes;
-             $obj->edu_course = $request->edu_course;
-             $obj->edu_college = $request->edu_college;
-             $obj->edu_service_start_date = $request->edu_service_start_date;
-             $obj->edu_notes = $request->edu_notes;
-             $obj->is_saved_db = 0;
-             $saved = $obj->save();
-         } else if ($entity_type == 'edit') {
-             $saved = DB::table('client_service_takens')
-                 ->where('id', $request->entity_id)
-                 ->update([
-                     'service_type' => $request->service_type,
-                     'mig_ref_no' => $request->mig_ref_no,
-                     'mig_service' => $request->mig_service,
-                     'mig_notes' => $request->mig_notes,
-                     'edu_course' => $request->edu_course,
-                     'edu_college' => $request->edu_college,
-                     'edu_service_start_date' => $request->edu_service_start_date,
-                     'edu_notes' => $request->edu_notes
-                 ]);
-         }
-         if ($saved) {
-             $response['status'] = true;
-             $response['message'] = 'success';
-             $user_rec = DB::table('client_service_takens')->where('client_id', $id)->where('is_saved_db', 0)->orderBy('id', 'desc')->get();
-             $response['user_rec'] = $user_rec;
-         } else {
-             $response['status'] = true;
-             $response['message'] = 'success';
-             $response['user_rec'] = array();
-         }
-        } else {
-         $response['status'] = false;
-         $response['message'] = 'fail';
-         $response['result_str'] = array();
-        }
-        return response()->json($response);
-    }
+    // Service Taken methods REMOVED - client_service_takens table does not exist
+    // Model clientServiceTaken.php deleted, table was never created in database
+    // Methods removed: createservicetaken(), removeservicetaken(), getservicetaken()
+    // Routes removed from routes/clients.php
+    // Modals removed from detail.blade.php and companies/detail.blade.php
 
-    public function removeservicetaken(Request $request)
-    {
-        $sel_service_taken_id = $request->sel_service_taken_id;
-        if (DB::table('client_service_takens')->where('id', $sel_service_taken_id)->exists()) {
-         $res = DB::table('client_service_takens')->where('id', $sel_service_taken_id)->delete();
-         if ($res) {
-             $response['status'] = true;
-             $response['record_id'] = $sel_service_taken_id;
-             $response['message'] = 'Service removed successfully';
-         } else {
-             $response['status'] = false;
-             $response['record_id'] = $sel_service_taken_id;
-             $response['message'] = 'Service not removed';
-         }
-        } else {
-         $response['status'] = false;
-         $response['record_id'] = $sel_service_taken_id;
-         $response['message'] = 'Please try again';
-        }
-        return response()->json($response);
-    }
-
-    public function getservicetaken(Request $request)
-    {
-        $sel_service_taken_id = $request->sel_service_taken_id;
-        if (DB::table('client_service_takens')->where('id', $sel_service_taken_id)->exists()) {
-         $res = DB::table('client_service_takens')->where('id', $sel_service_taken_id)->first();
-         if ($res) {
-             $response['status'] = true;
-             $response['message'] = 'success';
-             $response['user_rec'] = $res;
-         } else {
-             $response['status'] = true;
-             $response['message'] = 'success';
-             $response['user_rec'] = array();
-         }
-        } else {
-         $response['status'] = false;
-         $response['message'] = 'fail';
-         $response['user_rec'] = array();
-        }
-        return response()->json($response);
-    }
     public function previewMsgFile($filename)
     {
         //$filePath = storage_path('app/public/msgfiles/' . $filename);
@@ -9009,14 +9049,14 @@ class ClientsController extends Controller
 	}
 
     /**
-     * Store follow-up note with assignee information
+     * Store action with assignee information
      * Handles the "Assign User" popup functionality
      * Supports both single and multiple assignees
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function followupstore(Request $request)
+    public function actionStore(Request $request)
     {
         try {
             $requestData = $request->all();
@@ -9049,49 +9089,49 @@ class ClientsController extends Controller
                 exit;
             }
             
-            // Get the next unique ID for this task
-            $taskUniqueId = 'group_' . uniqid('', true);
+            // Get the next unique ID for this action
+            $actionUniqueId = 'group_' . uniqid('', true);
 
-            // Loop through each assignee and create a follow-up note
+            // Loop through each assignee and create an action
             foreach ($remCat as $assigneeId) {
-                // Create a new followup note for each assignee
-                $followup = new \App\Models\Note;
-                $followup->client_id = $clientId;
-                $followup->user_id = Auth::user()->id;
-                $followup->description = $requestData['description'] ?? '';
-                $followup->unique_group_id = $taskUniqueId;
+                // Create a new action for each assignee
+                $action = new \App\Models\Note;
+                $action->client_id = $clientId;
+                $action->user_id = Auth::user()->id;
+                $action->description = $requestData['description'] ?? '';
+                $action->unique_group_id = $actionUniqueId;
 
                 // Set the title for the current assignee
                 $assigneeName = $this->getAssigneeName($assigneeId);
-                $followup->title = $requestData['remindersubject'] ?? 'Lead assigned to ' . $assigneeName;
+                $action->title = $requestData['remindersubject'] ?? 'Lead assigned to ' . $assigneeName;
 
                 // PostgreSQL NOT NULL constraints - must set these fields (Notes Table pattern)
-                $followup->folloup = 1; // This is a follow-up note
-                $followup->pin = 0; // Default to not pinned
-                $followup->status = '0'; // Default status (string '0' = active, '1' = completed)
-                $followup->type = 'client';
-                $followup->task_group = $requestData['task_group'] ?? null;
-                $followup->assigned_to = $assigneeId;
+                $action->folloup = 1; // This is an action (folloup field name kept for database compatibility)
+                $action->pin = 0; // Default to not pinned
+                $action->status = '0'; // Default status (string '0' = active, '1' = completed)
+                $action->type = 'client';
+                $action->task_group = $requestData['task_group'] ?? null;
+                $action->assigned_to = $assigneeId;
 
                 if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
-                    $followup->followup_date = $requestData['followup_datetime'];
+                    $action->followup_date = $requestData['followup_datetime'];
                 }
 
                 //add note deadline
                 if(isset($requestData['note_deadline_checkbox']) && $requestData['note_deadline_checkbox'] != ''){
                     if($requestData['note_deadline_checkbox'] == 1){
-                        $followup->note_deadline = $requestData['note_deadline'] ?? null;
+                        $action->note_deadline = $requestData['note_deadline'] ?? null;
                     } else {
-                        $followup->note_deadline = NULL;
+                        $action->note_deadline = NULL;
                     }
                 } else {
-                    $followup->note_deadline = NULL;
+                    $action->note_deadline = NULL;
                 }
 
-                $saved = $followup->save();
+                $saved = $action->save();
 
                 if ($saved) {
-                    // Update lead follow-up date
+                    // Update lead action date
                     if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
                         $Lead = Admin::find($clientId);
                         if ($Lead) {
@@ -9110,19 +9150,19 @@ class ClientsController extends Controller
                     $o->receiver_status = 0; // Unread
                     $o->seen = 0; // Not seen
                     
-                    $followupDateTime = $requestData['followup_datetime'] ?? now();
+                    $actionDateTime = $requestData['followup_datetime'] ?? now();
                     try {
-                        if (is_numeric($followupDateTime)) {
-                            $formattedDate = date('d/M/Y h:i A', $followupDateTime);
+                        if (is_numeric($actionDateTime)) {
+                            $formattedDate = date('d/M/Y h:i A', $actionDateTime);
                         } else {
-                            $timestamp = strtotime($followupDateTime);
+                            $timestamp = strtotime($actionDateTime);
                             $formattedDate = $timestamp !== false ? date('d/M/Y h:i A', $timestamp) : date('d/M/Y h:i A');
                         }
                     } catch (\Exception $dateEx) {
                         $formattedDate = date('d/M/Y h:i A');
                     }
                     
-                    $o->message = 'Followup Assigned by ' . Auth::user()->first_name . ' ' . Auth::user()->last_name . ' on ' . $formattedDate;
+                    $o->message = 'Action Assigned by ' . Auth::user()->first_name . ' ' . Auth::user()->last_name . ' on ' . $formattedDate;
                     $o->save();
 
                     // Log the activity for the current assignee
@@ -9150,11 +9190,11 @@ class ClientsController extends Controller
             exit;
             
         } catch (\Exception $e) {
-            Log::error('Error in followupstore: ' . $e->getMessage(), [
+            Log::error('Error in actionStore: ' . $e->getMessage(), [
                 'request_data' => $request->all(),
                 'trace' => $e->getTraceAsString()
             ]);
-            echo json_encode(array('success' => false, 'message' => 'Error saving follow-up. Please try again.'));
+            echo json_encode(array('success' => false, 'message' => 'Error saving action. Please try again.'));
             exit;
         }
     }
@@ -9238,15 +9278,15 @@ class ClientsController extends Controller
     }
 
     /**
-     * Store personal followup/task (Add My Task functionality)
+     * Store personal action (Add My Action functionality)
      * Used by: action.blade.php
      */
-    public function personalfollowup(Request $request)
+    public function storePersonalAction(Request $request)
     {
         try {
             $requestData = $request->all();
             
-            // Decode the client ID - handle empty/null for personal tasks
+            // Decode the client ID - handle empty/null for personal actions
             $clientId = null;
             $encodedClientId = null;
             
@@ -9257,32 +9297,32 @@ class ClientsController extends Controller
                 $clientId = $this->decodeString($encodedClientId);
             }
 
-            // Generate unique task ID
-            $taskUniqueId = 'group_' . uniqid('', true);
+            // Generate unique action ID
+            $actionUniqueId = 'group_' . uniqid('', true);
 
             // Handle single or multiple assignees
             $assignees = is_array($requestData['rem_cat']) ? $requestData['rem_cat'] : [$requestData['rem_cat']];
 
-            // Loop through each assignee and create a task
+            // Loop through each assignee and create an action
             foreach ($assignees as $assigneeId) {
-                // Create a new task note for each assignee
-                $task = new \App\Models\Note;
-                $task->client_id = $clientId;
-                $task->user_id = Auth::user()->id;
-                $task->description = @$requestData['description'];
-                $task->unique_group_id = $taskUniqueId;
-                $task->folloup = 1;
-                $task->type = 'client';
-                $task->task_group = @$requestData['task_group'];
-                $task->assigned_to = $assigneeId;
-                $task->status = '0'; // Not completed
-                $task->pin = 0; // Required field - default to not pinned
+                // Create a new action for each assignee
+                $action = new \App\Models\Note;
+                $action->client_id = $clientId;
+                $action->user_id = Auth::user()->id;
+                $action->description = @$requestData['description'];
+                $action->unique_group_id = $actionUniqueId;
+                $action->folloup = 1;
+                $action->type = 'client';
+                $action->task_group = @$requestData['task_group'];
+                $action->assigned_to = $assigneeId;
+                $action->status = '0'; // Not completed
+                $action->pin = 0; // Required field - default to not pinned
                 
                 if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
-                    $task->followup_date = @$requestData['followup_datetime'];
+                    $action->followup_date = @$requestData['followup_datetime'];
                 }
 
-                $saved = $task->save();
+                $saved = $action->save();
 
                 if ($saved) {
                     // Create a notification for the assignee
@@ -9298,35 +9338,35 @@ class ClientsController extends Controller
                         $notification->url = URL::to('/action');
                     }
                     
-                    $notification->message = 'assigned you a task';
+                    $notification->message = 'assigned you an action';
                     $notification->seen = 0;
                     $notification->save();
                 }
             }
 
-            return response()->json(['success' => true, 'message' => 'Task created successfully']);
+            return response()->json(['success' => true, 'message' => 'Action created successfully']);
         } catch (\Exception $e) {
-            Log::error('Error in personalfollowup: ' . $e->getMessage(), [
+            Log::error('Error in storePersonalAction: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
                 'request_data' => $request->all()
             ]);
-            return response()->json(['success' => false, 'message' => 'Error creating task: ' . $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Error creating action: ' . $e->getMessage()], 500);
         }
     }
 
     /**
-     * Update existing followup/task
+     * Update existing action
      * Used by: assign_by_me.blade.php
      */
-    public function updatefollowup(Request $request)
+    public function updateAction(Request $request)
     {
         $requestData = $request->all();
         
         try {
-            // Find the existing task
-            $task = \App\Models\Note::findOrFail($requestData['note_id']);
+            // Find the existing action
+            $action = \App\Models\Note::findOrFail($requestData['note_id']);
             
-            // Decode the client ID - handle empty/null for personal tasks
+            // Decode the client ID - handle empty/null for personal actions
             $clientId = null;
             if (!empty($requestData['client_id'])) {
                 // Extract just the encoded part (format: "ENCODED/Matter/NO" or "ENCODED/Client")
@@ -9335,23 +9375,23 @@ class ClientsController extends Controller
                 $clientId = $this->decodeString($encodedClientId);
             }
             
-            // Update task fields
-            $task->description = @$requestData['description'];
-            $task->client_id = $clientId;
-            $task->task_group = @$requestData['task_group'];
-            $task->assigned_to = @$requestData['rem_cat'];
+            // Update action fields
+            $action->description = @$requestData['description'];
+            $action->client_id = $clientId;
+            $action->task_group = @$requestData['task_group'];
+            $action->assigned_to = @$requestData['rem_cat'];
             
             if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
-                $task->followup_date = @$requestData['followup_datetime'];
+                $action->followup_date = @$requestData['followup_datetime'];
             }
             
-            $task->save();
+            $action->save();
 
             // Create notification for the assignee if changed
-            if ($task->assigned_to != $task->getOriginal('assigned_to')) {
+            if ($action->assigned_to != $action->getOriginal('assigned_to')) {
                 $notification = new \App\Models\Notification;
                 $notification->sender_id = Auth::user()->id;
-                $notification->receiver_id = $task->assigned_to;
+                $notification->receiver_id = $action->assigned_to;
                 $notification->module_id = $clientId;
                 
                 // Set URL based on whether client exists
@@ -9361,27 +9401,27 @@ class ClientsController extends Controller
                     $notification->url = URL::to('/action');
                 }
                 
-                $notification->message = 'updated your task';
+                $notification->message = 'updated your action';
                 $notification->seen = 0;
                 $notification->save();
             }
 
-            return response()->json(['success' => true, 'message' => 'Task updated successfully']);
+            return response()->json(['success' => true, 'message' => 'Action updated successfully']);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error updating task: ' . $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Error updating action: ' . $e->getMessage()], 500);
         }
     }
 
     /**
-     * Reassign followup/task (for completed tasks)
+     * Reassign action (for completed actions)
      * Used by: action_completed.blade.php
      */
-    public function reassignfollowupstore(Request $request)
+    public function reassignAction(Request $request)
     {
         try {
             $requestData = $request->all();
             
-            // Decode the client ID - handle empty/null for personal tasks
+            // Decode the client ID - handle empty/null for personal actions
             $clientId = null;
             if (!empty($requestData['client_id'])) {
                 // Extract just the encoded part (format: "ENCODED/Matter/NO" or "ENCODED/Client")
@@ -9390,33 +9430,33 @@ class ClientsController extends Controller
                 $clientId = $this->decodeString($encodedClientId);
             }
 
-            // Generate unique task ID
-            $taskUniqueId = 'group_' . uniqid('', true);
+            // Generate unique action ID
+            $actionUniqueId = 'group_' . uniqid('', true);
 
-            // Create a new task
-            $task = new \App\Models\Note;
-            $task->client_id = $clientId;
-            $task->user_id = Auth::user()->id;
-            $task->description = @$requestData['description'];
-            $task->unique_group_id = $taskUniqueId;
-            $task->folloup = 1;
-            $task->type = 'client';
-            $task->task_group = @$requestData['task_group'];
-            $task->assigned_to = @$requestData['rem_cat'];
-            $task->status = '0'; // Not completed
-            $task->pin = 0; // Required field - default to not pinned
+            // Create a new action
+            $action = new \App\Models\Note;
+            $action->client_id = $clientId;
+            $action->user_id = Auth::user()->id;
+            $action->description = @$requestData['description'];
+            $action->unique_group_id = $actionUniqueId;
+            $action->folloup = 1;
+            $action->type = 'client';
+            $action->task_group = @$requestData['task_group'];
+            $action->assigned_to = @$requestData['rem_cat'];
+            $action->status = '0'; // Not completed
+            $action->pin = 0; // Required field - default to not pinned
             
             if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
-                $task->followup_date = @$requestData['followup_datetime'];
+                $action->followup_date = @$requestData['followup_datetime'];
             }
 
-            $saved = $task->save();
+            $saved = $action->save();
 
             if ($saved) {
                 // Create a notification for the assignee
                 $notification = new \App\Models\Notification;
                 $notification->sender_id = Auth::user()->id;
-                $notification->receiver_id = $task->assigned_to;
+                $notification->receiver_id = $action->assigned_to;
                 $notification->module_id = $clientId;
                 
                 // Set URL based on whether client exists
@@ -9426,18 +9466,18 @@ class ClientsController extends Controller
                     $notification->url = URL::to('/action');
                 }
                 
-                $notification->message = 'assigned you a task';
+                $notification->message = 'assigned you an action';
                 $notification->seen = 0;
                 $notification->save();
             }
 
-            return response()->json(['success' => true, 'message' => 'Task created successfully']);
+            return response()->json(['success' => true, 'message' => 'Action created successfully']);
         } catch (\Exception $e) {
-            Log::error('Error in reassignfollowupstore: ' . $e->getMessage(), [
+            Log::error('Error in reassignAction: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
                 'request_data' => $request->all()
             ]);
-            return response()->json(['success' => false, 'message' => 'Error creating task: ' . $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Error creating action: ' . $e->getMessage()], 500);
         }
     }
 
@@ -10306,6 +10346,206 @@ class ClientsController extends Controller
             'task_status' => 0,
             'pin' => 0,
         ]);
+    }
+
+    /**
+     * Export client data to JSON file
+     * 
+     * @param string $id Encoded client ID
+     * @return \Illuminate\Http\Response
+     */
+    public function export($id)
+    {
+        try {
+            // Decode the client ID
+            $clientId = $this->decodeString($id);
+            
+            if (!$clientId) {
+                return redirect()->route('clients.index')
+                    ->with('error', 'Invalid client ID.');
+            }
+
+            // Check if client exists
+            $client = Admin::where('id', $clientId)
+                ->where('role', 7)
+                ->first();
+
+            if (!$client) {
+                return redirect()->route('clients.index')
+                    ->with('error', 'Client not found.');
+            }
+
+            // Export client data
+            $exportService = app(ClientExportService::class);
+            $exportData = $exportService->exportClient($clientId);
+
+            // Generate filename
+            $filename = 'client_export_' . ($client->client_id ?? $clientId) . '_' . date('Y-m-d_His') . '.json';
+
+            // Return JSON file download
+            return response()->json($exportData, 200, [
+                'Content-Type' => 'application/json',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        } catch (\Exception $e) {
+            Log::error('Client export error: ' . $e->getMessage(), [
+                'client_id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->route('clients.index')
+                ->with('error', 'Failed to export client data: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Import client data from JSON file
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function import(Request $request)
+    {
+        try {
+            // Validate file upload
+            $request->validate([
+                'import_file' => 'required|file|mimes:json|max:10240', // Max 10MB
+            ]);
+
+            // Read and parse JSON file
+            $file = $request->file('import_file');
+            $jsonContent = file_get_contents($file->getRealPath());
+            $importData = json_decode($jsonContent, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return redirect()->back()
+                    ->withErrors(['import_file' => 'Invalid JSON file: ' . json_last_error_msg()])
+                    ->withInput();
+            }
+
+            // Validate import data structure
+            if (!isset($importData['client'])) {
+                return redirect()->back()
+                    ->withErrors(['import_file' => 'Invalid import file format: missing client data'])
+                    ->withInput();
+            }
+
+            // Check if client email is required (email is unique and NOT NULL in admins table)
+            if (empty($importData['client']['email'])) {
+                return redirect()->back()
+                    ->withErrors(['import_file' => 'Client email is required and cannot be empty'])
+                    ->withInput();
+            }
+
+            // Check if first_name is required
+            if (empty($importData['client']['first_name'])) {
+                return redirect()->back()
+                    ->withErrors(['import_file' => 'Client first name is required'])
+                    ->withInput();
+            }
+
+            // Import client
+            $skipDuplicates = $request->has('skip_duplicates');
+            $importService = app(ClientImportService::class);
+            $result = $importService->importClient($importData, $skipDuplicates);
+
+            if ($result['success']) {
+                return redirect()->route('clients.index')
+                    ->with('success', $result['message']);
+            } else {
+                return redirect()->back()
+                    ->withErrors(['import_file' => $result['message']])
+                    ->withInput();
+            }
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()
+                ->withErrors($e->validator)
+                ->withInput();
+        } catch (\Exception $e) {
+            Log::error('Client import error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->back()
+                ->withErrors(['import_file' => 'Failed to import client: ' . $e->getMessage()])
+                ->withInput();
+        }
+    }
+
+    /**
+     * Search for contact persons (clients/leads) by email, phone, name, or client ID
+     * Used for company contact person selection
+     * 
+     * Search priority: Phone and Email are primary search fields
+     */
+    public function searchContactPerson(Request $request)
+    {
+        $query = $request->input('q', '');
+        $excludeId = $request->input('exclude_id'); // Exclude current lead/client being edited
+        
+        if (strlen($query) < 2) {
+            return response()->json(['results' => []]);
+        }
+        
+        // Use ILIKE for PostgreSQL, LIKE for MySQL
+        $likeOperator = DB::getDriverName() === 'pgsql' ? 'ILIKE' : 'LIKE';
+        
+        $results = Admin::where(function($q) use ($query, $likeOperator) {
+                // Primary search: Phone and Email (as per requirement)
+                $q->where('phone', $likeOperator, "%{$query}%")
+                  ->orWhere('email', $likeOperator, "%{$query}%")
+                  // Secondary search: Name and Client ID
+                  ->orWhere('first_name', $likeOperator, "%{$query}%")
+                  ->orWhere('last_name', $likeOperator, "%{$query}%")
+                  ->orWhere('client_id', $likeOperator, "%{$query}%");
+                
+                // For PostgreSQL, use CONCAT with ILIKE
+                if (DB::getDriverName() === 'pgsql') {
+                    $q->orWhereRaw("CONCAT(first_name, ' ', last_name) ILIKE ?", ["%{$query}%"]);
+                } else {
+                    // For MySQL, use CONCAT with LIKE
+                    $q->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$query}%"]);
+                }
+            })
+            ->where('role', 7) // Clients/Leads only
+            ->where(function($q) {
+                $q->where('type', 'client')
+                  ->orWhere('type', 'lead');
+            })
+            ->where('is_company', false) // Exclude companies from being contact persons
+            ->when($excludeId, function($q) use ($excludeId) {
+                $q->where('id', '!=', $excludeId);
+            })
+            ->select('id', 'first_name', 'last_name', 'email', 'phone', 'client_id', 'type')
+            ->limit(20)
+            ->get()
+            ->map(function($person) {
+                $fullName = trim($person->first_name . ' ' . $person->last_name);
+                // Show phone and email in display text
+                $displayText = "{$fullName}";
+                if ($person->email) {
+                    $displayText .= " ({$person->email})";
+                }
+                if ($person->phone) {
+                    $displayText .= " - {$person->phone}";
+                }
+                $displayText .= " - {$person->client_id}";
+                
+                return [
+                    'id' => $person->id,
+                    'text' => $displayText,
+                    'first_name' => $person->first_name,
+                    'last_name' => $person->last_name,
+                    'email' => $person->email,
+                    'phone' => $person->phone,
+                    'client_id' => $person->client_id,
+                    'type' => $person->type
+                ];
+            });
+        
+        return response()->json(['results' => $results]);
     }
 
 }

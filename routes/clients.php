@@ -31,6 +31,8 @@ Route::get('/clientsemaillist', [ClientsController::class, 'clientsemaillist'])-
 Route::post('/clients/store', [ClientsController::class, 'store'])->name('clients.store');
 Route::get('/clients/edit/{id}', [ClientsController::class, 'edit'])->name('clients.edit');
 Route::post('/clients/edit', [ClientsController::class, 'edit'])->name('clients.update');
+Route::get('/clients/export/{id}', [ClientsController::class, 'export'])->name('clients.export');
+Route::post('/clients/import', [ClientsController::class, 'import'])->name('clients.import');
 Route::post('/clients/save-section', [ClientPersonalDetailsController::class, 'saveSection'])->name('clients.saveSection');
 Route::post('/edit-test-scores', [ClientsController::class, 'editTestScores'])->name('clients.editTestScores');
 Route::get('/clients/partner-eoi-data/{partnerId}', [ClientPersonalDetailsController::class, 'getPartnerEoiData'])->name('clients.partnerEoiData');
@@ -49,8 +51,8 @@ Route::prefix('clients/email')->name('clients.email.')->group(function () {
     Route::get('/status/{emailId}', [EmailVerificationController::class, 'getStatus'])->name('status');
 });
 
-/*---------- Client Follow-ups & Activities ----------*/
-Route::post('/clients/followup/store', [ClientsController::class, 'followupstore']);
+/*---------- Client Actions & Activities ----------*/
+Route::post('/clients/action/store', [ClientsController::class, 'actionStore']);
 Route::post('/clients/followup/retagfollowup', [ClientsController::class, 'retagfollowup']);
 Route::get('/clients/changetype/{id}/{type}', [ClientsController::class, 'changetype']);
 Route::get('/document/download/pdf/{id}', [ClientsController::class, 'downloadpdf']);
@@ -127,12 +129,9 @@ Route::post('/not-picked-call', [ClientsController::class, 'notpickedcall'])->na
 Route::get('/pinactivitylog', 'CRM\ClientsController@pinactivitylog');
 
 /*---------- Client Services ----------*/
-Route::post('/interested-service', 'CRM\ClientsController@interestedService');
-Route::post('/edit-interested-service', 'CRM\ClientsController@editinterestedService');
-Route::get('/get-services', 'CRM\ClientsController@getServices');
+// Interested Services routes REMOVED - feature deprecated (no UI access, modals deleted, controllers don't exist)
+// Routes removed: interested-service, edit-interested-service, get-services, getintrestedservice, getintrestedserviceedit
 Route::post('/servicesavefee', 'CRM\ClientsController@servicesavefee');
-Route::get('/getintrestedservice', 'CRM\ClientsController@getintrestedservice');
-Route::get('/getintrestedserviceedit', 'CRM\ClientsController@getintrestedserviceedit');
 
 Route::get('/get-application-lists', 'CRM\ClientsController@getapplicationlists')->name('clients.getapplicationlists');
 Route::post('/saveapplication', 'CRM\ClientsController@saveapplication')->name('clients.saveapplication');
@@ -140,9 +139,9 @@ Route::get('/convertapplication', 'CRM\ClientsController@convertapplication')->n
 Route::get('/deleteservices', 'CRM\ClientsController@deleteservices')->name('clients.deleteservices');
 Route::post('/savetoapplication', 'CRM\ClientsController@savetoapplication');
 
-Route::post('/client/createservicetaken', 'CRM\ClientsController@createservicetaken');
-Route::post('/client/removeservicetaken', 'CRM\ClientsController@removeservicetaken');
-Route::post('/client/getservicetaken', 'CRM\ClientsController@getservicetaken');
+// Service Taken routes REMOVED - client_service_takens table does not exist
+// Model clientServiceTaken.php deleted, controller methods removed
+// Routes were: createservicetaken, removeservicetaken, getservicetaken
 
 /*---------- Client Documents Management ----------*/
 Route::post('/documents/add-edu-checklist', [ClientDocumentsController::class, 'addedudocchecklist'])->name('clients.documents.addedudocchecklist');
@@ -291,10 +290,10 @@ Route::get('/upload-checklists', 'CRM\UploadChecklistController@index')->name('u
 Route::get('/upload-checklists/matter/{matterId}', 'CRM\UploadChecklistController@showByMatter')->name('upload_checklists.matter');
 Route::post('/upload-checklists/store', 'CRM\UploadChecklistController@store')->name('upload_checklistsupload');
 
-/*---------- Client Sessions & Follow-ups ----------*/
-Route::post('/clients/personalfollowup/store', 'CRM\ClientsController@personalfollowup');
-Route::post('/clients/updatefollowup/store', 'CRM\ClientsController@updatefollowup');
-Route::post('/clients/reassignfollowup/store', 'CRM\ClientsController@reassignfollowupstore');
+/*---------- Client Sessions & Actions ----------*/
+Route::post('/clients/action/personal/store', 'CRM\ClientsController@storePersonalAction');
+Route::post('/clients/action/update', 'CRM\ClientsController@updateAction');
+Route::post('/clients/action/reassign', 'CRM\ClientsController@reassignAction');
 Route::post('/clients/update-session-completed', 'CRM\ClientsController@updatesessioncompleted')->name('clients.updatesessioncompleted');
 Route::post('/clients/getAllUser', 'CRM\ClientsController@getAllUser')->name('clients.getAllUser');
 
@@ -320,6 +319,10 @@ Route::post('/save-references', 'CRM\ClientsController@savereferences')->name('r
 Route::post('/check-star-client', 'CRM\ClientsController@checkStarClient')->name('check.star.client');
 Route::post('/merge_records','CRM\ClientsController@merge_records')->name('client.merge_records');
 
+
+/*---------- Contact Person Search (for Company Leads) ----------*/
+Route::get('/api/search-contact-person', [ClientsController::class, 'searchContactPerson'])
+    ->name('api.search.contact.person');
 
 /*---------- Visa Expiry Messages ----------*/
 Route::get('/fetch-visa_expiry_messages', 'CRM\CRMUtilityController@fetchvisaexpirymessages');

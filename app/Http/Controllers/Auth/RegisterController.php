@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Models\Admin;
-use App\Models\VerifyUser;
+// use App\Models\VerifyUser; // REMOVED: VerifyUser model has been deleted
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -95,17 +95,18 @@ class RegisterController extends Controller
 		
 		if($result)
 		{	
-			$verifyUser = VerifyUser::create([
-				'user_id' => $result->id,
-				'token' => Str::random(40)
-			]);
-		$tokenurl = \URL::to('/user/verify/'.$verifyUser->token);
-	$replaceav = array('{company_logo}','{emailid}','{tokenemail}');
-	$replace_withav = array(\URL::to('/').'/public/img/logo.png', @$result->email, $tokenurl);			
-	// email_templates table has been deleted - using fallback subject
-	$emailtemplate	= 	DB::table('email_templates')->where('alias', 'verify-email')->first();
-	$subContentav 	= 	$emailtemplate ? $emailtemplate->subject : 'Please verify your email address';
-	$issuccess = $this->send_email_template($replaceav, $replace_withav, 'verify-email', @$result->email,$subContentav, config('mail.from.address'));
+			// DISABLED: VerifyUser model has been removed - email verification disabled
+			// $verifyUser = VerifyUser::create([
+			// 	'user_id' => $result->id,
+			// 	'token' => Str::random(40)
+			// ]);
+			// $tokenurl = \URL::to('/user/verify/'.$verifyUser->token);
+			// $replaceav = array('{company_logo}','{emailid}','{tokenemail}');
+			// $replace_withav = array(\URL::to('/').'/public/img/logo.png', @$result->email, $tokenurl);			
+			// // email_templates table has been deleted - using fallback subject
+			// $emailtemplate	= 	DB::table('email_templates')->where('alias', 'verify-email')->first();
+			// $subContentav 	= 	$emailtemplate ? $emailtemplate->subject : 'Please verify your email address';
+			// $issuccess = $this->send_email_template($replaceav, $replace_withav, 'verify-email', @$result->email,$subContentav, config('mail.from.address'));
 			return $result;
 		}
     }
@@ -114,8 +115,16 @@ class RegisterController extends Controller
     {
         return redirect()->route('dashboard')->with('success','welcome '. $user->name . ' you are registered. Please check your email inbox to verify email.');
     }
+	 /**
+	  * Verify user email
+	  * DISABLED: VerifyUser model has been removed
+	  */
 	 public function verifyUser($token)
     {
+        // DISABLED: VerifyUser model has been removed
+        return redirect()->route('dashboard')->with('warning', "Email verification has been disabled - VerifyUser model has been removed");
+        
+        /* DISABLED CODE
         $verifyUser = VerifyUser::where('token', $token)->first();
         if(isset($verifyUser) ){
             $user = $verifyUser->user;
@@ -131,5 +140,6 @@ class RegisterController extends Controller
         }
 
         return redirect()->route('dashboard')->with('success', $status);
+        */
     }
 }

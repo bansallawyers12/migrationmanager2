@@ -83,8 +83,8 @@ class DashboardService
     }
 
     /**
-     * Get all action tasks (notes with folloup = 1) for the user
-     * Shows tasks with deadlines first (ordered by urgency), then tasks without deadlines
+     * Get all actions (notes with folloup = 1) for the user
+     * Shows actions with deadlines first (ordered by urgency), then actions without deadlines
      */
     private function getNotesData($user)
     {
@@ -102,7 +102,7 @@ class DashboardService
             $query->where('assigned_to', $user->id);
         }
 
-        // Order: Tasks with deadlines first (by deadline ASC), then tasks without deadlines (by created_at DESC)
+        // Order: Actions with deadlines first (by deadline ASC), then actions without deadlines (by created_at DESC)
         return $query->orderByRaw('CASE WHEN note_deadline IS NOT NULL THEN 0 ELSE 1 END')
             ->orderBy('note_deadline', 'ASC')
             ->orderBy('created_at', 'DESC')
@@ -239,7 +239,7 @@ class DashboardService
     }
 
     /**
-     * Get note deadline count (all action tasks count)
+     * Get note deadline count (all actions count)
      */
     private function getNoteDeadlineCount($user): int
     {
@@ -297,7 +297,7 @@ class DashboardService
     }
 
     /**
-     * Get assignees for task creation
+     * Get assignees for action creation
      */
     private function getAssignees()
     {
@@ -456,17 +456,17 @@ class DashboardService
     }
 
     /**
-     * Update task completion status
+     * Update action completion status
      */
-    public function updateTaskCompleted($noteId, $uniqueGroupId): array
+    public function updateActionCompleted($noteId, $uniqueGroupId): array
     {
         $updated = Note::where('id', $noteId)
             ->where('unique_group_id', $uniqueGroupId)
             ->update(['status' => 1]);
 
         return $updated 
-            ? ['success' => true, 'message' => 'Task completed successfully']
-            : ['success' => false, 'message' => 'Failed to complete task'];
+            ? ['success' => true, 'message' => 'Action completed successfully']
+            : ['success' => false, 'message' => 'Failed to complete action'];
     }
 
     /**
@@ -510,7 +510,7 @@ class DashboardService
                     'module_id' => $note->client_id,
                     'url' => url('/clients/detail/' . $note->client_id),
                     'notification_type' => 'client',
-                    'message' => 'Followup Extended by ' . Auth::user()->first_name . ' ' . Auth::user()->last_name . ' on ' . date('d/M/Y h:i A')
+                    'message' => 'Action Extended by ' . Auth::user()->first_name . ' ' . Auth::user()->last_name . ' on ' . date('d/M/Y h:i A')
                 ]);
             }
 
