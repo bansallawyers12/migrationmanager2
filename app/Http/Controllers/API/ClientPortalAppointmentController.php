@@ -5,6 +5,8 @@ namespace App\Http\Controllers\API;
 use App\Models\BookingAppointment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Client\RequestException;
 use Carbon\Carbon;
 
 class ClientPortalAppointmentController extends BaseController
@@ -567,6 +569,266 @@ class ClientPortalAppointmentController extends BaseController
      * @param string $meetingType
      * @return string
      */
+    /**
+     * Get disabled dates from calendar
+     * 
+     * Returns disabled dates array along with duration, start_time, end_time, and weeks
+     * for the specified service type and location. Uses slot_overwrite=0 automatically.
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getDisabledDateFromCalendar(Request $request)
+    {
+        try {
+            // Get input parameters
+            $id = $request->input('id'); // 1=>consultation, 2=>paid-consultation, 3=>overseas-enquiry
+            $enquiry_item = $request->input('enquiry_item'); // 1=>permanent-residency, 2=>temporary-residency, etc.
+            $inperson_address = $request->input('inperson_address'); // 1=>Adelaide, 2=>melbourne
+            $slot_overwrite = 0; // Always set to 0, not passed in input
+            
+            // Validate required parameters
+            if (empty($id) || empty($enquiry_item) || empty($inperson_address)) {
+                return $this->sendError('Missing required parameters: id, enquiry_item, and inperson_address are required', [], 422);
+            }
+            
+            Log::info('getDisabledDateFromCalendar called', [
+                'id' => $id,
+                'enquiry_item' => $enquiry_item,
+                'inperson_address' => $inperson_address,
+                'slot_overwrite' => $slot_overwrite
+            ]);
+            
+            // Map id to specific_service
+            $specific_service_map = [
+                1 => 'consultation',
+                2 => 'paid-consultation',
+                3 => 'overseas-enquiry'
+            ];
+            $specific_service = $specific_service_map[$id] ?? 'consultation';
+            
+            // Map enquiry_item to service_type
+            $service_type_map = [
+                1 => 'permanent-residency',
+                2 => 'temporary-residency',
+                3 => 'jrp-skill-assessment',
+                4 => 'tourist-visa',
+                5 => 'education-visa',
+                6 => 'complex-matters',
+                7 => 'visa-cancellation',
+                8 => 'international-migration'
+            ];
+            $service_type = $service_type_map[$enquiry_item] ?? 'permanent-residency';
+            
+            // Map inperson_address to location
+            $location_map = [
+                1 => 'adelaide',
+                2 => 'melbourne'
+            ];
+            $location = $location_map[$inperson_address] ?? 'adelaide';
+            
+            // Prepare request data for external API
+            $requestData = [
+                'specific_service' => $specific_service,
+                'service_type' => $service_type,
+                'location' => $location,
+                'slot_overwrite' => $slot_overwrite
+            ];
+            
+            try {
+                // Get API configuration
+                $baseUrl = 'https://www.bansalimmigration.com.au/api/crm';
+                $apiToken = config('services.bansal_api.token');
+                $timeout = config('services.bansal_api.timeout', 30);
+                
+                if (empty($apiToken)) {
+                    Log::error('Bansal API token not configured');
+                    return $this->sendError('Bansal API token not configured. Set BANSAL_API_TOKEN in .env', [], 500);
+                }
+                
+                // Make API call to external Bansal API
+                $response = Http::timeout($timeout)
+                    ->withToken($apiToken)
+                    ->acceptJson()
+                    ->post("{$baseUrl}/appointments/get-datetime-backend", $requestData);
+                
+                if ($response->failed()) {
+                    Log::error('Bansal API get-datetime-backend Error', [
+                        'method' => 'getDisabledDateFromCalendar',
+                        'status' => $response->status(),
+                        'body' => $response->body(),
+                        'request_data' => $requestData
+                    ]);
+                    
+                    return $this->sendError('Failed to fetch datetime backend from external API', [
+                        'error' => $response->status() === 404 ? 'Endpoint not found' : 'API request failed'
+                    ], $response->status());
+                }
+                
+                $data = $response->json();
+                
+                // Format response to match expected output
+                $result = [
+                    'success' => $data['success'] ?? true,
+                    'disabledatesarray' => $data['disabledatesarray'] ?? [],
+                    'duration' => $data['duration'] ?? 15,
+                    'start_time' => $data['start_time'] ?? '10:45',
+                    'end_time' => $data['end_time'] ?? '16:00',
+                    'weeks' => $data['weeks'] ?? []
+                ];
+                
+                return $this->sendResponse($result, 'Disabled dates retrieved successfully');
+                
+            } catch (RequestException $e) {
+                $response = $e->response;
+                $responseBody = $response?->json();
+                $message = null;
+                
+                if (is_array($responseBody)) {
+                    $message = $responseBody['message']
+                        ?? ($responseBody['error']['message'] ?? null);
+                }
+                
+                $message = $message ?: $response?->body() ?: $e->getMessage();
+                
+                Log::error('Bansal API get-datetime-backend Request Error', [
+                    'method' => 'getDisabledDateFromCalendar',
+                    'message' => $message,
+                    'request_data' => $requestData,
+                    'exception' => $e->getMessage()
+                ]);
+                
+                return $this->sendError('API request failed: ' . $message, [], 500);
+            } catch (\Exception $e) {
+                Log::error('Bansal API get-datetime-backend Exception', [
+                    'method' => 'getDisabledDateFromCalendar',
+                    'message' => $e->getMessage(),
+                    'request_data' => $requestData,
+                    'trace' => $e->getTraceAsString()
+                ]);
+                
+                return $this->sendError('An error occurred: ' . $e->getMessage(), [], 500);
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('getDisabledDateFromCalendar Exception', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->sendError('An error occurred: ' . $e->getMessage(), [], 500);
+        }
+    }
+
+    /**
+     * Get disabled time slots for a specific date from calendar
+     * 
+     * Returns disabled time slots array for the specified date, service type and location.
+     * Uses slot_overwrite=0 automatically.
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getDisabledSlotsOfAnyDateFromCalendar(Request $request)
+    {
+        try {
+            // Get input parameters
+            $service_id = $request->input('service_id'); // 1=>consultation, 2=>paid-consultation, 3=>overseas-enquiry
+            $enquiry_item = $request->input('enquiry_item'); // 1=>permanent-residency, 2=>temporary-residency, etc.
+            $inperson_address = $request->input('inperson_address'); // 1=>adelaide, 2=>melbourne
+            $sel_date = $request->input('sel_date'); // Date in dd/mm/yyyy format
+            $slot_overwrite = 0; // Always set to 0, not passed in input
+            
+            // Validate required parameters
+            if (empty($service_id) || empty($enquiry_item) || empty($inperson_address) || empty($sel_date)) {
+                return $this->sendError('Missing required parameters: service_id, enquiry_item, inperson_address, and sel_date are required', [], 422);
+            }
+            
+            // Validate date format (dd/mm/yyyy)
+            if (!preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $sel_date)) {
+                return $this->sendError('Invalid date format. Date must be in dd/mm/yyyy format', [], 422);
+            }
+            
+            Log::info('getDisabledSlotsOfAnyDateFromCalendar called', [
+                'service_id' => $service_id,
+                'enquiry_item' => $enquiry_item,
+                'inperson_address' => $inperson_address,
+                'sel_date' => $sel_date,
+                'slot_overwrite' => $slot_overwrite
+            ]);
+            
+            // Map service_id to specific_service
+            $specific_service_map = [
+                1 => 'consultation',
+                2 => 'paid-consultation',
+                3 => 'overseas-enquiry'
+            ];
+            $specific_service = $specific_service_map[$service_id] ?? 'consultation';
+            
+            // Map enquiry_item to service_type
+            $service_type_map = [
+                1 => 'permanent-residency',
+                2 => 'temporary-residency',
+                3 => 'jrp-skill-assessment',
+                4 => 'tourist-visa',
+                5 => 'education-visa',
+                6 => 'complex-matters',
+                7 => 'visa-cancellation',
+                8 => 'international-migration'
+            ];
+            $service_type = $service_type_map[$enquiry_item] ?? 'permanent-residency';
+            
+            // Map inperson_address to location
+            $location_map = [
+                1 => 'adelaide',
+                2 => 'melbourne'
+            ];
+            $location = $location_map[$inperson_address] ?? 'adelaide';
+            
+            try {
+                // Use BansalApiClient to call the website API (same as getdisableddatetime)
+                $apiClient = new \App\Services\BansalAppointmentSync\BansalApiClient();
+                $response = $apiClient->getDisabledDateTime(
+                    $specific_service,
+                    $service_type,
+                    $location,
+                    $sel_date,
+                    $slot_overwrite
+                );
+                
+                // Format response to match expected output
+                $result = [
+                    'success' => $response['success'] ?? true,
+                    'disabledtimeslotes' => $response['disabledtimeslotes'] ?? []
+                ];
+                
+                return $this->sendResponse($result, 'Disabled time slots retrieved successfully');
+                
+            } catch (\Exception $e) {
+                Log::error('Bansal API get-disabled-datetime Exception', [
+                    'method' => 'getDisabledSlotsOfAnyDateFromCalendar',
+                    'message' => $e->getMessage(),
+                    'service_id' => $service_id,
+                    'enquiry_item' => $enquiry_item,
+                    'inperson_address' => $inperson_address,
+                    'sel_date' => $sel_date,
+                    'slot_overwrite' => $slot_overwrite,
+                    'trace' => $e->getTraceAsString()
+                ]);
+                
+                return $this->sendError('An error occurred: ' . $e->getMessage(), [
+                    'disabledtimeslotes' => []
+                ], 500);
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('getDisabledSlotsOfAnyDateFromCalendar Exception', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->sendError('An error occurred: ' . $e->getMessage(), [], 500);
+        }
+    }
+
     private function mapMeetingType(string $meetingType): string
     {
         // Normalize: convert to lowercase and replace spaces/hyphens with underscores

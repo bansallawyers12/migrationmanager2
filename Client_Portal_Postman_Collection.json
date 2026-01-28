@@ -8260,6 +8260,344 @@
 					"body": "{\n    \"success\": false,\n    \"message\": \"Video call appointments are only available for paid services\"\n}"
 				}
 			]
+		},
+		{
+			"name": "Get Disabled Dates From Calendar",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text",
+						"description": "Use token from login response"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"id\": 1,\n    \"enquiry_item\": 1,\n    \"inperson_address\": 1\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/appointments/get-disabled-dates",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"appointments",
+						"get-disabled-dates"
+					]
+				},
+				"description": "Get disabled dates from calendar along with duration, start_time, end_time, and weeks. The slot_overwrite parameter is automatically set to 0 (not passed in input).\n\n**Input Parameters:**\n\n```json\n{\n    \"id\": 1,  // 1=>consultation, 2=>paid-consultation, 3=>overseas-enquiry\n    \"enquiry_item\": 1,  // 1=>permanent-residency, 2=>temporary-residency, 3=>jrp-skill-assessment, 4=>tourist-visa, 5=>education-visa, 6=>complex-matters, 7=>visa-cancellation, 8=>international-migration\n    \"inperson_address\": 1  // 1=>Adelaide, 2=>melbourne\n}\n```\n\n**Parameter Details:**\n- `id` (required, integer): Service type - 1=consultation, 2=paid-consultation, 3=overseas-enquiry\n- `enquiry_item` (required, integer): Enquiry type - 1=permanent-residency, 2=temporary-residency, 3=jrp-skill-assessment, 4=tourist-visa, 5=education-visa, 6=complex-matters, 7=visa-cancellation, 8=international-migration\n- `inperson_address` (required, integer): Office location - 1=Adelaide, 2=melbourne\n\n**Note:** slot_overwrite is automatically set to 0 internally and not required in the request."
+			},
+			"response": [
+				{
+					"name": "Success Response",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": 1,\n    \"enquiry_item\": 1,\n    \"inperson_address\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/appointments/get-disabled-dates",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"appointments",
+								"get-disabled-dates"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": true,\n    \"message\": \"Disabled dates retrieved successfully\",\n    \"data\": {\n        \"success\": true,\n        \"disabledatesarray\": [\n            \"30/01/2026\",\n            \"06/02/2026\",\n            \"13/02/2026\",\n            \"20/02/2026\",\n            \"27/02/2026\",\n            \"06/03/2026\",\n            \"13/03/2026\",\n            \"20/03/2026\",\n            \"27/03/2026\",\n            \"03/04/2026\",\n            \"10/04/2026\",\n            \"17/04/2026\",\n            \"24/04/2026\",\n            \"01/05/2026\",\n            \"08/05/2026\",\n            \"15/05/2026\",\n            \"22/05/2026\",\n            \"29/05/2026\",\n            \"05/06/2026\",\n            \"12/06/2026\",\n            \"19/06/2026\",\n            \"26/06/2026\",\n            \"03/07/2026\",\n            \"10/07/2026\",\n            \"17/07/2026\",\n            \"24/07/2026\"\n        ],\n        \"duration\": 15,\n        \"start_time\": \"10:45\",\n        \"end_time\": \"16:00\",\n        \"weeks\": [\n            0,\n            6\n        ]\n    }\n}"
+				},
+				{
+					"name": "Validation Error",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/appointments/get-disabled-dates",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"appointments",
+								"get-disabled-dates"
+							]
+						}
+					},
+					"status": "Unprocessable Entity",
+					"code": 422,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": false,\n    \"message\": \"Missing required parameters: id, enquiry_item, and inperson_address are required\"\n}"
+				}
+			]
+		},
+		{
+			"name": "Get Disabled Slots Of Any Date From Calendar",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text",
+						"description": "Use token from login response"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"service_id\": 1,\n    \"enquiry_item\": 1,\n    \"inperson_address\": 1,\n    \"sel_date\": \"29/01/2026\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/appointments/get-disabled-slots",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"appointments",
+						"get-disabled-slots"
+					]
+				},
+				"description": "Get disabled time slots for a specific date from calendar. The slot_overwrite parameter is automatically set to 0 (not passed in input).\n\n**Input Parameters:**\n\n```json\n{\n    \"service_id\": 1,  // 1=>consultation, 2=>paid-consultation, 3=>overseas-enquiry\n    \"enquiry_item\": 1,  // 1=>permanent-residency, 2=>temporary-residency, 3=>jrp-skill-assessment, 4=>tourist-visa, 5=>education-visa, 6=>complex-matters, 7=>visa-cancellation, 8=>international-migration\n    \"inperson_address\": 1,  // 1=>adelaide, 2=>melbourne\n    \"sel_date\": \"29/01/2026\"  // Date in dd/mm/yyyy format\n}\n```\n\n**Parameter Details:**\n- `service_id` (required, integer): Service type - 1=consultation, 2=paid-consultation, 3=overseas-enquiry\n- `enquiry_item` (required, integer): Enquiry type - 1=permanent-residency, 2=temporary-residency, 3=jrp-skill-assessment, 4=tourist-visa, 5=education-visa, 6=complex-matters, 7=visa-cancellation, 8=international-migration\n- `inperson_address` (required, integer): Office location - 1=adelaide, 2=melbourne\n- `sel_date` (required, string): Selected date in dd/mm/yyyy format (e.g., \"29/01/2026\")\n\n**Note:** slot_overwrite is automatically set to 0 internally and not required in the request."
+			},
+			"response": [
+				{
+					"name": "Success Response",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"service_id\": 1,\n    \"enquiry_item\": 1,\n    \"inperson_address\": 1,\n    \"sel_date\": \"29/01/2026\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/appointments/get-disabled-slots",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"appointments",
+								"get-disabled-slots"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": true,\n    \"message\": \"Disabled time slots retrieved successfully\",\n    \"data\": {\n        \"success\": true,\n        \"disabledtimeslotes\": [\n            \"11:00 AM\",\n            \"11:15 AM\",\n            \"1:30 PM\",\n            \"1:45 PM\"\n        ]\n    }\n}"
+				},
+				{
+					"name": "Validation Error",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"service_id\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/appointments/get-disabled-slots",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"appointments",
+								"get-disabled-slots"
+							]
+						}
+					},
+					"status": "Unprocessable Entity",
+					"code": 422,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": false,\n    \"message\": \"Missing required parameters: service_id, enquiry_item, inperson_address, and sel_date are required\"\n}"
+				},
+				{
+					"name": "Invalid Date Format",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"service_id\": 1,\n    \"enquiry_item\": 1,\n    \"inperson_address\": 1,\n    \"sel_date\": \"2026-01-29\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/appointments/get-disabled-slots",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"appointments",
+								"get-disabled-slots"
+							]
+						}
+					},
+					"status": "Unprocessable Entity",
+					"code": 422,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": false,\n    \"message\": \"Invalid date format. Date must be in dd/mm/yyyy format\"\n}"
+				}
+			]
 		}
 	],
 	"event": [
