@@ -1044,6 +1044,162 @@ class ClientPortalAppointmentController extends BaseController
         }
     }
 
+    /**
+     * Update appointment status (Cancel or Complete only)
+     * 
+     * Allows authenticated clients to update their appointment status.
+     * Only supports 'cancel' and 'complete' status types for mobile app usage.
+     * 
+     * @param Request $request
+     * @param int $id Appointment ID
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateAppointmentStatus(Request $request, $id)
+    {
+        try {
+            $user = $request->user();
+            
+            if (!$user) {
+                return $this->sendError('Unauthenticated', [], 401);
+            }
+
+            // Find appointment that belongs to the authenticated client
+            $appointment = BookingAppointment::where('id', $id)
+                ->where('client_id', $user->id)
+                ->first();
+
+            if (!$appointment) {
+                return $this->sendError('Appointment not found', [], 404);
+            }
+
+            // Validate request
+            $validator = Validator::make($request->all(), [
+                'type' => 'required|in:cancel,complete',
+                'cancel_reason' => 'required_if:type,cancel|nullable|string|max:500'
+            ]);
+
+            if ($validator->fails()) {
+                return $this->sendError('Validation failed: ' . $validator->errors()->first(), $validator->errors(), 422);
+            }
+
+            // Map 'cancel' to 'cancelled' and 'complete' to 'completed'
+            $statusMap = [
+                'cancel' => 'cancelled',
+                'complete' => 'completed'
+            ];
+            $newStatus = $statusMap[$request->type];
+
+            // Check if appointment can be updated
+            if (in_array($appointment->status, ['cancelled', 'completed'])) {
+                return $this->sendError('Cannot update appointment. Appointment is already ' . $appointment->status, [], 422);
+            }
+
+            $oldStatus = $appointment->status;
+            $appointment->status = $newStatus;
+
+            // Set timestamp based on status
+            switch ($newStatus) {
+                case 'completed':
+                    $appointment->completed_at = now();
+                    break;
+                case 'cancelled':
+                    $appointment->cancelled_at = now();
+                    $appointment->cancellation_reason = $request->cancel_reason ?? null;
+                    break;
+            }
+
+            $appointment->save();
+
+            // Sync with Bansal API if applicable
+            $syncError = null;
+            if ($appointment->bansal_appointment_id) {
+                try {
+                    $bansalApiClient = app(\App\Services\BansalAppointmentSync\BansalApiClient::class);
+                    
+                    // Call Bansal API to update status
+                    // The API expects 'cancel' or 'complete' as type, not 'cancelled' or 'completed'
+                    $bansalApiClient->updateAppointmentStatus(
+                        $appointment->bansal_appointment_id,
+                        $request->type, // 'cancel' or 'complete'
+                        $request->cancel_reason ?? null
+                    );
+
+                    $appointment->forceFill([
+                        'last_synced_at' => now(),
+                        'sync_status' => 'synced',
+                        'sync_error' => null,
+                    ])->save();
+
+                    Log::info('Appointment status synced with Bansal API', [
+                        'appointment_id' => $appointment->id,
+                        'bansal_appointment_id' => $appointment->bansal_appointment_id,
+                        'status' => $newStatus
+                    ]);
+                } catch (\Exception $e) {
+                    $syncError = $e->getMessage();
+
+                    Log::error('Failed to sync appointment status with Bansal API', [
+                        'appointment_id' => $appointment->id,
+                        'bansal_appointment_id' => $appointment->bansal_appointment_id,
+                        'status' => $newStatus,
+                        'error' => $syncError,
+                    ]);
+
+                    $appointment->forceFill([
+                        'sync_status' => 'error',
+                        'sync_error' => $syncError,
+                    ])->save();
+                }
+            } else {
+                Log::warning('Skipping Bansal sync because appointment is missing bansal_appointment_id', [
+                    'appointment_id' => $appointment->id,
+                    'status' => $newStatus,
+                ]);
+                $syncError = 'Missing Bansal appointment identifier.';
+            }
+
+            // Log activity
+            if ($appointment->client_id) {
+                $activityLog = new \App\Models\ActivitiesLog;
+                $activityLog->client_id = $appointment->client_id;
+                $activityLog->created_by = $user->id;
+                $activityLog->subject = 'Appointment status updated via mobile app';
+                $activityLog->description = '<p><strong>Status changed:</strong> ' . ucfirst($oldStatus) . ' → ' . ucfirst($newStatus) . '</p>' .
+                                           ($request->cancel_reason ? '<p><strong>Cancellation Reason:</strong> ' . e($request->cancel_reason) . '</p>' : '');
+                $activityLog->task_status = 0;
+                $activityLog->pin = 0;
+                $activityLog->save();
+            }
+
+            $message = 'Appointment status updated successfully';
+            if ($syncError) {
+                $message .= '. Note: Status updated locally but could not be synced to Bansal website. Error: ' . $syncError;
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'data' => [
+                    'appointment_id' => $appointment->id,
+                    'status' => $newStatus,
+                    'updated_at' => $appointment->updated_at->toIso8601String(),
+                ],
+                'bansal_synced' => !$syncError
+            ], 200);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->sendError('Validation failed', $e->errors(), 422);
+        } catch (\Exception $e) {
+            Log::error('Update Appointment Status API Error: ' . $e->getMessage(), [
+                'user_id' => $request->user()->id ?? null,
+                'appointment_id' => $id ?? null,
+                'request_data' => $request->all(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->sendError('An error occurred: ' . $e->getMessage(), [], 500);
+        }
+    }
+
     private function mapMeetingType(string $meetingType): string
     {
         // Normalize: convert to lowercase and replace spaces/hyphens with underscores

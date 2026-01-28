@@ -8262,6 +8262,313 @@
 			]
 		},
 		{
+			"name": "Update Appointment Status",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text",
+						"description": "Use token from login response"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"type\": \"cancel\",\n    \"cancel_reason\": \"Client rescheduled\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/appointments/:id/status",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"appointments",
+						":id",
+						"status"
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": "1",
+							"description": "Appointment ID"
+						}
+					]
+				},
+				"description": "Update appointment status for the authenticated client. Only supports 'cancel' and 'complete' status types.\n\n**Input Parameters:**\n- `type` (required, string, one of: cancel, complete): Status type to update\n  - cancel = Mark appointment as cancelled\n  - complete = Mark appointment as completed\n\n- `cancel_reason` (required when type is cancel, max 500 chars): Reason for cancellation\n\n**Note:** \n- Client can only update their own appointments\n- Appointments that are already cancelled or completed cannot be updated\n- Status will be synced with Bansal API if possible\n- Activity log will be created for the status change"
+			},
+			"response": [
+				{
+					"name": "Success Response - Cancel",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"cancel\",\n    \"cancel_reason\": \"Client rescheduled\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/appointments/682/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"appointments",
+								"682",
+								"status"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": true,\n    \"message\": \"Appointment status updated successfully\",\n    \"data\": {\n        \"appointment_id\": 682,\n        \"status\": \"cancelled\",\n        \"updated_at\": \"2026-01-28T10:30:00.000000Z\"\n    },\n    \"bansal_synced\": true\n}"
+				},
+				{
+					"name": "Success Response - Complete",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"complete\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/appointments/682/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"appointments",
+								"682",
+								"status"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": true,\n    \"message\": \"Appointment status updated successfully\",\n    \"data\": {\n        \"appointment_id\": 682,\n        \"status\": \"completed\",\n        \"updated_at\": \"2026-01-28T10:30:00.000000Z\"\n    },\n    \"bansal_synced\": true\n}"
+				},
+				{
+					"name": "Validation Error - Missing cancel_reason",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"cancel\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/appointments/682/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"appointments",
+								"682",
+								"status"
+							]
+						}
+					},
+					"status": "Unprocessable Entity",
+					"code": 422,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": false,\n    \"message\": \"Validation failed: The cancel reason field is required when type is cancel.\",\n    \"data\": {\n        \"cancel_reason\": [\"The cancel reason field is required when type is cancel.\"]\n    }\n}"
+				},
+				{
+					"name": "Appointment Not Found",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"cancel\",\n    \"cancel_reason\": \"Client rescheduled\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/appointments/99999/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"appointments",
+								"99999",
+								"status"
+							]
+						}
+					},
+					"status": "Not Found",
+					"code": 404,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": false,\n    \"message\": \"Appointment not found\"\n}"
+				},
+				{
+					"name": "Already Cancelled/Completed",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"cancel\",\n    \"cancel_reason\": \"Client rescheduled\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/appointments/682/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"appointments",
+								"682",
+								"status"
+							]
+						}
+					},
+					"status": "Unprocessable Entity",
+					"code": 422,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": false,\n    \"message\": \"Cannot update appointment. Appointment is already cancelled\"\n}"
+				}
+			]
+		},
+		{
 			"name": "Get Disabled Dates From Calendar",
 			"request": {
 				"method": "POST",
