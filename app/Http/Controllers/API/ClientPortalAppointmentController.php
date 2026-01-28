@@ -551,6 +551,20 @@ class ClientPortalAppointmentController extends BaseController
             // Service 1 (Free Consultation) = 15 min, Service 2/3 (Paid) = 30 min
             $durationMinutes = $requestData['service_id'] == 1 ? 15 : 30;
 
+            // Check for duplicate appointments - prevent booking the same time slot
+            // An appointment is considered duplicate if:
+            // 1. It's for the same client
+            // 2. It's on the same date and time
+            // 3. It's not cancelled or rescheduled
+            $existingAppointment = BookingAppointment::where('client_id', $client->id)
+                ->where('appointment_datetime', $appointmentDateTime)
+                ->whereNotIn('status', ['cancelled', 'rescheduled'])
+                ->first();
+
+            if ($existingAppointment) {
+                return $this->sendError('This appointment time slot already exists. Please try a different time slot.', [], 422);
+            }
+
             // Use ConsultantAssignmentService to assign consultant
             $consultantAssigner = app(\App\Services\BansalAppointmentSync\ConsultantAssignmentService::class);
             $appointmentDataForConsultant = [
