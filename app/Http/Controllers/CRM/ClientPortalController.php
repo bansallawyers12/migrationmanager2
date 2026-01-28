@@ -336,7 +336,7 @@ class ClientPortalController extends Controller
 
                 if ($messageId) {
                     // Insert recipient into pivot table
-                    MessageRecipient->insert([
+                    MessageRecipient::insert([
                         'message_id' => $messageId,
                         'recipient_id' => $clientId,
                         'recipient' => $client->first_name . ' ' . $client->last_name,
@@ -507,7 +507,7 @@ class ClientPortalController extends Controller
 
                 if ($messageId) {
                     // Insert recipient into pivot table
-                    MessageRecipient->insert([
+                    MessageRecipient::insert([
                         'message_id' => $messageId,
                         'recipient_id' => $clientId,
                         'recipient' => $client->first_name . ' ' . $client->last_name,
@@ -2009,8 +2009,7 @@ class ClientPortalController extends Controller
 					}
 
 					// Get all recipients for this message
-					$recipients = MessageRecipient
-						->where('message_id', $message->id)
+					$recipients = MessageRecipient::where('message_id', $message->id)
 						->get()
 						->map(function ($recipient) {
 							$recipientUser = DB::table('admins')
@@ -2178,7 +2177,7 @@ class ClientPortalController extends Controller
 
 			if ($messageId) {
 				// Insert recipient into pivot table
-				MessageRecipient->insert([
+				MessageRecipient::insert([
 					'message_id' => $messageId,
 					'recipient_id' => $clientId,
 					'recipient' => $recipientUser->full_name,
