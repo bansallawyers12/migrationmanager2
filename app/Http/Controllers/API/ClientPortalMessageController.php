@@ -121,7 +121,7 @@ class ClientPortalMessageController extends Controller
 
             if ($messageId) {
                 // Insert single recipient into pivot table
-                MessageRecipient->insert([
+                MessageRecipient::insert([
                     'message_id' => $messageId,
                     'recipient_id' => $clientId,
                     'recipient' => $recipientUser->full_name,
@@ -424,7 +424,7 @@ class ClientPortalMessageController extends Controller
                         'updated_at' => now()
                     ];
                 }
-                MessageRecipient->insert($recipientRecords);
+                MessageRecipient::insert($recipientRecords);
 
                 // Prepare message for broadcasting
                 $messageForBroadcast = [
@@ -642,8 +642,7 @@ class ClientPortalMessageController extends Controller
                 ->get()
                 ->map(function ($msg) use ($clientId) {
                     // Get all recipients for this message
-                    $recipients = MessageRecipient
-                        ->where('message_id', $msg->id)
+                    $recipients = MessageRecipient::where('message_id', $msg->id)
                         ->get();
 
                     // Get current user's read status if they're a recipient
@@ -764,8 +763,7 @@ class ClientPortalMessageController extends Controller
             }
 
             // Check if user has access to this message (sender or recipient)
-            $isRecipient = MessageRecipient
-                ->where('message_id', $id)
+            $isRecipient = MessageRecipient::where('message_id', $id)
                 ->where('recipient_id', $clientId)
                 ->exists();
 
@@ -779,8 +777,7 @@ class ClientPortalMessageController extends Controller
             }
 
             // Get all recipients with their read status and names
-            $recipients = MessageRecipient
-                ->join('admins', 'message_recipients.recipient_id', '=', 'admins.id')
+            $recipients = MessageRecipient::join('admins', 'message_recipients.recipient_id', '=', 'admins.id')
                 ->where('message_id', $id)
                 ->select(
                     'message_recipients.recipient_id',
@@ -883,8 +880,7 @@ class ClientPortalMessageController extends Controller
             }
 
             // Check if user is a recipient of this message
-            $recipientRecord = MessageRecipient
-                ->where('message_id', $id)
+            $recipientRecord = MessageRecipient::where('message_id', $id)
                 ->where('recipient_id', $clientId)
                 ->first();
 
@@ -897,8 +893,7 @@ class ClientPortalMessageController extends Controller
 
             // Mark as read if not already read
             if (!$recipientRecord->is_read) {
-                MessageRecipient
-                    ->where('message_id', $id)
+                MessageRecipient::where('message_id', $id)
                     ->where('recipient_id', $clientId)
                     ->update([
                         'is_read' => true,
@@ -907,8 +902,7 @@ class ClientPortalMessageController extends Controller
                     ]);
 
                 // Get updated recipient record
-                $updatedRecipient = MessageRecipient
-                    ->where('message_id', $id)
+                $updatedRecipient = MessageRecipient::where('message_id', $id)
                     ->where('recipient_id', $clientId)
                     ->first();
 
@@ -949,8 +943,7 @@ class ClientPortalMessageController extends Controller
                 
                 // Broadcast unread count update for current user - with error handling
                 try {
-                    $unreadCount = MessageRecipient
-                        ->where('recipient_id', $clientId)
+                    $unreadCount = MessageRecipient::where('recipient_id', $clientId)
                         ->where('is_read', false)
                         ->count();
                     broadcast(new UnreadCountUpdated($clientId, $unreadCount));
@@ -1026,8 +1019,7 @@ class ClientPortalMessageController extends Controller
             }
 
             // Count messages where at least one recipient has read the message
-            $readMessagesCount = MessageRecipient
-                ->whereIn('message_id', $sentMessages)
+            $readMessagesCount = MessageRecipient::whereIn('message_id', $sentMessages)
                 ->where('is_read', true)
                 ->distinct('message_id')
                 ->count('message_id');
