@@ -127,7 +127,18 @@ return [
         'timeout' => env('BANSAL_API_TIMEOUT', 30),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Stripe Payment Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for Stripe payment processing
+    | Get your keys from: https://dashboard.stripe.com/apikeys
+    |
+    */
+
     'stripe' => [
+        'key' => env('STRIPE_KEY'),
         'secret' => env('STRIPE_SECRET'),
     ],
 
