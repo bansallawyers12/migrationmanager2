@@ -1200,6 +1200,373 @@ class ClientPortalAppointmentController extends BaseController
         }
     }
 
+    /**
+     * Update Appointment (Reschedule)
+     * 
+     * Allows authenticated clients to update their appointment date, time, meeting type, and preferred language.
+     * Syncs with Bansal API if appointment has bansal_appointment_id.
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateAppointment(Request $request)
+    {
+        try {
+            $user = $request->user();
+            
+            if (!$user) {
+                return $this->sendError('Unauthenticated', [], 401);
+            }
+
+            // Validate input
+            $validator = Validator::make($request->all(), [
+                'appointment_id' => 'required|integer|exists:booking_appointments,id',
+                'appointment_date' => 'required|date|date_format:Y-m-d',
+                'appointment_time' => 'required|date_format:H:i',
+                'meeting_type' => 'required|string|in:in-person,phone,video-call,in_person,video,phone-call',
+                'preferred_language' => 'required|string|in:English,Hindi,Punjabi',
+            ]);
+
+            if ($validator->fails()) {
+                return $this->sendError('Validation failed', $validator->errors(), 422);
+            }
+
+            // Find appointment that belongs to the authenticated client
+            $appointment = BookingAppointment::where('id', $request->appointment_id)
+                ->where('client_id', $user->id)
+                ->first();
+
+            if (!$appointment) {
+                return $this->sendError('Appointment not found or does not belong to you', [], 404);
+            }
+
+            // Normalize meeting_type to internal format (convert API format to DB format)
+            $meetingTypeNormalized = $this->mapMeetingType($request->meeting_type);
+
+            // Validate: Video meeting type is only allowed for paid appointments
+            if ($meetingTypeNormalized === 'video' && !$appointment->is_paid) {
+                return $this->sendError('Video meeting type is only available for paid appointments', [], 422);
+            }
+
+            $oldDatetime = $appointment->appointment_datetime;
+            $oldMeetingType = $appointment->meeting_type;
+            $oldPreferredLanguage = $appointment->preferred_language ?? 'English';
+            
+            try {
+                $newDatetime = Carbon::createFromFormat(
+                    'Y-m-d H:i',
+                    $request->appointment_date . ' ' . $request->appointment_time,
+                    config('app.timezone')
+                );
+            } catch (\Exception $e) {
+                return $this->sendError('Invalid date or time provided', ['error' => $e->getMessage()], 422);
+            }
+
+            // Check if anything has changed
+            $datetimeChanged = !$oldDatetime || !$oldDatetime->equalTo($newDatetime);
+            $meetingTypeChanged = $oldMeetingType !== $meetingTypeNormalized;
+            $preferredLanguageChanged = $oldPreferredLanguage !== $request->preferred_language;
+            
+            if (!$datetimeChanged && !$meetingTypeChanged && !$preferredLanguageChanged) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'No changes detected. Appointment details remain unchanged.',
+                    'data' => $this->formatAppointmentData($appointment)
+                ], 200);
+            }
+
+            // Update appointment fields in local database FIRST (always update locally)
+            if ($datetimeChanged) {
+                $appointment->appointment_datetime = $newDatetime;
+                $appointment->timeslot_full = $newDatetime->format('h:i A');
+            }
+            
+            if ($meetingTypeChanged) {
+                $appointment->meeting_type = $meetingTypeNormalized;
+            }
+            
+            if ($preferredLanguageChanged) {
+                $appointment->preferred_language = $request->preferred_language;
+            }
+
+            // Try to sync with Bansal API if any field changed AND bansal_appointment_id exists
+            $syncError = null;
+            $apiSynced = false;
+            $newBansalAppointmentId = null;
+
+            if (($datetimeChanged || $meetingTypeChanged || $preferredLanguageChanged) && !empty($appointment->bansal_appointment_id)) {
+                try {
+                    $bansalApiClient = app(\App\Services\BansalAppointmentSync\BansalApiClient::class);
+                    
+                    // Determine which fields to send to API
+                    $apiDate = $datetimeChanged ? $request->appointment_date : $appointment->appointment_datetime->format('Y-m-d');
+                    $apiTime = $datetimeChanged ? $request->appointment_time : $appointment->appointment_datetime->format('H:i');
+                    $apiMeetingType = $meetingTypeChanged ? $meetingTypeNormalized : ($appointment->meeting_type ?? 'in_person');
+                    $apiPreferredLanguage = $preferredLanguageChanged ? $request->preferred_language : ($appointment->preferred_language ?? 'English');
+
+                    $apiResponse = $bansalApiClient->rescheduleAppointment(
+                        (int) $appointment->bansal_appointment_id,
+                        $apiDate,
+                        $apiTime,
+                        $apiMeetingType,
+                        $apiPreferredLanguage
+                    );
+
+                    if ($apiResponse['success'] ?? false) {
+                        $apiSynced = true;
+                        $appointment->last_synced_at = now();
+                        $appointment->sync_status = 'synced';
+                        $appointment->sync_error = null;
+                    } else {
+                        $errorMessage = $apiResponse['message'] ?? 'Failed to update appointment on website.';
+                        $errors = $apiResponse['errors'] ?? [];
+                        
+                        // Check if error is "invalid appointment id"
+                        if (strpos(strtolower($errorMessage), 'appointment id is invalid') !== false || 
+                            (isset($errors['appointment_id']) && strpos(strtolower(implode(' ', $errors['appointment_id'])), 'invalid') !== false)) {
+                            
+                            // Try to create new appointment via API
+                            try {
+                                $newBansalAppointmentId = $this->createAppointmentViaApi(
+                                    $appointment, 
+                                    $bansalApiClient,
+                                    $apiDate,
+                                    $apiTime,
+                                    $apiMeetingType,
+                                    $apiPreferredLanguage
+                                );
+                                
+                                if ($newBansalAppointmentId) {
+                                    $appointment->bansal_appointment_id = $newBansalAppointmentId;
+                                    $appointment->last_synced_at = now();
+                                    $appointment->sync_status = 'synced';
+                                    $appointment->sync_error = null;
+                                    $apiSynced = true;
+                                } else {
+                                    $syncError = 'Failed to create appointment on website. Original error: ' . $errorMessage;
+                                    $appointment->sync_status = 'error';
+                                    $appointment->sync_error = $syncError;
+                                }
+                            } catch (\Exception $createException) {
+                                $syncError = 'Failed to create appointment on website: ' . $createException->getMessage();
+                                $appointment->sync_status = 'error';
+                                $appointment->sync_error = $syncError;
+                            }
+                        } else {
+                            $syncError = $errorMessage;
+                            $appointment->sync_status = 'error';
+                            $appointment->sync_error = $syncError;
+                        }
+                    }
+                } catch (\Exception $e) {
+                    $syncError = $e->getMessage();
+                    
+                    // Check if error is "invalid appointment id"
+                    if (strpos(strtolower($syncError), 'appointment id is invalid') !== false) {
+                        try {
+                            $bansalApiClient = app(\App\Services\BansalAppointmentSync\BansalApiClient::class);
+                            $newBansalAppointmentId = $this->createAppointmentViaApi(
+                                $appointment,
+                                $bansalApiClient,
+                                $apiDate,
+                                $apiTime,
+                                $apiMeetingType,
+                                $apiPreferredLanguage
+                            );
+                            
+                            if ($newBansalAppointmentId) {
+                                $appointment->bansal_appointment_id = $newBansalAppointmentId;
+                                $appointment->last_synced_at = now();
+                                $appointment->sync_status = 'synced';
+                                $appointment->sync_error = null;
+                                $apiSynced = true;
+                                $syncError = null;
+                            } else {
+                                $syncError = 'Failed to create appointment on website. Original error: ' . $syncError;
+                                $appointment->sync_status = 'error';
+                                $appointment->sync_error = $syncError;
+                            }
+                        } catch (\Exception $createException) {
+                            $createErrorMessage = $createException->getMessage();
+                            
+                            if (stripos($createErrorMessage, 'time is outside of available booking hours') !== false || 
+                                stripos($createErrorMessage, 'outside of available booking hours') !== false) {
+                                $syncError = 'The selected appointment time is not available for booking. Please choose a different time slot.';
+                            } elseif (stripos($createErrorMessage, 'time slot') !== false || 
+                                      stripos($createErrorMessage, 'slot') !== false) {
+                                $syncError = 'The selected time slot is not available. Please choose a different time.';
+                            } else {
+                                $syncError = 'Failed to create appointment on website: ' . $createErrorMessage;
+                            }
+                            
+                            $appointment->sync_status = 'error';
+                            $appointment->sync_error = $syncError;
+                        }
+                    } else {
+                        $appointment->sync_status = 'error';
+                        $appointment->sync_error = $syncError;
+                    }
+                }
+            } else {
+                // No bansal_appointment_id, so just update locally
+                if ($datetimeChanged || $meetingTypeChanged || $preferredLanguageChanged) {
+                    $appointment->sync_status = 'new';
+                    $appointment->sync_error = null;
+                }
+            }
+            
+            $appointment->save();
+
+            // Build success message
+            $messageParts = [];
+            if ($datetimeChanged) {
+                $messageParts[] = 'date and time';
+            }
+            if ($meetingTypeChanged) {
+                $messageParts[] = 'meeting type';
+            }
+            if ($preferredLanguageChanged) {
+                $messageParts[] = 'preferred language';
+            }
+            
+            $message = 'Appointment ' . implode(', ', $messageParts) . ' updated successfully.';
+            
+            // Add warning if API sync failed
+            if ($syncError) {
+                $message .= ' However, sync with website failed: ' . $syncError;
+            } elseif ($newBansalAppointmentId) {
+                $message .= ' Note: A new appointment was created on the website (previous appointment ID was invalid).';
+            }
+
+            Log::info('Appointment updated via API', [
+                'user_id' => $user->id,
+                'appointment_id' => $appointment->id,
+                'datetime_changed' => $datetimeChanged,
+                'meeting_type_changed' => $meetingTypeChanged,
+                'preferred_language_changed' => $preferredLanguageChanged,
+                'bansal_synced' => $apiSynced
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'data' => $this->formatAppointmentData($appointment),
+                'bansal_synced' => $apiSynced,
+                'sync_error' => $syncError
+            ], 200);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->sendError('Validation failed', $e->errors(), 422);
+        } catch (\Exception $e) {
+            Log::error('Update Appointment API Error: ' . $e->getMessage(), [
+                'user_id' => $request->user()->id ?? null,
+                'request_data' => $request->all(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->sendError('An error occurred: ' . $e->getMessage(), [], 500);
+        }
+    }
+
+    /**
+     * Helper method to create appointment via Bansal API when update fails due to invalid appointment ID
+     */
+    private function createAppointmentViaApi(
+        BookingAppointment $appointment,
+        BansalApiClient $bansalApiClient,
+        string $appointmentDate,
+        string $appointmentTime,
+        string $meetingType,
+        string $preferredLanguage
+    ): ?int {
+        try {
+            // Map meeting_type from database format to API format
+            $meetingTypeForApi = match($meetingType) {
+                'video' => 'video-call',
+                'in_person' => 'in-person',
+                'phone' => 'phone',
+                default => 'in-person'
+            };
+            
+            // Determine specific_service from enquiry_type or service_type
+            $specificService = $this->determineSpecificService($appointment);
+            
+            // Build payload for createAppointment API
+            $payload = [
+                'full_name' => $appointment->client_name,
+                'email' => $appointment->client_email,
+                'phone' => $appointment->client_phone ?? '',
+                'appointment_date' => $appointmentDate,
+                'appointment_time' => $appointmentTime,
+                'appointment_datetime' => $appointmentDate . ' ' . $appointmentTime . ':00',
+                'duration_minutes' => $appointment->duration_minutes ?? 15,
+                'location' => $appointment->location ?? 'melbourne',
+                'meeting_type' => $meetingTypeForApi,
+                'preferred_language' => $preferredLanguage,
+                'specific_service' => $specificService,
+                'enquiry_type' => $appointment->enquiry_type ?? 'pr_complex',
+                'service_type' => $appointment->service_type ?? 'Permanent Residency',
+                'enquiry_details' => $appointment->enquiry_details ?? '',
+                'is_paid' => $appointment->is_paid ?? false,
+                'amount' => $appointment->amount ?? 0,
+                'final_amount' => $appointment->final_amount ?? 0,
+                'payment_status' => $appointment->payment_status ?? ($appointment->is_paid ? 'pending' : null),
+                'slot_overwrite' => 0,
+            ];
+            
+            $apiResponse = $bansalApiClient->createAppointment($payload);
+            
+            if ($apiResponse['success'] ?? false) {
+                // Extract new bansal_appointment_id from response
+                if (isset($apiResponse['data']['id'])) {
+                    return (int) $apiResponse['data']['id'];
+                } elseif (isset($apiResponse['data']['appointment_id'])) {
+                    return (int) $apiResponse['data']['appointment_id'];
+                } elseif (isset($apiResponse['appointment_id'])) {
+                    return (int) $apiResponse['appointment_id'];
+                }
+            }
+            
+            Log::warning('Bansal API createAppointment returned success but no appointment ID', [
+                'appointment_id' => $appointment->id,
+                'response' => $apiResponse,
+            ]);
+            
+            return null;
+        } catch (\Exception $e) {
+            Log::warning('Failed to create appointment via API', [
+                'appointment_id' => $appointment->id,
+                'error' => $e->getMessage(),
+                'appointment_date' => $appointmentDate,
+                'appointment_time' => $appointmentTime,
+            ]);
+            
+            throw $e;
+        }
+    }
+
+    /**
+     * Determine specific_service for API based on appointment data
+     */
+    private function determineSpecificService(BookingAppointment $appointment): string
+    {
+        // If enquiry_type exists, try to map it
+        if ($appointment->enquiry_type) {
+            $enquiryType = strtolower($appointment->enquiry_type);
+            
+            // Map common enquiry types to specific_service
+            if (strpos($enquiryType, 'overseas') !== false || $enquiryType === 'international') {
+                return 'overseas-enquiry';
+            } elseif ($appointment->is_paid) {
+                return 'paid-consultation';
+            } else {
+                return 'consultation';
+            }
+        }
+        
+        // Default fallback based on is_paid
+        return $appointment->is_paid ? 'paid-consultation' : 'consultation';
+    }
+
     private function mapMeetingType(string $meetingType): string
     {
         // Normalize: convert to lowercase and replace spaces/hyphens with underscores

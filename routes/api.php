@@ -219,6 +219,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/appointments/{id}', [ClientPortalAppointmentController::class, 'getSingleAppointment']);
     Route::post('/appointments', [ClientPortalAppointmentController::class, 'addAppointment']);
     Route::post('/appointments/{id}/status', [ClientPortalAppointmentController::class, 'updateAppointmentStatus']);
+    Route::post('/appointments/update-appointment', [ClientPortalAppointmentController::class, 'updateAppointment']);
     Route::post('/appointments/get-disabled-dates', [ClientPortalAppointmentController::class, 'getDisabledDateFromCalendar']);
     Route::post('/appointments/get-disabled-slots', [ClientPortalAppointmentController::class, 'getDisabledSlotsOfAnyDateFromCalendar']);
     

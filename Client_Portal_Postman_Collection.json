@@ -8569,6 +8569,350 @@
 			]
 		},
 		{
+			"name": "Update Appointment (Reschedule)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text",
+						"description": "Use token from login response"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"appointment_id\": 682,\n    \"appointment_date\": \"2026-03-19\",\n    \"appointment_time\": \"15:00\",\n    \"meeting_type\": \"video-call\",\n    \"preferred_language\": \"English\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/appointments/update-appointment",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"appointments",
+						"update-appointment"
+					]
+				},
+				"description": "Update (reschedule) an existing appointment for the authenticated client. Allows updating appointment date, time, meeting type, and preferred language.\n\n**Input Parameters:**\n- `appointment_id` (required, integer): The ID of the appointment to update\n- `appointment_date` (required, string, format: YYYY-MM-DD): New appointment date (e.g., \"2026-03-19\")\n- `appointment_time` (required, string, format: HH:mm): New appointment time in 24-hour format (e.g., \"15:00\")\n- `meeting_type` (required, string): Meeting type\n  - Accepted values: \"in-person\", \"phone\", \"video-call\", \"in_person\", \"video\", \"phone-call\"\n  - Note: Video meeting type is only available for paid appointments\n- `preferred_language` (required, string): Preferred language\n  - Accepted values: \"English\", \"Hindi\", \"Punjabi\"\n\n**Note:**\n- Client can only update their own appointments\n- Changes will be synced with Bansal API if the appointment has a bansal_appointment_id\n- If sync fails due to invalid appointment ID, the system will attempt to create a new appointment on the website\n- Activity log will be created for the changes"
+			},
+			"response": [
+				{
+					"name": "Success Response",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"appointment_id\": 682,\n    \"appointment_date\": \"2026-03-19\",\n    \"appointment_time\": \"15:00\",\n    \"meeting_type\": \"video-call\",\n    \"preferred_language\": \"English\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/appointments/update-appointment",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"appointments",
+								"update-appointment"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": true,\n    \"message\": \"Appointment date and time, meeting type, preferred language updated successfully.\",\n    \"data\": {\n        \"id\": 682,\n        \"full_name\": \"Vipulhhk Kumar\",\n        \"email\": \"viplucmca@yahoo.co.in\",\n        \"phone\": \"+61 423 456 789\",\n        \"location\": \"melbourne\",\n        \"meeting_type\": \"video\",\n        \"meeting_type_display\": \"Video Call\",\n        \"preferred_language\": \"English\",\n        \"enquiry_type\": \"pr_complex\",\n        \"enquiry_type_display\": \"Permanent Residency\",\n        \"service_type\": \"Permanent Residency\",\n        \"enquiry_details\": \"Enquiry details here\",\n        \"appointment_date\": \"2026-03-19\",\n        \"appointment_time\": \"15:00:00\",\n        \"appointment_datetime\": \"2026-03-19T15:00:00.000000Z\",\n        \"duration_minutes\": 30,\n        \"status\": \"confirmed\",\n        \"status_display\": \"Confirmed\",\n        \"is_paid\": true,\n        \"amount\": \"150.00\",\n        \"discount_amount\": \"0.00\",\n        \"final_amount\": \"150.00\",\n        \"bansal_appointment_id\": 2205243,\n        \"sync_status\": \"synced\",\n        \"confirmed_at\": \"2026-01-27T10:30:00.000000Z\",\n        \"created_at\": \"2026-01-27T10:30:00.000000Z\",\n        \"updated_at\": \"2026-01-28T11:45:00.000000Z\"\n    },\n    \"bansal_synced\": true,\n    \"sync_error\": null\n}"
+				},
+				{
+					"name": "No Changes Detected",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"appointment_id\": 682,\n    \"appointment_date\": \"2026-03-19\",\n    \"appointment_time\": \"15:00\",\n    \"meeting_type\": \"video-call\",\n    \"preferred_language\": \"English\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/appointments/update-appointment",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"appointments",
+								"update-appointment"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": true,\n    \"message\": \"No changes detected. Appointment details remain unchanged.\",\n    \"data\": {\n        \"id\": 682,\n        \"full_name\": \"Vipulhhk Kumar\",\n        \"email\": \"viplucmca@yahoo.co.in\",\n        \"phone\": \"+61 423 456 789\",\n        \"location\": \"melbourne\",\n        \"meeting_type\": \"video\",\n        \"meeting_type_display\": \"Video Call\",\n        \"preferred_language\": \"English\",\n        \"appointment_date\": \"2026-03-19\",\n        \"appointment_time\": \"15:00:00\",\n        \"appointment_datetime\": \"2026-03-19T15:00:00.000000Z\",\n        \"status\": \"confirmed\"\n    }\n}"
+				},
+				{
+					"name": "Validation Error",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"appointment_id\": 682\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/appointments/update-appointment",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"appointments",
+								"update-appointment"
+							]
+						}
+					},
+					"status": "Unprocessable Entity",
+					"code": 422,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": false,\n    \"message\": \"Validation failed\",\n    \"data\": {\n        \"appointment_date\": [\"The appointment date field is required.\"],\n        \"appointment_time\": [\"The appointment time field is required.\"],\n        \"meeting_type\": [\"The meeting type field is required.\"],\n        \"preferred_language\": [\"The preferred language field is required.\"]\n    }\n}"
+				},
+				{
+					"name": "Video Call Not Allowed for Free",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"appointment_id\": 682,\n    \"appointment_date\": \"2026-03-19\",\n    \"appointment_time\": \"15:00\",\n    \"meeting_type\": \"video-call\",\n    \"preferred_language\": \"English\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/appointments/update-appointment",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"appointments",
+								"update-appointment"
+							]
+						}
+					},
+					"status": "Unprocessable Entity",
+					"code": 422,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": false,\n    \"message\": \"Video meeting type is only available for paid appointments\"\n}"
+				},
+				{
+					"name": "Appointment Not Found",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"appointment_id\": 99999,\n    \"appointment_date\": \"2026-03-19\",\n    \"appointment_time\": \"15:00\",\n    \"meeting_type\": \"phone\",\n    \"preferred_language\": \"English\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/appointments/update-appointment",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"appointments",
+								"update-appointment"
+							]
+						}
+					},
+					"status": "Not Found",
+					"code": 404,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": false,\n    \"message\": \"Appointment not found or does not belong to you\"\n}"
+				},
+				{
+					"name": "Sync Error",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"appointment_id\": 682,\n    \"appointment_date\": \"2026-03-19\",\n    \"appointment_time\": \"15:00\",\n    \"meeting_type\": \"video-call\",\n    \"preferred_language\": \"English\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/appointments/update-appointment",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"appointments",
+								"update-appointment"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": true,\n    \"message\": \"Appointment date and time, meeting type updated successfully. However, sync with website failed: The selected appointment time is not available for booking. Please choose a different time slot.\",\n    \"data\": {\n        \"id\": 682,\n        \"full_name\": \"Vipulhhk Kumar\",\n        \"email\": \"viplucmca@yahoo.co.in\",\n        \"sync_status\": \"error\",\n        \"sync_error\": \"The selected appointment time is not available for booking. Please choose a different time slot.\"\n    },\n    \"bansal_synced\": false,\n    \"sync_error\": \"The selected appointment time is not available for booking. Please choose a different time slot.\"\n}"
+				}
+			]
+		},
+		{
 			"name": "Get Disabled Dates From Calendar",
 			"request": {
 				"method": "POST",
