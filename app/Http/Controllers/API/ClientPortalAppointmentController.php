@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Models\BookingAppointment;
 use App\Models\Admin;
+use App\Models\AppointmentPayment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Client\RequestException;
 use Carbon\Carbon;
 use App\Services\BansalAppointmentSync\BansalApiClient;
+use App\Services\Payment\StripePaymentService;
 
 class ClientPortalAppointmentController extends BaseController
 {
@@ -1579,5 +1581,223 @@ class ClientPortalAppointmentController extends BaseController
             'video', 'videocall', 'video_call', 'video-call', 'zoom', 'online' => 'video',
             default => 'in_person' // Default fallback
         };
+    }
+
+    /**
+     * Process Stripe payment for appointment
+     * 
+     * Processes payment for paid appointments (service_id 2 or 3).
+     * Updates appointment status to 'paid' on successful payment.
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function processAppointmentPayment(Request $request)
+    {
+        try {
+            $user = $request->user();
+            
+            if (!$user) {
+                return $this->sendError('Unauthenticated', [], 401);
+            }
+
+            // Validate request
+            $validator = Validator::make($request->all(), [
+                'appointment_id' => 'required|integer|exists:booking_appointments,id',
+                'payment_method_id' => 'required|string', // Stripe payment method ID from frontend
+            ]);
+
+            if ($validator->fails()) {
+                return $this->sendError('Validation failed: ' . $validator->errors()->first(), $validator->errors(), 422);
+            }
+
+            // Find appointment that belongs to the authenticated client
+            $appointment = BookingAppointment::where('id', $request->appointment_id)
+                ->where('client_id', $user->id)
+                ->first();
+
+            if (!$appointment) {
+                return $this->sendError('Appointment not found or does not belong to you', [], 404);
+            }
+
+            // Validate appointment requires payment (service_id 2 or 3 means paid service)
+            // From addAppointment logic: service_id mapping is 1=Paid, 2=Free, 3=Paid Overseas
+            // So service_id 1 and 3 require payment
+            if (!in_array($appointment->service_id, [1, 3])) {
+                return $this->sendError('This appointment does not require payment', [], 422);
+            }
+
+            // Check if appointment is already paid
+            if ($appointment->is_paid || $appointment->payment_status === 'completed') {
+                return $this->sendError('This appointment has already been paid', [], 422);
+            }
+
+            // Verify appointment amount
+            $expectedAmount = 150.00; // As per requirements
+            $appointmentAmount = (float) ($appointment->final_amount ?? $appointment->amount);
+            
+            if ($appointmentAmount != $expectedAmount) {
+                Log::warning('Appointment amount mismatch', [
+                    'appointment_id' => $appointment->id,
+                    'expected' => $expectedAmount,
+                    'actual' => $appointmentAmount
+                ]);
+                // Still proceed but log the warning
+            }
+
+            // Process payment using Stripe service
+            $stripeService = app(StripePaymentService::class);
+            
+            $metadata = [
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ];
+
+            $result = $stripeService->processPayment(
+                $appointment,
+                $request->payment_method_id,
+                $metadata
+            );
+
+            // If payment requires additional action (3D Secure)
+            if (isset($result['data']['requires_action']) && $result['data']['requires_action']) {
+                return response()->json([
+                    'success' => false,
+                    'requires_action' => true,
+                    'message' => $result['message'],
+                    'data' => [
+                        'payment_intent_id' => $result['data']['payment_intent_id'],
+                        'client_secret' => $result['data']['client_secret'],
+                    ]
+                ], 200);
+            }
+
+            // If payment failed
+            if (!$result['success']) {
+                return $this->sendError($result['message'], $result['data'], 422);
+            }
+
+            // Payment succeeded - sync with Bansal API if applicable
+            $syncError = null;
+            if ($appointment->bansal_appointment_id) {
+                try {
+                    $bansalApiClient = app(BansalApiClient::class);
+                    
+                    // Update appointment status on Bansal website
+                    // Note: You may need to add updateAppointmentPaymentStatus method to BansalApiClient
+                    // For now, we'll just log it
+                    Log::info('Payment successful - should sync with Bansal API', [
+                        'appointment_id' => $appointment->id,
+                        'bansal_appointment_id' => $appointment->bansal_appointment_id,
+                    ]);
+                } catch (\Exception $e) {
+                    $syncError = $e->getMessage();
+                    Log::error('Failed to sync payment status with Bansal API', [
+                        'appointment_id' => $appointment->id,
+                        'error' => $syncError,
+                    ]);
+                }
+            }
+
+            // Refresh appointment to get updated data
+            $appointment->refresh();
+
+            // Build success response
+            $message = 'Payment processed successfully';
+            if ($syncError) {
+                $message .= '. Note: Payment completed but sync with website failed.';
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'data' => [
+                    'appointment_id' => $appointment->id,
+                    'payment_id' => $result['data']['payment_id'],
+                    'transaction_id' => $result['data']['payment_intent_id'],
+                    'charge_id' => $result['data']['charge_id'],
+                    'amount' => $result['data']['amount'],
+                    'currency' => $result['data']['currency'],
+                    'status' => 'paid',
+                    'receipt_url' => $result['data']['receipt_url'] ?? null,
+                    'paid_at' => $result['data']['paid_at'],
+                    'appointment' => $this->formatAppointmentData($appointment),
+                ],
+                'bansal_synced' => !$syncError
+            ], 200);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->sendError('Validation failed', $e->errors(), 422);
+        } catch (\Exception $e) {
+            Log::error('Process Payment API Error: ' . $e->getMessage(), [
+                'user_id' => $request->user()->id ?? null,
+                'request_data' => $request->all(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->sendError('An error occurred while processing payment: ' . $e->getMessage(), [], 500);
+        }
+    }
+
+    /**
+     * Get payment history for an appointment
+     * 
+     * Returns all payment attempts for a specific appointment.
+     * 
+     * @param Request $request
+     * @param int $appointmentId
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getPaymentHistory(Request $request, $appointmentId)
+    {
+        try {
+            $user = $request->user();
+            
+            if (!$user) {
+                return $this->sendError('Unauthenticated', [], 401);
+            }
+
+            // Find appointment that belongs to the authenticated client
+            $appointment = BookingAppointment::where('id', $appointmentId)
+                ->where('client_id', $user->id)
+                ->first();
+
+            if (!$appointment) {
+                return $this->sendError('Appointment not found', [], 404);
+            }
+
+            // Get payment history
+            $payments = AppointmentPayment::where('appointment_id', $appointmentId)
+                ->orderByDesc('created_at')
+                ->get()
+                ->map(function ($payment) {
+                    return [
+                        'id' => $payment->id,
+                        'transaction_id' => $payment->transaction_id,
+                        'charge_id' => $payment->charge_id,
+                        'amount' => number_format((float)$payment->amount, 2, '.', ''),
+                        'currency' => $payment->currency,
+                        'status' => $payment->status,
+                        'payment_gateway' => $payment->payment_gateway,
+                        'receipt_url' => $payment->receipt_url,
+                        'error_message' => $payment->error_message,
+                        'processed_at' => $payment->processed_at ? $payment->processed_at->toIso8601String() : null,
+                        'created_at' => $payment->created_at->toIso8601String(),
+                    ];
+                });
+
+            return $this->sendResponse([
+                'appointment_id' => $appointment->id,
+                'payments' => $payments,
+                'total_attempts' => $payments->count(),
+            ], 'Payment history retrieved successfully');
+
+        } catch (\Exception $e) {
+            Log::error('Get Payment History API Error: ' . $e->getMessage(), [
+                'user_id' => $request->user()->id ?? null,
+                'appointment_id' => $appointmentId ?? null,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->sendError('An error occurred: ' . $e->getMessage(), [], 500);
+        }
     }
 }

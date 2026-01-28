@@ -223,6 +223,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/appointments/get-disabled-dates', [ClientPortalAppointmentController::class, 'getDisabledDateFromCalendar']);
     Route::post('/appointments/get-disabled-slots', [ClientPortalAppointmentController::class, 'getDisabledSlotsOfAnyDateFromCalendar']);
     
+    // Appointment Payment routes
+    Route::post('/appointments/process-payment', [ClientPortalAppointmentController::class, 'processAppointmentPayment']);
+    Route::get('/appointments/{id}/payment-history', [ClientPortalAppointmentController::class, 'getPaymentHistory']);
+    
 });
 
 // Broadcasting auth route for WebSocket authentication
