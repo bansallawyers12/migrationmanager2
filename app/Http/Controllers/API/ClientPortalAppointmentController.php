@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\API;
 
 use App\Models\BookingAppointment;
+use App\Models\Admin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Client\RequestException;
 use Carbon\Carbon;
+use App\Services\BansalAppointmentSync\BansalApiClient;
 
 class ClientPortalAppointmentController extends BaseController
 {
@@ -401,6 +404,7 @@ class ClientPortalAppointmentController extends BaseController
      * Add new appointment
      * 
      * Creates a new appointment for the authenticated client.
+     * Uses the same logic as addAppointmentBook in ClientsController.
      * 
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -414,140 +418,337 @@ class ClientPortalAppointmentController extends BaseController
                 return $this->sendError('Unauthenticated', [], 401);
             }
 
-            $clientId = $user->id;
-
-            // Get client information from authenticated user
-            $clientName = trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? ''));
-            $clientEmail = $user->email ?? '';
-            $clientPhone = $user->phone ?? null;
-
-            // Validate that client has required information
-            if (empty($clientName)) {
-                return $this->sendError('Client name is missing. Please update your profile.', [], 422);
-            }
-            if (empty($clientEmail)) {
-                return $this->sendError('Client email is missing. Please update your profile.', [], 422);
-            }
-
-            // Validate input
-            $validated = $request->validate([
-                'location' => 'required|in:melbourne,adelaide',
-                'meeting_type' => 'required|string',
-                'preferred_language' => 'required|string|max:50',
-                'enquiry_type' => 'nullable|string|max:255',
-                'service_type' => 'nullable|string|max:255',
-                'specific_service' => 'nullable|string|max:255',
-                'enquiry_details' => 'nullable|string',
-                'appointment_date' => 'required|date|date_format:Y-m-d',
-                'appointment_time' => 'required|string',
-                'is_paid' => 'required|boolean',
+            $requestData = $request->all();
+            
+            // Validate required fields
+            $validator = Validator::make($requestData, [
+                'noe_id' => 'required|integer|in:1,2,3,4,5,6,7,8',
+                'service_id' => 'required|integer|in:1,2,3',
+                'appoint_date' => 'required|string', // Accept string format (dd/mm/yyyy), validate after conversion
+                'appoint_time' => 'required|string',
+                'description' => 'required|string',
+                'appointment_details' => 'required|in:phone,in_person,video_call',
+                'preferred_language' => 'required|string',
+                'inperson_address' => 'required|in:1,2',
             ]);
 
-            // Map meeting type (handle various formats)
-            $meetingType = $this->mapMeetingType($validated['meeting_type']);
-
-            // Validate: Video meeting type is only allowed for paid appointments
-            if ($meetingType === 'video' && !$validated['is_paid']) {
-                return $this->sendError('Video call appointments are only available for paid services', [], 422);
+            if ($validator->fails()) {
+                return $this->sendError('Validation failed: ' . $validator->errors()->first(), $validator->errors(), 422);
             }
 
-            // Determine duration based on service type or default to 15 minutes
-            $durationMinutes = 15; // Default
-            if ($validated['is_paid']) {
-                $durationMinutes = 30; // Paid appointments are typically 30 minutes
+            // Get client information - logged in user_id is the client_id
+            $client = Admin::findOrFail($user->id);
+            
+            // Get client_unique_id (which is the client_id field from admins table)
+            $clientUniqueId = $client->client_id ?? null;
+            
+            // Validate client has required fields
+            $clientName = trim($client->first_name . ' ' . ($client->last_name ?? ''));
+            if (empty($clientName)) {
+                $clientName = $client->email ?? 'Client ' . $client->id;
+            }
+            
+            $clientEmail = $client->email ?? '';
+            if (empty($clientEmail)) {
+                return $this->sendError('Client email is required. Please update client information first.', [], 422);
+            }
+            
+            // Map service_id from form to actual service_id
+            // Form: 1=Free Consultation, 2=Comprehensive Migration Advice, 3=Overseas Applicant Enquiry
+            // DB: 1=Paid, 2=Free, 3=Paid Overseas
+            $serviceIdMap = [
+                1 => 2, // Free Consultation -> Free
+                2 => 1, // Comprehensive Migration Advice -> Paid
+                3 => 3, // Overseas Applicant Enquiry -> Paid Overseas
+            ];
+            $serviceId = $serviceIdMap[$requestData['service_id']] ?? 2;
+
+            // Map NOE ID to service_type/enquiry_type
+            // Note: enquiry_type values must match what Bansal API expects (e.g., 'pr_complex' not 'pr')
+            $noeToServiceType = [
+                1 => ['service_type' => 'Permanent Residency', 'enquiry_type' => 'pr_complex'],  // API expects 'pr_complex'
+                2 => ['service_type' => 'Temporary Residency', 'enquiry_type' => 'tr'],
+                3 => ['service_type' => 'JRP/Skill Assessment', 'enquiry_type' => 'jrp'],
+                4 => ['service_type' => 'Tourist Visa', 'enquiry_type' => 'tourist'],
+                5 => ['service_type' => 'Education/Student Visa', 'enquiry_type' => 'education'],
+                6 => ['service_type' => 'Complex Matters (AAT, Protection visa, Federal Case)', 'enquiry_type' => 'complex'],
+                7 => ['service_type' => 'Visa Cancellation/NOICC/Refusals', 'enquiry_type' => 'cancellation'],
+                8 => ['service_type' => 'INDIA/UK/CANADA/EUROPE TO AUSTRALIA', 'enquiry_type' => 'international'],
+            ];
+            $serviceTypeMapping = $noeToServiceType[$requestData['noe_id']] ?? ['service_type' => 'Other', 'enquiry_type' => 'pr_complex']; // Default to pr_complex
+
+            // Map location
+            $locationMap = [1 => 'adelaide', 2 => 'melbourne'];
+            $location = $locationMap[$requestData['inperson_address']] ?? 'melbourne';
+
+            // Map meeting type
+            $meetingTypeMap = [
+                'phone' => 'phone',
+                'in_person' => 'in_person',
+                'video_call' => 'video',
+            ];
+            $meetingType = $meetingTypeMap[$requestData['appointment_details']] ?? 'in_person';
+
+            // Parse appointment time - handle different formats
+            // Time can be in format "10:00 AM - 10:15 AM" or "10:00 AM" or "10:00:00"
+            $timeStr = trim($requestData['appoint_time']);
+            
+            // Extract start time if in range format (e.g., "10:00 AM - 10:15 AM")
+            if (preg_match('/^([0-9]{1,2}:[0-9]{2}\s*(?:AM|PM)?)/i', $timeStr, $matches)) {
+                $timeStr = trim($matches[1]);
+            }
+            
+            // Parse time - handle 12-hour format with AM/PM
+            try {
+                if (preg_match('/(AM|PM)/i', $timeStr)) {
+                    // 12-hour format with AM/PM
+                    $parsedTime = Carbon::createFromFormat('g:i A', $timeStr);
+                    $timeStr = $parsedTime->format('H:i');
+                } else {
+                    // 24-hour format - extract just HH:MM
+                    if (preg_match('/^(\d{1,2}):(\d{2})/', $timeStr, $timeMatches)) {
+                        $timeStr = $timeMatches[1] . ':' . $timeMatches[2];
+                    }
+                }
+            } catch (\Exception $e) {
+                // If parsing fails, try to extract HH:MM format
+                if (preg_match('/^(\d{1,2}):(\d{2})/', $timeStr, $timeMatches)) {
+                    $timeStr = $timeMatches[1] . ':' . $timeMatches[2];
+                } else {
+                    throw new \Exception('Invalid time format: ' . $requestData['appoint_time']);
+                }
             }
 
-            // Determine service_id (1 = Paid, 2 = Free)
-            $serviceId = $validated['is_paid'] ? 1 : 2;
-
-            // Combine date and time into datetime
-            $appointmentDateTime = Carbon::createFromFormat(
-                'Y-m-d H:i',
-                $validated['appointment_date'] . ' ' . $validated['appointment_time']
-            );
+            // Combine date and time
+            $dateStr = $requestData['appoint_date'];
+            $timezone = $requestData['timezone'] ?? 'Australia/Melbourne';
+            
+            // Convert date from dd/mm/yyyy to Y-m-d format if needed
+            if (preg_match('/^(\d{2})\/(\d{2})\/(\d{4})$/', $dateStr, $dateMatches)) {
+                // Date is in dd/mm/yyyy format, convert to Y-m-d
+                $dateStr = $dateMatches[3] . '-' . $dateMatches[2] . '-' . $dateMatches[1];
+            }
+            
+            try {
+                $appointmentDateTime = Carbon::createFromFormat('Y-m-d H:i', $dateStr . ' ' . $timeStr, $timezone)
+                    ->setTimezone(config('app.timezone', 'UTC'));
+            } catch (\Exception $e) {
+                // Try alternative date format
+                try {
+                    $appointmentDateTime = Carbon::createFromFormat('Y-m-d H:i:s', $dateStr . ' ' . $timeStr . ':00', $timezone)
+                        ->setTimezone(config('app.timezone', 'UTC'));
+                } catch (\Exception $e2) {
+                    throw new \Exception('Invalid date/time format. Date: ' . $requestData['appoint_date'] . ', Time: ' . $timeStr . '. Error: ' . $e2->getMessage());
+                }
+            }
 
             // Validate appointment is in the future
             if ($appointmentDateTime->isPast()) {
                 return $this->sendError('Appointment date and time must be in the future', [], 422);
             }
 
-            // Determine status based on payment
-            $status = $validated['is_paid'] ? 'pending' : 'confirmed';
-            $confirmedAt = $validated['is_paid'] ? null : now();
+            // Calculate duration based on service
+            // Service 1 (Free Consultation) = 15 min, Service 2/3 (Paid) = 30 min
+            $durationMinutes = $requestData['service_id'] == 1 ? 15 : 30;
 
-            // Determine amount based on is_paid
-            $amount = $validated['is_paid'] ? 150.00 : 0.00;
-            $finalAmount = $amount;
+            // Use ConsultantAssignmentService to assign consultant
+            $consultantAssigner = app(\App\Services\BansalAppointmentSync\ConsultantAssignmentService::class);
+            $appointmentDataForConsultant = [
+                'noe_id' => $requestData['noe_id'],
+                'service_id' => $serviceId,
+                'location' => $location,
+                'inperson_address' => $requestData['inperson_address'],
+            ];
+            $consultant = $consultantAssigner->assignConsultant($appointmentDataForConsultant);
 
-            // Map inperson_address (1 = Adelaide, 2 = Melbourne)
-            $inpersonAddress = $validated['location'] === 'adelaide' ? 1 : 2;
+            // Prevent new bookings from being assigned to Ajay calendar (transfer-only calendar)
+            if ($consultant && $consultant->calendar_type === 'ajay') {
+                return $this->sendError('New bookings cannot be created in Ajay Calendar. Only transfers from other calendars are allowed.', [], 422);
+            }
 
-            // Generate unique bansal_appointment_id (temporary, can be updated when synced)
-            // Use timestamp-based ID to ensure uniqueness
-            $bansalAppointmentId = time() * 1000 + rand(100, 999);
+            // Consultant is nullable, but log if not found
+            if (!$consultant) {
+                Log::warning('No consultant assigned for appointment', [
+                    'noe_id' => $requestData['noe_id'],
+                    'service_id' => $serviceId,
+                    'location' => $location,
+                    'inperson_address' => $requestData['inperson_address']
+                ]);
+            }
 
-            // Create appointment
-            $appointment = BookingAppointment::create([
-                'bansal_appointment_id' => $bansalAppointmentId, // Temporary unique ID, can be updated when synced with Bansal API
-                'order_hash' => null,
+            // Map service_id to specific_service for Bansal API
+            $specificServiceMap = [
+                1 => 'paid-consultation',  // Paid Migration Advice
+                2 => 'consultation',        // Free Consultation
+                3 => 'overseas-enquiry',    // Overseas Applicant Enquiry
+            ];
+            $specificService = $specificServiceMap[$serviceId] ?? 'consultation';
+
+            // Prepare appointment data for Bansal API
+            // Format appointment date and time separately as API expects
+            $appointmentDateForApi = $appointmentDateTime->copy()->setTimezone($timezone)->format('Y-m-d');
+            
+            // Format appointment time - API expects H:i format (without seconds) for validation
+            // Extract the time from the parsed datetime in the original timezone
+            $appointmentTimeForApi = $appointmentDateTime->copy()->setTimezone($timezone)->format('H:i');
+            
+            // Format appointment time slot for display (e.g., "1:00 PM-1:15 PM")
+            $appointmentTimeSlot = $requestData['appoint_time'];
+
+            // Build payload for Bansal API (matching the expected structure from API error response)
+            $bansalApiPayload = [
+                'full_name' => $clientName,
+                'email' => $clientEmail,
+                'phone' => $client->phone ?? '',
+                'appointment_date' => $appointmentDateForApi,  // Required: YYYY-MM-DD format
+                'appointment_time' => $appointmentTimeForApi, // Required: HH:MM:SS format
+                'appointment_datetime' => $appointmentDateTime->copy()->setTimezone($timezone)->format('Y-m-d H:i:s'),
+                'duration_minutes' => $durationMinutes,
+                'location' => $location,
+                'meeting_type' => $meetingType,
+                'preferred_language' => $requestData['preferred_language'],
+                'specific_service' => $specificService,
+                'enquiry_type' => $serviceTypeMapping['enquiry_type'], // Required: use enquiry_type not service_type
+                'service_type' => $serviceTypeMapping['service_type'],
+                'enquiry_details' => $requestData['description'],
+                'is_paid' => ($serviceId == 2) ? false : true,
+                'amount' => ($serviceId == 2) ? 0 : 150,
+                'final_amount' => ($serviceId == 2) ? 0 : 150,
+                'payment_status' => ($serviceId == 2) ? null : 'pending',
+            ];
+
+            // Call Bansal API to create appointment and get real bansal_appointment_id
+            $bansalAppointmentId = null;
+            $bansalApiError = null;
+            
+            try {
+                $bansalApiClient = app(BansalApiClient::class);
+                $bansalApiResponse = $bansalApiClient->createAppointment($bansalApiPayload);
                 
-                'client_id' => $clientId,
-                'consultant_id' => null, // Can be assigned later
+                // Extract bansal_appointment_id from API response
+                if (isset($bansalApiResponse['data']['id'])) {
+                    $bansalAppointmentId = (int) $bansalApiResponse['data']['id'];
+                } elseif (isset($bansalApiResponse['data']['appointment_id'])) {
+                    $bansalAppointmentId = (int) $bansalApiResponse['data']['appointment_id'];
+                } elseif (isset($bansalApiResponse['appointment_id'])) {
+                    $bansalAppointmentId = (int) $bansalApiResponse['appointment_id'];
+                } else {
+                    throw new \Exception('Bansal API did not return appointment ID. Response: ' . json_encode($bansalApiResponse));
+                }
+                
+                Log::info('Appointment created on Bansal website', [
+                    'bansal_appointment_id' => $bansalAppointmentId,
+                    'client_id' => $client->id,
+                    'client_email' => $clientEmail
+                ]);
+            } catch (\Exception $apiException) {
+                $bansalApiError = $apiException->getMessage();
+                Log::error('Failed to create appointment on Bansal website via API', [
+                    'error' => $bansalApiError,
+                    'client_id' => $client->id,
+                    'client_email' => $clientEmail,
+                    'payload' => $bansalApiPayload,
+                    'trace' => $apiException->getTraceAsString()
+                ]);
+                
+                // If API call fails, we'll still create the appointment locally
+                // but with a temporary ID that indicates it needs to be synced
+                // This ensures existing functionality doesn't break
+                $bansalAppointmentId = null; // Will be set to a placeholder if API fails
+            }
+
+            // If API call failed, use a placeholder ID that indicates manual creation
+            // This allows the appointment to exist in CRM while we can retry API sync later
+            if ($bansalAppointmentId === null) {
+                // Generate temporary ID starting from 2000000 to distinguish from old system
+                // This will be replaced when API sync succeeds
+                $bansalAppointmentId = 2000000 + (time() % 900000) + mt_rand(1, 99999);
+                
+                // Ensure uniqueness
+                while (BookingAppointment::where('bansal_appointment_id', $bansalAppointmentId)->exists()) {
+                    $bansalAppointmentId = 2000000 + (time() % 900000) + mt_rand(1, 99999);
+                }
+                
+                Log::warning('Using temporary bansal_appointment_id due to API failure', [
+                    'temporary_id' => $bansalAppointmentId,
+                    'api_error' => $bansalApiError,
+                    'client_id' => $client->id
+                ]);
+            }
+
+            // Create booking appointment
+            $appointment = BookingAppointment::create([
+                'bansal_appointment_id' => $bansalAppointmentId,
+                'order_hash' => null, // No payment for manually created appointments
+                
+                'client_id' => $client->id,
+                'consultant_id' => $consultant ? $consultant->id : null,
                 'assigned_by_admin_id' => null,
                 
                 'client_name' => $clientName,
                 'client_email' => $clientEmail,
-                'client_phone' => $clientPhone,
-                'client_timezone' => 'Australia/Melbourne',
+                'client_phone' => $client->phone ?? null,
+                'client_timezone' => $requestData['timezone'] ?? 'Australia/Melbourne',
                 
                 'appointment_datetime' => $appointmentDateTime,
-                'timeslot_full' => $appointmentDateTime->format('h:i A'),
+                'timeslot_full' => $requestData['appoint_time'], // Store as provided
                 'duration_minutes' => $durationMinutes,
-                'location' => $validated['location'],
-                'inperson_address' => $inpersonAddress,
+                'location' => $location,
+                'inperson_address' => $requestData['inperson_address'],
                 'meeting_type' => $meetingType,
-                'preferred_language' => $validated['preferred_language'],
+                'preferred_language' => $requestData['preferred_language'],
                 
                 'service_id' => $serviceId,
-                'noe_id' => null, // Can be set based on enquiry_type if needed
-                'enquiry_type' => $validated['enquiry_type'] ?? null,
-                'service_type' => $validated['service_type'] ?? null,
-                'enquiry_details' => $validated['enquiry_details'] ?? null,
+                'noe_id' => $requestData['noe_id'],
+                'enquiry_type' => $serviceTypeMapping['enquiry_type'],
+                'service_type' => $serviceTypeMapping['service_type'],
+                'enquiry_details' => $requestData['description'],
                 
-                'status' => $status,
-                'confirmed_at' => $confirmedAt,
+                // Determine status based on service type and payment status
+                // Case 1: Free appointment (serviceId == 2) -> status = 'confirmed'
+                // Case 2: Paid appointment (serviceId != 2) -> status = 'paid' if payment successful, 'pending' if payment failed
+                'status' => ($serviceId == 2) 
+                    ? 'confirmed' 
+                    : (($requestData['payment_status'] ?? 'pending') === 'completed' ? 'paid' : 'pending'),
+                'confirmed_at' => ($serviceId == 2) ? now() : null, // Set confirmed_at for free appointments
+                'is_paid' => ($serviceId == 2) ? false : true, // Free service is not paid
+                'amount' => ($serviceId == 2) ? 0 : 150, // Set appropriate amounts
+                'final_amount' => ($serviceId == 2) ? 0 : 150,
+                'payment_status' => ($serviceId == 2) ? null : ($requestData['payment_status'] ?? 'pending'),
                 
-                'is_paid' => $validated['is_paid'],
-                'amount' => $amount,
-                'discount_amount' => 0.00,
-                'final_amount' => $finalAmount,
-                'promo_code' => null,
-                'payment_status' => $validated['is_paid'] ? 'pending' : null,
-                'payment_method' => null,
-                'paid_at' => null,
-                
-                'admin_notes' => null,
+                // Boolean fields with default values
                 'follow_up_required' => false,
-                'follow_up_date' => null,
                 'confirmation_email_sent' => false,
-                'confirmation_email_sent_at' => null,
                 'reminder_sms_sent' => false,
-                'reminder_sms_sent_at' => null,
                 
-                'synced_from_bansal_at' => null,
-                'last_synced_at' => null,
-                'sync_status' => 'new',
-                'sync_error' => null,
-                'slot_overwrite_hidden' => 0, // Always set to 0 automatically
-                'user_id' => $clientId,
+                // Sync status tracking
+                'sync_status' => $bansalApiError ? 'error' : 'synced',
+                'sync_error' => $bansalApiError,
+                'last_synced_at' => $bansalApiError ? null : now(),
+                
+                'user_id' => $client->id,
             ]);
 
             // Format and return the created appointment
             $result = $this->formatAppointmentData($appointment);
 
+            // Prepare response message
+            $successMessage = 'Appointment created successfully';
+            if ($bansalApiError) {
+                $successMessage .= '. Note: Appointment created in CRM but could not be synced to Bansal website. Error: ' . $bansalApiError;
+                Log::warning('Appointment created locally but Bansal API sync failed', [
+                    'appointment_id' => $appointment->id,
+                    'bansal_appointment_id' => $bansalAppointmentId,
+                    'api_error' => $bansalApiError
+                ]);
+            }
+
             return response()->json([
                 'success' => true,
-                'message' => 'Appointment created successfully',
+                'message' => $successMessage,
+                'bansal_synced' => !$bansalApiError,
+                'bansal_appointment_id' => $bansalAppointmentId,
+                'client_unique_id' => $clientUniqueId,
                 'data' => $result
             ], 201);
 
