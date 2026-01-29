@@ -177,6 +177,84 @@
     .verify-btn, .send-email-btn, .view-notes-btn {
         white-space: nowrap;
     }
+
+    /* Improved horizontal scroll */
+    .table-responsive {
+        position: relative;
+        overflow-x: auto;
+        overflow-y: visible;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Custom scrollbar styling */
+    .table-responsive::-webkit-scrollbar {
+        height: 12px;
+    }
+
+    .table-responsive::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    }
+
+    /* Scroll shadows to indicate more content */
+    .table-container {
+        position: relative;
+    }
+
+    .scroll-indicator {
+        position: absolute;
+        top: 0;
+        bottom: 20px;
+        width: 40px;
+        pointer-events: none;
+        z-index: 10;
+        transition: opacity 0.3s ease;
+    }
+
+    .scroll-indicator-left {
+        left: 0;
+        background: linear-gradient(to right, rgba(255,255,255,0.95), transparent);
+        opacity: 0;
+    }
+
+    .scroll-indicator-right {
+        right: 0;
+        background: linear-gradient(to left, rgba(255,255,255,0.95), transparent);
+    }
+
+    .scroll-indicator-left.visible,
+    .scroll-indicator-right.visible {
+        opacity: 1;
+    }
+
+    /* Scroll hint */
+    .scroll-hint {
+        text-align: center;
+        padding: 10px;
+        background: #e7f3ff;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        font-size: 13px;
+        color: #0c5460;
+    }
+
+    .scroll-hint i {
+        animation: slideHint 1.5s ease-in-out infinite;
+    }
+
+    @keyframes slideHint {
+        0%, 100% { transform: translateX(-5px); }
+        50% { transform: translateX(5px); }
+    }
 </style>
 @endsection
 
@@ -312,9 +390,17 @@
                         </form>
                     </div>
 
+                    {{-- Scroll hint --}}
+                    <div class="scroll-hint">
+                        <i class="fas fa-arrows-alt-h"></i> Scroll horizontally to see all columns.
+                    </div>
+
                     {{-- Table --}}
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-hover eoi-roi-table" id="eoi-roi-sheet-table">
+                    <div class="table-container">
+                        <div class="scroll-indicator scroll-indicator-left"></div>
+                        <div class="scroll-indicator scroll-indicator-right visible"></div>
+                        <div class="table-responsive" id="table-scroll-container">
+                            <table class="table table-bordered table-hover eoi-roi-table" id="eoi-roi-sheet-table">
                             <thead>
                                 <tr>
                                     <th class="sortable {{ request('sort') == 'matter_id' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="matter_id">Matter ID</th>
@@ -387,7 +473,17 @@
                                                     <span class="text-muted">—</span>
                                                 @endif
                                             </td>
-                                            <td>{{ $row->EOI_submission_date ? \Carbon\Carbon::parse($row->EOI_submission_date)->format('d/m/Y') : '—' }}</td>
+                                            <td>
+                                                @if($eoiRecord && $eoiRecord->confirmation_email_sent_at)
+                                                    {{ $eoiRecord->confirmation_email_sent_at->format('d/m/Y H:i') }}
+                                                    <br><small class="text-muted">Email sent</small>
+                                                @elseif($row->EOI_submission_date)
+                                                    {{ \Carbon\Carbon::parse($row->EOI_submission_date)->format('d/m/Y') }}
+                                                    <br><small class="text-muted">EOI submitted</small>
+                                                @else
+                                                    <span class="text-muted">—</span>
+                                                @endif
+                                            </td>
                                             <td>
                                                 @if($eoiRecord && $eoiRecord->client_last_confirmation)
                                                     <span class="client-confirmation-cell" data-eoi-id="{{ $row->eoi_id }}">
@@ -465,6 +561,7 @@
                                 @endif
                             </tbody>
                         </table>
+                        </div>
                     </div>
 
                     {{-- Pagination --}}
@@ -485,6 +582,49 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 jQuery(document).ready(function($) {
+    // Horizontal scroll indicators
+    var $scrollContainer = $('#table-scroll-container');
+    var $leftIndicator = $('.scroll-indicator-left');
+    var $rightIndicator = $('.scroll-indicator-right');
+
+    function updateScrollIndicators() {
+        var scrollLeft = $scrollContainer.scrollLeft();
+        var scrollWidth = $scrollContainer[0].scrollWidth;
+        var clientWidth = $scrollContainer[0].clientWidth;
+        var maxScroll = scrollWidth - clientWidth;
+
+        // Show/hide left indicator
+        if (scrollLeft > 10) {
+            $leftIndicator.addClass('visible');
+        } else {
+            $leftIndicator.removeClass('visible');
+        }
+
+        // Show/hide right indicator
+        if (scrollLeft < maxScroll - 10) {
+            $rightIndicator.addClass('visible');
+        } else {
+            $rightIndicator.removeClass('visible');
+        }
+    }
+
+    // Update on scroll
+    $scrollContainer.on('scroll', updateScrollIndicators);
+    
+    // Update on window resize
+    $(window).on('resize', updateScrollIndicators);
+    
+    // Initial check
+    setTimeout(updateScrollIndicators, 100);
+
+    // Smooth scroll with mouse wheel horizontal
+    $scrollContainer.on('wheel', function(e) {
+        if (e.originalEvent.deltaY !== 0 && !e.shiftKey) {
+            e.preventDefault();
+            this.scrollLeft += e.originalEvent.deltaY;
+        }
+    });
+
     // Per page change
     $('#per_page').on('change', function() {
         var currentUrl = new URL(window.location.href);
