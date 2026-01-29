@@ -81,6 +81,12 @@
                     <a class="dropdown-item" href="{{route('reports.visaexpires')}}"><i class="fas fa-calendar-times mr-2"></i> Visa Expiry Report</a>
                 </div>
             </div>
+            <div class="icon-dropdown js-dropdown">
+                <a href="{{ route('clients.sheets.eoi-roi') }}" class="icon-btn" title="Sheets"><i class="fas fa-table"></i></a>
+                <div class="icon-dropdown-menu">
+                    <a class="dropdown-item" href="{{ route('clients.sheets.eoi-roi') }}"><i class="fas fa-passport mr-2"></i> EOI/ROI Sheet</a>
+                </div>
+            </div>
         </div>
     </div>
     <div class="topbar-center">

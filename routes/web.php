@@ -323,3 +323,12 @@ require __DIR__ . '/documents.php';
 
 // Public email verification route - no authentication required
 Route::get('/verify-email/{token}', [EmailVerificationController::class, 'verifyEmail'])->name('clients.email.verify');
+
+/*--------------------------------------------------
+|| SECTION: Public Client EOI Confirmation Routes
+||--------------------------------------------------*/
+// These routes are accessible without authentication for client confirmation
+Route::get('/client/eoi/confirm/{token}', [\App\Http\Controllers\CRM\EoiRoiSheetController::class, 'showConfirmationPage'])->name('client.eoi.confirm');
+Route::get('/client/eoi/amend/{token}', [\App\Http\Controllers\CRM\EoiRoiSheetController::class, 'showAmendmentPage'])->name('client.eoi.amend');
+Route::post('/client/eoi/process/{token}', [\App\Http\Controllers\CRM\EoiRoiSheetController::class, 'processClientConfirmation'])->name('client.eoi.process');
+Route::get('/client/eoi/success/{token}', [\App\Http\Controllers\CRM\EoiRoiSheetController::class, 'showSuccessPage'])->name('client.eoi.success');

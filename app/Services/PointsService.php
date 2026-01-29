@@ -761,6 +761,9 @@ class PointsService
             }
         }
         
+        // Skill assessment expiry warnings
+        $this->addSkillAssessmentWarnings($warnings, $client, $referenceDate, $thresholdDate);
+        
         // Work experience thresholds approaching
         $this->addEmploymentWarnings($warnings, $breakdown, $client, $referenceDate, $thresholdDate);
         
@@ -772,8 +775,9 @@ class PointsService
      */
     protected function addEmploymentWarnings(array &$warnings, array $breakdown, Admin $client, Carbon $referenceDate, Carbon $thresholdDate): void
     {
-        $auYears = $breakdown['employment']['au_years'] ?? 0;
-        $osYears = $breakdown['employment']['os_years'] ?? 0;
+        // Fix: use correct breakdown keys
+        $auYears = $breakdown['australian_work_experience']['years'] ?? 0;
+        $osYears = $breakdown['overseas_work_experience']['years'] ?? 0;
         
         // Check AU thresholds: 1, 3, 5, 8 years
         $auThresholds = [1, 3, 5, 8];
@@ -785,7 +789,7 @@ class PointsService
                     $targetDate = $referenceDate->copy()->addMonths((int)$monthsToThreshold);
                     
                     if ($targetDate->lte($thresholdDate)) {
-                        $currentPoints = $breakdown['employment']['au_points'];
+                        $currentPoints = $breakdown['australian_work_experience']['points'];
                         $futurePoints = $this->getEmploymentPoints($threshold, 'australian');
                         
                         $warnings[] = [
@@ -796,6 +800,49 @@ class PointsService
                         ];
                     }
                 }
+            }
+        }
+    }
+
+    /**
+     * Add skill assessment expiry warnings
+     */
+    protected function addSkillAssessmentWarnings(array &$warnings, Admin $client, Carbon $referenceDate, Carbon $thresholdDate): void
+    {
+        // Load occupations/skill assessments
+        $occupations = $client->occupations ?? collect();
+        
+        if ($occupations->isEmpty()) {
+            return;
+        }
+        
+        foreach ($occupations as $occupation) {
+            // Skip if no expiry date set
+            if (empty($occupation->expiry_dates)) {
+                continue;
+            }
+            
+            try {
+                $expiryDate = Carbon::parse($occupation->expiry_dates);
+                
+                // Check if expiry is within the threshold period
+                if ($expiryDate->between($referenceDate, $thresholdDate)) {
+                    $occupationName = $occupation->skill_assessment ?? $occupation->nomi_occupation ?? 'Skill assessment';
+                    
+                    // Check how close to expiry (for severity)
+                    $daysUntilExpiry = $referenceDate->diffInDays($expiryDate);
+                    $severity = $daysUntilExpiry <= 60 ? 'high' : 'medium';
+                    
+                    $warnings[] = [
+                        'type' => 'skill_assessment_expiry',
+                        'date' => $expiryDate->format('Y-m-d'),
+                        'message' => "{$occupationName} will expire on {$expiryDate->format('d/m/Y')} - renew before invitation",
+                        'severity' => $severity,
+                    ];
+                }
+            } catch (\Exception $e) {
+                // Skip invalid dates
+                continue;
             }
         }
     }

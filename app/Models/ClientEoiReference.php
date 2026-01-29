@@ -26,7 +26,16 @@ class ClientEoiReference extends Model
         'eoi_nomination_date',
         'eoi_status',
         'created_by',
-        'updated_by'
+        'updated_by',
+        // Confirmation workflow fields
+        'staff_verified',
+        'confirmation_date',
+        'checked_by',
+        'client_confirmation_status',
+        'client_last_confirmation',
+        'client_confirmation_notes',
+        'client_confirmation_token',
+        'confirmation_email_sent_at'
     ];
 
     /**
@@ -38,6 +47,10 @@ class ClientEoiReference extends Model
         'EOI_submission_date' => 'date',
         'eoi_invitation_date' => 'date',
         'eoi_nomination_date' => 'date',
+        'staff_verified' => 'boolean',
+        'confirmation_date' => 'datetime',
+        'client_last_confirmation' => 'datetime',
+        'confirmation_email_sent_at' => 'datetime',
     ];
 
     /**
@@ -118,6 +131,14 @@ class ClientEoiReference extends Model
     public function updater(): BelongsTo
     {
         return $this->belongsTo(Admin::class, 'updated_by');
+    }
+
+    /**
+     * Relationship to admin who verified EOI
+     */
+    public function verifier(): BelongsTo
+    {
+        return $this->belongsTo(Admin::class, 'checked_by');
     }
 
     /**

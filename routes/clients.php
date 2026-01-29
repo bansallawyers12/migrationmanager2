@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CRM\ClientsController;
 use App\Http\Controllers\CRM\ClientAccountsController;
 use App\Http\Controllers\CRM\ClientEoiRoiController;
+use App\Http\Controllers\CRM\EoiRoiSheetController;
 use App\Http\Controllers\CRM\Clients\ClientNotesController;
 use App\Http\Controllers\CRM\Clients\ClientDocumentsController;
 use App\Http\Controllers\CRM\ClientPersonalDetailsController;
@@ -36,6 +37,14 @@ Route::post('/clients/import', [ClientsController::class, 'import'])->name('clie
 Route::post('/clients/save-section', [ClientPersonalDetailsController::class, 'saveSection'])->name('clients.saveSection');
 Route::post('/edit-test-scores', [ClientsController::class, 'editTestScores'])->name('clients.editTestScores');
 Route::get('/clients/partner-eoi-data/{partnerId}', [ClientPersonalDetailsController::class, 'getPartnerEoiData'])->name('clients.partnerEoiData');
+
+/*---------- Sheets ----------*/
+Route::get('/clients/sheets/eoi-roi', [\App\Http\Controllers\CRM\EoiRoiSheetController::class, 'index'])->name('clients.sheets.eoi-roi');
+Route::get('/clients/sheets/eoi-roi/insights', [\App\Http\Controllers\CRM\EoiRoiSheetController::class, 'insights'])->name('clients.sheets.eoi-roi.insights');
+
+// EOI Confirmation Workflow (Staff actions - requires auth)
+Route::post('/clients/sheets/eoi-roi/{eoiId}/verify', [\App\Http\Controllers\CRM\EoiRoiSheetController::class, 'verifyByStaff'])->name('clients.sheets.eoi-roi.verify');
+Route::post('/clients/sheets/eoi-roi/{eoiId}/send-confirmation', [\App\Http\Controllers\CRM\EoiRoiSheetController::class, 'sendConfirmationEmail'])->name('clients.sheets.eoi-roi.send-confirmation');
 
 /*---------- Phone & Email Verification ----------*/
 Route::prefix('clients/phone')->name('clients.phone.')->group(function () {
