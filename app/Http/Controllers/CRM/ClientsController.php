@@ -452,6 +452,57 @@ class ClientsController extends Controller
     }
 
     /**
+     * Archive a client
+     * Sets is_archived = 1, archived_by = current user, archived_on = now
+     *
+     * @param Request $request
+     * @param string $id Encoded client ID
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function archive(Request $request, $id)
+    {
+        try {
+            // Decode the client ID
+            $decodedId = convert_uudecode(base64_decode($id));
+            
+            if (!is_numeric($decodedId)) {
+                return redirect()->route('clients.index')
+                    ->with('error', 'Invalid client ID.');
+            }
+            
+            // Find the client
+            $client = Admin::where('id', $decodedId)
+                ->where('role', 7)
+                ->first();
+            
+            if (!$client) {
+                return redirect()->route('clients.index')
+                    ->with('error', 'Client not found.');
+            }
+            
+            // Check if already archived
+            if ($client->is_archived == 1) {
+                return redirect()->route('clients.index')
+                    ->with('info', 'Client is already archived.');
+            }
+            
+            // Archive the client
+            $client->is_archived = 1;
+            $client->archived_by = Auth::id();
+            $client->archived_on = now();
+            $client->save();
+            
+            return redirect()->route('clients.index')
+                ->with('success', 'Client has been archived successfully.');
+                
+        } catch (\Exception $e) {
+            Log::error('Error archiving client: ' . $e->getMessage());
+            return redirect()->route('clients.index')
+                ->with('error', 'An error occurred while archiving the client. Please try again.');
+        }
+    }
+
+    /**
      * Unarchive a client
      * Sets is_archived = 0 for the specified client
      *
