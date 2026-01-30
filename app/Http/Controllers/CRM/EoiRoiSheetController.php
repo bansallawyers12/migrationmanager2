@@ -152,6 +152,7 @@ class EoiRoiSheetController extends Controller
                 'eoi.eoi_status',
                 'eoi.eoi_subclasses',
                 'eoi.eoi_states',
+                DB::raw('eoi."EOI_state" as "EOI_state"'),
                 'eoi.client_id',
                 'admins.first_name',
                 'admins.last_name',

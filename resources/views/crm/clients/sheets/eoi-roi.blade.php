@@ -62,13 +62,10 @@
         border-bottom: 2px solid #667eea;
     }
 
-    /* First column (Matter ID) – wider so header and IDs are fully visible.
-       Override listing-container.css which forces first column to 40px. */
-    .listing-container .eoi-roi-table th:first-child,
-    .listing-container .eoi-roi-table td:first-child {
-        width: 240px !important;
-        min-width: 240px !important;
-        max-width: none !important;
+    /* First column (Matter ID) – wider so header and IDs are fully visible */
+    .eoi-roi-table th:first-child,
+    .eoi-roi-table td:first-child {
+        min-width: 220px;
     }
     
     .eoi-roi-table td {
@@ -453,8 +450,11 @@
                                                 'tab' => 'eoiroi'
                                             ]);
                                             $subclasses = json_decode($row->eoi_subclasses, true) ?? [];
-                                            $states = json_decode($row->eoi_states, true) ?? [];
-                                            
+                                            // eoi_states: may be JSON string (from query) or already array; fallback to legacy EOI_state
+                                            $states = is_array($row->eoi_states ?? null) ? $row->eoi_states : (json_decode($row->eoi_states ?? '[]', true) ?: []);
+                                            if (empty($states) && !empty($row->EOI_state ?? null)) {
+                                                $states = [ $row->EOI_state ];
+                                            }
                                             // Fetch full EOI record for confirmation workflow data
                                             $eoiRecord = \App\Models\ClientEoiReference::find($row->eoi_id);
                                         @endphp
