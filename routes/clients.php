@@ -42,6 +42,9 @@ Route::get('/clients/partner-eoi-data/{partnerId}', [ClientPersonalDetailsContro
 Route::get('/clients/sheets/eoi-roi', [\App\Http\Controllers\CRM\EoiRoiSheetController::class, 'index'])->name('clients.sheets.eoi-roi');
 Route::get('/clients/sheets/eoi-roi/insights', [\App\Http\Controllers\CRM\EoiRoiSheetController::class, 'insights'])->name('clients.sheets.eoi-roi.insights');
 
+Route::get('/clients/sheets/art', [\App\Http\Controllers\CRM\ArtSheetController::class, 'index'])->name('clients.sheets.art');
+Route::get('/clients/sheets/art/insights', [\App\Http\Controllers\CRM\ArtSheetController::class, 'insights'])->name('clients.sheets.art.insights');
+
 // EOI Confirmation Workflow (Staff actions - requires auth)
 Route::post('/clients/sheets/eoi-roi/{eoiId}/verify', [\App\Http\Controllers\CRM\EoiRoiSheetController::class, 'verifyByStaff'])->name('clients.sheets.eoi-roi.verify');
 Route::post('/clients/sheets/eoi-roi/{eoiId}/send-confirmation', [\App\Http\Controllers\CRM\EoiRoiSheetController::class, 'sendConfirmationEmail'])->name('clients.sheets.eoi-roi.send-confirmation');
@@ -127,6 +130,7 @@ Route::post('/convert-activity-to-note', 'CRM\ClientsController@convertActivityT
 
 /*---------- Client Status & Archive ----------*/
 Route::get('/archived', 'CRM\ClientsController@archived')->name('clients.archived');
+Route::post('/archive/{id}', 'CRM\ClientsController@archive')->name('clients.archive');
 Route::post('/unarchive/{id}', 'CRM\ClientsController@unarchive')->name('clients.unarchive');
 Route::get('/change-client-status', 'CRM\ClientsController@updateclientstatus')->name('clients.updateclientstatus');
 Route::get('/get-activities', 'CRM\ClientsController@activities')->name('clients.activities');

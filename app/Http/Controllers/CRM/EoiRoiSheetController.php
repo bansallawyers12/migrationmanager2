@@ -144,11 +144,11 @@ class EoiRoiSheetController extends Controller
             ->join(DB::raw('(' . $latestEoiMatterSql . ') AS latest_eoi_matter'), 'latest_eoi_matter.client_id', '=', 'admins.id')
             ->select(
                 'eoi.id as eoi_id',
-                'eoi.EOI_number',
-                'eoi.EOI_occupation',
-                'eoi.EOI_point as individual_points',
-                'eoi.EOI_submission_date',
-                'eoi.EOI_ROI',
+                DB::raw('eoi."EOI_number" as "EOI_number"'),
+                DB::raw('eoi."EOI_occupation" as "EOI_occupation"'),
+                DB::raw('eoi."EOI_point" as individual_points'),
+                DB::raw('eoi."EOI_submission_date" as "EOI_submission_date"'),
+                DB::raw('eoi."EOI_ROI" as "EOI_ROI"'),
                 'eoi.eoi_status',
                 'eoi.eoi_subclasses',
                 'eoi.eoi_states',
@@ -185,12 +185,12 @@ class EoiRoiSheetController extends Controller
         // Date range filter
         if ($request->filled('from_date')) {
             $fromDate = Carbon::createFromFormat('d/m/Y', $request->input('from_date'))->startOfDay();
-            $query->where('eoi.EOI_submission_date', '>=', $fromDate);
+            $query->whereRaw('eoi."EOI_submission_date" >= ?', [$fromDate]);
         }
 
         if ($request->filled('to_date')) {
             $toDate = Carbon::createFromFormat('d/m/Y', $request->input('to_date'))->endOfDay();
-            $query->where('eoi.EOI_submission_date', '<=', $toDate);
+            $query->whereRaw('eoi."EOI_submission_date" <= ?', [$toDate]);
         }
 
         // Subclass filter (JSON array contains)
@@ -221,8 +221,14 @@ class EoiRoiSheetController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->whereRaw('LOWER(admins.first_name) LIKE ?', ['%' . strtolower($search) . '%'])
                   ->orWhereRaw('LOWER(admins.last_name) LIKE ?', ['%' . strtolower($search) . '%'])
-                  ->orWhereRaw('LOWER(eoi.EOI_number) LIKE ?', ['%' . strtolower($search) . '%']);
+                  ->orWhereRaw('LOWER(eoi."EOI_number") LIKE ?', ['%' . strtolower($search) . '%']);
             });
+        }
+
+        // Occupation filter (nominated occupation – partial match on EOI_occupation)
+        if ($request->filled('occupation')) {
+            $occupation = $request->input('occupation');
+            $query->whereRaw('LOWER(eoi."EOI_occupation") LIKE ?', ['%' . strtolower($occupation) . '%']);
         }
 
         return $query;
@@ -237,30 +243,31 @@ class EoiRoiSheetController extends Controller
      */
     protected function applySorting($query, Request $request)
     {
-        $sortField = $request->get('sort', 'eoi.EOI_submission_date');
+        $sortField = $request->get('sort', 'submission_date');
         $sortDirection = $request->get('direction', 'desc');
 
-        // Map sort fields to actual columns
-        $sortableFields = [
-            'matter_id' => 'latest_eoi_matter.client_unique_matter_no',
-            'crm_ref' => 'admins.client_id',
-            'eoi_number' => 'eoi.EOI_number',
-            'client_name' => 'admins.first_name',
-            'occupation' => 'eoi.EOI_occupation',
-            'individual_points' => 'eoi.EOI_point',
-            'marital_status' => 'admins.marital_status',
-            'eoi_status' => 'eoi.eoi_status',
-            'submission_date' => 'eoi.EOI_submission_date',
-        ];
-
-        $actualSortField = $sortableFields[$sortField] ?? $sortField;
-        
         // Validate direction
         if (!in_array(strtolower($sortDirection), ['asc', 'desc'])) {
             $sortDirection = 'desc';
         }
+        $dir = strtolower($sortDirection) === 'asc' ? 'asc' : 'desc';
 
-        $query->orderBy($actualSortField, $sortDirection);
+        // Map sort fields to actual columns (use raw SQL for eoi mixed-case columns so PostgreSQL preserves case)
+        $sortableFieldsRaw = [
+            'matter_id' => 'latest_eoi_matter.client_unique_matter_no',
+            'crm_ref' => 'admins.client_id',
+            'eoi_number' => 'eoi."EOI_number"',
+            'client_name' => 'admins.first_name',
+            'occupation' => 'eoi."EOI_occupation"',
+            'individual_points' => 'eoi."EOI_point"',
+            'marital_status' => 'admins.marital_status',
+            'eoi_status' => 'eoi.eoi_status',
+            'submission_date' => 'eoi."EOI_submission_date"',
+        ];
+
+        $actualSortField = $sortableFieldsRaw[$sortField] ?? 'eoi."EOI_submission_date"';
+
+        $query->orderByRaw($actualSortField . ' ' . $dir);
 
         return $query;
     }
@@ -401,7 +408,7 @@ class EoiRoiSheetController extends Controller
      */
     protected function countActiveFilters(Request $request)
     {
-        $filters = ['eoi_status', 'from_date', 'to_date', 'subclass', 'state', 'search'];
+        $filters = ['eoi_status', 'from_date', 'to_date', 'subclass', 'state', 'search', 'occupation'];
         $count = 0;
         
         foreach ($filters as $filter) {

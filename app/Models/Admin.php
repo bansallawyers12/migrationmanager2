@@ -59,7 +59,7 @@ class Admin extends Authenticatable
         // Permissions
         'show_dashboard_per',
         // Archive fields
-        'is_archived', 'archived_by',
+        'is_archived', 'archived_by', 'archived_on',
         // Personal (staff might need some personal info)
         'marital_status', 'time_zone',
         // Client/Lead Tags

@@ -582,9 +582,12 @@
                                                         <a class="dropdown-item has-icon" href="{{URL::to('/clients/export/'.base64_encode(convert_uuencode(@$list->id)))}}" title="Export Client Data">
                                                             <i class="fas fa-download"></i> Export
                                                         </a>
-                                                        <a class="dropdown-item has-icon" href="javascript:;" onclick="deleteAction({{$list->id}}, 'admins')">
-                                                            <i class="fas fa-trash"></i> Archived
-                                                        </a>
+                                                        <form action="{{ route('clients.archive', base64_encode(convert_uuencode(@$list->id))) }}" method="POST" class="archive-client-form" style="display: inline-block;">
+                                                            @csrf
+                                                            <a class="dropdown-item has-icon" href="javascript:;" onclick="archiveClientAction(event, '{{ @$list->first_name }} {{ @$list->last_name }}')">
+                                                                <i class="fas fa-archive"></i> Archive
+                                                            </a>
+                                                        </form>
                                                     </div>
                                                 </div>
                                             </td>
@@ -1110,6 +1113,34 @@ jQuery(document).ready(function($){
         var fileName = $(this).val().split('\\').pop();
         $(this).next('.custom-file-label').html(fileName || 'Choose file...');
     });
+
+    // Archive client confirmation function - Global scope
+    function archiveClientAction(event, clientName) {
+        event.preventDefault();
+        
+        // Get the form element - traverse up from the clicked link
+        var form;
+        if (event.target.tagName.toLowerCase() === 'a') {
+            // Clicked on the link itself
+            form = jQuery(event.target).closest('.archive-client-form')[0];
+        } else if (event.target.tagName.toLowerCase() === 'i') {
+            // Clicked on the icon inside the link
+            form = jQuery(event.target).closest('.archive-client-form')[0];
+        }
+        
+        if (!form) {
+            console.error('Archive form not found');
+            return false;
+        }
+        
+        var confirmMessage = 'Are you sure you want to archive the client "' + (clientName || 'this client') + '"?\n\nThis will move the client to the archived list.';
+        
+        if (confirm(confirmMessage)) {
+            form.submit();
+        }
+        
+        return false;
+    }
 });
 </script>
 @endpush

@@ -85,6 +85,7 @@
                 <a href="{{ route('clients.sheets.eoi-roi') }}" class="icon-btn" title="Sheets"><i class="fas fa-table"></i></a>
                 <div class="icon-dropdown-menu">
                     <a class="dropdown-item" href="{{ route('clients.sheets.eoi-roi') }}"><i class="fas fa-passport mr-2"></i> EOI/ROI Sheet</a>
+                    <a class="dropdown-item" href="{{ route('clients.sheets.art') }}"><i class="fas fa-gavel mr-2"></i> ART Submission and Hearing Files</a>
                 </div>
             </div>
         </div>
