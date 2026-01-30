@@ -314,10 +314,16 @@
                     <div class="filter_panel {{ $activeFilterCount > 0 ? 'show' : '' }}">
                         <form action="{{ route('clients.sheets.eoi-roi') }}" method="get" id="filterForm">
                             <div class="row">
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <div class="form-group">
                                         <label for="search">Search</label>
                                         <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Client name or EOI number" id="search">
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="form-group">
+                                        <label for="occupation">Occupation</label>
+                                        <input type="text" name="occupation" value="{{ request('occupation') }}" class="form-control" placeholder="Nominated occupation" id="occupation">
                                     </div>
                                 </div>
                                 <div class="col-md-2">
@@ -346,7 +352,7 @@
                                         <input type="text" name="to_date" value="{{ request('to_date') }}" class="form-control datepicker" placeholder="dd/mm/yyyy" id="to_date" autocomplete="off">
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <div class="form-group">
                                         <label>Subclass</label>
                                         <div class="d-flex gap-3">

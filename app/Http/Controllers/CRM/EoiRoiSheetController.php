@@ -225,6 +225,12 @@ class EoiRoiSheetController extends Controller
             });
         }
 
+        // Occupation filter (nominated occupation – partial match on EOI_occupation)
+        if ($request->filled('occupation')) {
+            $occupation = $request->input('occupation');
+            $query->whereRaw('LOWER(eoi.EOI_occupation) LIKE ?', ['%' . strtolower($occupation) . '%']);
+        }
+
         return $query;
     }
 
@@ -401,7 +407,7 @@ class EoiRoiSheetController extends Controller
      */
     protected function countActiveFilters(Request $request)
     {
-        $filters = ['eoi_status', 'from_date', 'to_date', 'subclass', 'state', 'search'];
+        $filters = ['eoi_status', 'from_date', 'to_date', 'subclass', 'state', 'search', 'occupation'];
         $count = 0;
         
         foreach ($filters as $filter) {
