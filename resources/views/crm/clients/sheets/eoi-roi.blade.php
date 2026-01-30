@@ -62,10 +62,13 @@
         border-bottom: 2px solid #667eea;
     }
 
-    /* First column (Matter ID) – wider so header and IDs are fully visible */
-    .eoi-roi-table th:first-child,
-    .eoi-roi-table td:first-child {
-        min-width: 220px;
+    /* First column (Matter ID) – wider so header and IDs are fully visible.
+       Override listing-container.css which forces first column to 40px. */
+    .listing-container .eoi-roi-table th:first-child,
+    .listing-container .eoi-roi-table td:first-child {
+        width: 240px !important;
+        min-width: 240px !important;
+        max-width: none !important;
     }
     
     .eoi-roi-table td {
