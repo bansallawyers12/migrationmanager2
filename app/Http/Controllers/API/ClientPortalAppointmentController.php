@@ -1229,8 +1229,8 @@ class ClientPortalAppointmentController extends BaseController
                 'appointment_id' => 'required|integer|exists:booking_appointments,id',
                 'appointment_date' => 'required|date|date_format:Y-m-d',
                 'appointment_time' => 'required|date_format:H:i',
-                'meeting_type' => 'required|string|in:in-person,phone,video-call,in_person,video,phone-call',
-                'preferred_language' => 'required|string|in:English,Hindi,Punjabi',
+                'meeting_type' => 'required|integer|in:1,2,3', // 1=phone, 2=in_person, 3=video_call
+                'preferred_language' => 'required|integer|in:1,2,3', // 1=English, 2=Hindi, 3=Punjabi
             ]);
 
             if ($validator->fails()) {
@@ -1246,8 +1246,11 @@ class ClientPortalAppointmentController extends BaseController
                 return $this->sendError('Appointment not found or does not belong to you', [], 404);
             }
 
-            // Normalize meeting_type to internal format (convert API format to DB format)
-            $meetingTypeNormalized = $this->mapMeetingType($request->meeting_type);
+            // Map meeting_type (1=phone, 2=in_person, 3=video_call) and preferred_language (1=English, 2=Hindi, 3=Punjabi)
+            $meetingTypeMap = [1 => 'phone', 2 => 'in_person', 3 => 'video'];
+            $preferredLanguageMap = [1 => 'English', 2 => 'Hindi', 3 => 'Punjabi'];
+            $meetingTypeNormalized = $meetingTypeMap[(int) $request->meeting_type] ?? 'in_person';
+            $preferredLanguage = $preferredLanguageMap[(int) $request->preferred_language] ?? 'English';
 
             // Validate: Video meeting type is only allowed for paid appointments
             if ($meetingTypeNormalized === 'video' && !$appointment->is_paid) {
@@ -1271,7 +1274,7 @@ class ClientPortalAppointmentController extends BaseController
             // Check if anything has changed
             $datetimeChanged = !$oldDatetime || !$oldDatetime->equalTo($newDatetime);
             $meetingTypeChanged = $oldMeetingType !== $meetingTypeNormalized;
-            $preferredLanguageChanged = $oldPreferredLanguage !== $request->preferred_language;
+            $preferredLanguageChanged = $oldPreferredLanguage !== $preferredLanguage;
             
             if (!$datetimeChanged && !$meetingTypeChanged && !$preferredLanguageChanged) {
                 return response()->json([
@@ -1292,7 +1295,7 @@ class ClientPortalAppointmentController extends BaseController
             }
             
             if ($preferredLanguageChanged) {
-                $appointment->preferred_language = $request->preferred_language;
+                $appointment->preferred_language = $preferredLanguage;
             }
 
             // Try to sync with Bansal API if any field changed AND bansal_appointment_id exists
@@ -1308,7 +1311,7 @@ class ClientPortalAppointmentController extends BaseController
                     $apiDate = $datetimeChanged ? $request->appointment_date : $appointment->appointment_datetime->format('Y-m-d');
                     $apiTime = $datetimeChanged ? $request->appointment_time : $appointment->appointment_datetime->format('H:i');
                     $apiMeetingType = $meetingTypeChanged ? $meetingTypeNormalized : ($appointment->meeting_type ?? 'in_person');
-                    $apiPreferredLanguage = $preferredLanguageChanged ? $request->preferred_language : ($appointment->preferred_language ?? 'English');
+                    $apiPreferredLanguage = $preferredLanguageChanged ? $preferredLanguage : ($appointment->preferred_language ?? 'English');
 
                     $apiResponse = $bansalApiClient->rescheduleAppointment(
                         (int) $appointment->bansal_appointment_id,
