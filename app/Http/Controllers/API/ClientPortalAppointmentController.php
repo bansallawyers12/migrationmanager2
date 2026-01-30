@@ -429,8 +429,8 @@ class ClientPortalAppointmentController extends BaseController
                 'appoint_date' => 'required|string', // Accept string format (dd/mm/yyyy), validate after conversion
                 'appoint_time' => 'required|string',
                 'description' => 'required|string',
-                'appointment_details' => 'required|in:phone,in_person,video_call',
-                'preferred_language' => 'required|string',
+                'appointment_details' => 'required|integer|in:1,2,3', // 1=phone, 2=in_person, 3=video_call
+                'preferred_language' => 'required|integer|in:1,2,3', // 1=English, 2=Hindi, 3=Punjabi
                 'inperson_address' => 'required|in:1,2',
             ]);
 
@@ -483,13 +483,17 @@ class ClientPortalAppointmentController extends BaseController
             $locationMap = [1 => 'adelaide', 2 => 'melbourne'];
             $location = $locationMap[$requestData['inperson_address']] ?? 'melbourne';
 
-            // Map meeting type
-            $meetingTypeMap = [
-                'phone' => 'phone',
-                'in_person' => 'in_person',
-                'video_call' => 'video',
+            // Map meeting type (appointment_details: 1=phone, 2=in_person, 3=video_call)
+            $appointmentDetailsToMeetingType = [
+                1 => 'phone',
+                2 => 'in_person',
+                3 => 'video',
             ];
-            $meetingType = $meetingTypeMap[$requestData['appointment_details']] ?? 'in_person';
+            $meetingType = $appointmentDetailsToMeetingType[(int) $requestData['appointment_details']] ?? 'in_person';
+
+            // Map preferred language (1=English, 2=Hindi, 3=Punjabi)
+            $preferredLanguageMap = [1 => 'English', 2 => 'Hindi', 3 => 'Punjabi'];
+            $preferredLanguage = $preferredLanguageMap[(int) $requestData['preferred_language']] ?? 'English';
 
             // Parse appointment time - handle different formats
             // Time can be in format "10:00 AM - 10:15 AM" or "10:00 AM" or "10:00:00"
@@ -622,7 +626,7 @@ class ClientPortalAppointmentController extends BaseController
                 'duration_minutes' => $durationMinutes,
                 'location' => $location,
                 'meeting_type' => $meetingType,
-                'preferred_language' => $requestData['preferred_language'],
+                'preferred_language' => $preferredLanguage,
                 'specific_service' => $specificService,
                 'enquiry_type' => $serviceTypeMapping['enquiry_type'], // Required: use enquiry_type not service_type
                 'service_type' => $serviceTypeMapping['service_type'],
@@ -712,7 +716,7 @@ class ClientPortalAppointmentController extends BaseController
                 'location' => $location,
                 'inperson_address' => $requestData['inperson_address'],
                 'meeting_type' => $meetingType,
-                'preferred_language' => $requestData['preferred_language'],
+                'preferred_language' => $preferredLanguage,
                 
                 'service_id' => $serviceId,
                 'noe_id' => $requestData['noe_id'],
