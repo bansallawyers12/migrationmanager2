@@ -8590,7 +8590,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"appointment_id\": 682,\n    \"appointment_date\": \"2026-03-19\",\n    \"appointment_time\": \"15:00\",\n    \"meeting_type\": \"video-call\",\n    \"preferred_language\": \"English\"\n}",
+					"raw": "{\n    \"appointment_id\": 682,\n    \"appointment_date\": \"2026-03-19\",\n    \"appointment_time\": \"15:00\",\n    \"meeting_type\": 3,\n    \"preferred_language\": 1\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -8607,7 +8607,7 @@
 						"update-appointment"
 					]
 				},
-				"description": "Update (reschedule) an existing appointment for the authenticated client. Allows updating appointment date, time, meeting type, and preferred language.\n\n**Input Parameters:**\n- `appointment_id` (required, integer): The ID of the appointment to update\n- `appointment_date` (required, string, format: YYYY-MM-DD): New appointment date (e.g., \"2026-03-19\")\n- `appointment_time` (required, string, format: HH:mm): New appointment time in 24-hour format (e.g., \"15:00\")\n- `meeting_type` (required, string): Meeting type\n  - Accepted values: \"in-person\", \"phone\", \"video-call\", \"in_person\", \"video\", \"phone-call\"\n  - Note: Video meeting type is only available for paid appointments\n- `preferred_language` (required, string): Preferred language\n  - Accepted values: \"English\", \"Hindi\", \"Punjabi\"\n\n**Note:**\n- Client can only update their own appointments\n- Changes will be synced with Bansal API if the appointment has a bansal_appointment_id\n- If sync fails due to invalid appointment ID, the system will attempt to create a new appointment on the website\n- Activity log will be created for the changes"
+				"description": "Update (reschedule) an existing appointment for the authenticated client. Allows updating appointment date, time, meeting type, and preferred language.\n\n**Input Parameters:**\n- `appointment_id` (required, integer): The ID of the appointment to update\n- `appointment_date` (required, string, format: YYYY-MM-DD): New appointment date (e.g., \"2026-03-19\")\n- `appointment_time` (required, string, format: HH:mm): New appointment time in 24-hour format (e.g., \"15:00\")\n- `meeting_type` (required, integer, 1-3): Meeting type\n  - 1 = Phone\n  - 2 = In Person\n  - 3 = Video Call\n  - Note: Video meeting type (3) is only available for paid appointments\n- `preferred_language` (required, integer, 1-3): Preferred language\n  - 1 = English\n  - 2 = Hindi\n  - 3 = Punjabi\n\n**Note:**\n- Client can only update their own appointments\n- Changes will be synced with Bansal API if the appointment has a bansal_appointment_id\n- If sync fails due to invalid appointment ID, the system will attempt to create a new appointment on the website\n- Activity log will be created for the changes"
 			},
 			"response": [
 				{
@@ -8630,7 +8630,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"appointment_id\": 682,\n    \"appointment_date\": \"2026-03-19\",\n    \"appointment_time\": \"15:00\",\n    \"meeting_type\": \"video-call\",\n    \"preferred_language\": \"English\"\n}",
+							"raw": "{\n    \"appointment_id\": 682,\n    \"appointment_date\": \"2026-03-19\",\n    \"appointment_time\": \"15:00\",\n    \"meeting_type\": 3,\n    \"preferred_language\": 1\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -8680,7 +8680,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"appointment_id\": 682,\n    \"appointment_date\": \"2026-03-19\",\n    \"appointment_time\": \"15:00\",\n    \"meeting_type\": \"video-call\",\n    \"preferred_language\": \"English\"\n}",
+							"raw": "{\n    \"appointment_id\": 682,\n    \"appointment_date\": \"2026-03-19\",\n    \"appointment_time\": \"15:00\",\n    \"meeting_type\": 3,\n    \"preferred_language\": 1\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -8780,7 +8780,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"appointment_id\": 682,\n    \"appointment_date\": \"2026-03-19\",\n    \"appointment_time\": \"15:00\",\n    \"meeting_type\": \"video-call\",\n    \"preferred_language\": \"English\"\n}",
+							"raw": "{\n    \"appointment_id\": 682,\n    \"appointment_date\": \"2026-03-19\",\n    \"appointment_time\": \"15:00\",\n    \"meeting_type\": 3,\n    \"preferred_language\": 1\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -8830,7 +8830,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"appointment_id\": 99999,\n    \"appointment_date\": \"2026-03-19\",\n    \"appointment_time\": \"15:00\",\n    \"meeting_type\": \"phone\",\n    \"preferred_language\": \"English\"\n}",
+							"raw": "{\n    \"appointment_id\": 99999,\n    \"appointment_date\": \"2026-03-19\",\n    \"appointment_time\": \"15:00\",\n    \"meeting_type\": 1,\n    \"preferred_language\": 1\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -8880,7 +8880,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"appointment_id\": 682,\n    \"appointment_date\": \"2026-03-19\",\n    \"appointment_time\": \"15:00\",\n    \"meeting_type\": \"video-call\",\n    \"preferred_language\": \"English\"\n}",
+							"raw": "{\n    \"appointment_id\": 682,\n    \"appointment_date\": \"2026-03-19\",\n    \"appointment_time\": \"15:00\",\n    \"meeting_type\": 3,\n    \"preferred_language\": 1\n}",
 							"options": {
 								"raw": {
 									"language": "json"
