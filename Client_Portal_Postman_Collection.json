@@ -8093,7 +8093,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"noe_id\": 1,\n    \"service_id\": 1,\n    \"appoint_date\": \"18/03/2026\",\n    \"appoint_time\": \"3:00 PM-3:15 PM\",\n    \"description\": \"Enquiry1\",\n    \"appointment_details\": \"phone\",\n    \"preferred_language\": \"Hindi\",\n    \"inperson_address\": 1\n}",
+					"raw": "{\n    \"noe_id\": 1,\n    \"service_id\": 1,\n    \"appoint_date\": \"18/03/2026\",\n    \"appoint_time\": \"3:00 PM-3:15 PM\",\n    \"description\": \"Enquiry1\",\n    \"appointment_details\": 1,\n    \"preferred_language\": 2,\n    \"inperson_address\": 1\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -8109,7 +8109,7 @@
 						"appointments"
 					]
 				},
-				"description": "Create a new appointment for the authenticated client. The logged-in user_id will be used as the client_id, and client_unique_id will be retrieved from the admins table based on the client_id.\n\n**Input Parameters:**\n- `noe_id` (required, integer, 1-8): Nature of Enquiry ID\n  - 1 = Permanent Residency\n  - 2 = Temporary Residency\n  - 3 = JRP/Skill Assessment\n  - 4 = Tourist Visa\n  - 5 = Education/Student Visa\n  - 6 = Complex Matters\n  - 7 = Visa Cancellation/NOICC/Refusals\n  - 8 = International Migration\n\n- `service_id` (required, integer, 1-3): Service ID\n  - 1 = Free Consultation (15 minutes)\n  - 2 = Comprehensive Migration Advice (30 minutes, $150)\n  - 3 = Overseas Applicant Enquiry (30 minutes, $150)\n\n- `appoint_date` (required, string): Appointment date in dd/mm/yyyy format (e.g., \"18/03/2026\")\n\n- `appoint_time` (required, string): Appointment time slot (e.g., \"3:00 PM-3:15 PM\" or \"3:00 PM\")\n\n- `description` (required, string): Details of enquiry\n\n- `appointment_details` (required, string, one of: phone, in_person, video_call): Meeting type\n\n- `preferred_language` (required, string): Preferred language for the appointment\n\n- `inperson_address` (required, integer, 1 or 2): Location\n  - 1 = Adelaide\n  - 2 = Melbourne\n\n**Note:** Client information (full_name, email, phone, client_unique_id) is automatically retrieved from the authenticated user's profile. The appointment will be created in the booking_appointments table and synced with Bansal API if possible."
+				"description": "Create a new appointment for the authenticated client. The logged-in user_id will be used as the client_id, and client_unique_id will be retrieved from the admins table based on the client_id.\n\n**Input Parameters:**\n- `noe_id` (required, integer, 1-8): Nature of Enquiry ID\n  - 1 = Permanent Residency\n  - 2 = Temporary Residency\n  - 3 = JRP/Skill Assessment\n  - 4 = Tourist Visa\n  - 5 = Education/Student Visa\n  - 6 = Complex Matters\n  - 7 = Visa Cancellation/NOICC/Refusals\n  - 8 = International Migration\n\n- `service_id` (required, integer, 1-3): Service ID\n  - 1 = Free Consultation (15 minutes)\n  - 2 = Comprehensive Migration Advice (30 minutes, $150)\n  - 3 = Overseas Applicant Enquiry (30 minutes, $150)\n\n- `appoint_date` (required, string): Appointment date in dd/mm/yyyy format (e.g., \"18/03/2026\")\n\n- `appoint_time` (required, string): Appointment time slot (e.g., \"3:00 PM-3:15 PM\" or \"3:00 PM\")\n\n- `description` (required, string): Details of enquiry\n\n- `appointment_details` (required, integer, 1-3): Meeting type\n  - 1 = Phone\n  - 2 = In Person\n  - 3 = Video Call\n\n- `preferred_language` (required, integer, 1-3): Preferred language\n  - 1 = English\n  - 2 = Hindi\n  - 3 = Punjabi\n\n- `inperson_address` (required, integer, 1 or 2): Location\n  - 1 = Adelaide\n  - 2 = Melbourne\n\n**Note:** Client information (full_name, email, phone, client_unique_id) is automatically retrieved from the authenticated user's profile. The appointment will be created in the booking_appointments table and synced with Bansal API if possible."
 			},
 			"response": [
 				{
@@ -8132,7 +8132,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"noe_id\": 1,\n    \"service_id\": 1,\n    \"appoint_date\": \"18/03/2026\",\n    \"appoint_time\": \"3:00 PM-3:15 PM\",\n    \"description\": \"Enquiry1\",\n    \"appointment_details\": \"phone\",\n    \"preferred_language\": \"Hindi\",\n    \"inperson_address\": 1\n}",
+							"raw": "{\n    \"noe_id\": 1,\n    \"service_id\": 1,\n    \"appoint_date\": \"18/03/2026\",\n    \"appoint_time\": \"3:00 PM-3:15 PM\",\n    \"description\": \"Enquiry1\",\n    \"appointment_details\": 1,\n    \"preferred_language\": 2,\n    \"inperson_address\": 1\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -8230,7 +8230,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"noe_id\": 1,\n    \"service_id\": 1,\n    \"appoint_date\": \"18/03/2026\",\n    \"appoint_time\": \"3:00 PM-3:15 PM\",\n    \"description\": \"Enquiry1\",\n    \"appointment_details\": \"video_call\",\n    \"preferred_language\": \"Hindi\",\n    \"inperson_address\": 1\n}",
+							"raw": "{\n    \"noe_id\": 1,\n    \"service_id\": 1,\n    \"appoint_date\": \"18/03/2026\",\n    \"appoint_time\": \"3:00 PM-3:15 PM\",\n    \"description\": \"Enquiry1\",\n    \"appointment_details\": 3,\n    \"preferred_language\": 2,\n    \"inperson_address\": 1\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -8257,7 +8257,7 @@
 						}
 					],
 					"cookie": [],
-					"body": "{\n    \"success\": false,\n    \"message\": \"Validation failed: The appointment details field must be one of: phone, in_person, video_call.\"\n}"
+					"body": "{\n    \"success\": false,\n    \"message\": \"Validation failed: The appointment details field must be one of: 1, 2, 3.\"\n}"
 				}
 			]
 		},
