@@ -12,6 +12,7 @@ use App\Models\ClientCharacter;
 use App\Models\ClientVisaCountry;
 use App\Models\ActivitiesLog;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class ClientExportService
 {
@@ -206,19 +207,47 @@ class ClientExportService
     }
 
     /**
-     * Get client visa countries
+     * Get client visa countries.
+     * Exports visa_type (Matter ID), plus portable visa_type_matter_title and visa_type_matter_nick_name
+     * so import can resolve correct Matter in target system (e.g. bansalcrm2) when IDs differ.
+     * visa_expiry_date is normalised to Y-m-d for consistent import.
      */
     private function getClientVisaCountries($clientId)
     {
-        return ClientVisaCountry::where('client_id', $clientId)
+        return ClientVisaCountry::with('matter')
+            ->where('client_id', $clientId)
+            ->orderBy('id')
             ->get()
             ->map(function ($visa) {
+                $matter = $visa->matter;
+                $expiry = $visa->visa_expiry_date;
+                if ($expiry instanceof \DateTimeInterface) {
+                    $expiry = $expiry->format('Y-m-d');
+                } elseif (is_string($expiry) && $expiry !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $expiry)) {
+                    try {
+                        $expiry = Carbon::parse($expiry)->format('Y-m-d');
+                    } catch (\Exception $e) {
+                        $expiry = $visa->visa_expiry_date;
+                    }
+                }
+                $grant = $visa->visa_grant_date;
+                if ($grant instanceof \DateTimeInterface) {
+                    $grant = $grant->format('Y-m-d');
+                } elseif (is_string($grant) && $grant !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $grant)) {
+                    try {
+                        $grant = Carbon::parse($grant)->format('Y-m-d');
+                    } catch (\Exception $e) {
+                        $grant = $visa->visa_grant_date;
+                    }
+                }
                 return [
                     'visa_country' => $visa->visa_country,
                     'visa_type' => $visa->visa_type,
+                    'visa_type_matter_title' => $matter ? $matter->title : null,
+                    'visa_type_matter_nick_name' => $matter ? $matter->nick_name : null,
                     'visa_description' => $visa->visa_description,
-                    'visa_expiry_date' => $visa->visa_expiry_date,
-                    'visa_grant_date' => $visa->visa_grant_date,
+                    'visa_expiry_date' => $expiry ?: null,
+                    'visa_grant_date' => $grant ?: null,
                 ];
             })
             ->toArray();

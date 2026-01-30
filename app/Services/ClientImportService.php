@@ -11,11 +11,13 @@ use App\Models\ClientTravelInformation;
 use App\Models\ClientCharacter;
 use App\Models\ClientVisaCountry;
 use App\Models\ActivitiesLog;
+use App\Models\Matter;
 use App\Services\ClientReferenceService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 
 class ClientImportService
@@ -223,18 +225,34 @@ class ClientImportService
                 }
             }
 
-            // Import visa countries
+            // Import visa countries; resolve visa_type by matter title/nick_name when provided (cross-system portability)
+            $lastVisaType = null;
+            $lastVisaExpiry = null;
             if (isset($importData['visa_countries']) && is_array($importData['visa_countries'])) {
                 foreach ($importData['visa_countries'] as $visaData) {
+                    if (!is_array($visaData)) {
+                        continue;
+                    }
+                    $resolvedType = $this->resolveVisaType($visaData);
+                    $expiry = $this->parseDate($visaData['visa_expiry_date'] ?? null);
+                    $grant = $this->parseDate($visaData['visa_grant_date'] ?? null);
                     ClientVisaCountry::create([
                         'client_id' => $newClientId,
                         'admin_id' => Auth::id(),
                         'visa_country' => $visaData['visa_country'] ?? null,
-                        'visa_type' => $visaData['visa_type'] ?? null,
+                        'visa_type' => $resolvedType,
                         'visa_description' => $visaData['visa_description'] ?? null,
-                        'visa_expiry_date' => $this->parseDate($visaData['visa_expiry_date'] ?? null),
-                        'visa_grant_date' => $this->parseDate($visaData['visa_grant_date'] ?? null),
+                        'visa_expiry_date' => $expiry,
+                        'visa_grant_date' => $grant,
                     ]);
+                    $lastVisaType = $resolvedType;
+                    $lastVisaExpiry = $expiry;
+                }
+                // Sync last visa to client (visa_type, visaExpiry) for sidebar/summary display
+                if (Schema::hasColumn('admins', 'visa_type') && Schema::hasColumn('admins', 'visaExpiry')) {
+                    $client->visa_type = $lastVisaType ?? '';
+                    $client->visaExpiry = $lastVisaExpiry;
+                    $client->save();
                 }
             }
 
@@ -365,5 +383,41 @@ class ClientImportService
 
         // Return as is if no mapping found
         return $country;
+    }
+
+    /**
+     * Resolve visa_type (Matter ID) for import.
+     * Prefer portable identifiers so target system (e.g. bansalcrm2) maps correctly when matter IDs differ:
+     * 1. visa_type_matter_nick_name -> lookup Matter by nick_name
+     * 2. visa_type_matter_title -> lookup Matter by title
+     * 3. Fall back to numeric visa_type (backwards compat with older exports)
+     *
+     * @param array $visaData
+     * @return int|string|null
+     */
+    private function resolveVisaType(array $visaData)
+    {
+        $nick = isset($visaData['visa_type_matter_nick_name']) ? trim((string) $visaData['visa_type_matter_nick_name']) : null;
+        if ($nick !== null && $nick !== '') {
+            $matter = Matter::where('nick_name', $nick)->first();
+            if ($matter) {
+                return $matter->id;
+            }
+        }
+
+        $title = isset($visaData['visa_type_matter_title']) ? trim((string) $visaData['visa_type_matter_title']) : null;
+        if ($title !== null && $title !== '') {
+            $matter = Matter::where('title', $title)->first();
+            if ($matter) {
+                return $matter->id;
+            }
+        }
+
+        $id = $visaData['visa_type'] ?? null;
+        if ($id !== null && $id !== '' && (is_int($id) || (is_string($id) && is_numeric($id)))) {
+            return is_numeric($id) ? (int) $id : $id;
+        }
+
+        return null;
     }
 }

@@ -14,6 +14,8 @@ You need to create:
 5. **Routes** - Export and import routes
 6. **Controller Methods** - Export and import methods in ClientController
 
+**Visa type & expiry:** Export includes portable `visa_type_matter_title` and `visa_type_matter_nick_name` so import can resolve the correct Matter in the target system when IDs differ (e.g. migrationmanager2 ↔ bansalcrm2). Import resolves visa type by nick_name or title, then syncs the last visa's type and expiry to the client (`visa_type`, `visaExpiry`) for sidebar display.
+
 ---
 
 ## Step 1: Create ClientExportService
@@ -274,19 +276,39 @@ class ClientExportService
     }
 
     /**
-     * Get client visa countries
+     * Get client visa countries.
+     * Export visa_type (Matter ID), plus portable visa_type_matter_title and visa_type_matter_nick_name
+     * so import can resolve correct Matter in target system when IDs differ (e.g. migrationmanager2 ↔ bansalcrm2).
+     * visa_expiry_date / visa_grant_date are normalised to Y-m-d.
      */
     private function getClientVisaCountries($clientId)
     {
-        return ClientVisaCountry::where('client_id', $clientId)
+        return ClientVisaCountry::with('matter')
+            ->where('client_id', $clientId)
+            ->orderBy('id')
             ->get()
             ->map(function ($visa) {
+                $matter = $visa->matter;
+                $expiry = $visa->visa_expiry_date;
+                if ($expiry instanceof \DateTimeInterface) {
+                    $expiry = $expiry->format('Y-m-d');
+                } elseif (is_string($expiry) && $expiry !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $expiry)) {
+                    try { $expiry = \Carbon\Carbon::parse($expiry)->format('Y-m-d'); } catch (\Exception $e) { /* keep as-is */ }
+                }
+                $grant = $visa->visa_grant_date;
+                if ($grant instanceof \DateTimeInterface) {
+                    $grant = $grant->format('Y-m-d');
+                } elseif (is_string($grant) && $grant !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $grant)) {
+                    try { $grant = \Carbon\Carbon::parse($grant)->format('Y-m-d'); } catch (\Exception $e) { /* keep as-is */ }
+                }
                 return [
                     'visa_country' => $visa->visa_country ?? null,
                     'visa_type' => $visa->visa_type ?? null,
+                    'visa_type_matter_title' => $matter ? $matter->title : null,
+                    'visa_type_matter_nick_name' => $matter ? $matter->nick_name : null,
                     'visa_description' => $visa->visa_description ?? null,
-                    'visa_expiry_date' => $visa->visa_expiry_date ?? null,
-                    'visa_grant_date' => $visa->visa_grant_date ?? null,
+                    'visa_expiry_date' => $expiry ?: null,
+                    'visa_grant_date' => $grant ?: null,
                 ];
             })
             ->toArray();
@@ -392,11 +414,13 @@ use App\Models\ClientTravelInformation;
 use App\Models\ClientCharacter;
 use App\Models\ClientVisaCountry;
 use App\Models\ActivitiesLog;
+use App\Models\Matter;
 use App\Models\TestScore; // bansalcrm2 has TestScore table
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 
 class ClientImportService
@@ -595,18 +619,31 @@ class ClientImportService
                 }
             }
 
-            // Import visa countries
+            // Import visa countries; resolve visa_type by matter title/nick_name when provided (cross-system portability)
+            $lastVisaType = null;
+            $lastVisaExpiry = null;
             if (isset($importData['visa_countries']) && is_array($importData['visa_countries'])) {
                 foreach ($importData['visa_countries'] as $visaData) {
+                    $resolvedType = $this->resolveVisaType($visaData);
+                    $expiry = $this->parseDate($visaData['visa_expiry_date'] ?? null);
+                    $grant = $this->parseDate($visaData['visa_grant_date'] ?? null);
                     ClientVisaCountry::create([
                         'client_id' => $newClientId,
                         'admin_id' => Auth::id(),
                         'visa_country' => $visaData['visa_country'] ?? null,
-                        'visa_type' => $visaData['visa_type'] ?? null,
+                        'visa_type' => $resolvedType,
                         'visa_description' => $visaData['visa_description'] ?? null,
-                        'visa_expiry_date' => $this->parseDate($visaData['visa_expiry_date'] ?? null),
-                        'visa_grant_date' => $this->parseDate($visaData['visa_grant_date'] ?? null),
+                        'visa_expiry_date' => $expiry,
+                        'visa_grant_date' => $grant,
                     ]);
+                    $lastVisaType = $resolvedType;
+                    $lastVisaExpiry = $expiry;
+                }
+                // Sync last visa to client (visa_type, visaExpiry) for sidebar/summary display
+                if (Schema::hasColumn('admins', 'visa_type') && Schema::hasColumn('admins', 'visaExpiry')) {
+                    $client->visa_type = $lastVisaType ?? '';
+                    $client->visaExpiry = $lastVisaExpiry;
+                    $client->save();
                 }
             }
 
@@ -769,6 +806,39 @@ class ClientImportService
         }
 
         return $country;
+    }
+
+    /**
+     * Resolve visa_type (Matter ID) for import.
+     * Prefer portable identifiers so target system maps correctly when matter IDs differ:
+     * 1. visa_type_matter_nick_name -> lookup Matter by nick_name
+     * 2. visa_type_matter_title -> lookup Matter by title
+     * 3. Fall back to numeric visa_type (backwards compat with older exports)
+     */
+    private function resolveVisaType(array $visaData)
+    {
+        $nick = $visaData['visa_type_matter_nick_name'] ?? null;
+        if (is_string($nick) && $nick !== '') {
+            $matter = Matter::where('nick_name', $nick)->first();
+            if ($matter) {
+                return $matter->id;
+            }
+        }
+
+        $title = $visaData['visa_type_matter_title'] ?? null;
+        if (is_string($title) && $title !== '') {
+            $matter = Matter::where('title', $title)->first();
+            if ($matter) {
+                return $matter->id;
+            }
+        }
+
+        $id = $visaData['visa_type'] ?? null;
+        if ($id !== null && $id !== '') {
+            return is_numeric($id) ? (int) $id : $id;
+        }
+
+        return null;
     }
 }
 ```
