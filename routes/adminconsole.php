@@ -1,0 +1,218 @@
+<?php
+
+use App\Http\Controllers\AdminConsole\MatterController;
+use App\Http\Controllers\AdminConsole\TagController;
+use App\Http\Controllers\AdminConsole\WorkflowController;
+use App\Http\Controllers\AdminConsole\EmailController;
+use App\Http\Controllers\AdminConsole\CrmEmailTemplateController;
+use App\Http\Controllers\AdminConsole\MatterEmailTemplateController;
+use App\Http\Controllers\AdminConsole\MatterOtherEmailTemplateController;
+use App\Http\Controllers\AdminConsole\PersonalDocumentTypeController;
+use App\Http\Controllers\AdminConsole\VisaDocumentTypeController;
+use App\Http\Controllers\AdminConsole\DocumentChecklistController;
+use App\Http\Controllers\AdminConsole\UserController;
+use App\Http\Controllers\AdminConsole\UserroleController;
+use App\Http\Controllers\AdminConsole\TeamController;
+use App\Http\Controllers\AdminConsole\BranchesController;
+use App\Http\Controllers\AdminConsole\AnzscoOccupationController;
+use App\Http\Controllers\AdminConsole\Sms\SmsController;
+use App\Http\Controllers\AdminConsole\Sms\SmsSendController;
+use App\Http\Controllers\AdminConsole\Sms\SmsTemplateController;
+use App\Http\Controllers\AdminConsole\Sms\SmsWebhookController;
+use App\Http\Controllers\AdminConsole\ESignatureController;
+use App\Http\Controllers\AdminConsole\EmailLabelController;
+use App\Http\Controllers\AdminConsole\ActivitySearchController;
+
+/*
+|--------------------------------------------------------------------------
+| AdminConsole Routes
+|--------------------------------------------------------------------------
+|
+| Here are the admin console routes for system configuration and settings.
+| These routes are loaded by the RouteServiceProvider within a group which
+| contains the "web" middleware group. Now create something great!
+|
+*/
+
+Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin'])->group(function() {
+    
+    // Features routes - Feature management
+    Route::prefix('features')->name('features.')->group(function() {
+        
+        // Matter routes
+        Route::get('/matter', [MatterController::class, 'index'])->name('matter.index');
+        Route::get('/matter/create', [MatterController::class, 'create'])->name('matter.create');
+        Route::post('/matter/store', [MatterController::class, 'store'])->name('matter.store');
+        Route::get('/matter/edit/{id}', [MatterController::class, 'edit'])->name('matter.edit');
+        Route::put('/matter/{id}', [MatterController::class, 'update'])->name('matter.update');
+        
+        // Tags routes
+        Route::get('/tags', [TagController::class, 'index'])->name('tags.index');
+        Route::get('/tags/create', [TagController::class, 'create'])->name('tags.create');
+        Route::post('/tags/store', [TagController::class, 'store'])->name('tags.store');
+        Route::get('/tags/edit/{id}', [TagController::class, 'edit'])->name('tags.edit');
+        Route::put('/tags/{id}', [TagController::class, 'update'])->name('tags.update');
+        
+        // Email Labels routes
+        Route::get('/email-labels', [EmailLabelController::class, 'index'])->name('emaillabels.index');
+        Route::get('/email-labels/create', [EmailLabelController::class, 'create'])->name('emaillabels.create');
+        Route::post('/email-labels/store', [EmailLabelController::class, 'store'])->name('emaillabels.store');
+        Route::get('/email-labels/edit/{id}', [EmailLabelController::class, 'edit'])->name('emaillabels.edit');
+        Route::put('/email-labels/{id}', [EmailLabelController::class, 'update'])->name('emaillabels.update');
+        
+        // Workflow routes
+        Route::get('/workflow', [WorkflowController::class, 'index'])->name('workflow.index');
+        Route::get('/workflow/create', [WorkflowController::class, 'create'])->name('workflow.create');
+        Route::post('/workflow/store', [WorkflowController::class, 'store'])->name('workflow.store');
+        Route::get('/workflow/edit/{id}', [WorkflowController::class, 'edit'])->name('workflow.edit');
+        Route::put('/workflow/{id}', [WorkflowController::class, 'update'])->name('workflow.update');
+        Route::get('/workflow/deactivate-workflow/{id}', [WorkflowController::class, 'deactivateWorkflow'])->name('workflow.deactivate');
+        Route::get('/workflow/activate-workflow/{id}', [WorkflowController::class, 'activateWorkflow'])->name('workflow.activate');
+        
+        // Email routes
+        Route::get('/emails', [EmailController::class, 'index'])->name('emails.index');
+        Route::get('/emails/create', [EmailController::class, 'create'])->name('emails.create');
+        Route::post('/emails/store', [EmailController::class, 'store'])->name('emails.store');
+        Route::get('/emails/edit/{id}', [EmailController::class, 'edit'])->name('emails.edit');
+        Route::put('/emails/{id}', [EmailController::class, 'update'])->name('emails.update');
+        
+        // CRM Email Template routes
+        Route::get('/crm-email-template', [CrmEmailTemplateController::class, 'index'])->name('crmemailtemplate.index');
+        Route::get('/crm-email-template/create', [CrmEmailTemplateController::class, 'create'])->name('crmemailtemplate.create');
+        Route::post('/crm-email-template/store', [CrmEmailTemplateController::class, 'store'])->name('crmemailtemplate.store');
+        Route::get('/crm-email-template/edit/{id}', [CrmEmailTemplateController::class, 'edit'])->name('crmemailtemplate.edit');
+        Route::put('/crm-email-template/{id}', [CrmEmailTemplateController::class, 'update'])->name('crmemailtemplate.update');
+        
+        // Matter Email Template routes
+        Route::get('/matter-email-template', [MatterEmailTemplateController::class, 'index'])->name('matteremailtemplate.index');
+        Route::get('/matter-email-template/create', [MatterEmailTemplateController::class, 'create'])->name('matteremailtemplate.create');
+        Route::post('/matter-email-template/store', [MatterEmailTemplateController::class, 'store'])->name('matteremailtemplate.store');
+        Route::get('/matter-email-template/edit/{id}', [MatterEmailTemplateController::class, 'edit'])->name('matteremailtemplate.edit');
+        Route::put('/matter-email-template/{id}', [MatterEmailTemplateController::class, 'update'])->name('matteremailtemplate.update');
+        
+        // Matter Other Email Template routes
+        Route::get('/matter-other-email-template', [MatterOtherEmailTemplateController::class, 'index'])->name('matterotheremailtemplate.index');
+        Route::get('/matter-other-email-template/create', [MatterOtherEmailTemplateController::class, 'create'])->name('matterotheremailtemplate.create');
+        Route::post('/matter-other-email-template/store', [MatterOtherEmailTemplateController::class, 'store'])->name('matterotheremailtemplate.store');
+        Route::get('/matter-other-email-template/edit/{id}', [MatterOtherEmailTemplateController::class, 'edit'])->name('matterotheremailtemplate.edit');
+        Route::put('/matter-other-email-template/{id}', [MatterOtherEmailTemplateController::class, 'update'])->name('matterotheremailtemplate.update');
+        
+        // Personal Document Type routes
+        Route::get('/personal-document-type', [PersonalDocumentTypeController::class, 'index'])->name('personaldocumenttype.index');
+        Route::get('/personal-document-type/create', [PersonalDocumentTypeController::class, 'create'])->name('personaldocumenttype.create');
+        Route::post('/personal-document-type/store', [PersonalDocumentTypeController::class, 'store'])->name('personaldocumenttype.store');
+        Route::get('/personal-document-type/edit/{id}', [PersonalDocumentTypeController::class, 'edit'])->name('personaldocumenttype.edit');
+        Route::put('/personal-document-type/{id}', [PersonalDocumentTypeController::class, 'update'])->name('personaldocumenttype.update');
+        Route::post('/personal-document-type/checkcreatefolder', [PersonalDocumentTypeController::class, 'checkcreatefolder']);
+        
+        // Visa Document Type routes
+        Route::get('/visa-document-type', [VisaDocumentTypeController::class, 'index'])->name('visadocumenttype.index');
+        Route::get('/visa-document-type/create', [VisaDocumentTypeController::class, 'create'])->name('visadocumenttype.create');
+        Route::post('/visa-document-type/store', [VisaDocumentTypeController::class, 'store'])->name('visadocumenttype.store');
+        Route::get('/visa-document-type/edit/{id}', [VisaDocumentTypeController::class, 'edit'])->name('visadocumenttype.edit');
+        Route::put('/visa-document-type/{id}', [VisaDocumentTypeController::class, 'update'])->name('visadocumenttype.update');
+        Route::post('/visa-document-type/checkcreatefolder', [VisaDocumentTypeController::class, 'checkcreatefolder']);
+        
+        // Document Checklist routes
+        Route::get('/document-checklist', [DocumentChecklistController::class, 'index'])->name('documentchecklist.index');
+        Route::get('/document-checklist/create', [DocumentChecklistController::class, 'create'])->name('documentchecklist.create');
+        Route::post('/document-checklist/store', [DocumentChecklistController::class, 'store'])->name('documentchecklist.store');
+        Route::get('/document-checklist/edit/{id}', [DocumentChecklistController::class, 'edit'])->name('documentchecklist.edit');
+        Route::put('/document-checklist/{id}', [DocumentChecklistController::class, 'update'])->name('documentchecklist.update');
+        
+        // SMS Management routes
+        Route::prefix('sms')->name('sms.')->group(function() {
+            // SMS Dashboard & History
+            Route::get('/dashboard', [SmsController::class, 'dashboard'])->name('dashboard');
+            Route::get('/history', [SmsController::class, 'history'])->name('history');
+            Route::get('/history/{id}', [SmsController::class, 'show'])->name('history.show');
+            
+            // SMS Statistics & Status (API endpoints)
+            Route::get('/statistics', [SmsController::class, 'statistics'])->name('statistics');
+            Route::get('/status/{smsLogId}', [SmsController::class, 'checkStatus'])->name('status.check');
+            
+            // Manual SMS Sending
+            Route::get('/send', [SmsSendController::class, 'create'])->name('send.create');
+            Route::post('/send', [SmsSendController::class, 'send'])->name('send');
+            Route::post('/send/template', [SmsSendController::class, 'sendFromTemplate'])->name('send.template');
+            Route::post('/send/bulk', [SmsSendController::class, 'sendBulk'])->name('send.bulk');
+            
+            // SMS Templates
+            Route::resource('templates', SmsTemplateController::class);
+            Route::get('/templates-active', [SmsTemplateController::class, 'active'])->name('templates.active');
+        });
+        
+        // E-Signature Management routes
+        Route::prefix('esignature')->name('esignature.')->group(function() {
+            Route::get('/', [ESignatureController::class, 'index'])->name('index');
+            Route::get('/export', [ESignatureController::class, 'exportAudit'])->name('export');
+        });
+        
+    });
+    
+    // System routes - System management
+    Route::prefix('system')->name('system.')->group(function() {
+        
+        // Users routes
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
+        Route::post('/users/store', [UserController::class, 'store'])->name('users.store');
+        Route::get('/users/edit/{id}', [UserController::class, 'edit'])->name('users.edit');
+        Route::get('/users/view/{id}', [UserController::class, 'view'])->name('users.view');
+        Route::put('/users/{id}', [UserController::class, 'update'])->name('users.update');
+        Route::post('/users/savezone', [UserController::class, 'savezone']);
+        Route::get('/users/active', [UserController::class, 'active'])->name('users.active');
+        Route::get('/users/inactive', [UserController::class, 'inactive'])->name('users.inactive');
+        Route::get('/users/invited', [UserController::class, 'invited'])->name('users.invited');
+        Route::get('/users/clientlist', [UserController::class, 'clientlist'])->name('users.clientlist');
+        Route::get('/users/createclient', [UserController::class, 'createclient'])->name('users.createclient');
+        Route::post('/users/storeclient', [UserController::class, 'storeclient'])->name('users.storeclient');
+        Route::get('/users/editclient/{id}', [UserController::class, 'editclient'])->name('users.editclient');
+        Route::put('/users/client/{id}', [UserController::class, 'updateclient'])->name('users.updateclient');
+        
+        // Roles routes
+        Route::get('/roles', [UserroleController::class, 'index'])->name('roles.index');
+        Route::get('/roles/create', [UserroleController::class, 'create'])->name('roles.create');
+        Route::post('/roles/store', [UserroleController::class, 'store'])->name('roles.store');
+        Route::get('/roles/edit/{id}', [UserroleController::class, 'edit'])->name('roles.edit');
+        Route::put('/roles/{id}', [UserroleController::class, 'update'])->name('roles.update');
+        
+        // Teams routes
+        Route::get('/teams', [TeamController::class, 'index'])->name('teams.index');
+        Route::get('/teams/edit/{id}', [TeamController::class, 'edit'])->name('teams.edit');
+        Route::post('/teams/store', [TeamController::class, 'store'])->name('teams.store');
+        Route::put('/teams/{id}', [TeamController::class, 'update'])->name('teams.update');
+        
+        // Offices routes
+        Route::get('/offices', [BranchesController::class, 'index'])->name('offices.index');
+        Route::get('/offices/create', [BranchesController::class, 'create'])->name('offices.create');
+        Route::post('/offices/store', [BranchesController::class, 'store'])->name('offices.store');
+        Route::get('/offices/edit/{id}', [BranchesController::class, 'edit'])->name('offices.edit');
+        Route::get('/offices/view/{id}', [BranchesController::class, 'view'])->name('offices.view');
+        Route::get('/offices/view/client/{id}', [BranchesController::class, 'viewclient'])->name('offices.viewclient');
+        Route::put('/offices/{id}', [BranchesController::class, 'update'])->name('offices.update');
+        
+        // Client Email List route
+        Route::get('/clientsemaillist', [\App\Http\Controllers\CRM\ClientsController::class, 'clientsemaillist'])->name('clientsemaillist');
+        
+        // Activity Search routes (Super Admin only)
+        Route::get('/activity-search', [ActivitySearchController::class, 'index'])->name('activity-search.index');
+        Route::get('/activity-search/export', [ActivitySearchController::class, 'export'])->name('activity-search.export');
+        Route::get('/activity-search/search-clients', [ActivitySearchController::class, 'searchClients'])->name('activity-search.search-clients');
+        
+    });
+    
+    // Database routes - Database management
+    Route::prefix('database')->name('database.')->group(function() {
+        
+        // ANZSCO routes
+        Route::get('/anzsco', [AnzscoOccupationController::class, 'index'])->name('anzsco.index');
+        Route::get('/anzsco/data', [AnzscoOccupationController::class, 'getData'])->name('anzsco.data');
+        Route::get('/anzsco/create', [AnzscoOccupationController::class, 'create'])->name('anzsco.create');
+        Route::post('/anzsco/store', [AnzscoOccupationController::class, 'store'])->name('anzsco.store');
+        Route::get('/anzsco/edit/{id}', [AnzscoOccupationController::class, 'edit'])->name('anzsco.edit');
+        Route::put('/anzsco/{id}', [AnzscoOccupationController::class, 'update'])->name('anzsco.update');
+        Route::get('/anzsco/import', [AnzscoOccupationController::class, 'importPage'])->name('anzsco.import');
+        Route::post('/anzsco/import', [AnzscoOccupationController::class, 'import'])->name('anzsco.import.store');
+    });
+});

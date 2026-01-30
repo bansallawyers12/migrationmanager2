@@ -1,0 +1,390 @@
+/**
+ * Client Detail Page - Sidebar Tab Management
+ * Dedicated file for handling sidebar navigation tabs
+ * Handles tab switching, URL updates, and content visibility
+ */
+
+(function($) {
+    'use strict';
+
+    // Module state
+    const SidebarTabs = {
+        clientId: '',
+        matterId: '',
+        selectedMatter: '',
+        initialized: false
+    };
+
+    /**
+     * Initialize sidebar tabs
+     * NOTE: This should be called from within $(document).ready() - don't wrap it again
+     */
+    function init(config) {
+        if (SidebarTabs.initialized) {
+            return;
+        }
+
+        SidebarTabs.clientId = config.clientId;
+        SidebarTabs.matterId = config.matterId;
+        SidebarTabs.selectedMatter = config.selectedMatter || '';
+        
+        // Setup event handlers immediately (caller ensures DOM is ready)
+        setupTabClickHandlers();
+        setupBrowserNavigation();
+        activateInitialTab(config.activeTab);
+        
+        // Hide grid data by default
+        $('.grid_data').hide();
+        
+        SidebarTabs.initialized = true;
+    }
+
+    /**
+     * Setup tab click handlers
+     */
+    function setupTabClickHandlers() {
+        // IMPORTANT: Attach handlers DIRECTLY to each button element
+        // This ensures our handler runs BEFORE any delegated handlers that might stop propagation
+        $('.client-nav-button').each(function() {
+            const $button = $(this);
+            const tabId = $button.data('tab');
+            
+            // Remove any existing handler on this specific button
+            $button.off('click.sidebarTabs');
+            
+            // Attach handler directly with namespace
+            $button.on('click.sidebarTabs', function(e) {
+                // Stop event from propagating to other handlers
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                
+                if (!tabId) {
+                    console.error('[SidebarTabs] No tab ID found on button');
+                    return false;
+                }
+                
+                activateTab(tabId);
+                return false;
+            });
+        });
+    }
+
+    /**
+     * Activate a specific tab
+     */
+    function activateTab(tabId) {
+        // Remove active class from all sidebar buttons and panes
+        $('.client-nav-button').removeClass('active');
+        $('.tab-pane').removeClass('active');
+        
+        // Add active class to the clicked button - use exact match with filter to ensure precision
+        $('.client-nav-button').filter(function() {
+            return $(this).data('tab') === tabId;
+        }).addClass('active');
+        
+        // Show the corresponding tab pane
+        const $tabPane = $(`#${tabId}-tab`);
+        if ($tabPane.length) {
+            $tabPane.addClass('active');
+        } else {
+            console.error('[SidebarTabs] Tab pane not found:', `#${tabId}-tab`);
+        }
+        
+        // Update URL
+        updateUrl(tabId);
+        
+        // Handle activity feed visibility
+        if (tabId === 'personaldetails') {
+            $('#activity-feed').show();
+            $('#main-content').css('flex', '1');
+            
+            // Adjust Activity Feed height when it becomes visible
+            setTimeout(function() {
+                if (typeof adjustActivityFeedHeight === 'function') {
+                    adjustActivityFeedHeight();
+                }
+            }, 100);
+        } else {
+            handleMatterSpecificTab(tabId);
+            $('#activity-feed').hide();
+        }
+        
+        // Handle EOI-ROI tab activation
+        if (tabId === 'eoiroi') {
+            console.log('[SidebarTabs] EOI-ROI tab activated');
+            
+            // Load data directly via AJAX (don't rely on window.EoiRoi which might not be loaded yet)
+            setTimeout(function() {
+                const clientId = window.ClientDetailConfig.encodeId;
+                
+                if (!clientId) {
+                    console.error('[SidebarTabs] No client ID found for EOI-ROI data loading');
+                    return;
+                }
+                
+                console.log('[SidebarTabs] Loading EOI data for client:', clientId);
+                
+                $.ajax({
+                    url: `/clients/${clientId}/eoi-roi`,
+                    method: 'GET',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(response) {
+                        console.log('[SidebarTabs] EOI data loaded successfully:', response);
+                        
+                        // Always show points summary section
+                        $('#points-summary-section').show();
+                        
+                        // If window.EoiRoi is available, trigger its reload
+                        if (typeof window.EoiRoi !== 'undefined' && window.EoiRoi.reload) {
+                            console.log('[SidebarTabs] Calling window.EoiRoi.reload()');
+                            window.EoiRoi.reload();
+                        } else {
+                            console.log('[SidebarTabs] window.EoiRoi not available yet, storing data temporarily');
+                            // Store data for when eoi-roi.js loads
+                            window.tempEoiData = response.data;
+                        }
+                    },
+                    error: function(xhr) {
+                        console.error('[SidebarTabs] Failed to load EOI data');
+                        console.error('[SidebarTabs] Status:', xhr.status, xhr.statusText);
+                        console.error('[SidebarTabs] Response:', xhr.responseText);
+                        
+                        // Show user-friendly error in the table
+                        const errorMsg = xhr.status === 403 ? 
+                            'Access denied. Please check your permissions.' :
+                            xhr.status === 404 ?
+                            'EOI endpoint not found. Please contact support.' :
+                            'Failed to load EOI records. Please try refreshing the page.';
+                        
+                        // Always show points summary section even on error
+                        $('#points-summary-section').show();
+                        
+                        // Try to update the table if it exists
+                        const $tbody = $('#eoi-roi-tbody');
+                        if ($tbody.length) {
+                            $tbody.html(`
+                                <tr class="no-data-row">
+                                    <td colspan="9" class="text-center text-danger">
+                                        <i class="fas fa-exclamation-triangle"></i> ${errorMsg}
+                                        <br><small>Error ${xhr.status}: ${xhr.statusText}</small>
+                                    </td>
+                                </tr>
+                            `);
+                        }
+                    }
+                });
+            }, 300);
+        }
+        
+        // Store active tab
+        localStorage.setItem('activeTab', tabId);
+    }
+
+    /**
+     * Update URL without reloading page
+     */
+    function updateUrl(tabId) {
+        let newUrl = '/clients/detail/' + SidebarTabs.clientId;
+        if (SidebarTabs.matterId && SidebarTabs.matterId !== '') {
+            newUrl += '/' + SidebarTabs.matterId;
+        }
+        newUrl += '/' + tabId;
+        
+        window.history.pushState({tab: tabId}, '', newUrl);
+    }
+
+    /**
+     * Handle matter-specific tab content
+     */
+    function handleMatterSpecificTab(tabId) {
+        // Get selected matter
+        SidebarTabs.selectedMatter = $('#sel_matter_id_client_detail').val();
+
+        const activeSubTab = $('.subtab-button.active').data('subtab');
+
+        // Filter content by matter
+        switch(tabId) {
+            case 'noteterm':
+                // Ensure All tab is active and trigger initial filtering
+                ensureAllTabActive();
+                filterNotesByMatter(SidebarTabs.selectedMatter);
+                break;
+            case 'visadocuments':
+                filterVisaDocumentsByMatter(SidebarTabs.selectedMatter);
+                break;
+            case 'application':
+                if (typeof showClientMatterApplicationData === 'function') {
+                    showClientMatterApplicationData(SidebarTabs.selectedMatter);
+                }
+                break;
+        }
+    }
+
+    /**
+     * Ensure All tab is active for notes
+     */
+    function ensureAllTabActive() {
+        // Check if any subtab8 button is active
+        const $activeTab = $('.subtab8-button.active');
+        
+        if (!$activeTab.length) {
+            // No active tab, make All tab active
+            $('.subtab8-button.pill-tab[data-subtab8="All"]').addClass('active');
+            console.log('[SidebarTabs] Activated All tab (no active tab found)');
+        } else {
+            // Check if All tab is already active
+            const activeTabType = $activeTab.data('subtab8');
+            if (activeTabType !== 'All') {
+                // Remove active from current tab and make All tab active
+                $('.subtab8-button.pill-tab').removeClass('active');
+                $('.subtab8-button.pill-tab[data-subtab8="All"]').addClass('active');
+                console.log('[SidebarTabs] Switched to All tab from:', activeTabType);
+            }
+        }
+    }
+
+    /**
+     * Filter notes by matter
+     */
+    function filterNotesByMatter(matterId) {
+        // Get the active task group tab (default to 'All' if none active)
+        const activeTaskGroup = $('.subtab8-button.active').data('subtab8') || 'All';
+        
+        $('#noteterm-tab').find('.note-card-redesign').each(function() {
+            const $note = $(this);
+            const noteMatterId = $note.data('matterid');
+            const noteType = $note.data('type');
+            
+            // Check type match (All tab shows all types)
+            const typeMatch = (activeTaskGroup === 'All' || noteType === activeTaskGroup);
+            
+            // Check matter match
+            let matterMatch = false;
+            if (matterId !== "" && matterId !== null && matterId !== undefined) {
+                // Show only notes that match the selected matter (exclude notes with no matter_id)
+                // Notes without matter_id should only appear in Activity feed, not in Notes tab
+                matterMatch = (noteMatterId == matterId && noteMatterId !== '' && noteMatterId !== null);
+            } else {
+                // Show all notes when no matter is selected
+                matterMatch = true;
+            }
+            
+            // Show/hide based on both type and matter match
+            if (typeMatch && matterMatch) {
+                $note.show();
+            } else {
+                $note.hide();
+            }
+        });
+    }
+
+    /**
+     * Filter visa documents by matter
+     */
+    function filterVisaDocumentsByMatter(matterId) {
+        if (matterId !== "") {
+            $('#visadocuments-tab .migdocumnetlist1').find('.drow').each(function() {
+                if ($(this).data('matterid') == matterId) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        } else {
+            $('#visadocuments-tab .migdocumnetlist1').find('.drow').hide();
+        }
+    }
+
+    /**
+     * Filter emails by matter
+     */
+    function filterEmailsByMatter(matterId, folder) {
+        const selector = folder === 'inbox' ? '#inbox-subtab #email-list' : '#sent-subtab #email-list1';
+        
+        if (matterId !== "") {
+            $(selector).find('.email-card').each(function() {
+                if ($(this).data('matterid') == matterId) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        } else {
+            $(selector).find('.email-card').hide();
+        }
+    }
+
+    /**
+     * Setup browser navigation (back/forward buttons)
+     */
+    function setupBrowserNavigation() {
+        window.addEventListener('popstate', function(event) {
+            if (event.state && event.state.tab) {
+                activateTab(event.state.tab);
+            }
+        });
+    }
+
+    /**
+     * Activate initial tab from URL or default
+     */
+    function activateInitialTab(activeTabFromUrl) {
+        let tabId = activeTabFromUrl || 'personaldetails';
+        
+        // Legacy support: redirect deprecated "accounts-test" slug to the new "account" tab
+        if (tabId === 'accounts-test') {
+            tabId = 'account';
+        }
+        
+        // Legacy support: redirect deprecated "emailhandling" slug to the new "emails" tab
+        if (tabId === 'emailhandling') {
+            tabId = 'emails';
+        }
+        
+        if (tabId !== 'personaldetails') {
+            // Trigger click on the button for non-default tabs
+            const $button = $(`.client-nav-button[data-tab="${tabId}"]`);
+            if ($button.length) {
+                $button.click();
+            } else {
+                // Try to find a close match (singular vs plural issue)
+                // BUT exclude hyphenated variations inherited from legacy tabs
+                const availableTabs = [];
+                $('.client-nav-button').each(function() {
+                    availableTabs.push($(this).data('tab'));
+                });
+                
+                const closeTabs = availableTabs.filter(t => {
+                    // Exact match check first
+                    if (t === tabId) return true;
+                    
+                    // Only allow close matches if neither contains a hyphen
+                    // This avoids legacy tab slugs from hijacking current tabs
+                    if (t.includes('-') || tabId.includes('-')) {
+                        return false;
+                    }
+                    
+                    return t.startsWith(tabId) || tabId.startsWith(t);
+                });
+                
+                if (closeTabs.length > 0) {
+                    $(`.client-nav-button[data-tab="${closeTabs[0]}"]`).click();
+                }
+            }
+        }
+    }
+
+    // Expose public API
+    window.SidebarTabs = {
+        init: init,
+        activateTab: activateTab,
+        ensureAllTabActive: ensureAllTabActive,
+        filterNotesByMatter: filterNotesByMatter,
+        filterVisaDocumentsByMatter: filterVisaDocumentsByMatter,
+        filterEmailsByMatter: filterEmailsByMatter
+    };
+
+})(jQuery);
+

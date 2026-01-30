@@ -1,0 +1,930 @@
+<?php
+
+namespace App\Http\Controllers\API;
+
+use App\Http\Controllers\Controller;
+use App\Models\Admin;
+use App\Models\DeviceToken;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+use Carbon\Carbon;
+use Laravel\Sanctum\PersonalAccessToken;
+
+class ClientPortalController extends Controller
+{
+    
+    /**
+     * Login
+     * POST /api/login
+     */
+    public function login(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|max:255',
+            'password' => 'required|string',
+            'device_name' => 'nullable|string|max:255',
+            'device_token' => 'nullable|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $admin = Admin::where('email', $request->email)
+                     ->where('role', 7)
+                     ->where('cp_status', 1)
+                     ->first();
+
+        if (!$admin || !Hash::check($request->password, $admin->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid credentials'
+            ], 401);
+        }
+
+        // Create Sanctum token with device information
+        $deviceName = $request->device_name ?? 'client-portal-app';
+        $token = $admin->createToken($deviceName)->plainTextToken;
+
+        // Handle device token for push notifications
+        if ($request->device_token) {
+            $this->handleDeviceToken($admin->id, $request->device_token, $deviceName);
+        }
+
+        // Generate refresh token using DB query
+        try {
+            $refreshTokenValue = Str::random(64);
+            $expiresAt = Carbon::now()->addDays(30);
+            
+            // Prepare insert data
+            $insertData = [
+                'user_id' => $admin->id,
+                'token' => $refreshTokenValue,
+                'device_name' => $deviceName,
+                'expires_at' => $expiresAt->format('Y-m-d H:i:s'),
+                'is_revoked' => 0,
+                'created_at' => Carbon::now()->format('Y-m-d H:i:s'),
+                'updated_at' => Carbon::now()->format('Y-m-d H:i:s'),
+            ];
+            
+            // Log the data being inserted for debugging
+            Log::info('Attempting to insert refresh token', [
+                'user_id' => $admin->id,
+                'data' => array_merge($insertData, ['token' => substr($refreshTokenValue, 0, 10) . '...'])
+            ]);
+            
+            $refreshTokenId = DB::table('refresh_tokens')->insertGetId($insertData);
+            
+        } catch (\Illuminate\Database\QueryException $e) {
+            $errorDetails = $this->handleRefreshTokenError($e, $admin->id, $insertData ?? [], $refreshTokenValue ?? '');
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to complete login. Please try again.',
+                'error' => 'Token generation failed',
+                'problematic_field' => $errorDetails['field'],
+                'error_details' => config('app.debug') ? $errorDetails : null
+            ], 500);
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to generate refresh token during login (non-database error)', [
+                'user_id' => $admin->id,
+                'error' => $e->getMessage(),
+                'error_code' => $e->getCode(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to complete login. Please try again.',
+                'error' => 'Token generation failed',
+                'error_details' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
+
+        // Update last login timestamp (if you have this field)
+        $admin->touch();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'token' => $token,
+                'refresh_token' => $refreshTokenValue,
+                'user' => [
+                    'id' => $admin->id,
+                    'name' => $admin->first_name . ' ' . $admin->last_name,
+                    'email' => $admin->email,
+                    'client_id' => $admin->client_id
+                ]
+            ]
+        ], 200);
+    }
+
+    /**
+     * Admin Login
+     * POST /api/admin-login
+     * 
+     * Login for admin users with roles 1, 12, 13, 16
+     */
+    public function adminLogin(Request $request)
+    {   
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|max:255',
+            'password' => 'required|string',
+            'device_name' => 'nullable|string|max:255',
+            'device_token' => 'nullable|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $admin = Admin::where('email', $request->email)
+                     ->whereIn('role', [1, 12, 13, 16]) // Admin roles
+                     ->where('status', 1) // Active status
+                     ->first(); 
+
+        if (!$admin || !Hash::check($request->password, $admin->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid credentials'
+            ], 401);
+        }
+
+        // Create Sanctum token with device information
+        $deviceName = $request->device_name ?? 'admin-portal-app';
+        $token = $admin->createToken($deviceName)->plainTextToken;
+
+        // Handle device token for push notifications
+        if ($request->device_token) {
+            $this->handleDeviceToken($admin->id, $request->device_token, $deviceName);
+        }
+
+        // Generate refresh token using DB query
+        try {
+            $refreshTokenValue = Str::random(64);
+            $expiresAt = Carbon::now()->addDays(30);
+            
+            // Prepare insert data
+            $insertData = [
+                'user_id' => $admin->id,
+                'token' => $refreshTokenValue,
+                'device_name' => $deviceName,
+                'expires_at' => $expiresAt->format('Y-m-d H:i:s'),
+                'is_revoked' => 0,
+                'created_at' => Carbon::now()->format('Y-m-d H:i:s'),
+                'updated_at' => Carbon::now()->format('Y-m-d H:i:s'),
+            ];
+            
+            $refreshTokenId = DB::table('refresh_tokens')->insertGetId($insertData);
+            
+        } catch (\Illuminate\Database\QueryException $e) {
+            $errorDetails = $this->handleRefreshTokenError($e, $admin->id, $insertData ?? [], $refreshTokenValue ?? '');
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to complete login. Please try again.',
+                'error' => 'Token generation failed',
+                'problematic_field' => $errorDetails['field'],
+                'error_details' => config('app.debug') ? $errorDetails : null
+            ], 500);
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to generate refresh token during admin login (non-database error)', [
+                'user_id' => $admin->id,
+                'error' => $e->getMessage(),
+                'error_code' => $e->getCode(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to complete login. Please try again.',
+                'error' => 'Token generation failed',
+                'error_details' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
+
+        // Update last login timestamp
+        $admin->touch();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'token' => $token,
+                'refresh_token' => $refreshTokenValue,
+                'user' => [
+                    'id' => $admin->id,
+                    'name' => $admin->first_name . ' ' . $admin->last_name,
+                    'email' => $admin->email,
+                    'role' => $admin->role
+                ]
+            ]
+        ], 200);
+    }
+
+    /**
+     * Logout
+     * POST /api/logout
+     */
+    public function logout(Request $request)
+    {
+        try {
+            $user = $request->user();
+            
+            // Delete current access token
+            $user->currentAccessToken()->delete();
+
+            // Revoke all refresh tokens for this user using DB query
+            DB::table('refresh_tokens')
+                ->where('user_id', $user->id)
+                ->update(['is_revoked' => 1, 'updated_at' => Carbon::now()->format('Y-m-d H:i:s')]);
+
+            // Optionally deactivate device token (but keep it for potential re-login)
+            // DeviceToken::where('user_id', $user->id)->update(['is_active' => false]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Logged out successfully'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Logout failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Logout from all devices
+     * POST /api/logout-all
+     */
+    public function logoutAll(Request $request)
+    {
+        try {
+            $user = $request->user();
+            
+            // Delete all access tokens for the user
+            $user->tokens()->delete();
+
+            // Revoke all refresh tokens for the user using DB query
+            DB::table('refresh_tokens')
+                ->where('user_id', $user->id)
+                ->update(['is_revoked' => 1, 'updated_at' => Carbon::now()->format('Y-m-d H:i:s')]);
+
+            // Deactivate all device tokens for the user
+            DeviceToken::where('user_id', $user->id)->update(['is_active' => false]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Logged out from all devices successfully'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Logout from all devices failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Forgot Password
+     * POST /api/forgot-password
+     */
+    public function forgotPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $email = $request->email;
+        
+        // Check if admin exists
+        $admin = Admin::where('email', $email)->first();
+        
+        if (!$admin) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This user does not exist in our records'
+            ], 404);
+        }
+
+        // Check if user role is client (7)
+        if ($admin->role != 7) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your record exists in DB but your role is not Client. So you cannot access this mobile app.'
+            ], 403);
+        }
+        
+        // Check if client portal status is active
+        if ($admin->cp_status != 1) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not authorized to access this mobile app because your client portal is not active from website. Please contact Administrator.'
+            ], 403);
+        }
+        
+        // Generate 6-digit random code
+        $verificationCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        
+        // Update existing admin with new verification code and timestamp
+        $admin->update([
+            'cp_random_code' => $verificationCode,
+            'cp_code_verify' => 0,
+            'cp_token_generated_at' => now() // Store when code was generated
+        ]);
+
+        // Send verification email
+        try {
+            Mail::raw("Your password reset verification code is: {$verificationCode}\n\nThis code will expire in 10 minutes.\n\nIf you did not request this password reset, please ignore this email.", function ($message) use ($email) {
+                $message->to($email)
+                        ->subject('Client Portal - Password Reset Verification Code');
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Password reset verification code sent successfully',
+                'data' => [
+                    'email' => $email,
+                    'expires_in' => 600 // 10 minutes in seconds
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send verification code',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Reset Password
+     * POST /api/reset-password
+     */
+    public function resetPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|max:255',
+            'code' => 'required|string|size:6',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $admin = Admin::where('email', $request->email)
+                     ->where('cp_random_code', $request->code)
+                     ->where('role', 7)
+                     ->where('cp_status', 1)
+                     ->first();
+
+        if (!$admin) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid verification code or email'
+            ], 400);
+        }
+
+        // Check if verification code has expired (10 minutes)
+        if ($admin->cp_token_generated_at) {
+            $tokenGeneratedAt = \Carbon\Carbon::parse($admin->cp_token_generated_at);
+            if ($tokenGeneratedAt->diffInMinutes(now()) > 10) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Verification code has expired. Please request a new code.'
+                ], 400);
+            }
+        }
+
+        // Update password and clear verification code
+        $admin->update([
+            'password' => Hash::make($request->password),
+            'cp_random_code' => null,
+            'cp_code_verify' => 0,
+            'cp_token_generated_at' => null // Clear the timestamp
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password reset successfully. You can now login with your new password.',
+            'data' => [
+                'email' => $admin->email,
+                'status' => 'password_reset'
+            ]
+        ], 200);
+    }
+
+    /**
+     * Update Password
+     * POST /api/update-password
+     */
+    public function updatePassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'current_password' => 'required|string',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $admin = $request->user();
+
+        // Verify current password
+        if (!Hash::check($request->current_password, $admin->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Current password is incorrect'
+            ], 400);
+        }
+
+        // Update password
+        $admin->update([
+            'password' => Hash::make($request->password),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password updated successfully'
+        ], 200);
+    }
+
+
+    /**
+     * Get Client Profile
+     * GET /api/profile
+     */
+    public function getProfile(Request $request)
+    {
+        $admin = $request->user();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $admin->id,
+                'client_id' => $admin->client_id,
+                'first_name' => $admin->first_name,
+                'last_name' => $admin->last_name,
+                'email' => $admin->email,
+                'phone' => $admin->phone,
+                'address' => $admin->address,
+                'city' => $admin->city,
+                'state' => $admin->state,
+                'zip' => $admin->zip,
+                'country' => $admin->country,
+                'profile_img' => $admin->profile_img,
+                'status' => $admin->status,
+                'role' => $admin->role,
+                'cp_status' => $admin->cp_status,
+                'cp_code_verify' => $admin->cp_code_verify,
+                'email_verified_at' => $admin->email_verified_at,
+                'created_at' => $admin->created_at,
+                'updated_at' => $admin->updated_at
+            ]
+        ], 200);
+    }
+
+    /**
+     * Refresh Token
+     * POST /api/refresh
+     */
+    public function refresh(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'refresh_token' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        // Find the refresh token using DB query
+        $refreshTokenData = DB::table('refresh_tokens')
+            ->where('token', $request->refresh_token)
+            ->where('is_revoked', false)
+            ->where('expires_at', '>', Carbon::now())
+            ->first();
+
+        if (!$refreshTokenData) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid or expired refresh token'
+            ], 401);
+        }
+
+        // Get admin user
+        $admin = Admin::find($refreshTokenData->user_id);
+
+        // Check if user is still active
+        if (!$admin || $admin->role != 7 || $admin->cp_status != 1) {
+            // Revoke the token
+            DB::table('refresh_tokens')
+                ->where('id', $refreshTokenData->id)
+                ->update(['is_revoked' => 1, 'updated_at' => Carbon::now()->format('Y-m-d H:i:s')]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'User account is no longer active'
+            ], 401);
+        }
+
+        // Revoke old refresh token
+        DB::table('refresh_tokens')
+            ->where('id', $refreshTokenData->id)
+            ->update(['is_revoked' => 1, 'updated_at' => Carbon::now()->format('Y-m-d H:i:s')]);
+
+        // Create new access token
+        $deviceName = $refreshTokenData->device_name ?? 'client-portal-app';
+        $newAccessToken = $admin->createToken($deviceName)->plainTextToken;
+
+        // Generate new refresh token using DB query
+        try {
+            $newRefreshTokenValue = Str::random(64);
+            $expiresAt = Carbon::now()->addDays(30);
+            
+            // Prepare insert data
+            $insertData = [
+                'user_id' => $admin->id,
+                'token' => $newRefreshTokenValue,
+                'device_name' => $deviceName,
+                'expires_at' => $expiresAt->format('Y-m-d H:i:s'),
+                'is_revoked' => 0,
+                'created_at' => Carbon::now()->format('Y-m-d H:i:s'),
+                'updated_at' => Carbon::now()->format('Y-m-d H:i:s'),
+            ];
+            
+            $newRefreshTokenId = DB::table('refresh_tokens')->insertGetId($insertData);
+            
+        } catch (\Illuminate\Database\QueryException $e) {
+            $errorDetails = $this->handleRefreshTokenError($e, $admin->id, $insertData ?? [], $newRefreshTokenValue ?? '');
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to refresh token. Please login again.',
+                'error' => 'Token generation failed',
+                'problematic_field' => $errorDetails['field'],
+                'error_details' => config('app.debug') ? $errorDetails : null
+            ], 500);
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to generate refresh token during token refresh (non-database error)', [
+                'user_id' => $admin->id,
+                'error' => $e->getMessage(),
+                'error_code' => $e->getCode(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to refresh token. Please login again.',
+                'error' => 'Token generation failed',
+                'error_details' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'token' => $newAccessToken,
+                'refresh_token' => $newRefreshTokenValue,
+                'user' => [
+                    'id' => $admin->id,
+                    'name' => $admin->first_name . ' ' . $admin->last_name,
+                    'email' => $admin->email,
+                    'client_id' => $admin->client_id
+                ]
+            ]
+        ], 200);
+    }
+
+    /**
+     * Handle refresh token database errors and return detailed error information
+     */
+    private function handleRefreshTokenError($e, $userId, $insertData, $tokenValue)
+    {
+        $errorMessage = $e->getMessage();
+        $problematicField = null;
+        
+        // Detect which field is causing the issue
+        if (str_contains($errorMessage, 'user_id')) {
+            $problematicField = 'user_id';
+        } elseif (str_contains($errorMessage, 'token')) {
+            $problematicField = 'token';
+        } elseif (str_contains($errorMessage, 'device_name')) {
+            $problematicField = 'device_name';
+        } elseif (str_contains($errorMessage, 'expires_at')) {
+            $problematicField = 'expires_at';
+        } elseif (str_contains($errorMessage, 'is_revoked')) {
+            $problematicField = 'is_revoked';
+        } elseif (str_contains($errorMessage, 'created_at')) {
+            $problematicField = 'created_at';
+        } elseif (str_contains($errorMessage, 'updated_at')) {
+            $problematicField = 'updated_at';
+        } elseif (str_contains($errorMessage, 'Duplicate entry')) {
+            $problematicField = 'token (duplicate)';
+        } elseif (str_contains($errorMessage, 'foreign key constraint')) {
+            $problematicField = 'user_id (foreign key constraint - user may not exist)';
+        } elseif (str_contains($errorMessage, 'cannot be null')) {
+            // Extract field name from error
+            preg_match("/Column '([^']+)' cannot be null/", $errorMessage, $matches);
+            $problematicField = $matches[1] ?? 'unknown field';
+        }
+        
+        Log::error('Failed to generate refresh token', [
+            'user_id' => $userId,
+            'error' => $errorMessage,
+            'problematic_field' => $problematicField,
+            'error_code' => $e->getCode(),
+            'sql_state' => $e->errorInfo[0] ?? null,
+            'driver_code' => $e->errorInfo[1] ?? null,
+            'sql_message' => $e->errorInfo[2] ?? null,
+            'insert_data' => array_merge($insertData, ['token' => substr($tokenValue, 0, 10) . '...']),
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        return [
+            'field' => $problematicField,
+            'message' => $errorMessage,
+            'sql_state' => $e->errorInfo[0] ?? null,
+            'driver_code' => $e->errorInfo[1] ?? null,
+        ];
+    }
+
+    /**
+     * Handle device token registration/update
+     */
+    private function handleDeviceToken($userId, $deviceToken, $deviceName = null)
+    {
+        try {
+            // Check if device token already exists
+            $existingToken = DeviceToken::where('device_token', $deviceToken)->first();
+            
+            if ($existingToken) {
+                // Update existing token
+                $existingToken->update([
+                    'user_id' => $userId,
+                    'device_name' => $deviceName,
+                    'is_active' => true,
+                    'last_used_at' => now(),
+                ]);
+            } else {
+                // Create new device token
+                DeviceToken::create([
+                    'user_id' => $userId,
+                    'device_token' => $deviceToken,
+                    'device_name' => $deviceName,
+                    'is_active' => true,
+                    'last_used_at' => now(),
+                ]);
+            }
+        } catch (\Exception $e) {
+            // Log error but don't fail the login
+            Log::error('Failed to handle device token: ' . $e->getMessage(), [
+                'user_id' => $userId,
+                'device_token' => substr($deviceToken, 0, 20) . '...'
+            ]);
+        }
+    }
+
+    /**
+     * Expire Token
+     * POST /api/expire-token
+     * 
+     * Expires a specific access token by updating its expires_at column
+     */
+    public function expireToken(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'token' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            // Find the token using Sanctum's findToken method
+            $accessToken = PersonalAccessToken::findToken($request->token);
+
+            if (!$accessToken) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Token not found or invalid'
+                ], 404);
+            }
+
+            // Check if token is already expired
+            if ($accessToken->expires_at && $accessToken->expires_at < Carbon::now()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Token is already expired',
+                    'data' => [
+                        'token_id' => $accessToken->id,
+                        'user_id' => $accessToken->tokenable_id,
+                        'expires_at' => $accessToken->expires_at,
+                        'status' => 'already_expired'
+                    ]
+                ], 200);
+            }
+
+            // Update expires_at to current time (expire immediately)
+            $accessToken->update([
+                'expires_at' => Carbon::now()
+            ]);
+
+            Log::info('Token expired via API', [
+                'token_id' => $accessToken->id,
+                'user_id' => $accessToken->tokenable_id,
+                'expires_at' => $accessToken->expires_at
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Token expired successfully',
+                'data' => [
+                    'token_id' => $accessToken->id,
+                    'user_id' => $accessToken->tokenable_id,
+                    'expires_at' => $accessToken->expires_at,
+                    'status' => 'expired'
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to expire token', [
+                'error' => $e->getMessage(),
+                'token_preview' => substr($request->token, 0, 20) . '...',
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to expire token',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+            ], 500);
+        }
+    }
+
+    /**
+     * Update Profile
+     * PUT /api/profile
+     */
+    public function updateProfile(Request $request)
+    {
+        try {
+            $admin = $request->user();
+            $clientId = $admin->id;
+
+            // Validate the request
+            $validator = Validator::make($request->all(), [
+                'first_name' => 'sometimes|string|max:255',
+                'last_name' => 'sometimes|string|max:255',
+                'phone' => 'sometimes|string|max:255',
+                'address' => 'sometimes|string|max:500',
+                'city' => 'sometimes|string|max:255',
+                'state' => 'sometimes|string|max:255',
+                'post_code' => 'sometimes|string|max:20',
+                'country' => 'sometimes|string|max:255',
+                'dob' => 'sometimes|date|before:today',
+                'gender' => 'sometimes|string|in:Male,Female,Other',
+                'marital_status' => 'sometimes|string|in:Single,Married,Divorced,Widowed,Other'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            // Get the client record
+            $client = DB::table('admins')->where('id', $clientId)->first();
+            
+            if (!$client) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Client not found'
+                ], 404);
+            }
+
+            // Prepare update data
+            $updateData = [];
+            $allowedFields = [
+                'first_name', 'last_name', 'phone', 'address', 'city', 
+                'state', 'post_code', 'country', 'dob', 'gender', 'marital_status'
+            ];
+
+            foreach ($allowedFields as $field) {
+                if ($request->has($field)) {
+                    $updateData[$field] = $request->input($field);
+                }
+            }
+
+            // Add updated_at timestamp
+            $updateData['updated_at'] = now();
+
+            // Update the client record
+            $updated = DB::table('admins')
+                ->where('id', $clientId)
+                ->update($updateData);
+
+            if ($updated) {
+                // Get updated client data
+                $updatedClient = DB::table('admins')->where('id', $clientId)->first();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Profile updated successfully',
+                    'data' => [
+                        'id' => $updatedClient->id,
+                        'client_id' => $updatedClient->client_id,
+                        'first_name' => $updatedClient->first_name,
+                        'last_name' => $updatedClient->last_name,
+                        'email' => $updatedClient->email,
+                        'phone' => $updatedClient->phone,
+                        'address' => $updatedClient->address,
+                        'city' => $updatedClient->city,
+                        'state' => $updatedClient->state,
+                        'zip' => $updatedClient->zip,
+                        'country' => $updatedClient->country,
+                        'profile_img' => $updatedClient->profile_img,
+                        'status' => $updatedClient->status,
+                        'role' => $updatedClient->role,
+                        'cp_status' => $updatedClient->cp_status,
+                        'cp_code_verify' => $updatedClient->cp_code_verify,
+                        'email_verified_at' => $updatedClient->email_verified_at,
+                        'created_at' => $updatedClient->created_at,
+                        'updated_at' => $updatedClient->updated_at
+                    ]
+                ], 200);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to update profile'
+                ], 500);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Update Profile API Error: ' . $e->getMessage(), [
+                'user_id' => $admin->id ?? null,
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update profile',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+}
