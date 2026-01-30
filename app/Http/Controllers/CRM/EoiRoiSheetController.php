@@ -153,7 +153,6 @@ class EoiRoiSheetController extends Controller
                 'eoi.eoi_subclasses',
                 'eoi.eoi_states',
                 'eoi.client_id',
-                'admins.client_id as crm_ref',
                 'admins.first_name',
                 'admins.last_name',
                 'admins.marital_status',
@@ -255,7 +254,6 @@ class EoiRoiSheetController extends Controller
         // Map sort fields to actual columns (use raw SQL for eoi mixed-case columns so PostgreSQL preserves case)
         $sortableFieldsRaw = [
             'matter_id' => 'latest_eoi_matter.client_unique_matter_no',
-            'crm_ref' => 'admins.client_id',
             'eoi_number' => 'eoi."EOI_number"',
             'client_name' => 'admins.first_name',
             'occupation' => 'eoi."EOI_occupation"',

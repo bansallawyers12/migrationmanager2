@@ -61,6 +61,12 @@
         color: #495057;
         border-bottom: 2px solid #667eea;
     }
+
+    /* First column (Matter ID) – wider so header and IDs are fully visible */
+    .eoi-roi-table th:first-child,
+    .eoi-roi-table td:first-child {
+        min-width: 220px;
+    }
     
     .eoi-roi-table td {
         padding: 10px 8px;
@@ -410,7 +416,6 @@
                             <thead>
                                 <tr>
                                     <th class="sortable {{ request('sort') == 'matter_id' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="matter_id">Matter ID</th>
-                                    <th class="sortable {{ request('sort') == 'crm_ref' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="crm_ref">CRM Ref</th>
                                     <th class="sortable {{ request('sort') == 'eoi_number' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="eoi_number">EOI ID</th>
                                     <th class="sortable {{ request('sort') == 'client_name' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="client_name">Client Name</th>
                                     <th class="sortable {{ request('sort') == 'occupation' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="occupation">Nominated Occupation</th>
@@ -418,6 +423,7 @@
                                     <th class="sortable {{ request('sort') == 'individual_points' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="individual_points">Individual Points</th>
                                     <th class="sortable {{ request('sort') == 'marital_status' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="marital_status">Marital Status</th>
                                     <th>Partner Points</th>
+                                    <th>State</th>
                                     <th>ROI Status</th>
                                     <th>Comments</th>
                                     <th class="sortable {{ request('sort') == 'submission_date' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="submission_date">Last EOI/ROI Sent</th>
@@ -451,7 +457,6 @@
                                         @endphp
                                         <tr>
                                             <td><a href="{{ $eoiPageUrl }}" class="eoi-link">{{ $row->matter_id ?? '—' }}</a></td>
-                                            <td>{{ $row->crm_ref ?? '—' }}</td>
                                             <td><a href="{{ $eoiPageUrl }}" class="eoi-link">{{ $row->EOI_number ?? '—' }}</a></td>
                                             <td><a href="{{ $eoiPageUrl }}" class="eoi-link">{{ $row->first_name }} {{ $row->last_name }}</a></td>
                                             <td>{{ $row->EOI_occupation ?? '—' }}</td>
@@ -459,6 +464,7 @@
                                             <td>{{ $row->individual_points ?? '—' }}</td>
                                             <td>{{ $row->marital_status ?? '—' }}</td>
                                             <td>{{ $row->partner_points ?? '—' }}</td>
+                                            <td>{{ !empty($states) ? implode(', ', $states) : '—' }}</td>
                                             <td>
                                                 @if($row->EOI_ROI)
                                                     {{ $row->EOI_ROI }}

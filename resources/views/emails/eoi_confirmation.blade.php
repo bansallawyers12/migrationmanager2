@@ -105,6 +105,35 @@
             margin: 0;
             color: #856404;
         }
+        .points-total-box {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: #ffffff;
+            padding: 24px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 25px 0 20px 0;
+            max-width: 200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .points-total-number {
+            font-size: 42px;
+            font-weight: bold;
+            margin: 0;
+            line-height: 1.2;
+        }
+        .points-total-label {
+            font-size: 14px;
+            opacity: 0.95;
+            margin: 8px 0 0 0;
+        }
+        .points-info-text {
+            font-size: 12px;
+            color: #6c757d;
+            text-align: center;
+            margin-top: 10px;
+            padding: 0 10px;
+        }
     </style>
 </head>
 <body>
@@ -154,6 +183,12 @@
                 <div class="detail-value">{{ ucfirst($eoiReference->eoi_status ?? 'N/A') }}</div>
             </div>
         </div>
+
+        <div class="points-total-box">
+            <div class="points-total-number">{{ $eoiReference->EOI_point ?? '0' }}</div>
+            <div class="points-total-label">Current total</div>
+        </div>
+        <p class="points-info-text">Points calculated based on current client data from Personal Details, Qualifications, Experience, and Test Scores sections.</p>
 
         <div class="important-notice">
             <p><strong>Important:</strong> Please carefully review all the information above. If everything is correct, click the "Confirm Details" button. If you need to make any changes, click "Request Amendment" and provide details.</p>
