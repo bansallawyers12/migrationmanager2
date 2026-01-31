@@ -27,7 +27,12 @@ class EoiRoiSheetController extends Controller
 
     public function __construct(PointsService $pointsService)
     {
-        $this->middleware('auth:admin');
+        $this->middleware('auth:admin')->except([
+            'showConfirmationPage',
+            'showAmendmentPage',
+            'processClientConfirmation',
+            'showSuccessPage'
+        ]);
         $this->pointsService = $pointsService;
     }
 
