@@ -1639,6 +1639,16 @@ class ClientPortalAppointmentController extends BaseController
                 return $this->sendError('This appointment has already been paid', [], 422);
             }
 
+            if ($appointment->is_paid && $appointment->status === 'cancelled') {
+                return $this->sendError('This appointment has already been cancelled', [], 422);
+            }
+
+            if ($appointment->is_paid && $appointment->status === 'completed') {
+                return $this->sendError('This appointment has already been completed', [], 422);
+            }
+
+            
+
             // Verify appointment amount
             $expectedAmount = 150.00; // As per requirements
             $appointmentAmount = (float) ($appointment->final_amount ?? $appointment->amount);
