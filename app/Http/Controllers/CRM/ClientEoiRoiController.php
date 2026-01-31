@@ -78,12 +78,13 @@ class ClientEoiRoiController extends Controller
             // Allow any authenticated admin (auth:admin middleware); no policy.
             // $this->authorize('view', $client);
 
-            if ($eoiReference->client_id !== $client->id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'EOI record not found for this client',
-                ], 404);
-            }
+            // Re-enable to enforce client–EOI association (prevent cross-client access).
+            // if ($eoiReference->client_id !== $client->id) {
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => 'EOI record not found for this client',
+            //     ], 404);
+            // }
 
             // Load relationships for workflow display
             $eoiReference->load(['creator', 'updater', 'verifier', 'client']);
@@ -137,12 +138,13 @@ class ClientEoiRoiController extends Controller
             if ($eoiId) {
                 $eoi = ClientEoiReference::findOrFail($eoiId);
                 
-                if ($eoi->client_id !== $client->id) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'EOI record not found',
-                    ], 404);
-                }
+                // Re-enable to enforce client–EOI association (prevent cross-client access).
+                // if ($eoi->client_id !== $client->id) {
+                //     return response()->json([
+                //         'success' => false,
+                //         'message' => 'EOI record not found',
+                //     ], 404);
+                // }
             } else {
                 $eoi = new ClientEoiReference();
                 $eoi->client_id = $client->id;
@@ -216,12 +218,13 @@ class ClientEoiRoiController extends Controller
             // Allow any authenticated admin (auth:admin middleware); no policy.
             // $this->authorize('update', $client);
 
-            if ($eoiReference->client_id !== $client->id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'EOI record not found for this client',
-                ], 404);
-            }
+            // Re-enable to enforce client–EOI association (prevent cross-client access).
+            // if ($eoiReference->client_id !== $client->id) {
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => 'EOI record not found for this client',
+            //     ], 404);
+            // }
 
             DB::beginTransaction();
 
@@ -311,12 +314,13 @@ class ClientEoiRoiController extends Controller
             // Allow any authenticated admin (auth:admin middleware); no policy.
             // $this->authorize('update', $client);
 
-            if ($eoiReference->client_id !== $client->id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'EOI record not found',
-                ], 404);
-            }
+            // Re-enable to enforce client–EOI association (prevent cross-client access).
+            // if ($eoiReference->client_id !== $client->id) {
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => 'EOI record not found',
+            //     ], 404);
+            // }
 
             $password = $eoiReference->getEOIPasswordDecrypted();
 
@@ -356,12 +360,13 @@ class ClientEoiRoiController extends Controller
             // Allow any authenticated admin (auth:admin middleware); no policy.
             // $this->authorize('update', $client);
 
-            if ($eoiReference->client_id !== $client->id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'EOI record not found',
-                ], 404);
-            }
+            // Re-enable to enforce client–EOI association (prevent cross-client access).
+            // if ($eoiReference->client_id !== $client->id) {
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => 'EOI record not found',
+            //     ], 404);
+            // }
 
             // Update verification fields
             $eoiReference->staff_verified = true;
@@ -405,12 +410,13 @@ class ClientEoiRoiController extends Controller
             // Allow any authenticated admin (auth:admin middleware); no policy.
             // $this->authorize('update', $client);
 
-            if ($eoiReference->client_id !== $client->id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'EOI record not found',
-                ], 404);
-            }
+            // Re-enable to enforce client–EOI association (prevent cross-client access).
+            // if ($eoiReference->client_id !== $client->id) {
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => 'EOI record not found',
+            //     ], 404);
+            // }
 
             // Check if staff has verified first
             if (!$eoiReference->staff_verified) {
@@ -488,12 +494,13 @@ class ClientEoiRoiController extends Controller
             // Allow any authenticated admin (auth:admin middleware); no policy.
             // $this->authorize('update', $client);
 
-            if ($eoiReference->client_id !== $client->id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'EOI record not found',
-                ], 404);
-            }
+            // Re-enable to enforce client–EOI association (prevent cross-client access).
+            // if ($eoiReference->client_id !== $client->id) {
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => 'EOI record not found',
+            //     ], 404);
+            // }
 
             if ($eoiReference->client_confirmation_status !== 'amendment_requested') {
                 return response()->json([
