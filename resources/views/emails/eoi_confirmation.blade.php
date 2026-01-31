@@ -80,12 +80,12 @@
             transition: all 0.3s ease;
         }
         .btn-confirm {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-color: #667eea;
             color: #ffffff;
+            border: 2px solid #5a67d8;
         }
         .btn-confirm:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            background-color: #5a67d8;
         }
         .btn-amend {
             background-color: #f8f9fa;
