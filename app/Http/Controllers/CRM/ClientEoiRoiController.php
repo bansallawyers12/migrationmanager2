@@ -171,10 +171,12 @@ class ClientEoiRoiController extends Controller
 
             // Log activity
             $action = $eoiId ? 'updated' : 'created';
+            $adminUser = auth('admin')->user();
+            $adminName = $adminUser ? ($adminUser->first_name . ' ' . $adminUser->last_name) : 'System';
             $this->logActivity(
                 $client->id,
                 "EOI Record " . ucfirst($action),
-                "EOI #" . $eoi->EOI_number . " was {$action} by " . auth('admin')->user()->first_name . ' ' . auth('admin')->user()->last_name,
+                "EOI #" . $eoi->EOI_number . " was {$action} by " . $adminName,
                 'eoi_' . $action
             );
 
@@ -183,7 +185,7 @@ class ClientEoiRoiController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => $eoiId ? 'EOI record updated successfully' : 'EOI record created successfully',
-                'data' => $this->formatEoiForResponse($eoi->fresh(), true),
+                'data' => $this->formatEoiForResponse($eoi->fresh() ?? $eoi, true),
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -642,7 +644,8 @@ class ClientEoiRoiController extends Controller
                 'subject' => $subject,
                 'description' => $description,
                 'activity_type' => $activityType,
-                'use_for' => 'client'
+                'task_status' => 0, // Required NOT NULL field - 0 for non-task activities
+                'pin' => 0, // Required NOT NULL field
             ]);
         } catch (\Exception $e) {
             Log::error('Error logging activity', [

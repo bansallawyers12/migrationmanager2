@@ -815,7 +815,8 @@ class EoiRoiSheetController extends Controller
                 'subject' => $subject,
                 'description' => $description,
                 'activity_type' => $activityType,
-                'use_for' => 'client'
+                'task_status' => 0, // Required NOT NULL field - 0 for non-task activities
+                'pin' => 0, // Required NOT NULL field
             ]);
         } catch (\Exception $e) {
             Log::error('Error logging activity', [
