@@ -112,7 +112,8 @@ class ClientEoiRoiController extends Controller
     public function upsert(Request $request, Admin $client): JsonResponse
     {
         try {
-            $this->authorize('update', $client);
+            // Authorization: any authenticated admin can save EOI (auth:admin middleware ensures login)
+            // Role/assignee checks removed to allow all staff to save EOI records
 
             // Validate input
             $validator = $this->validateEoiData($request);
