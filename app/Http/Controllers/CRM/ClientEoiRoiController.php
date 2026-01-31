@@ -75,7 +75,8 @@ class ClientEoiRoiController extends Controller
     public function show(Admin $client, ClientEoiReference $eoiReference): JsonResponse
     {
         try {
-            $this->authorize('view', $client);
+            // Allow any authenticated admin (auth:admin middleware); no policy.
+            // $this->authorize('view', $client);
 
             if ($eoiReference->client_id !== $client->id) {
                 return response()->json([
@@ -212,7 +213,8 @@ class ClientEoiRoiController extends Controller
     public function destroy(Admin $client, ClientEoiReference $eoiReference): JsonResponse
     {
         try {
-            $this->authorize('update', $client);
+            // Allow any authenticated admin (auth:admin middleware); no policy.
+            // $this->authorize('update', $client);
 
             if ($eoiReference->client_id !== $client->id) {
                 return response()->json([
@@ -306,7 +308,8 @@ class ClientEoiRoiController extends Controller
     public function revealPassword(Admin $client, ClientEoiReference $eoiReference): JsonResponse
     {
         try {
-            $this->authorize('update', $client); // Only allow admins with update permission
+            // Allow any authenticated admin (auth:admin middleware); no policy.
+            // $this->authorize('update', $client);
 
             if ($eoiReference->client_id !== $client->id) {
                 return response()->json([
@@ -350,7 +353,8 @@ class ClientEoiRoiController extends Controller
     public function verifyByStaff(Admin $client, ClientEoiReference $eoiReference): JsonResponse
     {
         try {
-            $this->authorize('update', $client);
+            // Allow any authenticated admin (auth:admin middleware); no policy.
+            // $this->authorize('update', $client);
 
             if ($eoiReference->client_id !== $client->id) {
                 return response()->json([
@@ -398,7 +402,8 @@ class ClientEoiRoiController extends Controller
     public function sendConfirmationEmail(Admin $client, ClientEoiReference $eoiReference, Request $request): JsonResponse
     {
         try {
-            $this->authorize('update', $client);
+            // Allow any authenticated admin (auth:admin middleware); no policy.
+            // $this->authorize('update', $client);
 
             if ($eoiReference->client_id !== $client->id) {
                 return response()->json([
@@ -480,7 +485,8 @@ class ClientEoiRoiController extends Controller
     public function resolveAmendment(Admin $client, ClientEoiReference $eoiReference): JsonResponse
     {
         try {
-            $this->authorize('update', $client);
+            // Allow any authenticated admin (auth:admin middleware); no policy.
+            // $this->authorize('update', $client);
 
             if ($eoiReference->client_id !== $client->id) {
                 return response()->json([
