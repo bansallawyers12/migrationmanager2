@@ -447,16 +447,15 @@
                                     <th>ROI Status</th>
                                     <th>Comments</th>
                                     <th class="sortable {{ request('sort') == 'submission_date' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="submission_date">Last EOI/ROI Sent</th>
-                                    <th>Client Last Confirmation</th>
-                                    <th>Confirmation Date</th>
-                                    <th>Checked By</th>
-                                    <th>Actions</th>
+                                    <th>Verification Date</th>
+                                    <th>Verified By</th>
+                                    <th>Workflow Status</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @if($rows->isEmpty())
                                     <tr>
-                                        <td colspan="15" class="text-center text-muted py-4">
+                                        <td colspan="13" class="text-center text-muted py-4">
                                             <i class="fas fa-info-circle"></i> No EOI/ROI records found matching your criteria.
                                         </td>
                                     </tr>
@@ -519,76 +518,69 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                @if($eoiRecord && $eoiRecord->client_last_confirmation)
-                                                    <span class="client-confirmation-cell" data-eoi-id="{{ $row->eoi_id }}">
-                                                        @if($eoiRecord->client_confirmation_status === 'confirmed')
-                                                            <span class="badge badge-success" title="Confirmed on {{ $eoiRecord->client_last_confirmation->format('d/m/Y H:i') }}">
-                                                                <i class="fas fa-check-circle"></i> Confirmed
-                                                            </span>
-                                                            <br><small class="text-muted">{{ $eoiRecord->client_last_confirmation->format('d/m/Y') }}</small>
-                                                        @elseif($eoiRecord->client_confirmation_status === 'amendment_requested')
-                                                            <span class="badge badge-warning" title="{{ $eoiRecord->client_confirmation_notes }}">
-                                                                <i class="fas fa-edit"></i> Amendment
-                                                            </span>
-                                                            <br><small class="text-muted">{{ $eoiRecord->client_last_confirmation->format('d/m/Y') }}</small>
-                                                        @elseif($eoiRecord->client_confirmation_status === 'pending' && $eoiRecord->confirmation_email_sent_at)
-                                                            <span class="badge badge-secondary">
-                                                                <i class="fas fa-clock"></i> Pending
-                                                            </span>
-                                                            <br><small class="text-muted">Sent {{ $eoiRecord->confirmation_email_sent_at->format('d/m/Y') }}</small>
-                                                        @else
-                                                            —
-                                                        @endif
-                                                    </span>
-                                                @else
-                                                    <span class="text-muted">—</span>
-                                                @endif
-                                            </td>
-                                            <td class="confirmation-date-cell" data-eoi-id="{{ $row->eoi_id }}">
                                                 @if($eoiRecord && $eoiRecord->confirmation_date)
-                                                    {{ $eoiRecord->confirmation_date->format('d/m/Y H:i') }}
-                                                @else
-                                                    <span class="text-muted">—</span>
-                                                @endif
-                                            </td>
-                                            <td class="checked-by-cell" data-eoi-id="{{ $row->eoi_id }}">
-                                                @if($eoiRecord && $eoiRecord->verifier)
-                                                    {{ $eoiRecord->verifier->first_name }} {{ $eoiRecord->verifier->last_name }}
+                                                    <div style="line-height: 1.6;">
+                                                        <strong>{{ $eoiRecord->confirmation_date->format('d/m/Y H:i') }}</strong>
+                                                        <br><small class="text-muted"><i class="fas fa-user-shield"></i> Staff</small>
+                                                    </div>
+                                                    @if($eoiRecord->client_last_confirmation)
+                                                        <div style="line-height: 1.6; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e0e0e0;">
+                                                            <strong>{{ $eoiRecord->client_last_confirmation->format('d/m/Y H:i') }}</strong>
+                                                            <br><small class="text-success"><i class="fas fa-user-check"></i> Client</small>
+                                                        </div>
+                                                    @endif
                                                 @else
                                                     <span class="text-muted">—</span>
                                                 @endif
                                             </td>
                                             <td>
-                                                <div class="btn-group-vertical" role="group">
-                                                    @if($eoiRecord && !$eoiRecord->staff_verified)
-                                                        <button type="button" class="btn btn-sm btn-success verify-btn" 
-                                                                data-eoi-id="{{ $row->eoi_id }}"
-                                                                title="Verify EOI details">
-                                                            <i class="fas fa-check"></i> Verify
-                                                        </button>
-                                                    @elseif($eoiRecord && $eoiRecord->staff_verified && !$eoiRecord->confirmation_email_sent_at)
-                                                        <button type="button" class="btn btn-sm btn-primary send-email-btn" 
-                                                                data-eoi-id="{{ $row->eoi_id }}"
-                                                                title="Send confirmation email to client">
-                                                            <i class="fas fa-envelope"></i> Send Email
-                                                        </button>
-                                                    @elseif($eoiRecord && $eoiRecord->confirmation_email_sent_at && $eoiRecord->client_confirmation_status === 'pending')
-                                                        <span class="badge badge-info">
-                                                            <i class="fas fa-clock"></i> Awaiting Client
-                                                        </span>
-                                                    @elseif($eoiRecord && $eoiRecord->client_confirmation_status === 'confirmed')
-                                                        <span class="badge badge-success">
-                                                            <i class="fas fa-check-circle"></i> Completed
-                                                        </span>
-                                                    @elseif($eoiRecord && $eoiRecord->client_confirmation_status === 'amendment_requested')
-                                                        <button type="button" class="btn btn-sm btn-warning view-notes-btn" 
-                                                                data-eoi-id="{{ $row->eoi_id }}"
-                                                                data-notes="{{ $eoiRecord->client_confirmation_notes }}"
-                                                                title="View amendment notes">
-                                                            <i class="fas fa-eye"></i> View Notes
-                                                        </button>
+                                                @if($eoiRecord && $eoiRecord->verifier)
+                                                    <div style="line-height: 1.6;">
+                                                        <strong>{{ $eoiRecord->verifier->first_name }} {{ $eoiRecord->verifier->last_name }}</strong>
+                                                        <br><small class="text-muted"><i class="fas fa-user-shield"></i> Staff</small>
+                                                    </div>
+                                                    @if($eoiRecord->client_confirmation_status === 'confirmed')
+                                                        <div style="line-height: 1.6; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e0e0e0;">
+                                                            <strong class="text-success">Client Confirmed</strong>
+                                                            <br><small class="text-success"><i class="fas fa-user-check"></i> Client</small>
+                                                        </div>
+                                                    @elseif($eoiRecord->client_confirmation_status === 'amendment_requested')
+                                                        <div style="line-height: 1.6; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e0e0e0;">
+                                                            <strong class="text-warning">Amendment Requested</strong>
+                                                            <br><small class="text-warning"><i class="fas fa-exclamation-triangle"></i> Client</small>
+                                                        </div>
                                                     @endif
-                                                </div>
+                                                @else
+                                                    <span class="text-muted">—</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @php
+                                                    // Determine workflow status
+                                                    if (!$eoiRecord) {
+                                                        $workflowStatus = 'draft';
+                                                        $statusBadge = '<span class="badge badge-secondary"><i class="fas fa-file"></i> Draft</span>';
+                                                    } elseif (!$eoiRecord->staff_verified) {
+                                                        $workflowStatus = 'pending_verification';
+                                                        $statusBadge = '<span class="badge badge-warning"><i class="fas fa-hourglass-half"></i> Pending Verification</span>';
+                                                    } elseif ($eoiRecord->staff_verified && !$eoiRecord->confirmation_email_sent_at) {
+                                                        $workflowStatus = 'verified';
+                                                        $statusBadge = '<span class="badge badge-info"><i class="fas fa-check-circle"></i> Verified - Ready to Send</span>';
+                                                    } elseif ($eoiRecord->client_confirmation_status === 'confirmed') {
+                                                        $workflowStatus = 'completed';
+                                                        $statusBadge = '<span class="badge badge-success"><i class="fas fa-check-double"></i> Client Confirmed</span>';
+                                                    } elseif ($eoiRecord->client_confirmation_status === 'amendment_requested') {
+                                                        $workflowStatus = 'amendment';
+                                                        $statusBadge = '<span class="badge badge-danger"><i class="fas fa-exclamation-triangle"></i> Amendment Requested</span>';
+                                                    } elseif ($eoiRecord->client_confirmation_status === 'pending') {
+                                                        $workflowStatus = 'awaiting_client';
+                                                        $statusBadge = '<span class="badge badge-primary"><i class="fas fa-clock"></i> Awaiting Client Response</span>';
+                                                    } else {
+                                                        $workflowStatus = 'unknown';
+                                                        $statusBadge = '<span class="badge badge-secondary">—</span>';
+                                                    }
+                                                @endphp
+                                                {!! $statusBadge !!}
                                             </td>
                                         </tr>
                                     @endforeach
@@ -697,152 +689,13 @@ jQuery(document).ready(function($) {
         window.location.href = currentUrl.toString();
     });
 
-    // Verify EOI by staff
-    $('.verify-btn').on('click', function() {
-        var $btn = $(this);
-        var eoiId = $btn.data('eoi-id');
-        
-        Swal.fire({
-            title: 'Verify EOI Details?',
-            text: 'Please confirm that you have reviewed and verified the EOI details.',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#667eea',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Yes, Verify',
-            cancelButtonText: 'Cancel'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Verifying...');
-                
-                $.ajax({
-                    url: '/clients/sheets/eoi-roi/' + eoiId + '/verify',
-                    type: 'POST',
-                    data: {
-                        _token: '{{ csrf_token() }}'
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            Swal.fire({
-                                title: 'Verified!',
-                                text: response.message,
-                                icon: 'success',
-                                confirmButtonColor: '#667eea'
-                            }).then(() => {
-                                // Update the UI
-                                var $row = $btn.closest('tr');
-                                $row.find('.confirmation-date-cell').html(response.confirmation_date);
-                                $row.find('.checked-by-cell').html(response.checked_by);
-                                
-                                // Replace verify button with send email button
-                                $btn.replaceWith(
-                                    '<button type="button" class="btn btn-sm btn-primary send-email-btn" ' +
-                                    'data-eoi-id="' + eoiId + '" title="Send confirmation email to client">' +
-                                    '<i class="fas fa-envelope"></i> Send Email</button>'
-                                );
-                                
-                                // Re-bind send email event
-                                bindSendEmailEvents();
-                            });
-                        } else {
-                            Swal.fire('Error', response.message, 'error');
-                            $btn.prop('disabled', false).html('<i class="fas fa-check"></i> Verify');
-                        }
-                    },
-                    error: function(xhr) {
-                        Swal.fire('Error', 'Failed to verify EOI details. Please try again.', 'error');
-                        $btn.prop('disabled', false).html('<i class="fas fa-check"></i> Verify');
-                    }
-                });
-            }
-        });
-    });
-
-    // Send confirmation email to client
-    function bindSendEmailEvents() {
-        $('.send-email-btn').off('click').on('click', function() {
-            var $btn = $(this);
-            var eoiId = $btn.data('eoi-id');
-            
-            Swal.fire({
-                title: 'Send Confirmation Email?',
-                text: 'This will send an email to the client asking them to confirm their EOI details.',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#667eea',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Yes, Send Email',
-                cancelButtonText: 'Cancel'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Sending...');
-                    
-                    $.ajax({
-                        url: '/clients/sheets/eoi-roi/' + eoiId + '/send-confirmation',
-                        type: 'POST',
-                        data: {
-                            _token: '{{ csrf_token() }}'
-                        },
-                        success: function(response) {
-                            if (response.success) {
-                                Swal.fire({
-                                    title: 'Email Sent!',
-                                    text: response.message,
-                                    icon: 'success',
-                                    confirmButtonColor: '#667eea'
-                                }).then(() => {
-                                    // Update the UI
-                                    var $row = $btn.closest('tr');
-                                    $row.find('.client-confirmation-cell').html(
-                                        '<span class="badge badge-secondary">' +
-                                        '<i class="fas fa-clock"></i> Pending</span>' +
-                                        '<br><small class="text-muted">Sent ' + response.sent_at.split(' ')[0] + '</small>'
-                                    );
-                                    
-                                    // Replace send email button with awaiting status
-                                    $btn.replaceWith(
-                                        '<span class="badge badge-info">' +
-                                        '<i class="fas fa-clock"></i> Awaiting Client</span>'
-                                    );
-                                });
-                            } else {
-                                Swal.fire('Error', response.message, 'error');
-                                $btn.prop('disabled', false).html('<i class="fas fa-envelope"></i> Send Email');
-                            }
-                        },
-                        error: function(xhr) {
-                            var errorMsg = 'Failed to send email. Please try again.';
-                            if (xhr.responseJSON && xhr.responseJSON.message) {
-                                errorMsg = xhr.responseJSON.message;
-                            }
-                            Swal.fire('Error', errorMsg, 'error');
-                            $btn.prop('disabled', false).html('<i class="fas fa-envelope"></i> Send Email');
-                        }
-                    });
-                }
-            });
-        });
-    }
-    
-    // Initial binding
-    bindSendEmailEvents();
-
-    // View amendment notes
-    $('.view-notes-btn').on('click', function() {
-        var notes = $(this).data('notes');
-        
-        Swal.fire({
-            title: 'Client Amendment Request',
-            html: '<div style="text-align: left; max-height: 400px; overflow-y: auto;">' +
-                  '<p><strong>Requested Changes:</strong></p>' +
-                  '<div style="background: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #ffc107;">' +
-                  notes.replace(/\n/g, '<br>') +
-                  '</div></div>',
-            icon: 'info',
-            confirmButtonColor: '#667eea',
-            confirmButtonText: 'Close',
-            width: '600px'
-        });
+    // Per page selector
+    $('#per_page').on('change', function() {
+        var perPage = $(this).val();
+        var currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set('per_page', perPage);
+        currentUrl.searchParams.delete('page'); // Reset to page 1
+        window.location.href = currentUrl.toString();
     });
 });
 </script>

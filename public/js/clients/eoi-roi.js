@@ -138,6 +138,31 @@
 
         // Points subclass selector
         $('#points-subclass-selector').on('change', handleSubclassChange);
+
+        // Map to Visa Documents: switch to Visa Documents tab and activate matching category
+        // Prefer per-EOI category (e.g. "EOI Summary - E0121253652") when editing an EOI
+        $(document).on('click', '.eoi-map-doc-btn', function() {
+            const categoryName = $(this).data('visa-category');
+            const eoiNumber = $('#eoi-number').val() ? $('#eoi-number').val().trim() : '';
+            const $visaTab = $('.client-nav-button[data-tab="visadocuments"]');
+            if ($visaTab.length) {
+                $visaTab[0].click();
+                setTimeout(function() {
+                    const perEoiName = eoiNumber ? (categoryName + ' - ' + eoiNumber) : null;
+                    let $subtab = perEoiName ? $('.subtab6-button').filter(function() {
+                        return $(this).text().trim().toLowerCase() === perEoiName.toLowerCase();
+                    }) : $();
+                    if (!$subtab.length) {
+                        $subtab = $('.subtab6-button').filter(function() {
+                            return $(this).text().trim().toLowerCase() === (categoryName || '').toLowerCase();
+                        });
+                    }
+                    if ($subtab.length) {
+                        $subtab[0].click();
+                    }
+                }, 400);
+            }
+        });
     }
 
     // Load EOI records from API
@@ -218,6 +243,7 @@
     // Hide form
     function hideForm() {
         $('#eoi-roi-form-section').slideUp();
+        $('#workflow-section-compact').slideUp();
         resetForm();
     }
 
@@ -257,6 +283,9 @@
                     $('#btn-delete-eoi').show();
                     $('#eoi-roi-form-section').slideDown();
                     state.selectedEoiId = eoiId;
+                    
+                    // Load workflow section
+                    loadWorkflowSection(eoiId);
                 }
             },
             error: function(xhr) {
@@ -750,6 +779,273 @@
             loadPoints();
         },
         init: initEoiRoi
+    };
+
+    // Load workflow status and actions
+    function loadWorkflowSection(eoiId) {
+        console.log('[EOI-ROI] Loading workflow for EOI:', eoiId);
+        
+        const eoi = state.eoiRecords.find(e => e.id == eoiId);
+        if (!eoi) {
+            console.warn('[EOI-ROI] EOI not found in state');
+            return;
+        }
+
+        $.ajax({
+            url: `/clients/${state.clientId}/eoi-roi/${eoiId}`,
+            method: 'GET',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                if (response.success) {
+                    renderWorkflowSection(response.data);
+                    $('#workflow-section-compact').show();
+                }
+            },
+            error: function(xhr) {
+                console.error('Error loading workflow:', xhr);
+            }
+        });
+    }
+
+    // Render workflow section (compact version)
+    function renderWorkflowSection(eoi) {
+        const workflowContent = $('#workflow-content-compact');
+        
+        let html = '';
+
+        // Staff Verification Box
+        if (!eoi.staff_verified) {
+            html += `
+                <div class="workflow-box warning">
+                    <h5><i class="fas fa-user-shield"></i> Staff Verification Required</h5>
+                    <p style="margin-bottom: 10px;">This EOI needs to be verified by staff before sending to the client.</p>
+                    <div class="workflow-actions">
+                        <button type="button" class="btn btn-success btn-sm" id="btn-verify-eoi" data-eoi-id="${eoi.id}">
+                            <i class="fas fa-check-circle"></i> Verify EOI Details
+                        </button>
+                    </div>
+                </div>
+            `;
+        } else {
+            html += `
+                <div class="workflow-box success">
+                    <h5><i class="fas fa-check-circle"></i> Staff Verification Complete</h5>
+                    <div class="workflow-detail">
+                        <strong>Verified By:</strong>
+                        <span>${eoi.verified_by || 'N/A'}</span>
+                    </div>
+                    <div class="workflow-detail">
+                        <strong>Date:</strong>
+                        <span>${eoi.verification_date || 'N/A'}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Client Confirmation Box
+        if (eoi.staff_verified) {
+            if (eoi.client_confirmation_status === 'confirmed') {
+                html += `
+                    <div class="workflow-box success">
+                        <h5><i class="fas fa-check-double"></i> Client Confirmed</h5>
+                        <div class="workflow-detail">
+                            <strong>Confirmed On:</strong>
+                            <span>${eoi.client_confirmation_date || 'N/A'}</span>
+                        </div>
+                        <p class="text-success" style="margin: 0; font-size: 12px;"><i class="fas fa-info-circle"></i> Client confirmed all details are correct.</p>
+                    </div>
+                `;
+            } else if (eoi.client_confirmation_status === 'amendment_requested') {
+                html += `
+                    <div class="workflow-box danger">
+                        <h5><i class="fas fa-exclamation-triangle"></i> Amendment Requested</h5>
+                        <div class="workflow-detail">
+                            <strong>Requested On:</strong>
+                            <span>${eoi.client_confirmation_date || 'N/A'}</span>
+                        </div>
+                        <div class="amendment-notes">
+                            <strong>Client Notes:</strong><br>
+                            ${eoi.client_notes || 'No notes provided'}
+                        </div>
+                        <div class="workflow-actions">
+                            <button type="button" class="btn btn-primary btn-sm" id="btn-resend-email" data-eoi-id="${eoi.id}">
+                                <i class="fas fa-envelope"></i> Resend Email
+                            </button>
+                            <button type="button" class="btn btn-success btn-sm" id="btn-resolve-amendment" data-eoi-id="${eoi.id}">
+                                <i class="fas fa-check"></i> Mark Resolved
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else if (eoi.email_sent_at) {
+                html += `
+                    <div class="workflow-box info">
+                        <h5><i class="fas fa-clock"></i> Awaiting Client Response</h5>
+                        <div class="workflow-detail">
+                            <strong>Email Sent:</strong>
+                            <span>${eoi.email_sent_at || 'N/A'}</span>
+                        </div>
+                        <div class="workflow-actions">
+                            <button type="button" class="btn btn-primary btn-sm" id="btn-resend-email" data-eoi-id="${eoi.id}">
+                                <i class="fas fa-envelope"></i> Resend Email
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="workflow-box info">
+                        <h5><i class="fas fa-envelope"></i> Ready to Send</h5>
+                        <p style="margin-bottom: 10px;">EOI verified. Send confirmation email to client.</p>
+                        <div class="workflow-actions">
+                            <button type="button" class="btn btn-primary btn-sm" id="btn-send-email" data-eoi-id="${eoi.id}">
+                                <i class="fas fa-paper-plane"></i> Send to Client
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        workflowContent.html(html);
+        bindWorkflowHandlers();
+    }
+
+    // Bind workflow action handlers
+    function bindWorkflowHandlers() {
+        // Verify EOI
+        $('#btn-verify-eoi').off('click').on('click', function() {
+            const eoiId = $(this).data('eoi-id');
+            verifyEoi(eoiId);
+        });
+
+        // Send Email
+        $('#btn-send-email').off('click').on('click', function() {
+            const eoiId = $(this).data('eoi-id');
+            sendConfirmationEmail(eoiId, false);
+        });
+
+        // Resend Email
+        $('#btn-resend-email').off('click').on('click', function() {
+            const eoiId = $(this).data('eoi-id');
+            sendConfirmationEmail(eoiId, true);
+        });
+
+        // Resolve Amendment
+        $('#btn-resolve-amendment').off('click').on('click', function() {
+            const eoiId = $(this).data('eoi-id');
+            resolveAmendment(eoiId);
+        });
+    }
+
+    // Verify EOI
+    function verifyEoi(eoiId) {
+        if (!confirm('Are you sure you want to verify this EOI? This confirms you have reviewed all details and they are correct.')) {
+            return;
+        }
+
+        $.ajax({
+            url: `/clients/${state.clientId}/eoi-roi/${eoiId}/verify`,
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification(response.message, 'success');
+                    loadEoiRecords();
+                    loadWorkflowSection(eoiId);
+                }
+            },
+            error: function(xhr) {
+                showNotification('Error verifying EOI', 'error');
+            }
+        });
+    }
+
+    // Send confirmation email
+    function sendConfirmationEmail(eoiId, isResend) {
+        const action = isResend ? 'resend' : 'send';
+        const message = isResend ? 
+            'Are you sure you want to resend the confirmation email to the client?' :
+            'Are you sure you want to send the confirmation email to the client?';
+
+        if (!confirm(message)) {
+            return;
+        }
+
+        $.ajax({
+            url: `/clients/${state.clientId}/eoi-roi/${eoiId}/send-email`,
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification(response.message, 'success');
+                    loadEoiRecords();
+                    loadWorkflowSection(eoiId);
+                }
+            },
+            error: function(xhr) {
+                const message = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Error sending email';
+                showNotification(message, 'error');
+            }
+        });
+    }
+
+    // Resolve amendment
+    function resolveAmendment(eoiId) {
+        if (!confirm('Are you sure you want to mark this amendment as resolved? This will allow you to resend the confirmation email.')) {
+            return;
+        }
+
+        $.ajax({
+            url: `/clients/${state.clientId}/eoi-roi/${eoiId}/resolve-amendment`,
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification(response.message, 'success');
+                    loadEoiRecords();
+                    loadWorkflowSection(eoiId);
+                }
+            },
+            error: function(xhr) {
+                showNotification('Error resolving amendment', 'error');
+            }
+        });
+    }
+
+    // Helper: Show notification
+    function showNotification(message, type) {
+        const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+        const bgColor = type === 'success' ? '#28a745' : '#dc3545';
+        
+        const notification = $(`
+            <div class="notification-toast" style="position: fixed; top: 20px; right: 20px; z-index: 9999; background: ${bgColor}; color: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 10px; min-width: 300px;">
+                <i class="fas ${icon}"></i>
+                <span>${message}</span>
+            </div>
+        `);
+        
+        $('body').append(notification);
+        
+        setTimeout(() => {
+            notification.fadeOut(300, function() {
+                $(this).remove();
+            });
+        }, 3000);
+    }
+
+    // Export for global access if needed
+    window.EoiRoiModule = {
+        loadWorkflowSection: loadWorkflowSection,
+        state: state
     };
 
 })();

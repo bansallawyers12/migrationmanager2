@@ -188,6 +188,11 @@ Route::prefix('clients/{client}/eoi-roi')->name('clients.eoi-roi.')->group(funct
     Route::get('/{eoiReference}', [ClientEoiRoiController::class, 'show'])->name('show');
     Route::delete('/{eoiReference}', [ClientEoiRoiController::class, 'destroy'])->name('destroy');
     Route::get('/{eoiReference}/reveal-password', [ClientEoiRoiController::class, 'revealPassword'])->name('revealPassword');
+    
+    // Workflow actions
+    Route::post('/{eoiReference}/verify', [ClientEoiRoiController::class, 'verifyByStaff'])->name('verify');
+    Route::post('/{eoiReference}/send-email', [ClientEoiRoiController::class, 'sendConfirmationEmail'])->name('sendEmail');
+    Route::post('/{eoiReference}/resolve-amendment', [ClientEoiRoiController::class, 'resolveAmendment'])->name('resolveAmendment');
 });
 
 /*---------- Client Invoices & Receipts ----------*/

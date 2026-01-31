@@ -179,6 +179,39 @@
                             <small class="form-text text-muted">Password will be encrypted</small>
                         </div>
                     </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="d-block">Map to Visa Documents</label>
+                            <div class="eoi-doc-buttons mt-2">
+                                <button type="button" class="btn btn-outline-primary btn-sm eoi-map-doc-btn" data-visa-category="EOI Summary" title="Open EOI Summary in Visa Documents">
+                                    <i class="fas fa-file-alt"></i> EOI Summary
+                                </button>
+                                <button type="button" class="btn btn-outline-primary btn-sm eoi-map-doc-btn" data-visa-category="Points Summary" title="Open Points Summary in Visa Documents">
+                                    <i class="fas fa-calculator"></i> Points Summary
+                                </button>
+                                <button type="button" class="btn btn-outline-primary btn-sm eoi-map-doc-btn" data-visa-category="ROI Draft" title="Open ROI Draft in Visa Documents">
+                                    <i class="fas fa-file-pdf"></i> ROI Draft
+                                </button>
+                            </div>
+                            <small class="form-text text-muted d-block mt-1">Click a button to open the matching category in the <strong>Visa Documents</strong> tab.</small>
+                            <div class="eoi-map-help mt-2">
+                                <button type="button" class="btn btn-link btn-sm p-0 text-info" data-toggle="collapse" data-target="#eoi-map-help-collapse" aria-expanded="false">
+                                    <i class="fas fa-question-circle"></i> How do I add or map documents?
+                                </button>
+                                <div class="collapse mt-1" id="eoi-map-help-collapse">
+                                    <div class="small text-muted border rounded p-2 bg-light">
+                                        <strong>To map documents to these buttons:</strong>
+                                        <ol class="mb-0 pl-3">
+                                            <li>Click any button above to go to the <strong>Visa Documents</strong> tab.</li>
+                                            <li><strong>One EOI:</strong> Create categories named exactly <strong>EOI Summary</strong>, <strong>Points Summary</strong>, <strong>ROI Draft</strong> (Add Category if needed).</li>
+                                            <li><strong>Two or more EOIs:</strong> Create <em>per-EOI</em> categories so the right documents attach to the right EOI: name them <strong>EOI Summary - E0121253652</strong>, <strong>Points Summary - E0121253652</strong>, <strong>ROI Draft - E0121253652</strong> (use the actual EOI number). Repeat for each EOI (e.g. … - E0121253653). When you send the confirmation email for an EOI, only documents from that EOI’s categories are attached.</li>
+                                            <li>Open each category (subtab) and add documents via <strong>Add Checklist</strong>, <strong>Bulk Upload</strong>, or drag-and-drop.</li>
+                                        </ol>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="form-actions">
@@ -192,6 +225,16 @@
                             style="display:none;">
                         <i class="fas fa-trash"></i> Delete
                     </button>
+                </div>
+
+                {{-- Workflow Section - Compact Version inside form --}}
+                <div id="workflow-section-compact" style="display:none; margin-top: 20px; padding-top: 20px; border-top: 2px solid #e0e0e0;">
+                    <h4 style="font-size: 16px; margin-bottom: 15px; color: #333;">
+                        <i class="fas fa-tasks"></i> Workflow & Client Confirmation
+                    </h4>
+                    <div id="workflow-content-compact">
+                        <!-- Workflow content will be loaded dynamically -->
+                    </div>
                 </div>
             </form>
         </div>
@@ -327,6 +370,21 @@
 
 .checkbox-inline {
     margin-right: 15px;
+}
+
+/* Map to Visa Documents buttons – solid colours for visibility on light background */
+.eoi-doc-buttons .eoi-map-doc-btn {
+    background-color: #0d6efd;
+    color: #fff;
+    border: 1px solid #0a58ca;
+}
+.eoi-doc-buttons .eoi-map-doc-btn:hover {
+    background-color: #0b5ed7;
+    color: #fff;
+    border-color: #0a58ca;
+}
+.eoi-doc-buttons .eoi-map-doc-btn:focus {
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.5);
 }
 
 .form-actions {
@@ -541,6 +599,160 @@
 
 .form-group {
     position: relative;
+}
+
+/* Workflow Section Styles - Compact Version */
+.workflow-box {
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 12px 15px;
+    margin-bottom: 12px;
+}
+
+.workflow-box h5 {
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.workflow-box p {
+    font-size: 13px;
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.workflow-box.success {
+    background: #d4edda;
+    border-color: #28a745;
+}
+
+.workflow-box.warning {
+    background: #fff3cd;
+    border-color: #ffc107;
+}
+
+.workflow-box.danger {
+    background: #f8d7da;
+    border-color: #dc3545;
+}
+
+.workflow-box.info {
+    background: #d1ecf1;
+    border-color: #17a2b8;
+}
+
+.workflow-detail {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 12px;
+}
+
+.workflow-detail strong {
+    min-width: 100px;
+    font-size: 12px;
+}
+
+.workflow-actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.workflow-actions .btn {
+    font-size: 12px;
+    padding: 5px 12px;
+}
+
+.amendment-notes {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 10px;
+    margin-top: 8px;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.amendment-notes strong {
+    font-size: 12px;
+}
+
+.workflow-timeline {
+    margin-top: 20px;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 40px;
+    padding-bottom: 20px;
+    border-left: 2px solid #e0e0e0;
+}
+
+.timeline-item:last-child {
+    border-left-color: transparent;
+    padding-bottom: 0;
+}
+
+.timeline-icon {
+    position: absolute;
+    left: -10px;
+    top: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid #007bff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+}
+
+.timeline-item.success .timeline-icon {
+    border-color: #28a745;
+    color: #28a745;
+}
+
+.timeline-item.warning .timeline-icon {
+    border-color: #ffc107;
+    color: #ffc107;
+}
+
+.timeline-item.danger .timeline-icon {
+    border-color: #dc3545;
+    color: #dc3545;
+}
+
+.timeline-content {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 12px;
+}
+
+.timeline-content h5 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.timeline-content p {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.timeline-content small {
+    font-size: 12px;
+    color: #999;
 }
 </style>
 

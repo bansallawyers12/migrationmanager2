@@ -5,6 +5,8 @@ namespace App\Http\Controllers\CRM;
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use App\Models\ClientEoiReference;
+use App\Models\Document;
+use App\Models\VisaDocumentType;
 use App\Models\ActivitiesLog;
 use App\Services\PointsService;
 use App\Traits\ClientAuthorization;
@@ -13,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
@@ -543,8 +546,19 @@ class EoiRoiSheetController extends Controller
             $eoi->client_confirmation_status = 'pending';
             $eoi->save();
 
+            // Get EOI/Points/ROI visa documents to attach (per-EOI or shared)
+            $attachmentsData = $this->getEoiRelatedAttachments($eoi->client, $eoi);
+            $attachmentLabels = $attachmentsData['labels'];
+            $attachments = $attachmentsData['attachments'];
+
             // Send email
-            Mail::to($eoi->client->email)->send(new EoiConfirmationMail($eoi, $eoi->client, $token));
+            Mail::to($eoi->client->email)->send(new EoiConfirmationMail(
+                $eoi,
+                $eoi->client,
+                $token,
+                $attachments,
+                $attachmentLabels
+            ));
 
             // Log activity
             $this->logActivity(
@@ -567,6 +581,108 @@ class EoiRoiSheetController extends Controller
             ]);
             return response()->json(['success' => false, 'message' => 'Error sending confirmation email'], 500);
         }
+    }
+
+    /**
+     * Get visa documents from EOI Summary, Points Summary, ROI Draft categories for email attachment.
+     * Prefers per-EOI categories (e.g. "EOI Summary - E0121253652") when present; otherwise shared.
+     *
+     * @return array{attachments: array<int, array{data: string, name: string, mime: string}>, labels: array<int, string>}
+     */
+    protected function getEoiRelatedAttachments(Admin $client, ClientEoiReference $eoiReference): array
+    {
+        $eoiNumber = $eoiReference->EOI_number ?? '';
+        $bases = ['EOI Summary', 'Points Summary', 'ROI Draft'];
+
+        $categoryIds = [];
+        foreach ($bases as $base) {
+            $perEoiTitle = $eoiNumber ? ($base . ' - ' . $eoiNumber) : null;
+            $perEoi = $perEoiTitle ? VisaDocumentType::where('status', 1)->where('title', $perEoiTitle)
+                ->where(function ($q) use ($client) {
+                    $q->whereNull('client_id')->orWhere('client_id', $client->id);
+                })->first() : null;
+            $shared = VisaDocumentType::where('status', 1)->where('title', $base)
+                ->where(function ($q) use ($client) {
+                    $q->whereNull('client_id')->orWhere('client_id', $client->id);
+                })->first();
+            $chosen = $perEoi ?? $shared;
+            if ($chosen) {
+                $categoryIds[] = $chosen->id;
+            }
+        }
+
+        if (empty($categoryIds)) {
+            return ['attachments' => [], 'labels' => []];
+        }
+
+        $categories = VisaDocumentType::whereIn('id', $categoryIds)->pluck('title', 'id')->toArray();
+        $documents = Document::where('client_id', $client->id)
+            ->where('doc_type', 'visa')
+            ->whereIn('folder_name', $categoryIds)
+            ->whereNull('not_used_doc')
+            ->where('type', 'client')
+            ->whereNotNull('myfile')
+            ->orderBy('folder_name')
+            ->orderBy('created_at')
+            ->get();
+
+        $attachments = [];
+        $labelsUsed = [];
+
+        foreach ($documents as $doc) {
+            $categoryTitle = $categories[$doc->folder_name] ?? 'Document';
+            if (!in_array($categoryTitle, $labelsUsed, true)) {
+                $labelsUsed[] = $categoryTitle;
+            }
+
+            $s3Key = null;
+            if (!empty($doc->myfile) && (str_starts_with($doc->myfile, 'http'))) {
+                $path = parse_url($doc->myfile, PHP_URL_PATH);
+                if ($path) {
+                    $s3Key = ltrim(urldecode($path), '/');
+                }
+            }
+            if (empty($s3Key) && !empty($doc->myfile_key)) {
+                $s3Key = $client->id . '/visa/' . $doc->myfile_key;
+            }
+            if (empty($s3Key)) {
+                continue;
+            }
+
+            try {
+                if (!Storage::disk('s3')->exists($s3Key)) {
+                    Log::warning('EOI attachment: S3 file not found', ['key' => $s3Key, 'doc_id' => $doc->id]);
+                    continue;
+                }
+                $data = Storage::disk('s3')->get($s3Key);
+            } catch (\Throwable $e) {
+                Log::warning('EOI attachment: failed to get S3 file', ['key' => $s3Key, 'error' => $e->getMessage()]);
+                continue;
+            }
+
+            $ext = strtolower($doc->filetype ?? pathinfo($doc->myfile_key ?? '', PATHINFO_EXTENSION) ?: 'pdf');
+            $mimeMap = [
+                'pdf' => 'application/pdf',
+                'doc' => 'application/msword',
+                'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'xls' => 'application/vnd.ms-excel',
+                'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'jpg' => 'image/jpeg',
+                'jpeg' => 'image/jpeg',
+                'png' => 'image/png',
+            ];
+            $mime = $mimeMap[$ext] ?? 'application/octet-stream';
+
+            $fileName = $doc->file_name ?: ('document_' . $doc->id);
+            $displayName = $categoryTitle . ' - ' . $fileName . (str_contains($fileName, '.') ? '' : '.' . $ext);
+            $attachments[] = [
+                'data' => $data,
+                'name' => $displayName,
+                'mime' => $mime,
+            ];
+        }
+
+        return ['attachments' => $attachments, 'labels' => $labelsUsed];
     }
 
     /**

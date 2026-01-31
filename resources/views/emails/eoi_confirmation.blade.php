@@ -41,19 +41,29 @@
             border-bottom: 2px solid #e0e0e0;
             padding-bottom: 8px;
         }
-        .detail-row {
-            display: flex;
-            padding: 10px 0;
-            border-bottom: 1px solid #f0f0f0;
+        .eoi-info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 0;
         }
-        .detail-label {
+        .eoi-info-table thead tr {
+            background-color: #667eea;
+            color: #ffffff;
+        }
+        .eoi-info-table th {
+            padding: 12px 10px;
+            text-align: left;
             font-weight: 600;
-            width: 180px;
-            color: #555;
+            font-size: 14px;
+            border: 1px solid #5a67d8;
         }
-        .detail-value {
-            flex: 1;
+        .eoi-info-table tbody td {
+            padding: 12px 10px;
+            border: 1px solid #e0e0e0;
             color: #333;
+        }
+        .eoi-info-table tbody tr {
+            background-color: #f8f9fa;
         }
         .button-container {
             text-align: center;
@@ -134,6 +144,67 @@
             margin-top: 10px;
             padding: 0 10px;
         }
+        .warning-box {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 12px 15px;
+            margin-bottom: 12px;
+            border-radius: 4px;
+        }
+        .warning-box p {
+            margin: 0;
+            color: #721c24;
+            display: flex;
+            align-items: start;
+            line-height: 1.5;
+        }
+        .warning-icon {
+            font-size: 18px;
+            margin-right: 8px;
+            flex-shrink: 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        thead tr {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+        }
+        th.points-col {
+            width: 80px;
+            text-align: center;
+        }
+        tbody tr {
+            border-bottom: 1px solid #e9ecef;
+        }
+        td {
+            padding: 10px;
+            color: #495057;
+        }
+        td.category {
+            font-weight: 500;
+        }
+        td.details {
+            color: #6c757d;
+        }
+        td.points {
+            text-align: center;
+            font-weight: 600;
+        }
+        td.points.positive {
+            color: #28a745;
+        }
+        td.points.zero {
+            color: #6c757d;
+        }
     </style>
 </head>
 <body>
@@ -142,53 +213,99 @@
             <h1>EOI Details Confirmation</h1>
         </div>
 
+        @php
+            $formatDetail = function ($detail, $fallback = 'N/A') {
+                if ($detail === null || $detail === '') {
+                    return $fallback;
+                }
+                if (is_array($detail)) {
+                    $keys = array_keys($detail);
+                    $isAssoc = $keys !== range(0, count($keys) - 1);
+                    if ($isAssoc) {
+                        return json_encode($detail);
+                    }
+                    $filtered = array_filter($detail, function ($value) {
+                        return $value !== null && $value !== '';
+                    });
+                    return implode(', ', $filtered);
+                }
+                return $detail;
+            };
+        @endphp
+
         <p>Dear {{ $client->first_name }} {{ $client->last_name }},</p>
 
         <p>Please review and confirm the following Expression of Interest (EOI) details we have on record for you:</p>
 
         <div class="section">
             <h2>EOI Information</h2>
-            <div class="detail-row">
-                <div class="detail-label">EOI Number:</div>
-                <div class="detail-value">{{ $eoiReference->EOI_number ?? 'N/A' }}</div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">Subclass(es):</div>
-                <div class="detail-value">{{ $eoiReference->formatted_subclasses }}</div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">State(s):</div>
-                <div class="detail-value">{{ $eoiReference->formatted_states }}</div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">Occupation:</div>
-                <div class="detail-value">{{ $eoiReference->EOI_occupation ?? 'N/A' }}</div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">Points:</div>
-                <div class="detail-value">{{ $eoiReference->EOI_point ?? 'N/A' }}</div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">Submission Date:</div>
-                <div class="detail-value">
-                    @if($eoiReference->EOI_submission_date)
-                        {{ $eoiReference->EOI_submission_date->format('d/m/Y') }}
-                    @else
-                        N/A
-                    @endif
-                </div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">Status:</div>
-                <div class="detail-value">{{ ucfirst($eoiReference->eoi_status ?? 'N/A') }}</div>
-            </div>
+            <table class="eoi-info-table">
+                <thead>
+                    <tr>
+                        <th>EOI Number</th>
+                        <th>Subclass(es)</th>
+                        <th>State(s)</th>
+                        <th>Occupation</th>
+                        <th>Points</th>
+                        <th>Submission Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{{ $eoiReference->EOI_number ?? 'N/A' }}</td>
+                        <td>{{ $eoiReference->formatted_subclasses }}</td>
+                        <td>{{ $eoiReference->formatted_states }}</td>
+                        <td>{{ $eoiReference->EOI_occupation ?? 'N/A' }}</td>
+                        <td><strong>{{ $eoiReference->EOI_point ?? 'N/A' }}</strong></td>
+                        <td>
+                            @if($eoiReference->EOI_submission_date)
+                                {{ $eoiReference->EOI_submission_date->format('d/m/Y') }}
+                            @else
+                                N/A
+                            @endif
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
 
-        <div class="points-total-box">
-            <div class="points-total-number">{{ $eoiReference->EOI_point ?? '0' }}</div>
-            <div class="points-total-label">Current total</div>
+        @if(!empty($attachmentLabels))
+        <div class="section">
+            <p><strong>Attachments for your reference:</strong> Please find the following document(s) attached to this email: {{ implode(', ', $attachmentLabels) }}.</p>
         </div>
-        <p class="points-info-text">Points calculated based on current client data from Personal Details, Qualifications, Experience, and Test Scores sections.</p>
+        @endif
+
+        {{-- Warnings Section --}}
+        @if(!empty($pointsData['warnings']))
+        <div class="section">
+            <h2 style="color: #dc3545;">Upcoming Changes</h2>
+            @foreach($pointsData['warnings'] as $warning)
+            <div class="warning-box">
+                <p>
+                    <span class="warning-icon">&#9888;</span>
+                    <span>{{ is_array($warning) ? ($warning['message'] ?? '') : $warning }}</span>
+                </p>
+            </div>
+            @endforeach
+        </div>
+        @endif
+
+        <div class="section">
+            <p>Please review all the details carefully and let us know if any adjustments are required.</p>
+            <p><strong>Kindly note the following points related to EOI:</strong></p>
+            <ul>
+                <li>In most instances, work experience points can only be claimed after the completion of your relevant education.</li>
+                <li>To claim experience points, you must be working in your nominated or closely related occupation for at least 20 hours per week for at least 1 year.</li>
+                <li>You can only claim points for work completed on a Substantive visa or BVA or BVB, which allows you to work. Work completed on BVC or BVE cannot be used to claim experience points.</li>
+                <li>If your nominated occupation is a trade occupation, you are not eligible to receive points for the Professional Year.</li>
+                <li>Points for regional studies can be claimed only if you have both studied and lived in the designated regional area throughout your course with no distance education.</li>
+                <li>Experience gained during any period where you did not hold work rights, or if you worked in excess of your permitted work rights, cannot be counted towards your experience points.</li>
+                <li>We have prepared the EOI based on the information provided and may not verify all your claims or points.</li>
+            </ul>
+            <p><strong>Additional requirement for State Nomination:</strong></p>
+            <p>We require that your English test and Skills Assessment each have at least 12 weeks validity remaining at all times.</p>
+            <p>Please ensure that you have provided us with all Points claimed work experience details strictly in accordance with the above parameters.</p>
+        </div>
 
         <div class="important-notice">
             <p><strong>Important:</strong> Please carefully review all the information above. If everything is correct, click the "Confirm Details" button. If you need to make any changes, click "Request Amendment" and provide details.</p>
