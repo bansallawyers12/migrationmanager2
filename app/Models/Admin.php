@@ -246,6 +246,24 @@ class Admin extends Authenticatable
     }
 
     /**
+     * Get the qualifications for this client
+     * Used for education points calculation
+     */
+    public function qualifications(): HasMany
+    {
+        return $this->hasMany(\App\Models\ClientQualification::class, 'client_id');
+    }
+
+    /**
+     * Get the work experiences for this client
+     * Used for employment points calculation
+     */
+    public function experiences(): HasMany
+    {
+        return $this->hasMany(\App\Models\ClientExperience::class, 'client_id');
+    }
+
+    /**
      * Get the relationships (partner, children, parents, etc.) for this client
      * Used for family member information
      */
