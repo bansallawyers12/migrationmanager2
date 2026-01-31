@@ -1634,8 +1634,8 @@ class ClientPortalAppointmentController extends BaseController
                 return $this->sendError('This appointment does not require payment', [], 422);
             }
 
-            // Check if appointment is already paid
-            if ($appointment->is_paid || $appointment->payment_status === 'completed') {
+            // Check if appointment is already paid (both is_paid and payment_status completed)
+            if ($appointment->is_paid && $appointment->payment_status === 'completed') {
                 return $this->sendError('This appointment has already been paid', [], 422);
             }
 

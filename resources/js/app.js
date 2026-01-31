@@ -16,14 +16,18 @@ Alpine.start();
 if (import.meta.env.VITE_REVERB_APP_KEY) {
     try {
         window.Pusher = Pusher;
-        
+        const wsHost = import.meta.env.VITE_REVERB_HOST || window.location.hostname;
+        // Use ws (not wss) for localhost so Reverb connection works without TLS
+        const useTLS = (wsHost !== 'localhost' && wsHost !== '127.0.0.1') &&
+            ((import.meta.env.VITE_REVERB_SCHEME ?? 'http') === 'https');
+
         window.Echo = new Echo({
             broadcaster: 'reverb',
             key: import.meta.env.VITE_REVERB_APP_KEY,
-            wsHost: import.meta.env.VITE_REVERB_HOST || window.location.hostname,
+            wsHost,
             wsPort: import.meta.env.VITE_REVERB_PORT ?? 8080,
             wssPort: import.meta.env.VITE_REVERB_PORT ?? 8080,
-            forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'http') === 'https',
+            forceTLS: useTLS,
             enabledTransports: ['ws', 'wss'],
             authEndpoint: '/broadcasting/auth',
             auth: {

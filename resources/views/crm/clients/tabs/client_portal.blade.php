@@ -2816,6 +2816,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const reverbHost = '{{ config("broadcasting.connections.reverb.options.host", "127.0.0.1") }}';
     const reverbPort = {{ config("broadcasting.connections.reverb.options.port", 8080) }};
     const reverbScheme = '{{ config("broadcasting.connections.reverb.options.scheme", "http") }}';
+    // Use ws (not wss) for localhost so Reverb works without TLS
+    const reverbUseTLS = reverbScheme === 'https' && reverbHost !== 'localhost' && reverbHost !== '127.0.0.1';
     
     // Debug logging
     console.log('Messages Tab Initialization:', {
@@ -3063,8 +3065,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const pusherConfig = {
                 cluster: pusherCluster,
-                forceTLS: reverbScheme === 'https',
-                encrypted: reverbScheme === 'https',
+                forceTLS: reverbUseTLS,
+                encrypted: reverbUseTLS,
                 authEndpoint: '/broadcasting/auth',
                 auth: {
                     headers: {
