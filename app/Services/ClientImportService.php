@@ -49,18 +49,31 @@ class ClientImportService
             $clientData = $importData['client'];
 
             // Check for duplicate email if skip_duplicates is enabled
-            if ($skipDuplicates && !empty($clientData['email'])) {
-                $existingClient = Admin::where('email', $clientData['email'])
-                    ->where('role', 7)
-                    ->first();
+            if ($skipDuplicates) {
+                $email = isset($clientData['email']) ? trim((string) $clientData['email']) : '';
+                $phone = isset($clientData['phone']) ? trim((string) $clientData['phone']) : '';
 
-                if ($existingClient) {
-                    DB::rollBack();
-                    return [
-                        'success' => false,
-                        'client_id' => null,
-                        'message' => 'Client with email ' . $clientData['email'] . ' already exists. Import skipped.'
-                    ];
+                $query = Admin::where('role', 7);
+                if ($email !== '') {
+                    $query->where('email', $email);
+                }
+                if ($phone !== '') {
+                    $query->orWhere('phone', $phone);
+                }
+
+                if ($email !== '' || $phone !== '') {
+                    $existingClient = $query->first();
+                    if ($existingClient) {
+                        DB::rollBack();
+                        $match = $email !== '' && $existingClient->email === $email
+                            ? 'email ' . $email
+                            : 'phone ' . $phone;
+                        return [
+                            'success' => false,
+                            'client_id' => null,
+                            'message' => 'Client with same ' . $match . ' already exists. Import skipped.'
+                        ];
+                    }
                 }
             }
 

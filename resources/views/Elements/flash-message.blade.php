@@ -16,7 +16,8 @@
 	<button type="button" class="close" data-dismiss="alert" aria-label="Close">☓</button>
 	<strong>{{ $message }}</strong>
 </div>
-@endif
+@endif
+
 @if ($message = Session::get('info'))
 <div class="alert alert-info alert-dismissible fade show">
 	<button type="button" class="close" data-dismiss="alert" aria-label="Close">☓</button>
