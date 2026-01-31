@@ -45,6 +45,15 @@
 .fc-event-container .fc-h-event {
     cursor: pointer;
 }
+.fc-event a.fc-event-title-link {
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+}
+.fc-event a.fc-event-title-link:hover {
+    text-decoration: underline;
+    color: inherit;
+}
 .fc-more-popover {
     overflow-y: scroll;
     max-height: 50%;
@@ -225,7 +234,17 @@ function initializeCalendar() {
                 right: "dayGridMonth,timeGridWeek,timeGridDay,listMonth",
             },
             events: events,
+            eventContent: function(arg) {
+                var url = arg.event.extendedProps.url || '#';
+                var title = arg.event.title;
+                return {
+                    html: '<a href="' + url + '" class="fc-event-title-link" title="View client profile">' + title + '</a>'
+                };
+            },
             eventClick: function(info) {
+                if (info.jsEvent.target.closest && info.jsEvent.target.closest('a.fc-event-title-link')) {
+                    return; // Let the link open the client profile
+                }
                 console.log('Event clicked:', info);
                 var details = document.getElementById('event-details-modal');
                 if (!details) return;

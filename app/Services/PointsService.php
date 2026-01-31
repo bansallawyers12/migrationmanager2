@@ -69,6 +69,28 @@ class PointsService
     }
 
     /**
+     * Get partner points only (e.g. for EOI/ROI sheet).
+     * Single / no partner = 10 pts; partner citizen/PR = 10; partner with skills = 10; partner English only = 5; else 0.
+     *
+     * @param Admin $client
+     * @return int|null Points value or null on error
+     */
+    public function getPartnerPoints(Admin $client): ?int
+    {
+        try {
+            $referenceDate = $this->getInvitationDate($client);
+            $partnerData = $this->calculatePartnerPoints($client, $referenceDate);
+            return $partnerData['points'] ?? null;
+        } catch (\Throwable $e) {
+            Log::warning('PointsService::getPartnerPoints failed', [
+                'client_id' => $client->id,
+                'error' => $e->getMessage(),
+            ]);
+            return null;
+        }
+    }
+
+    /**
      * Perform the actual points calculation
      */
     protected function calculatePoints(Admin $client, ?string $selectedSubclass, int $monthsAhead): array

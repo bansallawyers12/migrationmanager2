@@ -254,7 +254,6 @@ class EoiRoiSheetController extends Controller
 
         // Map sort fields to actual columns (use raw SQL for eoi mixed-case columns so PostgreSQL preserves case)
         $sortableFieldsRaw = [
-            'matter_id' => 'latest_eoi_matter.client_unique_matter_no',
             'eoi_number' => 'eoi."EOI_number"',
             'client_name' => 'admins.first_name',
             'occupation' => 'eoi."EOI_occupation"',
@@ -272,35 +271,19 @@ class EoiRoiSheetController extends Controller
     }
 
     /**
-     * Calculate partner points for a client
-     * 
+     * Calculate partner points for a client (Single = 10, partner citizen/PR = 10, partner skills = 10, partner English = 5, else 0).
+     *
      * @param int $clientId
      * @return int|null
      */
     protected function calculatePartnerPoints($clientId)
     {
         try {
-            // Load client with relationships needed for points calculation
             $client = Admin::find($clientId);
-            
             if (!$client) {
                 return null;
             }
-
-            // Load partner data
-            $partner = \App\Models\ClientSpouseDetail::where('client_id', $clientId)->first();
-            
-            if (!$partner) {
-                return null;
-            }
-
-            // For now, return a placeholder or calculate using PointsService
-            // This can be optimized later if performance issues arise
-            // $points = $this->pointsService->calculatePartnerPoints($client);
-            
-            // Placeholder: return null for now (will be "—" in view)
-            return null;
-
+            return $this->pointsService->getPartnerPoints($client);
         } catch (\Exception $e) {
             Log::error('Error calculating partner points', [
                 'client_id' => $clientId,

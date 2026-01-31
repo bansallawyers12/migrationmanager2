@@ -62,10 +62,15 @@
         border-bottom: 2px solid #667eea;
     }
 
-    /* First column (Matter ID) – wider so header and IDs are fully visible */
-    .eoi-roi-table th:first-child,
-    .eoi-roi-table td:first-child {
-        min-width: 220px;
+    /* First column (EOI ID) – fit content (e.g. E0039757088). Override listing-container.css 40px rule. */
+    .listing-container table.eoi-roi-table th:first-child,
+    .listing-container table.eoi-roi-table td:first-child {
+        width: 140px !important;
+        min-width: 140px !important;
+        max-width: none !important;
+        white-space: nowrap;
+        overflow: visible !important;
+        text-overflow: clip !important;
     }
     
     .eoi-roi-table td {
@@ -415,7 +420,6 @@
                             <table class="table table-bordered table-hover eoi-roi-table" id="eoi-roi-sheet-table">
                             <thead>
                                 <tr>
-                                    <th class="sortable {{ request('sort') == 'matter_id' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="matter_id">Matter ID</th>
                                     <th class="sortable {{ request('sort') == 'eoi_number' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="eoi_number">EOI ID</th>
                                     <th class="sortable {{ request('sort') == 'client_name' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="client_name">Client Name</th>
                                     <th class="sortable {{ request('sort') == 'occupation' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="occupation">Nominated Occupation</th>
@@ -436,7 +440,7 @@
                             <tbody>
                                 @if($rows->isEmpty())
                                     <tr>
-                                        <td colspan="16" class="text-center text-muted py-4">
+                                        <td colspan="15" class="text-center text-muted py-4">
                                             <i class="fas fa-info-circle"></i> No EOI/ROI records found matching your criteria.
                                         </td>
                                     </tr>
@@ -459,7 +463,6 @@
                                             $eoiRecord = \App\Models\ClientEoiReference::find($row->eoi_id);
                                         @endphp
                                         <tr>
-                                            <td><a href="{{ $eoiPageUrl }}" class="eoi-link">{{ $row->matter_id ?? '—' }}</a></td>
                                             <td><a href="{{ $eoiPageUrl }}" class="eoi-link">{{ $row->EOI_number ?? '—' }}</a></td>
                                             <td><a href="{{ $eoiPageUrl }}" class="eoi-link">{{ $row->first_name }} {{ $row->last_name }}</a></td>
                                             <td>{{ $row->EOI_occupation ?? '—' }}</td>
