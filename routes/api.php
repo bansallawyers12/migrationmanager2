@@ -11,6 +11,7 @@ use App\Http\Controllers\API\ClientPortalDashboardController;
 use App\Http\Controllers\API\ClientPortalDocumentController;
 use App\Http\Controllers\API\ClientPortalWorkflowController;
 use App\Http\Controllers\API\ClientPortalMessageController;
+use App\Http\Controllers\API\ClientPortalNotificationController;
 use App\Http\Controllers\API\ClientPortalPersonalDetailsController;
 use App\Http\Controllers\API\ClientPortalCommonListingController;
 use App\Http\Controllers\API\ClientPortalAppointmentController;
@@ -106,6 +107,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/messages/unread-count', [ClientPortalMessageController::class, 'getUnreadCount']);
     Route::post('/messages/{id}/read', [ClientPortalMessageController::class, 'markAsRead']);
     Route::get('/messages/{id}', [ClientPortalMessageController::class, 'getMessageDetails']);
+
+    // Notifications routes (client portal)
+    Route::get('/notifications', [ClientPortalNotificationController::class, 'index']);
+    Route::get('/notifications/{id}', [ClientPortalNotificationController::class, 'show']);
+    Route::post('/notifications/{id}/read', [ClientPortalNotificationController::class, 'markAsRead']);
 
     Route::post('/payments/create-payment-intent', function (Request $request) {
         $validated = $request->validate([
