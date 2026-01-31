@@ -6870,9 +6870,19 @@ class ClientsController extends Controller
     public function import(Request $request)
     {
         try {
-            // Validate file upload
+            // Validate file upload (use extension check; mimes:json often fails when server reports .json as text/plain)
             $request->validate([
-                'import_file' => 'required|file|mimes:json|max:10240', // Max 10MB
+                'import_file' => [
+                    'required',
+                    'file',
+                    'max:10240', // 10MB
+                    function ($attribute, $value, $fail) {
+                        $ext = strtolower($value->getClientOriginalExtension());
+                        if ($ext !== 'json') {
+                            $fail('The file must be a JSON file (.json).');
+                        }
+                    },
+                ],
             ]);
 
             // Read and parse JSON file

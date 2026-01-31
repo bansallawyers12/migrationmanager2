@@ -281,6 +281,7 @@ class ClientImportService
                         'followup_date' => $this->parseDateTime($activityData['followup_date'] ?? null),
                         'task_group' => $activityData['task_group'] ?? null,
                         'task_status' => $activityData['task_status'] ?? 0,
+                        'pin' => $activityData['pin'] ?? 0,
                     ]);
                 }
             }
@@ -416,6 +417,20 @@ class ClientImportService
         $id = $visaData['visa_type'] ?? null;
         if ($id !== null && $id !== '' && (is_int($id) || (is_string($id) && is_numeric($id)))) {
             return is_numeric($id) ? (int) $id : $id;
+        }
+
+        $label = $visaData['visa_type'] ?? null;
+        if (is_string($label)) {
+            $label = trim($label);
+            if ($label !== '') {
+                $labelLower = mb_strtolower($label);
+                $matter = Matter::whereRaw('LOWER(title) = ?', [$labelLower])
+                    ->orWhereRaw('LOWER(nick_name) = ?', [$labelLower])
+                    ->first();
+                if ($matter) {
+                    return $matter->id;
+                }
+            }
         }
 
         return null;
