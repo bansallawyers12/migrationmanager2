@@ -95,11 +95,27 @@
 
 /* Comments cell – warnings text */
 .eoi-comments-cell {
-    max-width: 280px;
+    min-width: 300px;
+    max-width: 400px;
     font-size: 12px;
     line-height: 1.4;
     word-wrap: break-word;
     white-space: normal;
+}
+
+.eoi-comments-cell .warning-text {
+    color: #dc3545;
+    font-weight: 500;
+}
+
+/* Highlight rows with warnings */
+.eoi-roi-table tbody tr.has-warning {
+    background-color: #fff5f5 !important;
+    border-left: 3px solid #dc3545;
+}
+
+.eoi-roi-table tbody tr.has-warning:hover {
+    background-color: #ffe5e5 !important;
 }
 
 /* Filters panel */
@@ -462,7 +478,7 @@
                                             // Fetch full EOI record for confirmation workflow data
                                             $eoiRecord = \App\Models\ClientEoiReference::find($row->eoi_id);
                                         @endphp
-                                        <tr>
+                                        <tr class="{{ !empty($row->warnings_text) ? 'has-warning' : '' }}">
                                             <td><a href="{{ $eoiPageUrl }}" class="eoi-link">{{ $row->EOI_number ?? '—' }}</a></td>
                                             <td><a href="{{ $eoiPageUrl }}" class="eoi-link">{{ $row->first_name }} {{ $row->last_name }}</a></td>
                                             <td>{{ $row->EOI_occupation ?? '—' }}</td>
@@ -486,7 +502,7 @@
                                             </td>
                                             <td class="eoi-comments-cell" title="{{ $row->warnings_text ?? '' }}">
                                                 @if(!empty($row->warnings_text))
-                                                    <span class="text-muted small">{{ $row->warnings_text }}</span>
+                                                    <span class="warning-text">{{ $row->warnings_text }}</span>
                                                 @else
                                                     <span class="text-muted">—</span>
                                                 @endif
