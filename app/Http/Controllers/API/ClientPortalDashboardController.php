@@ -595,15 +595,10 @@ class ClientPortalDashboardController extends Controller
             $search = $request->get('search', '');
             $type = $request->get('type', ''); // Note, Action, Document, Email, Activity
 
-            // Build query for recent activities (Client Portal only: source=client_portal or legacy client-originated)
+            // Build query for recent activities (Client Portal only: source = client_portal OR client_portal_web)
             $query = DB::table('activities_logs')
                 ->where('client_id', $clientId)
-                ->where(function ($q) use ($clientId) {
-                    $q->where('source', 'client_portal')
-                        ->orWhere(function ($q2) use ($clientId) {
-                            $q2->whereNull('source')->where('created_by', $clientId);
-                        });
-                });
+                ->whereIn('source', ['client_portal', 'client_portal_web']);
 
             // Apply search filter
             if (!empty($search)) {
@@ -696,12 +691,7 @@ class ClientPortalDashboardController extends Controller
             // Get all activities for type counting (without pagination) – same Client Portal filter
             $allActivities = DB::table('activities_logs')
                 ->where('client_id', $clientId)
-                ->where(function ($q) use ($clientId) {
-                    $q->where('source', 'client_portal')
-                        ->orWhere(function ($q2) use ($clientId) {
-                            $q2->whereNull('source')->where('created_by', $clientId);
-                        });
-                })
+                ->whereIn('source', ['client_portal', 'client_portal_web'])
                 ->when(!empty($search), function($query) use ($search) {
                     $query->where(function($q) use ($search) {
                         $q->where('subject', 'LIKE', "%{$search}%")
@@ -1137,12 +1127,7 @@ class ClientPortalDashboardController extends Controller
     {
         $query = DB::table('activities_logs')
             ->where('client_id', $clientId)
-            ->where(function ($q) use ($clientId) {
-                $q->where('source', 'client_portal')
-                    ->orWhere(function ($q2) use ($clientId) {
-                        $q2->whereNull('source')->where('created_by', $clientId);
-                    });
-            });
+            ->whereIn('source', ['client_portal', 'client_portal_web']);
 
         $recentActivities = $query
             ->orderBy('updated_at', 'desc')
