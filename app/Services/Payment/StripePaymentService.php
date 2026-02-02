@@ -198,7 +198,7 @@ class StripePaymentService
             return [
                 'success' => false,
                 'data' => ['payment_id' => $payment->id ?? null],
-                'message' => 'Invalid payment request. Please check your payment details.',
+                'message' => $errorMessage,
             ];
 
         } catch (AuthenticationException $e) {
@@ -249,7 +249,7 @@ class StripePaymentService
             return [
                 'success' => false,
                 'data' => ['payment_id' => $payment->id ?? null],
-                'message' => 'Payment processing error. Please try again.',
+                'message' => $errorMessage,
             ];
 
         } catch (Exception $e) {
