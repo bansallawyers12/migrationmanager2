@@ -626,6 +626,7 @@ class ClientPortalDocumentController extends Controller
                     'subject' => $activitySubject,
                     'description' => 'Document uploaded via client portal',
                     'activity_type' => 'document',
+                    'source' => 'client_portal',
                     'created_at' => now(),
                     'updated_at' => now()
                 ]);

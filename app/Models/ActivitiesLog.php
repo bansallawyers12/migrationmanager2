@@ -32,6 +32,7 @@ class ActivitiesLog extends Authenticatable
 		'description',
 		'sms_log_id',
 		'activity_type',
+		'source',
 		'use_for',
 		'followup_date',
 		'task_group',

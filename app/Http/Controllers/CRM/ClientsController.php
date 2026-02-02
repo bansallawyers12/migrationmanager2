@@ -2830,7 +2830,8 @@ class ClientsController extends Controller
                             'use_for' => $actval->use_for,
                             'followup_date' => $actval->followup_date,
                             'task_group' => $actval->task_group,
-                            'task_status' => $actval->task_status
+                            'task_status' => $actval->task_status,
+                            'source' => $actval->source ?? null
                         ]
                     );
                 }

@@ -595,9 +595,15 @@ class ClientPortalDashboardController extends Controller
             $search = $request->get('search', '');
             $type = $request->get('type', ''); // Note, Action, Document, Email, Activity
 
-            // Build query for recent activities
+            // Build query for recent activities (Client Portal only: source=client_portal or legacy client-originated)
             $query = DB::table('activities_logs')
-                ->where('client_id', $clientId);
+                ->where('client_id', $clientId)
+                ->where(function ($q) use ($clientId) {
+                    $q->where('source', 'client_portal')
+                        ->orWhere(function ($q2) use ($clientId) {
+                            $q2->whereNull('source')->where('created_by', $clientId);
+                        });
+                });
 
             // Apply search filter
             if (!empty($search)) {
@@ -687,9 +693,15 @@ class ClientPortalDashboardController extends Controller
                 'Activity' => 0
             ];
 
-            // Get all activities for type counting (without pagination)
+            // Get all activities for type counting (without pagination) – same Client Portal filter
             $allActivities = DB::table('activities_logs')
                 ->where('client_id', $clientId)
+                ->where(function ($q) use ($clientId) {
+                    $q->where('source', 'client_portal')
+                        ->orWhere(function ($q2) use ($clientId) {
+                            $q2->whereNull('source')->where('created_by', $clientId);
+                        });
+                })
                 ->when(!empty($search), function($query) use ($search) {
                     $query->where(function($q) use ($search) {
                         $q->where('subject', 'LIKE', "%{$search}%")
@@ -1124,9 +1136,14 @@ class ClientPortalDashboardController extends Controller
     private function getRecentActivity($clientId)
     {
         $query = DB::table('activities_logs')
-            ->where('client_id', $clientId);
-            
-        
+            ->where('client_id', $clientId)
+            ->where(function ($q) use ($clientId) {
+                $q->where('source', 'client_portal')
+                    ->orWhere(function ($q2) use ($clientId) {
+                        $q2->whereNull('source')->where('created_by', $clientId);
+                    });
+            });
+
         $recentActivities = $query
             ->orderBy('updated_at', 'desc')
             ->limit(3)

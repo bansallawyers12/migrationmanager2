@@ -868,7 +868,7 @@ class ClientPortalController extends Controller
 				// Check if this is the last stage
 				$isLastStage = !WorkflowStage::where('id', '>', $nextStage->id)->exists();
 
-				// Log activity
+				// Log activity (Client Portal tab - website)
 				$comments = 'moved the stage from <b>' . $currentStage->name . '</b> to <b>' . $nextStage->name . '</b>';
 				
 				$activityLog = new ActivitiesLog;
@@ -881,6 +881,7 @@ class ClientPortalController extends Controller
 				// The existing code pattern for stage activities doesn't require use_for
 				$activityLog->task_status = 0;
 				$activityLog->pin = 0;
+				$activityLog->source = 'client_portal_web';
 				$activityLog->save();
 
 				return response()->json([
@@ -1447,6 +1448,19 @@ class ClientPortalController extends Controller
 
 		$saved = $obj->save();
 		if($saved){
+			// Log activity (Client Portal Documents tab - website)
+			DB::table('activities_logs')->insert([
+				'client_id' => $client_id,
+				'created_by' => Auth::user()->id,
+				'subject' => 'Added checklist in Client Portal (Documents tab)',
+				'description' => 'Checklist "' . $document_type . '" added via Client Portal tab (website) for application ID: ' . $app_id,
+				'task_status' => 0,
+				'pin' => 0,
+				'source' => 'client_portal_web',
+				'created_at' => now(),
+				'updated_at' => now()
+			]);
+
 			$applicationdocuments = \App\Models\ApplicationDocumentList::where('application_id', $app_id)->where('client_id', $client_id)->where('type', $type)->get();
 			$checklistdata = '<table class="table"><tbody>';
 			foreach($applicationdocuments as $applicationdocument){
@@ -1493,6 +1507,24 @@ class ClientPortalController extends Controller
 			  $imageData .= '<li><i class="fa fa-file"></i> '.$fileName.'</li>';
 			}
 		  }
+		}
+
+		// Log activity when at least one document was uploaded (Client Portal Documents tab - website)
+		if (!empty($imageData)) {
+			$appRecord = DB::table('applications')->where('id', $request->application_id)->first();
+			if ($appRecord && !empty($appRecord->client_id)) {
+				DB::table('activities_logs')->insert([
+					'client_id' => $appRecord->client_id,
+					'created_by' => Auth::user()->id,
+					'subject' => 'Uploaded document(s) to checklist in Client Portal (Documents tab)',
+					'description' => 'Document(s) uploaded via Client Portal tab (website) for application ID: ' . $request->application_id,
+					'task_status' => 0,
+					'pin' => 0,
+					'source' => 'client_portal_web',
+					'created_at' => now(),
+					'updated_at' => now()
+				]);
+			}
 		}
 
 		$doclists = \App\Models\ApplicationDocument::where('application_id',$request->application_id)->orderby('created_at','DESC')->get();
@@ -1810,6 +1842,24 @@ class ClientPortalController extends Controller
 				]);
 			
 			if ($updated) {
+				// Log activity (Client Portal Documents tab - website)
+				$doc = DB::table('application_documents')->where('id', $documentId)->first();
+				if ($doc) {
+					$app = DB::table('applications')->where('id', $doc->application_id)->first();
+					if ($app && !empty($app->client_id)) {
+						DB::table('activities_logs')->insert([
+							'client_id' => $app->client_id,
+							'created_by' => Auth::guard('admin')->id(),
+							'subject' => 'Approved document in Client Portal (Documents tab)',
+							'description' => 'Document approved via Client Portal tab (website) for document ID: ' . $documentId,
+							'task_status' => 0,
+							'pin' => 0,
+							'source' => 'client_portal_web',
+							'created_at' => now(),
+							'updated_at' => now()
+						]);
+					}
+				}
 				$response['status'] = true;
 				$response['message'] = 'Document approved successfully!';
 			} else {
@@ -1859,6 +1909,24 @@ class ClientPortalController extends Controller
 				->update($updateData);
 			
 			if ($updated) {
+				// Log activity (Client Portal Documents tab - website)
+				$doc = DB::table('application_documents')->where('id', $documentId)->first();
+				if ($doc) {
+					$app = DB::table('applications')->where('id', $doc->application_id)->first();
+					if ($app && !empty($app->client_id)) {
+						DB::table('activities_logs')->insert([
+							'client_id' => $app->client_id,
+							'created_by' => Auth::guard('admin')->id(),
+							'subject' => 'Rejected document in Client Portal (Documents tab)',
+							'description' => 'Document rejected via Client Portal tab (website) for document ID: ' . $documentId . (trim($rejectReason ?? '') !== '' ? '. Reason: ' . trim($rejectReason) : ''),
+							'task_status' => 0,
+							'pin' => 0,
+							'source' => 'client_portal_web',
+							'created_at' => now(),
+							'updated_at' => now()
+						]);
+					}
+				}
 				$response['status'] = true;
 				$response['message'] = 'Document rejected successfully!';
 			} else {
@@ -2183,6 +2251,19 @@ class ClientPortalController extends Controller
 					'recipient' => $recipientUser->full_name,
 					'is_read' => false,
 					'read_at' => null,
+					'created_at' => now(),
+					'updated_at' => now()
+				]);
+
+				// Create activity log (message sent from website Client Portal tab)
+				DB::table('activities_logs')->insert([
+					'client_id' => $clientId,
+					'created_by' => $senderId,
+					'subject' => 'Message sent to client',
+					'description' => 'Message sent from Client Portal tab (website) to client ' . $recipientUser->full_name . ' for matter ID: ' . $clientMatterId,
+					'task_status' => 0,
+					'pin' => 0,
+					'source' => 'client_portal_web',
 					'created_at' => now(),
 					'updated_at' => now()
 				]);
