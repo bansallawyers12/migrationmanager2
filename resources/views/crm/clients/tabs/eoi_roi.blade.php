@@ -273,7 +273,8 @@
                     <form id="eoi-compose-form" autocomplete="off">
                         @csrf
                         <input type="hidden" id="eoi-compose-eoi-id" value="">
-                        <input type="hidden" id="eoi-compose-client-id" value="{{ $fetchedData->id ?? '' }}">
+                        <input type="hidden" id="eoi-compose-client-id" value="">
+                        {{-- Client ID will be set dynamically by JavaScript --}}
                         
                         {{-- To Field (readonly) --}}
                         <div class="row">

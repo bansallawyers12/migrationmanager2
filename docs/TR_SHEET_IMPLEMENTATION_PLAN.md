@@ -294,14 +294,42 @@ Route::patch('/clients/sheets/tr/{trReferenceId}', [TrSheetController::class, 'u
 **Recommended: No standalone Rec Date or Last Date columns** — these dates are shown inside the **Checklist & follow-ups box** along with F1, F2, Call. This keeps the table compact and groups all date-related info in one place. If you prefer standalone columns for Rec Date and Last Date for easier sorting/filtering visibility, add them before the Checklist box (columns 6 and 7, shift Checklist box to column 8).
 
 - **Checklist & follow-ups (one box):** One combined cell/block per row containing:
-    - **Dates:** Rec Date, Last Date, Checklist sent (if different), Follow up 1, Follow up 2 (and optionally Call), e.g. `Rec: 13.01.2026 | Last: 09.02.2026 | F1: 27.11.2025 | F2: 20.12.2025` or a small card layout. Show "NP" for F2/Call when flag set.
-    - **Events:** Short list of recorded reminder events in the same box, e.g. "Reminder 1 email 27.11.2025", "Reminder 2 SMS 20.12.2025".
-    - **Buttons:**  
-      - After **checklist sent** date exists: "Reminder 1 – Email", "Reminder 1 – SMS".  
-      - After Reminder 1 has been sent (per logic): "Reminder 2 – Email", "Reminder 2 – SMS".  
+
+  **Visual layout (card style):**
+  ```
+  ┌────────────────────────────────────────────────────────────┐
+  │ 📅 Dates:                                                  │
+  │   Rec: 13.01.2026 | Last: 09.02.2026 | F1: 27.11.2025     │
+  │   F2: 20.12.2025 | Call: — (NP)                           │
+  │                                                            │
+  │ 📧 Events:                                                 │
+  │   • Reminder 1 email sent 27.11.2025 (by Staff A)         │
+  │   • Reminder 2 SMS sent 20.12.2025 (by Staff B)           │
+  │                                                            │
+  │ 🔔 Actions:                                                │
+  │   [Reminder 1 – Email] [Reminder 1 – SMS]                 │
+  │   [Reminder 2 – Email] [Reminder 2 – SMS]                 │
+  │   [✏️ Edit Dates]                                          │
+  └────────────────────────────────────────────────────────────┘
+  ```
+
+  **Components:**
+    - **Dates section:** Shows rec_date, last_date, checklist_send_date (if different from rec_date), first_reminder_date (F1), second_reminder_date (F2), call_date (Call). Display "—" or "NP" for empty/NP dates. Compact single-line or multi-line depending on design.
+    - **Events section:** List of recorded reminder events (latest 3-5), e.g. "Reminder 1 email sent 27.11.2025 (by Staff A)". If many events, show latest 3 and "+ 2 more" link to expand or modal.
+    - **Actions (buttons):**  
+      - **Reminder 1 buttons:** Show if `rec_date` (or `checklist_send_date`) is set. Buttons: "Reminder 1 – Email", "Reminder 1 – SMS".  
+      - **Reminder 2 buttons:** Show only if at least one Reminder 1 event exists. Buttons: "Reminder 2 – Email", "Reminder 2 – SMS".  
       - Clicking a button opens the **reminder popup** (see below).
-    - **Edit dates:** Inline edit or small "Edit" link that opens a modal to set/change rec_date, last_date, checklist_send_date, first_reminder_date, second_reminder_date, call_date, docs_requested, comments (calls optional PATCH endpoint).
-  - **Comments** (free-text).
+    - **Edit link/button:** Small "✏️ Edit Dates" link or icon that opens a modal to set/change rec_date, last_date, checklist_send_date, first_reminder_date, second_reminder_date, call_date, docs_requested, comments (calls PATCH endpoint on save).
+  
+  **Alternative compact layout (inline text + buttons):**
+  ```
+  Rec: 13.01.2026 | Last: 09.02.2026 | F1: 27.11.2025 | F2: 20.12.2025
+  Events: Reminder 1 email ✓ 27.11.2025, Reminder 2 SMS ✓ 20.12.2025
+  [R1 Email] [R1 SMS] [R2 Email] [R2 SMS] [Edit]
+  ```
+  
+  Choose card or inline based on design preference; card is more readable for many dates/events; inline is more compact for wide tables.
 - **Rows:** Name and CRM Ref link to client detail (same route pattern as ART).
 - **Pagination:** Same as ART (below table, preserve query string).
 - **Empty state:** "No TR records found. Add a TR matter type and assign matters to clients, then add TR checklist data."
@@ -392,6 +420,11 @@ Route::patch('/clients/sheets/tr/{trReferenceId}', [TrSheetController::class, 'u
 - **Issue:** Email body can be very long (thousands of chars); storing full body in `body_preview` bloats events table.
 - **Solution:** Store first 200 chars in `body_preview` for display in checklist box (e.g. "Reminder 1 email: Dear John, We are writing to..."). Full body not stored (rely on email log or activities_logs if needed for audit).
 
+### 10.10 Performance with many TR records and eager-loading events
+
+- **Issue:** If sheet has hundreds/thousands of TR records and each has multiple events, eager-loading all events can be slow.
+- **Solution:** Use Laravel eager loading: `$rows->load('reminderEvents')` or `->with('reminderEvents')` in base query. Paginate at 50 or 100 per page; eager-loading 50 records × 2-3 events each = ~150 event rows, acceptable. If performance issue, add limit to events (e.g. latest 5 events per TR reference: `->with(['reminderEvents' => fn($q) => $q->latest()->limit(5)])`) and show "View all events" link in modal if needed.
+
 ---
 
 ## 11. Implementation Order (when you apply)
@@ -405,8 +438,21 @@ Route::patch('/clients/sheets/tr/{trReferenceId}', [TrSheetController::class, 'u
 7. **Header** – Add TR Checklist link to Sheets dropdown.
 8. **Templates** – Add TR Checklist Reminder 1 & 2 email (and optionally SMS) templates in Admin Console with placeholders; wire template IDs or slugs in controller for preview/send.
 9. **Matter type** – Ensure a TR matter type exists in `matters` (manual or seed).
-10. **Testing** – Add TR matter + `client_tr_references` row; confirm list, checklist box, reminder buttons; test preview popup and send (email/SMS); confirm events appear in sheet.
-11. **Optional** – Inline/modal edit for checklist and follow-up dates (PATCH endpoint + JS); consolidated columns (SOS, TRN, Skill Assessment, AFP, Medical, Lodgement) if merging second sheet.
+10. **Testing checklist:**
+    - Create a TR matter type in `matters` (nick_name = 'tr' or title contains 'TR').
+    - Assign TR matter to a test client via `client_matters`.
+    - Add `client_tr_references` row for that client/matter with rec_date, expiry_date, docs_requested.
+    - Confirm client appears in TR sheet list.
+    - Confirm checklist box shows dates correctly.
+    - Test "Reminder 1 – Email" button: opens popup, loads merged template, edit subject/body, click Send; confirm email sent (check mail log), event created in `tr_reminder_events`, last_date updated, event appears in checklist box.
+    - Test "Reminder 1 – SMS" (same flow for SMS).
+    - Confirm "Reminder 2" buttons appear after Reminder 1 sent; test Reminder 2 flow.
+    - Test filters (matter type, expiry date range, search by name/docs).
+    - Test sorting (by expiry_date, rec_date, name).
+    - Test insights tab (total records, by matter_type, expiring soon).
+    - Test Edit dates modal (PATCH endpoint); confirm dates update.
+    - Test edge cases: no email/phone (error shown), no template (error shown), send failure (error shown).
+11. **Optional** – Consolidated columns (SOS, TRN, Skill Assessment, AFP, Medical, Lodgement) if merging second sheet; define data sources and add joins/columns.
 
 ---
 
@@ -431,7 +477,14 @@ Route::patch('/clients/sheets/tr/{trReferenceId}', [TrSheetController::class, 'u
 
 - EOI-style **client-facing** TR checklist confirmation (e.g. client portal link to confirm checklist received). Not in this plan.
 - **Excel import/export** for TR. Can be added later using the same tables.
-- **Consolidated sheet** with SOS, TRN, Skill Assessment, AFP, Medical, Lodgement columns (second screenshot) — plan describes optional merge; implement when data sources for those columns are defined.
+- **Consolidated sheet** with SOS, TRN, Skill Assessment, AFP, Medical, Lodgement columns (second screenshot) — plan describes optional merge; implement when data sources for those columns are defined:
+  - **SOS** (presumably "Statement of Service" or similar) — source table/column TBD.
+  - **TRN** (Transaction Reference Number or similar) — source table/column TBD.
+  - **Skill Assessment Uploaded** — likely from `documents` or `client_documents` where doc type = 'Skill Assessment'; display "Uploaded" or date.
+  - **AFP Uploaded** (Australian Federal Police check) — likely from `documents` where doc type = 'AFP'; display "Uploaded" or date.
+  - **Medical Test Required** — likely from client medical records or assessment table; display "Health clearance provided", "Examination required", etc.
+  - **Lodgement** (visa lodgement date?) — likely from `client_matters` or visa application table; display date.
+  - If merging these, add columns to `client_tr_references` (e.g. `sos`, `trn`, `skill_assessment_uploaded_date`, `afp_uploaded_date`, `medical_status`, `lodgement_date`) or query from existing tables in base query (joins). Define data sources before implementation.
 
 ---
 
@@ -459,4 +512,194 @@ This plan delivers:
 - **Duplicate sends allowed** (creates multiple events); frontend can optionally warn/confirm.
 - **Base query** = latest TR matter per client + left join TR references; clients with TR matter but no TR reference row will show with empty checklist.
 
+**Deployment considerations:**
+
+- **Migration rollback:** Provide `down()` methods in migrations to drop tables if rollback needed.
+- **Data migration:** If existing TR data in other tables/spreadsheets, create seeder or import script to populate `client_tr_references` and `tr_reminder_events`.
+- **Templates:** Add TR Checklist Reminder 1/2 email and SMS templates in Admin Console before going live; document template slugs and placeholders in release notes.
+- **Training:** Train staff on new TR sheet workflow (how to enter dates, send reminders, interpret events).
+- **Module permission:** Confirm module ID for TR sheet (plan suggests reusing module '20' for ART, or create new module ID for TR if needed).
+
 **Next steps:** Review and approve this plan; then proceed with implementation step by step (section 11) or request specific sections first.
+
+---
+
+## 15. Comparison with EOI/ROI Sheet & Recommended Enhancements
+
+### 15.1 EOI/ROI Sheet Patterns Reviewed
+
+**EOI/ROI Sheet structure:**
+- **Verification workflow:** EOI/ROI uses a two-step workflow:
+  1. **Staff verification** (`verifyByStaff` endpoint) — staff clicks "Verify" in client detail EOI/ROI tab; sets `staff_verified = true`, `confirmation_date = now()`, `checked_by = staff_id`.
+  2. **Client confirmation email** (`sendConfirmationEmail` endpoint) — after staff verification, send email to client with unique token; client can confirm or request amendments via public link (no auth required); client response updates `client_confirmation_status` ('pending' → 'confirmed' or 'amendment_requested'), `client_last_confirmation = now()`.
+- **Status badges:** Workflow status column displays badges: Draft, Pending Verification, Verified - Ready to Send, Awaiting Client Response, Client Confirmed, Amendment Requested.
+- **Columns:** EOI ID, Client Name, Occupation, Current Job, Individual Points, Marital Status, Partner Points, State, ROI Status, Comments, Last EOI/ROI Sent, Verification Date (staff + client dates), Verified By (staff + client status), Workflow Status.
+- **Actions:** Verification and send-confirmation buttons are in the **client detail EOI/ROI tab**, not in the sheet itself. Sheet is **read-only** with status display.
+- **Email:** Uses Laravel Mail + Mailable (`EoiConfirmationMail`) with S3 attachments (EOI Summary, Points Summary, ROI Draft).
+- **Logging:** Logs activities via `logActivity()` method (subject, description, type) in `activities_logs` table.
+- **Module access:** Same module ID '20' as ART (can reuse for TR or use separate module).
+
+### 15.2 Should TR Sheet Have Similar Verification Workflow?
+
+**Options:**
+
+**A) Full verification workflow (like EOI/ROI):**
+- Add `staff_verified`, `verification_date`, `checked_by`, `client_confirmation_status`, `client_last_confirmation`, `client_confirmation_token`, `confirmation_email_sent_at` to `client_tr_references`.
+- Add `verifyByStaff` and `sendConfirmationEmail` endpoints; send TR checklist confirmation email to client with token; client confirms or requests amendments.
+- Add **Workflow Status** column to TR sheet (badges: Draft, Pending Verification, Verified, Sent to Client, Client Confirmed, etc.).
+- Reminder buttons appear only after staff verification and/or client confirmation (depending on policy).
+
+**B) Simple reminder-only workflow (current plan):**
+- No verification step; staff directly send reminders when rec_date is entered.
+- No client confirmation link (client doesn't confirm TR checklist via portal).
+- Simpler; faster to implement; suitable if TR checklist doesn't require client sign-off.
+
+**C) Hybrid: Verification without client confirmation:**
+- Add `staff_verified`, `verification_date`, `checked_by` to `client_tr_references`.
+- Add "Verify" button in TR sheet (or client detail TR tab); after verify, staff can send reminders.
+- No client confirmation email/token; reminders are one-way (staff → client).
+- Status column: Draft, Verified, Reminder 1 Sent, Reminder 2 Sent.
+
+**Decision for TR Sheet:**  
+✅ **Option B (simple reminder-only) — CONFIRMED**
+
+**Rationale:** TR checklists are operational follow-ups (send docs, book medical, etc.); client doesn't need to "confirm" like EOI data. Verification workflow can be added later if requirements change.
+
+### 15.3 Recommended Enhancements from EOI/ROI Review
+
+**1. Activity logging (add to TR plan):**
+- Add `logActivity()` helper in `TrSheetController` (same as EOI).
+- Log events: "TR Reminder 1 Email Sent", "TR Reminder 2 SMS Sent", "TR Checklist Verified by Staff" (if Option C), etc.
+- Store in `activities_logs` table with `client_id`, `subject`, `description`, `type` ('email', 'sms', 'tr_reminder', etc.).
+- Display in client detail Activity Log tab.
+
+**2. Status badge system (add to TR plan if desired):**
+- Add **Workflow Status** column to TR sheet table.
+- Status logic (for Option B - simple):
+  - **Draft**: No rec_date and no checklist data.
+  - **Ready**: rec_date entered; no reminders sent yet.
+  - **Reminder 1 Sent**: At least one Reminder 1 event exists.
+  - **Reminder 2 Sent**: At least one Reminder 2 event exists.
+  - **Completed** (optional): All required follow-ups done; or custom status set by staff.
+- Badges color-coded like EOI: Draft (secondary/gray), Ready (info/blue), Reminder 1 Sent (warning/yellow), Reminder 2 Sent (primary/blue), Completed (success/green).
+
+**3. Email attachment support (optional):**
+- If TR reminders should include attachments (e.g. checklist PDF, docs requested list), add attachment logic in `sendReminder`.
+- Use same S3 pattern as EOI: query `documents` table for TR-related doc types; attach to email.
+
+**4. SweetAlert2 for confirmations (already used in EOI):**
+- EOI sheet uses SweetAlert2 for success/error messages after verification/send.
+- TR sheet should use same for "Reminder sent successfully" / "Error: No email found" messages (better UX than plain alerts).
+
+**5. Centralized email/SMS service (recommended):**
+- EOI uses `CRMUtilityController@sendmail` and `Mail::to(...)->send(new Mailable(...))`.
+- TR should use same pattern for consistency.
+- For SMS, use existing Admin Console SMS send (e.g. `SmsSendController@sendFromTemplate` or Mail-like SMS service if available).
+
+**6. Template merge helper (add to plan):**
+- Create a helper method `mergeTemplatePlaceholders($template, $client, $trReference)` that replaces `{client_name}`, `{crm_ref}`, `{expiry_date}`, `{docs_requested}`, etc.
+- Reuse for both email and SMS templates; keep DRY.
+
+**7. Module permission consistency:**
+- EOI/ROI and ART both use module '20'.
+- **Recommendation:** TR sheet uses same module '20' (all sheets under one "Sheets" permission) **or** create new module '21' for TR if you want separate access control.
+
+### 15.4 Updated TR Plan Recommendations
+
+**Add to section 2.1 (client_tr_references table) — OPTIONAL VERIFICATION COLUMNS (if you choose Option C or A):**
+
+| Column               | Type           | Nullable | Notes |
+|----------------------|----------------|----------|--------|
+| `staff_verified`     | boolean        | No, default false | True when staff verifies TR checklist (like EOI). |
+| `verification_date`  | timestamp      | Yes      | When staff verified. |
+| `checked_by`         | bigint unsigned | Yes     | FK to admins — staff who verified. |
+
+If **Option A (full client confirmation)**, also add:
+- `client_confirmation_status` (enum: 'pending', 'confirmed', 'amendment_requested')
+- `client_last_confirmation` (timestamp)
+- `client_confirmation_token` (string, unique)
+- `confirmation_email_sent_at` (timestamp)
+
+**Add to section 4 (Routes) — IF VERIFICATION WORKFLOW:**
+
+```php
+// Option C (staff verification only)
+Route::post('/clients/sheets/tr/{trReferenceId}/verify', [TrSheetController::class, 'verifyByStaff'])->name('clients.sheets.tr.verify');
+
+// Option A (staff verification + client confirmation)
+Route::post('/clients/sheets/tr/{trReferenceId}/verify', [TrSheetController::class, 'verifyByStaff'])->name('clients.sheets.tr.verify');
+Route::post('/clients/sheets/tr/{trReferenceId}/send-confirmation', [TrSheetController::class, 'sendClientConfirmationEmail'])->name('clients.sheets.tr.send-confirmation');
+
+// Public routes (no auth) for client confirmation (Option A only)
+Route::get('/client/tr/confirm/{token}', [TrSheetController::class, 'showClientConfirmationPage'])->name('client.tr.confirm');
+Route::post('/client/tr/process/{token}', [TrSheetController::class, 'processClientConfirmation'])->name('client.tr.process');
+Route::get('/client/tr/success/{token}', [TrSheetController::class, 'showSuccessPage'])->name('client.tr.success');
+```
+
+**Add to section 5 (Controller methods) — IF VERIFICATION WORKFLOW:**
+
+- `verifyByStaff($trReferenceId)`: Set staff_verified = true, verification_date = now(), checked_by = auth user; log activity; return JSON success.
+- `sendClientConfirmationEmail($trReferenceId)` (Option A): Generate token; send email with link to client.tr.confirm; set confirmation_email_sent_at, client_confirmation_status = 'pending'; log activity.
+- `showClientConfirmationPage($token)`, `processClientConfirmation($token)`, `showSuccessPage($token)` (Option A): Public pages for client to confirm or request amendments (no auth).
+
+**Add to section 6.1 (List view columns) — IF VERIFICATION WORKFLOW:**
+
+- Add **Verification Date** column (shows staff verification date + optionally client confirmation date if Option A).
+- Add **Verified By** column (staff name + client status if Option A: "Client Confirmed" or "Amendment Requested").
+- Add **Workflow Status** column (badge: Draft / Ready / Verified / Reminder 1 Sent / Reminder 2 Sent / Completed or Client Confirmed / Amendment Requested).
+
+**Add to section 5 (Controller) — LOGGING:**
+
+- Add `logActivity($clientId, $subject, $description, $type)` helper method:
+  ```php
+  protected function logActivity($clientId, $subject, $description, $type)
+  {
+      ActivitiesLog::create([
+          'client_id' => $clientId,
+          'subject' => $subject,
+          'description' => $description,
+          'type' => $type,
+          'contact_from' => auth()->guard('admin')->id(),
+          'created_at' => now(),
+      ]);
+  }
+  ```
+- Call `logActivity()` in `sendReminder`: e.g. `$this->logActivity($trRef->client_id, 'TR Reminder 1 Email Sent', 'Reminder email sent to client@example.com for TR checklist', 'email');`
+
+**Add to section 9 (Email & SMS Integration) — TEMPLATE MERGE HELPER:**
+
+```php
+protected function mergeTemplatePlaceholders($template, $client, $trReference)
+{
+    $placeholders = [
+        '{client_name}' => trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? '')),
+        '{crm_ref}' => $client->client_id ?? '',
+        '{expiry_date}' => $trReference->expiry_date ? $trReference->expiry_date->format('d/m/Y') : '—',
+        '{docs_requested}' => $trReference->docs_requested ?? '—',
+        '{rec_date}' => $trReference->rec_date ? $trReference->rec_date->format('d/m/Y') : '—',
+        '{last_date}' => $trReference->last_date ? $trReference->last_date->format('d/m/Y') : '—',
+        // Add more placeholders as needed
+    ];
+    return str_replace(array_keys($placeholders), array_values($placeholders), $template);
+}
+```
+
+Use in `reminderPreview` and `sendReminder` to merge template subject/body.
+
+### 15.5 Final Recommendation
+
+✅ **CONFIRMED: Option B (Simple Reminder-Only Workflow)**
+
+**Included in implementation:**
+- ✅ **No verification workflow** — staff directly send reminders when rec_date is entered
+- ✅ **Activity logging** — log reminder sends to `activities_logs` for audit trail in client detail
+- ✅ **Workflow status badges** — Draft → Ready → Reminder 1 Sent → Reminder 2 Sent → Completed (no verification step)
+- ✅ **SweetAlert2** — for success/error messages (consistent with EOI/ART)
+- ✅ **Template merge helper** — `mergeTemplatePlaceholders()` for email/SMS placeholders
+
+**Deferred (can add later if needed):**
+- ⏭️ **Verification workflow** (Option A or C) — staff verification and/or client confirmation
+- ⏭️ **Email attachments** — attach checklist PDF or docs list to reminders (use S3 pattern when needed)
+
+**Separate system (to be designed):**
+- 📋 **Checklist sending system** — general-purpose checklist generator and sender for all checklist types (TR, visa, document, etc.) — will be integrated into TR sheet once designed.

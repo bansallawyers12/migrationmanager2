@@ -182,15 +182,20 @@ Route::post('/documents/bulk-upload-visa', [ClientDocumentsController::class, 'b
 
 /*---------- Client EOI/ROI Management ----------*/
 Route::prefix('clients/{client}/eoi-roi')->name('clients.eoi-roi.')->group(function () {
+    // IMPORTANT: Specific routes MUST come before generic /{eoiReference} routes
+    // to avoid route parameter conflicts
+    
     Route::get('/', [ClientEoiRoiController::class, 'index'])->name('index');
-    Route::get('/calculate-points', [ClientEoiRoiController::class, 'calculatePoints'])->name('calculatePoints');
     Route::post('/', [ClientEoiRoiController::class, 'upsert'])->name('upsert');
+    
+    // Compose modal endpoints (NEW - MUST be before /{eoiReference} routes)
+    Route::get('/visa-documents', [ClientEoiRoiController::class, 'getVisaDocuments'])->name('visaDocuments');
+    Route::get('/calculate-points', [ClientEoiRoiController::class, 'calculatePoints'])->name('calculatePoints');
+    
+    // Generic {eoiReference} routes (MUST be after specific routes)
     Route::get('/{eoiReference}', [ClientEoiRoiController::class, 'show'])->name('show');
     Route::delete('/{eoiReference}', [ClientEoiRoiController::class, 'destroy'])->name('destroy');
     Route::get('/{eoiReference}/reveal-password', [ClientEoiRoiController::class, 'revealPassword'])->name('revealPassword');
-    
-    // Compose modal endpoints (NEW - for email compose flow)
-    Route::get('/visa-documents', [ClientEoiRoiController::class, 'getVisaDocuments'])->name('visaDocuments');
     Route::get('/{eoiReference}/email-preview', [ClientEoiRoiController::class, 'getEmailPreview'])->name('emailPreview');
     
     // Workflow actions

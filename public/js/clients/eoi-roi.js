@@ -23,11 +23,16 @@
 
     function initEoiRoi() {
         // Get client ID from page configuration
-        if (window.ClientDetailConfig && window.ClientDetailConfig.encodeId) {
-            state.clientId = window.ClientDetailConfig.encodeId;
+        // NOTE: For API routes, we need the actual database ID, not the encoded ID
+        if (window.ClientDetailConfig && window.ClientDetailConfig.clientId) {
+            state.clientId = window.ClientDetailConfig.clientId;
             console.log('[EOI-ROI] Client ID detected:', state.clientId);
+        } else if (window.ClientDetailConfig && window.ClientDetailConfig.encodeId) {
+            // Fallback to encoded ID if clientId not available
+            state.clientId = window.ClientDetailConfig.encodeId;
+            console.log('[EOI-ROI] Using encoded ID as fallback:', state.clientId);
         } else {
-            console.error('[EOI-ROI] Client ID not found - ClientDetailConfig.encodeId missing');
+            console.error('[EOI-ROI] Client ID not found - ClientDetailConfig missing');
             return;
         }
 
@@ -1041,6 +1046,8 @@
      * Open EOI compose modal
      */
     window.openEoiComposeModal = function(eoiId, eoiNumber, clientId, isResend = false) {
+        console.log('[EOI-COMPOSE] Opening modal with:', { eoiId, eoiNumber, clientId, isResend });
+        
         if (!eoiId) {
             showNotification('Please save the EOI first before sending email.', 'error');
             return;
@@ -1050,6 +1057,8 @@
         currentCompose.eoiId = eoiId;
         currentCompose.eoiNumber = eoiNumber;
         currentCompose.clientId = clientId || state.clientId;
+        
+        console.log('[EOI-COMPOSE] Current compose state:', currentCompose);
         
         // Update modal title
         $('#eoi-compose-modal .modal-title').text(isResend ? 'Resend EOI Confirmation Email' : 'Send EOI Confirmation Email');
@@ -1072,14 +1081,21 @@
      * Load email preview (subject and body) from server
      */
     function loadEoiEmailPreview(clientId, eoiId) {
+        console.log('[EOI-COMPOSE] Loading email preview for client:', clientId, 'eoi:', eoiId);
+        
         $('#eoi-email-subject').val('Loading...');
         $('#eoi-email-to').val('Loading...');
         $('#eoi-email-body').val('Loading...');
         
+        const url = `/clients/${clientId}/eoi-roi/${eoiId}/email-preview`;
+        console.log('[EOI-COMPOSE] Preview URL:', url);
+        
         $.ajax({
-            url: `/clients/${clientId}/eoi-roi/${eoiId}/email-preview`,
+            url: url,
             method: 'GET',
+            timeout: 30000, // 30 second timeout
             success: function(response) {
+                console.log('[EOI-COMPOSE] Preview loaded successfully:', response);
                 if (response.success) {
                     $('#eoi-email-subject').val(response.data.subject);
                     $('#eoi-email-to').val(response.data.client_name + ' <' + response.data.client_email + '>');
@@ -1090,10 +1106,14 @@
                     $('#eoi-compose-modal').modal('hide');
                 }
             },
-            error: function(xhr) {
-                const msg = xhr.responseJSON?.message || 'Failed to load email preview. Please try again.';
+            error: function(xhr, status, error) {
+                console.error('[EOI-COMPOSE] Preview load failed:', { xhr, status, error, responseText: xhr.responseText });
+                const msg = xhr.responseJSON?.message || `Failed to load email preview: ${status} - ${error}`;
                 showNotification(msg, 'error');
-                $('#eoi-compose-modal').modal('hide');
+                
+                // Show error details in the modal instead of closing it
+                $('#eoi-email-subject').val('ERROR: Could not load preview');
+                $('#eoi-email-body').val(`Error: ${status}\n${xhr.responseText || error}`);
             }
         });
     }
@@ -1102,21 +1122,29 @@
      * Load visa documents for attachment selection
      */
     function loadEoiVisaDocuments(clientId, eoiNumber) {
+        console.log('[EOI-COMPOSE] Loading visa documents for client:', clientId, 'eoi:', eoiNumber);
+        
         $('#eoi-attachment-list').html('<div class="text-center text-muted py-3"><i class="fas fa-spinner fa-spin"></i> Loading documents...</div>');
         
+        const url = `/clients/${clientId}/eoi-roi/visa-documents`;
+        console.log('[EOI-COMPOSE] Documents URL:', url, 'params:', { eoi_number: eoiNumber });
+        
         $.ajax({
-            url: `/clients/${clientId}/eoi-roi/visa-documents`,
+            url: url,
             method: 'GET',
             data: { eoi_number: eoiNumber },
+            timeout: 30000, // 30 second timeout
             success: function(response) {
+                console.log('[EOI-COMPOSE] Documents loaded successfully:', response);
                 if (response.success) {
                     renderEoiVisaDocuments(response.data, eoiNumber);
                 } else {
                     $('#eoi-attachment-list').html('<div class="text-danger">Failed to load documents.</div>');
                 }
             },
-            error: function() {
-                $('#eoi-attachment-list').html('<div class="text-danger">Error loading documents. Please try again.</div>');
+            error: function(xhr, status, error) {
+                console.error('[EOI-COMPOSE] Documents load failed:', { xhr, status, error, responseText: xhr.responseText });
+                $('#eoi-attachment-list').html(`<div class="text-danger">Error loading documents: ${status} - ${error}<br><small>${xhr.responseText || 'Please try again or check console for details.'}</small></div>`);
             }
         });
     }
