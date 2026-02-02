@@ -547,6 +547,7 @@ class ClientPortalMessageController extends Controller
                     'description' => 'Message sent by Client Portal Mobile App for matter ID: ' . $clientMatterId . ' to ' . count($targetRecipients) . ' recipient(s)',
                     'task_status' => 0, // Required NOT NULL field (0 = activity, 1 = task)
                     'pin' => 0, // Required NOT NULL field (0 = not pinned, 1 = pinned)
+                    'source' => 'client_portal',
                     'created_at' => now(),
                     'updated_at' => now()
                 ]);
