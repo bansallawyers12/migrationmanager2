@@ -678,12 +678,24 @@ class ClientEoiRoiController extends Controller
                 $eoiReference->save();
             }
             
+            // Generate confirmation URLs (same as in EoiConfirmationMail)
+            $confirmUrl = route('client.eoi.confirm', ['token' => $eoiReference->client_confirmation_token]);
+            $amendUrl = route('client.eoi.amend', ['token' => $eoiReference->client_confirmation_token]);
+            
+            // Get points data with warnings (same as used in actual sending)
+            $pointsData = [
+                'warnings' => [], // Empty for now, can be populated if needed
+            ];
+            
             // Render email body (same view used for actual sending)
             $bodyHtml = view('emails.eoi_confirmation', [
-                'eoi' => $eoiReference,
+                'eoiReference' => $eoiReference,
                 'client' => $client,
                 'token' => $eoiReference->client_confirmation_token,
                 'attachmentLabels' => [], // Empty for preview
+                'confirmUrl' => $confirmUrl,
+                'amendUrl' => $amendUrl,
+                'pointsData' => $pointsData,
             ])->render();
             
             // Strip HTML for plain text preview

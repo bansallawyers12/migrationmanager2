@@ -1085,7 +1085,7 @@
         
         $('#eoi-email-subject').val('Loading...');
         $('#eoi-email-to').val('Loading...');
-        $('#eoi-email-body').val('Loading...');
+        $('#eoi-email-body').html('<div style="text-align: center; color: #999;">Loading preview...</div>');
         
         const url = `/clients/${clientId}/eoi-roi/${eoiId}/email-preview`;
         console.log('[EOI-COMPOSE] Preview URL:', url);
@@ -1100,7 +1100,8 @@
                     $('#eoi-email-subject').val(response.data.subject);
                     $('#eoi-email-to').val(response.data.client_name + ' <' + response.data.client_email + '>');
                     $('#eoi-email-to-help').text('Email will be sent to: ' + response.data.client_email);
-                    $('#eoi-email-body').val(response.data.body_plain || '');
+                    // Render the HTML email preview (scaled down to fit)
+                    $('#eoi-email-body').html(response.data.body_html || '<div style="color: #999;">No preview available</div>');
                 } else {
                     showNotification(response.message || 'Failed to load email preview', 'error');
                     $('#eoi-compose-modal').modal('hide');
@@ -1113,7 +1114,7 @@
                 
                 // Show error details in the modal instead of closing it
                 $('#eoi-email-subject').val('ERROR: Could not load preview');
-                $('#eoi-email-body').val(`Error: ${status}\n${xhr.responseText || error}`);
+                $('#eoi-email-body').html(`<div style="color: #dc3545; font-family: monospace; font-size: 12px; white-space: pre-wrap;">Error: ${status}\n${xhr.responseText || error}</div>`);
             }
         });
     }
