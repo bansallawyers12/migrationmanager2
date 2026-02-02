@@ -87,7 +87,14 @@ class NotificationService
                 default => '1300 859 368' // Fallback to original number
             };
 
-            $message = "BANSAL IMMIGRATION: Reminder - You have an appointment tomorrow at {$appointment->timeslot_full} at our {$appointment->location} office. Please be on time. If you need to reschedule, call us at {$officePhone}.";
+            // Message varies by meeting type
+            $meetingType = strtolower(trim($appointment->meeting_type ?? ''));
+            $message = match ($meetingType) {
+                'in_person' => "BANSAL IMMIGRATION: Reminder - You have a scheduled In-Person appointment tomorrow at {$appointment->timeslot_full} at our {$appointment->location} office. Please be on time. If you need to reschedule, call us at {$officePhone}.",
+                'phone' => "BANSAL IMMIGRATION: Reminder - You have a scheduled Phone appointment tomorrow at {$appointment->timeslot_full} . Please be on time. If you need to reschedule, call us at {$officePhone}.",
+                'video' => "BANSAL IMMIGRATION: Reminder - You have a scheduled Video Call appointment tomorrow at {$appointment->timeslot_full} . Please be on time. If you need to reschedule, call us at {$officePhone}.",
+                default => "BANSAL IMMIGRATION: Reminder - You have a scheduled appointment tomorrow at {$appointment->timeslot_full} at our {$appointment->location} office. Please be on time. If you need to reschedule, call us at {$officePhone}.",
+            };
 
             $result = $this->smsManager->sendSms($phone, $message, 'reminder', [
                 'appointment_id' => $appointment->id,
