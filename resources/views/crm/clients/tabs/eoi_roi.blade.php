@@ -181,22 +181,14 @@
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label class="d-block">Map to Visa Documents</label>
-                            <div class="eoi-doc-buttons mt-2">
-                                <button type="button" class="btn btn-outline-primary btn-sm eoi-map-doc-btn" data-visa-category="EOI Summary" title="Open EOI Summary in Visa Documents">
-                                    <i class="fas fa-file-alt"></i> EOI Summary
-                                </button>
-                                <button type="button" class="btn btn-outline-primary btn-sm eoi-map-doc-btn" data-visa-category="Points Summary" title="Open Points Summary in Visa Documents">
-                                    <i class="fas fa-calculator"></i> Points Summary
-                                </button>
-                                <button type="button" class="btn btn-outline-primary btn-sm eoi-map-doc-btn" data-visa-category="ROI Draft" title="Open ROI Draft in Visa Documents">
-                                    <i class="fas fa-file-pdf"></i> ROI Draft
-                                </button>
+                            <label class="d-block">Document Attachments</label>
+                            <div class="alert alert-info mt-2 mb-0">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Attaching Documents:</strong> When you send the confirmation email to the client, you'll be able to select which visa documents to attach from a list. No pre-mapping required!
                             </div>
-                            <small class="form-text text-muted d-block mt-1">Click a button to open the matching category in the <strong>Visa Documents</strong> tab.</small>
                             <div class="eoi-map-help mt-2">
                                 <button type="button" class="btn btn-link btn-sm p-0 text-info" data-toggle="collapse" data-target="#eoi-map-help-collapse" aria-expanded="false">
-                                    <i class="fas fa-question-circle"></i> How do I add or map documents?
+                                    {{-- OLD help text removed --}}
                                 </button>
                                 <div class="collapse mt-1" id="eoi-map-help-collapse">
                                     <div class="small text-muted border rounded p-2 bg-light">
@@ -262,6 +254,95 @@
             <div id="points-summary-content">
                 <div class="text-center text-muted">
                     <i class="fas fa-spinner fa-spin"></i> Loading points calculation...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- EOI Confirmation Email Compose Modal (NEW - adapted from existing email compose) --}}
+    <div id="eoi-compose-modal" data-backdrop="static" data-keyboard="false" class="modal fade custom_modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Send EOI Confirmation Email</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="eoi-compose-form" autocomplete="off">
+                        @csrf
+                        <input type="hidden" id="eoi-compose-eoi-id" value="">
+                        <input type="hidden" id="eoi-compose-client-id" value="{{ $fetchedData->id ?? '' }}">
+                        
+                        {{-- To Field (readonly) --}}
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label for="eoi-email-to">To <span class="text-danger">*</span></label>
+                                    <input type="text" readonly class="form-control" id="eoi-email-to" placeholder="Loading...">
+                                    <small class="form-text text-muted" id="eoi-email-to-help"></small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {{-- Subject Field --}}
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label for="eoi-email-subject">Subject <span class="text-danger">*</span></label>
+                                    <input type="text" name="subject" id="eoi-email-subject" class="form-control" 
+                                           placeholder="Enter Subject" maxlength="255" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {{-- Body Field (read-only for Phase 1) --}}
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label for="eoi-email-body">Email Body (Preview)</label>
+                                    <textarea class="form-control" id="eoi-email-body" name="body" rows="10" readonly 
+                                              style="font-family: monospace; font-size: 12px;"></textarea>
+                                    <small class="form-text text-muted">
+                                        <i class="fas fa-info-circle"></i> Body is generated from template and contains confirmation links. Editing disabled for security.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {{-- Attachments Section (adapted from uploadchecklists pattern) --}}
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label>Attachments (Select from Visa Documents)</label>
+                                    <div class="border p-3" style="max-height: 350px; overflow-y: auto; background-color: #f8f9fa;">
+                                        <div id="eoi-attachment-list">
+                                            <div class="text-center text-muted py-3">
+                                                <i class="fas fa-spinner fa-spin"></i> Loading documents...
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <small class="form-text text-muted mt-2">
+                                        <i class="fas fa-paperclip"></i> Maximum 10 documents, 25MB total
+                                        <span id="eoi-attachment-summary" class="ml-2"></span>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {{-- Actions --}}
+                        <div class="row">
+                            <div class="col-12">
+                                <button type="button" class="btn btn-primary" id="btn-eoi-send-email">
+                                    <i class="fas fa-paper-plane"></i> Send Email
+                                </button>
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                                    <i class="fas fa-times"></i> Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
