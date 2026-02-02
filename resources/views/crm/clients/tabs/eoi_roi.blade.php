@@ -273,7 +273,8 @@
                     <form id="eoi-compose-form" autocomplete="off">
                         @csrf
                         <input type="hidden" id="eoi-compose-eoi-id" value="">
-                        <input type="hidden" id="eoi-compose-client-id" value="{{ $fetchedData->id ?? '' }}">
+                        <input type="hidden" id="eoi-compose-client-id" value="">
+                        {{-- Client ID will be set dynamically by JavaScript --}}
                         
                         {{-- To Field (readonly) --}}
                         <div class="row">
@@ -302,10 +303,12 @@
                             <div class="col-12">
                                 <div class="form-group">
                                     <label for="eoi-email-body">Email Body (Preview)</label>
-                                    <textarea class="form-control" id="eoi-email-body" name="body" rows="10" readonly 
-                                              style="font-family: monospace; font-size: 12px;"></textarea>
+                                    <div id="eoi-email-body" 
+                                         style="border: 1px solid #ddd; border-radius: 4px; padding: 15px; max-height: 400px; overflow-y: auto; background-color: #f9f9f9;">
+                                        <div style="text-align: center; color: #999;">Loading preview...</div>
+                                    </div>
                                     <small class="form-text text-muted">
-                                        <i class="fas fa-info-circle"></i> Body is generated from template and contains confirmation links. Editing disabled for security.
+                                        <i class="fas fa-info-circle"></i> This shows how the email will appear to your client. Body is generated from template and contains confirmation links.
                                     </small>
                                 </div>
                             </div>
