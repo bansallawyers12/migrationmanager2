@@ -25,18 +25,28 @@ class EoiConfirmationMail extends Mailable
     /** @var array<int, string> Category names attached (e.g. EOI Summary, Points Summary, ROI Draft) */
     public $attachmentLabels;
 
+    /** @var string|null Custom subject (optional) */
+    public $customSubject;
+
+    /** @var string|null Custom body (optional) */
+    public $customBody;
+
     /**
      * Create a new message instance.
      *
      * @param array<int, array{data: string, name: string, mime: string}> $attachments
      * @param array<int, string> $attachmentLabels
+     * @param string|null $customSubject Optional custom subject
+     * @param string|null $customBody Optional custom body
      */
     public function __construct(
         ClientEoiReference $eoiReference,
         Admin $client,
         string $token,
         array $attachments = [],
-        array $attachmentLabels = []
+        array $attachmentLabels = [],
+        ?string $customSubject = null,
+        ?string $customBody = null
     ) {
         $this->eoiReference = $eoiReference;
         $this->client = $client;
@@ -44,6 +54,8 @@ class EoiConfirmationMail extends Mailable
         $this->amendUrl = route('client.eoi.amend', ['token' => $token]);
         $this->attachments = $attachments;
         $this->attachmentLabels = $attachmentLabels;
+        $this->customSubject = $customSubject;
+        $this->customBody = $customBody;
 
         // Get points calculation with warnings
         $pointsService = app(PointsService::class);
@@ -58,8 +70,14 @@ class EoiConfirmationMail extends Mailable
      */
     public function build()
     {
-        $mail = $this->subject('Please Confirm Your EOI Details')
-            ->view('emails.eoi_confirmation');
+        // Use custom subject if provided, otherwise use default
+        $subject = $this->customSubject ?? 'Please Confirm Your EOI Details - ' . $this->eoiReference->EOI_number;
+        
+        $mail = $this->subject($subject)
+            ->view('emails.eoi_confirmation')
+            ->with([
+                'customBody' => $this->customBody, // Pass custom body to view (for Phase 2 if needed)
+            ]);
 
         foreach ($this->attachments as $att) {
             $mail->attachData(

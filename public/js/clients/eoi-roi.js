@@ -139,30 +139,29 @@
         // Points subclass selector
         $('#points-subclass-selector').on('change', handleSubclassChange);
 
-        // Map to Visa Documents: switch to Visa Documents tab and activate matching category
-        // Prefer per-EOI category (e.g. "EOI Summary - E0121253652") when editing an EOI
-        $(document).on('click', '.eoi-map-doc-btn', function() {
-            const categoryName = $(this).data('visa-category');
-            const eoiNumber = $('#eoi-number').val() ? $('#eoi-number').val().trim() : '';
-            const $visaTab = $('.client-nav-button[data-tab="visadocuments"]');
-            if ($visaTab.length) {
-                $visaTab[0].click();
-                setTimeout(function() {
-                    const perEoiName = eoiNumber ? (categoryName + ' - ' + eoiNumber) : null;
-                    let $subtab = perEoiName ? $('.subtab6-button').filter(function() {
-                        return $(this).text().trim().toLowerCase() === perEoiName.toLowerCase();
-                    }) : $();
-                    if (!$subtab.length) {
-                        $subtab = $('.subtab6-button').filter(function() {
-                            return $(this).text().trim().toLowerCase() === (categoryName || '').toLowerCase();
-                        });
-                    }
-                    if ($subtab.length) {
-                        $subtab[0].click();
-                    }
-                }, 400);
-            }
-        });
+        // OLD: Map to Visa Documents buttons - REMOVED (now using compose modal)
+        // $(document).on('click', '.eoi-map-doc-btn', function() {
+            // const categoryName = $(this).data('visa-category');
+            // const eoiNumber = $('#eoi-number').val() ? $('#eoi-number').val().trim() : '';
+            // const $visaTab = $('.client-nav-button[data-tab="visadocuments"]');
+            // if ($visaTab.length) {
+            //     $visaTab[0].click();
+            //     setTimeout(function() {
+            //         const perEoiName = eoiNumber ? (categoryName + ' - ' + eoiNumber) : null;
+            //         let $subtab = perEoiName ? $('.subtab6-button').filter(function() {
+            //             return $(this).text().trim().toLowerCase() === perEoiName.toLowerCase();
+            //         }) : $();
+            //         if (!$subtab.length) {
+            //             $subtab = $('.subtab6-button').filter(function() {
+            //                 return $(this).text().trim().toLowerCase() === (categoryName || '').toLowerCase();
+            //             });
+            //         }
+            //         if ($subtab.length) {
+            //             $subtab[0].click();
+            //         }
+            //     }, 400);
+            // }
+        // });
     }
 
     // Load EOI records from API
@@ -967,33 +966,16 @@
 
     // Send confirmation email
     function sendConfirmationEmail(eoiId, isResend) {
-        const action = isResend ? 'resend' : 'send';
-        const message = isResend ? 
-            'Are you sure you want to resend the confirmation email to the client?' :
-            'Are you sure you want to send the confirmation email to the client?';
-
-        if (!confirm(message)) {
+        // NEW: Open compose modal instead of directly sending
+        // Find the EOI record to get the EOI number
+        const eoiRecord = state.eoiRecords.find(eoi => eoi.id === eoiId);
+        if (!eoiRecord) {
+            showNotification('EOI record not found', 'error');
             return;
         }
-
-        $.ajax({
-            url: `/clients/${state.clientId}/eoi-roi/${eoiId}/send-email`,
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            },
-            success: function(response) {
-                if (response.success) {
-                    showNotification(response.message, 'success');
-                    loadEoiRecords();
-                    loadWorkflowSection(eoiId);
-                }
-            },
-            error: function(xhr) {
-                const message = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Error sending email';
-                showNotification(message, 'error');
-            }
-        });
+        
+        // Open compose modal
+        openEoiComposeModal(eoiId, eoiRecord.eoi_number, state.clientId, isResend);
     }
 
     // Resolve amendment
@@ -1042,9 +1024,270 @@
         }, 3000);
     }
 
+    /**
+     * =====================================================
+     * EOI COMPOSE MODAL - NEW (Adapted from existing email compose)
+     * =====================================================
+     */
+
+    // Global variables for current compose session
+    let currentCompose = {
+        eoiId: null,
+        eoiNumber: null,
+        clientId: null
+    };
+
+    /**
+     * Open EOI compose modal
+     */
+    window.openEoiComposeModal = function(eoiId, eoiNumber, clientId, isResend = false) {
+        if (!eoiId) {
+            showNotification('Please save the EOI first before sending email.', 'error');
+            return;
+        }
+        
+        // Set compose variables
+        currentCompose.eoiId = eoiId;
+        currentCompose.eoiNumber = eoiNumber;
+        currentCompose.clientId = clientId || state.clientId;
+        
+        // Update modal title
+        $('#eoi-compose-modal .modal-title').text(isResend ? 'Resend EOI Confirmation Email' : 'Send EOI Confirmation Email');
+        
+        // Set hidden fields
+        $('#eoi-compose-eoi-id').val(eoiId);
+        $('#eoi-compose-client-id').val(currentCompose.clientId);
+        
+        // Show modal
+        $('#eoi-compose-modal').modal('show');
+        
+        // Load email preview (subject + body)
+        loadEoiEmailPreview(currentCompose.clientId, eoiId);
+        
+        // Load visa documents for attachment selection
+        loadEoiVisaDocuments(currentCompose.clientId, eoiNumber);
+    };
+
+    /**
+     * Load email preview (subject and body) from server
+     */
+    function loadEoiEmailPreview(clientId, eoiId) {
+        $('#eoi-email-subject').val('Loading...');
+        $('#eoi-email-to').val('Loading...');
+        $('#eoi-email-body').val('Loading...');
+        
+        $.ajax({
+            url: `/clients/${clientId}/eoi-roi/${eoiId}/email-preview`,
+            method: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    $('#eoi-email-subject').val(response.data.subject);
+                    $('#eoi-email-to').val(response.data.client_name + ' <' + response.data.client_email + '>');
+                    $('#eoi-email-to-help').text('Email will be sent to: ' + response.data.client_email);
+                    $('#eoi-email-body').val(response.data.body_plain || '');
+                } else {
+                    showNotification(response.message || 'Failed to load email preview', 'error');
+                    $('#eoi-compose-modal').modal('hide');
+                }
+            },
+            error: function(xhr) {
+                const msg = xhr.responseJSON?.message || 'Failed to load email preview. Please try again.';
+                showNotification(msg, 'error');
+                $('#eoi-compose-modal').modal('hide');
+            }
+        });
+    }
+
+    /**
+     * Load visa documents for attachment selection
+     */
+    function loadEoiVisaDocuments(clientId, eoiNumber) {
+        $('#eoi-attachment-list').html('<div class="text-center text-muted py-3"><i class="fas fa-spinner fa-spin"></i> Loading documents...</div>');
+        
+        $.ajax({
+            url: `/clients/${clientId}/eoi-roi/visa-documents`,
+            method: 'GET',
+            data: { eoi_number: eoiNumber },
+            success: function(response) {
+                if (response.success) {
+                    renderEoiVisaDocuments(response.data, eoiNumber);
+                } else {
+                    $('#eoi-attachment-list').html('<div class="text-danger">Failed to load documents.</div>');
+                }
+            },
+            error: function() {
+                $('#eoi-attachment-list').html('<div class="text-danger">Error loading documents. Please try again.</div>');
+            }
+        });
+    }
+
+    /**
+     * Render visa documents as checkboxes
+     */
+    function renderEoiVisaDocuments(data, eoiNumber) {
+        let html = '';
+        let totalDocs = 0;
+        
+        // Group 1: Documents referencing this EOI
+        if (data.eoi_references && data.eoi_references.length > 0) {
+            html += `<div class="mb-3">
+                        <h6 class="mb-2"><i class="fas fa-star text-warning"></i> Documents referencing ${eoiNumber}</h6>
+                        <div class="pl-3">`;
+            
+            data.eoi_references.forEach(doc => {
+                html += `<div class="form-check mb-2">
+                            <input class="form-check-input eoi-attachment-checkbox" type="checkbox" 
+                                   value="${doc.id}" data-size="${doc.file_size_mb}" id="doc-${doc.id}">
+                            <label class="form-check-label" for="doc-${doc.id}">
+                                <strong>${doc.file_name}</strong>
+                                <br><small class="text-muted">${doc.category} • ${doc.file_size_mb} MB • ${doc.created_at}</small>
+                            </label>
+                        </div>`;
+                totalDocs++;
+            });
+            
+            html += `</div></div>`;
+        }
+        
+        // Group 2: Other visa documents
+        if (data.other_documents && data.other_documents.length > 0) {
+            html += `<div class="mb-3">
+                        <h6 class="mb-2"><i class="fas fa-folder text-secondary"></i> Other Visa Documents</h6>
+                        <div class="pl-3">`;
+            
+            data.other_documents.forEach(doc => {
+                html += `<div class="form-check mb-2">
+                            <input class="form-check-input eoi-attachment-checkbox" type="checkbox" 
+                                   value="${doc.id}" data-size="${doc.file_size_mb}" id="doc-${doc.id}">
+                            <label class="form-check-label" for="doc-${doc.id}">
+                                ${doc.file_name}
+                                <br><small class="text-muted">${doc.category} • ${doc.file_size_mb} MB • ${doc.created_at}</small>
+                            </label>
+                        </div>`;
+                totalDocs++;
+            });
+            
+            html += `</div></div>`;
+        }
+        
+        // No documents found
+        if (totalDocs === 0) {
+            html = '<div class="text-center text-muted py-3"><i class="fas fa-info-circle"></i> No visa documents available. You can still send the email without attachments.</div>';
+        }
+        
+        $('#eoi-attachment-list').html(html);
+        
+        // Update attachment selection on checkbox change
+        $('.eoi-attachment-checkbox').on('change', updateEoiAttachmentSummary);
+        updateEoiAttachmentSummary();
+    }
+
+    /**
+     * Update attachment summary (count and size)
+     */
+    function updateEoiAttachmentSummary() {
+        const checked = $('.eoi-attachment-checkbox:checked');
+        const count = checked.length;
+        let totalSize = 0;
+        
+        checked.each(function() {
+            totalSize += parseFloat($(this).data('size')) || 0;
+        });
+        
+        totalSize = totalSize.toFixed(2);
+        
+        if (count > 0) {
+            let color = 'text-success';
+            if (count > 10) color = 'text-danger';
+            else if (totalSize > 25) color = 'text-danger';
+            else if (totalSize > 20) color = 'text-warning';
+            
+            $('#eoi-attachment-summary').html(`<span class="${color}"><strong>${count} selected</strong> (${totalSize} MB)</span>`);
+        } else {
+            $('#eoi-attachment-summary').html('<span class="text-muted">No attachments selected</span>');
+        }
+    }
+
+    /**
+     * Send EOI confirmation email with composed data
+     */
+    $('#btn-eoi-send-email').on('click', function() {
+        const subject = $('#eoi-email-subject').val().trim();
+        const body = ''; // Phase 1: always use server-rendered body (readonly field)
+        const documentIds = [];
+        let totalSize = 0;
+        
+        // Collect selected document IDs
+        $('.eoi-attachment-checkbox:checked').each(function() {
+            documentIds.push(parseInt($(this).val()));
+            totalSize += parseFloat($(this).data('size')) || 0;
+        });
+        
+        // Validation
+        if (!subject) {
+            showNotification('Subject is required.', 'error');
+            return;
+        }
+        
+        if (documentIds.length > 10) {
+            showNotification('Maximum 10 attachments allowed. Please deselect some documents.', 'error');
+            return;
+        }
+        
+        if (totalSize > 25) {
+            showNotification(`Total attachment size (${totalSize.toFixed(2)} MB) exceeds 25MB limit. Please deselect some documents.`, 'error');
+            return;
+        }
+        
+        // Confirm send
+        const confirmMsg = documentIds.length > 0 
+            ? `Send email with ${documentIds.length} attachment(s) (${totalSize.toFixed(2)} MB)?`
+            : 'Send email without attachments?';
+        
+        if (!confirm(confirmMsg)) {
+            return;
+        }
+        
+        // Disable button and show loading
+        const $btn = $('#btn-eoi-send-email');
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Sending...');
+        
+        // Send AJAX request
+        $.ajax({
+            url: `/clients/${currentCompose.clientId}/eoi-roi/${currentCompose.eoiId}/send-email`,
+            method: 'POST',
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content'),
+                subject: subject,
+                body: body || null,
+                document_ids: documentIds
+            },
+            success: function(response) {
+                showNotification(response.message || 'Email sent successfully!', 'success');
+                $('#eoi-compose-modal').modal('hide');
+                
+                // Refresh EOI list to show updated status
+                loadEoiRecords();
+                
+                // Refresh workflow section if EOI is currently loaded
+                if (state.selectedEoiId === currentCompose.eoiId) {
+                    loadWorkflowSection(currentCompose.eoiId);
+                }
+            },
+            error: function(xhr) {
+                const msg = xhr.responseJSON?.message || 'Failed to send email. Please try again.';
+                showNotification(msg, 'error');
+            },
+            complete: function() {
+                $btn.prop('disabled', false).html('<i class="fas fa-paper-plane"></i> Send Email');
+            }
+        });
+    });
+
     // Export for global access if needed
     window.EoiRoiModule = {
         loadWorkflowSection: loadWorkflowSection,
+        openEoiComposeModal: openEoiComposeModal,
         state: state
     };
 

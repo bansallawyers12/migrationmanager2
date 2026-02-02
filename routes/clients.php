@@ -189,9 +189,14 @@ Route::prefix('clients/{client}/eoi-roi')->name('clients.eoi-roi.')->group(funct
     Route::delete('/{eoiReference}', [ClientEoiRoiController::class, 'destroy'])->name('destroy');
     Route::get('/{eoiReference}/reveal-password', [ClientEoiRoiController::class, 'revealPassword'])->name('revealPassword');
     
+    // Compose modal endpoints (NEW - for email compose flow)
+    Route::get('/visa-documents', [ClientEoiRoiController::class, 'getVisaDocuments'])->name('visaDocuments');
+    Route::get('/{eoiReference}/email-preview', [ClientEoiRoiController::class, 'getEmailPreview'])->name('emailPreview');
+    
     // Workflow actions
     Route::post('/{eoiReference}/verify', [ClientEoiRoiController::class, 'verifyByStaff'])->name('verify');
-    Route::post('/{eoiReference}/send-email', [ClientEoiRoiController::class, 'sendConfirmationEmail'])->name('sendEmail');
+    Route::post('/{eoiReference}/send-email', [ClientEoiRoiController::class, 'sendConfirmationEmail'])->name('sendEmail')
+        ->middleware('throttle:5,60'); // Rate limit: 5 emails per hour
     Route::post('/{eoiReference}/resolve-amendment', [ClientEoiRoiController::class, 'resolveAmendment'])->name('resolveAmendment');
 });
 

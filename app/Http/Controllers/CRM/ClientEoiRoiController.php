@@ -400,23 +400,32 @@ class ClientEoiRoiController extends Controller
     }
 
     /**
-     * Send or resend confirmation email to client
+     * Send or resend confirmation email to client (UPDATED - with compose data)
      * 
      * POST /clients/{client}/eoi-roi/{eoiReference}/send-email
      */
     public function sendConfirmationEmail(Admin $client, ClientEoiReference $eoiReference, Request $request): JsonResponse
     {
         try {
-            // Allow any authenticated admin (auth:admin middleware); no policy.
-            // $this->authorize('update', $client);
-
-            // Re-enable to enforce client–EOI association (prevent cross-client access).
-            // if ($eoiReference->client_id !== $client->id) {
-            //     return response()->json([
-            //         'success' => false,
-            //         'message' => 'EOI record not found',
-            //     ], 404);
-            // }
+            // Validate input from compose modal
+            $validator = Validator::make($request->all(), [
+                'subject' => ['required', 'string', 'max:255', function ($attribute, $value, $fail) {
+                    if (preg_match('/[\r\n]/', $value)) {
+                        $fail('Subject cannot contain line breaks.');
+                    }
+                }],
+                'body' => 'nullable|string|max:100000',
+                'document_ids' => 'nullable|array|max:10',
+                'document_ids.*' => 'integer|exists:documents,id',
+            ]);
+            
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
 
             // Check if staff has verified first
             if (!$eoiReference->staff_verified) {
@@ -435,6 +444,9 @@ class ClientEoiRoiController extends Controller
             }
 
             $isResend = !empty($eoiReference->confirmation_email_sent_at);
+            
+            // Get subject from request or use default
+            $subject = $request->input('subject', 'Please Confirm Your EOI Details - ' . $eoiReference->EOI_number);
 
             // Generate unique token for confirmation (or use existing if resending)
             if (!$isResend || empty($eoiReference->client_confirmation_token)) {
@@ -445,10 +457,23 @@ class ClientEoiRoiController extends Controller
             $eoiReference->client_confirmation_status = 'pending';
             $eoiReference->save();
 
-            // Get EOI/Points/ROI visa documents to attach (per-EOI or shared)
-            $attachmentsData = $this->getEoiRelatedAttachments($client, $eoiReference);
-            $attachmentLabels = $attachmentsData['labels'];
+            // Get attachments from selected document IDs (NEW - replaces category-based logic)
+            $documentIds = $request->input('document_ids', []);
+            $attachmentsData = $this->buildAttachmentsFromIds($client, $documentIds);
+            
+            // Check total attachment size
+            if ($attachmentsData['total_size_mb'] > 25) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Total attachment size (' . $attachmentsData['total_size_mb'] . 'MB) exceeds 25MB limit.'
+                ], 400);
+            }
+            
             $attachments = $attachmentsData['attachments'];
+            $attachmentLabels = $attachmentsData['labels'];
+            
+            // Use custom body if provided, otherwise use default view
+            $body = $request->input('body');
 
             // Send email
             Mail::to($client->email)->send(new EoiConfirmationMail(
@@ -456,7 +481,9 @@ class ClientEoiRoiController extends Controller
                 $client,
                 $eoiReference->client_confirmation_token,
                 $attachments,
-                $attachmentLabels
+                $attachmentLabels,
+                $subject, // Pass custom subject
+                $body // Pass custom body (null = use default)
             ));
 
             // Log activity
@@ -464,22 +491,24 @@ class ClientEoiRoiController extends Controller
             $this->logActivity(
                 $client->id,
                 "EOI Confirmation Email {$action}",
-                "Confirmation email {$action} to {$client->email} for EOI #{$eoiReference->EOI_number}",
+                "Confirmation email {$action} to {$client->email} for EOI #{$eoiReference->EOI_number} with " . count($documentIds) . " attachment(s)",
                 'email'
             );
 
             return response()->json([
                 'success' => true,
                 'message' => "Confirmation email " . strtolower($action) . " successfully to {$client->email}",
-                'sent_at' => $eoiReference->confirmation_email_sent_at->format('d/m/Y H:i')
+                'sent_at' => $eoiReference->confirmation_email_sent_at->format('d/m/Y H:i'),
+                'attachment_count' => count($attachments)
             ]);
 
         } catch (\Exception $e) {
             Log::error('Error sending confirmation email', [
                 'eoi_id' => $eoiReference->id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            return response()->json(['success' => false, 'message' => 'Error sending confirmation email'], 500);
+            return response()->json(['success' => false, 'message' => 'Error sending confirmation email: ' . $e->getMessage()], 500);
         }
     }
 
@@ -537,9 +566,279 @@ class ClientEoiRoiController extends Controller
     }
 
     /**
+     * Get visa documents for EOI email attachment selection (compose modal)
+     * 
+     * GET /clients/{client}/eoi-roi/visa-documents?eoi_number=E012345
+     */
+    public function getVisaDocuments(Request $request, Admin $client): JsonResponse
+    {
+        try {
+            $eoiNumber = $request->input('eoi_number');
+            
+            // Get all visa documents for this client
+            $documents = Document::where('client_id', $client->id)
+                ->where('doc_type', 'visa')
+                ->where('type', 'client')
+                ->whereNull('not_used_doc')
+                ->whereNotNull('myfile')
+                ->orderBy('created_at', 'desc')
+                ->get();
+            
+            $eoiReferences = [];
+            $otherDocuments = [];
+            
+            foreach ($documents as $doc) {
+                // Get category title from VisaDocumentType
+                $categoryTitle = 'Uncategorized';
+                if ($doc->folder_name) {
+                    $visaDocType = VisaDocumentType::find($doc->folder_name);
+                    if ($visaDocType) {
+                        $categoryTitle = $visaDocType->title;
+                    }
+                }
+                
+                // Calculate file size
+                $fileSizeMb = 0;
+                $s3Key = $this->getS3KeyFromUrl($doc->myfile, $doc->myfile_key, $client->id);
+                if ($s3Key) {
+                    try {
+                        if (Storage::disk('s3')->exists($s3Key)) {
+                            $fileSizeMb = round(Storage::disk('s3')->size($s3Key) / 1048576, 2);
+                        }
+                    } catch (\Exception $e) {
+                        Log::warning('Failed to get file size', ['doc_id' => $doc->id, 'error' => $e->getMessage()]);
+                    }
+                }
+                
+                $docData = [
+                    'id' => $doc->id,
+                    'file_name' => $doc->file_name ?: ('document_' . $doc->id),
+                    'category' => $categoryTitle,
+                    'file_size_mb' => $fileSizeMb,
+                    'created_at' => $doc->created_at->format('d/m/Y'),
+                ];
+                
+                // Check if document references the EOI number
+                $referencesEoi = false;
+                if ($eoiNumber) {
+                    $searchIn = strtolower($doc->file_name . ' ' . $categoryTitle . ' ' . ($doc->title ?? ''));
+                    $referencesEoi = str_contains($searchIn, strtolower($eoiNumber));
+                }
+                
+                if ($referencesEoi) {
+                    $eoiReferences[] = $docData;
+                } else {
+                    $otherDocuments[] = $docData;
+                }
+            }
+            
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'eoi_references' => $eoiReferences,
+                    'other_documents' => $otherDocuments,
+                    'total_count' => count($eoiReferences) + count($otherDocuments),
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error fetching visa documents for email', [
+                'client_id' => $client->id,
+                'error' => $e->getMessage(),
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load visa documents',
+            ], 500);
+        }
+    }
+
+    /**
+     * Get email preview for compose modal (subject + body with EOI data)
+     * 
+     * GET /clients/{client}/eoi-roi/{eoiReference}/email-preview
+     */
+    public function getEmailPreview(Admin $client, ClientEoiReference $eoiReference): JsonResponse
+    {
+        try {
+            // Check client email exists
+            if (!$client->email) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Client email not found. Please add client email first.',
+                ], 400);
+            }
+            
+            // Generate subject
+            $subject = 'Please Confirm Your EOI Details - ' . $eoiReference->EOI_number;
+            
+            // Generate or reuse token
+            if (empty($eoiReference->client_confirmation_token)) {
+                $eoiReference->client_confirmation_token = Str::random(64);
+                $eoiReference->save();
+            }
+            
+            // Render email body (same view used for actual sending)
+            $bodyHtml = view('emails.eoi_confirmation', [
+                'eoi' => $eoiReference,
+                'client' => $client,
+                'token' => $eoiReference->client_confirmation_token,
+                'attachmentLabels' => [], // Empty for preview
+            ])->render();
+            
+            // Strip HTML for plain text preview
+            $bodyPlain = strip_tags(str_replace(['<br>', '<br/>', '<br />'], "\n", $bodyHtml));
+            
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'subject' => $subject,
+                    'body_html' => $bodyHtml,
+                    'body_plain' => $bodyPlain,
+                    'client_email' => $client->email,
+                    'client_name' => $client->first_name . ' ' . $client->last_name,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error generating email preview', [
+                'eoi_id' => $eoiReference->id,
+                'error' => $e->getMessage(),
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate email preview',
+            ], 500);
+        }
+    }
+
+    /**
+     * Build attachments from selected document IDs (replaces category-based logic for compose modal)
+     * 
+     * @param Admin $client
+     * @param array $documentIds
+     * @return array{attachments: array, labels: array, total_size_mb: float}
+     */
+    protected function buildAttachmentsFromIds(Admin $client, array $documentIds): array
+    {
+        if (empty($documentIds)) {
+            return ['attachments' => [], 'labels' => [], 'total_size_mb' => 0];
+        }
+        
+        // Fetch documents - validate they belong to this client
+        $documents = Document::where('client_id', $client->id)
+            ->where('doc_type', 'visa')
+            ->whereIn('id', $documentIds)
+            ->whereNull('not_used_doc')
+            ->where('type', 'client')
+            ->whereNotNull('myfile')
+            ->get();
+        
+        if ($documents->count() !== count($documentIds)) {
+            Log::warning('Some document IDs invalid or not accessible', [
+                'requested' => $documentIds,
+                'found' => $documents->pluck('id')->toArray(),
+            ]);
+        }
+        
+        $attachments = [];
+        $labelsUsed = [];
+        $totalSizeBytes = 0;
+        
+        foreach ($documents as $doc) {
+            // Get category title from VisaDocumentType
+            $categoryTitle = 'Document';
+            if ($doc->folder_name) {
+                $visaDocType = VisaDocumentType::find($doc->folder_name);
+                if ($visaDocType) {
+                    $categoryTitle = $visaDocType->title;
+                }
+            }
+            
+            if (!in_array($categoryTitle, $labelsUsed, true)) {
+                $labelsUsed[] = $categoryTitle;
+            }
+            
+            // Get S3 key
+            $s3Key = $this->getS3KeyFromUrl($doc->myfile, $doc->myfile_key, $client->id);
+            if (empty($s3Key)) {
+                continue;
+            }
+            
+            try {
+                if (!Storage::disk('s3')->exists($s3Key)) {
+                    Log::warning('EOI attachment: S3 file not found', ['key' => $s3Key, 'doc_id' => $doc->id]);
+                    continue;
+                }
+                
+                $data = Storage::disk('s3')->get($s3Key);
+                $totalSizeBytes += strlen($data);
+                
+            } catch (\Throwable $e) {
+                Log::warning('EOI attachment: failed to get S3 file', ['key' => $s3Key, 'error' => $e->getMessage()]);
+                continue;
+            }
+            
+            $ext = strtolower($doc->filetype ?? pathinfo($doc->myfile_key ?? '', PATHINFO_EXTENSION) ?: 'pdf');
+            $mimeMap = [
+                'pdf' => 'application/pdf',
+                'doc' => 'application/msword',
+                'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'xls' => 'application/vnd.ms-excel',
+                'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'jpg' => 'image/jpeg',
+                'jpeg' => 'image/jpeg',
+                'png' => 'image/png',
+            ];
+            $mime = $mimeMap[$ext] ?? 'application/octet-stream';
+            
+            $fileName = $doc->file_name ?: ('document_' . $doc->id);
+            $displayName = $categoryTitle . ' - ' . $fileName . (str_contains($fileName, '.') ? '' : '.' . $ext);
+            
+            $attachments[] = [
+                'data' => $data,
+                'name' => $displayName,
+                'mime' => $mime,
+            ];
+        }
+        
+        $totalSizeMb = round($totalSizeBytes / 1048576, 2);
+        
+        return [
+            'attachments' => $attachments,
+            'labels' => $labelsUsed,
+            'total_size_mb' => $totalSizeMb,
+        ];
+    }
+
+    /**
+     * Helper to extract S3 key from document URL
+     * 
+     * @param string|null $myfile
+     * @param string|null $myfileKey
+     * @param int $clientId
+     * @return string|null
+     */
+    protected function getS3KeyFromUrl($myfile, $myfileKey, $clientId): ?string
+    {
+        if (!empty($myfile) && str_starts_with($myfile, 'http')) {
+            $path = parse_url($myfile, PHP_URL_PATH);
+            if ($path) {
+                return ltrim(urldecode($path), '/');
+            }
+        }
+        if (!empty($myfileKey)) {
+            return $clientId . '/visa/' . $myfileKey;
+        }
+        return null;
+    }
+
+    /**
      * Get visa documents from EOI Summary, Points Summary, ROI Draft categories for email attachment.
      * Prefers per-EOI categories (e.g. "EOI Summary - E0121253652") when present; otherwise uses
      * shared categories ("EOI Summary", "Points Summary", "ROI Draft").
+     * 
+     * @deprecated This method is no longer used in the compose flow. Kept for backward compatibility.
      *
      * @return array{attachments: array<int, array{data: string, name: string, mime: string}>, labels: array<int, string>}
      */

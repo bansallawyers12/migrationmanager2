@@ -11,7 +11,13 @@ use Illuminate\Support\Facades\Validator;
 class ClientPortalNotificationController extends Controller
 {
     /**
-     * List all notifications for the authenticated client.
+     * Notification types that are considered client-portal related (web or mobile).
+     * Only these types are listed/visible in the Client Portal Notification API.
+     */
+    private const CLIENT_PORTAL_NOTIFICATION_TYPES = ['message'];
+
+    /**
+     * List all notifications for the authenticated client (client-portal related only).
      * Optionally filter by client_matter_id (matter).
      *
      * GET /api/notifications
@@ -44,6 +50,7 @@ class ClientPortalNotificationController extends Controller
             $query = DB::table('notifications')
                 ->leftJoin('admins as sender', 'notifications.sender_id', '=', 'sender.id')
                 ->where('notifications.receiver_id', $clientId)
+                ->whereIn('notifications.notification_type', self::CLIENT_PORTAL_NOTIFICATION_TYPES)
                 ->select(
                     'notifications.id',
                     'notifications.sender_id',
@@ -110,6 +117,7 @@ class ClientPortalNotificationController extends Controller
                 ->leftJoin('admins as sender', 'notifications.sender_id', '=', 'sender.id')
                 ->where('notifications.id', $id)
                 ->where('notifications.receiver_id', $clientId)
+                ->whereIn('notifications.notification_type', self::CLIENT_PORTAL_NOTIFICATION_TYPES)
                 ->select(
                     'notifications.id',
                     'notifications.sender_id',
@@ -165,6 +173,7 @@ class ClientPortalNotificationController extends Controller
             $updated = DB::table('notifications')
                 ->where('id', $id)
                 ->where('receiver_id', $clientId)
+                ->whereIn('notification_type', self::CLIENT_PORTAL_NOTIFICATION_TYPES)
                 ->update([
                     'receiver_status' => 1,
                     'seen' => 1,
