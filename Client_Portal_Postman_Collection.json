@@ -9251,7 +9251,7 @@
 			]
 		},
 		{
-			"name": "Process Appointment Payment",
+			"name": "Record Appointment Payment",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -9272,7 +9272,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"appointment_id\": 123,\n    \"amount\": 150.00,\n    \"payment_method_id\": \"pm_card_visa\",\n    \"currency\": \"AUD\"\n}",
+					"raw": "{\n    \"appointment_id\": 123,\n    \"payment_intent_id\": \"pi_xxxxxxxxxxxxx\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -9280,16 +9280,16 @@
 					}
 				},
 				"url": {
-					"raw": "{{base_url}}/appointments/process-payment",
+					"raw": "{{base_url}}/appointments/record-payment",
 					"host": [
 						"{{base_url}}"
 					],
 					"path": [
 						"appointments",
-						"process-payment"
+						"record-payment"
 					]
 				},
-				"description": "Process payment for an appointment using Stripe. This endpoint creates a payment intent, processes the payment, and records the transaction.\n\n**Input Parameters:**\n\n```json\n{\n    \"appointment_id\": 123,\n    \"amount\": 150.00,\n    \"payment_method_id\": \"pm_card_visa\",\n    \"currency\": \"AUD\"\n}\n```\n\n**Parameter Details:**\n- `appointment_id` (required, integer): The ID of the appointment to process payment for\n- `amount` (required, decimal): Payment amount (must be positive)\n- `payment_method_id` (required, string): Stripe payment method ID\n- `currency` (optional, string): Currency code (default: AUD)\n\n**Note:** For testing, you'll need to create a payment method first using Stripe API with test card numbers like 4242424242424242."
+				"description": "Record payment for an appointment (Option C: frontend owns PaymentIntent, backend only records). Call this **after** the frontend has created and confirmed the PaymentIntent with Stripe (including 3DS if required).\n\n**URL:** Ensure {{base_url}} includes the API prefix (e.g. https://your-domain.com/api). Full URL: {{base_url}}/appointments/record-payment. If you get 405 Method Not Allowed, clear route cache on the server: php artisan route:clear\n\n**Input Parameters:**\n\n```json\n{\n    \"appointment_id\": 123,\n    \"payment_intent_id\": \"pi_xxxxxxxxxxxxx\"\n}\n```\n\n**Parameter Details:**\n- `appointment_id` (required, integer): The ID of the appointment to record payment for\n- `payment_intent_id` (required, string): Stripe **Payment Intent** ID (must start with pi_), NOT the Payment Method ID (pm_). Use the id from the PaymentIntent after the frontend has confirmed the payment.\n\n**Flow:** Frontend creates Payment Method → creates PaymentIntent with Customer → confirms (e.g. confirmCardPayment) → on success, call this endpoint with the PaymentIntent ID. Backend verifies the PaymentIntent with Stripe and updates the appointment + payment record."
 			},
 			"response": [
 				{
@@ -9312,7 +9312,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"appointment_id\": 123,\n    \"amount\": 150.00,\n    \"payment_method_id\": \"pm_card_visa\",\n    \"currency\": \"AUD\"\n}",
+							"raw": "{\n    \"appointment_id\": 123,\n    \"payment_intent_id\": \"pi_xxxxxxxxxxxxx\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -9320,13 +9320,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{base_url}}/appointments/process-payment",
+							"raw": "{{base_url}}/appointments/record-payment",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"appointments",
-								"process-payment"
+								"record-payment"
 							]
 						}
 					},
@@ -9340,7 +9340,7 @@
 						}
 					],
 					"cookie": [],
-					"body": "{\n    \"success\": true,\n    \"message\": \"Payment processed successfully\",\n    \"data\": {\n        \"payment_id\": 456,\n        \"appointment_id\": 123,\n        \"amount\": 150.00,\n        \"currency\": \"AUD\",\n        \"status\": \"succeeded\",\n        \"stripe_payment_intent_id\": \"pi_xxxxxxxxxxxxx\",\n        \"stripe_charge_id\": \"ch_xxxxxxxxxxxxx\",\n        \"payment_date\": \"2026-01-28T10:30:00.000000Z\"\n    }\n}"
+					"body": "{\n    \"success\": true,\n    \"message\": \"Payment processed successfully\",\n    \"data\": {\n        \"appointment_id\": 123,\n        \"payment_id\": 456,\n        \"transaction_id\": \"pi_xxxxxxxxxxxxx\",\n        \"charge_id\": \"ch_xxxxxxxxxxxxx\",\n        \"amount\": 150.00,\n        \"currency\": \"AUD\",\n        \"status\": \"paid\",\n        \"receipt_url\": \"https://pay.stripe.com/receipts/xxx\",\n        \"paid_at\": \"2026-01-28T10:30:00.000000Z\",\n        \"appointment\": {}\n    },\n    \"bansal_synced\": true\n}"
 				},
 				{
 					"name": "Validation Error",
@@ -9370,13 +9370,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{base_url}}/appointments/process-payment",
+							"raw": "{{base_url}}/appointments/record-payment",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"appointments",
-								"process-payment"
+								"record-payment"
 							]
 						}
 					},
@@ -9390,10 +9390,10 @@
 						}
 					],
 					"cookie": [],
-					"body": "{\n    \"success\": false,\n    \"message\": \"Validation failed\",\n    \"errors\": {\n        \"amount\": [\"The amount field is required.\"],\n        \"payment_method_id\": [\"The payment method id field is required.\"]\n    }\n}"
+					"body": "{\n    \"success\": false,\n    \"message\": \"Validation failed: The payment intent id field is required.\",\n    \"errors\": {\n        \"payment_intent_id\": [\"The payment intent id field is required.\"]\n    }\n}"
 				},
 				{
-					"name": "Payment Failed",
+					"name": "Payment Not Succeeded",
 					"originalRequest": {
 						"method": "POST",
 						"header": [
@@ -9412,7 +9412,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"appointment_id\": 123,\n    \"amount\": 150.00,\n    \"payment_method_id\": \"pm_card_chargeDeclined\",\n    \"currency\": \"AUD\"\n}",
+							"raw": "{\n    \"appointment_id\": 123,\n    \"payment_intent_id\": \"pi_xxxxxxxxxxxxx\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -9420,18 +9420,18 @@
 							}
 						},
 						"url": {
-							"raw": "{{base_url}}/appointments/process-payment",
+							"raw": "{{base_url}}/appointments/record-payment",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"appointments",
-								"process-payment"
+								"record-payment"
 							]
 						}
 					},
-					"status": "Payment Required",
-					"code": 402,
+					"status": "Unprocessable Entity",
+					"code": 422,
 					"_postman_previewlanguage": "json",
 					"header": [
 						{
@@ -9440,7 +9440,7 @@
 						}
 					],
 					"cookie": [],
-					"body": "{\n    \"success\": false,\n    \"message\": \"Payment failed: Your card was declined.\",\n    \"error\": \"card_declined\"\n}"
+					"body": "{\n    \"success\": false,\n    \"message\": \"Payment has not succeeded. Current status: requires_payment_method\",\n    \"data\": {}\n}"
 				}
 			]
 		},

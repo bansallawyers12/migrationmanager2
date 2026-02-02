@@ -398,6 +398,154 @@ class StripePaymentService
     }
 
     /**
+     * Record payment by PaymentIntent ID (Option C: frontend owns PaymentIntent, backend only records).
+     * Call this after the frontend has created and confirmed the PaymentIntent with Stripe.
+     *
+     * @param BookingAppointment $appointment
+     * @param string $paymentIntentId Stripe PaymentIntent ID (pi_...)
+     * @param array $metadata Optional (ip, user_agent)
+     * @return array ['success' => bool, 'data' => array, 'message' => string]
+     */
+    public function recordPaymentByIntent(BookingAppointment $appointment, string $paymentIntentId, array $metadata = []): array
+    {
+        try {
+            $paymentIntent = PaymentIntent::retrieve($paymentIntentId);
+
+            if ($paymentIntent->status !== 'succeeded') {
+                return [
+                    'success' => false,
+                    'data' => [],
+                    'message' => 'Payment has not succeeded. Current status: ' . $paymentIntent->status,
+                ];
+            }
+
+            $appointmentAmount = (float) ($appointment->final_amount ?? $appointment->amount);
+            $amountInCents = (int) round($appointmentAmount * 100);
+            if ($paymentIntent->amount !== $amountInCents) {
+                Log::warning('Record payment: amount mismatch', [
+                    'appointment_id' => $appointment->id,
+                    'expected_cents' => $amountInCents,
+                    'stripe_cents' => $paymentIntent->amount,
+                ]);
+                return [
+                    'success' => false,
+                    'data' => [],
+                    'message' => 'Payment amount does not match appointment amount.',
+                ];
+            }
+
+            // Optional: verify metadata appointment_id if frontend set it
+            if (!empty($paymentIntent->metadata->appointment_id) && (string) $paymentIntent->metadata->appointment_id !== (string) $appointment->id) {
+                return [
+                    'success' => false,
+                    'data' => [],
+                    'message' => 'PaymentIntent does not belong to this appointment.',
+                ];
+            }
+
+            // Avoid duplicate record for same PaymentIntent
+            $existing = AppointmentPayment::where('transaction_id', $paymentIntent->id)->first();
+            if ($existing) {
+                if ($existing->appointment_id !== (int) $appointment->id) {
+                    return [
+                        'success' => false,
+                        'data' => ['payment_id' => $existing->id],
+                        'message' => 'This payment was already recorded for another appointment.',
+                    ];
+                }
+                $this->updateAppointmentAfterPayment($appointment, $existing);
+                $appointment->refresh();
+                return [
+                    'success' => true,
+                    'data' => [
+                        'payment_id' => $existing->id,
+                        'appointment_id' => $appointment->id,
+                        'payment_intent_id' => $paymentIntent->id,
+                        'charge_id' => $paymentIntent->latest_charge,
+                        'amount' => $existing->amount,
+                        'currency' => $existing->currency,
+                        'status' => 'succeeded',
+                        'receipt_url' => $existing->receipt_url,
+                        'paid_at' => $appointment->paid_at ? $appointment->paid_at->toIso8601String() : null,
+                    ],
+                    'message' => 'Payment already recorded.',
+                ];
+            }
+
+            $receiptUrl = null;
+            if (!empty($paymentIntent->charges->data[0]->receipt_url)) {
+                $receiptUrl = $paymentIntent->charges->data[0]->receipt_url;
+            }
+
+            $payment = AppointmentPayment::create([
+                'appointment_id' => $appointment->id,
+                'payment_gateway' => 'stripe',
+                'transaction_id' => $paymentIntent->id,
+                'charge_id' => $paymentIntent->latest_charge,
+                'customer_id' => $paymentIntent->customer ?? null,
+                'payment_method_id' => is_string($paymentIntent->payment_method) ? $paymentIntent->payment_method : ($paymentIntent->payment_method->id ?? null),
+                'amount' => $appointmentAmount,
+                'currency' => strtoupper($paymentIntent->currency ?? 'AUD'),
+                'status' => 'succeeded',
+                'transaction_data' => $paymentIntent->toArray(),
+                'receipt_url' => $receiptUrl,
+                'client_ip' => $metadata['ip'] ?? null,
+                'user_agent' => $metadata['user_agent'] ?? null,
+                'processed_at' => now(),
+            ]);
+
+            $this->updateAppointmentAfterPayment($appointment, $payment);
+
+            Log::info('Stripe payment recorded by intent', [
+                'appointment_id' => $appointment->id,
+                'payment_id' => $payment->id,
+                'payment_intent_id' => $paymentIntent->id,
+            ]);
+
+            $appointment->refresh();
+
+            return [
+                'success' => true,
+                'data' => [
+                    'payment_id' => $payment->id,
+                    'appointment_id' => $appointment->id,
+                    'payment_intent_id' => $paymentIntent->id,
+                    'charge_id' => $paymentIntent->latest_charge,
+                    'amount' => $payment->amount,
+                    'currency' => $payment->currency,
+                    'status' => 'succeeded',
+                    'receipt_url' => $payment->receipt_url,
+                    'paid_at' => $appointment->paid_at ? $appointment->paid_at->toIso8601String() : null,
+                ],
+                'message' => 'Payment processed successfully',
+            ];
+        } catch (InvalidRequestException $e) {
+            Log::error('Stripe record payment: invalid request', [
+                'appointment_id' => $appointment->id,
+                'payment_intent_id' => $paymentIntentId,
+                'error' => $e->getMessage(),
+            ]);
+            return [
+                'success' => false,
+                'data' => [],
+                'message' => $e->getMessage(),
+            ];
+        } catch (Exception $e) {
+            Log::error('Stripe record payment error', [
+                'appointment_id' => $appointment->id,
+                'payment_intent_id' => $paymentIntentId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return [
+                'success' => false,
+                'data' => [],
+                'message' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
      * Get payment history for an appointment
      * 
      * @param int $appointmentId

@@ -1593,18 +1593,27 @@ class ClientPortalAppointmentController extends BaseController
 
     /**
      * Process Stripe payment for appointment
-     * 
-     * Processes payment for paid appointments (service_id 2 or 3).
-     * Updates appointment status to 'paid' on successful payment.
-     * 
+     *
+     * DEPRECATED (Option C): Use POST /appointments/record-payment with payment_intent_id instead.
+     * Frontend should create and confirm the PaymentIntent with Stripe, then call record-payment.
+     *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function processAppointmentPayment(Request $request)
     {
+        // Option C: Frontend owns PaymentIntent; backend only records. This endpoint is deprecated.
+        return $this->sendError(
+            'This endpoint is deprecated. Use POST /appointments/record-payment with appointment_id and payment_intent_id after confirming payment on the frontend.',
+            ['use_endpoint' => '/appointments/record-payment'],
+            410
+        );
+
+        /*
+        // --- COMMENTED OUT: Original process-payment logic (Option C: use record-payment instead) ---
         try {
             $user = $request->user();
-            
+
             if (!$user) {
                 return $this->sendError('Unauthenticated', [], 401);
             }
@@ -1648,12 +1657,10 @@ class ClientPortalAppointmentController extends BaseController
                 return $this->sendError('This appointment has already been completed', [], 422);
             }
 
-            
-
             // Verify appointment amount
             $expectedAmount = 150.00; // As per requirements
             $appointmentAmount = (float) ($appointment->final_amount ?? $appointment->amount);
-            
+
             if ($appointmentAmount != $expectedAmount) {
                 Log::warning('Appointment amount mismatch', [
                     'appointment_id' => $appointment->id,
@@ -1665,7 +1672,7 @@ class ClientPortalAppointmentController extends BaseController
 
             // Process payment using Stripe service
             $stripeService = app(StripePaymentService::class);
-            
+
             $metadata = [
                 'ip' => $request->ip(),
                 'user_agent' => $request->userAgent(),
@@ -1700,10 +1707,8 @@ class ClientPortalAppointmentController extends BaseController
             if ($appointment->bansal_appointment_id) {
                 try {
                     $bansalApiClient = app(BansalApiClient::class);
-                    
+
                     // Update appointment status on Bansal website
-                    // Note: You may need to add updateAppointmentPaymentStatus method to BansalApiClient
-                    // For now, we'll just log it
                     Log::info('Payment successful - should sync with Bansal API', [
                         'appointment_id' => $appointment->id,
                         'bansal_appointment_id' => $appointment->bansal_appointment_id,
@@ -1753,6 +1758,125 @@ class ClientPortalAppointmentController extends BaseController
                 'trace' => $e->getTraceAsString()
             ]);
             return $this->sendError('An error occurred while processing payment: ' . $e->getMessage(), [], 500);
+        }
+        */
+    }
+
+    /**
+     * Record payment by PaymentIntent ID (Option C: frontend owns PaymentIntent, backend only records).
+     * Call this after the frontend has created and confirmed the PaymentIntent with Stripe.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function recordAppointmentPayment(Request $request)
+    {
+        try {
+            $user = $request->user();
+
+            if (!$user) {
+                return $this->sendError('Unauthenticated', [], 401);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'appointment_id' => 'required|integer|exists:booking_appointments,id',
+                'payment_intent_id' => 'required|string',
+            ]);
+
+            if ($validator->fails()) {
+                return $this->sendError('Validation failed: ' . $validator->errors()->first(), $validator->errors(), 422);
+            }
+
+            $appointment = BookingAppointment::where('id', $request->appointment_id)
+                ->where('client_id', $user->id)
+                ->first();
+
+            if (!$appointment) {
+                return $this->sendError('Appointment not found or does not belong to you', [], 404);
+            }
+
+            if (!in_array($appointment->service_id, [1, 3])) {
+                return $this->sendError('This appointment does not require payment', [], 422);
+            }
+
+            if ($appointment->is_paid && $appointment->payment_status === 'completed') {
+                return $this->sendError('This appointment has already been paid', [], 422);
+            }
+
+            if ($appointment->is_paid && $appointment->status === 'cancelled') {
+                return $this->sendError('This appointment has already been cancelled', [], 422);
+            }
+
+            if ($appointment->is_paid && $appointment->status === 'completed') {
+                return $this->sendError('This appointment has already been completed', [], 422);
+            }
+
+            $stripeService = app(StripePaymentService::class);
+            $metadata = [
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ];
+
+            $result = $stripeService->recordPaymentByIntent(
+                $appointment,
+                $request->payment_intent_id,
+                $metadata
+            );
+
+            if (!$result['success']) {
+                return $this->sendError($result['message'], $result['data'] ?? [], 422);
+            }
+
+            $syncError = null;
+            if ($appointment->bansal_appointment_id) {
+                try {
+                    Log::info('Payment successful - should sync with Bansal API', [
+                        'appointment_id' => $appointment->id,
+                        'bansal_appointment_id' => $appointment->bansal_appointment_id,
+                    ]);
+                } catch (\Exception $e) {
+                    $syncError = $e->getMessage();
+                    Log::error('Failed to sync payment status with Bansal API', [
+                        'appointment_id' => $appointment->id,
+                        'error' => $syncError,
+                    ]);
+                }
+            }
+
+            $appointment->refresh();
+
+            $message = $result['message'];
+            if ($syncError) {
+                $message .= ' Note: Payment completed but sync with website failed.';
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'data' => [
+                    'appointment_id' => $appointment->id,
+                    'payment_id' => $result['data']['payment_id'],
+                    'transaction_id' => $result['data']['payment_intent_id'],
+                    'charge_id' => $result['data']['charge_id'],
+                    'amount' => $result['data']['amount'],
+                    'currency' => $result['data']['currency'],
+                    'status' => 'paid',
+                    'receipt_url' => $result['data']['receipt_url'] ?? null,
+                    'paid_at' => $result['data']['paid_at'],
+                    'appointment' => $this->formatAppointmentData($appointment),
+                ],
+                'bansal_synced' => !$syncError
+            ], 200);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->sendError('Validation failed', $e->errors(), 422);
+        } catch (\Exception $e) {
+            Log::error('Record Payment API Error: ' . $e->getMessage(), [
+                'user_id' => $request->user()->id ?? null,
+                'request_data' => $request->all(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->sendError('An error occurred while recording payment: ' . $e->getMessage(), [], 500);
         }
     }
 

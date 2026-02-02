@@ -220,18 +220,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/postcode-search', [OthersController::class, 'searchPostcode']);
     Route::get('/postcode-result', [OthersController::class, 'getPostcodeResult']);
     
-    // Appointment routes
+    // Appointment routes (specific paths before /appointments/{id} to avoid 405 on POST)
     Route::get('/appointments', [ClientPortalAppointmentController::class, 'getAppointmentList']);
+    Route::post('/appointments/process-payment', [ClientPortalAppointmentController::class, 'processAppointmentPayment']);
+    Route::post('/appointments/record-payment', [ClientPortalAppointmentController::class, 'recordAppointmentPayment']);
+    Route::get('/appointments/{id}/payment-history', [ClientPortalAppointmentController::class, 'getPaymentHistory']);
     Route::get('/appointments/{id}', [ClientPortalAppointmentController::class, 'getSingleAppointment']);
     Route::post('/appointments', [ClientPortalAppointmentController::class, 'addAppointment']);
     Route::post('/appointments/{id}/status', [ClientPortalAppointmentController::class, 'updateAppointmentStatus']);
     Route::post('/appointments/update-appointment', [ClientPortalAppointmentController::class, 'updateAppointment']);
     Route::post('/appointments/get-disabled-dates', [ClientPortalAppointmentController::class, 'getDisabledDateFromCalendar']);
     Route::post('/appointments/get-disabled-slots', [ClientPortalAppointmentController::class, 'getDisabledSlotsOfAnyDateFromCalendar']);
-    
-    // Appointment Payment routes
-    Route::post('/appointments/process-payment', [ClientPortalAppointmentController::class, 'processAppointmentPayment']);
-    Route::get('/appointments/{id}/payment-history', [ClientPortalAppointmentController::class, 'getPaymentHistory']);
     
 });
 
