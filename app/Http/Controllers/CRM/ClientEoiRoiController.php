@@ -698,6 +698,12 @@ class ClientEoiRoiController extends Controller
                 'pointsData' => $pointsData,
             ])->render();
             
+            // Scope preview HTML so its "body" styles don't affect the page (modal injects this into DOM).
+            // Replace body selector with a class used only inside the preview container; replace body tags with div.
+            $bodyHtml = preg_replace('/\bbody\s*\{/', '.eoi-email-preview-scope {', $bodyHtml);
+            $bodyHtml = preg_replace('/<body([^>]*)>/', '<div class="eoi-email-preview-scope"$1>', $bodyHtml);
+            $bodyHtml = str_replace('</body>', '</div>', $bodyHtml);
+            
             // Strip HTML for plain text preview
             $bodyPlain = strip_tags(str_replace(['<br>', '<br/>', '<br />'], "\n", $bodyHtml));
             
