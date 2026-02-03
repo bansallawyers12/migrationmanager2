@@ -97,6 +97,9 @@ class VisaExpireReminderEmail extends Command
                     $message = str_replace('{Visa Valid Upto}',$visaExpiry, $message);
                     $message = str_replace('{Company Name}',$FROM_MAIL_COMPANY_NAME, $message);
 
+                    $consumerGuideLink = '<br><br>Consumer guide: <a href="https://www.mara.gov.au/get-help-visa-subsite/FIles/consumer_guide_english.pdf">https://www.mara.gov.au/get-help-visa-subsite/FIles/consumer_guide_english.pdf</a>';
+                    $message .= $consumerGuideLink;
+
                     $ccarray = array();
                     $array = array();
 

@@ -169,6 +169,9 @@
         <div class="email-footer">
             <p>This is an automated email from <strong>BANSAL Immigration</strong>.</p>
             <p>If you have any questions, please contact our office.</p>
+            <p style="margin-top: 15px; font-size: 13px;">
+                Consumer guide: <a href="https://www.mara.gov.au/get-help-visa-subsite/FIles/consumer_guide_english.pdf" style="color: #4f46e5; text-decoration: none; font-weight: 600;">https://www.mara.gov.au/get-help-visa-subsite/FIles/consumer_guide_english.pdf</a>
+            </p>
             <p style="margin-top: 15px; font-size: 12px; color: #666666;">
                 &copy; {{ date('Y') }} BANSAL Immigration. All rights reserved.
             </p>

@@ -50,6 +50,9 @@
                   </td>
                 </tr>
               </table>
+              <p style="margin:20px 0 0 0;font-size:14px;line-height:22px;font-family:Arial,sans-serif;color:#111827;">
+                Consumer guide: <a href="https://www.mara.gov.au/get-help-visa-subsite/FIles/consumer_guide_english.pdf" style="color:#2563eb;text-decoration:underline;">https://www.mara.gov.au/get-help-visa-subsite/FIles/consumer_guide_english.pdf</a>
+              </p>
             </td>
           </tr>
           <tr>

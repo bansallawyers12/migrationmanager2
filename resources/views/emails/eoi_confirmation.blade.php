@@ -319,6 +319,9 @@
         <div class="footer">
             <p>This is an automated email. Please do not reply directly to this message.</p>
             <p>If you have any questions, please contact your migration agent.</p>
+            <p style="margin-top: 15px; font-size: 14px;">
+                Consumer guide: <a href="https://www.mara.gov.au/get-help-visa-subsite/FIles/consumer_guide_english.pdf" style="color: #667eea; text-decoration: none; font-weight: 600;">https://www.mara.gov.au/get-help-visa-subsite/FIles/consumer_guide_english.pdf</a>
+            </p>
         </div>
     </div>
 </body>
