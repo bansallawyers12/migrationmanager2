@@ -3251,6 +3251,9 @@ class ClientPersonalDetailsController extends Controller
                     $start = $requestData['start_date'][$key] ?? null;
                     $finish = $requestData['finish_date'][$key] ?? null;
                     $relevant_qualification = isset($requestData['relevant_qualification'][$key]) && $requestData['relevant_qualification'][$key] == 1 ? 1 : 0;
+                    $specialist_education = isset($requestData['specialist_education'][$key]) && $requestData['specialist_education'][$key] == 1 ? 1 : 0;
+                    $stem_qualification = isset($requestData['stem_qualification'][$key]) && $requestData['stem_qualification'][$key] == 1 ? 1 : 0;
+                    $regional_study = isset($requestData['regional_study'][$key]) && $requestData['regional_study'][$key] == 1 ? 1 : 0;
                     $qualificationId = $requestData['qualification_id'][$key] ?? null;
 
                     // Convert start_date from dd/mm/yyyy to Y-m-d for database storage
@@ -3298,6 +3301,9 @@ class ClientPersonalDetailsController extends Controller
                                 if ($existingQualification->start_date != $formatted_start_date) $hasChanges = true;
                                 if ($existingQualification->finish_date != $formatted_finish_date) $hasChanges = true;
                                 if ($existingQualification->relevant_qualification != $relevant_qualification) $hasChanges = true;
+                                if ($existingQualification->specialist_education != $specialist_education) $hasChanges = true;
+                                if ($existingQualification->stem_qualification != $stem_qualification) $hasChanges = true;
+                                if ($existingQualification->regional_study != $regional_study) $hasChanges = true;
                                 
                                 if ($hasChanges) {
                                     $actuallyModifiedCount++;
@@ -3313,7 +3319,10 @@ class ClientPersonalDetailsController extends Controller
                                     'qual_state' => $qual_state,
                                     'start_date' => $formatted_start_date,
                                     'finish_date' => $formatted_finish_date,
-                                    'relevant_qualification' => $relevant_qualification
+                                    'relevant_qualification' => $relevant_qualification,
+                                    'specialist_education' => $specialist_education,
+                                    'stem_qualification' => $stem_qualification,
+                                    'regional_study' => $regional_study
                                 ]);
                             }
                         } else {
@@ -3330,9 +3339,9 @@ class ClientPersonalDetailsController extends Controller
                                 'start_date' => $formatted_start_date,
                                 'finish_date' => $formatted_finish_date,
                                 'relevant_qualification' => $relevant_qualification,
-                                'specialist_education' => 0,
-                                'stem_qualification' => 0,
-                                'regional_study' => 0
+                                'specialist_education' => $specialist_education,
+                                'stem_qualification' => $stem_qualification,
+                                'regional_study' => $regional_study
                             ]);
                             $newRecordsCount++;
                         }

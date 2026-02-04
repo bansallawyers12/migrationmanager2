@@ -2902,6 +2902,9 @@ window.saveQualificationsInfo = function() {
         const startDate = section.querySelector('input[name*="start_date"]')?.value;
         const finishDate = section.querySelector('input[name*="finish_date"]')?.value;
         const relevantQual = section.querySelector('input[name*="relevant_qualification"]')?.checked;
+        const specialistEducation = section.querySelector('input[name*="specialist_education"]')?.checked;
+        const stemQualification = section.querySelector('input[name*="stem_qualification"]')?.checked;
+        const regionalStudy = section.querySelector('input[name*="regional_study"]')?.checked;
         
         // Append data in array format that controller expects
         if (qualId) formData.append(`qualification_id[${index}]`, qualId);
@@ -2916,6 +2919,9 @@ window.saveQualificationsInfo = function() {
         if (relevantQual) {
             formData.append(`relevant_qualification[${index}]`, '1');
         }
+        formData.append(`specialist_education[${index}]`, specialistEducation ? '1' : '0');
+        formData.append(`stem_qualification[${index}]`, stemQualification ? '1' : '0');
+        formData.append(`regional_study[${index}]`, regionalStudy ? '1' : '0');
     });
     
     saveSectionData('qualificationsInfo', formData, function() {
