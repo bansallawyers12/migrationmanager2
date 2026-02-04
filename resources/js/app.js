@@ -3,66 +3,76 @@ import './bootstrap';
 import Alpine from 'alpinejs';
 import SignaturePad from 'signature_pad';
 import Echo from 'laravel-echo';
-import Pusher from 'pusher-js';
 
+// Make Alpine & SignaturePad globally available
 window.Alpine = Alpine;
 window.SignaturePad = SignaturePad;
 
 Alpine.start();
 
-// Initialize Laravel Echo with Reverb (uses Pusher protocol)
-// Reverb is Laravel's native WebSocket server
-// If VITE_REVERB_APP_KEY is not set, Echo will not be initialized and polling fallback will be used
+/*
+|--------------------------------------------------------------------------
+| Laravel Echo + Reverb (PRODUCTION CONFIG)
+|--------------------------------------------------------------------------
+| - Uses wss only (SSL)
+| - Browser connects to port 443
+| - Nginx proxies /app -> Reverb (8080)
+| - No Pusher dependency needed
+*/
+
 if (import.meta.env.VITE_REVERB_APP_KEY) {
     try {
-        window.Pusher = Pusher;
-        const wsHost = import.meta.env.VITE_REVERB_HOST || window.location.hostname;
-        // Use ws (not wss) for localhost so Reverb connection works without TLS
-        const useTLS = (wsHost !== 'localhost' && wsHost !== '127.0.0.1') &&
-            ((import.meta.env.VITE_REVERB_SCHEME ?? 'http') === 'https');
-
         window.Echo = new Echo({
             broadcaster: 'reverb',
             key: import.meta.env.VITE_REVERB_APP_KEY,
-            wsHost,
-            wsPort: import.meta.env.VITE_REVERB_PORT ?? 8080,
-            wssPort: import.meta.env.VITE_REVERB_PORT ?? 8080,
-            forceTLS: useTLS,
-            enabledTransports: ['ws', 'wss'],
+
+            // Reverb public host (subdomain)
+            wsHost: import.meta.env.VITE_REVERB_HOST,
+
+            // Browser MUST use 443 in production
+            wsPort: 443,
+            wssPort: 443,
+
+            // Force secure WebSocket
+            forceTLS: true,
+            enabledTransports: ['wss'],
+
             authEndpoint: '/broadcasting/auth',
             auth: {
                 headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+                    'X-CSRF-TOKEN': document
+                        .querySelector('meta[name="csrf-token"]')
+                        ?.getAttribute('content'),
                 },
             },
         });
-        
-        console.log('✅ Laravel Echo initialized with Reverb');
+
+        console.log('✅ Laravel Echo initialized with Reverb (production)');
     } catch (error) {
-        console.warn('⚠️ Failed to initialize Laravel Echo:', error.message);
-        // Set flag to indicate Echo is intentionally unavailable
+        console.warn('⚠️ Failed to initialize Laravel Echo:', error);
         window.EchoDisabled = true;
     }
 } else {
-    // Set flag to indicate Echo is intentionally not configured (not an error)
     window.EchoDisabled = true;
 }
 
-// FullCalendar v6 - for new booking appointments system
-// Import FullCalendar core and plugins
+/*
+|--------------------------------------------------------------------------
+| FullCalendar v6
+|--------------------------------------------------------------------------
+*/
+
 import { Calendar } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import listPlugin from '@fullcalendar/list';
 
-// Note: FullCalendar v6 CSS is loaded locally in the blade template
-
-// Make FullCalendar v6 available globally for blade templates
+// Make FullCalendar globally available for Blade templates
 window.FullCalendar = { Calendar };
 window.FullCalendarPlugins = {
     dayGridPlugin,
     timeGridPlugin,
     interactionPlugin,
-    listPlugin
+    listPlugin,
 };
