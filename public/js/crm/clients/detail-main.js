@@ -8101,11 +8101,85 @@ Bansal Immigration`;
 
                         }
 
+                        // Initialize calculation handlers for Lead form (Total Block Fee, Total DoHA Charges, Total DoHA Surcharges)
+                        if (typeof window.initializeCostAssignmentCalculationsLead === 'function') {
+                            window.initializeCostAssignmentCalculationsLead();
+                        } else {
+                            calculateTotalBlockFeeLead();
+                            calculateTotalDoHAChargesLead();
+                            calculateTotalDoHASurchargesLead();
+                        }
+
                     }
 
                 });
 
             }
+
+        // Lead form calculation functions (uses _lead suffix IDs)
+        function initializeCostAssignmentCalculationsLead() {
+            $('#Block_1_Ex_Tax_lead, #Block_2_Ex_Tax_lead, #Block_3_Ex_Tax_lead').off('input change keyup');
+            $('#Dept_Base_Application_Charge_lead, #Dept_Non_Internet_Application_Charge_lead, #Dept_Additional_Applicant_Charge_18_Plus_lead, #Dept_Additional_Applicant_Charge_Under_18_lead, #Dept_Subsequent_Temp_Application_Charge_lead, #Dept_Second_VAC_Instalment_Charge_18_Plus_lead, #Dept_Second_VAC_Instalment_Under_18_lead, #Dept_Nomination_Application_Charge_lead, #Dept_Sponsorship_Application_Charge_lead').off('input change keyup');
+            $('#Dept_Base_Application_Charge_no_of_person_lead, #Dept_Non_Internet_Application_Charge_no_of_person_lead, #Dept_Additional_Applicant_Charge_18_Plus_no_of_person_lead, #Dept_Additional_Applicant_Charge_Under_18_no_of_person_lead, #Dept_Subsequent_Temp_Application_Charge_no_of_person_lead, #Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person_lead, #Dept_Second_VAC_Instalment_Under_18_no_of_person_lead').off('input change keyup');
+            $('#surcharge_lead').off('change');
+
+            $('#Block_1_Ex_Tax_lead, #Block_2_Ex_Tax_lead, #Block_3_Ex_Tax_lead').on('input change keyup', function() { calculateTotalBlockFeeLead(); });
+            $('#Dept_Base_Application_Charge_lead, #Dept_Non_Internet_Application_Charge_lead, #Dept_Additional_Applicant_Charge_18_Plus_lead, #Dept_Additional_Applicant_Charge_Under_18_lead, #Dept_Subsequent_Temp_Application_Charge_lead, #Dept_Second_VAC_Instalment_Charge_18_Plus_lead, #Dept_Second_VAC_Instalment_Under_18_lead, #Dept_Nomination_Application_Charge_lead, #Dept_Sponsorship_Application_Charge_lead').on('input change keyup', function() { calculateTotalDoHAChargesLead(); });
+            $('#Dept_Base_Application_Charge_no_of_person_lead, #Dept_Non_Internet_Application_Charge_no_of_person_lead, #Dept_Additional_Applicant_Charge_18_Plus_no_of_person_lead, #Dept_Additional_Applicant_Charge_Under_18_no_of_person_lead, #Dept_Subsequent_Temp_Application_Charge_no_of_person_lead, #Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person_lead, #Dept_Second_VAC_Instalment_Under_18_no_of_person_lead').on('input change keyup', function() { calculateTotalDoHAChargesLead(); });
+            $('#surcharge_lead').on('change', function() { calculateTotalDoHASurchargesLead(); });
+
+            calculateTotalBlockFeeLead();
+            calculateTotalDoHAChargesLead();
+            calculateTotalDoHASurchargesLead();
+        }
+        function calculateTotalBlockFeeLead() {
+            var block1 = parseFloat($('#Block_1_Ex_Tax_lead').val()) || 0;
+            var block2 = parseFloat($('#Block_2_Ex_Tax_lead').val()) || 0;
+            var block3 = parseFloat($('#Block_3_Ex_Tax_lead').val()) || 0;
+            var total = block1 + block2 + block3;
+            $('#TotalBLOCKFEE_lead').val(total.toFixed(2));
+        }
+        function calculateTotalDoHAChargesLead() {
+            var total = 0;
+            var baseCharge = parseFloat($('#Dept_Base_Application_Charge_lead').val()) || 0;
+            var basePersons = parseFloat($('#Dept_Base_Application_Charge_no_of_person_lead').val()) || 1;
+            total += baseCharge * basePersons;
+            var nonInternetCharge = parseFloat($('#Dept_Non_Internet_Application_Charge_lead').val()) || 0;
+            var nonInternetPersons = parseFloat($('#Dept_Non_Internet_Application_Charge_no_of_person_lead').val()) || 1;
+            total += nonInternetCharge * nonInternetPersons;
+            var add18PlusCharge = parseFloat($('#Dept_Additional_Applicant_Charge_18_Plus_lead').val()) || 0;
+            var add18PlusPersons = parseFloat($('#Dept_Additional_Applicant_Charge_18_Plus_no_of_person_lead').val()) || 1;
+            total += add18PlusCharge * add18PlusPersons;
+            var addUnder18Charge = parseFloat($('#Dept_Additional_Applicant_Charge_Under_18_lead').val()) || 0;
+            var addUnder18Persons = parseFloat($('#Dept_Additional_Applicant_Charge_Under_18_no_of_person_lead').val()) || 1;
+            total += addUnder18Charge * addUnder18Persons;
+            var subsequentCharge = parseFloat($('#Dept_Subsequent_Temp_Application_Charge_lead').val()) || 0;
+            var subsequentPersons = parseFloat($('#Dept_Subsequent_Temp_Application_Charge_no_of_person_lead').val()) || 1;
+            total += subsequentCharge * subsequentPersons;
+            var vac18PlusCharge = parseFloat($('#Dept_Second_VAC_Instalment_Charge_18_Plus_lead').val()) || 0;
+            var vac18PlusPersons = parseFloat($('#Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person_lead').val()) || 1;
+            total += vac18PlusCharge * vac18PlusPersons;
+            var vacUnder18Charge = parseFloat($('#Dept_Second_VAC_Instalment_Under_18_lead').val()) || 0;
+            var vacUnder18Persons = parseFloat($('#Dept_Second_VAC_Instalment_Under_18_no_of_person_lead').val()) || 1;
+            total += vacUnder18Charge * vacUnder18Persons;
+            total += parseFloat($('#Dept_Nomination_Application_Charge_lead').val()) || 0;
+            total += parseFloat($('#Dept_Sponsorship_Application_Charge_lead').val()) || 0;
+            $('#TotalDoHACharges_lead').val(total.toFixed(2));
+            calculateTotalDoHASurchargesLead();
+        }
+        function calculateTotalDoHASurchargesLead() {
+            var surcharge = $('#surcharge_lead').val();
+            var totalSurcharges = 0;
+            if (surcharge === 'Yes') {
+                var totalCharges = parseFloat($('#TotalDoHACharges_lead').val()) || 0;
+                totalSurcharges = totalCharges * 0.014;
+            }
+            $('#TotalDoHASurcharges_lead').val(totalSurcharges.toFixed(2));
+        }
+        window.initializeCostAssignmentCalculationsLead = initializeCostAssignmentCalculationsLead;
+        window.calculateTotalBlockFeeLead = calculateTotalBlockFeeLead;
+        window.calculateTotalDoHAChargesLead = calculateTotalDoHAChargesLead;
+        window.calculateTotalDoHASurchargesLead = calculateTotalDoHASurchargesLead;
 
         //Lead Section End
 

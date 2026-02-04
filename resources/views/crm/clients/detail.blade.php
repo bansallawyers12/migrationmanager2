@@ -310,7 +310,7 @@ use App\Http\Controllers\Controller;
             // Valid tab names that should NOT be treated as matter IDs
             $validTabNames = ['personaldetails', 'noteterm', 'personaldocuments', 'visadocuments', 
                               'eoiroi', 'emails', 
-                              'formgenerations', 'formgenerationsL', 'application','appointments'];
+                              'formgenerations', 'formgenerationsL', 'application','appointments', 'checklists'];
             
             // Check if $id1 is a valid matter ID (not a tab name)
             $isMatterIdInUrl = isset($id1) && $id1 != "" && !in_array($id1, $validTabNames);
@@ -353,6 +353,10 @@ use App\Http\Controllers\Controller;
                     <i class="fas fa-file-alt"></i>
                     <span>Form Generation</span>
                 </button>
+                <button class="client-nav-button" data-tab="checklists">
+                    <i class="fas fa-tasks"></i>
+                    <span>Checklists</span>
+                </button>
                 <button class="client-nav-button" data-tab="appointments">
                     <i class="fas fa-calendar"></i>
                     <span>Appointments</span>
@@ -392,6 +396,10 @@ use App\Http\Controllers\Controller;
                 <button class="client-nav-button" data-tab="formgenerationsL">
                     <i class="fas fa-file-alt"></i>
                     <span>Form Generation</span>
+                </button>
+                <button class="client-nav-button" data-tab="checklists">
+                    <i class="fas fa-tasks"></i>
+                    <span>Checklists</span>
                 </button>
                 <button class="client-nav-button" data-tab="appointments">
                     <i class="fas fa-calendar"></i>
@@ -437,10 +445,12 @@ use App\Http\Controllers\Controller;
                 @include('crm.clients.tabs.account')
                 @include('crm.clients.tabs.emails')
                 @include('crm.clients.tabs.form_generation_client')
+                @include('crm.clients.tabs.checklists')
                 @include('crm.clients.tabs.appointments')
                 @include('crm.clients.tabs.client_portal')
             @else
                 @include('crm.clients.tabs.form_generation_lead')
+                @include('crm.clients.tabs.checklists')
                 @include('crm.clients.tabs.appointments')
             @endif
             

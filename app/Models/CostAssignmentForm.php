@@ -76,6 +76,14 @@ class CostAssignmentForm extends Model
         return $this->belongsTo(Admin::class, 'agent_id');
     }
 
+    /**
+     * Get the client matter associated with the form.
+     */
+    public function clientMatter(): BelongsTo
+    {
+        return $this->belongsTo(ClientMatter::class, 'client_matter_id');
+    }
+
 }
 
 
