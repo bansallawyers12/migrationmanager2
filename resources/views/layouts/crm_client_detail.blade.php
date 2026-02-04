@@ -1436,6 +1436,14 @@
             box-shadow: 0 2px 8px rgba(0,0,0,.06) !important;
             transition: transform .2s ease-in-out !important;
         }
+        /* Remove blank space: topbar is sticky so navbar-bg spacer is not needed */
+        .main-wrapper .navbar-bg {
+            height: 0 !important;
+            min-height: 0 !important;
+            overflow: hidden !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
         /* Hide on scroll (keep a small top gap visible) */
         .main-topbar.is-hidden {
             transform: translateY(calc(-100% + 6px)) !important;

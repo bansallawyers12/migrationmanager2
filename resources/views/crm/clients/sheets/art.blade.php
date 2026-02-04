@@ -6,28 +6,85 @@
 <link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
 <link rel="stylesheet" href="{{ asset('css/bootstrap-datepicker.min.css') }}">
 <style>
+    .art-sheet-sticky-header {
+        position: sticky;
+        top: 70px; /* below main-navbar */
+        z-index: 100;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        margin: 0 -1px 0 -1px;
+    }
+    .art-sheet-top-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 10px 20px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .art-sheet-top-bar .art-sheet-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #2d3748;
+        margin: 0;
+        display: flex;
+        align-items: center;
+    }
+    .art-sheet-top-bar .art-sheet-title i { margin-right: 8px; }
+    .art-sheet-top-bar-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
     .sheet-tabs {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         padding: 0;
-        margin: 0 -20px 20px -20px;
+        margin: 0;
         display: flex;
         gap: 0;
-        border-radius: 8px 8px 0 0;
+        border-radius: 6px 6px 0 0;
+        flex: 0 0 auto;
     }
     .sheet-tab {
-        flex: 1;
-        padding: 15px 20px;
+        padding: 10px 16px;
         text-align: center;
         color: rgba(255, 255, 255, 0.7);
         text-decoration: none;
         font-weight: 600;
-        font-size: 15px;
+        font-size: 13px;
         transition: all 0.3s ease;
         border-bottom: 3px solid transparent;
+        white-space: nowrap;
     }
     .sheet-tab:hover { color: #fff; background: rgba(255,255,255,0.1); text-decoration: none; }
     .sheet-tab.active { color: #fff; background: rgba(255,255,255,0.15); border-bottom-color: #fff; }
-    .sheet-tab i { margin-right: 8px; }
+    .sheet-tab i { margin-right: 6px; }
+    .art-sheet-filter-bar {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 10px 20px 12px;
+        background: #fafbfc;
+        border-bottom: 1px solid #eee;
+    }
+    .art-sheet-filter-bar .filter_btn,
+    .art-sheet-filter-bar .clear-filter-btn { margin: 0; }
+    .art-sheet-filter-bar .office-filter-section {
+        flex: 1;
+        min-width: 200px;
+        margin: 0;
+        padding: 6px 12px !important;
+        background: #fff !important;
+        border-radius: 6px;
+        border: 1px solid #e3e6f0;
+    }
+    .art-sheet-filter-bar .office-filter-section .d-flex { margin: 0; }
+    .art-sheet-filter-bar .office-filter-section label.mb-0 { font-size: 13px; margin-right: 8px !important; }
+    .art-sheet-filter-bar .office-filter-section .form-check-inline { margin-right: 12px !important; }
+    .art-sheet-filter-bar .per-page-select { margin-left: 4px; padding: 4px 8px; font-size: 13px; }
     .art-table { font-size: 13px; }
     .art-table th {
         background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
@@ -62,98 +119,92 @@
     .scroll-indicator-left { left: 0; background: linear-gradient(to right, rgba(255,255,255,0.95), transparent); opacity: 0; }
     .scroll-indicator-right { right: 0; background: linear-gradient(to left, rgba(255,255,255,0.95), transparent); }
     .scroll-indicator-left.visible, .scroll-indicator-right.visible { opacity: 1; }
-    .scroll-hint { text-align: center; padding: 10px; background: #e7f3ff; border-radius: 5px; margin-bottom: 10px; font-size: 13px; color: #0c5460; }
 </style>
 @endsection
 
 @section('content')
 <div class="listing-container">
-    <section class="listing-section" style="padding-top: 40px;">
+    <section class="listing-section" style="padding-top: 16px;">
         <div class="listing-section-body">
             <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
-                    <h4><i class="fas fa-gavel"></i> ART Submission and Hearing Files</h4>
-                    <div class="card-header-actions">
-                        <a href="{{ route('clients.index') }}" class="btn btn-theme btn-theme-sm" title="Back to Clients">
-                            <i class="fas fa-arrow-left"></i> Back to Clients
-                        </a>
+                {{-- Sticky: title + tabs + filter bar --}}
+                <div class="art-sheet-sticky-header">
+                    <div class="art-sheet-top-bar">
+                        <h4 class="art-sheet-title"><i class="fas fa-gavel"></i> ART Submission and Hearing Files</h4>
+                        <div class="art-sheet-top-bar-right">
+                            <a href="{{ route('clients.index') }}" class="btn btn-theme btn-theme-sm" title="Back to Clients">
+                                <i class="fas fa-arrow-left"></i> Back to Clients
+                            </a>
+                            <div class="sheet-tabs">
+                                <a href="{{ route('clients.sheets.art') }}" class="sheet-tab active">
+                                    <i class="fas fa-list"></i> List
+                                </a>
+                                <a href="{{ route('clients.sheets.art.insights') }}" class="sheet-tab">
+                                    <i class="fas fa-chart-bar"></i> Insights
+                                </a>
+                            </div>
+                        </div>
                     </div>
-                </div>
-
-                <div class="sheet-tabs">
-                    <a href="{{ route('clients.sheets.art') }}" class="sheet-tab active">
-                        <i class="fas fa-list"></i> List
-                    </a>
-                    <a href="{{ route('clients.sheets.art.insights') }}" class="sheet-tab">
-                        <i class="fas fa-chart-bar"></i> Insights
-                    </a>
+                    <div class="art-sheet-filter-bar">
+                        <button type="button" class="btn btn-theme btn-theme-sm filter_btn">
+                            <i class="fas fa-filter"></i> Filters
+                            @if($activeFilterCount > 0)
+                                <span class="active-filters-badge">{{ $activeFilterCount }}</span>
+                            @endif
+                        </button>
+                        @if($activeFilterCount > 0)
+                            <a href="{{ route('clients.sheets.art') }}" class="clear-filter-btn">
+                                <i class="fas fa-undo"></i> Clear Filters
+                            </a>
+                        @endif
+                        <div class="office-filter-section" style="background: #f8f9fa; border-radius: 5px; border: 1px solid #e3e6f0;">
+                            <form action="{{ route('clients.sheets.art') }}" method="get" id="officeFilterForm">
+                                <input type="hidden" name="per_page" value="{{ $perPage }}">
+                                @foreach(request()->except(['office', 'page', 'per_page']) as $key => $value)
+                                    @if(is_array($value))
+                                        @foreach($value as $item)
+                                            <input type="hidden" name="{{ $key }}[]" value="{{ $item }}">
+                                        @endforeach
+                                    @else
+                                        <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                                    @endif
+                                @endforeach
+                                <div class="d-flex align-items-center flex-wrap">
+                                    <label class="mb-0 mr-2" style="font-weight: 600; color: #6c757d; font-size: 13px;">
+                                        <i class="fas fa-building"></i> Office:
+                                    </label>
+                                    @foreach(\App\Models\Branch::orderBy('office_name')->get() as $office)
+                                        <div class="form-check form-check-inline mr-2 mb-0">
+                                            <input class="form-check-input office-filter-checkbox" 
+                                                   type="checkbox" 
+                                                   name="office[]" 
+                                                   value="{{ $office->id }}" 
+                                                   id="office_{{ $office->id }}"
+                                                   {{ is_array(request('office')) && in_array($office->id, request('office')) ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="office_{{ $office->id }}" style="cursor: pointer; font-size: 13px;">
+                                                {{ $office->office_name }}
+                                            </label>
+                                        </div>
+                                    @endforeach
+                                    @if(request('office'))
+                                        <a href="{{ route('clients.sheets.art', array_merge(request()->except(['office', 'page']), ['per_page' => $perPage])) }}" 
+                                           class="btn btn-sm btn-secondary ml-1">
+                                            <i class="fas fa-times"></i> Clear
+                                        </a>
+                                    @endif
+                                </div>
+                            </form>
+                        </div>
+                        <label for="per_page" class="mb-0" style="font-size: 13px; margin-right: 4px;">Show:</label>
+                        <select name="per_page" id="per_page" class="form-control per-page-select">
+                            @foreach([10, 25, 50, 100, 200] as $option)
+                                <option value="{{ $option }}" {{ $perPage == $option ? 'selected' : '' }}>{{ $option }}/page</option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
 
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div>
-                            <button type="button" class="btn btn-theme btn-theme-sm filter_btn">
-                                <i class="fas fa-filter"></i> Filters
-                                @if($activeFilterCount > 0)
-                                    <span class="active-filters-badge">{{ $activeFilterCount }}</span>
-                                @endif
-                            </button>
-                            @if($activeFilterCount > 0)
-                                <a href="{{ route('clients.sheets.art') }}" class="clear-filter-btn ml-2">
-                                    <i class="fas fa-undo"></i> Clear Filters
-                                </a>
-                            @endif
-                        </div>
-                        <div>
-                            <label for="per_page" style="display: inline; margin-right: 5px;">Show:</label>
-                            <select name="per_page" id="per_page" class="form-control per-page-select">
-                                @foreach([10, 25, 50, 100, 200] as $option)
-                                    <option value="{{ $option }}" {{ $perPage == $option ? 'selected' : '' }}>{{ $option }} / page</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-
-                    {{-- Office Filter (Always Visible) --}}
-                    <div class="office-filter-section mb-3 p-3" style="background: #f8f9fa; border-radius: 5px; border: 1px solid #e3e6f0;">
-                        <form action="{{ route('clients.sheets.art') }}" method="get" id="officeFilterForm">
-                            <input type="hidden" name="per_page" value="{{ $perPage }}">
-                            @foreach(request()->except(['office', 'page', 'per_page']) as $key => $value)
-                                @if(is_array($value))
-                                    @foreach($value as $item)
-                                        <input type="hidden" name="{{ $key }}[]" value="{{ $item }}">
-                                    @endforeach
-                                @else
-                                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
-                                @endif
-                            @endforeach
-                            
-                            <div class="d-flex align-items-center flex-wrap">
-                                <label class="mb-0 mr-3" style="font-weight: 600; color: #6c757d;">
-                                    <i class="fas fa-building"></i> Filter by Office:
-                                </label>
-                                @foreach(\App\Models\Branch::orderBy('office_name')->get() as $office)
-                                    <div class="form-check form-check-inline mr-3">
-                                        <input class="form-check-input office-filter-checkbox" 
-                                               type="checkbox" 
-                                               name="office[]" 
-                                               value="{{ $office->id }}" 
-                                               id="office_{{ $office->id }}"
-                                               {{ is_array(request('office')) && in_array($office->id, request('office')) ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="office_{{ $office->id }}" style="cursor: pointer;">
-                                            {{ $office->office_name }}
-                                        </label>
-                                    </div>
-                                @endforeach
-                                @if(request('office'))
-                                    <a href="{{ route('clients.sheets.art', array_merge(request()->except(['office', 'page']), ['per_page' => $perPage])) }}" 
-                                       class="btn btn-sm btn-secondary ml-2">
-                                        <i class="fas fa-times"></i> Clear Office Filter
-                                    </a>
-                                @endif
-                            </div>
-                        </form>
-                    </div>
 
                     <div class="filter_panel {{ $activeFilterCount > 0 ? 'show' : '' }}">
                         <form action="{{ route('clients.sheets.art') }}" method="get" id="filterForm">
@@ -212,10 +263,6 @@
                                 </div>
                             </div>
                         </form>
-                    </div>
-
-                    <div class="scroll-hint">
-                        <i class="fas fa-arrows-alt-h"></i> Scroll horizontally to see all columns.
                     </div>
 
                     <div class="table-container">
