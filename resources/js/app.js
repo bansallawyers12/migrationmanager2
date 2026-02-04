@@ -3,21 +3,22 @@ import './bootstrap';
 import Alpine from 'alpinejs';
 import SignaturePad from 'signature_pad';
 import Echo from 'laravel-echo';
+import Pusher from 'pusher-js';
 
-// Make Alpine & SignaturePad globally available
+// Make global
 window.Alpine = Alpine;
 window.SignaturePad = SignaturePad;
+window.Pusher = Pusher;
 
 Alpine.start();
 
 /*
 |--------------------------------------------------------------------------
-| Laravel Echo + Reverb (PRODUCTION CONFIG)
+| Laravel Echo + Reverb (PRODUCTION SAFE)
 |--------------------------------------------------------------------------
-| - Uses wss only (SSL)
-| - Browser connects to port 443
-| - Nginx proxies /app -> Reverb (8080)
-| - No Pusher dependency needed
+| - Reverb uses Pusher JS protocol
+| - Browser connects via wss (443)
+| - Nginx proxies to Reverb (8080)
 */
 
 if (import.meta.env.VITE_REVERB_APP_KEY) {
@@ -26,14 +27,10 @@ if (import.meta.env.VITE_REVERB_APP_KEY) {
             broadcaster: 'reverb',
             key: import.meta.env.VITE_REVERB_APP_KEY,
 
-            // Reverb public host (subdomain)
             wsHost: import.meta.env.VITE_REVERB_HOST,
-
-            // Browser MUST use 443 in production
             wsPort: 443,
             wssPort: 443,
 
-            // Force secure WebSocket
             forceTLS: true,
             enabledTransports: ['wss'],
 
@@ -47,7 +44,7 @@ if (import.meta.env.VITE_REVERB_APP_KEY) {
             },
         });
 
-        console.log('✅ Laravel Echo initialized with Reverb (production)');
+        console.log('✅ Laravel Echo initialized with Reverb');
     } catch (error) {
         console.warn('⚠️ Failed to initialize Laravel Echo:', error);
         window.EchoDisabled = true;
@@ -68,7 +65,6 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import listPlugin from '@fullcalendar/list';
 
-// Make FullCalendar globally available for Blade templates
 window.FullCalendar = { Calendar };
 window.FullCalendarPlugins = {
     dayGridPlugin,
