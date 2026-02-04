@@ -1444,6 +1444,11 @@
             margin: 0 !important;
             padding: 0 !important;
         }
+        /* Content after topbar: no extra top space (listing/sheet pages) */
+        .main-wrapper > .listing-container {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+        }
         /* Hide on scroll (keep a small top gap visible) */
         .main-topbar.is-hidden {
             transform: translateY(calc(-100% + 6px)) !important;
@@ -1590,7 +1595,7 @@
     <div class="popuploader" style="display: none;"></div>
     <div id="app">
         <div class="main-wrapper main-wrapper-1">
-            <div class="navbar-bg"></div>
+            <div class="navbar-bg" style="height: 0 !important; min-height: 0 !important; padding: 0 !important; margin: 0 !important; display: block !important; overflow: hidden !important;"></div>
             @include('../Elements/CRM/header_client_detail')
             @yield('content')
             @include('../Elements/CRM/footer_client_detail')

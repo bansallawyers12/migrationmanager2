@@ -6,13 +6,26 @@
 <link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
 <link rel="stylesheet" href="{{ asset('css/bootstrap-datepicker.min.css') }}">
 <style>
+    /* Remove top blank space: no margin/padding above ART content */
+    .art-sheet-page.listing-container {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+    .art-sheet-page .listing-section {
+        padding-top: 0 !important;
+    }
+    .art-sheet-page .art-sheet-card {
+        margin-top: 0 !important;
+    }
+    /* Header colour theme: slate blue */
     .art-sheet-sticky-header {
         position: sticky;
         top: 70px; /* below main-navbar */
         z-index: 100;
-        background: #fff;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
         margin: 0 -1px 0 -1px;
+        border-bottom: 1px solid #e2e8f0;
     }
     .art-sheet-top-bar {
         display: flex;
@@ -21,45 +34,62 @@
         flex-wrap: wrap;
         gap: 12px;
         padding: 10px 20px 0;
-        border-bottom: 1px solid #f0f0f0;
+        border-bottom: 1px solid #e2e8f0;
     }
     .art-sheet-top-bar .art-sheet-title {
         font-size: 1.2rem;
         font-weight: 600;
-        color: #2d3748;
+        color: #1e293b;
         margin: 0;
         display: flex;
         align-items: center;
     }
-    .art-sheet-top-bar .art-sheet-title i { margin-right: 8px; }
+    .art-sheet-top-bar .art-sheet-title i { margin-right: 8px; color: #475569; }
     .art-sheet-top-bar-right {
         display: flex;
         align-items: center;
         gap: 12px;
         flex-wrap: wrap;
     }
+    .art-sheet-top-bar .btn-theme,
+    .art-sheet-top-bar .btn-theme-sm {
+        background: #475569 !important;
+        color: #fff !important;
+        border: 1px solid #64748b !important;
+    }
+    .art-sheet-top-bar .btn-theme:hover,
+    .art-sheet-top-bar .btn-theme-sm:hover {
+        background: #334155 !important;
+        color: #fff !important;
+        border-color: #475569 !important;
+    }
     .sheet-tabs {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: #e2e8f0;
         padding: 0;
         margin: 0;
         display: flex;
-        gap: 0;
-        border-radius: 6px 6px 0 0;
+        gap: 2px;
+        border-radius: 8px;
         flex: 0 0 auto;
+        padding: 3px;
     }
     .sheet-tab {
-        padding: 10px 16px;
+        padding: 8px 14px;
         text-align: center;
-        color: rgba(255, 255, 255, 0.7);
+        color: #64748b;
         text-decoration: none;
         font-weight: 600;
         font-size: 13px;
-        transition: all 0.3s ease;
-        border-bottom: 3px solid transparent;
+        transition: all 0.2s ease;
+        border-radius: 6px;
         white-space: nowrap;
     }
-    .sheet-tab:hover { color: #fff; background: rgba(255,255,255,0.1); text-decoration: none; }
-    .sheet-tab.active { color: #fff; background: rgba(255,255,255,0.15); border-bottom-color: #fff; }
+    .sheet-tab:hover { color: #334155; background: #cbd5e1; text-decoration: none; }
+    .sheet-tab.active {
+        color: #fff;
+        background: linear-gradient(135deg, #475569 0%, #334155 100%);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    }
     .sheet-tab i { margin-right: 6px; }
     .art-sheet-filter-bar {
         display: flex;
@@ -67,40 +97,86 @@
         flex-wrap: wrap;
         gap: 12px;
         padding: 10px 20px 12px;
-        background: #fafbfc;
-        border-bottom: 1px solid #eee;
+        background: #fff;
+        border-bottom: 1px solid #e2e8f0;
     }
-    .art-sheet-filter-bar .filter_btn,
-    .art-sheet-filter-bar .clear-filter-btn { margin: 0; }
+    .art-sheet-filter-bar .filter_btn {
+        margin: 0;
+        background: linear-gradient(135deg, #475569 0%, #334155 100%) !important;
+        color: #fff !important;
+        border: none !important;
+    }
+    .art-sheet-filter-bar .filter_btn:hover {
+        background: linear-gradient(135deg, #334155 0%, #1e293b 100%) !important;
+        color: #fff !important;
+    }
+    .art-sheet-filter-bar .clear-filter-btn {
+        margin: 0;
+        background: #64748b !important;
+        color: #fff !important;
+        border: none !important;
+    }
+    .art-sheet-filter-bar .clear-filter-btn:hover {
+        background: #475569 !important;
+        color: #fff !important;
+    }
+    .art-sheet-filter-bar .active-filters-badge {
+        background: #334155 !important;
+        color: #fff !important;
+    }
     .art-sheet-filter-bar .office-filter-section {
         flex: 1;
         min-width: 200px;
         margin: 0;
         padding: 6px 12px !important;
-        background: #fff !important;
-        border-radius: 6px;
-        border: 1px solid #e3e6f0;
+        background: #f8fafc !important;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
     }
-    .art-sheet-filter-bar .office-filter-section .d-flex { margin: 0; }
-    .art-sheet-filter-bar .office-filter-section label.mb-0 { font-size: 13px; margin-right: 8px !important; }
+    .art-sheet-filter-bar .office-filter-section label.mb-0,
+    .art-sheet-filter-bar .office-filter-section .form-check-label {
+        color: #475569 !important;
+        font-size: 13px;
+        margin-right: 8px !important;
+    }
     .art-sheet-filter-bar .office-filter-section .form-check-inline { margin-right: 12px !important; }
-    .art-sheet-filter-bar .per-page-select { margin-left: 4px; padding: 4px 8px; font-size: 13px; }
+    .art-sheet-filter-bar .office-filter-section .form-check-input:checked {
+        background-color: #475569;
+        border-color: #475569;
+    }
+    .art-sheet-filter-bar label[for="per_page"] { color: #475569 !important; }
+    .art-sheet-filter-bar .per-page-select {
+        margin-left: 4px;
+        padding: 4px 8px;
+        font-size: 13px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        color: #334155;
+    }
     .art-table { font-size: 13px; }
-    .art-table th {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    /* Override global sticky table headers */
+    .art-sheet-page .art-table th,
+    .art-sheet-page .art-table thead th,
+    .listing-container.art-sheet-page .table thead th,
+    #art-sheet-table thead th,
+    table#art-sheet-table thead th {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
         font-weight: 600;
         white-space: nowrap;
         padding: 12px 8px;
         font-size: 12px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        color: #495057;
-        border-bottom: 2px solid #667eea;
+        color: #475569;
+        border-bottom: 2px solid #94a3b8;
+        position: static !important;
+        top: auto !important;
+        z-index: auto !important;
     }
     .art-table td { padding: 10px 8px; vertical-align: middle; }
-    .art-table tbody tr:hover { background-color: #f8f9ff; }
-    .art-link { color: #667eea; font-weight: 600; text-decoration: none; }
-    .art-link:hover { color: #764ba2; text-decoration: underline; }
+    .art-table tbody tr:hover { background-color: #f8fafc; }
+    .art-link { color: #475569; font-weight: 600; text-decoration: none; }
+    .art-link:hover { color: #334155; text-decoration: underline; }
     .art-comments-cell { max-width: 280px; font-size: 12px; line-height: 1.4; word-wrap: break-word; white-space: normal; }
     .filter_panel { display: none; background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
     .filter_panel.show { display: block; }
@@ -109,10 +185,10 @@
     .clear-filter-btn:hover { background: #5a6268; }
     .per-page-select { width: auto; display: inline-block; margin-left: 10px; }
     .sortable { cursor: pointer; user-select: none; position: relative; padding-right: 20px !important; }
-    .sortable:hover { background: rgba(102, 126, 234, 0.1); }
+    .sortable:hover { background: rgba(71, 85, 105, 0.08); }
     .sortable::after { content: '\f0dc'; font-family: 'Font Awesome 5 Free'; font-weight: 900; position: absolute; right: 8px; opacity: 0.3; }
-    .sortable.asc::after { content: '\f0de'; opacity: 1; color: #667eea; }
-    .sortable.desc::after { content: '\f0dd'; opacity: 1; color: #667eea; }
+    .sortable.asc::after { content: '\f0de'; opacity: 1; color: #475569; }
+    .sortable.desc::after { content: '\f0dd'; opacity: 1; color: #475569; }
     .table-responsive { position: relative; overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .table-container { position: relative; }
     .scroll-indicator { position: absolute; top: 0; bottom: 20px; width: 40px; pointer-events: none; z-index: 10; transition: opacity 0.3s; }
@@ -123,10 +199,10 @@
 @endsection
 
 @section('content')
-<div class="listing-container">
-    <section class="listing-section" style="padding-top: 16px;">
+<div class="listing-container art-sheet-page">
+    <section class="listing-section">
         <div class="listing-section-body">
-            <div class="card">
+            <div class="card art-sheet-card">
                 {{-- Sticky: title + tabs + filter bar --}}
                 <div class="art-sheet-sticky-header">
                     <div class="art-sheet-top-bar">
@@ -270,7 +346,7 @@
                         <div class="scroll-indicator scroll-indicator-right visible"></div>
                         <div class="table-responsive" id="table-scroll-container">
                             <table class="table table-bordered table-hover art-table" id="art-sheet-table">
-                                <thead>
+                                <thead style="position: static !important;">
                                     <tr>
                                         <th class="sortable {{ request('sort') == 'crm_ref' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="crm_ref">CRM Ref</th>
                                         <th class="sortable {{ request('sort') == 'other_reference' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="other_reference">Other Reference</th>
@@ -403,6 +479,13 @@ jQuery(document).ready(function($) {
     // Office filter auto-submit
     $('.office-filter-checkbox').on('change', function() {
         $('#officeFilterForm').submit();
+    });
+
+    // Force remove sticky positioning from table headers (override global CSS)
+    $('#art-sheet-table thead th').css({
+        'position': 'static',
+        'top': 'auto',
+        'z-index': 'auto'
     });
 });
 </script>

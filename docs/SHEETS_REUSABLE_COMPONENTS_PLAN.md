@@ -402,6 +402,7 @@ To keep controllers consistent:
 - **Filter routes:** Use same route for filter form and clear (with/without params).
 - **Sort params:** `sort`, `direction` in query string.
 - **Office filter:** Preserve other params when office changes.
+- **TR extra methods:** `reminderPreview`, `sendReminder`, `updateReference` (see TR plan §4–5).
 
 No mandatory base class; each controller can remain independent but follow this convention.
 
