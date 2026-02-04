@@ -443,14 +443,14 @@
                             window.open(pdfUrl, '_blank');
                             break;
                         case 'download':
-                            // Try to find download button by filelink
+                            // Try to find download button by filelink (multiple elements may exist - table + grid; trigger only first to avoid multiple tabs)
                             let $downloadBtn = $('.download-file[data-filelink="' + currentVisaContextData.fileUrl + '"]');
                             if ($downloadBtn.length === 0) {
                                 // Fallback: try finding by document ID
                                 $downloadBtn = $('.download-file[data-id="' + currentVisaContextFile + '"]');
                             }
                             if ($downloadBtn.length > 0) {
-                                $downloadBtn.click();
+                                $downloadBtn.first().click();
                             } else {
                                 console.error('Download button not found for file ID:', currentVisaContextFile);
                                 alert('Download link not found. Please refresh the page and try again.');
