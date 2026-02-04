@@ -88,7 +88,8 @@ class ArtSheetController extends Controller
                 cm.id AS matter_id,
                 cm.other_reference,
                 cm.department_reference,
-                cm.sel_migration_agent
+                cm.sel_migration_agent,
+                cm.office_id
             FROM client_matters cm
             INNER JOIN matters m ON m.id = cm.sel_matter_id
             WHERE cm.matter_status = 1
@@ -104,7 +105,7 @@ class ArtSheetController extends Controller
         if ($driver === 'mysql') {
             $latestArtMatterSql = "
                 SELECT cm.client_id, cm.client_unique_matter_no, cm.id AS matter_id,
-                       cm.other_reference, cm.department_reference, cm.sel_migration_agent
+                       cm.other_reference, cm.department_reference, cm.sel_migration_agent, cm.office_id
                 FROM client_matters cm
                 INNER JOIN matters m ON m.id = cm.sel_matter_id
                 INNER JOIN (
@@ -148,6 +149,7 @@ class ArtSheetController extends Controller
                 'latest_art_matter.matter_id as matter_internal_id',
                 'latest_art_matter.other_reference',
                 'latest_art_matter.department_reference',
+                'latest_art_matter.office_id',
                 DB::raw("CONCAT(COALESCE(agents.first_name, ''), ' ', COALESCE(agents.last_name, '')) as agent_name")
             )
             ->where('admins.is_archived', 0)
@@ -227,6 +229,12 @@ class ArtSheetController extends Controller
             });
         }
 
+        // Office filter
+        if ($request->filled('office')) {
+            $offices = is_array($request->input('office')) ? $request->input('office') : [$request->input('office')];
+            $query->whereIn('latest_art_matter.office_id', $offices);
+        }
+
         return $query;
     }
 
@@ -256,7 +264,7 @@ class ArtSheetController extends Controller
 
     protected function countActiveFilters(Request $request)
     {
-        $filters = ['status', 'from_date', 'to_date', 'agent', 'search'];
+        $filters = ['status', 'from_date', 'to_date', 'agent', 'search', 'office'];
         $count = 0;
         foreach ($filters as $filter) {
             if ($request->filled($filter)) {

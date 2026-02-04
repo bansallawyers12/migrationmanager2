@@ -114,6 +114,47 @@
                         </div>
                     </div>
 
+                    {{-- Office Filter (Always Visible) --}}
+                    <div class="office-filter-section mb-3 p-3" style="background: #f8f9fa; border-radius: 5px; border: 1px solid #e3e6f0;">
+                        <form action="{{ route('clients.sheets.art') }}" method="get" id="officeFilterForm">
+                            <input type="hidden" name="per_page" value="{{ $perPage }}">
+                            @foreach(request()->except(['office', 'page', 'per_page']) as $key => $value)
+                                @if(is_array($value))
+                                    @foreach($value as $item)
+                                        <input type="hidden" name="{{ $key }}[]" value="{{ $item }}">
+                                    @endforeach
+                                @else
+                                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                                @endif
+                            @endforeach
+                            
+                            <div class="d-flex align-items-center flex-wrap">
+                                <label class="mb-0 mr-3" style="font-weight: 600; color: #6c757d;">
+                                    <i class="fas fa-building"></i> Filter by Office:
+                                </label>
+                                @foreach(\App\Models\Branch::orderBy('office_name')->get() as $office)
+                                    <div class="form-check form-check-inline mr-3">
+                                        <input class="form-check-input office-filter-checkbox" 
+                                               type="checkbox" 
+                                               name="office[]" 
+                                               value="{{ $office->id }}" 
+                                               id="office_{{ $office->id }}"
+                                               {{ is_array(request('office')) && in_array($office->id, request('office')) ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="office_{{ $office->id }}" style="cursor: pointer;">
+                                            {{ $office->office_name }}
+                                        </label>
+                                    </div>
+                                @endforeach
+                                @if(request('office'))
+                                    <a href="{{ route('clients.sheets.art', array_merge(request()->except(['office', 'page']), ['per_page' => $perPage])) }}" 
+                                       class="btn btn-sm btn-secondary ml-2">
+                                        <i class="fas fa-times"></i> Clear Office Filter
+                                    </a>
+                                @endif
+                            </div>
+                        </form>
+                    </div>
+
                     <div class="filter_panel {{ $activeFilterCount > 0 ? 'show' : '' }}">
                         <form action="{{ route('clients.sheets.art') }}" method="get" id="filterForm">
                             <input type="hidden" name="per_page" value="{{ $perPage }}">
@@ -310,6 +351,11 @@ jQuery(document).ready(function($) {
         url.searchParams.set('direction', newDirection);
         url.searchParams.delete('page');
         window.location.href = url.toString();
+    });
+
+    // Office filter auto-submit
+    $('.office-filter-checkbox').on('change', function() {
+        $('#officeFilterForm').submit();
     });
 });
 </script>

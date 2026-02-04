@@ -766,6 +766,12 @@ class ClientPersonalDetailsController extends Controller
             $obj->sel_person_responsible = $requstData['person_responsible'];
             $obj->sel_person_assisting = $requstData['person_assisting'];
             $obj->user_id = $requstData['user_id'];
+            
+            // Update office if provided
+            if (isset($requstData['office_id']) && !empty($requstData['office_id'])) {
+                $obj->office_id = $requstData['office_id'];
+            }
+            
             $saved = $obj->save();
             if($saved) {
 

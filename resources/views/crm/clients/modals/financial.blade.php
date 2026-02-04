@@ -761,6 +761,21 @@
 
                         <div class="col-12 col-md-6 col-lg-6">
                             <div class="form-group">
+                                <label for="office_id">Handling Office <span class="span_req">*</span></label>
+                                <select data-valid="required" class="form-control select2" name="office_id" id="sel_office_id_lead">
+                                    <option value="">Select Office</option>
+                                    @foreach(\App\Models\Branch::orderBy('office_name')->get() as $office)
+                                        <option value="{{$office->id}}" 
+                                            {{ Auth::user()->office_id == $office->id ? 'selected' : '' }}>
+                                            {{$office->office_name}}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-lg-6">
+                            <div class="form-group">
                                 <label for="matter_id">Select Matter <span class="span_req">*</span></label>
                                 <select data-valid="required" class="form-control select2" name="matter_id" id="sel_matter_id_lead">
                                     <option value="">Select Matter</option>

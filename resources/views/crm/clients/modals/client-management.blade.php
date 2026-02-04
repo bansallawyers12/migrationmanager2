@@ -52,6 +52,24 @@
 
                         <div class="col-12 col-md-12 col-lg-12">
                             <div class="form-group">
+                                <label for="office_id">Handling Office <span class="span_req">*</span></label>
+                                <select data-valid="required" class="form-control select2" name="office_id" id="sel_office_id">
+                                    <option value="">Select Office</option>
+                                    @foreach(\App\Models\Branch::orderBy('office_name')->get() as $office)
+                                        <option value="{{$office->id}}" 
+                                            {{ Auth::user()->office_id == $office->id ? 'selected' : '' }}>
+                                            {{$office->office_name}}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <small class="form-text text-muted">
+                                    <i class="fas fa-building"></i> This matter will be handled by the selected office
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-12 col-lg-12">
+                            <div class="form-group">
                                 <label for="matter_id">Select Matter <span class="span_req">*</span></label>
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" name="matter_id" value="1" id="general_matter_checkbox_new">
@@ -835,6 +853,21 @@
                                         <option value="{{$perassislist->id}}">{{@$perassislist->first_name}} {{@$perassislist->last_name}} ({{@$perassislist->email}})</option>
                                     @endforeach
                                 </select>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-12 col-lg-12">
+                            <div class="form-group">
+                                <label for="office_id">Handling Office</label>
+                                <select class="form-control select2" name="office_id" id="change_office_id">
+                                    <option value="">Select Office</option>
+                                    @foreach(\App\Models\Branch::orderBy('office_name')->get() as $office)
+                                        <option value="{{$office->id}}">{{$office->office_name}}</option>
+                                    @endforeach
+                                </select>
+                                <small class="form-text text-muted">
+                                    <i class="fas fa-building"></i> Optional - Leave blank to keep current office
+                                </small>
                             </div>
                         </div>
 

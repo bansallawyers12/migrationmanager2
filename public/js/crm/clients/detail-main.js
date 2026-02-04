@@ -7939,7 +7939,7 @@ Bansal Immigration`;
 
                 $('#cost_assignment_lead_id').val(window.ClientDetailConfig.clientId);
 
-                $('#sel_migration_agent_id_lead,#sel_person_responsible_id_lead,#sel_person_assisting_id_lead,#sel_matter_id_lead').select2({
+                $('#sel_migration_agent_id_lead,#sel_person_responsible_id_lead,#sel_person_assisting_id_lead,#sel_office_id_lead,#sel_matter_id_lead').select2({
 
                     dropdownParent: $('#costAssignmentCreateFormModelLead')
 
@@ -13213,7 +13213,7 @@ Bansal Immigration`;
 
             $('#convertLeadToClientModal').modal('show');
 
-            $('#sel_migration_agent_id,#sel_person_responsible_id,#sel_person_assisting_id,#sel_matter_id').select2({
+            $('#sel_migration_agent_id,#sel_person_responsible_id,#sel_person_assisting_id,#sel_office_id,#sel_matter_id').select2({
 
                 dropdownParent: $('#convertLeadToClientModal')
 
@@ -13275,11 +13275,13 @@ Bansal Immigration`;
 
                     $('#change_sel_person_assisting_id').val(obj.matter_info.sel_person_assisting);
 
+                    $('#change_office_id').val(obj.matter_info.office_id);
+
 
 
                     $('#changeMatterAssigneeModal').modal('show');
 
-                    $('#change_sel_migration_agent_id,#change_sel_person_responsible_id,#change_sel_person_assisting_id').select2({
+                    $('#change_sel_migration_agent_id,#change_sel_person_responsible_id,#change_sel_person_assisting_id,#change_office_id').select2({
 
                         dropdownParent: $('#changeMatterAssigneeModal')
 

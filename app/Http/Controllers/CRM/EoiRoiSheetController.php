@@ -134,7 +134,8 @@ class EoiRoiSheetController extends Controller
             SELECT DISTINCT ON (cm.client_id)
                 cm.client_id,
                 cm.client_unique_matter_no,
-                cm.id AS matter_id
+                cm.id AS matter_id,
+                cm.office_id
             FROM client_matters cm
             INNER JOIN matters m ON m.id = cm.sel_matter_id
             WHERE cm.matter_status = 1
@@ -166,7 +167,8 @@ class EoiRoiSheetController extends Controller
                 'admins.last_name',
                 'admins.marital_status',
                 'latest_eoi_matter.client_unique_matter_no as matter_id',
-                'latest_eoi_matter.matter_id as matter_internal_id'
+                'latest_eoi_matter.matter_id as matter_internal_id',
+                'latest_eoi_matter.office_id'
             )
             ->where('admins.is_archived', 0)
             ->where('admins.role', 7)
@@ -237,6 +239,12 @@ class EoiRoiSheetController extends Controller
         if ($request->filled('occupation')) {
             $occupation = $request->input('occupation');
             $query->whereRaw('LOWER(eoi."EOI_occupation") LIKE ?', ['%' . strtolower($occupation) . '%']);
+        }
+
+        // Office filter
+        if ($request->filled('office')) {
+            $offices = is_array($request->input('office')) ? $request->input('office') : [$request->input('office')];
+            $query->whereIn('latest_eoi_matter.office_id', $offices);
         }
 
         return $query;
@@ -398,7 +406,7 @@ class EoiRoiSheetController extends Controller
      */
     protected function countActiveFilters(Request $request)
     {
-        $filters = ['eoi_status', 'from_date', 'to_date', 'subclass', 'state', 'search', 'occupation'];
+        $filters = ['eoi_status', 'from_date', 'to_date', 'subclass', 'state', 'search', 'occupation', 'office'];
         $count = 0;
         
         foreach ($filters as $filter) {

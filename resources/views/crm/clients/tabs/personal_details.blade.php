@@ -678,14 +678,14 @@
                             $matter_dis_ref_info_arr = []; // Always a Collection
                             if($id1)
                             { //if client unique reference id is present in url
-                                $matter_dis_ref_info_arr = \App\Models\ClientMatter::select('sel_migration_agent','sel_person_responsible','sel_person_assisting')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
+                                $matter_dis_ref_info_arr = \App\Models\ClientMatter::select('sel_migration_agent','sel_person_responsible','sel_person_assisting','office_id')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
                             }
                             else
                             {
                                 $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
                                 //dd($matter_cnt);
                                 if($matter_cnt >0){
-                                    $matter_dis_ref_info_arr = \App\Models\ClientMatter::select('sel_migration_agent','sel_person_responsible','sel_person_assisting')->where('client_id',$fetchedData->id)->where('matter_status',1)->orderBy('id', 'desc')->first();
+                                    $matter_dis_ref_info_arr = \App\Models\ClientMatter::select('sel_migration_agent','sel_person_responsible','sel_person_assisting','office_id')->where('client_id',$fetchedData->id)->where('matter_status',1)->orderBy('id', 'desc')->first();
                                 }
                             } //dd($matter_dis_ref_info_arr);
                             ?>
@@ -731,6 +731,21 @@
                                         }
                                     } else {
                                         echo 'N/A';
+                                    } ?>
+                                </span>
+                            </div>
+
+                            <div class="field-group">
+                                <span class="field-label">Handling Office</span>
+                                <span class="field-value">
+                                    <?php
+                                    if( isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->office_id != ''){
+                                        $office_info = \App\Models\Branch::select('office_name')->where('id', $matter_dis_ref_info_arr->office_id)->first();
+                                        if($office_info){
+                                            echo $office_info->office_name;
+                                        }
+                                    } else {
+                                        echo 'No Office Assigned';
                                     } ?>
                                 </span>
                             </div>

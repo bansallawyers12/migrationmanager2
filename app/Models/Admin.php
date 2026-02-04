@@ -8,6 +8,7 @@ use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Branch;
 
 class Admin extends Authenticatable
 {
@@ -154,7 +155,7 @@ class Admin extends Authenticatable
      */
     public function office()
     {
-        return $this->belongsTo(\App\Models\OurOffice::class, 'office_id');
+        return $this->belongsTo(Branch::class, 'office_id');
     }
 
     /**
