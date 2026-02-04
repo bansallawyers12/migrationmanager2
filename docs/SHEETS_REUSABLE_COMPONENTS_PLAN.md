@@ -59,7 +59,7 @@ resources/views/crm/clients/sheets/
 │   ├── sheet-table-header.blade.php # Single sortable th (or plain th)
 │   ├── sheet-pagination.blade.php # Pagination footer
 │   ├── sheet-empty-state.blade.php # No records message
-│   └── sheet-insights-layout.blade.php # Insights shell (tabs, filter alert, slots)
+│   ├── sheet-insights-layout.blade.php # Insights shell (tabs, filter alert, slots)
 │   ├── tr-checklist-box.blade.php # TR-only: dates, events, reminder buttons, Edit link
 │   ├── tr-reminder-modal.blade.php # TR-only: preview/edit/send reminder popup
 │   └── sheet-edit-modal.blade.php # Optional: generic inline-edit modal (TR uses for Edit Dates)
@@ -445,6 +445,7 @@ No mandatory base class; each controller can remain independent but follow this 
 2. **Office filter:** Keep inline in `sheet-filter-bar` or extract to `partials/office-filter-form.blade.php`?
 3. **Column definition approach:** Implement generic column renderer later, or stick with row partials only?
 4. **Sticky header:** Unify ART and EOI layout (both sticky or both normal), or keep as option?
+5. **TR checklist refresh:** After reminder send, re-fetch checklist box HTML via AJAX endpoint, or return updated HTML in send-reminder JSON, or full page reload?
 
 ---
 
