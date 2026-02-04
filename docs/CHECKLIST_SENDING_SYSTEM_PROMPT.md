@@ -1,6 +1,6 @@
 # Checklist Sending System - Design Document
 
-**Version:** 2.0 (Updated for Lead/Client Tab Integration, TR Sheet Recording, Follow-ups & Status Options)  
+**Version:** 2.1 (Form Generation Tab Integration, Cost Assignment Context, TR Sheet Recording)  
 **Last Updated:** February 2026
 
 ---
@@ -9,30 +9,46 @@
 
 I'm building a Laravel migration management CRM system. I need to design a **general-purpose checklist sending system** that can generate, customize, and send checklists to leads/clients via email/SMS. The system integrates with the **TR Sheet** and provides follow-up workflows (Email/SMS), status tracking (convert, abandon, follow up in 6 months, etc.), and supports multiple checklists per client (multiple matters).
 
+**Integration location:** The checklist send and follow-up system will be integrated **within the Form Generation tab** as a new subtab, alongside Cost Assignment and Form 956.
+
 ---
 
-## 1. Primary Integration: Checklists Tab in Lead & Client Detail
+## 1. Primary Integration: Checklists Subtab in Form Generation Tab
 
-### 1.1 New "Checklists" Tab
+### 1.1 Existing Form Generation Structure (Review)
 
-- **Location:** Add a new sidebar tab **"Checklists"** in both **Lead** and **Client** detail views (same pattern as Emails, Notes, etc.).
+| Tab | Subtabs | Content |
+|-----|---------|---------|
+| **Form Generation** (Client) | Form 956, **Cost Assignment**, Create Cost Assignment | Form 956 list; Cost Assignment list (Preview, Create Visa Agreement, Finalize Agreement, Delete); Create Cost Assignment form |
+| **Form Generation** (Lead) | **Cost Assignment** | Cost Assignment list (Preview, Delete); Create Cost Assignment modal |
+
+**Existing "Send Checklist" context:**
+- The **Compose Email** modal (client detail, companies) includes an **Attachment** section with `checklistfile[]` checkboxes from `UploadChecklist` — staff can attach checklist PDFs when sending any email.
+- When `checklistfile` or `checklistfile_document` is present in the sendmail request, `CRMUtilityController` logs "Checklist sent to client" / "Document Checklist sent to client" in `activities_logs`.
+- **Documents** page (Preview and Send Email / Signing Link) also has matter-specific `UploadChecklist` items for attachment.
+- This is a **simple attachment flow** — no dedicated checklist instances, TR sheet recording, or follow-up tracking.
+
+### 1.2 New "Checklists" Subtab (Within Form Generation)
+
+- **Location:** Add a new **subtab** "Checklists" (or "Send Checklist & Follow-up") inside the **Form Generation** tab.
 - **Visibility:**
-  - **Clients (with matters):** Full tab visible; matter dropdown available.
-  - **Leads (no matters):** Tab visible; matter selection optional or "General" — allows sending pre-engagement checklists; or show "Add a matter first" prompt if business rules require matter.
-- **Tab icon:** e.g. `fa-clipboard-list` or `fa-tasks`.
+  - **Clients:** Form Generation → subtabs: Form 956 | Cost Assignment | Create Cost Assignment | **Checklists**
+  - **Leads:** Form Generation → subtabs: Cost Assignment | **Checklists**
 - **Files to modify:**
-  - `resources/views/crm/clients/detail.blade.php` — add sidebar button and tab pane.
-  - Create `resources/views/crm/clients/tabs/checklists.blade.php` — main tab content.
-  - `public/js/crm/clients/sidebar-tabs.js` — register new tab.
-  - `resources/views/crm/companies/detail.blade.php` — add tab for company clients if applicable.
+  - `resources/views/crm/clients/tabs/form_generation_client.blade.php` — add subtab button and subtab pane for Checklists.
+  - `resources/views/crm/clients/tabs/form_generation_lead.blade.php` — add subtab button and pane for Checklists.
+  - Create partial or inline content for the Checklists subtab (can be a reusable partial `_checklists_subtab.blade.php`).
+  - `resources/views/crm/companies/detail.blade.php` — add Checklists subtab if Form Generation exists for companies.
+  - `public/js/crm/clients/detail-main.js` — handle subtab switching (existing `subtabs3` pattern).
 
-### 1.2 Tab Content Layout
+### 1.3 Checklists Subtab Content Layout
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  Checklists                                                     [Send Checklist] │
+│  Form Generation: [Form 956] [Cost Assignment] [Create Cost Assignment] [Checklists] │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  Matter: [Dropdown: Select Matter ▼]  (or "General" for leads)               │
+│  CHECKLISTS SUBTAB                                                           │
+│  Matter: [Dropdown: Select Matter ▼]  (or "General" for leads)   [Send Checklist] │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │  SENT CHECKLISTS                                                            │
 │  ┌─────────────────────────────────────────────────────────────────────────┐ │
@@ -45,6 +61,18 @@ I'm building a Laravel migration management CRM system. I need to design a **gen
 │  └─────────────────────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
+
+### 1.4 Relationship: New Checklist System vs Existing Checklist Attachment
+
+| Aspect | Existing (Email Modal) | New (Form Generation → Checklists) |
+|--------|------------------------|------------------------------------|
+| **Trigger** | Compose Email → attach checklist files | Form Generation → Checklists → Send Checklist |
+| **Attachments** | `UploadChecklist` items (`checklistfile[]`) | Checklist template + optional S3/uploaded attachments |
+| **Recording** | `activities_logs` only | `checklist_instances`, `activities_logs`, TR sheet (`client_tr_references`, `tr_reminder_events`) |
+| **Follow-up** | None | Follow up by Email/SMS, status (convert, abandon, follow up 6m, etc.) |
+| **Use case** | Ad-hoc attach PDF when sending any email | Structured checklist workflow with templates and tracking |
+
+The new system is **additive** — the existing email checklist attachment remains; the Form Generation Checklists subtab provides a dedicated workflow with full tracking and follow-up.
 
 ---
 
@@ -104,14 +132,14 @@ Per `docs/TR_SHEET_IMPLEMENTATION_PLAN.md`:
 
 ### 4.1 Placement
 
-- In the **Checklists tab:** Each sent checklist row shows **"Follow up by Email"** and **"Follow up by SMS"**.
+- In the **Form Generation → Checklists subtab:** Each sent checklist row shows **"Follow up by Email"** and **"Follow up by SMS"**.
 - In the **TR Sheet** "Checklist & Follow-ups" box: Same buttons (Reminder 1 – Email, Reminder 1 – SMS, Reminder 2 – Email, Reminder 2 – SMS) as per TR plan.
 
 ### 4.2 Behaviour
 
-- **Follow up by Email:** Opens popup with merged email template (Reminder 1 or 2); staff reviews/edits; sends. On success: record event, update TR sheet dates, refresh Checklists tab.
+- **Follow up by Email:** Opens popup with merged email template (Reminder 1 or 2); staff reviews/edits; sends. On success: record event, update TR sheet dates, refresh Checklists subtab.
 - **Follow up by SMS:** Same flow for SMS template.
-- **Sheet updates:** Both Checklists tab and TR Sheet consume the same `tr_reminder_events` and `client_tr_references`; any follow-up sent from either place updates both views.
+- **Sheet updates:** Both Form Generation Checklists subtab and TR Sheet consume the same `tr_reminder_events` and `client_tr_references`; any follow-up sent from either place updates both views.
 
 ---
 
@@ -125,7 +153,7 @@ Per `docs/TR_SHEET_IMPLEMENTATION_PLAN.md`:
 
 ### 5.2 Add New Checklist Button
 
-- Primary CTA: **"Send Checklist"** or **"Add Checklist"** at top of Checklists tab.
+- Primary CTA: **"Send Checklist"** or **"Add Checklist"** at top of Form Generation → Checklists subtab.
 - Opens the same send workflow: Matter → Template → Attachments → Popup → Send.
 
 ---
@@ -209,15 +237,16 @@ Each checklist should support:
    - Optionally allow client to mark items as completed via portal (like EOI confirmation workflow)
 
 ### 4. **Integration with Existing Sheets**
-**Checklists tab (primary):**
-- New tab in Lead & Client detail with full send workflow: Matter → Template → Attachments → Popup → Send.
+**Form Generation → Checklists subtab (primary):**
+- New subtab in Form Generation (Client & Lead) with full send workflow: Matter → Template → Attachments → Popup → Send.
 - Lists all sent checklists with Follow up by Email/SMS and Change Status.
+- Co-located with Cost Assignment and Form 956 for workflow continuity.
 
 **TR Sheet:**
 - "Checklist & Follow-ups" box has **"Send Checklist"** button.
 - Click → Opens same modal: Select template, add attachments, preview, send.
 - Records in `client_tr_references` (checklist_send_date, rec_date, last_date), `tr_reminder_events`, `activities_logs`.
-- Reminder 1/2 – Email/SMS buttons for follow-ups; updates sync with Checklists tab.
+- Reminder 1/2 – Email/SMS buttons for follow-ups; updates sync with Form Generation Checklists subtab.
 
 **EOI/ROI Sheet**: Could add "Send Document Checklist" button after EOI verified.
 
@@ -277,7 +306,7 @@ When a checklist is sent to a client, store it:
 
 ### 9. **Reminders & Follow-ups**
 - **Auto-reminders**: If checklist not completed within X days, auto-send reminder (cron job)
-- **Manual reminders**: Staff can click **"Follow up by Email"** or **"Follow up by SMS"** in Checklists tab, or Reminder 1/2 – Email/SMS in TR sheet (uses same checklist instance, re-sends email/SMS)
+- **Manual reminders**: Staff can click **"Follow up by Email"** or **"Follow up by SMS"** in Form Generation → Checklists subtab, or Reminder 1/2 – Email/SMS in TR sheet (uses same checklist instance, re-sends email/SMS)
 - **Reminder templates**: Separate email/SMS templates for reminders (e.g. "TR Checklist Reminder 1", "TR Checklist Reminder 2")
 - **Sheet updates**: Follow-up sends update `tr_reminder_events`, `client_tr_references` (last_date, first_reminder_date, second_reminder_date); both Checklists tab and TR Sheet reflect changes
 
@@ -298,7 +327,7 @@ When a checklist is sent to a client, store it:
    - Or separate controllers per checklist type (e.g. `TrChecklistController`, `VisaChecklistController`)?
    - Recommend one general `ChecklistController` + `ChecklistService` for business logic.
 
-3. **Modal/popup for sending**: When staff clicks "Send Checklist" in TR sheet:
+3. **Modal/popup for sending**: When staff clicks "Send Checklist" in Form Generation Checklists subtab or TR sheet:
    - Open modal: Select template → Customize items → Preview → Send
    - Or: Open separate page (e.g. `/clients/{id}/send-checklist`)?
    - Recommend modal for in-sheet workflow (consistent with TR reminder popup).
@@ -310,10 +339,10 @@ When a checklist is sent to a client, store it:
    - Recommend both: default = portal (if client has account); fallback = public link (generate token if no portal login).
 
 5. **Integration points**:
+   - Form Generation → Checklists subtab (primary): List all sent, send new, follow up, change status
    - TR sheet: "Send Checklist" button in checklist box
-   - Client detail: "Checklists" tab (list all sent, send new, view status)
    - EOI/ROI sheet, ART sheet: Add "Send Checklist" button?
-   - Recommend: Add "Send Checklist" action to all sheets + client detail tab for central access.
+   - Recommend: Add "Send Checklist" action to Form Generation + TR sheet + optional EOI/ART for central access.
 
 6. **Template merge placeholders**: What placeholders should be supported?
    - Client: `{client_name}`, `{crm_ref}`, `{email}`, `{phone}`
@@ -351,7 +380,7 @@ When a checklist is sent to a client, store it:
 3. **Routes** (web + AJAX)
 4. **Models** (ChecklistTemplate, ChecklistInstance with relations and casts)
 5. **Views**:
-   - **Checklists tab**: `resources/views/crm/clients/tabs/checklists.blade.php` — list sent checklists, Send Checklist button, Follow up by Email/SMS, Change Status dropdown
+   - **Checklists subtab**: Add to `form_generation_client.blade.php` and `form_generation_lead.blade.php` — new subtab pane with list of sent checklists, Send Checklist button, Follow up by Email/SMS, Change Status dropdown. Optionally use partial `_checklists_subtab.blade.php` for reuse.
    - **Send Checklist modal**: Select matter, template, attachments; popup with body + attachments for review before send
    - Admin Console: Checklist templates CRUD (list, create, edit)
    - Client portal: View checklists, mark items complete, upload docs
@@ -359,15 +388,31 @@ When a checklist is sent to a client, store it:
 6. **Email/SMS sending logic** (integrate with existing Mail/SMS system)
 7. **Activity logging** (log checklist sends to `activities_logs`)
 8. **Integration examples**:
-   - **Checklists tab** (primary): New tab in Lead & Client detail — Send Checklist, list sent checklists, Follow up by Email/SMS, Change Status
-   - **TR sheet**: "Send Checklist" button in checklist box; Reminder 1/2 – Email/SMS buttons; events and dates sync with Checklists tab
+   - **Form Generation → Checklists subtab** (primary): New subtab in Form Generation (Client & Lead) — Send Checklist, list sent checklists, Follow up by Email/SMS, Change Status; co-located with Cost Assignment
+   - **TR sheet**: "Send Checklist" button in checklist box; Reminder 1/2 – Email/SMS buttons; events and dates sync with Checklists subtab
 9. **PDF generation** (optional but recommended)
 10. **Implementation plan** (step-by-step, similar to TR_SHEET_IMPLEMENTATION_PLAN.md)
 
 ---
 
-## Existing Files to Reference
+## Existing Files & Patterns (Form Generation, Cost Assignment, Checklist Attachment)
 
+| File | Purpose |
+|------|---------|
+| `resources/views/crm/clients/tabs/form_generation_client.blade.php` | Form Generation tab (Client): subtabs Form 956, Cost Assignment, Create Cost Assignment. Add Checklists subtab here. |
+| `resources/views/crm/clients/tabs/form_generation_lead.blade.php` | Form Generation tab (Lead): subtab Cost Assignment. Add Checklists subtab here. |
+| `resources/views/crm/clients/modals/financial.blade.php` | Cost Assignment create modal (`costAssignmentCreateFormModel`, `costAssignmentform`) |
+| `resources/views/crm/clients/detail.blade.php` | Email modal (`#emailmodal`) with `checklistfile[]` from `UploadChecklist`; `compose_client_matter_id` |
+| `resources/views/crm/companies/detail.blade.php` | Same email modal pattern for company clients |
+| `resources/views/crm/documents/index.blade.php` | "Preview and Send Email" / signing link modal with matter-specific `UploadChecklist` (`checklistfile[]`) |
+| `app/Http/Controllers/CRM/CRMUtilityController.php` | `sendmail` — handles `checklistfile`, `checklistfile_document`; logs "Checklist sent to client" / "Document Checklist sent to client" to `activities_logs` |
+| `app/Models/UploadChecklist.php` | Checklist files (name, file) — matter_id for matter-specific lists |
+| `app/Models/CostAssignmentForm.php` | Cost assignment per client_matter |
+| `public/js/crm/clients/detail-main.js` | Cost assignment form submit, subtab switching; `subtabs3` pattern for Form Generation subtabs |
+
+**Subtab pattern:** Use `subtab3-button` and `subtab3-pane` classes; `data-subtab` for targeting. Same as Form 956 / Cost Assignment.
+
+**Additional references:**
 - **EOI/ROI verification workflow**: `app/Http/Controllers/CRM/EoiRoiSheetController.php` (lines 473-589) — shows email sending, token generation, activity logging pattern
 - **TR Sheet plan**: `docs/TR_SHEET_IMPLEMENTATION_PLAN.md` — shows reminder popup, template merge, event recording
 - **Email templates**: Admin Console → CRM Email Templates (stored in DB, rendered via Blade or similar)
@@ -419,20 +464,20 @@ A comprehensive design document (similar to TR_SHEET_IMPLEMENTATION_PLAN.md) wit
 
 | Component | Description |
 |-----------|-------------|
-| **Tab** | New "Checklists" tab in Lead & Client detail (sidebar) |
+| **Location** | Form Generation tab → new "Checklists" subtab (alongside Cost Assignment, Form 956) |
 | **Send flow** | 1. Select matter → 2. Select template → 3. Add attachments → 4. Open popup (body + attachments) → 5. Review & Send → 6. Record |
 | **Recording** | `checklist_instances`, `activities_logs`; for TR matters: `client_tr_references`, `tr_reminder_events` |
 | **Follow-ups** | "Follow up by Email" / "Follow up by SMS" buttons; update TR sheet dates and events |
 | **Add new** | "Send Checklist" / "Add Checklist" — supports multiple checklists per matter per client |
 | **Status options** | Active, Converted, Abandoned, Follow up (1m/3m/6m), Completed, Other |
-| **TR Sheet sync** | Checklist send and follow-ups update `client_tr_references`, `tr_reminder_events`; both Checklists tab and TR Sheet stay in sync |
+| **TR Sheet sync** | Checklist send and follow-ups update `client_tr_references`, `tr_reminder_events`; both Form Generation Checklists subtab and TR Sheet stay in sync |
 
 ---
 
 ## Implementation Checklist
 
 - [ ] Add `client_tr_reference_id` and `status` (enum) to `checklist_instances` migration
-- [ ] Create Checklists tab view (`checklists.blade.php`) and register in sidebar
+- [ ] Add Checklists subtab to `form_generation_client.blade.php` and `form_generation_lead.blade.php` (new subtab button + pane)
 - [ ] Implement Send Checklist modal: matter select, template select, attachments, preview popup
 - [ ] Wire ChecklistController: send, followUpEmail, followUpSms, updateStatus
 - [ ] Integrate with TR sheet: create/update `client_tr_references`, record events on send and follow-up
