@@ -572,16 +572,27 @@ function customValidate(formName, savetype = '')
 							processData: false,
 							contentType: false,
 							data: fd,
+							dataType: 'json',
 							success: function(response){
-								var obj = response; // Remove $.parseJSON(response)
+								var obj = (typeof response === 'string' ? JSON.parse(response) : response) || {};
+								var msg = (obj.message != null && obj.message !== '') ? obj.message : (obj.status ? 'Cost assignment saved successfully.' : 'An error occurred. Please try again.');
 								$('#costAssignmentCreateFormModelLead').modal('hide');
-								location.reload();
 								$('.popuploader').hide();
+								localStorage.setItem('activeTab', 'checklists');
 								if(obj.status){
-									$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
+									$('.custom-error-msg').html('<span class="alert alert-success">'+msg+'</span>');
 								}else{
-									$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
+									$('.custom-error-msg').html('<span class="alert alert-danger">'+msg+'</span>');
 								}
+								location.reload();
+							},
+							error: function(xhr){
+								$('#costAssignmentCreateFormModelLead').modal('hide');
+								$('.popuploader').hide();
+								var errMsg = 'An error occurred while saving. Please try again.';
+								if (xhr.responseJSON && xhr.responseJSON.message) errMsg = xhr.responseJSON.message;
+								else if (xhr.responseJSON && xhr.responseJSON.errors) errMsg = Object.values(xhr.responseJSON.errors).flat().join(' ');
+								$('.custom-error-msg').html('<span class="alert alert-danger">'+errMsg+'</span>');
 							}
 						});
 					}

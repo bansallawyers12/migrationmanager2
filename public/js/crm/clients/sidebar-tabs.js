@@ -331,7 +331,14 @@
      * Activate initial tab from URL or default
      */
     function activateInitialTab(activeTabFromUrl) {
-        let tabId = activeTabFromUrl || 'personaldetails';
+        // Check localStorage first (takes precedence for better UX when returning to page)
+        const storedTab = localStorage.getItem('activeTab');
+        let tabId = storedTab || activeTabFromUrl || 'personaldetails';
+        
+        // Clear localStorage after reading to prevent stale tab persistence
+        if (storedTab) {
+            localStorage.removeItem('activeTab');
+        }
         
         // Legacy support: redirect deprecated "accounts-test" slug to the new "account" tab
         if (tabId === 'accounts-test') {

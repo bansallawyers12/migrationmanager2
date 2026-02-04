@@ -4908,6 +4908,7 @@ class ClientsController extends Controller
     //Store Cost Assignment Form Values of Lead
     public function savecostassignmentlead(Request $request)
     {   
+        $response = ['status' => false, 'message' => 'An error occurred. Please try again.'];
         if ($request->isMethod('post'))
         {
             $requestData = $request->all(); //dd($requestData);
@@ -5283,10 +5284,12 @@ class ClientsController extends Controller
             $log->save();
         }
 
-        //7. Return success response
+        //7. Return success response with document ID for signature placement
         return response()->json([
             'status' => true,
-            'message' => 'PDF agreement uploaded successfully!'
+            'message' => 'PDF agreement uploaded successfully!',
+            'document_id' => $doc->id,
+            'edit_url' => route('documents.edit', $doc->id)
         ]);
     }
     

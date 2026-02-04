@@ -873,6 +873,16 @@ class DocumentController extends Controller
 
         //$document = auth()->user()->documents()->findOrFail($documentId);
         $document = \App\Models\Document::findOrFail($documentId);
+        
+        // Debug logging - check document attributes
+        Log::info('Document update method called', [
+            'document_id' => $document->id,
+            'client_matter_id' => $document->client_matter_id,
+            'doc_type' => $document->doc_type,
+            'client_id' => $document->client_id,
+            'type' => $document->type,
+            'all_attributes' => $document->toArray()
+        ]);
 
         // Updated validation for percentages
         $request->validate([
@@ -1008,11 +1018,128 @@ class DocumentController extends Controller
                 }
             }
 
-            // Update document status to indicate signatures have been placed
-            // Note: status column is VARCHAR(6), so using 'placed' instead of 'signature_placed'
+            // Check if this is an agreement document with client_matter_id (from checklist workflow)
+            // This check MUST happen BEFORE updating status to determine the correct flow
+            $isChecklistAgreement = !empty($document->client_matter_id) && 
+                                   $document->doc_type === 'agreement' && 
+                                   !empty($document->client_id);
+            
+            // Force refresh by reloading document from database
+            $document->refresh();
+            
+            Log::info('Document update - checking workflow type', [
+                'document_id' => $document->id,
+                'client_matter_id' => $document->client_matter_id,
+                'client_matter_id_type' => gettype($document->client_matter_id),
+                'client_matter_id_empty' => empty($document->client_matter_id),
+                'doc_type' => $document->doc_type,
+                'doc_type_match' => ($document->doc_type === 'agreement'),
+                'client_id' => $document->client_id,
+                'client_id_empty' => empty($document->client_id),
+                'is_checklist_agreement' => $isChecklistAgreement
+            ]);
+            
+            if ($isChecklistAgreement) {
+                // Checklist workflow: Automatically generate signing link and return to checklist
+                try {
+                    // Get client information using the relationship
+                    $client = $document->client; // This is defined in Document model as belongsTo(Admin::class, 'client_id')
+                    
+                    if (!$client) {
+                        throw new \Exception('Client not found for document');
+                    }
+                    
+                    if (empty($client->email)) {
+                        throw new \Exception('Client email not available');
+                    }
+                    
+                    // Use the client's ID (primary key from admins table)
+                    $clientDatabaseId = $client->id;
+                    
+                    // Create signer with token
+                    $signer = $document->signers()->create([
+                        'email' => $client->email,
+                        'name' => trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? '')),
+                        'token' => \Illuminate\Support\Str::random(64),
+                        'status' => 'pending',
+                        'reminder_count' => 0,
+                    ]);
+                    
+                    // Generate signing URL
+                    $signingUrl = url("/sign/{$document->id}/{$signer->token}");
+                    
+                    // Store signing link in document
+                    $signatureLinks = [
+                        [
+                            'email' => $signer->email,
+                            'name' => $signer->name,
+                            'url' => $signingUrl
+                        ]
+                    ];
+                    
+                    // Update document with signing information
+                    $document->update([
+                        'status' => 'sent',
+                        'signature_doc_link' => json_encode($signatureLinks),
+                        'primary_signer_email' => $signer->email,
+                        'signer_count' => 1,
+                        'last_activity_at' => now(),
+                    ]);
+                    
+                    Log::info('Signature link generated successfully for checklist agreement', [
+                        'document_id' => $document->id,
+                        'client_matter_id' => $document->client_matter_id,
+                        'signer_email' => $signer->email,
+                        'signing_url' => $signingUrl
+                    ]);
+                    
+                    // Redirect back to client detail page with checklists tab
+                    // Encode client ID the same way the rest of the app does (using the database ID)
+                    $encodedClientId = base64_encode(convert_uuencode($clientDatabaseId));
+                    $redirectUrl = url("/clients/detail/{$encodedClientId}/checklists");
+                    
+                    Log::info('Redirecting to client detail page', [
+                        'document_id' => $document->id,
+                        'client_database_id' => $clientDatabaseId,
+                        'encoded_client_id' => $encodedClientId,
+                        'redirect_url' => $redirectUrl
+                    ]);
+                    
+                    return redirect($redirectUrl)
+                        ->with('success', 'Signature fields placed successfully! The signing link is now available in the checklist.');
+                        
+                } catch (\Exception $e) {
+                    Log::error('Failed to auto-generate signature link for checklist agreement', [
+                        'document_id' => $document->id,
+                        'client_matter_id' => $document->client_matter_id,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                    
+                    // For checklist agreements, even if auto-generation fails, 
+                    // still redirect back to checklist with error message
+                    // Try to get client ID for redirect
+                    $clientForRedirect = $document->client;
+                    if ($clientForRedirect) {
+                        $encodedClientId = base64_encode(convert_uuencode($clientForRedirect->id));
+                        $redirectUrl = url("/clients/detail/{$encodedClientId}/checklists");
+                        
+                        return redirect($redirectUrl)
+                            ->with('warning', 'Signature fields saved, but failed to generate link automatically. Please try again from the checklist.');
+                    }
+                }
+            }
+            
+            // Normal signature dashboard workflow: Update status and redirect to create page
+            // This handles all non-checklist documents (ad-hoc documents, etc.)
             $document->update(['status' => 'placed']);
             
-            // Redirect to the signature creation page where user can associate with client/lead and send
+            Log::info('Document following normal signature workflow', [
+                'document_id' => $document->id,
+                'redirecting_to' => 'signatures.create'
+            ]);
+            
+            // Default behavior: Redirect to the signature creation page where user can associate with client/lead and send
             return redirect()->route('signatures.create', ['document_id' => $document->id])
                 ->with('success', 'Signature locations added successfully! Now associate with client/lead and send for signing.');
         } catch (\Exception $e) {
