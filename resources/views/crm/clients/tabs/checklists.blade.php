@@ -210,35 +210,40 @@
                                                                 </div>
                                                             </div>
                                                             
-                                                            <!-- Cost Breakdown Section -->
-                                                            <div class="col-md-6 mb-3">
-                                                                <h6 class="font-weight-bold mb-3"><i class="fas fa-calculator mr-2"></i>Cost Breakdown</h6>
-                                                                <div class="cost-item mb-2">
+                                                            <!-- Cost Breakdown Section (compact) -->
+                                                            <div class="col-md-6 mb-3 cost-breakdown-col">
+                                                                <h6 class="font-weight-bold cost-breakdown-title"><i class="fas fa-calculator mr-2"></i>Cost Breakdown</h6>
+                                                                <div class="cost-item cost-breakdown-item">
                                                                     <div class="d-flex justify-content-between align-items-center">
                                                                         <span>Our Cost (Block Fees):</span>
-                                                                        <strong class="text-primary" style="font-size: 1.1rem;">${{ number_format($totalOurCost, 2) }}</strong>
+                                                                        <strong class="text-primary" style="font-size: 1.05rem;">${{ number_format($totalOurCost, 2) }}</strong>
                                                                     </div>
                                                                 </div>
-                                                                <div class="cost-item mb-2">
+                                                                <div class="cost-item cost-breakdown-item">
                                                                     <div class="d-flex justify-content-between align-items-center">
                                                                         <span>Dept. Charges:</span>
-                                                                        <strong class="text-info" style="font-size: 1.1rem;">${{ number_format($totalDeptCost, 2) }}</strong>
+                                                                        <strong class="text-info" style="font-size: 1.05rem;">${{ number_format($totalDeptCost, 2) }}</strong>
                                                                     </div>
                                                                 </div>
                                                                 @if($totalSurcharge > 0)
-                                                                <div class="cost-item mb-2">
+                                                                <div class="cost-item cost-breakdown-item">
                                                                     <div class="d-flex justify-content-between align-items-center">
                                                                         <span>Surcharges:</span>
-                                                                        <strong class="text-danger" style="font-size: 1.1rem;">${{ number_format($totalSurcharge, 2) }}</strong>
+                                                                        <strong class="text-danger" style="font-size: 1.05rem;">${{ number_format($totalSurcharge, 2) }}</strong>
                                                                     </div>
                                                                 </div>
                                                                 @endif
-                                                                <hr class="my-2" style="border-top: 2px solid #dee2e6;">
-                                                                <div class="cost-item" style="background: #e8f5e9; border-left-color: #28a745; border-left-width: 4px;">
+                                                                <hr class="cost-breakdown-hr">
+                                                                <div class="cost-item cost-breakdown-total">
                                                                     <div class="d-flex justify-content-between align-items-center">
-                                                                        <span class="font-weight-bold" style="color: #1b5e20; font-size: 1.05rem;">Total Cost:</span>
-                                                                        <strong class="text-success" style="font-size: 1.25rem; font-weight: 700;">${{ number_format($totalOurCost + $totalDeptCost + $totalSurcharge, 2) }}</strong>
+                                                                        <span class="font-weight-bold" style="color: #1b5e20; font-size: 1rem;">Total Cost:</span>
+                                                                        <strong class="text-success" style="font-size: 1.1rem; font-weight: 700;">${{ number_format($totalOurCost + $totalDeptCost + $totalSurcharge, 2) }}</strong>
                                                                     </div>
+                                                                </div>
+                                                                <div class="cost-breakdown-edit mt-2">
+                                                                    <button type="button" class="btn btn-outline-secondary btn-sm btn-amend-checklist" data-id="{{ $form->id }}" data-client-matter-id="{{ $form->client_matter_id }}" title="Amend Cost Assignment">
+                                                                        <i class="fas fa-edit mr-1"></i>Edit
+                                                                    </button>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -249,12 +254,9 @@
                                                                 <div class="col-12">
                                                                     <h6 class="font-weight-bold mb-3"><i class="fas fa-tools mr-2"></i>Actions</h6>
                                                                     <div class="d-flex flex-wrap gap-2">
-                                                                        <a href="{{ route('forms.preview', $form) }}" target="_blank" class="btn btn-outline-primary btn-sm" title="View Cost Assignment">
+                                                                        <a href="{{ route('forms.preview', $form) }}" target="_blank" class="btn btn-outline-primary btn-sm btn-view-cost-assignment" title="View Cost Assignment" data-preview-url="{{ route('forms.preview', $form) }}">
                                                                             <i class="fas fa-eye mr-1"></i>View
                                                                         </a>
-                                                                        <button type="button" class="btn btn-outline-secondary btn-sm btn-amend-checklist" data-id="{{ $form->id }}" data-client-matter-id="{{ $form->client_matter_id }}" title="Amend Cost Assignment">
-                                                                            <i class="fas fa-edit mr-1"></i>Amend
-                                                                        </button>
                                                                         <button type="button" class="btn btn-primary btn-sm visaAgreementCreateForm" data-id="{{ $form->id }}" data-client-matter-id="{{ $form->client_matter_id }}" title="Create Visa Agreement">
                                                                             <i class="fas fa-file-contract mr-1"></i>Create Visa Agreement
                                                                         </button>
@@ -454,6 +456,38 @@
     border-left-color: #28a745;
 }
 
+/* Cost Breakdown: compact layout */
+.cost-breakdown-col .cost-breakdown-title {
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.cost-breakdown-col .cost-breakdown-item,
+.cost-breakdown-col .cost-breakdown-total {
+    padding: 6px 10px;
+    margin-bottom: 4px;
+    border-radius: 4px;
+}
+
+.cost-breakdown-col .cost-breakdown-item:last-of-type {
+    margin-bottom: 4px;
+}
+
+.cost-breakdown-col .cost-breakdown-total {
+    background: #e8f5e9;
+    border-left-width: 4px;
+    border-left-color: #28a745;
+}
+
+.cost-breakdown-col .cost-breakdown-hr {
+    margin: 6px 0;
+    border-top: 2px solid #dee2e6;
+}
+
+.cost-breakdown-col .cost-breakdown-edit {
+    margin-top: 0.5rem !important;
+}
+
 .cost-item .text-muted {
     color: #495057 !important;
     font-weight: 500;
@@ -462,6 +496,23 @@
 .cost-item strong {
     color: #212529;
     font-size: 1rem;
+}
+
+/* Force visible colour for cost amounts (override Bootstrap .text-primary etc so never white-on-white) */
+.cost-item strong.text-primary {
+    color: #007bff !important;
+}
+
+.cost-item strong.text-info {
+    color: #0dcaf0 !important;
+}
+
+.cost-item strong.text-danger {
+    color: #dc3545 !important;
+}
+
+.cost-item strong.text-success {
+    color: #28a745 !important;
 }
 
 .font-weight-500 {
@@ -483,6 +534,17 @@
     gap: 8px;
 }
 
+/* Ensure action button icons are visible (avoid white icon on white outline button) */
+.checklist-actions-section .btn-outline-primary,
+.checklist-actions-section .btn-outline-primary i {
+    color: #007bff !important;
+}
+
+.checklist-actions-section .btn-outline-primary:hover,
+.checklist-actions-section .btn-outline-primary:hover i {
+    color: #fff !important;
+}
+
 .signature-section {
     animation: fadeIn 0.3s ease-in;
 }
@@ -494,6 +556,22 @@
 
 .signature-section p {
     color: #495057;
+}
+
+/* WCAG AA contrast: text-muted (#6c757d) on bg-light (#f8f9fa) ≈ 3.8:1 (fails 4.5:1). Use darker gray. */
+.signature-section .text-muted {
+    color: #495057 !important;
+}
+
+.signature-section .btn-outline-secondary {
+    color: #495057;
+    border-color: #495057;
+}
+
+.signature-section .btn-outline-secondary:hover {
+    color: #fff;
+    background-color: #495057;
+    border-color: #495057;
 }
 
 .bg-warning-light {
@@ -653,6 +731,16 @@
             $(this).prev('.checklist-item-header').attr('aria-expanded', 'true');
         }).on('hidden.bs.collapse', function() {
             $(this).prev('.checklist-item-header').attr('aria-expanded', 'false');
+        });
+
+        // View Cost Assignment - open preview in new tab (explicit handler so popup always opens)
+        $(document).on('click', '.btn-view-cost-assignment', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var url = $(this).data('preview-url') || $(this).attr('href');
+            if (url) {
+                window.open(url, '_blank', 'noopener,noreferrer');
+            }
         });
 
         // Copy signature link to clipboard
