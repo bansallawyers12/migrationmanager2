@@ -19,8 +19,8 @@ class EoiConfirmationMail extends Mailable
     public $amendUrl;
     public $pointsData;
 
-    /** @var array<int, array{data: string, name: string, mime: string}> */
-    public $attachments;
+    /** @var array<int, array{data: string, name: string, mime: string}> Raw attachment data (not Laravel's $attachments which expects file paths) */
+    public $eoiAttachmentData = [];
 
     /** @var array<int, string> Category names attached (e.g. EOI Summary, Points Summary, ROI Draft) */
     public $attachmentLabels;
@@ -52,7 +52,7 @@ class EoiConfirmationMail extends Mailable
         $this->client = $client;
         $this->confirmUrl = route('client.eoi.confirm', ['token' => $token]);
         $this->amendUrl = route('client.eoi.amend', ['token' => $token]);
-        $this->attachments = $attachments;
+        $this->eoiAttachmentData = $attachments;
         $this->attachmentLabels = $attachmentLabels;
         $this->customSubject = $customSubject;
         $this->customBody = $customBody;
@@ -79,7 +79,7 @@ class EoiConfirmationMail extends Mailable
                 'customBody' => $this->customBody, // Pass custom body to view (for Phase 2 if needed)
             ]);
 
-        foreach ($this->attachments as $att) {
+        foreach ($this->eoiAttachmentData as $att) {
             $mail->attachData(
                 $att['data'],
                 $att['name'],

@@ -364,7 +364,7 @@ class ClientPortalController extends Controller
 
         // Send verification email
         try {
-            Mail::raw("Your password reset verification code is: {$verificationCode}\n\nThis code will expire in 10 minutes.\n\nIf you did not request this password reset, please ignore this email.", function ($message) use ($email) {
+            Mail::raw("Your password reset verification code is: {$verificationCode}\n\nThis code will expire in 10 minutes.\n\nIf you did not request this password reset, please ignore this email.\n\nConsumer guide: https://www.mara.gov.au/get-help-visa-subsite/FIles/consumer_guide_english.pdf", function ($message) use ($email) {
                 $message->to($email)
                         ->subject('Client Portal - Password Reset Verification Code');
             });
