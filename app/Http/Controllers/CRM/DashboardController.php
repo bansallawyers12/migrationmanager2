@@ -78,7 +78,10 @@ class DashboardController extends Controller
     {
         $notifications = $this->dashboardService->getOfficeVisitNotifications();
         
-        return response()->json($notifications);
+        return response()->json([
+            'notifications' => $notifications,
+            'count' => count($notifications)
+        ]);
     }
 
     /**

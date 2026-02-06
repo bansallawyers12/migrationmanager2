@@ -1426,7 +1426,7 @@ public function getpartnerbranch(Request $request){
             ->get();
 
         if ($notifications->isEmpty()) {
-            return response()->json([]);
+            return response()->json(['notifications' => [], 'count' => 0]);
         }
 
         // Batch-load all checkin logs (eliminates N+1)
@@ -1438,7 +1438,7 @@ public function getpartnerbranch(Request $request){
 
         // If no active checkin logs, return empty
         if ($checkinLogs->isEmpty()) {
-            return response()->json([]);
+            return response()->json(['notifications' => [], 'count' => 0]);
         }
 
         // Separate client IDs by type (Lead vs Admin)
@@ -1491,7 +1491,7 @@ public function getpartnerbranch(Request $request){
             ];
         }
 
-        return response()->json($data);
+        return response()->json(['notifications' => $data, 'count' => count($data)]);
     }
 
     /**

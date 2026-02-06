@@ -2461,11 +2461,10 @@
                 method: "GET",
                 dataType: "json",
                 success: function(data) {
-                    if (data && data.length > 0) {
-                        data.forEach(function(notification) {
-                            showTeamsNotification(notification);
-                        });
-                    }
+                    var list = (data && data.notifications) ? data.notifications : [];
+                    list.forEach(function(notification) {
+                        showTeamsNotification(notification);
+                    });
                 }
             });
         }

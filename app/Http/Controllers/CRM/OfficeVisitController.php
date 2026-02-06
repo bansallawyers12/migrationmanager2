@@ -558,10 +558,11 @@ class OfficeVisitController extends Controller
 
         $saved = $obj->save();
 
-        if($saved){
+        // Notify reception only when assignee clicked "Waiting" (please send the client), not when moving to attending
+        if ($saved && $request->waitingtype != 1) {
 		    $o = new \App\Models\Notification;
 	    	$o->sender_id = Auth::user()->id;
-	    	$o->receiver_id = 36608; // to receptionist id  //info@bansaleducation.com.au 36730 (for live)
+	    	$o->receiver_id = (int) (config('constants.reception_user_id') ?? 36608);
 	    	$o->module_id = $request->id;
 	    	$o->url = \URL::to('/office-visits/'.$t);
 	    	$o->notification_type = 'officevisit';
@@ -577,20 +578,27 @@ class OfficeVisitController extends Controller
 	    	    : Admin::where('role', '7')->find($obj->client_id);
 	    	
 	    	// Broadcast real-time notification via Reverb
-	    	broadcast(new OfficeVisitNotificationCreated(
-	    	    $o->id,
-	    	    $o->receiver_id,
-	    	    [
-	    	        'id' => $o->id,
-	    	        'checkin_id' => $obj->id,
-	    	        'message' => $o->message,
-	    	        'sender_name' => Auth::user()->first_name . ' ' . Auth::user()->last_name,
-	    	        'client_name' => $client ? $client->first_name . ' ' . $client->last_name : 'Unknown Client',
-	    	        'visit_purpose' => $obj->visit_purpose,
-	    	        'created_at' => $o->created_at ? $o->created_at->format('d/m/Y h:i A') : now()->format('d/m/Y h:i A'),
-	    	        'url' => $o->url
-	    	    ]
-	    	));
+	    	try {
+	    	    broadcast(new OfficeVisitNotificationCreated(
+	    	        $o->id,
+	    	        $o->receiver_id,
+	    	        [
+	    	            'id' => $o->id,
+	    	            'checkin_id' => $obj->id,
+	    	            'message' => $o->message,
+	    	            'sender_name' => Auth::user()->first_name . ' ' . Auth::user()->last_name,
+	    	            'client_name' => $client ? $client->first_name . ' ' . $client->last_name : 'Unknown Client',
+	    	            'visit_purpose' => $obj->visit_purpose,
+	    	            'created_at' => $o->created_at ? $o->created_at->format('d/m/Y h:i A') : now()->format('d/m/Y h:i A'),
+	    	            'url' => $o->url
+	    	        ]
+	    	    ));
+	    	} catch (\Exception $e) {
+	    	    Log::warning('Failed to broadcast office visit reception notification', [
+	    	        'notification_id' => $o->id,
+	    	        'error' => $e->getMessage()
+	    	    ]);
+	    	}
 		}
 
 		$objs = new CheckinHistory;
