@@ -5,13 +5,13 @@
 @php
 	$baseUrl = '/office-visits/' . $activeTab;
 	if(\Auth::user()->role == 1 || \Auth::user()->role == 14){
-		$InPersonCount_waiting_type = \App\Models\CheckinLog::where('status',0)->where('is_archived',0)->orderBy('created_at', 'desc')->count();
-		$InPersonCount_attending_type = \App\Models\CheckinLog::where('status',2)->where('is_archived',0)->orderBy('created_at', 'desc')->count();
-		$InPersonCount_completed_type = \App\Models\CheckinLog::where('status',1)->where('is_archived',0)->orderBy('created_at', 'desc')->count();
+		$InPersonCount_waiting_type = \App\Models\CheckinLog::where('status',0)->orderBy('created_at', 'desc')->count();
+		$InPersonCount_attending_type = \App\Models\CheckinLog::where('status',2)->orderBy('created_at', 'desc')->count();
+		$InPersonCount_completed_type = \App\Models\CheckinLog::where('status',1)->orderBy('created_at', 'desc')->count();
 	} else {
-		$InPersonCount_waiting_type = \App\Models\CheckinLog::where('user_id',Auth::user()->id)->where('status',0)->where('is_archived',0)->orderBy('created_at', 'desc')->count();
-		$InPersonCount_attending_type = \App\Models\CheckinLog::where('user_id',Auth::user()->id)->where('status',2)->where('is_archived',0)->orderBy('created_at', 'desc')->count();
-		$InPersonCount_completed_type = \App\Models\CheckinLog::where('user_id',Auth::user()->id)->where('status',1)->where('is_archived',0)->orderBy('created_at', 'desc')->count();
+		$InPersonCount_waiting_type = \App\Models\CheckinLog::where('user_id',Auth::user()->id)->where('status',0)->orderBy('created_at', 'desc')->count();
+		$InPersonCount_attending_type = \App\Models\CheckinLog::where('user_id',Auth::user()->id)->where('status',2)->orderBy('created_at', 'desc')->count();
+		$InPersonCount_completed_type = \App\Models\CheckinLog::where('user_id',Auth::user()->id)->where('status',1)->orderBy('created_at', 'desc')->count();
 	}
 @endphp
 

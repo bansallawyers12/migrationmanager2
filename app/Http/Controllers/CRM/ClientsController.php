@@ -3044,7 +3044,6 @@ class ClientsController extends Controller
                              'updated_at' => $checkval->updated_at,
                              'wait_time' => $checkval->wait_time,
                              'attend_time' => $checkval->attend_time,
-                             'is_archived' => $checkval->is_archived,
                              'office' => $checkval->office,
                              'wait_type' => $checkval->wait_type
                         ]
