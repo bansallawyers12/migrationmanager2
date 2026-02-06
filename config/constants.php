@@ -50,4 +50,7 @@ return [
 	'not_exist' => ' does not exist in our system, so please check it once again.',	
 	'added' => ' has been added successfully.',	
 	'edited' => ' has been edited successfully.',	
+
+	// Reception user ID for office visit "please send the client" notifications (env RECEPTION_USER_ID)
+	'reception_user_id' => env('RECEPTION_USER_ID', 36608),
 ];

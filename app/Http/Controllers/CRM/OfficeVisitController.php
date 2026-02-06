@@ -126,6 +126,7 @@ class OfficeVisitController extends Controller
 				$obj->office = $officeId;
 				$obj->contact_type = $contactType;
 				$obj->status = 0;
+				$obj->is_archived = 0; // Required: PostgreSQL NOT NULL constraint
 				$obj->date = date('Y-m-d');
 				
 				if (!$obj->save()) {
@@ -637,7 +638,7 @@ class OfficeVisitController extends Controller
     	       $ovv->save();
     	    }
 	    }
-		$query 		= CheckinLog::where('status', '=', 0);
+		$query 		= CheckinLog::where('status', '=', 0)->where('is_archived', 0);
 
 		$totalData 	= $query->count();	//for all data
 		if($request->has('office')){
@@ -661,7 +662,7 @@ class OfficeVisitController extends Controller
     	       $ovv->save();
     	    }
 	    }
-		$query 		= CheckinLog::where('status', '=', '2');
+		$query 		= CheckinLog::where('status', '=', '2')->where('is_archived', 0);
 
 		$totalData 	= $query->count();	//for all data
 		if($request->has('office')){
@@ -685,7 +686,7 @@ class OfficeVisitController extends Controller
     	       $ovv->save();
     	    }
 	    }
-		$query 		= CheckinLog::where('status', '=', '1');
+		$query 		= CheckinLog::where('status', '=', '1')->where('is_archived', 0);
 
 		$totalData 	= $query->count();	//for all data
 		if($request->has('office')){
