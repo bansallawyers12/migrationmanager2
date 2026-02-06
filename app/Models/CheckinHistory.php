@@ -1,13 +1,11 @@
 <?php
 namespace App\Models;
 
-use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Model;
 use Kyslik\ColumnSortable\Sortable;
-use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class CheckinHistory extends Authenticatable
+class CheckinHistory extends Model
 {
-    use Notifiable;
 	use Sortable;
 
 	protected $fillable = [
@@ -15,6 +13,20 @@ class CheckinHistory extends Authenticatable
     ];
 	
 	public $sortable = ['id', 'created_at', 'updated_at'];
-	
-	
+
+	/**
+	 * Get the checkin log this history belongs to
+	 */
+	public function checkinLog()
+	{
+		return $this->belongsTo(CheckinLog::class, 'checkin_id');
+	}
+
+	/**
+	 * Get the admin who created this history record
+	 */
+	public function creator()
+	{
+		return $this->belongsTo(Admin::class, 'created_by');
+	}
 }

@@ -2,17 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Notifications\Notifiable;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Model;
 use Kyslik\ColumnSortable\Sortable;
-use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class Notification extends Authenticatable
+class Notification extends Model
 {
-    use Notifiable;
 	use Sortable;
 	
-	protected $fillable = ['sender_id', 'receiver_id', 'module_id', 'url', 'notification_type', 'message', 'receiver_status', 'seen'];
+	protected $fillable = ['sender_id', 'receiver_id', 'module_id', 'url', 'notification_type', 'message', 'receiver_status', 'sender_status', 'seen'];
  
 	public $sortable = ['id', 'created_at', 'updated_at'];
 	

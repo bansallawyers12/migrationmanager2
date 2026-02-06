@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Log;
 
+use App\Models\ActivitiesLog;
 use App\Models\Admin;
 use App\Models\CheckinLog;
 use App\Models\CheckinHistory;
@@ -126,7 +127,6 @@ class OfficeVisitController extends Controller
 				$obj->office = $officeId;
 				$obj->contact_type = $contactType;
 				$obj->status = 0;
-				$obj->is_archived = 0; // Required: PostgreSQL NOT NULL constraint
 				$obj->date = date('Y-m-d');
 				
 				if (!$obj->save()) {
@@ -186,6 +186,19 @@ class OfficeVisitController extends Controller
 				
 				if (!$checkinHistory->save()) {
 					throw new \Exception('Failed to save check-in history.');
+				}
+
+				// Optional: log client activity for check-in (Client only; Lead uses different id space)
+				if ($contactType === 'Client') {
+					ActivitiesLog::create([
+						'client_id' => $contactId,
+						'created_by' => Auth::user()->id,
+						'subject' => 'Office visit check-in created',
+						'description' => 'Check-in created for office visit: ' . $visitPurpose,
+						'activity_type' => 'office_visit_checkin',
+						'task_status' => 0,
+						'pin' => 0,
+					]);
 				}
 
 				// Commit transaction
@@ -516,21 +529,28 @@ class OfficeVisitController extends Controller
 	    	    ? \App\Models\Lead::find($objs->client_id)
 	    	    : Admin::where('role', '7')->find($objs->client_id);
 	    	
-	    	// Broadcast real-time notification via Reverb
-	    	broadcast(new OfficeVisitNotificationCreated(
-	    	    $o->id,
-	    	    $o->receiver_id,
-	    	    [
-	    	        'id' => $o->id,
-	    	        'checkin_id' => $objs->id,
-	    	        'message' => $o->message,
-	    	        'sender_name' => Auth::user()->first_name . ' ' . Auth::user()->last_name,
-	    	        'client_name' => $client ? $client->first_name . ' ' . $client->last_name : 'Unknown Client',
-	    	        'visit_purpose' => $objs->visit_purpose,
-	    	        'created_at' => $o->created_at ? $o->created_at->format('d/m/Y h:i A') : now()->format('d/m/Y h:i A'),
-	    	        'url' => $o->url
-	    	    ]
-	    	));
+	    	// Broadcast real-time notification via Reverb (wrap in try-catch)
+	    	try {
+	    	    broadcast(new OfficeVisitNotificationCreated(
+	    	        $o->id,
+	    	        $o->receiver_id,
+	    	        [
+	    	            'id' => $o->id,
+	    	            'checkin_id' => $objs->id,
+	    	            'message' => $o->message,
+	    	            'sender_name' => Auth::user()->first_name . ' ' . Auth::user()->last_name,
+	    	            'client_name' => $client ? $client->first_name . ' ' . $client->last_name : 'Unknown Client',
+	    	            'visit_purpose' => $objs->visit_purpose,
+	    	            'created_at' => $o->created_at ? $o->created_at->format('d/m/Y h:i A') : now()->format('d/m/Y h:i A'),
+	    	            'url' => $o->url
+	    	        ]
+	    	    ));
+	    	} catch (\Exception $e) {
+	    	    Log::warning('Failed to broadcast office visit assignee notification', [
+	    	        'notification_id' => $o->id,
+	    	        'error' => $e->getMessage()
+	    	    ]);
+	    	}
 	    	
 			$response['status'] 	= 	true;
 			$response['message']	=	'Updated successfully';
@@ -558,47 +578,50 @@ class OfficeVisitController extends Controller
 
         $saved = $obj->save();
 
-        // Notify reception only when assignee clicked "Waiting" (please send the client), not when moving to attending
-        if ($saved && $request->waitingtype != 1) {
-		    $o = new \App\Models\Notification;
-	    	$o->sender_id = Auth::user()->id;
-	    	$o->receiver_id = (int) (config('constants.reception_user_id') ?? 36608);
-	    	$o->module_id = $request->id;
-	    	$o->url = \URL::to('/office-visits/'.$t);
-	    	$o->notification_type = 'officevisit';
-	    	$o->message = 'Office Visit Assigned by '.Auth::user()->first_name.' '.Auth::user()->last_name;
-	    	$o->seen = 0;              // Mark as unseen
-	    	$o->receiver_status = 0;   // Mark as unread by receiver
-	    	$o->sender_status = 1;     // Mark as sent by sender
-	    	$o->save();
-	    	
-	    	// Get client information for the notification
-	    	$client = $obj->contact_type == 'Lead' 
-	    	    ? \App\Models\Lead::find($obj->client_id)
-	    	    : Admin::where('role', '7')->find($obj->client_id);
-	    	
-	    	// Broadcast real-time notification via Reverb
-	    	try {
-	    	    broadcast(new OfficeVisitNotificationCreated(
-	    	        $o->id,
-	    	        $o->receiver_id,
-	    	        [
-	    	            'id' => $o->id,
-	    	            'checkin_id' => $obj->id,
-	    	            'message' => $o->message,
-	    	            'sender_name' => Auth::user()->first_name . ' ' . Auth::user()->last_name,
-	    	            'client_name' => $client ? $client->first_name . ' ' . $client->last_name : 'Unknown Client',
-	    	            'visit_purpose' => $obj->visit_purpose,
-	    	            'created_at' => $o->created_at ? $o->created_at->format('d/m/Y h:i A') : now()->format('d/m/Y h:i A'),
-	    	            'url' => $o->url
-	    	        ]
-	    	    ));
-	    	} catch (\Exception $e) {
-	    	    Log::warning('Failed to broadcast office visit reception notification', [
-	    	        'notification_id' => $o->id,
-	    	        'error' => $e->getMessage()
-	    	    ]);
-	    	}
+        if($saved){
+		    // Only notify reception when waitingtype != 1 (i.e. when status stays "waiting" / "Pls send")
+		    if ((int) $request->waitingtype != 1) {
+		        $receiverId = config('constants.reception_user_id', 36608);
+		        $o = new \App\Models\Notification;
+		        $o->sender_id = Auth::user()->id;
+		        $o->receiver_id = $receiverId;
+		        $o->module_id = $request->id;
+		        $o->url = \URL::to('/office-visits/'.$t);
+		        $o->notification_type = 'officevisit';
+		        $o->message = 'Office Visit Assigned by '.Auth::user()->first_name.' '.Auth::user()->last_name;
+		        $o->seen = 0;              // Mark as unseen
+		        $o->receiver_status = 0;   // Mark as unread by receiver
+		        $o->sender_status = 1;     // Mark as sent by sender
+		        $o->save();
+		        
+		        // Get client information for the notification
+		        $client = $obj->contact_type == 'Lead' 
+		            ? \App\Models\Lead::find($obj->client_id)
+		            : Admin::where('role', '7')->find($obj->client_id);
+		        
+		        // Broadcast real-time notification via Reverb (wrap in try-catch)
+		        try {
+		            broadcast(new OfficeVisitNotificationCreated(
+		                $o->id,
+		                $o->receiver_id,
+		                [
+		                    'id' => $o->id,
+		                    'checkin_id' => $obj->id,
+		                    'message' => $o->message,
+		                    'sender_name' => Auth::user()->first_name . ' ' . Auth::user()->last_name,
+		                    'client_name' => $client ? $client->first_name . ' ' . $client->last_name : 'Unknown Client',
+		                    'visit_purpose' => $obj->visit_purpose,
+		                    'created_at' => $o->created_at ? $o->created_at->format('d/m/Y h:i A') : now()->format('d/m/Y h:i A'),
+		                    'url' => $o->url
+		                ]
+		            ));
+		        } catch (\Exception $e) {
+		            Log::warning('Failed to broadcast office visit attend notification', [
+		                'notification_id' => $o->id,
+		                'error' => $e->getMessage()
+		            ]);
+		        }
+		    }
 		}
 
 		$objs = new CheckinHistory;
@@ -607,6 +630,18 @@ class OfficeVisitController extends Controller
 		$objs->checkin_id = $request->id;
 		$saved = $objs->save();
 		if($saved){
+			// Optional: log client activity for attend session (Client only)
+			if ($obj->contact_type === 'Client') {
+				ActivitiesLog::create([
+					'client_id' => $obj->client_id,
+					'created_by' => Auth::user()->id,
+					'subject' => 'Office visit session started',
+					'description' => 'Session started for office visit (check-in #' . $obj->id . ')',
+					'activity_type' => 'office_visit_attend',
+					'task_status' => 0,
+					'pin' => 0,
+				]);
+			}
 			$response['status'] 	= 	true;
 			$response['message']	=	'saved successfully';
 		}else{
@@ -629,6 +664,18 @@ class OfficeVisitController extends Controller
 		$objs->checkin_id = $request->id;
 		$saved = $objs->save();
 		if($saved){
+			// Optional: log client activity for completed session (Client only)
+			if ($obj->contact_type === 'Client') {
+				ActivitiesLog::create([
+					'client_id' => $obj->client_id,
+					'created_by' => Auth::user()->id,
+					'subject' => 'Office visit session completed',
+					'description' => 'Session completed for office visit (check-in #' . $obj->id . ')',
+					'activity_type' => 'office_visit_complete',
+					'task_status' => 0,
+					'pin' => 0,
+				]);
+			}
 			$response['status'] 	= 	true;
 			$response['message']	=	'saved successfully';
 		}else{
@@ -646,7 +693,7 @@ class OfficeVisitController extends Controller
     	       $ovv->save();
     	    }
 	    }
-		$query 		= CheckinLog::where('status', '=', 0)->where('is_archived', 0);
+		$query 		= CheckinLog::where('status', '=', 0);
 
 		$totalData 	= $query->count();	//for all data
 		if($request->has('office')){
@@ -670,7 +717,7 @@ class OfficeVisitController extends Controller
     	       $ovv->save();
     	    }
 	    }
-		$query 		= CheckinLog::where('status', '=', '2')->where('is_archived', 0);
+		$query 		= CheckinLog::where('status', '=', '2');
 
 		$totalData 	= $query->count();	//for all data
 		if($request->has('office')){
@@ -694,7 +741,7 @@ class OfficeVisitController extends Controller
     	       $ovv->save();
     	    }
 	    }
-		$query 		= CheckinLog::where('status', '=', '1')->where('is_archived', 0);
+		$query 		= CheckinLog::where('status', '=', '1');
 
 		$totalData 	= $query->count();	//for all data
 		if($request->has('office')){
