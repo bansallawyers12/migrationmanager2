@@ -91,11 +91,10 @@ Route::get('/application/download-document', [ClientPortalController::class, 'do
 |--------------------------------------------------------------------------
 */
 
-Route::get('/office-visits', [OfficeVisitController::class, 'index'])->name('officevisits.index');
+Route::get('/office-visits', fn () => redirect()->route('officevisits.waiting'))->name('officevisits.index');
 Route::get('/office-visits/waiting', [OfficeVisitController::class, 'waiting'])->name('officevisits.waiting');
 Route::get('/office-visits/attending', [OfficeVisitController::class, 'attending'])->name('officevisits.attending');
 Route::get('/office-visits/completed', [OfficeVisitController::class, 'completed'])->name('officevisits.completed');
-Route::get('/office-visits/archived', [OfficeVisitController::class, 'archived'])->name('officevisits.archived');
 Route::get('/office-visits/create', [OfficeVisitController::class, 'create'])->name('officevisits.create');
 
 /*---------- Office Visit Operations ----------*/

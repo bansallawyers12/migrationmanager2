@@ -225,23 +225,6 @@ class OfficeVisitController extends Controller
 		}
 	}
 
-	public function index(Request $request)
-	{
-		$query 		= CheckinLog::query();
-
-		$totalData 	= $query->count();	//for all data
-		if($request->has('office')){
-			$office 		= 	$request->input('office');
-			if(trim($office) != '')
-			{
-				$query->where('office', '=', $office);
-			}
-		}
-		$lists		= $query->with('assignee')->sortable(['id' => 'desc'])->paginate(config('constants.limit'));
-
-		return view('crm.officevisits.index',compact(['lists', 'totalData']));
-	}
-
 	public function getcheckin(Request $request)
 	{
 
@@ -655,7 +638,7 @@ class OfficeVisitController extends Controller
     	       $ovv->save();
     	    }
 	    }
-		$query 		= CheckinLog::where('status', '=', 0);
+		$query 		= CheckinLog::where('status', '=', 0)->where('is_archived', 0);
 
 		$totalData 	= $query->count();	//for all data
 		if($request->has('office')){
@@ -667,7 +650,8 @@ class OfficeVisitController extends Controller
 		}
 		$lists		= $query->with('assignee')->sortable(['id' => 'desc'])->paginate(config('constants.limit'));
 
-		return view('crm.officevisits.waiting',compact(['lists', 'totalData']));
+		$activeTab = 'waiting';
+		return view('crm.officevisits.index', compact('lists', 'totalData', 'activeTab'));
 	}
 	public function attending(Request $request)
 	{
@@ -678,7 +662,7 @@ class OfficeVisitController extends Controller
     	       $ovv->save();
     	    }
 	    }
-		$query 		= CheckinLog::where('status', '=', '2');
+		$query 		= CheckinLog::where('status', '=', '2')->where('is_archived', 0);
 
 		$totalData 	= $query->count();	//for all data
 		if($request->has('office')){
@@ -690,7 +674,8 @@ class OfficeVisitController extends Controller
 		}
 		$lists		= $query->with('assignee')->sortable(['id' => 'desc'])->paginate(config('constants.limit'));
 
-		return view('crm.officevisits.attending',compact(['lists', 'totalData']));
+		$activeTab = 'attending';
+		return view('crm.officevisits.index', compact('lists', 'totalData', 'activeTab'));
 	}
 	public function completed(Request $request)
 	{
@@ -701,7 +686,7 @@ class OfficeVisitController extends Controller
     	       $ovv->save();
     	    }
 	    }
-		$query 		= CheckinLog::where('status', '=', '1');
+		$query 		= CheckinLog::where('status', '=', '1')->where('is_archived', 0);
 
 		$totalData 	= $query->count();	//for all data
 		if($request->has('office')){
@@ -712,24 +697,8 @@ class OfficeVisitController extends Controller
 			}
 		}
 		$lists		= $query->with('assignee')->sortable(['id' => 'desc'])->paginate(config('constants.limit'));
-        return view('crm.officevisits.completed',compact(['lists', 'totalData']));
-	}
-
-	public function archived(Request $request)
-	{
-		$query 		= CheckinLog::where('is_archived', '=', '1');
-
-		$totalData 	= $query->count();	//for all data
-		if($request->has('office')){
-			$office 		= 	$request->input('office');
-			if(trim($office) != '')
-			{
-				$query->where('office', '=', $office);
-			}
-		}
-		$lists		= $query->with('assignee')->sortable(['id' => 'desc'])->paginate(config('constants.limit'));
-
-		return view('crm.officevisits.archived',compact(['lists', 'totalData']));
+		$activeTab = 'completed';
+		return view('crm.officevisits.index', compact('lists', 'totalData', 'activeTab'));
 	}
 	public function create(Request $request){
 		return view('crm.officevisits.create');
