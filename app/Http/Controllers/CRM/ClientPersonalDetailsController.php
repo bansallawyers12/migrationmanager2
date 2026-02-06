@@ -1806,7 +1806,7 @@ class ClientPersonalDetailsController extends Controller
                 'dob' => 'nullable|date_format:d/m/Y',
                 'age' => 'nullable|string',
                 'gender' => 'nullable|in:Male,Female,Other',
-                'marital_status' => 'nullable|in:Single,Married,De Facto,Defacto,Divorced,Widowed,Separated'
+                'marital_status' => 'nullable|in:Never Married,Engaged,Married,De Facto,Defacto,Separated,Divorced,Widowed,Single'
             ]);
 
             // Convert DOB format and calculate age (like the working methods)
@@ -1829,6 +1829,9 @@ class ClientPersonalDetailsController extends Controller
             $maritalStatus = $validated['marital_status'] ?? null;
             if ($maritalStatus === 'Defacto') {
                 $maritalStatus = 'De Facto';
+            }
+            if ($maritalStatus === 'Single') {
+                $maritalStatus = 'Never Married';
             }
 
             // Track changed fields for activity log with old and new values

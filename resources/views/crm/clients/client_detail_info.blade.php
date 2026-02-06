@@ -128,14 +128,13 @@
                                             <label for="marital_status">Marital Status</label>
                                             <select style="padding: 0px 5px;width: 165px;" name="marital_status" id="marital-status-select" class="form-control">
                                                 <option value="">Select Marital Status</option>
-                                                <option value="Married" @if(@$fetchedData->marital_status == "Married") selected @endif>Married</option>
-                                                <option value="Never Married" @if(@$fetchedData->marital_status == "Never Married") selected @endif>Never Married</option>
+                                                <option value="Never Married" @if(@$fetchedData->marital_status == "Never Married" || @$fetchedData->marital_status == "Single") selected @endif>Never Married</option>
                                                 <option value="Engaged" @if(@$fetchedData->marital_status == "Engaged") selected @endif>Engaged</option>
-                                                <option value="Divorced" @if(@$fetchedData->marital_status == "Divorced") selected @endif>Divorced</option>
+                                                <option value="Married" @if(@$fetchedData->marital_status == "Married") selected @endif>Married</option>
+                                                <option value="De Facto" @if(@$fetchedData->marital_status == "De Facto" || @$fetchedData->marital_status == "Defacto" || @$fetchedData->marital_status == "De facto") selected @endif>De Facto</option>
                                                 <option value="Separated" @if(@$fetchedData->marital_status == "Separated") selected @endif>Separated</option>
-                                                <option value="De facto" @if(@$fetchedData->marital_status == "De facto") selected @endif>De facto</option>
+                                                <option value="Divorced" @if(@$fetchedData->marital_status == "Divorced") selected @endif>Divorced</option>
                                                 <option value="Widowed" @if(@$fetchedData->marital_status == "Widowed") selected @endif>Widowed</option>
-                                                <option value="Others" @if(@$fetchedData->marital_status == "Others") selected @endif>Others</option>
                                             </select>
                                             @if ($errors->has('marital_status'))
                                             <span class="custom-error" role="alert">
@@ -3872,7 +3871,7 @@
                                 <script>
                                     $(document).ready(function() {
                                         var maritalStatus = $('#marital-status-select').val();
-                                        if (maritalStatus === 'Married' || maritalStatus === 'De facto') {
+                                        if (maritalStatus === 'Married' || maritalStatus === 'De Facto' || maritalStatus === 'Defacto') {
                                             $('#spouse-english-question').show();
                                             $('#english-score-fields').show();
                                             $('#spouse-skill-assessment-question').show();
@@ -3887,7 +3886,7 @@
                                         // Show or hide spouse questions based on Marital Status
                                         $('#marital-status-select').change(function() {
                                             var maritalStatus = $(this).val();
-                                            if (maritalStatus === 'Married' || maritalStatus === 'De facto') {
+                                            if (maritalStatus === 'Married' || maritalStatus === 'De Facto' || maritalStatus === 'Defacto') {
                                                 $('#spouse-english-question').show();
                                                 $('#spouse-skill-assessment-question').show();
 

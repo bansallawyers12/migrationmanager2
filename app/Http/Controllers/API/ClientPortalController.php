@@ -836,7 +836,7 @@ class ClientPortalController extends Controller
                 'country' => 'sometimes|string|max:255',
                 'dob' => 'sometimes|date|before:today',
                 'gender' => 'sometimes|string|in:Male,Female,Other',
-                'marital_status' => 'sometimes|string|in:Single,Married,Divorced,Widowed,Other'
+                'marital_status' => 'sometimes|string|in:Never Married,Engaged,Married,De Facto,Defacto,Separated,Divorced,Widowed,Single'
             ]);
 
             if ($validator->fails()) {
@@ -866,7 +866,14 @@ class ClientPortalController extends Controller
 
             foreach ($allowedFields as $field) {
                 if ($request->has($field)) {
-                    $updateData[$field] = $request->input($field);
+                    $value = $request->input($field);
+                    if ($field === 'marital_status' && $value === 'Single') {
+                        $value = 'Never Married';
+                    }
+                    if ($field === 'marital_status' && $value === 'Defacto') {
+                        $value = 'De Facto';
+                    }
+                    $updateData[$field] = $value;
                 }
             }
 

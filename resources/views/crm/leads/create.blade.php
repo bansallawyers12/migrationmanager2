@@ -265,9 +265,10 @@
                                         <label for="maritalStatus">Marital Status</label>
                                         <select id="maritalStatus" name="marital_status">
                                             <option value="">Select Marital Status</option>
-                                            <option value="Single" {{ old('marital_status') == 'Single' ? 'selected' : '' }}>Single</option>
+                                            <option value="Never Married" {{ (old('marital_status') == 'Never Married' || old('marital_status') == 'Single') ? 'selected' : '' }}>Never Married</option>
+                                            <option value="Engaged" {{ old('marital_status') == 'Engaged' ? 'selected' : '' }}>Engaged</option>
                                             <option value="Married" {{ old('marital_status') == 'Married' ? 'selected' : '' }}>Married</option>
-                                            <option value="Defacto" {{ (old('marital_status') == 'Defacto' || old('marital_status') == 'De Facto') ? 'selected' : '' }}>De Facto</option>
+                                            <option value="De Facto" {{ (old('marital_status') == 'Defacto' || old('marital_status') == 'De Facto') ? 'selected' : '' }}>De Facto</option>
                                             <option value="Separated" {{ old('marital_status') == 'Separated' ? 'selected' : '' }}>Separated</option>
                                             <option value="Divorced" {{ old('marital_status') == 'Divorced' ? 'selected' : '' }}>Divorced</option>
                                             <option value="Widowed" {{ old('marital_status') == 'Widowed' ? 'selected' : '' }}>Widowed</option>

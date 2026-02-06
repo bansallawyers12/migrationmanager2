@@ -586,7 +586,7 @@ class ClientsController extends Controller
                 'dob_verify_document' => 'nullable|string|max:255',
                 'age' => 'nullable|string',
                 'gender' => 'nullable|in:Male,Female,Other',
-                'marital_status' => 'nullable|in:Single,Married,De Facto,Divorced,Widowed,Separated',
+                'marital_status' => 'nullable|in:Never Married,Engaged,Married,De Facto,Separated,Divorced,Widowed',
 
                 'phone_verified' => 'nullable|in:1',
                 'contact_type_hidden.*' => 'nullable|in:Personal,Work,Mobile,Business,Secondary,Father,Mother,Brother,Sister,Uncle,Aunt,Cousin,Others,Partner,Not In Use',
