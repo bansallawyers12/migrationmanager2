@@ -2809,7 +2809,6 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="clientModalLabel">In Person Details</h5>
-                    <a style="margin-left:10px;" href="javascript:;"><i class="fa fa-trash"></i> Archive</a>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>

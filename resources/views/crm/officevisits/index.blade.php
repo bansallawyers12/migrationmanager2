@@ -112,7 +112,7 @@ body, html { overflow-x: hidden !important; max-width: 100% !important; }
 											<tbody class="tdata checindata">
 												@if(@$totalData !== 0)
 												@foreach (@$lists as $list)
-												<tr did="{{@$list->id}}" id="id_{{@$list->id}}">
+												<tr did="{{@$list->id}}" id="id_{{@$list->id}}" data-status="{{ (int) $list->status }}">
 													<td style="white-space: initial;"><a id="{{@$list->id}}" class="opencheckindetail" href="javascript:;">#{{$list->id}}</a></td>
 													<td style="white-space: initial;"><a href="javascript:;">{{date('l',strtotime($list->created_at))}}</a><br>{{date('d/m/Y',strtotime($list->created_at))}}</td>
 													<td style="white-space: initial;"><?php if($list->sesion_start != ''){ echo date('h:i A',strtotime($list->sesion_start)); }else{ echo '-'; } ?></td>
@@ -130,12 +130,20 @@ body, html { overflow-x: hidden !important; max-width: 100% !important; }
 															<span class="text-muted">Not Assigned</span>
 														@endif
 													</td>
-													<td id="count{{$list->id}}" data-checkintime="{{date('Y-m-d H:i:s',strtotime($list->created_at))}}"><?php if($list->status == 0){ ?><span id="waitcount"> 00h:00m:00s</span><?php }else if($list->status == 2){ echo '<span>'.$list->wait_time.'</span>'; }else{ echo '<span>-</span>'; } ?></td>
+													<td id="count{{$list->id}}" data-checkintime="{{date('Y-m-d H:i:s',strtotime($list->created_at))}}"><?php if($list->status == 0){ ?><span id="waitcount"> 00h:00m:00s</span><?php }else if($list->status == 2){ echo '<span>'.$list->wait_time.'</span>'; }else if($list->status == 1){ echo '<span>'.($list->wait_time ?? '-').'</span>'; }else{ echo '<span>-</span>'; } ?></td>
 													<td style="white-space: initial;">
-														<?php if($list->wait_type == 1){ ?>
-															<a href="javascript:;" data-id="{{@$list->id}}" data-waitingtype="{{@$list->wait_type}}" class="btn btn-success attendsessionforclient">Pls Send The Client</a>
-														<?php } else { ?>
-															<a href="javascript:;" data-id="{{@$list->id}}" data-waitingtype="{{@$list->wait_type}}" class="btn btn-danger attendsessionforclient">Waiting</a>
+														<?php
+														if ($list->status == 0) {
+															// Waiting: also check wait_type
+															if ($list->wait_type == 1) { ?>
+																<a href="javascript:;" data-id="{{@$list->id}}" data-waitingtype="{{@$list->wait_type}}" class="btn btn-success attendsessionforclient">Pls Send The Client</a>
+															<?php } else { ?>
+																<a href="javascript:;" data-id="{{@$list->id}}" data-waitingtype="{{@$list->wait_type}}" class="btn btn-danger attendsessionforclient">Waiting</a>
+															<?php }
+														} elseif ($list->status == 2) { ?>
+															<span class="badge badge-info" style="font-size: 0.9em;">Attending</span>
+														<?php } elseif ($list->status == 1) { ?>
+															<span class="badge badge-secondary" style="font-size: 0.9em;">Completed</span>
 														<?php } ?>
 														<input type="hidden" value="0-6h:0-24m:0-7s" id="lwaitcountdata{{@$list->id}}">
 													</td>
@@ -249,8 +257,12 @@ jQuery(document).ready(function($){
 });
 function pretty_time_string(num) { return ( num < 10 ? "0" : "" ) + num; }
 $('.checindata tr').each(function(){
-	var did = $(this).attr('did');
-	var time = $(this).find('#count'+did).attr('data-checkintime');
+	var $row = $(this);
+	var status = parseInt($row.attr('data-status'), 10);
+	// Completed (status=1): do not run running timer — wait time is total from server
+	if (status === 1) return;
+	var did = $row.attr('did');
+	var time = $row.find('#count'+did).attr('data-checkintime');
 	var start = new Date(time);
 	setInterval(function() {
 		var total_seconds = (new Date - start) / 1000;
@@ -259,7 +271,7 @@ $('.checindata tr').each(function(){
 		var seconds = Math.floor(total_seconds);
 		var currentTimeString = pretty_time_string(hours) + "h:" + pretty_time_string(minutes) + "m:" + pretty_time_string(seconds)+'s';
 		$('#count'+did).text(currentTimeString);
-		$('#lwaitcountdata'+did).text(currentTimeString);
+		$('#lwaitcountdata'+did).val(currentTimeString);
 	}, 1000);
 });
 function myFunction() { document.getElementById("myDropdown").classList.toggle("show"); }
