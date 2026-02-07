@@ -929,10 +929,6 @@ class ClientsController extends Controller
 
             $client->dob_verify_document = $requestData['dob_verify_document'];
 
-            $client->emergency_country_code = $requestData['emergency_country_code'];
-            $client->emergency_contact_no = $requestData['emergency_contact_no'];
-			 $client->emergency_contact_type = $requestData['emergency_contact_type'];
-          
             $client->created_at = now();
             $client->updated_at = now();
 
@@ -2138,7 +2134,6 @@ class ClientsController extends Controller
                         ->orWhereRaw('LOWER(admins.att_email) LIKE ?', ["%$squeryLower%"])
                         ->orWhereRaw('LOWER(admins.att_phone) LIKE ?', ["%$squeryLower%"])
                         ->orWhereRaw('LOWER(admins.phone) LIKE ?', ["%$squeryLower%"])
-                        ->orWhereRaw('LOWER(admins.emergency_contact_no) LIKE ?', ["%$squeryLower%"])
                         ->orWhereRaw("LOWER(COALESCE(admins.first_name, '') || ' ' || COALESCE(admins.last_name, '')) LIKE ?", ["%$squeryLower%"])
                         ->orWhereRaw('LOWER(client_contacts.phone) LIKE ?', ["%$squeryLower%"])
                         ->orWhereRaw('LOWER(client_emails.email) LIKE ?', ["%$squeryLower%"]);

@@ -136,11 +136,6 @@ class ClientImportService
             $client->phone_verified_date = $this->parseDateTime($clientData['phone_verified_date'] ?? null);
             $client->visa_expiry_verified_at = $this->parseDateTime($clientData['visa_expiry_verified_at'] ?? null);
             
-            // Emergency Contact
-            $client->emergency_country_code = $clientData['emergency_country_code'] ?? null;
-            $client->emergency_contact_no = $clientData['emergency_contact_no'] ?? null;
-            $client->emergency_contact_type = $clientData['emergency_contact_type'] ?? null;
-            
             // System fields
             $client->client_counter = $client_current_counter;
             $client->client_id = $client_id;

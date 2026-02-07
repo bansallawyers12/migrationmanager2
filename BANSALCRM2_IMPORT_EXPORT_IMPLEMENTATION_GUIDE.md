@@ -149,11 +149,6 @@ class ClientExportService
             'dob_verify_document' => $client->dob_verify_document ?? null,
             'phone_verified_date' => $client->phone_verified_date ?? null,
             'visa_expiry_verified_at' => $client->visa_expiry_verified_at ?? null,
-            
-            // Emergency Contact (if exists)
-            'emergency_country_code' => $client->emergency_country_code ?? null,
-            'emergency_contact_no' => $client->emergency_contact_no ?? null,
-            'emergency_contact_type' => $client->emergency_contact_type ?? null,
         ];
     }
 
@@ -524,11 +519,6 @@ class ClientImportService
             $client->dob_verify_document = $clientData['dob_verify_document'] ?? null;
             $client->phone_verified_date = $this->parseDateTime($clientData['phone_verified_date'] ?? null);
             $client->visa_expiry_verified_at = $this->parseDateTime($clientData['visa_expiry_verified_at'] ?? null);
-            
-            // Emergency Contact
-            $client->emergency_country_code = $clientData['emergency_country_code'] ?? null;
-            $client->emergency_contact_no = $clientData['emergency_contact_no'] ?? null;
-            $client->emergency_contact_type = $clientData['emergency_contact_type'] ?? null;
             
             // System fields
             $client->client_id = $client_id;
