@@ -631,16 +631,21 @@ class OfficeVisitController extends Controller
 		$saved = $objs->save();
 		if($saved){
 			// Optional: log client activity for attend session (Client only)
+			// Use client relationship id so value fits activities_logs.client_id (varchar(20))
 			if ($obj->contact_type === 'Client') {
-				ActivitiesLog::create([
-					'client_id' => $obj->client_id,
-					'created_by' => Auth::user()->id,
-					'subject' => 'Office visit session started',
-					'description' => 'Session started for office visit (check-in #' . $obj->id . ')',
-					'activity_type' => 'office_visit_attend',
-					'task_status' => 0,
-					'pin' => 0,
-				]);
+				$clientForLog = $obj->client;
+				$clientIdForLog = $clientForLog ? $clientForLog->id : null;
+				if ($clientIdForLog !== null) {
+					ActivitiesLog::create([
+						'client_id' => $clientIdForLog,
+						'created_by' => Auth::user()->id,
+						'subject' => 'Office visit session started',
+						'description' => 'Session started for office visit (check-in #' . $obj->id . ')',
+						'activity_type' => 'office_visit_attend',
+						'task_status' => 0,
+						'pin' => 0,
+					]);
+				}
 			}
 			$response['status'] 	= 	true;
 			$response['message']	=	'saved successfully';
@@ -665,16 +670,21 @@ class OfficeVisitController extends Controller
 		$saved = $objs->save();
 		if($saved){
 			// Optional: log client activity for completed session (Client only)
+			// Use client relationship id so value fits activities_logs.client_id (varchar(20))
 			if ($obj->contact_type === 'Client') {
-				ActivitiesLog::create([
-					'client_id' => $obj->client_id,
-					'created_by' => Auth::user()->id,
-					'subject' => 'Office visit session completed',
-					'description' => 'Session completed for office visit (check-in #' . $obj->id . ')',
-					'activity_type' => 'office_visit_complete',
-					'task_status' => 0,
-					'pin' => 0,
-				]);
+				$clientForLog = $obj->client;
+				$clientIdForLog = $clientForLog ? $clientForLog->id : null;
+				if ($clientIdForLog !== null) {
+					ActivitiesLog::create([
+						'client_id' => $clientIdForLog,
+						'created_by' => Auth::user()->id,
+						'subject' => 'Office visit session completed',
+						'description' => 'Session completed for office visit (check-in #' . $obj->id . ')',
+						'activity_type' => 'office_visit_complete',
+						'task_status' => 0,
+						'pin' => 0,
+					]);
+				}
 			}
 			$response['status'] 	= 	true;
 			$response['message']	=	'saved successfully';
