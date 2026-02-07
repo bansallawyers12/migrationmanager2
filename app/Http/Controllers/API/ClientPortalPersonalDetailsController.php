@@ -510,7 +510,7 @@ class ClientPortalPersonalDetailsController extends Controller
                 'phones' => 'required|array|min:1',
                 'phones.*.id' => 'present|nullable|integer',
                 'phones.*.phone' => 'required|string|max:255',
-                'phones.*.type' => 'required|string|in:Personal,Mobile,Work,Home,Other',
+                'phones.*.type' => 'required|string|in:Personal,Office,Mobile,Work,Home,Other',
                 'phones.*.country_code' => 'nullable|string|max:10',
                 'phones.*.extension' => 'nullable|string|max:10',
             ], [
@@ -519,7 +519,7 @@ class ClientPortalPersonalDetailsController extends Controller
                 'phones.*.id.integer' => 'Phone ID must be an integer or null.',
                 'phones.*.phone.required' => 'Phone number is required for each entry.',
                 'phones.*.type.required' => 'Phone type is required for each entry.',
-                'phones.*.type.in' => 'Phone type must be one of: Personal, Mobile, Work, Home, Other.',
+                'phones.*.type.in' => 'Phone type must be one of: Personal, Office, Mobile, Work, Home, Other.',
             ]);
 
             // Custom validation: Ensure id field is always present and check Personal phone restrictions
@@ -7285,7 +7285,7 @@ class ClientPortalPersonalDetailsController extends Controller
                 'emails' => 'required|array|min:1',
                 'emails.*.id' => 'present|nullable|integer',
                 'emails.*.email' => 'required|email|max:255',
-                'emails.*.type' => 'required|string|in:Personal,Work,Home,Other',
+                'emails.*.type' => 'required|string|in:Personal,Work,Business,Home,Other,Secondary,Additional,Sister,Brother,Father,Mother,Uncle,Auntie',
             ], [
                 'emails.required' => 'At least one email is required.',
                 'emails.*.id.present' => 'Email ID field is required for each email. Use null for new emails or provide the existing email ID for updates.',
@@ -7293,7 +7293,7 @@ class ClientPortalPersonalDetailsController extends Controller
                 'emails.*.email.required' => 'Email address is required for each entry.',
                 'emails.*.email.email' => 'Each email must be a valid email address.',
                 'emails.*.type.required' => 'Email type is required for each entry.',
-                'emails.*.type.in' => 'Email type must be one of: Personal, Work, Home, Other.',
+                'emails.*.type.in' => 'Email type must be one of: Personal, Work, Business, Home, Other, Secondary, Additional, Sister, Brother, Father, Mother, Uncle, Auntie.',
             ]);
 
             // Custom validation: Ensure id field is always present and check Personal email restrictions

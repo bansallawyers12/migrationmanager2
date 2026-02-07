@@ -991,7 +991,6 @@ class LeadController extends Controller
             $lead->naati_py = $requestData['naati_py'] ?? null;
             $lead->married_partner = $requestData['married_partner'] ?? null;
             $lead->total_points = $requestData['total_points'] ?? null;
-            $lead->start_process = $requestData['start_process'] ?? null;
 
             $lead->save();
             

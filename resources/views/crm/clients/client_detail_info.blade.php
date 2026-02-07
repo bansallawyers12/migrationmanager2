@@ -448,7 +448,10 @@
                                                     <label for="email_type_{{ $email_index }}">Email Type <span style="color:#ff0000;">*</span></label>
                                                     <select style="padding: 0px 5px;" name="email_type[]" id="email_type_{{ $email_index }}" class="form-control emailTypeCls" data-valid="required" disabled>
                                                         <option value="Personal" {{ $email_val->email_type == 'Personal' ? 'selected' : '' }}>Personal</option>
+                                                        <option value="Work" {{ $email_val->email_type == 'Work' ? 'selected' : '' }}>Work</option>
                                                         <option value="Business" {{ $email_val->email_type == 'Business' ? 'selected' : '' }}>Business</option>
+                                                        <option value="Secondary" {{ $email_val->email_type == 'Secondary' ? 'selected' : '' }}>Secondary</option>
+                                                        <option value="Additional" {{ $email_val->email_type == 'Additional' ? 'selected' : '' }}>Additional</option>
                                                         <option value="Sister" {{ $email_val->email_type == 'Sister' ? 'selected' : '' }}>Sister</option>
                                                         <option value="Brother" {{ $email_val->email_type == 'Brother' ? 'selected' : '' }}>Brother</option>
                                                         <option value="Father" {{ $email_val->email_type == 'Father' ? 'selected' : '' }}>Father</option>
@@ -490,7 +493,11 @@
                                                     <label for="email_type_${emailIndexByDefault}">Email Type <span style="color:#ff0000;">*</span></label>
                                                     <select style="padding: 0px 5px;" name="email_type[]" id="email_type_${emailIndexByDefault}" class="form-control emailTypeCls" data-valid="required">
                                                         <option value="Personal">Personal</option>
+                                                        <option value="Work">Work</option>
                                                         <option value="Business">Business</option>
+                                                        <option value="Secondary">Secondary</option>
+                                                        <option value="Additional">Additional</option>
+                                                        <option value="Sister">Sister</option>
                                                         <option value="Brother">Brother</option>
                                                         <option value="Father">Father</option>
                                                         <option value="Mother">Mother</option>
@@ -545,7 +552,11 @@
                                                     <label for="email_type_${emailIndex}">Email Type <span style="color:#ff0000;">*</span></label>
                                                     <select style="padding: 0px 5px;" name="email_type[]" id="email_type_${emailIndex}" class="form-control emailTypeCls" data-valid="required">
                                                         <option value="Personal">Personal</option>
+                                                        <option value="Work">Work</option>
                                                         <option value="Business">Business</option>
+                                                        <option value="Secondary">Secondary</option>
+                                                        <option value="Additional">Additional</option>
+                                                        <option value="Sister">Sister</option>
                                                         <option value="Brother">Brother</option>
                                                         <option value="Father">Father</option>
                                                         <option value="Mother">Mother</option>
