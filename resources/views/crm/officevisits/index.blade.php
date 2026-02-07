@@ -49,6 +49,9 @@ body, html { overflow-x: hidden !important; max-width: 100% !important; }
 .nav-pills .nav-link { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
 .card-header-action { max-width: 100%; overflow-x: hidden; }
 .card-header-action .btn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card .card-body table.table tbody tr td:last-child a:hover, .card .card-body table.table tbody tr td:last-child .btn:hover, .card .card-body table.table tbody tr td.last_td a:hover {
+	color: #ffffff !important;
+}
 </style>
 
 <!-- Main Content -->
@@ -136,7 +139,7 @@ body, html { overflow-x: hidden !important; max-width: 100% !important; }
 														if ($list->status == 0) {
 															// Waiting: also check wait_type
 															if ($list->wait_type == 1) { ?>
-																<a href="javascript:;" data-id="{{@$list->id}}" data-waitingtype="{{@$list->wait_type}}" class="btn btn-success attendsessionforclient">Pls Send The Client</a>
+																<a href="javascript:;" data-id="{{@$list->id}}" data-waitingtype="{{@$list->wait_type}}" class="btn btn-success attendsessionforclient" title="Pls Send">Pls Send</a>
 															<?php } else { ?>
 																<a href="javascript:;" data-id="{{@$list->id}}" data-waitingtype="{{@$list->wait_type}}" class="btn btn-danger attendsessionforclient">Waiting</a>
 															<?php }

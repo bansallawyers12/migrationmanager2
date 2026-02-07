@@ -1868,16 +1868,10 @@
                     success: function(response){
                         var obj = $.parseJSON(response);
                         if(obj.status){
-                            $.ajax({
-                                url: site_url+'/get-checkin-detail',
-                                type:'GET',
-                                data:{id: appliid},
-                                success: function(res){
-                                    $('.popuploader').hide();
-                                    $('.showchecindetail').html(res);
-                                }
-                            });
+                            $('.popuploader').hide();
+                            $('#checkindetailmodal').modal('hide');
                             $('.checindata #id_'+appliid).remove();
+                            alert('Session is completed successfully');
                         } else {
                             alert(obj.message);
                         }
