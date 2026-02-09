@@ -51,7 +51,7 @@ body, html { overflow-x: hidden !important; max-width: 100% !important; }
 .card-header-action .btn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card .card-body table.table tbody tr td:last-child a:hover, .card .card-body table.table tbody tr td:last-child .btn:hover, .card .card-body table.table tbody tr td.last_td a:hover {
 	color: #ffffff !important;
-}
+}+
 </style>
 
 <!-- Main Content -->
