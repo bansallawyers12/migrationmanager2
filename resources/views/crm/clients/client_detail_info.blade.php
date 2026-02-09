@@ -769,7 +769,7 @@
                             @if(count($visaCountries) > 0)
                                 @foreach($visaCountries as $key => $visaCountry)
 
-                                    @if($visaCountry->visa_country != 'Australia')
+                                    @if($fetchedData->country_passport != 'Australia')
                                     <div class="fields row mb-3 visa-full-cu" id="row-{{ $key }}">
                                         <input type="hidden" name="visa_id[]" value="{{ $visaCountry->id }}">
                                         <div class="col-sm-3">

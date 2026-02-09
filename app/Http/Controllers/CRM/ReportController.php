@@ -77,7 +77,7 @@ class ReportController extends Controller
                 'displayDate' => $expiryDate->format('F d, Y'),
                 'url' => $url,
                 'color' => $color,
-                'visa_country' => $visaExpiry->visa_country ?? 'N/A',
+                'visa_country' => $client->country_passport ?? 'N/A',
                 'visa_type' => $visaExpiry->matter ? $visaExpiry->matter->title : ($visaExpiry->visa_type ?? 'N/A'),
                 'days_until_expiry' => $daysUntilExpiry,
             ];

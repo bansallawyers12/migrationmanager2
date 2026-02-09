@@ -241,7 +241,6 @@ class ClientExportService
                     }
                 }
                 return [
-                    'visa_country' => $visa->visa_country,
                     'visa_type' => $visa->visa_type,
                     'visa_type_matter_title' => $matter ? $matter->title : null,
                     'visa_type_matter_nick_name' => $matter ? $matter->nick_name : null,

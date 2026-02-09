@@ -1982,6 +1982,15 @@ class ClientPortalPersonalDetailsController extends Controller
                 $processedIds[] = $visaId;
             }
         }
+
+        // Ensure visa_country is populated from client's country_passport when null
+        $client = Admin::find($clientId);
+        $countryPassport = $client ? ($client->country_passport ?? null) : null;
+        foreach ($mergedVisas as &$visa) {
+            if (empty($visa['visa_country']) && $countryPassport) {
+                $visa['visa_country'] = $countryPassport;
+            }
+        }
         
         return $mergedVisas;
     }
@@ -2096,11 +2105,10 @@ class ClientPortalPersonalDetailsController extends Controller
             }
         }
 
-        // Convert to indexed array and filter out entries without at least visa_country or visa_type
+        // Convert to indexed array and filter out entries without visa_type
         $visas = [];
         foreach ($visaData as $order => $visa) {
-            // Include visa if it has at least country or type
-            if (!empty($visa['visa_country']) || !empty($visa['visa_type'])) {
+            if (!empty($visa['visa_type'])) {
                 $visas[] = $visa;
             }
         }
@@ -2120,7 +2128,9 @@ class ClientPortalPersonalDetailsController extends Controller
     private function getVisasFromSource($clientId)
     {
         $visas = [];
-        
+        $client = Admin::find($clientId);
+        $countryPassport = $client ? ($client->country_passport ?? null) : null;
+
         $clientVisas = DB::table('client_visa_countries')
             ->where('client_id', $clientId)
             ->orderBy('id')
@@ -2129,7 +2139,7 @@ class ClientPortalPersonalDetailsController extends Controller
         foreach ($clientVisas as $visa) {
             $visas[] = [
                 'id' => $visa->id,
-                'visa_country' => $visa->visa_country ?? null,
+                'visa_country' => $countryPassport,
                 'visa_type' => $visa->visa_type ?? null,
                 'visa_description' => $visa->visa_description ?? null,
                 'visa_expiry_date' => !empty($visa->visa_expiry_date) ? $this->formatDate($visa->visa_expiry_date) : null,
@@ -4734,21 +4744,6 @@ class ClientPortalPersonalDetailsController extends Controller
                 'updated_at' => now(),
             ]);
 
-            // Insert visa country if exists
-            if ($sourceVisa->visa_country) {
-                ClientPortalDetailAudit::create([
-                    'client_id' => $clientId,
-                    'meta_key' => 'visa_country',
-                    'old_value' => null,
-                    'new_value' => $sourceVisa->visa_country,
-                    'meta_order' => $metaOrder,
-                    'meta_type' => (string) $visaId,
-                    'action' => 'delete',
-                    'updated_by' => $userId,
-                    'updated_at' => now(),
-                ]);
-            }
-
             // Insert visa type if exists
             if ($sourceVisa->visa_type !== null) {
                 ClientPortalDetailAudit::create([
@@ -4811,13 +4806,14 @@ class ClientPortalPersonalDetailsController extends Controller
 
             DB::commit();
 
+            $client = Admin::find($clientId);
             return response()->json([
                 'success' => true,
                 'message' => 'Visa deleted successfully',
                 'data' => [
                     'id' => $visaId,
                     'type' => 'visa',
-                    'visa_country' => $sourceVisa->visa_country ?? null,
+                    'visa_country' => $client ? ($client->country_passport ?? null) : null,
                     'visa_type' => $sourceVisa->visa_type ?? null,
                     'visa_description' => $sourceVisa->visa_description ?? null,
                     'visa_expiry_date' => $expiryDate,
@@ -6972,7 +6968,6 @@ class ClientPortalPersonalDetailsController extends Controller
                 'visas' => 'required|array|min:1',
                 'visas.*.id' => 'present|nullable|integer',
                 'visas.*.visa_type' => 'nullable|integer',
-                'visas.*.visa_country' => 'nullable|string|max:255',
                 'visas.*.visa_description' => 'nullable|string|max:255',
                 'visas.*.visa_expiry_date' => 'nullable|date_format:d/m/Y',
                 'visas.*.visa_grant_date' => 'nullable|date_format:d/m/Y',
@@ -6985,7 +6980,7 @@ class ClientPortalPersonalDetailsController extends Controller
                 'visas.*.visa_grant_date.date_format' => 'Visa grant date must be in dd/mm/yyyy format.',
             ]);
 
-            // Custom validation: Ensure id field is always present and at least visa_type or visa_country must be provided
+            // Custom validation: Ensure id field is always present and visa_type must be provided
             $validator->after(function ($validator) use ($request) {
                 $visas = $request->input('visas', []);
                 foreach ($visas as $index => $visa) {
@@ -6997,10 +6992,10 @@ class ClientPortalPersonalDetailsController extends Controller
                         );
                     }
                     
-                    if (empty($visa['visa_type']) && empty($visa['visa_country'])) {
+                    if (empty($visa['visa_type'])) {
                         $validator->errors()->add(
                             "visas.{$index}.visa_type",
-                            "Either visa_type or visa_country must be provided for each visa entry."
+                            "Visa type must be provided for each visa entry."
                         );
                     }
                 }
@@ -7079,13 +7074,12 @@ class ClientPortalPersonalDetailsController extends Controller
                     }
                     
                     $visaType = $visaData['visa_type'] ?? null;
-                    $visaCountry = $visaData['visa_country'] ?? null;
                     $visaDescription = $visaData['visa_description'] ?? null;
                     $visaExpiryDate = $visaData['visa_expiry_date'] ?? null;
                     $visaGrantDate = $visaData['visa_grant_date'] ?? null;
 
-                    // Skip if neither visa_type nor visa_country is provided
-                    if (empty($visaType) && empty($visaCountry)) {
+                    // Skip if visa_type is not provided
+                    if (empty($visaType)) {
                         continue;
                     }
 
@@ -7118,21 +7112,6 @@ class ClientPortalPersonalDetailsController extends Controller
                         'updated_by' => $userId,
                         'updated_at' => now(),
                     ]);
-
-                    // Save visa country if provided - store record ID in meta_type
-                    if ($visaCountry) {
-                        ClientPortalDetailAudit::create([
-                            'client_id' => $clientId,
-                            'meta_key' => 'visa_country',
-                            'old_value' => null,
-                            'new_value' => $visaCountry,
-                            'meta_order' => $metaOrder,
-                            'meta_type' => (string) $visaId, // Store record ID for consistency
-                            'action' => $action,
-                            'updated_by' => $userId,
-                            'updated_at' => now(),
-                        ]);
-                    }
 
                     // Save visa type if provided
                     if ($visaType) {
@@ -7216,10 +7195,11 @@ class ClientPortalPersonalDetailsController extends Controller
                         }
                     }
 
+                    $client = Admin::find($clientId);
                     $updatedVisas[] = [
                         'id' => $visaId,
                         'visa_type' => $visaType,
-                        'visa_country' => $visaCountry,
+                        'visa_country' => $client ? ($client->country_passport ?? null) : null,
                         'visa_description' => $visaDescription,
                         'visa_expiry_date' => $visaExpiryDate,
                         'visa_grant_date' => $visaGrantDate,

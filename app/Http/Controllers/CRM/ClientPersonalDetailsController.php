@@ -1051,7 +1051,6 @@ class ClientPersonalDetailsController extends Controller
                         ClientVisaCountry::create([
                             'admin_id' => Auth::user()->id, // Assigning Auth user ID to admin_id
                             'client_id' => $obj->id,
-                            'visa_country' => $requestData['visa_country'][0],
                             'visa_type' => "",
                             'visa_expiry_date' => "",
                             'visa_description' => ""
@@ -1080,7 +1079,6 @@ class ClientPersonalDetailsController extends Controller
                                 ClientVisaCountry::create([
                                     'admin_id' => Auth::user()->id, // Assigning Auth user ID to admin_id
                                     'client_id' => $obj->id,
-                                    'visa_country' => $visa_country,
                                     'visa_type' => $visaType,
                                     'visa_expiry_date' => $visa_expiry_date,
                                     'visa_description' => $visa_description
@@ -2577,8 +2575,8 @@ class ClientPersonalDetailsController extends Controller
                 if ($existing->visa_type) {
                     $display[] = 'Type: ' . $existing->visa_type;
                 }
-                if ($existing->visa_country) {
-                    $display[] = 'Country: ' . $existing->visa_country;
+                if ($client->country_passport) {
+                    $display[] = 'Country: ' . $client->country_passport;
                 }
                 if ($existing->visa_grant_date) {
                     $display[] = 'Grant: ' . date('d/m/Y', strtotime($existing->visa_grant_date));
@@ -2632,7 +2630,6 @@ class ClientPersonalDetailsController extends Controller
                         if ($existingVisa && $existingVisa->client_id == $client->id) {
                             $existingVisa->update([
                                 'admin_id' => \Auth::user()->id,
-                                'visa_country' => $client->country_passport ?? '',
                                 'visa_type' => $visaData['visa_type_hidden'],
                                 'visa_expiry_date' => $expiryDate,
                                 'visa_grant_date' => $grantDate,
@@ -2644,7 +2641,6 @@ class ClientPersonalDetailsController extends Controller
                             $newVisa = ClientVisaCountry::create([
                                 'client_id' => $client->id,
                                 'admin_id' => \Auth::user()->id,
-                                'visa_country' => $client->country_passport ?? '',
                                 'visa_type' => $visaData['visa_type_hidden'],
                                 'visa_expiry_date' => $expiryDate,
                                 'visa_grant_date' => $grantDate,
@@ -2657,7 +2653,6 @@ class ClientPersonalDetailsController extends Controller
                         $newVisa = ClientVisaCountry::create([
                             'client_id' => $client->id,
                             'admin_id' => \Auth::user()->id,
-                            'visa_country' => $client->country_passport ?? '',
                             'visa_type' => $visaData['visa_type_hidden'],
                             'visa_expiry_date' => $expiryDate,
                             'visa_grant_date' => $grantDate,
@@ -2704,8 +2699,8 @@ class ClientPersonalDetailsController extends Controller
                     if ($newVisa->visa_type) {
                         $display[] = 'Type: ' . $newVisa->visa_type;
                     }
-                    if ($newVisa->visa_country) {
-                        $display[] = 'Country: ' . $newVisa->visa_country;
+                    if ($client->country_passport) {
+                        $display[] = 'Country: ' . $client->country_passport;
                     }
                     if ($newVisa->visa_grant_date) {
                         $display[] = 'Grant: ' . date('d/m/Y', strtotime($newVisa->visa_grant_date));
@@ -6200,10 +6195,7 @@ class ClientPersonalDetailsController extends Controller
     {
         $normalized = [];
         foreach ($visas as $visa) {
-            $key = strtolower(trim(
-                ($visa->visa_type ?? '') . '|' .
-                ($visa->visa_country ?? '')
-            ));
+            $key = strtolower(trim((string) ($visa->visa_type ?? '') . '|' . ($visa->visa_expiry_date ?? '')));
             $normalized[$key] = $visa;
         }
         return $normalized;
@@ -6213,7 +6205,6 @@ class ClientPersonalDetailsController extends Controller
     {
         $parts = [];
         if (!empty($visa->visa_type)) $parts[] = 'Type: ' . $visa->visa_type;
-        if (!empty($visa->visa_country)) $parts[] = 'Country: ' . $visa->visa_country;
         if (!empty($visa->visa_grant_date)) $parts[] = 'Grant: ' . date('d/m/Y', strtotime($visa->visa_grant_date));
         if (!empty($visa->visa_expiry_date)) $parts[] = 'Expiry: ' . date('d/m/Y', strtotime($visa->visa_expiry_date));
         if (!empty($visa->visa_description)) $parts[] = 'Desc: ' . $visa->visa_description;

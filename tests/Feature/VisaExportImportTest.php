@@ -60,10 +60,12 @@ class VisaExportImportTest extends TestCase
             'client_counter' => str_pad((string) random_int(1, 99999), 5, '0', STR_PAD_LEFT),
         ]);
 
+        $client->country_passport = 'India';
+        $client->save();
+
         ClientVisaCountry::create([
             'client_id' => $client->id,
             'admin_id' => $this->admin->id ?? 1,
-            'visa_country' => 'India',
             'visa_type' => $matter->id,
             'visa_expiry_date' => '2025-12-31',
             'visa_grant_date' => '2022-06-03',
@@ -107,7 +109,6 @@ class VisaExportImportTest extends TestCase
             ],
             'visa_countries' => [
                 [
-                    'visa_country' => 'India',
                     'visa_type' => 999,
                     'visa_type_matter_title' => '600 - Visitor - Outside Australia (Outside Australia)',
                     'visa_type_matter_nick_name' => '600',

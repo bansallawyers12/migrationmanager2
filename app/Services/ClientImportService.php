@@ -247,7 +247,6 @@ class ClientImportService
                     ClientVisaCountry::create([
                         'client_id' => $newClientId,
                         'admin_id' => Auth::id(),
-                        'visa_country' => $visaData['visa_country'] ?? null,
                         'visa_type' => $resolvedType,
                         'visa_description' => $visaData['visa_description'] ?? null,
                         'visa_expiry_date' => $expiry,

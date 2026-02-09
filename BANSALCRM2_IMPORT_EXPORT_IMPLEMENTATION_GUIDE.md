@@ -297,7 +297,6 @@ class ClientExportService
                     try { $grant = \Carbon\Carbon::parse($grant)->format('Y-m-d'); } catch (\Exception $e) { /* keep as-is */ }
                 }
                 return [
-                    'visa_country' => $visa->visa_country ?? null,
                     'visa_type' => $visa->visa_type ?? null,
                     'visa_type_matter_title' => $matter ? $matter->title : null,
                     'visa_type_matter_nick_name' => $matter ? $matter->nick_name : null,
@@ -620,7 +619,6 @@ class ClientImportService
                     ClientVisaCountry::create([
                         'client_id' => $newClientId,
                         'admin_id' => Auth::id(),
-                        'visa_country' => $visaData['visa_country'] ?? null,
                         'visa_type' => $resolvedType,
                         'visa_description' => $visaData['visa_description'] ?? null,
                         'visa_expiry_date' => $expiry,

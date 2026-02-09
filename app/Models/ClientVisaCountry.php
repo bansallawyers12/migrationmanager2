@@ -10,8 +10,7 @@ class ClientVisaCountry extends Model
     protected $fillable = [
         'client_id',
         'admin_id',
-        'visa_country',      // Country of the visa
-        'visa_type',         // Type of visa
+        'visa_type',         // Type of visa (Matter ID)
         'visa_description',
         'visa_expiry_date',  // Expiry date of the visa
         'visa_grant_date',

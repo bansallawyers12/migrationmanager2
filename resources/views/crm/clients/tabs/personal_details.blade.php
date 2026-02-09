@@ -204,14 +204,14 @@
                         <h3><i class="fas fa-passport"></i>Visa</h3>
                         <?php
                         // Get visa with latest expiry date
-                        $visa_Info_with_expiry = App\Models\ClientVisaCountry::select('visa_country','visa_type','visa_expiry_date','visa_grant_date','visa_description')
+                        $visa_Info_with_expiry = App\Models\ClientVisaCountry::select('visa_type','visa_expiry_date','visa_grant_date','visa_description')
                             ->where('client_id', $fetchedData->id)
                             ->whereNotNull('visa_expiry_date')
                             ->orderBy('visa_expiry_date', 'desc')
                             ->first();
                         
                         // Get all visas without expiry date
-                        $visas_without_expiry = App\Models\ClientVisaCountry::select('visa_country','visa_type','visa_expiry_date','visa_grant_date','visa_description')
+                        $visas_without_expiry = App\Models\ClientVisaCountry::select('visa_type','visa_expiry_date','visa_grant_date','visa_description')
                             ->where('client_id', $fetchedData->id)
                             ->whereNull('visa_expiry_date')
                             ->get();
