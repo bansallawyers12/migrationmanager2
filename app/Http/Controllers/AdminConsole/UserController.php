@@ -79,14 +79,13 @@ class UserController extends Controller
 			$obj->first_name	=	@$requestData['first_name'];
 			$obj->last_name		=	@$requestData['last_name'];
 			$obj->email		=	@$requestData['email'];
-			$obj->telephone		=	@$requestData['country_code'];
+			$obj->country_code	=	@$requestData['country_code'];
 			$obj->position		=	@$requestData['position'];
 			$obj->password		=	Hash::make(@$requestData['password']);
 
 			$obj->phone			=	@$requestData['phone'];
 			$obj->role			=	@$requestData['role'];
 			$obj->office_id		=	@$requestData['office'];
-			$obj->telephone		=	@$requestData['country_code'];
 			$obj->team		    =	@$requestData['team'];
 			if(isset($requestData['show_dashboard_per'])){
 			    $obj->show_dashboard_per		=	1;
@@ -165,24 +164,17 @@ class UserController extends Controller
         }
 		//check authorization end
 		$usertype = UserRole::all();
-		
-		if(isset($id) && !empty($id))
-		{
-			//$id = $this->decodeString($id);
-			if(Admin::where('id', '=', $id)->exists())
-			{
-				$fetchedData = Admin::find($id);
-				return view('AdminConsole.system.users.edit', compact(['fetchedData', 'usertype']));
-			}
-			else
-			{
-				return redirect()->route('adminconsole.system.users.index')->with('error', 'User Not Exist');
-			}
+
+		if (!isset($id) || $id === '' || !is_numeric($id) || (int)$id <= 0) {
+			return redirect()->route('adminconsole.system.users.index')->with('error', 'Invalid user ID.');
 		}
-		else
-		{
-			return redirect()->route('adminconsole.system.users.index')->with('error', config('constants.unauthorized'));
+		$id = (int) $id;
+
+		if (Admin::where('id', '=', $id)->exists()) {
+			$fetchedData = Admin::find($id);
+			return view('AdminConsole.system.users.edit', compact(['fetchedData', 'usertype']));
 		}
+		return redirect()->route('adminconsole.system.users.index')->with('error', 'User not found.');
 	}
 
 	/**
@@ -198,7 +190,12 @@ class UserController extends Controller
 				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
 			}
 			//check authorization end
-			
+
+			if (!isset($id) || $id === '' || !is_numeric($id) || (int)$id <= 0) {
+				return redirect()->route('adminconsole.system.users.index')->with('error', 'Invalid user ID.');
+			}
+			$id = (int) $id;
+
 			$requestData = $request->all();
 
 			$this->validate($request, [
@@ -209,19 +206,18 @@ class UserController extends Controller
 
 			$obj = Admin::find($id);
 			if (!$obj) {
-				return redirect()->route('adminconsole.system.users.index')->with('error', 'User Not Found');
+				return redirect()->route('adminconsole.system.users.index')->with('error', 'User not found.');
 			}
 
 			$obj->first_name = @$requestData['first_name'];
 			$obj->last_name = @$requestData['last_name'];
 			$obj->email = @$requestData['email'];
-			$obj->telephone = @$requestData['country_code'];
+			$obj->country_code = @$requestData['country_code'];
 			$obj->position = @$requestData['position'];
 
 			$obj->phone = @$requestData['phone'];
 			$obj->role = @$requestData['role'];
 			$obj->office_id = @$requestData['office'];
-			$obj->telephone = @$requestData['country_code'];
 			$obj->team = @$requestData['team'];
 
 			if( isset($requestData['permission']) && $requestData['permission'] !="" ){
@@ -298,7 +294,10 @@ class UserController extends Controller
 		{
 			$requestData 		= 	$request->all();
 
-			$obj							= 	Admin::find(@$requestData['user_id']);
+			$obj = Admin::find(@$requestData['user_id']);
+			if (!$obj) {
+				return redirect()->back()->with('error', 'User not found.');
+			}
 
 			$obj->time_zone				=	@$requestData['timezone'];
 
@@ -321,18 +320,15 @@ class UserController extends Controller
 
 	public function view(Request $request, $id)
 	{
-		if(isset($id) && !empty($id))
-        {
-            if(Admin::where('id', '=', $id)->exists())
-            {
-                $fetchedData = Admin::find($id);
-                return view('AdminConsole.system.users.view', compact(['fetchedData']));
-            }
-            else
-            {
-                return redirect()->route('adminconsole.system.users.active')->with('error', 'User Not Exist');
-            }
-        }
+		if (!isset($id) || $id === '' || !is_numeric($id) || (int)$id <= 0) {
+			return redirect()->route('adminconsole.system.users.active')->with('error', 'Invalid user ID.');
+		}
+		$id = (int) $id;
+		if (Admin::where('id', '=', $id)->exists()) {
+			$fetchedData = Admin::find($id);
+			return view('AdminConsole.system.users.view', compact(['fetchedData']));
+		}
+		return redirect()->route('adminconsole.system.users.active')->with('error', 'User not found.');
 	}
 
 	public function clientlist(Request $request)

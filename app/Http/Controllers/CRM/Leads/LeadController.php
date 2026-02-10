@@ -975,7 +975,6 @@ class LeadController extends Controller
             }
 
             // Additional fields with null coalescing
-            $lead->preferredIntake = $requestData['preferredIntake'] ?? null;
             $lead->country_passport = $requestData['country_passport'] ?? null;
             $lead->address = $requestData['address'] ?? null;
             $lead->city = $requestData['city'] ?? null;

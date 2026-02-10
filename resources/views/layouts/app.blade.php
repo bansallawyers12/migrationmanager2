@@ -53,10 +53,11 @@
                                 </a>
 
                                 <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
-                                    <a class="dropdown-item" href="javascript:void(0)"
-                                       onclick="event.preventDefault();
-                                                     document.getElementById('app-logout-form').submit();">
-                                        {{ __('Logout') }}
+                                    <a class="dropdown-item" href="{{ route('crm.login') }}?tab_logout=1" data-logout="tab">
+                                        {{ __('Log out (this tab)') }}
+                                    </a>
+                                    <a class="dropdown-item" href="javascript:void(0)" data-logout="all">
+                                        {{ __('Log out everywhere') }}
                                     </a>
 
                                     <form id="app-logout-form" action="{{ route('crm.logout') }}" method="POST" style="display: none;">
@@ -75,5 +76,9 @@
             @yield('content')
         </main>
     </div>
+    @auth
+    <script>window.crmLoginUrl = {{ json_encode(route('crm.login')) }};</script>
+    <script src="{{ asset('js/cross-tab-logout.js') }}"></script>
+    @endauth
 </body>
 </html>

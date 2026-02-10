@@ -123,9 +123,13 @@
                 </a>
                 @endif
                 <div class="dropdown-divider"></div>
-                <a href="javascript:void(0)" class="text-danger" onclick="event.preventDefault(); document.getElementById('crm-logout-form').submit();">
-                    <i class="fas fa-sign-out-alt"></i> 
-                    <span>Logout</span>
+                <a href="{{ route('crm.login') }}?tab_logout=1" class="text-danger dropdown-item" data-logout="tab">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Log out (this tab)</span>
+                </a>
+                <a href="javascript:void(0)" class="text-danger dropdown-item" data-logout="all">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Log out everywhere</span>
                 </a>
             </div>
         </div>

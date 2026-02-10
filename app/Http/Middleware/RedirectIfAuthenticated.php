@@ -17,6 +17,10 @@ class RedirectIfAuthenticated
      */
 	public function handle($request, Closure $next, $guard = null)
 	{
+			// Allow authenticated users to see login page when "logout this tab" sent them here
+			if ($request->query('tab_logout')) {
+				return $next($request);
+			}
 			switch ($guard) {
 			case 'admin' :
 				if (Auth::guard($guard)->check()) {
