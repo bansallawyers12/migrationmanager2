@@ -61,8 +61,6 @@ class VisaExpireReminderEmail extends Command
     {
         $query 	= \App\Models\Admin::select('id','visaExpiry','email','first_name','last_name')
         ->where('role', 7)
-        //->where('is_visa_expire_mail_sent', 2)
-        ->whereNull('is_visa_expire_mail_sent')
         ->where('visaExpiry','!=','')
         ->where('visaExpiry', '=', Carbon::now()->addDays(15)->toDateString() ) ;
         $totalLogs = $query->count();//dd($totalLogs);
@@ -106,9 +104,7 @@ class VisaExpireReminderEmail extends Command
                     $mail_sent = $this->send_compose_template($message, '', $to_email, $subject, $from_email, $array, @$ccarray);
                     if($mail_sent){
                         $this->info('Mail is sent.');
-                        $rec = \App\Models\Admin::find($val->id);
-                        $rec->is_visa_expire_mail_sent = 1;
-                        $rec->save();
+                        // is_visa_expire_mail_sent column dropped Phase 4 - no tracking
                     } else {
                         $this->info('Mail not sent.');
                     }

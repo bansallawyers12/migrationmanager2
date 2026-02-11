@@ -26,7 +26,7 @@
 							<span style="font-size:21px;line-height:24px;color:#000;"><b>{{$admin->company_name}}</b></span>
 							<p style="font-size: 15px;line-height: 21px;color: #1a1a1a;font-weight: normal;margin: 10px 0px 0px;"> {{$admin->address}}<br/>
                                 {{$admin->state}} {{$admin->city}} {{$admin->zip}}<br/>
-							<b>Email:</b> {{$admin->primary_email}}<br/>
+							<b>Email:</b> {{$admin->email ?? ''}}<br/>
 							<b>Phone:</b> {{$admin->phone}}</p>
 						</td>
 						<td style="text-align: right;">

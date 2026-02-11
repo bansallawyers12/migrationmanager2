@@ -50,8 +50,8 @@ class ServiceAccountTokenService
     public function generateTokenSync(Admin $admin, $serviceName = null, $description = null, $password = null)
     {
         try {
-            // Use provided password, fallback to decrypt_password, then default
-            $adminPassword = $password ?: $admin->decrypt_password ?: 'admin123';
+            // Use provided password or default (decrypt_password column removed Phase 4)
+            $adminPassword = $password ?: 'admin123';
             
             // Create a mock request object
             $request = new Request([

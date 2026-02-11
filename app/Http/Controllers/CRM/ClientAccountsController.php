@@ -4588,7 +4588,7 @@ class ClientAccountsController extends Controller
       if($record_get){
           $clientname = DB::table('admins')->select('first_name','last_name','address','state','city','zip','country')->where('id',$record_get[0]->client_id)->first();
           $agentname = DB::table('agents')->where('id',$record_get[0]->agent_id)->first();
-          $admin = DB::table('admins')->select('company_name','address','state','city','zip','primary_email','phone')->where('id',$record_get[0]->user_id)->first();
+          $admin = DB::table('admins')->select('company_name','address','state','city','zip','email','phone')->where('id',$record_get[0]->user_id)->first();
       }
       $pdf = PDF::setOptions([
           'isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true,
@@ -5595,15 +5595,8 @@ public function getInvoiceAmount(Request $request)
                 ->where('id', $record_get->client_id)
                 ->first();
 
-            // FIX: Check both primary_email and email fields with fallback
-            $clientEmail = null;
-            if ($clientname) {
-                if (!empty($clientname->primary_email)) {
-                    $clientEmail = $clientname->primary_email;
-                } elseif (!empty($clientname->email)) {
-                    $clientEmail = $clientname->email;
-                }
-            }
+            // Use client email (primary_email column removed Phase 4)
+            $clientEmail = $clientname ? ($clientname->email ?? null) : null;
 
             if (!$clientname || empty($clientEmail)) {
                 return response()->json([
@@ -5735,15 +5728,8 @@ public function getInvoiceAmount(Request $request)
                 ->where('id', $record_get->client_id)
                 ->first();
 
-            // FIX: Check both primary_email and email fields with fallback
-            $clientEmail = null;
-            if ($clientname) {
-                if (!empty($clientname->primary_email)) {
-                    $clientEmail = $clientname->primary_email;
-                } elseif (!empty($clientname->email)) {
-                    $clientEmail = $clientname->email;
-                }
-            }
+            // Use client email (primary_email column removed Phase 4)
+            $clientEmail = $clientname ? ($clientname->email ?? null) : null;
 
             if (!$clientname || empty($clientEmail)) {
                 return response()->json([
@@ -5869,15 +5855,8 @@ public function getInvoiceAmount(Request $request)
                 ->where('id', $record_get->client_id)
                 ->first();
 
-            // FIX: Check both primary_email and email fields with fallback
-            $clientEmail = null;
-            if ($clientname) {
-                if (!empty($clientname->primary_email)) {
-                    $clientEmail = $clientname->primary_email;
-                } elseif (!empty($clientname->email)) {
-                    $clientEmail = $clientname->email;
-                }
-            }
+            // Use client email (primary_email column removed Phase 4)
+            $clientEmail = $clientname ? ($clientname->email ?? null) : null;
 
             if (!$clientname || empty($clientEmail)) {
                 return response()->json([

@@ -100,7 +100,7 @@
                                         </div>
                                         <div class="createdinfo">
                                             <a href="" class="appointmentcreatedname"><?php echo @$adminfirst->first_name ?></a>
-                                            <p class="appointmentcreatedemail"><?php echo @$adminfirst->primary_email; ?></p>
+                                            <p class="appointmentcreatedemail"><?php echo @$adminfirst->email; ?></p>
                                         </div>
                                     </div>
                                 </div>

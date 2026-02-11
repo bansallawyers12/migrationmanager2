@@ -273,9 +273,7 @@
                             'name' => request('name'),
                             'email' => request('email'),
                             'phone' => request('phone'),
-                            'service' => request('service'),
                             'status_filter' => request('status_filter'),
-                            'lead_quality' => request('lead_quality'),
                             'quick_date_range' => request('quick_date_range'),
                             'from_date' => request('from_date'),
                             'to_date' => request('to_date'),
@@ -284,10 +282,6 @@
                         $activeLeadFilters = $leadFilters->filter(function ($value) {
                             return $value !== null && $value !== '';
                         })->count();
-                        $qualityList = ($qualityOptions ?? collect())->filter()->values();
-                        if ($qualityList->isEmpty()) {
-                            $qualityList = collect([5, 4, 3, 2, 1]);
-                        }
                         $statusList = ($statusOptions ?? collect())->filter()->values();
                         $fallbackStatuses = collect(['New', 'In Progress', 'Converted', 'Closed', 'Lost']);
                     @endphp
@@ -339,12 +333,6 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="service">Service</label>
-                                        <input type="text" name="service" id="service" value="{{ request('service') }}" class="form-control" placeholder="Interested service">
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
                                         <label for="status_filter">Status</label>
                                         <select name="status_filter" id="status_filter" class="form-control">
                                             <option value="">All Statuses</option>
@@ -367,19 +355,6 @@
                             </div>
 
                             <div class="row">
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="lead_quality">Lead Quality</label>
-                                        <select name="lead_quality" id="lead_quality" class="form-control">
-                                            <option value="">All Levels</option>
-                                            @foreach($qualityList as $quality)
-                                                <option value="{{ $quality }}" {{ request('lead_quality') == $quality ? 'selected' : '' }}>
-                                                    {{ is_numeric($quality) ? $quality . ' Star' : ucfirst($quality) }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label for="date_filter_field">Date Field</label>
@@ -450,7 +425,6 @@
                                     <th class="sortable-header">@sortablelink('first_name', 'Name')</th>
                                     <th>Info</th>
                                     <th class="sortable-header">@sortablelink('created_at', 'Contact Date')</th>
-                                    <th class="sortable-header">@sortablelink('lead_quality', 'Level & Status')</th>
                                     <th class="sortable-header">@sortablelink('status', 'Status')</th>
                                     <th>Action</th>
                                 </tr>
@@ -477,8 +451,7 @@
 
                                         </td>
                                         <td><i class="fa fa-mobile"></i> {{@$list->phone}} <br/> <i class="fa fa-envelope"></i> {{@$list->email}}</td>
-                                        <td>{{@$list->service}} <br/> {{date('d/m/Y h:i:s a', strtotime($list->created_at))}}</td>
-                                        <td><div class="lead_stars"><i class="fa fa-star"></i><span>{{@$list->lead_quality}}</span></div></td>
+                                        <td>{{date('d/m/Y h:i:s a', strtotime($list->created_at))}}</td>
                                         <td>
                                             @php
                                                 $statusValue = @$list->status ?: config('constants.empty');

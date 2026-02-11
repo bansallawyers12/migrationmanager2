@@ -89,9 +89,6 @@ class ClientExportService
             'country_passport' => $client->country_passport ?? null,
             
             // Additional Contact (if exists in both systems)
-            'att_email' => $client->att_email ?? null,
-            'att_phone' => $client->att_phone ?? null,
-            'att_country_code' => $client->att_country_code ?? null,
             
             // Email and Contact Type (stored in admins table)
             'email_type' => $client->email_type ?? null,

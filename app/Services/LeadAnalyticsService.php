@@ -23,7 +23,7 @@ class LeadAnalyticsService
         }
         
         $totalLeads = $query->count();
-        $qualified = (clone $query)->where('lead_quality', '!=', 'cold')->count();
+        $qualified = $totalLeads; // lead_quality column removed
         $contacted = 0; // Follow-up system removed
         $interested = 0; // Follow-up system removed
         $converted = (clone $query)->where('type', 'client')->count();
@@ -107,18 +107,8 @@ class LeadAnalyticsService
         $performance = [];
         
         foreach ($agents as $agent) {
-            $assignedLeads = Admin::where('type', 'lead')
-                ->where('assignee', $agent->id)
-                ->when($startDate, fn($q) => $q->where('created_at', '>=', $startDate))
-                ->when($endDate, fn($q) => $q->where('created_at', '<=', $endDate))
-                ->count();
-            
-            $convertedLeads = Admin::where('type', 'lead')
-                ->where('assignee', $agent->id)
-                ->where('lead_status', 'converted')
-                ->when($startDate, fn($q) => $q->where('created_at', '>=', $startDate))
-                ->when($endDate, fn($q) => $q->where('created_at', '<=', $endDate))
-                ->count();
+            $assignedLeads = 0; // assignee column removed
+            $convertedLeads = 0; // assignee column removed
             
             $completedFollowups = 0; // Follow-up system removed
             $overdueFollowups = 0; // Follow-up system removed
@@ -205,28 +195,8 @@ class LeadAnalyticsService
      */
     public function getLeadQualityDistribution($startDate = null, $endDate = null)
     {
-        $query = Admin::where('type', 'lead')
-            ->select('lead_quality', DB::raw('COUNT(*) as count'))
-            ->groupBy('lead_quality');
-        
-        if ($startDate) {
-            $query->where('created_at', '>=', $startDate);
-        }
-        if ($endDate) {
-            $query->where('created_at', '<=', $endDate);
-        }
-        
-        $distribution = $query->get();
-        
-        $total = $distribution->sum('count');
-        
-        return $distribution->map(function($item) use ($total) {
-            return [
-                'quality' => $item->lead_quality ?: 'Unqualified',
-                'count' => $item->count,
-                'percentage' => $total > 0 ? round(($item->count / $total) * 100, 2) : 0,
-            ];
-        })->toArray();
+        // lead_quality column removed - return empty distribution
+        return [];
     }
     
     /**
@@ -250,8 +220,8 @@ class LeadAnalyticsService
                 ->count(),
             'converted' => (clone $query)->where('lead_status', 'converted')->count(),
             'active' => (clone $query)->where('lead_status', 'active')->count(),
-            'cold' => (clone $query)->where('lead_quality', 'cold')->count(),
-            'hot' => (clone $query)->where('lead_quality', 'hot')->count(),
+            'cold' => 0, // lead_quality column removed
+            'hot' => 0, // lead_quality column removed
             'avg_conversion_time' => $this->getAvgConversionTime($startDate, $endDate),
             'pending_followups' => 0, // Follow-up system removed
             'overdue_followups' => 0, // Follow-up system removed

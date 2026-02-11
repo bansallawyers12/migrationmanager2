@@ -41,14 +41,11 @@ class LeadConversionController extends Controller
         
         $convertedCount = 0;
         foreach($enqdatas as $lead){
-            $id = $lead->id;
-            $enqdata = Admin::where('lead_id', $id)->first();
-            if($enqdata){
-                $obj = Admin::find($enqdata->id);
-                $obj->created_at = $lead->created_at;
-                $obj->updated_at = $lead->updated_at;
-                $obj->save();
+            try {
+                $lead->convertToClient();
                 $convertedCount++;
+            } catch (\Exception $e) {
+                // Skip failed conversions
             }
         }
         

@@ -108,9 +108,6 @@ class ClientImportService
             $client->country_passport = $clientData['country_passport'] ?? null;
             
             // Additional Contact (if exists in both systems)
-            $client->att_email = $clientData['att_email'] ?? null;
-            $client->att_phone = $clientData['att_phone'] ?? null;
-            $client->att_country_code = $clientData['att_country_code'] ?? null;
             
             // Email and Contact Type (stored in admins table)
             $client->email_type = $clientData['email_type'] ?? null;
@@ -141,7 +138,6 @@ class ClientImportService
             $client->client_id = $client_id;
             $client->role = 7; // Client role
             $client->password = Hash::make('CLIENT_IMPORT_' . time()); // Temporary password
-            $client->decrypt_password = null;
             $client->verified = 0;
             $client->show_dashboard_per = 0;
             $client->cp_status = 0;

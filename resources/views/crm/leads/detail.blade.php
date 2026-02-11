@@ -159,7 +159,7 @@
 								 </span>
 							</p>
 								@endif
-								@if($fetchedData->lead_quality != '')
+								@if(false && $fetchedData->lead_quality != '')
 								    <p class="clearfix"> 
 								<span class="float-left">Lead Quality:</span>
 								<span class="float-right text-muted">
@@ -177,12 +177,12 @@
 								@endif
 								</div>
 								<?php
-									$assignee = \App\Models\Admin::where('id',@$fetchedData->assign_to)->first();
+									$assignee = null; // assignee column removed
 								?>
 								<div class="col-md-12"> 
 									<div class="client_assign client_info_tags"> 
 									<span class="">Assignee:</span>
-										@if($assignee)
+										@if(false && $assignee)
 										<div class="client_info">
 											<div class="cl_logo">{{substr(@$assignee->first_name, 0, 1)}}</div>
 											<div class="cl_name">
@@ -268,7 +268,7 @@
 														<th>Phone</th>
 														<td>{{$fetchedData->country_code}} {{$fetchedData->phone}}</td>
 													</tr>
-													@if($fetchedData->service != '')
+													@if(false && $fetchedData->service != '')
 													<tr>
 														<th>Service Interested</th>
 														<td>{{$fetchedData->service}}</td>
@@ -291,12 +291,6 @@
 												</tbody>
 											</table>
 											
-											@if($fetchedData->comments_note != '')
-											<h4 style="margin-top: 30px;">Notes / Comments</h4>
-											<div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
-												{!! nl2br(e($fetchedData->comments_note)) !!}
-											</div>
-											@endif
 										</div>
 									</div>
 									

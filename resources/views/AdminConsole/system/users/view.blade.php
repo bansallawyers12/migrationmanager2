@@ -154,12 +154,7 @@
 										<label for="legal_practitioner_number"><strong>Legal Practitioner Number</strong></label>
 										<p class="form-control-plaintext">{{ $fetchedData->legal_practitioner_number ?? 'N/A' }}</p>
 									</div>
-									@if($fetchedData->exempt_person_reason)
-									<div class="form-group">
-										<label for="exempt_person_reason"><strong>Exempt Person Reason</strong></label>
-										<p class="form-control-plaintext">{{ $fetchedData->exempt_person_reason }}</p>
-									</div>
-									@endif
+									{{-- exempt_person_reason column dropped Phase 4 --}}
 								</div>
 
 								<div class="col-md-6">
@@ -202,17 +197,6 @@
 									</div>
 								</div>
 							</div>
-
-							@if($fetchedData->business_fax)
-							<div class="row">
-								<div class="col-md-4">
-									<div class="form-group">
-										<label for="business_fax"><strong>Business Fax</strong></label>
-										<p class="form-control-plaintext">{{ $fetchedData->business_fax }}</p>
-									</div>
-								</div>
-							</div>
-							@endif
 						</div>
 					</div>
 				</div>

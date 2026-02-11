@@ -121,7 +121,7 @@ Route::get('/getnotedetail', [ClientNotesController::class, 'getnotedetail'])->n
 Route::get('/deletenote', [ClientNotesController::class, 'deletenote'])->name('clients.deletenote');
 Route::get('/viewnotedetail', [ClientNotesController::class, 'viewnotedetail']);
 Route::get('/viewapplicationnote', [ClientNotesController::class, 'viewapplicationnote']);
-Route::post('/saveprevvisa', [ClientNotesController::class, 'saveprevvisa']);
+// REMOVED Phase 4: prev_visa column dropped - Route::post('/saveprevvisa', [ClientNotesController::class, 'saveprevvisa']);
 // REMOVED: saveonlineform routes - OnlineForm model deleted, no frontend calls these routes
 Route::get('/get-notes', [ClientNotesController::class, 'getnotes'])->name('clients.getnotes');
 Route::get('/pinnote', [ClientNotesController::class, 'pinnote']);

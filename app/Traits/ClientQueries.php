@@ -109,9 +109,7 @@ trait ClientQueries
             $query->where('status', $request->input('status'));
         }
 
-        if ($request->filled('rating')) {
-            $query->where('rating', $request->input('rating'));
-        }
+        // rating column dropped Phase 4 - filter removed
 
         if (
             $request->filled('quick_date_range') ||

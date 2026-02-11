@@ -342,18 +342,11 @@ class ClientsController extends Controller
         $leadStats = [
             'total' => (clone $leadBase)->count(),
             'new30' => (clone $leadBase)->where('created_at', '>=', $now->copy()->subDays(30))->count(),
-            'assigned' => (clone $leadBase)->whereNotNull('assignee')->count(),
         ];
 
         $leadsByStatus = (clone $leadBase)
             ->select('status', DB::raw('COUNT(*) as total'))
             ->groupBy('status')
-            ->orderByDesc('total')
-            ->get();
-
-        $leadsByQuality = (clone $leadBase)
-            ->select('lead_quality', DB::raw('COUNT(*) as total'))
-            ->groupBy('lead_quality')
             ->orderByDesc('total')
             ->get();
 
@@ -371,7 +364,7 @@ class ClientsController extends Controller
         $recentLeads = (clone $leadBase)
             ->orderByDesc('created_at')
             ->limit(5)
-            ->get(['first_name', 'last_name', 'service', 'status', 'lead_quality', 'created_at']);
+            ->get(['first_name', 'last_name', 'status', 'created_at']);
 
         return view('crm.clients.insights', [
             'section' => $section,
@@ -384,7 +377,7 @@ class ClientsController extends Controller
             'recentMatters' => $recentMatters,
             'leadStats' => $leadStats,
             'leadsByStatus' => $leadsByStatus,
-            'leadsByQuality' => $leadsByQuality,
+            'leadsByQuality' => collect(), // lead_quality column removed
             'leadMonthlyGrowth' => $leadMonthlyGrowth,
             'recentLeads' => $recentLeads,
         ]);
@@ -1767,8 +1760,8 @@ class ClientsController extends Controller
                     $currentAdmin = Auth::user();
                     $staffName = $currentAdmin->first_name . ' ' . $currentAdmin->last_name;
                     $matterNumber = $id1 ?? '';
-                    $officePhone = $currentAdmin->phone ?? $currentAdmin->att_phone ?? '';
-                    $officeCountryCode = $currentAdmin->att_country_code ?? '+61';
+                    $officePhone = $currentAdmin->phone ?? '';
+                    $officeCountryCode = '+61';
                     
                     $encodeId = base64_encode(convert_uuencode($id));
                     $activeTab = $tab ?? 'companydetails';
@@ -1902,8 +1895,8 @@ class ClientsController extends Controller
                 $currentAdmin = Auth::user();
                 $staffName = $currentAdmin->first_name . ' ' . $currentAdmin->last_name;
                 $matterNumber = $id1 ?? '';
-                $officePhone = $currentAdmin->phone ?? $currentAdmin->att_phone ?? '';
-                $officeCountryCode = $currentAdmin->att_country_code ?? '+61';
+                $officePhone = $currentAdmin->phone ?? '';
+                $officeCountryCode = '+61';
                 
                 //Return the view with all data
                 return view('crm.clients.detail', compact(
@@ -2054,8 +2047,6 @@ class ClientsController extends Controller
                         ->orWhereRaw('LOWER(first_name) LIKE ?', ["%$squeryLower%"])
                         ->orWhereRaw('LOWER(last_name) LIKE ?', ["%$squeryLower%"])
                         ->orWhereRaw('LOWER(client_id) LIKE ?', ["%$squeryLower%"])
-                        ->orWhereRaw('LOWER(att_email) LIKE ?', ["%$squeryLower%"])
-                        ->orWhereRaw('LOWER(att_phone) LIKE ?', ["%$squeryLower%"])
                         ->orWhereRaw('LOWER(phone) LIKE ?', ["%$squeryLower%"])
                         ->orWhereRaw("LOWER(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) LIKE ?", ["%$squeryLower%"]);
                     if ($d != "") {
@@ -2131,8 +2122,6 @@ class ClientsController extends Controller
                         ->orWhereRaw('LOWER(admins.first_name) LIKE ?', ["%$squeryLower%"])
                         ->orWhereRaw('LOWER(admins.last_name) LIKE ?', ["%$squeryLower%"])
                         ->orWhereRaw('LOWER(admins.client_id) LIKE ?', ["%$squeryLower%"])
-                        ->orWhereRaw('LOWER(admins.att_email) LIKE ?', ["%$squeryLower%"])
-                        ->orWhereRaw('LOWER(admins.att_phone) LIKE ?', ["%$squeryLower%"])
                         ->orWhereRaw('LOWER(admins.phone) LIKE ?', ["%$squeryLower%"])
                         ->orWhereRaw("LOWER(COALESCE(admins.first_name, '') || ' ' || COALESCE(admins.last_name, '')) LIKE ?", ["%$squeryLower%"])
                         ->orWhereRaw('LOWER(client_contacts.phone) LIKE ?', ["%$squeryLower%"])
@@ -2554,21 +2543,15 @@ class ClientsController extends Controller
 			$client = Admin::where('role', '=', 7)->where('id', $request->id)->first();
 
 			$obj = Admin::find($request->id);
-			$obj->rating = $request->rating;
+			// rating column dropped Phase 4 - no-op
 			$saved = $obj->save();
 			if($saved){
-				if($client->rating == ''){
-					$subject = 'has rated Client as '.$request->rating;
+				if('' /* rating dropped Phase 4 */ == ''){
+					// rating dropped Phase 4
 				}else{
-					$subject = 'has changed Client’s rating from '.$client->rating.' to '.$request->rating;
+					$subject = 'has changed Client’s rating from '.'' /* rating dropped Phase 4 */.' to '.$request->rating;
 				}
-				$objs = new ActivitiesLog;
-				$objs->client_id = $request->id;
-				$objs->created_by = Auth::user()->id;
-				$objs->subject = $subject;
-				$objs->task_status = 0;
-				$objs->pin = 0;
-				$objs->save();
+				// rating column dropped Phase 4 - activity log removed
 				$response['status'] 	= 	true;
 				$response['message']	=	'You’ve successfully updated your client’s information.';
 			}else{
@@ -2717,31 +2700,27 @@ class ClientsController extends Controller
                 //echo "<pre>";print_r($merge_record_ids_arr);
 
                 //check 1st and 2nd record
-                $first_record = Admin::where('id', $merge_record_ids_arr[0])->select('id','phone','att_phone','email','att_email')->first();
+                $first_record = Admin::where('id', $merge_record_ids_arr[0])->select('id','phone','email')->first();
                 //echo "<pre>";print_r($first_record);
                 if(!empty($first_record)){
                     $first_phone = $first_record['phone'];
-                    $first_att_phone = $first_record['att_phone'];
                     $first_email = $first_record['email'];
-                    $first_att_email = $first_record['att_email'];
                 }
 
-                $second_record = Admin::where('id', $merge_record_ids_arr[1])->select('id','phone','att_phone','email','att_email')->first();
+                $second_record = Admin::where('id', $merge_record_ids_arr[1])->select('id','phone','email')->first();
                 //echo "<pre>";print_r($second_record);
                 if(!empty($second_record)){
                     $second_phone = $second_record['phone'];
-                    $second_att_phone = $second_record['att_phone'];
                     $second_email = $second_record['email'];
-                    $second_att_email = $second_record['att_email'];
                 }
 
                DB::table('admins')
                 ->where('id', $merge_record_ids_arr[0])
-                ->update(['att_phone' => $second_phone,'att_email' => $second_email]);
+                ->update(['phone' => $second_phone,'email' => $second_email]);
 
                 DB::table('admins')
                 ->where('id', $merge_record_ids_arr[1])
-                ->update(['att_phone' => $first_phone,'att_email' => $first_email]);
+                ->update(['phone' => $first_phone,'email' => $first_email]);
 
                 $notelist1 = Note::where('client_id', $merge_record_ids_arr[0])->whereNull('assigned_to')->where('type', 'client')->orderby('pin', 'DESC')->orderBy('created_at', 'DESC')->get();
                 //dd($notelist1);
@@ -3046,11 +3025,7 @@ class ClientsController extends Controller
                 }
             }
 
-            //Previous History
-            $prevHis = DB::table('admins')->where('id', $request->merge_from)->select('id','prev_visa')->get(); //dd($prevHis);
-            if(!empty($prevHis)){
-               DB::table('admins')->where('id',$request->merge_into)->update( array('prev_visa'=>$prevHis[0]->prev_visa) );
-            }
+            // prev_visa column dropped Phase 4 - no longer copied during merge
         }
         $response['status'] 	= 	true;
         $response['message']	=	'You have successfully merged records.';
@@ -4273,12 +4248,10 @@ class ClientsController extends Controller
                 'is_migration_agent',
                 'marn_number',
                 'legal_practitioner_number',
-                'exempt_person_reason',
                 'business_address',
                 'business_phone',
                 'business_mobile',
                 'business_email',
-                'business_fax',
                 'tax_number'
             )->where('id',$sel_migration_agent)->first();
             //dd($agentInfo);
@@ -4321,12 +4294,10 @@ class ClientsController extends Controller
                 'is_migration_agent',
                 'marn_number',
                 'legal_practitioner_number',
-                'exempt_person_reason',
                 'business_address',
                 'business_phone',
                 'business_mobile',
                 'business_email',
-                'business_fax',
                 'tax_number'
             )->where('id',$sel_migration_agent)->first();
             //dd($agentInfo);
@@ -4378,12 +4349,10 @@ class ClientsController extends Controller
                 'is_migration_agent',
                 'marn_number',
                 'legal_practitioner_number',
-                'exempt_person_reason',
                 'business_address',
                 'business_phone',
                 'business_mobile',
                 'business_email',
-                'business_fax',
                 'tax_number'
             )->where('id',$sel_migration_agent)->first();
             //dd($agentInfo);
@@ -4853,17 +4822,7 @@ class ClientsController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Client not found']);
         }
 
-        if ($admin->is_star_client == 1) {
-            return response()->json(['status' => 'exists']);
-        }
-
-        // Update only if requested to do so
-        if ($request->update == true) {
-            $admin->is_star_client = 1;
-            $admin->save();
-            return response()->json(['status' => 'updated']);
-        }
-
+        // is_star_client column dropped Phase 4 - always return not_star
         return response()->json(['status' => 'not_star']);
     }
 

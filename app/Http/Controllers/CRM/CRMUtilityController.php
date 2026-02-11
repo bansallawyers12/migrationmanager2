@@ -84,33 +84,7 @@ class CRMUtilityController extends Controller
      * @return \Illuminate\Http\Response
      */
 	public function returnsetting(Request $request){
-		if ($request->isMethod('post'))
-		{
-			$requestData 		= 	$request->all();
-			$obj							= 	Admin::find(Auth::user()->id);
-			if(@$requestData['is_business_gst'] == 'yes'){
-			$obj->is_business_gst				=	@$requestData['is_business_gst'];
-			$obj->gstin					=	@$requestData['gstin'];
-			$obj->gst_date						=	@$requestData['gst_date'];
-			}else{
-				$obj->is_business_gst				=	@$requestData['is_business_gst'];
-			$obj->gstin					=	'';
-			$obj->gst_date						=	'';
-			}
-			$saved							=	$obj->save();
-
-			if(!$saved)
-			{
-				return redirect()->back()->with('error', config('constants.server_error'));
-			}
-			else
-			{
-				return Redirect::to('/settings/taxes/returnsetting')->with('success', 'Your Profile has been edited successfully.');
-			}
-		}else{
-			//return view('crm.my_profile', compact(['fetchedData', 'countries']));
-			return view('crm.settings.returnsetting');
-		}
+		return view('crm.settings.returnsetting');
 	}
 	public function myProfile(Request $request)
 	{
@@ -161,7 +135,6 @@ class CRMUtilityController extends Controller
 			$obj->city						=	@$requestData['city'];
 			$obj->address					=	@$requestData['address'];
 			$obj->zip						=	@$requestData['zip'];
-			$obj->company_fax						=	@$requestData['company_fax'];
 			$obj->company_name						=	@$requestData['company_name'];
 			$obj->company_website						=	@$requestData['company_website'];
 			$obj->profile_img				=	@$profile_img;

@@ -540,9 +540,8 @@ use App\Http\Controllers\Controller;
 							<div class="form-group">
 								<label for="template">Templates </label>
                                 <?php
-                                $assignee = \App\Models\Admin::select('first_name')->where('id',@$fetchedData->assignee)->first();
-                                if($assignee){
-                                    $clientAssigneeName = $assignee->first_name;
+                                $clientAssigneeName = ''; // assignee column removed
+                                if(false){
                                 } else {
                                     $clientAssigneeName = 'NA';
                                 }

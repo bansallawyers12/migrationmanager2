@@ -83,29 +83,12 @@ class LeadController extends Controller
                 $phone = $request->input('phone');
                 // For universal phone (4444444444), also search for timestamped versions
                 if ($phone === '4444444444') {
-                    return $q->where(function ($subQuery) use ($phone) {
-                        $subQuery->where(function($phoneQuery) use ($phone) {
-                            $phoneQuery->where('phone', $phone)
-                                      ->orWhere('phone', 'LIKE', $phone . '_%');
-                        })
-                        ->orWhere(function($attPhoneQuery) use ($phone) {
-                            $attPhoneQuery->where('att_phone', 'LIKE', '%' . $phone . '%')
-                                         ->orWhere('att_phone', 'LIKE', '%' . $phone . '_%');
-                        });
+                    return $q->where(function ($phoneQuery) use ($phone) {
+                        $phoneQuery->where('phone', $phone)
+                                  ->orWhere('phone', 'LIKE', $phone . '_%');
                     });
                 }
-                return $q->where(function ($subQuery) use ($request) {
-                    $subQuery->where('phone', 'LIKE', '%' . $request->input('phone') . '%')
-                             ->orWhere('att_phone', 'LIKE', '%' . $request->input('phone') . '%');
-                });
-            });
-
-            $query->when($request->filled('service'), function ($q) use ($request) {
-                return $q->where('service', 'LIKE', '%' . $request->input('service') . '%');
-            });
-
-            $query->when($request->filled('lead_quality'), function ($q) use ($request) {
-                return $q->where('lead_quality', $request->input('lead_quality'));
+                return $q->where('phone', 'LIKE', '%' . $request->input('phone') . '%');
             });
 
             $query->when($request->filled('status_filter'), function ($q) use ($request) {
@@ -133,12 +116,6 @@ class LeadController extends Controller
                 ->orderBy('status')
                 ->pluck('status');
 
-            $qualityOptions = Lead::select('lead_quality')
-                ->distinct()
-                ->whereNotNull('lead_quality')
-                ->orderBy('lead_quality')
-                ->pluck('lead_quality');
-
             $lists = $query->sortable(['id' => 'desc'])
                 ->paginate($perPage)
                 ->appends($request->except('page'));
@@ -147,7 +124,7 @@ class LeadController extends Controller
             $totalData = 0;
         }
         
-        return view('crm.leads.index', compact('lists', 'totalData', 'perPage', 'statusOptions', 'qualityOptions'));
+        return view('crm.leads.index', compact('lists', 'totalData', 'perPage', 'statusOptions'));
     }
 
     /**
@@ -947,13 +924,7 @@ class LeadController extends Controller
             $lead->phone = $lastPhone;
             $lead->email_type = $lastEmailType;
             $lead->email = $lastEmail;
-            $lead->service = $requestData['service'] ?? null;
-            $lead->assignee = $requestData['assign_to'] ?? null;
             $lead->status = $requestData['status'] ?? null;
-            $lead->lead_quality = $requestData['lead_quality'] ?? null;
-            $lead->att_country_code = $requestData['att_country_code'] ?? null;
-            $lead->att_phone = $requestData['att_phone'] ?? null;
-            $lead->att_email = $requestData['att_email'] ?? null;
             $lead->source = $requestData['lead_source'] ?? null;
             $lead->related_files = rtrim($related_files, ',');
 
@@ -981,14 +952,6 @@ class LeadController extends Controller
             $lead->state = $requestData['state'] ?? null;
             $lead->zip = $requestData['zip'] ?? null;
             $lead->country = $requestData['country'] ?? null;
-            $lead->nomi_occupation = $requestData['nomi_occupation'] ?? null;
-            $lead->skill_assessment = $requestData['skill_assessment'] ?? null;
-            $lead->high_quali_aus = $requestData['high_quali_aus'] ?? null;
-            $lead->high_quali_overseas = $requestData['high_quali_overseas'] ?? null;
-            $lead->relevant_work_exp_aus = $requestData['relevant_work_exp_aus'] ?? null;
-            $lead->relevant_work_exp_over = $requestData['relevant_work_exp_over'] ?? null;
-            $lead->naati_py = $requestData['naati_py'] ?? null;
-            $lead->married_partner = $requestData['married_partner'] ?? null;
             $lead->total_points = $requestData['total_points'] ?? null;
 
             $lead->save();

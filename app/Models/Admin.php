@@ -25,11 +25,9 @@ class Admin extends Authenticatable
 	protected $fillable = [
         'id', 
         // Core Identity
-        'first_name', 'last_name', 'email', 'password', 'decrypt_password',
+        'first_name', 'last_name', 'email', 'password',
         // Role & Permissions
         'role', 'position', 'team', 'permission', 'office_id',
-        // Staff ID
-        'staff_id',
         // Contact Information
         'phone', 'country_code', 'telephone',
         // Address
@@ -39,16 +37,13 @@ class Admin extends Authenticatable
         // Migration Agent Flag & Details
         'is_migration_agent',
         // Business/Professional Info
-        'marn_number', 'legal_practitioner_number', 'exempt_person_reason',
-        'business_address', 'business_phone', 'business_mobile', 'business_email', 'business_fax',
+        'marn_number', 'legal_practitioner_number',
+        'business_address', 'business_phone', 'business_mobile', 'business_email',
         'tax_number',
-        'company_name', 'company_website', 'primary_email',
-        'gst_no', 'gstin', 'gst_date', 'is_business_gst',
-        'ABN_number', 'company_fax',
+        'company_name', 'company_website',
+        'ABN_number',
         // Company Lead/Client Flag (company data stored in companies table)
         'is_company',
-        // Email Configuration
-        'smtp_host', 'smtp_port', 'smtp_enc', 'smtp_username', 'smtp_password',
         // API/Service Tokens
         'service_token', 'token_generated_at',
         // Client Portal (for staff access)
@@ -84,7 +79,6 @@ class Admin extends Authenticatable
         'first_name',
         'last_name',
         'email',
-        'rating',
         'status',
         'created_at',
         'updated_at'

@@ -21,42 +21,11 @@ class LeadAssignmentController extends Controller
     }
 
     /**
-     * Assign lead to a user/agent
+     * Assign lead to a user/agent (deprecated - assignee column removed)
      */
     public function assign(Request $request) 
     {
-        $requestData = $request->all();
-        $id = $this->decodeString($requestData['mlead_id']);
-        
-        // Using Lead model
-        if(Lead::where('id', '=', $id)->where('user_id', '=', Auth::user()->id)->exists())
-        {
-            $lead = Lead::where('id', '=', $id)->where('user_id', '=', Auth::user()->id)->first();
-            
-            if($lead->assignee != ''){
-                if($lead->assignee == $requestData['assignto']){
-                    return redirect()->back()->with('error', 'Already Assigned to this user');
-                }else{
-                    $assignfrom = Admin::where('id',$lead->assignee)->first();
-                    $assignto = Admin::where('id',$requestData['assignto'])->first();
-                    
-                    // Use Lead model method
-                    $lead->assignToUser($requestData['assignto']);
-                    return redirect()->back()->with('success', 'Lead transfer successfully');
-                }
-            }else{
-                // Use Lead model method
-                $saved = $lead->assignToUser($requestData['assignto']);
-                if(!$saved)
-                {
-                    return redirect()->back()->with('error', 'Please try again');
-                }else{
-                    return redirect()->back()->with('success', 'Lead Assigned successfully');
-                }
-            }
-        }else{
-            return redirect()->back()->with('error', 'Not Found');
-        }
+        return redirect()->back()->with('info', 'Lead assignment has been deprecated.');
     }
 
     /**
@@ -99,19 +68,7 @@ class LeadAssignmentController extends Controller
             return redirect()->back()->with('error', 'Missing required data');
         }
 
-        $leadIds = $requestData['lead_ids'];
-        $assignTo = $requestData['assign_to'];
-        $assignedCount = 0;
-
-        foreach($leadIds as $leadId) {
-            $lead = Lead::find($leadId);
-            if($lead) {
-                $lead->assignToUser($assignTo);
-                $assignedCount++;
-            }
-        }
-
-        return redirect()->back()->with('success', "Successfully assigned {$assignedCount} leads");
+        return redirect()->back()->with('info', 'Lead assignment has been deprecated.');
     }
 
     /**

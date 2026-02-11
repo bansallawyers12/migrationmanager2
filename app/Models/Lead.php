@@ -19,7 +19,6 @@ class Lead extends Admin
         'last_name', 
         'email', 
         'phone',
-        'lead_quality',
         'status',
         'created_at', 
         'updated_at'
@@ -73,30 +72,12 @@ class Lead extends Admin
     }
     
     /**
-     * Filter by lead quality
-     * Usage: Lead::quality('hot')->get()
-     */
-    public function scopeQuality(Builder $query, $quality)
-    {
-        return $query->where('lead_quality', $quality);
-    }
-    
-    /**
      * Filter by lead status
      * Usage: Lead::status('active')->get()
      */
     public function scopeStatus(Builder $query, $status)
     {
         return $query->where('status', $status);
-    }
-    
-    /**
-     * Filter by assigned agent
-     * Usage: Lead::assignedTo($userId)->get()
-     */
-    public function scopeAssignedTo(Builder $query, $userId)
-    {
-        return $query->where('assignee', $userId);
     }
     
     /**
@@ -109,30 +90,11 @@ class Lead extends Admin
     }
     
     /**
-     * Get the assigned agent/staff member
-     */
-    public function assignedAgent()
-    {
-        return $this->belongsTo(Admin::class, 'assignee', 'id')
-                    ->where('type', '!=', 'lead')
-                    ->where('type', '!=', 'client');
-    }
-    
-    /**
      * Get the user who created this lead
      */
     public function createdBy()
     {
         return $this->belongsTo(Admin::class, 'user_id', 'id');
-    }
-    
-    /**
-     * Assign lead to a user/agent
-     */
-    public function assignToUser($userId)
-    {
-        $this->assignee = $userId;
-        return $this->save();
     }
     
     /**
@@ -196,14 +158,6 @@ class Lead extends Admin
     }
     
     /**
-     * Check if lead has been assigned
-     */
-    public function isAssigned()
-    {
-        return !empty($this->assignee);
-    }
-    
-    /**
      * Get full name
      */
     public function getFullNameAttribute(): string
@@ -211,17 +165,4 @@ class Lead extends Admin
         return trim($this->first_name . ' ' . $this->last_name);
     }
     
-    /**
-     * Get lead quality badge HTML (optional helper)
-     */
-    public function getQualityBadge()
-    {
-        $badges = [
-            'hot' => '<span class="badge bg-danger">Hot</span>',
-            'warm' => '<span class="badge bg-warning">Warm</span>',
-            'cold' => '<span class="badge bg-info">Cold</span>',
-        ];
-        
-        return $badges[$this->lead_quality] ?? '<span class="badge bg-secondary">Unknown</span>';
-    }
 }

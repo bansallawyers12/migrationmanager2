@@ -115,16 +115,6 @@
 											@endif
 										</div>
 										<div class="form-group">
-											<label for="company_fax">Company Fax</label>
-											<input type="text" name="company_fax" value="{{ old('company_fax', @$fetchedData->company_fax) }}" class="form-control" data-valid="" placeholder="Company Fax">
-
-											@if ($errors->has('company_fax'))
-												<span class="custom-error" role="alert">
-													<strong>{{ $errors->first('company_fax') }}</strong>
-												</span>
-											@endif
-										</div>
-										<div class="form-group">
 											<label for="country">Country <span style="color:#ff0000;">*</span></label>
 											<select class="form-control  select2" name="country" >
 												<?php
@@ -142,16 +132,6 @@
 												</span>
 											@endif
 										</div>
-										<!--<div class="form-group">
-											<label for="state">Primary Email </label>
-											<input type="text" name="primary_email" value="{{ old('primary_email', @$fetchedData->primary_email) }}" class="form-control" data-valid="email">
-
-											@if ($errors->has('primary_email'))
-												<span class="custom-error" role="alert">
-													<strong>{{ $errors->first('primary_email') }}</strong>
-												</span>
-											@endif
-										</div>	-->
 										<div class="form-group">
 											<label for="state">State <span style="color:#ff0000;">*</span></label>
 											<input type="text" name="state" value="{{ old('state', @$fetchedData->state) }}" class="form-control" data-valid="required">

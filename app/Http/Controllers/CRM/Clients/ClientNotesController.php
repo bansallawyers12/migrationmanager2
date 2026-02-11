@@ -503,43 +503,13 @@ class ClientNotesController extends Controller
 	}
 
     /**
-     * Save previous visa information
-     * 
-     * @param Request $request
-     * @return redirect
+     * Save previous visa information - DEPRECATED Phase 4
+     * prev_visa column has been dropped from admins table.
      */
     public function saveprevvisa(Request $request)
     {
-    	    $requestData 		= 	$request->all();
-    	     $obj = Admin::find($requestData['client_id']);
-    	    $pr = array();
-    	    $i = 0;
-    	  $start_date =  $requestData['prev_visa']['start_date'];
-    	   $end_date =  $requestData['prev_visa']['end_date'];
-    	    $place =  $requestData['prev_visa']['place'];
-    	     $person =  $requestData['prev_visa']['person'];
-
-    	    foreach($requestData['prev_visa']['name'] as  $prev_visa){
-
-    	       $pr[] = array(
-    	                'name' => $prev_visa,
-    	                'start_date' => $start_date[$i],
-    	                'end_date' =>$end_date[$i],
-    	                'place' =>$place[$i],
-    	                'person' =>$person[$i],
-    	            );
-    	            $i++;
-    	    }
-
-    	     $obj->prev_visa = json_encode($pr);
-
-    	     $save = $obj->save();
-    	     if($save){
-    	         return Redirect::to('/clients/detail/'.base64_encode(convert_uuencode(@$requestData['client_id'])))->with('success', 'Previous Visa Updated Successfully');
-    	     }else{
-    	         return redirect()->back()->with('error', config('constants.server_error'));
-    	     }
-    	}
+        return redirect()->back()->with('error', 'Previous visa functionality has been deprecated (prev_visa column removed).');
+    }
 
     /**
      * Save online form data

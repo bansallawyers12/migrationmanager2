@@ -136,16 +136,6 @@
 										</span> 
 									@endif 
 								</div> 
-								<div class="form-group">
-									<label for="gst_no">GST No.</label>
-										<input type="text" name="gst_no" id="gst_no" value="{{ old('gst_no', $fetchedData->gst_no ?? '') }}" 
-										       class="form-control" data-valid="required" autocomplete="off" placeholder="e.g. 22AAAAA00000AZ5">
-									@if ($errors->has('gst_no'))
-										<span class="custom-error" role="alert">
-											<strong>{{ @$errors->first('gst_no') }}</strong>
-										</span> 
-									@endif
-								</div> 
 								<div class="form-group float-right">
 									<button type="submit" class="btn btn-primary">Update</button>
 								</div>

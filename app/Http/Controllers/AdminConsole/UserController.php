@@ -396,7 +396,6 @@ class UserController extends Controller
 			$obj->phone	=	@$requestData['phone'];
 			$obj->country	=	@$requestData['country'];
 			$obj->city	=	@$requestData['city'];
-			$obj->gst_no	=	@$requestData['gst_no'];
 			$obj->verified	=	1;
 			$obj->role	=	7;
 			
@@ -510,7 +509,6 @@ class UserController extends Controller
 		$obj->phone = @$requestData['phone'];
 		$obj->country = @$requestData['country'];
 		$obj->city = @$requestData['city'];
-		$obj->gst_no = @$requestData['gst_no'];
 		$obj->role = 7;
 
 		/* Profile Image Upload Function Start */

@@ -47,8 +47,8 @@ class GenerateServiceAccountToken implements ShouldQueue
     public function handle()
     {
         try {
-            // Use provided password, fallback to decrypt_password, then default
-            $adminPassword = $this->password ?: $this->admin->decrypt_password ?: 'admin123';
+            // Use provided password or default (decrypt_password column removed Phase 4)
+            $adminPassword = $this->password ?: 'admin123';
             
             // Create a mock request object
             $request = new Request([
