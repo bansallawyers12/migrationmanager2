@@ -363,7 +363,6 @@
                             'phone' => request('phone'),
                             'type' => request('type'),
                             'status' => request('status'),
-                            'rating' => request('rating'),
                             'quick_date_range' => request('quick_date_range'),
                             'from_date' => request('from_date'),
                             'to_date' => request('to_date'),
@@ -434,17 +433,6 @@
                                             <option value="">Any</option>
                                             <option value="1" {{ request('status') === '1' ? 'selected' : '' }}>Active</option>
                                             <option value="0" {{ request('status') === '0' ? 'selected' : '' }}>Inactive</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label for="rating">Rating</label>
-                                        <select class="form-control" name="rating" id="rating">
-                                            <option value="">Any</option>
-                                            @for($i = 1; $i <= 5; $i++)
-                                                <option value="{{ $i }}" {{ request('rating') == $i ? 'selected' : '' }}>{{ $i }} Star{{ $i > 1 ? 's' : '' }}</option>
-                                            @endfor
                                         </select>
                                     </div>
                                 </div>
@@ -519,7 +507,6 @@
                                         </div>
                                     </th>
                                     <th class="sortable-header">@sortablelink('first_name', 'Name')</th>
-                                    <th class="sortable-header">@sortablelink('rating', 'Rating')</th>
                                     <th class="sortable-header">@sortablelink('client_id', 'Client ID')</th>
                                     <th class="sortable-header">@sortablelink('status', 'Status')</th>
                                     <th class="sortable-header">@sortablelink('updated_at', 'Last Updated')</th>
@@ -550,7 +537,6 @@
                                                 : URL::to('/clients/detail/'.$encodedId);
                                             ?>
                                             <td style="white-space: initial;"><a href="{{ $clientDetailUrl }}">{{ @$list->first_name == "" ? config('constants.empty') : Str::limit(@$list->first_name, '50', '...') }} {{ @$list->last_name == "" ? config('constants.empty') : Str::limit(@$list->last_name, '50', '...') }} </a><br/></td>
-                                            <td style="white-space: initial;"><?php echo @$list->rating; ?></td>
                                             <td style="white-space: initial;">{{ @$list->client_id == "" ? config('constants.empty') : Str::limit(@$list->client_id, '50', '...') }}</td>
                                             <td>
                                                 @php

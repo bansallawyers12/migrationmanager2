@@ -270,7 +270,7 @@ class Form956Controller extends Controller
                 'mg.prov assist' => $form->is_registered_migration_agent ? 'reg' : ($form->is_legal_practitioner ? 'Legal' : ($form->is_exempt_person ? 'exampt' : 'Off')),
 
                 // Exempt person reason
-                'mg.reason ex' => $form->agent->exempt_person_reason ?? 'Off', // Options: close, sponsor, nominator, diplom, parlia, public
+                'mg.reason ex' => 'Off', // exempt_person_reason column dropped Phase 4
 
                 // Question 10: Is there another registered migration agent or legal practitioner
                 'mg.oth mig' => 'No',
@@ -617,7 +617,7 @@ class Form956Controller extends Controller
                 'mg.prov assist' => $form->is_registered_migration_agent ? 'reg' : ($form->is_legal_practitioner ? 'Legal' : ($form->is_exempt_person ? 'exampt' : 'Off')),
 
                 // Exempt person reason
-                'mg.reason ex' => $form->agent->exempt_person_reason ?? 'Off', // Options: close, sponsor, nominator, diplom, parlia, public
+                'mg.reason ex' => 'Off', // exempt_person_reason column dropped Phase 4
 
                 // Question 10: Is there another registered migration agent or legal practitioner
                 'mg.oth mig' => 'No',

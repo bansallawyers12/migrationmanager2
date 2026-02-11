@@ -2540,24 +2540,9 @@ class ClientsController extends Controller
 
 	public function updateclientstatus(Request $request){
 		if(Admin::where('role', '=', 7)->where('id', $request->id)->exists()){
-			$client = Admin::where('role', '=', 7)->where('id', $request->id)->first();
-
-			$obj = Admin::find($request->id);
 			// rating column dropped Phase 4 - no-op
-			$saved = $obj->save();
-			if($saved){
-				if('' /* rating dropped Phase 4 */ == ''){
-					// rating dropped Phase 4
-				}else{
-					$subject = 'has changed Client’s rating from '.'' /* rating dropped Phase 4 */.' to '.$request->rating;
-				}
-				// rating column dropped Phase 4 - activity log removed
-				$response['status'] 	= 	true;
-				$response['message']	=	'You’ve successfully updated your client’s information.';
-			}else{
-				$response['status'] 	= 	false;
-				$response['message']	=	'Please try again';
-			}
+			$response['status'] 	= 	true;
+			$response['message']	=	'You\'ve successfully updated your client\'s information.';
 		}else{
 			$response['status'] 	= 	false;
 			$response['message']	=	'Please try again';
