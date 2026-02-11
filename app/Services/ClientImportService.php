@@ -10,6 +10,7 @@ use App\Models\ClientPassportInformation;
 use App\Models\ClientTravelInformation;
 use App\Models\ClientCharacter;
 use App\Models\ClientVisaCountry;
+use App\Models\ClientTestScore;
 use App\Models\ActivitiesLog;
 use App\Models\Matter;
 use App\Services\ClientReferenceService;
@@ -106,6 +107,9 @@ class ClientImportService
             
             // Passport
             $client->country_passport = $clientData['country_passport'] ?? null;
+            if (Schema::hasColumn('admins', 'passport_number') && isset($clientData['passport_number'])) {
+                $client->passport_number = $clientData['passport_number'];
+            }
             
             // Additional Contact (if exists in both systems)
             
@@ -113,6 +117,30 @@ class ClientImportService
             $client->email_type = $clientData['email_type'] ?? null;
             $client->contact_type = $clientData['contact_type'] ?? null;
             
+            // Optional bansalcrm2-style fields (if columns exist)
+            $bansalOptional = [
+                'att_email', 'att_phone', 'att_country_code',
+                'nomi_occupation', 'skill_assessment', 'high_quali_aus', 'high_quali_overseas',
+                'relevant_work_exp_aus', 'relevant_work_exp_over',
+                'naati_py', 'total_points', 'office_id',
+                'service', 'assignee', 'lead_quality', 'comments_note', 'married_partner',
+                'tagname', 'related_files',
+            ];
+            foreach ($bansalOptional as $field) {
+                if (Schema::hasColumn('admins', $field) && array_key_exists($field, $clientData)) {
+                    $client->{$field} = $clientData[$field];
+                }
+            }
+            if (Schema::hasColumn('admins', 'visa_type') && array_key_exists('visa_type', $clientData)) {
+                $client->visa_type = $clientData['visa_type'];
+            }
+            if (Schema::hasColumn('admins', 'visa_opt') && array_key_exists('visa_opt', $clientData)) {
+                $client->visa_opt = $clientData['visa_opt'];
+            }
+            if (Schema::hasColumn('admins', 'visaExpiry') && array_key_exists('visaExpiry', $clientData)) {
+                $client->visaExpiry = $this->parseDate($clientData['visaExpiry']);
+            }
+
             // Other
             $client->naati_test = $clientData['naati_test'] ?? null;
             $client->naati_date = $this->parseDate($clientData['naati_date'] ?? null);
@@ -272,12 +300,30 @@ class ClientImportService
                 }
             }
 
-            // Import activities (if structure matches)
+            // Import test scores (unified format: test_type, listening, reading, writing, speaking, overall_score, test_date)
+            if (isset($importData['test_scores']) && is_array($importData['test_scores'])) {
+                foreach ($importData['test_scores'] as $testData) {
+                    ClientTestScore::create([
+                        'client_id' => $newClientId,
+                        'admin_id' => Auth::id(),
+                        'test_type' => $testData['test_type'] ?? null,
+                        'listening' => $testData['listening'] ?? null,
+                        'reading' => $testData['reading'] ?? null,
+                        'writing' => $testData['writing'] ?? null,
+                        'speaking' => $testData['speaking'] ?? null,
+                        'overall_score' => $testData['overall_score'] ?? null,
+                        'test_date' => $this->parseDate($testData['test_date'] ?? null),
+                        'relevant_test' => $testData['relevant_test'] ?? 1,
+                    ]);
+                }
+            }
+
+            // Import activities (supports both migrationmanager2 and bansalcrm2 formats)
             if (isset($importData['activities']) && is_array($importData['activities'])) {
                 foreach ($importData['activities'] as $activityData) {
-                    ActivitiesLog::create([
+                    $activityAttrs = [
                         'client_id' => $newClientId,
-                        'created_by' => Auth::id(),
+                        'created_by' => $activityData['created_by'] ?? Auth::id(),
                         'subject' => $activityData['subject'] ?? 'Imported Activity',
                         'description' => $activityData['description'] ?? null,
                         'activity_type' => $activityData['activity_type'] ?? 'activity',
@@ -285,7 +331,11 @@ class ClientImportService
                         'task_group' => $activityData['task_group'] ?? null,
                         'task_status' => $activityData['task_status'] ?? 0,
                         'pin' => $activityData['pin'] ?? 0,
-                    ]);
+                    ];
+                    if (Schema::hasColumn('activities_logs', 'use_for') && array_key_exists('use_for', $activityData)) {
+                        $activityAttrs['use_for'] = $activityData['use_for'];
+                    }
+                    ActivitiesLog::create($activityAttrs);
                 }
             }
 

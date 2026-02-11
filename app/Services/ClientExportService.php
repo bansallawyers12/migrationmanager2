@@ -10,8 +10,10 @@ use App\Models\ClientPassportInformation;
 use App\Models\ClientTravelInformation;
 use App\Models\ClientCharacter;
 use App\Models\ClientVisaCountry;
+use App\Models\ClientTestScore;
 use App\Models\ActivitiesLog;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 
 class ClientExportService
@@ -37,14 +39,15 @@ class ClientExportService
                 'version' => '1.0',
                 'exported_at' => now()->toIso8601String(),
                 'exported_from' => 'migrationmanager2',
-                'client' => $this->getClientBasicData($client),
-                // 'addresses' => $this->getClientAddresses($clientId), // Skipped: bansalcrm2 doesn't have separate client_addresses table - only primary address in admins table
+                'client' => $this->getClientBasicData($client, $clientId),
+                'addresses' => $this->getClientAddresses($clientId),
                 'contacts' => $this->getClientContacts($clientId),
                 'emails' => $this->getClientEmails($clientId),
                 'passport' => $this->getClientPassport($clientId),
                 'travel' => $this->getClientTravel($clientId),
                 'visa_countries' => $this->getClientVisaCountries($clientId),
                 'character' => $this->getClientCharacter($clientId),
+                'test_scores' => $this->getClientTestScores($clientId),
                 'activities' => $this->getClientActivities($clientId),
             ];
 
@@ -59,41 +62,53 @@ class ClientExportService
     }
 
     /**
-     * Get basic client data (fields that exist in both systems)
+     * Get basic client data (unified format for migrationmanager2 and bansalcrm2)
+     * Exports all fields both systems may use; target import ignores unknown columns.
      */
-    private function getClientBasicData($client)
+    private function getClientBasicData($client, $clientId)
     {
-        return [
+        $passport = ClientPassportInformation::where('client_id', $clientId)->first();
+        $passportNumber = $passport ? ($passport->passport ?? null) : null;
+        if ($passportNumber === null && Schema::hasColumn('admins', 'passport_number')) {
+            $passportNumber = $client->passport_number ?? null;
+        }
+
+        $data = [
             // Basic Identity
+            'client_id' => $client->client_id ?? null,
             'first_name' => $client->first_name,
             'last_name' => $client->last_name,
             'email' => $client->email,
             'phone' => $client->phone,
             'country_code' => $client->country_code,
             'telephone' => $client->telephone ?? null,
-            
+
             // Personal Information
             'dob' => $client->dob,
             'age' => $client->age,
             'gender' => $client->gender,
-            'marital_status' => $client->marital_status,
-            
+            'marital_status' => $client->marital_status ?? null,
+
             // Address
             'address' => $client->address,
             'city' => $client->city,
             'state' => $client->state,
             'country' => $client->country,
             'zip' => $client->zip,
-            
-            // Passport
+
+            // Passport (unified: passport_number in client for bansalcrm2)
             'country_passport' => $client->country_passport ?? null,
-            
-            // Additional Contact (if exists in both systems)
-            
-            // Email and Contact Type (stored in admins table)
+            'passport_number' => $passportNumber,
+
+            // Visa (from client for bansalcrm2 compatibility; visa_countries has full detail)
+            'visa_type' => null,
+            'visa_opt' => null,
+            'visaExpiry' => null,
+
+            // Email and Contact Type
             'email_type' => $client->email_type ?? null,
             'contact_type' => $client->contact_type ?? null,
-            
+
             // Other
             'source' => $client->source,
             'type' => $client->type,
@@ -101,6 +116,82 @@ class ClientExportService
             'profile_img' => $client->profile_img,
             'agent_id' => $client->agent_id ?? null,
         ];
+
+        // Visa summary from last visa (bansalcrm2 stores visa name in admins; migrationmanager2 uses Matter ID)
+        $lastVisa = ClientVisaCountry::with('matter')->where('client_id', $clientId)->orderBy('id', 'desc')->first();
+        if ($lastVisa) {
+            $matter = $lastVisa->matter;
+            $data['visa_type'] = $matter ? ($matter->nick_name ?? $matter->title) : (string) $lastVisa->visa_type;
+            $data['visa_opt'] = $lastVisa->visa_description ?? null;
+            $expiry = $lastVisa->visa_expiry_date;
+            if ($expiry instanceof \DateTimeInterface) {
+                $data['visaExpiry'] = $expiry->format('Y-m-d');
+            } elseif (is_string($expiry) && $expiry !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $expiry)) {
+                $data['visaExpiry'] = $expiry;
+            } elseif ($expiry) {
+                try {
+                    $data['visaExpiry'] = Carbon::parse($expiry)->format('Y-m-d');
+                } catch (\Exception $e) {
+                    $data['visaExpiry'] = null;
+                }
+            }
+        }
+
+        // Schema-checked fields (bansalcrm2 may have; migrationmanager2 may have dropped)
+        $optionalFields = [
+            'att_email', 'att_phone', 'att_country_code',
+            'nomi_occupation', 'skill_assessment', 'high_quali_aus', 'high_quali_overseas',
+            'relevant_work_exp_aus', 'relevant_work_exp_over',
+            'naati_py', 'total_points', 'office_id', 'verified', 'show_dashboard_per',
+            'service', 'assignee', 'lead_quality', 'comments_note', 'married_partner',
+            'tagname', 'related_files',
+        ];
+        foreach ($optionalFields as $field) {
+            if (Schema::hasColumn('admins', $field)) {
+                $data[$field] = $client->{$field} ?? null;
+            } else {
+                $data[$field] = null;
+            }
+        }
+
+        // migrationmanager2-specific (bansalcrm2 import ignores)
+        if (Schema::hasColumn('admins', 'naati_test')) {
+            $data['naati_test'] = $client->naati_test ?? null;
+        }
+        if (Schema::hasColumn('admins', 'naati_date')) {
+            $data['naati_date'] = $client->naati_date ? ($client->naati_date instanceof \DateTimeInterface ? $client->naati_date->format('Y-m-d') : $client->naati_date) : null;
+        }
+        if (Schema::hasColumn('admins', 'nati_language')) {
+            $data['nati_language'] = $client->nati_language ?? null;
+        }
+        if (Schema::hasColumn('admins', 'py_test')) {
+            $data['py_test'] = $client->py_test ?? null;
+        }
+        if (Schema::hasColumn('admins', 'py_date')) {
+            $data['py_date'] = $client->py_date ? ($client->py_date instanceof \DateTimeInterface ? $client->py_date->format('Y-m-d') : $client->py_date) : null;
+        }
+        if (Schema::hasColumn('admins', 'py_field')) {
+            $data['py_field'] = $client->py_field ?? null;
+        }
+        if (Schema::hasColumn('admins', 'regional_points')) {
+            $data['regional_points'] = $client->regional_points ?? null;
+        }
+
+        // Verification metadata (migrationmanager2)
+        if (Schema::hasColumn('admins', 'dob_verified_date')) {
+            $data['dob_verified_date'] = $client->dob_verified_date ? ($client->dob_verified_date instanceof \DateTimeInterface ? $client->dob_verified_date->toIso8601String() : $client->dob_verified_date) : null;
+        }
+        if (Schema::hasColumn('admins', 'dob_verify_document')) {
+            $data['dob_verify_document'] = $client->dob_verify_document ?? null;
+        }
+        if (Schema::hasColumn('admins', 'phone_verified_date')) {
+            $data['phone_verified_date'] = $client->phone_verified_date ? ($client->phone_verified_date instanceof \DateTimeInterface ? $client->phone_verified_date->toIso8601String() : $client->phone_verified_date) : null;
+        }
+        if (Schema::hasColumn('admins', 'visa_expiry_verified_at')) {
+            $data['visa_expiry_verified_at'] = $client->visa_expiry_verified_at ? ($client->visa_expiry_verified_at instanceof \DateTimeInterface ? $client->visa_expiry_verified_at->toIso8601String() : $client->visa_expiry_verified_at) : null;
+        }
+
+        return $data;
     }
 
     /**
@@ -267,24 +358,67 @@ class ClientExportService
     }
 
     /**
-     * Get client activities (if structure matches)
+     * Get client test scores (unified format for migrationmanager2 and bansalcrm2)
+     * Both use test_type, listening, reading, writing, speaking, overall_score, test_date
+     */
+    private function getClientTestScores($clientId)
+    {
+        return ClientTestScore::where('client_id', $clientId)
+            ->orderBy('updated_at', 'desc')
+            ->get()
+            ->map(function ($test) {
+                $testDate = $test->test_date;
+                if ($testDate instanceof \DateTimeInterface) {
+                    $testDate = $testDate->format('Y-m-d');
+                } elseif (is_string($testDate) && $testDate !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $testDate)) {
+                    try {
+                        $testDate = Carbon::parse($testDate)->format('Y-m-d');
+                    } catch (\Exception $e) {
+                        $testDate = $test->test_date;
+                    }
+                }
+                return [
+                    'test_type' => $test->test_type ?? null,
+                    'listening' => $test->listening ?? null,
+                    'reading' => $test->reading ?? null,
+                    'writing' => $test->writing ?? null,
+                    'speaking' => $test->speaking ?? null,
+                    'overall_score' => $test->overall_score ?? null,
+                    'test_date' => $testDate ?: null,
+                ];
+            })
+            ->toArray();
+    }
+
+    /**
+     * Get client activities (unified format - both systems use subject, description, task_status)
      */
     private function getClientActivities($clientId)
     {
         return ActivitiesLog::where('client_id', $clientId)
             ->orderBy('created_at', 'desc')
-            ->limit(100) // Limit to recent 100 activities
+            ->limit(100)
             ->get()
             ->map(function ($activity) {
-                return [
+                $arr = [
                     'subject' => $activity->subject,
                     'description' => $activity->description,
                     'activity_type' => $activity->activity_type,
                     'followup_date' => $activity->followup_date,
                     'task_group' => $activity->task_group,
-                    'task_status' => $activity->task_status,
+                    'task_status' => $activity->task_status ?? 0,
                     'created_at' => $activity->created_at,
                 ];
+                if (Schema::hasColumn('activities_logs', 'use_for')) {
+                    $arr['use_for'] = $activity->use_for ?? null;
+                }
+                if (Schema::hasColumn('activities_logs', 'pin')) {
+                    $arr['pin'] = $activity->pin ?? 0;
+                }
+                if (Schema::hasColumn('activities_logs', 'created_by')) {
+                    $arr['created_by'] = $activity->created_by ?? null;
+                }
+                return $arr;
             })
             ->toArray();
     }
