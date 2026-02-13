@@ -49,6 +49,24 @@ Route::get('/search-occupation', [ClientPortalCommonListingController::class, 's
 // Appointment Variable Lists API (public route)
 Route::get('/appointment-variable-lists', [ClientPortalAppointmentController::class, 'getAppointmentVariableLists']);
 
+// Blog routes (public)
+Route::get('/blogs/list', [OthersController::class, 'getBlogList']);
+Route::get('/blogs/detail/{id}', [OthersController::class, 'getBlogDetail']);
+
+// PR Point Calculator routes (public)
+Route::get('/pr-point-calc-lists', [OthersController::class, 'getPrPointCalcLists']);
+Route::post('/pr-point-calc-result', [OthersController::class, 'calculatePrPointsResult']);
+
+// Student Calculator routes (public)
+Route::get('/student-calc-lists', [OthersController::class, 'getStudentCalcLists']);
+Route::post('/student-calc-result', [OthersController::class, 'calculateStudentFinancialRequirements']);
+
+// Occupation Finder (public)
+Route::get('/occupation-finder', [OthersController::class, 'searchOccupation']);
+
+// Postcode Checker routes (public)
+Route::get('/postcode-search', [OthersController::class, 'searchPostcode']);
+Route::get('/postcode-result', [OthersController::class, 'getPostcodeResult']);
 
 // Protected routes (authentication required)
 Route::middleware('auth:sanctum')->group(function () {
@@ -200,25 +218,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/fcm/unregister-token', [FCMController::class, 'unregisterToken']);
     Route::post('/fcm/test', [FCMController::class, 'testNotification']);
     Route::post('/fcm/send-message', [FCMController::class, 'sendMessage']);
-    
-    // Blog routes
-    Route::get('/blogs/list', [OthersController::class, 'getBlogList']);
-    Route::get('/blogs/detail/{id}', [OthersController::class, 'getBlogDetail']);
-    
-    // PR Point Calculator routes
-    Route::get('/pr-point-calc-lists', [OthersController::class, 'getPrPointCalcLists']);
-    Route::post('/pr-point-calc-result', [OthersController::class, 'calculatePrPointsResult']);
-    
-    // Student Calculator routes
-    Route::get('/student-calc-lists', [OthersController::class, 'getStudentCalcLists']);
-    Route::post('/student-calc-result', [OthersController::class, 'calculateStudentFinancialRequirements']);
-    
-    // Occupation Finder route
-    Route::get('/occupation-finder', [OthersController::class, 'searchOccupation']);
-    
-    // Postcode Checker routes
-    Route::get('/postcode-search', [OthersController::class, 'searchPostcode']);
-    Route::get('/postcode-result', [OthersController::class, 'getPostcodeResult']);
     
     // Appointment routes (specific paths before /appointments/{id} to avoid 405 on POST)
     Route::get('/appointments', [ClientPortalAppointmentController::class, 'getAppointmentList']);

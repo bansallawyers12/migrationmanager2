@@ -6993,12 +6993,6 @@
 				"method": "GET",
 				"header": [
 					{
-						"key": "Authorization",
-						"value": "Bearer {{auth_token}}",
-						"type": "text",
-						"description": "Use token from login response"
-					},
-					{
 						"key": "Accept",
 						"value": "application/json"
 					}
@@ -7033,7 +7027,7 @@
 						}
 					]
 				},
-				"description": "Get a paginated list of blogs from the external Bansal API.\n\n**Query Parameters:**\n- `page` (optional): Page number for pagination (default: 1)\n- `q` (optional): Search query - search in blog title and content\n- `featured` (optional): Filter by featured posts - set to 1 for featured only\n\n**Response:**\n- `200`: Blog list retrieved successfully\n- `401`: Unauthorized\n- `500`: API configuration error or external API failure\n\n**Note:** This endpoint proxies requests to `https://www.bansalimmigration.com.au/api/crm/blogs/list`"
+				"description": "Get a paginated list of blogs from the external Bansal API.\n\n**Auth:** Public endpoint - no authentication required.\n\n**Query Parameters:**\n- `page` (optional): Page number for pagination (default: 1)\n- `q` (optional): Search query - search in blog title and content\n- `featured` (optional): Filter by featured posts - set to 1 for featured only\n\n**Response:**\n- `200`: Blog list retrieved successfully\n- `500`: API configuration error or external API failure\n\n**Note:** This endpoint proxies requests to `https://www.bansalimmigration.com.au/api/crm/blogs/list`"
 			},
 			"response": [
 				{
@@ -7041,10 +7035,6 @@
 					"originalRequest": {
 						"method": "GET",
 						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}"
-							},
 							{
 								"key": "Accept",
 								"value": "application/json"
@@ -7087,12 +7077,6 @@
 				"method": "GET",
 				"header": [
 					{
-						"key": "Authorization",
-						"value": "Bearer {{auth_token}}",
-						"type": "text",
-						"description": "Use token from login response"
-					},
-					{
 						"key": "Accept",
 						"value": "application/json"
 					}
@@ -7108,7 +7092,7 @@
 						"1"
 					]
 				},
-				"description": "Get detailed information about a specific blog by ID from the external Bansal API.\n\n**Path Parameters:**\n- `id` (required): Blog ID (integer)\n\n**Response:**\n- `200`: Blog detail retrieved successfully\n- `400`: Invalid blog ID\n- `401`: Unauthorized\n- `404`: Blog not found\n- `500`: API configuration error or external API failure\n\n**Note:** This endpoint proxies requests to `https://www.bansalimmigration.com.au/api/crm/blogs/detail/{id}`"
+				"description": "Get detailed information about a specific blog by ID from the external Bansal API.\n\n**Auth:** Public endpoint - no authentication required.\n\n**Path Parameters:**\n- `id` (required): Blog ID (integer)\n\n**Response:**\n- `200`: Blog detail retrieved successfully\n- `400`: Invalid blog ID\n- `404`: Blog not found\n- `500`: API configuration error or external API failure\n\n**Note:** This endpoint proxies requests to `https://www.bansalimmigration.com.au/api/crm/blogs/detail/{id}`"
 			},
 			"response": [
 				{
@@ -7116,10 +7100,6 @@
 					"originalRequest": {
 						"method": "GET",
 						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}"
-							},
 							{
 								"key": "Accept",
 								"value": "application/json"
@@ -7154,10 +7134,6 @@
 					"originalRequest": {
 						"method": "GET",
 						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}"
-							},
 							{
 								"key": "Accept",
 								"value": "application/json"
@@ -7195,12 +7171,6 @@
 				"method": "GET",
 				"header": [
 					{
-						"key": "Authorization",
-						"value": "Bearer {{auth_token}}",
-						"type": "text",
-						"description": "Use token from login response"
-					},
-					{
 						"key": "Accept",
 						"value": "application/json"
 					}
@@ -7214,7 +7184,7 @@
 						"pr-point-calc-lists"
 					]
 				},
-				"description": "Get PR Point Calculator lists from the external Bansal API.\n\n**Response:**\n- `200`: PR Point Calculator lists retrieved successfully\n- `401`: Unauthorized\n- `500`: API configuration error or external API failure\n\n**Note:** This endpoint proxies requests to `https://www.bansalimmigration.com.au/api/crm/pr-point-calc-lists`"
+				"description": "Get PR Point Calculator lists from the external Bansal API.\n\n**Auth:** Public endpoint - no authentication required.\n\n**Response:**\n- `200`: PR Point Calculator lists retrieved successfully\n- `500`: API configuration error or external API failure\n\n**Note:** This endpoint proxies requests to `https://www.bansalimmigration.com.au/api/crm/pr-point-calc-lists`"
 			},
 			"response": [
 				{
@@ -7222,10 +7192,6 @@
 					"originalRequest": {
 						"method": "GET",
 						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}"
-							},
 							{
 								"key": "Accept",
 								"value": "application/json"
@@ -7261,12 +7227,6 @@
 				"method": "POST",
 				"header": [
 					{
-						"key": "Authorization",
-						"value": "Bearer {{auth_token}}",
-						"type": "text",
-						"description": "Use token from login response"
-					},
-					{
 						"key": "Content-Type",
 						"value": "application/json"
 					},
@@ -7293,7 +7253,7 @@
 						"pr-point-calc-result"
 					]
 				},
-				"description": "Calculate PR Points Result based on provided criteria from the external Bansal API.\n\n**Request Body:**\n- `age` (required): Age in years (integer)\n- `english_language_proficiency` (required): English language proficiency points (integer)\n- `educational_qualifications` (required): Educational qualifications points (integer)\n- `skilled_employment_overseas` (required): Skilled employment overseas points (integer)\n- `skilled_employment_australia` (required): Skilled employment in Australia points (integer)\n- `additional_points` (optional): Array of additional points (array of integers)\n- `partner_spouse_status` (required): Partner/spouse status points (integer)\n\n**Response:**\n- `200`: PR Points calculated successfully\n- `401`: Unauthorized\n- `500`: API configuration error or external API failure\n\n**Note:** This endpoint proxies requests to `https://www.bansalimmigration.com.au/api/crm/pr-point-calc-result`"
+				"description": "Calculate PR Points Result based on provided criteria from the external Bansal API.\n\n**Auth:** Public endpoint - no authentication required.\n\n**Request Body:**\n- `age` (required): Age in years (integer)\n- `english_language_proficiency` (required): English language proficiency points (integer)\n- `educational_qualifications` (required): Educational qualifications points (integer)\n- `skilled_employment_overseas` (required): Skilled employment overseas points (integer)\n- `skilled_employment_australia` (required): Skilled employment in Australia points (integer)\n- `additional_points` (optional): Array of additional points (array of integers)\n- `partner_spouse_status` (required): Partner/spouse status points (integer)\n\n**Response:**\n- `200`: PR Points calculated successfully\n- `500`: API configuration error or external API failure\n\n**Note:** This endpoint proxies requests to `https://www.bansalimmigration.com.au/api/crm/pr-point-calc-result`"
 			},
 			"response": [
 				{
@@ -7301,10 +7261,6 @@
 					"originalRequest": {
 						"method": "POST",
 						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}"
-							},
 							{
 								"key": "Content-Type",
 								"value": "application/json"
@@ -7353,12 +7309,6 @@
 				"method": "GET",
 				"header": [
 					{
-						"key": "Authorization",
-						"value": "Bearer {{auth_token}}",
-						"type": "text",
-						"description": "Use token from login response"
-					},
-					{
 						"key": "Accept",
 						"value": "application/json"
 					}
@@ -7372,7 +7322,7 @@
 						"student-calc-lists"
 					]
 				},
-				"description": "Get Student Calculator lists from the external Bansal API.\n\n**Response:**\n- `200`: Student Calculator lists retrieved successfully\n- `401`: Unauthorized\n- `500`: API configuration error or external API failure\n\n**Note:** This endpoint proxies requests to `https://www.bansalimmigration.com.au/api/crm/student-calc-lists`"
+				"description": "Get Student Calculator lists from the external Bansal API.\n\n**Auth:** Public endpoint - no authentication required.\n\n**Response:**\n- `200`: Student Calculator lists retrieved successfully\n- `500`: API configuration error or external API failure\n\n**Note:** This endpoint proxies requests to `https://www.bansalimmigration.com.au/api/crm/student-calc-lists`"
 			},
 			"response": [
 				{
@@ -7380,10 +7330,6 @@
 					"originalRequest": {
 						"method": "GET",
 						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}"
-							},
 							{
 								"key": "Accept",
 								"value": "application/json"
@@ -7419,12 +7365,6 @@
 				"method": "POST",
 				"header": [
 					{
-						"key": "Authorization",
-						"value": "Bearer {{auth_token}}",
-						"type": "text",
-						"description": "Use token from login response"
-					},
-					{
 						"key": "Content-Type",
 						"value": "application/json"
 					},
@@ -7451,7 +7391,7 @@
 						"student-calc-result"
 					]
 				},
-				"description": "Calculate Student Financial Requirements based on provided criteria from the external Bansal API.\n\n**Request Body:**\n- `course_duration` (required): Course duration in years (integer)\n- `annual_tuition_fee` (required): Annual tuition fee (integer)\n- `partner_spouse` (required): Number of partner/spouse (integer)\n- `dependent_children` (required): Number of dependent children (integer)\n- `school_age_children` (required): Number of school age children (integer)\n- `additional_accommodation` (required): Additional accommodation cost (integer)\n- `oshc_type` (required): OSHC (Overseas Student Health Cover) type cost (integer)\n- `travel_expenses` (required): Travel expenses (integer)\n\n**Response:**\n- `200`: Student Financial Requirements calculated successfully\n- `401`: Unauthorized\n- `500`: API configuration error or external API failure\n\n**Note:** This endpoint proxies requests to `https://www.bansalimmigration.com.au/api/crm/student-calc-result`"
+				"description": "Calculate Student Financial Requirements based on provided criteria from the external Bansal API.\n\n**Auth:** Public endpoint - no authentication required.\n\n**Request Body:**\n- `course_duration` (required): Course duration in years (integer)\n- `annual_tuition_fee` (required): Annual tuition fee (integer)\n- `partner_spouse` (required): Number of partner/spouse (integer)\n- `dependent_children` (required): Number of dependent children (integer)\n- `school_age_children` (required): Number of school age children (integer)\n- `additional_accommodation` (required): Additional accommodation cost (integer)\n- `oshc_type` (required): OSHC (Overseas Student Health Cover) type cost (integer)\n- `travel_expenses` (required): Travel expenses (integer)\n\n**Response:**\n- `200`: Student Financial Requirements calculated successfully\n- `500`: API configuration error or external API failure\n\n**Note:** This endpoint proxies requests to `https://www.bansalimmigration.com.au/api/crm/student-calc-result`"
 			},
 			"response": [
 				{
@@ -7459,10 +7399,6 @@
 					"originalRequest": {
 						"method": "POST",
 						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}"
-							},
 							{
 								"key": "Content-Type",
 								"value": "application/json"
@@ -7511,12 +7447,6 @@
 				"method": "GET",
 				"header": [
 					{
-						"key": "Authorization",
-						"value": "Bearer {{auth_token}}",
-						"type": "text",
-						"description": "Use token from login response"
-					},
-					{
 						"key": "Accept",
 						"value": "application/json"
 					}
@@ -7542,7 +7472,7 @@
 						}
 					]
 				},
-				"description": "Search for occupations by name or ANZSCO code from the external Bansal API.\n\n**Query Parameters:**\n- `q` (required): Search query - occupation name or ANZSCO code\n- `limit` (optional): Number of results (default: 20)\n\n**Response includes:**\n- `anzsco_code`: ANZSCO occupation code\n- `occupation_title`: Title of the occupation\n- `skill_level`: Skill level (1-5)\n- `assessing_authority`: Skills assessing authority (e.g., ACS, VETASSESS)\n- `assessment_validity_years`: Validity period of skill assessment\n- `occupation_lists`: Array of occupation lists (e.g., MLTSSL, CSOL)\n- `alternate_titles`: Alternative job titles\n- `additional_info`: Additional information about the occupation\n\n**Response:**\n- `200`: Occupations retrieved successfully\n- `400`: Missing required query parameter\n- `401`: Unauthorized\n- `500`: API configuration error or external API failure\n\n**Note:** This endpoint proxies requests to `https://www.bansalimmigration.com.au/api/crm/occupation-finder`"
+				"description": "Search for occupations by name or ANZSCO code from the external Bansal API.\n\n**Auth:** Public endpoint - no authentication required.\n\n**Query Parameters:**\n- `q` (required): Search query - occupation name or ANZSCO code\n- `limit` (optional): Number of results (default: 20)\n\n**Response includes:**\n- `anzsco_code`: ANZSCO occupation code\n- `occupation_title`: Title of the occupation\n- `skill_level`: Skill level (1-5)\n- `assessing_authority`: Skills assessing authority (e.g., ACS, VETASSESS)\n- `assessment_validity_years`: Validity period of skill assessment\n- `occupation_lists`: Array of occupation lists (e.g., MLTSSL, CSOL)\n- `alternate_titles`: Alternative job titles\n- `additional_info`: Additional information about the occupation\n\n**Response:**\n- `200`: Occupations retrieved successfully\n- `400`: Missing required query parameter\n- `500`: API configuration error or external API failure\n\n**Note:** This endpoint proxies requests to `https://www.bansalimmigration.com.au/api/crm/occupation-finder`"
 			},
 			"response": [
 				{
@@ -7550,10 +7480,6 @@
 					"originalRequest": {
 						"method": "GET",
 						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}"
-							},
 							{
 								"key": "Accept",
 								"value": "application/json"
@@ -7599,12 +7525,6 @@
 				"method": "GET",
 				"header": [
 					{
-						"key": "Authorization",
-						"value": "Bearer {{auth_token}}",
-						"type": "text",
-						"description": "Use token from login response"
-					},
-					{
 						"key": "Accept",
 						"value": "application/json"
 					}
@@ -7631,7 +7551,7 @@
 						}
 					]
 				},
-				"description": "Search for matching postcodes from the external Bansal API.\n\n**Query Parameters:**\n- `q` (required): Search query - postcode number (e.g., \"3000\")\n- `limit` (optional): Number of results (default: 20)\n\n**Response:**\n- `200`: Matching postcodes retrieved successfully\n- `400`: Missing required query parameter\n- `401`: Unauthorized\n- `500`: API configuration error or external API failure\n\n**Note:** This endpoint proxies requests to `https://www.bansalimmigration.com.au/api/crm/postcode-search`"
+				"description": "Search for matching postcodes from the external Bansal API.\n\n**Auth:** Public endpoint - no authentication required.\n\n**Query Parameters:**\n- `q` (required): Search query - postcode number (e.g., \"3000\")\n- `limit` (optional): Number of results (default: 20)\n\n**Response:**\n- `200`: Matching postcodes retrieved successfully\n- `400`: Missing required query parameter\n- `500`: API configuration error or external API failure\n\n**Note:** This endpoint proxies requests to `https://www.bansalimmigration.com.au/api/crm/postcode-search`"
 			},
 			"response": [
 				{
@@ -7639,10 +7559,6 @@
 					"originalRequest": {
 						"method": "GET",
 						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}"
-							},
 							{
 								"key": "Accept",
 								"value": "application/json"
@@ -7684,12 +7600,6 @@
 				"method": "GET",
 				"header": [
 					{
-						"key": "Authorization",
-						"value": "Bearer {{auth_token}}",
-						"type": "text",
-						"description": "Use token from login response"
-					},
-					{
 						"key": "Accept",
 						"value": "application/json"
 					}
@@ -7716,7 +7626,7 @@
 						}
 					]
 				},
-				"description": "Get detailed information for a specific postcode from the external Bansal API.\n\n**Query Parameters:**\n- `postcode` (required): Postcode number (integer e.g., 3002)\n- `suburb` (optional): Suburb name - If provided, filters result for specific suburb (e.g., \"EAST MELBOURNE\")\n\n**Response:**\n- `200`: Postcode result retrieved successfully\n- `400`: Missing required postcode parameter\n- `401`: Unauthorized\n- `404`: Postcode not found\n- `500`: API configuration error or external API failure\n\n**Note:** This endpoint proxies requests to `https://www.bansalimmigration.com.au/api/crm/postcode-result`"
+				"description": "Get detailed information for a specific postcode from the external Bansal API.\n\n**Auth:** Public endpoint - no authentication required.\n\n**Query Parameters:**\n- `postcode` (required): Postcode number (integer e.g., 3002)\n- `suburb` (optional): Suburb name - If provided, filters result for specific suburb (e.g., \"EAST MELBOURNE\")\n\n**Response:**\n- `200`: Postcode result retrieved successfully\n- `400`: Missing required postcode parameter\n- `404`: Postcode not found\n- `500`: API configuration error or external API failure\n\n**Note:** This endpoint proxies requests to `https://www.bansalimmigration.com.au/api/crm/postcode-result`"
 			},
 			"response": [
 				{
@@ -7724,10 +7634,6 @@
 					"originalRequest": {
 						"method": "GET",
 						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}"
-							},
 							{
 								"key": "Accept",
 								"value": "application/json"
