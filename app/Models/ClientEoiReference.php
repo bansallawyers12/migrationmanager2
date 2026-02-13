@@ -1,6 +1,7 @@
 <?php
 namespace App\Models;
 
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -59,20 +60,28 @@ class ClientEoiReference extends Model
     protected $appends = ['formatted_subclasses', 'formatted_states'];
 
     /**
-     * Encrypt password when setting
+     * Store password when setting (plain text, no encryption)
      */
     public function setEOIPasswordAttribute($value)
     {
-        $this->attributes['EOI_password'] = $value ? encrypt($value) : null;
+        $this->attributes['EOI_password'] = $value ?: null;
     }
 
     /**
-     * Decrypt password for authorized viewing
-     * Use this method explicitly when password needs to be revealed
+     * Get password for authorized viewing.
+     * Returns plain value. For backward compatibility with previously encrypted records,
+     * attempts decrypt first; if that fails, returns the value as-is.
      */
     public function getEOIPasswordDecrypted(): ?string
     {
-        return $this->EOI_password ? decrypt($this->EOI_password) : null;
+        if (empty($this->EOI_password)) {
+            return null;
+        }
+        try {
+            return decrypt($this->EOI_password);
+        } catch (DecryptException) {
+            return $this->EOI_password;
+        }
     }
 
     /**

@@ -1004,7 +1004,7 @@ class ClientEoiRoiController extends Controller
             'eoi_invitation_date' => 'nullable|string',
             'eoi_nomination_date' => 'nullable|string',
             'eoi_roi' => 'nullable|string|max:100',
-            'eoi_password' => 'nullable|string|max:255',
+            'eoi_password' => 'nullable|string|max:50',
             'eoi_status' => ['nullable', 'string', Rule::in(['draft', 'submitted', 'invited', 'nominated', 'rejected', 'withdrawn'])],
         ], [
             'eoi_subclasses.*.in' => 'Each subclass must be 189, 190, or 491',
