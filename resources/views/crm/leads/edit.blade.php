@@ -1349,7 +1349,7 @@
                     <section class="form-section">
                         <div class="section-header">
                             <h3><i class="fas fa-file-alt"></i> EOI References</h3>
-                            <div class="section-actions">
+                            <div class="section-actions" style="display: none;">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('eoiInfo')">
                                     <i class="fas fa-pen"></i>
                                 </button>
@@ -1394,10 +1394,6 @@
                                                     <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">ROI:</span>
                                                     <span class="summary-value" style="color: #212529; font-weight: 500;">{{ $eoi->EOI_ROI ?: 'Not set' }}</span>
                                                 </div>
-                                                <div class="summary-item-inline">
-                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">PASSWORD:</span>
-                                                    <span class="summary-value" style="color: #212529; font-weight: 500;">{{ $eoi->EOI_password ? '••••••••' : 'Not set' }}</span>
-                                                </div>
                                             </div>
                                         </div>
                                     @endforeach
@@ -1420,7 +1416,7 @@
                                 @endforeach
                             </div>
 
-                            <button type="button" class="add-item-btn" onclick="addEoiReference()"><i class="fas fa-plus-circle"></i> Add EOI Reference</button>
+                            <button type="button" class="add-item-btn" onclick="addEoiReference()" style="display: none;"><i class="fas fa-plus-circle"></i> Add EOI Reference</button>
                             <div class="edit-actions">
                                 <button type="button" class="btn btn-primary" onclick="saveEoiInfo()">Save</button>
                                 <button type="button" class="btn btn-secondary" onclick="cancelEdit('eoiInfo')">Cancel</button>

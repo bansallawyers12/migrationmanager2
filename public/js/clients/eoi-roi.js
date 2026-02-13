@@ -322,6 +322,7 @@
         $('#eoi-nomination-date').val(data.nomination_date);
         $('#eoi-roi').val(data.roi);
         $('#eoi-status').val(data.status);
+        $('#eoi-password').val(data.password || '');
 
         // Set subclasses
         $('input[name="eoi_subclasses[]"]').prop('checked', false);

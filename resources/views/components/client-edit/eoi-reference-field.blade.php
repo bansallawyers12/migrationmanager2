@@ -65,23 +65,5 @@
                    value="{{ $eoi->EOI_ROI ?? '' }}" 
                    placeholder="ROI">
         </div>
-        
-        <div class="form-group">
-            <label>Password</label>
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <input type="password" 
-                       name="EOI_password[{{ $index }}]" 
-                       value="{{ $eoi->EOI_password ?? '' }}" 
-                       placeholder="Password" 
-                       class="eoi-password-input" 
-                       data-index="{{ $index }}">
-                <button type="button" 
-                        class="btn btn-sm btn-outline-secondary toggle-password" 
-                        data-index="{{ $index }}" 
-                        title="Show/Hide Password">
-                    <i class="fas fa-eye"></i>
-                </button>
-            </div>
-        </div>
     </div>
 </div>

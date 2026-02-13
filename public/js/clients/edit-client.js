@@ -667,15 +667,6 @@ function addEoiReference() {
                     <label>ROI</label>
                     <input type="text" name="EOI_ROI[${index}]" placeholder="ROI">
                 </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <input type="password" name="EOI_password[${index}]" placeholder="Password" class="eoi-password-input" data-index="${index}">
-                        <button type="button" class="btn btn-sm btn-outline-secondary toggle-password" data-index="${index}" title="Show/Hide Password">
-                            <i class="fas fa-eye-slash"></i>
-                        </button>
-                    </div>
-                </div>
             </div>
         </div>
     `);
@@ -2906,9 +2897,6 @@ window.saveQualificationsInfo = function() {
         const startDate = section.querySelector('input[name*="start_date"]')?.value;
         const finishDate = section.querySelector('input[name*="finish_date"]')?.value;
         const relevantQual = section.querySelector('input[name*="relevant_qualification"]')?.checked;
-        const specialistEducation = section.querySelector('input[name*="specialist_education"]')?.checked;
-        const stemQualification = section.querySelector('input[name*="stem_qualification"]')?.checked;
-        const regionalStudy = section.querySelector('input[name*="regional_study"]')?.checked;
         
         // Append data in array format that controller expects
         if (qualId) formData.append(`qualification_id[${index}]`, qualId);
@@ -2923,9 +2911,6 @@ window.saveQualificationsInfo = function() {
         if (relevantQual) {
             formData.append(`relevant_qualification[${index}]`, '1');
         }
-        formData.append(`specialist_education[${index}]`, specialistEducation ? '1' : '0');
-        formData.append(`stem_qualification[${index}]`, stemQualification ? '1' : '0');
-        formData.append(`regional_study[${index}]`, regionalStudy ? '1' : '0');
     });
     
     saveSectionData('qualificationsInfo', formData, function() {
@@ -3899,9 +3884,8 @@ window.saveEoiInfo = function() {
         const state = section.querySelector('input[name*="EOI_state"]').value;
         const submissionDate = section.querySelector('input[name*="EOI_submission_date"]').value;
         const roi = section.querySelector('input[name*="EOI_ROI"]').value;
-        const password = section.querySelector('input[name*="EOI_password"]').value;
         
-        if (eoiNumber || subclass || occupation || point || state || submissionDate || roi || password) {
+        if (eoiNumber || subclass || occupation || point || state || submissionDate || roi) {
             eois.push({
                 eoi_id: eoiId || '',
                 eoi_number: eoiNumber,
@@ -3910,8 +3894,7 @@ window.saveEoiInfo = function() {
                 point: point,
                 state: state,
                 submission_date: submissionDate,
-                roi: roi,
-                password: password
+                roi: roi
             });
         }
     });
@@ -3956,10 +3939,6 @@ window.saveEoiInfo = function() {
                             <div class="summary-item-inline">
                                 <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">ROI:</span>
                                 <span class="summary-value" style="color: #212529; font-weight: 500;">${eoi.roi || 'Not set'}</span>
-                            </div>
-                            <div class="summary-item-inline">
-                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">PASSWORD:</span>
-                                <span class="summary-value" style="color: #212529; font-weight: 500;">${eoi.password ? '••••••••' : 'Not set'}</span>
                             </div>
                         </div>
                     </div>
@@ -4237,61 +4216,6 @@ $(document).ready(function() {
         $(dobInput).on('change', updateAge);
     }
 
-    // Password toggle functionality
-    $(document).on('click', '.toggle-password', function() {
-        const index = $(this).data('index');
-        const passwordInput = $(`.eoi-password-input[data-index="${index}"]`);
-        const icon = $(this).find('i');
-        
-        if (passwordInput.attr('type') === 'password') {
-            passwordInput.attr('type', 'text');
-            icon.removeClass('fa-eye').addClass('fa-eye-slash');
-        } else {
-            passwordInput.attr('type', 'password');
-            icon.removeClass('fa-eye-slash').addClass('fa-eye');
-        }
-    });
-
-    // Password change confirmation
-    $(document).on('focus', '.eoi-password-input', function() {
-        const currentValue = $(this).val();
-        const originalValue = $(this).data('original-value') || '';
-        
-        // Set original value if not set
-        if (!$(this).data('original-value-set')) {
-            $(this).data('original-value', currentValue);
-            $(this).data('original-value-set', true);
-        }
-        
-        // Reset confirmation flag if the current value matches the original
-        if (currentValue === originalValue) {
-            $(this).data('confirmation-shown', false);
-        }
-    });
-
-    // Password change confirmation - only trigger once when user starts typing
-    $(document).on('keydown', '.eoi-password-input', function(e) {
-        const currentValue = $(this).val();
-        const originalValue = $(this).data('original-value') || '';
-        const hasShownConfirmation = $(this).data('confirmation-shown') || false;
-        
-        // Only show confirmation if:
-        // 1. There was an original password value (not empty)
-        // 2. We haven't shown the confirmation yet for this session
-        // 3. User is about to type (not deleting)
-        if (originalValue !== '' && !hasShownConfirmation && e.key.length === 1) {
-            const confirmChange = confirm('Do you want to change the password?');
-            $(this).data('confirmation-shown', true);
-            
-            if (!confirmChange) {
-                e.preventDefault();
-                return false;
-            } else {
-                // If user confirms, allow typing to continue
-                $(this).data('original-value', ''); // Clear original value to prevent further confirmations
-            }
-        }
-    });
 
     // Update autocomplete to handle all family member types
     $(document).on('input', '.partner-details', function() {

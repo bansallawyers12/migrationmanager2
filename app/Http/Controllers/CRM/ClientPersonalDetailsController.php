@@ -4513,7 +4513,6 @@ class ClientPersonalDetailsController extends Controller
                         'EOI_state' => $eoiData['state'] ?? null,
                         'EOI_submission_date' => $formatted_submission_date,
                         'EOI_ROI' => $eoiData['roi'] ?? null,
-                        'EOI_password' => $eoiData['password'] ?? null,
                     ]);
                 }
             }

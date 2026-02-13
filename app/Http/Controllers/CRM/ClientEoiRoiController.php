@@ -1048,9 +1048,9 @@ class ClientEoiRoiController extends Controller
             'client_email' => $eoi->client?->email,
         ];
 
-        // Only include password if explicitly requested (never in list views)
+        // Only include decrypted password when editing a single record (never in list views)
         if ($includePassword && !empty($eoi->EOI_password)) {
-            $data['password_encrypted'] = true;
+            $data['password'] = $eoi->getEOIPasswordDecrypted();
         }
 
         return $data;

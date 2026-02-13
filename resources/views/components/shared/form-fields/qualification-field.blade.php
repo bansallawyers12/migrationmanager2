@@ -106,42 +106,6 @@
                 <span>Relevant Qualification for Migration</span>
             </label>
         </div>
-        
-        <div class="form-group">
-            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                <input type="checkbox" 
-                       name="specialist_education[{{ $index }}]" 
-                       value="1"
-                       {{ ($qualification->specialist_education ?? old("specialist_education.$index", 0)) == 1 ? 'checked' : '' }}
-                       style="width: auto; margin: 0;">
-                <span>Specialist Education (+10 pts)</span>
-            </label>
-            <small style="color: #6c757d;">STEM Masters/PhD by research in Australia</small>
-        </div>
-        
-        <div class="form-group">
-            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                <input type="checkbox" 
-                       name="stem_qualification[{{ $index }}]" 
-                       value="1"
-                       {{ ($qualification->stem_qualification ?? old("stem_qualification.$index", 0)) == 1 ? 'checked' : '' }}
-                       style="width: auto; margin: 0;">
-                <span>STEM Qualification</span>
-            </label>
-            <small style="color: #6c757d;">Science, Technology, Engineering, or Math</small>
-        </div>
-        
-        <div class="form-group">
-            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                <input type="checkbox" 
-                       name="regional_study[{{ $index }}]" 
-                       value="1"
-                       {{ ($qualification->regional_study ?? old("regional_study.$index", 0)) == 1 ? 'checked' : '' }}
-                       style="width: auto; margin: 0;">
-                <span>Regional Study (+5 pts)</span>
-            </label>
-            <small style="color: #6c757d;">Studied in regional Australia</small>
-        </div>
     </div>
 </div>
 
