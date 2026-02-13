@@ -3154,10 +3154,19 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (!messagesContainer) return;
         
+        // Duplicate check: skip if this message (by ID) is already displayed (prevents duplicate from optimistic update + Pusher)
+        const messageId = message.id;
+        if (messageId != null && messageId !== '' && messagesContainer.querySelector(`[data-message-id="${messageId}"]`)) {
+            return;
+        }
+        
         if (emptyDiv) emptyDiv.style.display = 'none';
         
         const messageDiv = document.createElement('div');
         messageDiv.className = `whatsapp-message ${isSent ? 'message-sent' : 'message-received'}`;
+        if (messageId != null && messageId !== '') {
+            messageDiv.setAttribute('data-message-id', messageId);
+        }
         if (!animate) {
             messageDiv.style.animation = 'none';
         }
