@@ -14,7 +14,7 @@ class ClientPortalNotificationController extends Controller
      * Notification types that are considered client-portal related (web or mobile).
      * Only these types are listed/visible in the Client Portal Notification API.
      */
-    private const CLIENT_PORTAL_NOTIFICATION_TYPES = ['message'];
+    private const CLIENT_PORTAL_NOTIFICATION_TYPES = ['message', 'stage_change', 'checklist'];
 
     /**
      * List all notifications for the authenticated client (client-portal related only).
