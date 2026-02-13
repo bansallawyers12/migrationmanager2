@@ -7,7 +7,7 @@
 .xdsoft_datetimepicker .xdsoft_prev:hover, .xdsoft_datetimepicker .xdsoft_next:hover { background: #0056b3; }
 
 /* Activity Feed Width Toggle Styles */
-.activity-feed.wide-mode { flex: 0 0 450px !important; width: 450px !important; min-width: 450px !important; }
+.activity-feed.wide-mode { flex: 0 0 50% !important; width: 50% !important; min-width: 450px !important; max-width: 700px !important; }
 
 /* Normal state - when compact-mode is NOT active */
 .main-content .content-grid { 
@@ -319,9 +319,10 @@
 
 /* Activity Feed Width Toggle Styles - Duplicate Section */
 .activity-feed.wide-mode {
-    flex: 0 0 450px !important;
-    width: 450px !important;
+    flex: 0 0 50% !important;
+    width: 50% !important;
     min-width: 450px !important;
+    max-width: 700px !important;
 }
 
 /* Normal state - when compact-mode is NOT active */
@@ -794,6 +795,46 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
         height: 44px;
         font-size: 16px;
     }
+}
+
+/* Activity Feed Extended Filter Bar (visible when checkbox ticked) */
+.activity-feed-filter-bar {
+    margin-bottom: 15px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+}
+
+.activity-feed-filter-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.activity-feed-filter-row:last-of-type {
+    margin-bottom: 0;
+}
+
+.activity-feed-filter-row .activity-feed-search {
+    flex: 1;
+    font-size: 13px;
+}
+
+.activity-feed-filter-row .activity-feed-date {
+    flex: 1;
+    font-size: 13px;
+    min-width: 0;
+}
+
+.activity-feed-filter-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.activity-feed-filter-actions .btn-sm {
+    font-size: 12px;
 }
 
 /* Activity Feed Filters */

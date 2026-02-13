@@ -7,6 +7,37 @@
         </label>
     </div>
     
+    <!-- Extended Filters (visible only when checkbox is ticked / wide-mode) -->
+    <div class="activity-feed-filter-bar" id="activity-feed-filter-bar" style="display: none;">
+        <div class="activity-feed-filter-row">
+            <input type="text" 
+                   class="form-control form-control-sm activity-feed-search" 
+                   id="activity-feed-search" 
+                   placeholder="Search activities..." 
+                   autocomplete="off">
+        </div>
+        <div class="activity-feed-filter-row">
+            <input type="text" 
+                   class="form-control form-control-sm activity-feed-date" 
+                   id="activity-feed-date-from" 
+                   placeholder="From" 
+                   autocomplete="off">
+            <input type="text" 
+                   class="form-control form-control-sm activity-feed-date" 
+                   id="activity-feed-date-to" 
+                   placeholder="To" 
+                   autocomplete="off">
+        </div>
+        <div class="activity-feed-filter-actions">
+            <button type="button" class="btn btn-sm btn-primary activity-feed-apply" id="activity-feed-apply">
+                <i class="fas fa-search"></i> Apply
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary activity-feed-reset" id="activity-feed-reset">
+                <i class="fas fa-redo"></i> Reset
+            </button>
+        </div>
+    </div>
+    
     <!-- Activity Type Filters -->
     <div class="activity-filters">
         <button class="activity-filter-btn active" data-filter="all">
@@ -90,6 +121,10 @@
                     'clientId' => $fetchedData->id
                 ])
             @endforeach
+            <li class="feed-item feed-item-no-results" style="display: none; text-align: center; padding: 20px; color: #6c757d;">
+                <i class="fas fa-filter" style="font-size: 1.5em; margin-bottom: 8px; opacity: 0.5;"></i>
+                <p class="mb-0 small">No activities match your filters</p>
+            </li>
         @else
             <li class="feed-item feed-item--empty" style="text-align: center; padding: 20px; color: #6c757d;">
                 <i class="fas fa-inbox" style="font-size: 2em; margin-bottom: 10px; opacity: 0.5;"></i>

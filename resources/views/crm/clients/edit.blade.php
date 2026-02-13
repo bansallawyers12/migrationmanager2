@@ -46,7 +46,7 @@
             <!-- Sidebar Navigation -->
             <div class="sidebar-navigation" id="sidebarNav">
                 <div class="nav-header">
-                    <h3><i class="fas fa-user-edit"></i> {{ $fetchedData->type == 'lead' ? 'Edit Lead' : ($fetchedData->type == 'client' ? 'Edit Client' : '') }} : {{ $fetchedData->first_name }} {{ $fetchedData->last_name }}</h3>
+                    <h3><i class="fas {{ $fetchedData->type == 'client' ? 'fa-id-card' : 'fa-user-edit' }}"></i> {{ $fetchedData->type == 'lead' ? 'Edit Lead' : ($fetchedData->type == 'client' ? 'Client Details Form' : '') }} : {{ $fetchedData->first_name }} {{ $fetchedData->last_name }}</h3>
                     <div class="client-id">
                         {{ $fetchedData->type == 'lead' ? 'Lead ID' : ($fetchedData->type == 'client' ? 'Client ID' : '') }} : {{ $fetchedData->client_id }}
                     </div>

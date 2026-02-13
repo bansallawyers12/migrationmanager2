@@ -12,24 +12,23 @@
     function init() {
         setupFilterButtons();
         setupWidthToggle();
+        setupExtendedFilters();
     }
 
     /**
      * Setup activity filter buttons
+     * Type filter works with extended filters (search, date) when they are active
      */
     function setupFilterButtons() {
         $('.activity-filter-btn').on('click', function() {
-            // Remove active class from all buttons
             $('.activity-filter-btn').removeClass('active');
-            
-            // Add active class to clicked button
             $(this).addClass('active');
-            
-            // Get filter type
-            var filterType = $(this).data('filter');
-            
-            // Show/hide activities based on filter
-            filterActivities(filterType);
+            // Use applyExtendedFilters so type + search + date are combined when filter bar is visible
+            if ($('#activity-feed-filter-bar').is(':visible')) {
+                applyExtendedFilters();
+            } else {
+                filterActivities($(this).data('filter'));
+            }
         });
     }
 
@@ -175,13 +174,17 @@
 
     /**
      * Setup width toggle checkbox
+     * When checked, shows extended filter bar (search, date range, apply/reset)
      */
     function setupWidthToggle() {
         $('#increase-activity-feed-width').on('change', function() {
             if ($(this).is(':checked')) {
                 $('.activity-feed').addClass('wide-mode');
                 $('.main-content').addClass('compact-mode');
+                $('#activity-feed-filter-bar').slideDown(200);
+                initActivityFeedDatepickers();
             } else {
+                $('#activity-feed-filter-bar').slideUp(200);
                 $('.activity-feed').removeClass('wide-mode');
                 $('.main-content').removeClass('compact-mode');
             }
@@ -189,13 +192,104 @@
             // Adjust Activity Feed height after layout change
             if (typeof adjustActivityFeedHeight === 'function') {
                 adjustActivityFeedHeight();
-                
-                // Force a small delay to ensure CSS transitions complete
                 setTimeout(function() {
                     adjustActivityFeedHeight();
                 }, 150);
             }
         });
+    }
+
+    /**
+     * Initialize Flatpickr on activity feed date inputs (when filter bar is visible)
+     */
+    function initActivityFeedDatepickers() {
+        if (typeof flatpickr === 'undefined') return;
+        var $from = $('#activity-feed-date-from');
+        var $to = $('#activity-feed-date-to');
+        if (!$from.length || !$to.length) return;
+        if ($from.data('flatpickr')) return; // Already initialized
+        flatpickr('#activity-feed-date-from', { dateFormat: 'Y-m-d', allowInput: true });
+        flatpickr('#activity-feed-date-to', { dateFormat: 'Y-m-d', allowInput: true });
+    }
+
+    /**
+     * Setup extended filters (search, date range, apply, reset)
+     * Only active when checkbox is ticked
+     */
+    function setupExtendedFilters() {
+        $('#activity-feed-apply').on('click', function() {
+            applyExtendedFilters();
+        });
+        $('#activity-feed-reset').on('click', function() {
+            $('#activity-feed-search').val('');
+            $('#activity-feed-date-from').val('');
+            $('#activity-feed-date-to').val('');
+            applyExtendedFilters();
+        });
+        $('#activity-feed-search').on('keypress', function(e) {
+            if (e.which === 13) { applyExtendedFilters(); }
+        });
+    }
+
+    /**
+     * Apply search and date filters, combined with current type filter
+     */
+    function applyExtendedFilters() {
+        var searchVal = ($('#activity-feed-search').val() || '').trim().toLowerCase();
+        var dateFrom = ($('#activity-feed-date-from').val() || '').trim();
+        var dateTo = ($('#activity-feed-date-to').val() || '').trim();
+        var activeType = $('.activity-filter-btn.active').data('filter') || 'all';
+
+        $('.feed-item.activity').each(function() {
+            var $item = $(this);
+            var typeMatch = matchesTypeFilter($item, activeType);
+            var searchMatch = !searchVal || $item.find('.feed-content').text().toLowerCase().indexOf(searchVal) >= 0;
+            var itemDate = $item.attr('data-created-at') || '';
+            var dateMatch = true;
+            if (itemDate) {
+                if (dateFrom && itemDate < dateFrom) dateMatch = false;
+                if (dateTo && itemDate > dateTo) dateMatch = false;
+            }
+            $item.toggle(typeMatch && searchMatch && dateMatch);
+        });
+
+        updateEmptyState();
+    }
+
+    /**
+     * Check if item matches the current type filter
+     */
+    function matchesTypeFilter($item, filterType) {
+        if (filterType === 'all') return true;
+        if (filterType === 'activity') {
+            return $item.hasClass('activity-type-activity') || $item.hasClass('activity-type-sms');
+        }
+        if (filterType === 'note') {
+            return !$item.hasClass('activity-type-sms') && !$item.hasClass('activity-type-activity') &&
+                !$item.hasClass('activity-type-document') && !$item.hasClass('activity-type-financial');
+        }
+        if (filterType === 'document') {
+            if ($item.hasClass('activity-type-document')) return true;
+            var subject = ($item.find('.feed-content strong').text() || '').toLowerCase();
+            if (/(receipt document|journal receipt document|client receipt document|office receipt document)/i.test(subject)) return false;
+            var docPatterns = ['document', 'added.*document', 'updated.*document', 'visa document', 'personal document', 'checklist', 'uploaded', 'signed document'];
+            return docPatterns.some(function(p) { return new RegExp(p, 'i').test(subject); });
+        }
+        if (filterType === 'accounting') {
+            if ($item.hasClass('activity-type-financial')) return true;
+            var subj = ($item.find('.feed-content strong').text() || '').toLowerCase();
+            return /invoice|receipt|payment|ledger|account/.test(subj);
+        }
+        return true;
+    }
+
+    /**
+     * Show/hide empty state when no activities match
+     */
+    function updateEmptyState() {
+        var visible = $('.feed-item.activity:visible').length;
+        $('.feed-item--empty').toggle(visible === 0);
+        $('.feed-item-no-results').toggle(visible === 0 && $('.feed-item.activity').length > 0);
     }
 
     // Initialize when DOM is ready

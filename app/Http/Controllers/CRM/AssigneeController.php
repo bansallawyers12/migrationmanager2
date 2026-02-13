@@ -305,16 +305,27 @@ class AssigneeController extends Controller
                 // Note: Search functionality is now handled by Yajra DataTables filterColumn() definitions
                 // The custom 'd.search' parameter from frontend is handled by DataTables' built-in search
 
-                // Apply sorting - simplified to avoid join issues
+                // Apply sorting
+                $orderDirection = in_array($request->input('order.0.dir'), ['asc', 'desc']) 
+                    ? $request->input('order.0.dir') 
+                    : 'desc';
+
                 if ($request->has('order')) {
-                    $orderColumnIndex = $request->order[0]['column'];
-                    $orderDirection = $request->order[0]['dir'];
+                    $orderColumnIndex = (int) $request->order[0]['column'];
                     $columns = $request->columns;
 
-                    $columnName = $columns[$orderColumnIndex]['name'];
+                    $columnName = $columns[$orderColumnIndex]['name'] ?? '';
 
                     // Map DataTables column names to database columns
                     switch ($columnName) {
+                        case 'assigner_name':
+                            $query->leftJoin('admins as assigner_admins', 'notes.user_id', '=', 'assigner_admins.id')
+                                ->orderByRaw("COALESCE(assigner_admins.first_name, '') " . $orderDirection . ", COALESCE(assigner_admins.last_name, '') " . $orderDirection);
+                            break;
+                        case 'client_reference':
+                            $query->leftJoin('admins as client_admins', 'notes.client_id', '=', 'client_admins.id')
+                                ->orderByRaw("COALESCE(client_admins.first_name, 'zzz') " . $orderDirection . ", COALESCE(client_admins.last_name, '') " . $orderDirection);
+                            break;
                         case 'assign_date':
                             $query->orderBy('notes.followup_date', $orderDirection);
                             break;

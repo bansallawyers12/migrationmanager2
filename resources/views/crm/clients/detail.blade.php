@@ -46,8 +46,8 @@ use App\Http\Controllers\Controller;
                 {{-- Personal Lead Display --}}
                 <p class="client-name">
                     {{$fetchedData->first_name}} {{$fetchedData->last_name}} 
-                    <a href="{{route('clients.edit', base64_encode(convert_uuencode(@$fetchedData->id)))}}" title="Edit" class="client-name-edit">
-                        <i class="fa fa-edit"></i>
+                    <a href="{{route('clients.edit', base64_encode(convert_uuencode(@$fetchedData->id)))}}" title="Client Details Form" class="client-name-edit">
+                        <i class="fas fa-id-card"></i>
                     </a>
                 </p>
                 
