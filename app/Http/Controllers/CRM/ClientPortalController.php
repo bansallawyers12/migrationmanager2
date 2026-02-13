@@ -884,6 +884,23 @@ class ClientPortalController extends Controller
 				$activityLog->source = 'client_portal_web';
 				$activityLog->save();
 
+				// Notify client of stage change (for List Notifications API)
+				$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $matterId;
+				$notificationMessage = 'Stage moved from ' . $currentStage->name . ' to ' . $nextStage->name . ' for matter ' . $matterNo;
+				DB::table('notifications')->insert([
+					'sender_id' => Auth::user()->id,
+					'receiver_id' => $clientMatter->client_id,
+					'module_id' => $matterId,
+					'url' => '/documents',
+					'notification_type' => 'stage_change',
+					'message' => $notificationMessage,
+					'created_at' => now(),
+					'updated_at' => now(),
+					'sender_status' => 1,
+					'receiver_status' => 0,
+					'seen' => 0
+				]);
+
 				return response()->json([
 					'status' => true,
 					'message' => 'Matter has been successfully moved to the next stage.',
@@ -1461,6 +1478,28 @@ class ClientPortalController extends Controller
 				'created_at' => now(),
 				'updated_at' => now()
 			]);
+
+			// Notify client of new checklist (for List Notifications API)
+			$application = DB::table('applications')->where('id', $app_id)->first();
+			if ($application && !empty($application->client_matter_id)) {
+				$clientMatter = DB::table('client_matters')->where('id', $application->client_matter_id)->first();
+				$matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID: ' . $application->client_matter_id) : 'ID: ' . $application->client_matter_id;
+				$senderName = Auth::user()->first_name . ' ' . Auth::user()->last_name;
+				$notificationMessage = 'New checklist "' . $document_type . '" added for matter ' . $matterNo;
+				DB::table('notifications')->insert([
+					'sender_id' => Auth::user()->id,
+					'receiver_id' => $client_id,
+					'module_id' => $application->client_matter_id,
+					'url' => '/documents',
+					'notification_type' => 'checklist',
+					'message' => $notificationMessage,
+					'created_at' => now(),
+					'updated_at' => now(),
+					'sender_status' => 1,
+					'receiver_status' => 0,
+					'seen' => 0
+				]);
+			}
 
 			$applicationdocuments = \App\Models\ApplicationDocumentList::where('application_id', $app_id)->where('client_id', $client_id)->where('type', $type)->get();
 			$checklistdata = '<table class="table"><tbody>';
@@ -2267,6 +2306,23 @@ class ClientPortalController extends Controller
 					'source' => 'client_portal_web',
 					'created_at' => now(),
 					'updated_at' => now()
+				]);
+
+				// Notify client (for List Notifications API)
+				$matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatterId) : 'ID: ' . $clientMatterId;
+				$notificationMessage = 'New message from ' . $senderName . ' for matter ' . $matterNo;
+				DB::table('notifications')->insert([
+					'sender_id' => $senderId,
+					'receiver_id' => $clientId,
+					'module_id' => $clientMatterId,
+					'url' => '/messages',
+					'notification_type' => 'message',
+					'message' => $notificationMessage,
+					'created_at' => now(),
+					'updated_at' => now(),
+					'sender_status' => 1,
+					'receiver_status' => 0,
+					'seen' => 0
 				]);
 
 				// Broadcast message via Laravel Reverb (configured via BROADCAST_DRIVER in .env)
