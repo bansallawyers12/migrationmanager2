@@ -332,7 +332,7 @@ class ClientPortalController extends Controller
         if (!$admin) {
             return response()->json([
                 'success' => true,
-                'message' => 'If an account exists with this email address, we have sent a password reset code. Please check your inbox.'
+                'message' => 'User is not exist in database.'
             ], 200);
         }
 
