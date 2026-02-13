@@ -17279,35 +17279,40 @@ Bansal Immigration`;
         initializeSidebarReferences();
     });
 
-    // Edit Checklist Button Handler (triggers edit mode)
+    // Edit Checklist Button Handler (triggers edit mode - supports both personal and visa documents)
     $(document).on('click', '.edit-checklist-btn', function(e) {
         e.preventDefault();
         e.stopPropagation();
         
         var checklistId = $(this).data('id');
         var $drow = $(this).closest('.drow');
-        var $parent = $drow.find('.personalchecklist-row');
+        var $parent = $drow.find('.personalchecklist-row').length ? $drow.find('.personalchecklist-row') : $drow.find('.visachecklist-row');
+        var isVisa = $parent.hasClass('visachecklist-row');
         
         if ($parent.length === 0) {
-            console.error('Personal checklist row not found');
+            console.error('Checklist row not found');
             return false;
         }
         
         // Store current HTML
         $parent.data('current-html', $parent.html());
         
-        var currentChecklist = $parent.data('personalchecklistname') || $(this).data('checklist');
+        var currentChecklist = $parent.data('personalchecklistname') || $parent.data('visachecklistname') || $(this).data('checklist');
         
         if (!currentChecklist) {
             console.error('Checklist name not found');
             return false;
         }
         
+        // Use visa or personal button classes so the correct save handler runs
+        var saveBtnClass = isVisa ? 'btn-visaprimary' : 'btn-personalprimary';
+        var cancelBtnClass = isVisa ? 'btn-visadanger' : 'btn-personaldanger';
+        
         // Replace with input field and buttons
         $parent.empty().append(
             $('<input style="display: inline-block;width: auto;" class="form-control opentime" type="text">').prop('value', currentChecklist),
-            $('<button class="btn btn-personalprimary btn-sm mb-1"><i class="fas fa-check"></i></button>'),
-            $('<button class="btn btn-personaldanger btn-sm mb-1"><i class="far fa-trash-alt"></i></button>')
+            $('<button class="btn ' + saveBtnClass + ' btn-sm mb-1"><i class="fas fa-check"></i></button>'),
+            $('<button class="btn ' + cancelBtnClass + ' btn-sm mb-1"><i class="far fa-trash-alt"></i></button>')
         );
         
         return false;

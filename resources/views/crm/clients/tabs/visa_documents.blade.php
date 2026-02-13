@@ -162,8 +162,18 @@
                                                     ?>
                                                     <tr class="drow" data-matterid="<?= $fetch->client_matter_id ?>" data-catid="<?= $fetch->folder_name ?>" id="id_<?= $fetch->id ?>">
                                                         <td style="white-space: initial;">
-                                                            <div data-id="<?= $fetch->id ?>" data-visachecklistname="<?= htmlspecialchars($fetch->checklist) ?>" class="visachecklist-row" title="Uploaded by: <?= htmlspecialchars($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>">
-                                                                <span><?= htmlspecialchars($fetch->checklist) ?></span>
+                                                            <div data-id="<?= $fetch->id ?>" data-visachecklistname="<?= htmlspecialchars($fetch->checklist) ?>" class="visachecklist-row" title="Uploaded by: <?= htmlspecialchars($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" style="display: flex; align-items: center; gap: 8px;">
+                                                                <span style="flex: 1;"><?= htmlspecialchars($fetch->checklist) ?></span>
+                                                                <div class="checklist-actions" style="display: flex; gap: 5px;">
+                                                                    <?php if (!$fetch->file_name): ?>
+                                                                    <a href="javascript:;" class="edit-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= htmlspecialchars($fetch->checklist) ?>" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;">
+                                                                        <i class="fas fa-edit"></i>
+                                                                    </a>
+                                                                    <a href="javascript:;" class="delete-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= htmlspecialchars($fetch->checklist) ?>" title="Delete Checklist" style="color: #dc3545; cursor: pointer;">
+                                                                        <i class="fas fa-trash"></i>
+                                                                    </a>
+                                                                    <?php endif; ?>
+                                                                </div>
                                                             </div>
                                                         </td>
                                                         <td style="white-space: initial;">
@@ -322,14 +332,7 @@
                                 </select>
                             </div>
                             
-                            <!-- For Visa Documents: Show Matters first, then Categories -->
-                            <div class="form-group" id="moveVisaVisaMatterContainer" style="display: none;">
-                                <label>Select Visa Matter:</label>
-                                <select id="moveVisaVisaMatterId" class="form-control" style="margin-bottom: 15px;">
-                                    <option value="">-- Select Matter --</option>
-                                </select>
-                            </div>
-                            
+                            <!-- For Visa Documents: Show Categories (like Personal Documents) -->
                             <div class="form-group" id="moveVisaVisaCategoryContainer" style="display: none;">
                                 <label>Select Visa Category:</label>
                                 <select id="moveVisaVisaCategoryId" class="form-control">
@@ -475,10 +478,8 @@
                     // Reset modal
                     $('#moveVisaTargetType').val('');
                     $('#moveVisaPersonalCategoryContainer').hide();
-                    $('#moveVisaVisaMatterContainer').hide();
                     $('#moveVisaVisaCategoryContainer').hide();
                     $('#moveVisaPersonalCategoryId').empty().append('<option value="">-- Select Category --</option>');
-                    $('#moveVisaVisaMatterId').empty().append('<option value="">-- Select Matter --</option>');
                     $('#moveVisaVisaCategoryId').empty().append('<option value="">-- Select Category --</option>');
                     $('#moveVisaDocumentError').hide();
                     
@@ -492,7 +493,6 @@
                     
                     // Hide all containers first
                     $('#moveVisaPersonalCategoryContainer').hide();
-                    $('#moveVisaVisaMatterContainer').hide();
                     $('#moveVisaVisaCategoryContainer').hide();
                     $('#moveVisaDocumentError').hide();
                     
@@ -501,7 +501,7 @@
                     }
                     
                     if (targetType === 'personal') {
-                        // Load personal document categories
+                        // Load personal document categories from DOM (like personal tab)
                         const categories = [];
                         $('.subtab2-button').each(function() {
                             const catId = $(this).data('subtab2');
@@ -522,74 +522,26 @@
                         $('#moveVisaPersonalCategoryContainer').show();
                         
                     } else if (targetType === 'visa') {
-                        // Load visa matters first
-                        const clientId = '<?= $fetchedData->id ?? "" ?>';
-                        if (!clientId) {
-                            $('#moveVisaDocumentError').text('Error: Client ID not found').show();
-                            return;
-                        }
-                        
-                        $('#moveVisaVisaMatterId').empty().append('<option value="">Loading...</option>');
-                        $('#moveVisaVisaMatterContainer').show();
-                        
-                        // Fetch matters via AJAX
-                        $.ajax({
-                            url: '{{ URL::to('/get-client-matters') }}/' + clientId,
-                            type: 'GET',
-                            success: function(response) {
-                                $('#moveVisaVisaMatterId').empty().append('<option value="">-- Select Matter --</option>');
-                                if (response && response.length > 0) {
-                                    response.forEach(matter => {
-                                        const matterLabel = matter.client_unique_matter_no || ('Matter #' + matter.id);
-                                        $('#moveVisaVisaMatterId').append(`<option value="${matter.id}">${matterLabel}</option>`);
-                                    });
-                                } else {
-                                    $('#moveVisaVisaMatterId').empty().append('<option value="">No matters found</option>');
-                                }
-                            },
-                            error: function() {
-                                $('#moveVisaVisaMatterId').empty().append('<option value="">Error loading matters</option>');
+                        // Load visa document categories from DOM (like personal - same UX)
+                        const categories = [];
+                        $('.subtab6-button').each(function() {
+                            const catId = $(this).data('subtab6');
+                            const catTitle = $(this).text().trim();
+                            if (catId && catTitle) {
+                                categories.push({ id: catId, title: catTitle });
                             }
                         });
-                    }
-                });
-
-                // Handle visa matter selection - load categories for that matter
-                $(document).on('change', '#moveVisaVisaMatterId', function() {
-                    const matterId = $(this).val();
-                    $('#moveVisaVisaCategoryContainer').hide();
-                    $('#moveVisaDocumentError').hide();
-                    
-                    if (!matterId) {
-                        return;
-                    }
-                    
-                    const clientId = '<?= $fetchedData->id ?? "" ?>';
-                    $('#moveVisaVisaCategoryId').empty().append('<option value="">Loading...</option>');
-                    $('#moveVisaVisaCategoryContainer').show();
-                    
-                    // Fetch visa categories for this matter via AJAX
-                    $.ajax({
-                        url: '{{ URL::to('/get-visa-categories') }}',
-                        type: 'GET',
-                        data: {
-                            client_id: clientId,
-                            matter_id: matterId
-                        },
-                        success: function(response) {
-                            $('#moveVisaVisaCategoryId').empty().append('<option value="">-- Select Category --</option>');
-                            if (response && response.length > 0) {
-                                response.forEach(category => {
-                                    $('#moveVisaVisaCategoryId').append(`<option value="${category.id}">${category.title}</option>`);
-                                });
-                            } else {
-                                $('#moveVisaVisaCategoryId').append('<option value="">No categories found</option>');
-                            }
-                        },
-                        error: function() {
-                            $('#moveVisaVisaCategoryId').empty().append('<option value="">Error loading categories</option>');
+                        
+                        $('#moveVisaVisaCategoryId').empty().append('<option value="">-- Select Category --</option>');
+                        if (categories.length > 0) {
+                            categories.forEach(cat => {
+                                $('#moveVisaVisaCategoryId').append(`<option value="${cat.id}">${cat.title}</option>`);
+                            });
+                        } else {
+                            $('#moveVisaVisaCategoryId').append('<option value="">No categories found</option>');
                         }
-                    });
+                        $('#moveVisaVisaCategoryContainer').show();
+                    }
                 });
 
                 // Handle move visa document confirmation

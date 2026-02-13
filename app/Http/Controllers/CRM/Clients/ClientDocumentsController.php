@@ -589,8 +589,18 @@ class ClientDocumentsController extends Controller
                         ?>
                         <tr class="drow" data-matterid="<?php echo $fetch->client_matter_id;?>" data-catid="<?php echo $fetch->folder_name;?>" id="id_<?php echo $fetch->id; ?>" <?php echo $showCls;?>>
                             <td style="white-space: initial;">
-                                <div data-id="<?php echo $fetch->id;?>" data-visachecklistname="<?php echo htmlspecialchars($fetch->checklist); ?>" class="visachecklist-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>">
-                                    <span><?php echo htmlspecialchars($fetch->checklist); ?></span>
+                                <div data-id="<?php echo $fetch->id;?>" data-visachecklistname="<?php echo htmlspecialchars($fetch->checklist); ?>" class="visachecklist-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="flex: 1;"><?php echo htmlspecialchars($fetch->checklist); ?></span>
+                                    <div class="checklist-actions" style="display: flex; gap: 5px;">
+                                        <?php if (!$fetch->file_name): ?>
+                                        <a href="javascript:;" class="edit-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo htmlspecialchars($fetch->checklist); ?>" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="javascript:;" class="delete-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo htmlspecialchars($fetch->checklist); ?>" title="Delete Checklist" style="color: #dc3545; cursor: pointer;">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
                             </td>
                             <td style="white-space: initial;">
@@ -1432,8 +1442,9 @@ class ClientDocumentsController extends Controller
                 
                 $document->doc_type = 'visa';
                 $document->folder_name = $targetId; // Category ID
-                $document->client_matter_id = $category->client_matter_id; // Set matter from category
-                // Keep checklist name if available
+                // Preserve document's matter when target category is global (client_matter_id null)
+                // so the document stays visible in the matter-filtered visa documents view
+                $document->client_matter_id = $category->client_matter_id ?? $document->client_matter_id;
                 
                 $targetName = $category->title;
             }

@@ -963,13 +963,14 @@
                             type: 'GET',
                             success: function(response) {
                                 $('#moveVisaMatterId').empty().append('<option value="">-- Select Matter --</option>');
-                                if (response && response.length > 0) {
-                                    response.forEach(matter => {
+                                const matters = response && response.matters ? response.matters : [];
+                                if (matters.length > 0) {
+                                    matters.forEach(matter => {
                                         const matterLabel = matter.client_unique_matter_no || ('Matter #' + matter.id);
                                         $('#moveVisaMatterId').append(`<option value="${matter.id}">${matterLabel}</option>`);
                                     });
                                 } else {
-                                    $('#moveVisaMatterId').empty().append('<option value="">No matters found</option>');
+                                    $('#moveVisaMatterId').append('<option value="">No matters found</option>');
                                 }
                             },
                             error: function() {
@@ -1003,8 +1004,9 @@
                         },
                         success: function(response) {
                             $('#moveVisaCategoryId').empty().append('<option value="">-- Select Category --</option>');
-                            if (response && response.length > 0) {
-                                response.forEach(category => {
+                            const categories = Array.isArray(response) ? response : [];
+                            if (categories.length > 0) {
+                                categories.forEach(category => {
                                     $('#moveVisaCategoryId').append(`<option value="${category.id}">${category.title}</option>`);
                                 });
                             } else {
