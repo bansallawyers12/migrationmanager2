@@ -18,7 +18,10 @@
         $matterId = $clientMatter ? $clientMatter->id : null;
     }
 @endphp
-<div class="email-interface-container" data-client-id="{{ $clientData->id ?? '' }}" data-matter-id="{{ $matterId ?? '' }}">
+@php
+    $canDeleteEmail = Auth::user() && Auth::user()->role == 1;
+@endphp
+<div class="email-interface-container" data-client-id="{{ $clientData->id ?? '' }}" data-matter-id="{{ $matterId ?? '' }}" data-can-delete-email="{{ $canDeleteEmail ? '1' : '0' }}">
     <!-- Top Control Bar (Search & Filters) -->
     <div class="email-control-bar">
         <div class="control-section search-section">
@@ -133,11 +136,13 @@
         <i class="fas fa-share"></i>
         <span>Forward</span>
     </div>
+    @if($canDeleteEmail)
     <div class="context-menu-separator"></div>
-    <div class="context-menu-item" data-action="delete" style="display: none;">
+    <div class="context-menu-item" data-action="delete">
         <i class="fas fa-trash"></i>
         <span>Delete</span>
     </div>
+    @endif
 </div>
 
 <!-- Label Submenu -->

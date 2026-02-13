@@ -3652,6 +3652,50 @@ class ClientsController extends Controller
         }
     }
 
+    /**
+     * Delete a mail report (email). Admin only (role === 1).
+     */
+    public function deleteMailReport(Request $request, $id)
+    {
+        // Restrict to Super Admin only (role 1)
+        if (Auth::user()->role != 1) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized: Only admins can delete emails.',
+            ], 403);
+        }
+
+        try {
+            $mailReport = \App\Models\MailReport::find($id);
+            if (!$mailReport) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Email not found.',
+                ], 404);
+            }
+
+            // Delete pivot records (email labels)
+            DB::table('email_label_mail_report')->where('mail_report_id', $id)->delete();
+
+            // Delete attachments
+            \App\Models\MailReportAttachment::where('mail_report_id', $id)->delete();
+
+            // Delete the mail report
+            $mailReport->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Email deleted successfully.',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error deleting mail report: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete email: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
         //Filter Sent emails
     public function filterSentEmails(Request $request)
     {

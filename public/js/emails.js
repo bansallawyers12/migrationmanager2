@@ -1613,6 +1613,51 @@
     }
 
     /**
+     * Handle Delete email action (admin only - option shown based on server-side check)
+     */
+    async function handleDeleteEmail(email) {
+        if (!email || !email.id) {
+            showNotification('No email selected for delete', 'error');
+            return;
+        }
+
+        if (!confirm('Are you sure you want to delete this email? This action cannot be undone.')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/mail-reports/${email.id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': getCsrfToken()
+                }
+            });
+
+            const data = await response.json().catch(() => ({}));
+
+            if (response.ok && data.success) {
+                showNotification('Email deleted successfully', 'success');
+                // Reset content pane to placeholder when the viewed email was deleted
+                const emailContentView = document.getElementById('emailContentView');
+                const emailContentPlaceholder = document.getElementById('emailContentPlaceholder');
+                if (emailContentView && emailContentPlaceholder) {
+                    emailContentView.style.display = 'none';
+                    emailContentPlaceholder.style.display = 'block';
+                }
+                loadEmailsFromServer();
+            } else {
+                const message = data.message || `Failed to delete email (${response.status})`;
+                showNotification(message, 'error');
+            }
+        } catch (error) {
+            console.error('Error deleting email:', error);
+            showNotification('Failed to delete email: ' + error.message, 'error');
+        }
+    }
+
+    /**
      * Show context menu at specified coordinates
      */
     function showContextMenu(x, y, email) {
@@ -1794,8 +1839,9 @@
                     hideContextMenu();
                     break;
                 case 'delete':
-                    // TODO: Implement delete functionality
-                    console.log('Delete:', currentContextEmail);
+                    if (currentContextEmail) {
+                        handleDeleteEmail(currentContextEmail);
+                    }
                     hideContextMenu();
                     break;
                 default:

@@ -97,6 +97,7 @@ Route::post('/updatemailreadbit', 'CRM\ClientsController@updatemailreadbit')->na
 
 Route::post('/clients/filter-emails', 'CRM\ClientsController@filterEmails')->name('clients.filter.emails');
 Route::post('/clients/filter-sentemails', 'CRM\ClientsController@filterSentEmails')->name('clients.filter.sentmails');
+Route::delete('/mail-reports/{id}', 'CRM\ClientsController@deleteMailReport')->name('mail-reports.delete');
 Route::post('/mail/enhance', 'CRM\ClientsController@enhanceMessage')->name('mail.enhance');
 
 /*---------- Email Labels Management ----------*/
