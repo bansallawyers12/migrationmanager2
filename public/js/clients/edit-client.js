@@ -759,7 +759,7 @@ function addPassportDetail() {
                 </div>
                 <div class="form-group">
                     <label>Issue Date</label>
-                    <input type="text" name="passports[${index}][issue_date]" placeholder="dd/mm/yyyy" class="date-picker">
+                    <input type="text" name="passports[${index}][issue_date]" placeholder="dd/mm/yyyy" class="date-picker date-picker-past-only">
                 </div>
                 <div class="form-group">
                     <label>Expiry Date</label>
@@ -891,7 +891,7 @@ function addAnotherAddress() {
                            id="address_start_date_${index}" 
                            name="address_start_date[]" 
                            placeholder="dd/mm/yyyy"
-                           class="date-picker">
+                           class="date-picker date-picker-past-only">
                 </div>
                 
                 <div class="form-group">
@@ -900,7 +900,7 @@ function addAnotherAddress() {
                            id="address_end_date_${index}" 
                            name="address_end_date[]" 
                            placeholder="dd/mm/yyyy"
-                           class="date-picker">
+                           class="date-picker date-picker-past-only">
                 </div>
             </div>
         </div>
@@ -930,10 +930,12 @@ function addAnotherAddress() {
         if (typeof flatpickr !== 'undefined' && newWrapper) {
             $(newWrapper).find('.date-picker').each(function() {
                 if (!$(this).data('flatpickr')) {
+                    const isPastOnly = $(this).hasClass('date-picker-past-only');
                     flatpickr(this, {
                         dateFormat: 'd/m/Y',
                         allowInput: true,
                         clickOpens: true,
+                        maxDate: isPastOnly ? 'today' : undefined,
                         locale: {
                             firstDayOfWeek: 1
                         }
@@ -1078,11 +1080,11 @@ async function addTravelDetail() {
                 </div>
                 <div class="form-group">
                     <label>Arrival Date</label>
-                    <input type="text" name="travel_arrival_date[${index}]" placeholder="dd/mm/yyyy" class="date-picker">
+                    <input type="text" name="travel_arrival_date[${index}]" placeholder="dd/mm/yyyy" class="date-picker date-picker-past-only">
                 </div>
                 <div class="form-group">
                     <label>Departure Date</label>
-                    <input type="text" name="travel_departure_date[${index}]" placeholder="dd/mm/yyyy" class="date-picker">
+                    <input type="text" name="travel_departure_date[${index}]" placeholder="dd/mm/yyyy" class="date-picker date-picker-past-only">
                 </div>
                 <div class="form-group">
                     <label>Travel Purpose</label>
@@ -1532,7 +1534,7 @@ async function addVisaDetail() {
                 </div>
                 <div class="form-group">
                     <label>Visa Grant Date</label>
-                    <input type="text" name="visa_grant_date[${index}]" placeholder="dd/mm/yyyy" class="visa-grant-field date-picker">
+                    <input type="text" name="visa_grant_date[${index}]" placeholder="dd/mm/yyyy" class="visa-grant-field date-picker date-picker-past-only">
                 </div>
                 <div class="form-group">
                     <label>Visa Description</label>
@@ -1560,6 +1562,7 @@ function initializeDatepickers() {
         const $this = $(this);
         const element = this;
         const currentValue = $this.val(); // Get the current value of the field
+        const isPastOnly = $this.hasClass('date-picker-past-only');
 
         // Skip if already initialized
         if ($this.data('flatpickr')) {
@@ -1567,9 +1570,9 @@ function initializeDatepickers() {
         }
 
         // Initialize Flatpickr
-        // Calculate maxDate as Date object to avoid format mismatch issues
-        const maxYear = new Date().getFullYear() + 50;
-        const maxDateObj = new Date(maxYear, 11, 31); // Month is 0-indexed, so 11 = December
+        // Past-only fields (DOB, address, travel, employment, passport issue, visa grant): maxDate = today
+        // Other fields (passport expiry, visa expiry): allow future
+        const maxDateObj = isPastOnly ? 'today' : new Date(new Date().getFullYear() + 50, 11, 31);
         
         const fp = flatpickr(element, {
             dateFormat: 'd/m/Y',
@@ -1779,11 +1782,11 @@ async function addExperience() {
                 </div>
                 <div class="form-group">
                     <label>Start Date</label>
-                    <input type="text" name="job_start_date[${index}]" placeholder="dd/mm/yyyy" class="date-picker">
+                    <input type="text" name="job_start_date[${index}]" placeholder="dd/mm/yyyy" class="date-picker date-picker-past-only">
                 </div>
                 <div class="form-group">
                     <label>Finish Date</label>
-                    <input type="text" name="job_finish_date[${index}]" placeholder="dd/mm/yyyy" class="date-picker">
+                    <input type="text" name="job_finish_date[${index}]" placeholder="dd/mm/yyyy" class="date-picker date-picker-past-only">
                 </div>
                 <div class="form-group" style="align-items: center;">
                     <label>Relevant?</label>
@@ -1827,6 +1830,7 @@ function addCharacterRow(containerId, fieldName) {
                         <option value="2">Military/ Intelligence Work</option>
                         <option value="3">Visa/ Citizenship/ refusal/ cancellation/ deportation</option>
                         <option value="4">Health Declaration</option>
+                        <option value="5">Other</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -3235,7 +3239,8 @@ window.saveCharacterInfo = function() {
                     '1': 'Criminal',
                     '2': 'Military/ Intelligence Work',
                     '3': 'Visa/ Citizenship/ refusal/ cancellation/ deportation',
-                    '4': 'Health Declaration'
+                    '4': 'Health Declaration',
+                    '5': 'Other'
                 };
                 const typeLabel = typeLabels[character.type_of_character] || 'Unknown Type';
                 

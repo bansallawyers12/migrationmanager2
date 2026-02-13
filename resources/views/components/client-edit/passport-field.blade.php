@@ -37,7 +37,7 @@
                    name="passports[{{ $index }}][issue_date]" 
                    value="{{ $passport && $passport->passport_issue_date ? date('d/m/Y', strtotime($passport->passport_issue_date)) : '' }}" 
                    placeholder="dd/mm/yyyy" 
-                   class="date-picker">
+                   class="date-picker date-picker-past-only">
         </div>
         
         <div class="form-group">

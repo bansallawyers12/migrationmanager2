@@ -84,6 +84,59 @@ window.CRM_Flatpickr = {
      * @param {string|jQuery|HTMLElement} ageSelector - Age output field selector (optional)
      * @param {object} options - Optional configuration overrides
      */
+    /**
+     * Past-dates-only picker (maxDate: today)
+     * Use for: Address dates, travel dates, employment dates, document issue dates, visa grant dates
+     * 
+     * Example: CRM_Flatpickr.initPastDates('.address-start-date');
+     * 
+     * @param {string|jQuery|HTMLElement} selector - CSS selector, jQuery object, or DOM element
+     * @param {object} options - Optional configuration overrides
+     */
+    initPastDates: function(selector, options) {
+        if (typeof flatpickr === 'undefined') {
+            console.warn('⚠️ CRM_Flatpickr: flatpickr library not loaded');
+            return;
+        }
+
+        var defaults = {
+            dateFormat: 'd/m/Y',
+            allowInput: true,
+            clickOpens: true,
+            locale: {
+                firstDayOfWeek: 1
+            },
+            minDate: '01/01/1900',
+            maxDate: 'today'
+        };
+
+        var config = $.extend({}, defaults, options || {});
+
+        $(selector).each(function() {
+            var $this = $(this);
+            var element = this;
+
+            if ($this.data('flatpickr')) {
+                return;
+            }
+
+            if ($this.val() && !config.defaultDate) {
+                config.defaultDate = $this.val();
+            }
+
+            var fp = flatpickr(element, config);
+
+            fp.config.onChange.push(function(selectedDates, dateStr, instance) {
+                $this.val(dateStr);
+                $this.trigger('change');
+            });
+
+            $this.data('flatpickr', fp);
+        });
+
+        console.log('✅ CRM_Flatpickr.initPastDates:', selector);
+    },
+
     initDOB: function(dobSelector, ageSelector, options) {
         if (typeof flatpickr === 'undefined') {
             console.warn('⚠️ CRM_Flatpickr: flatpickr library not loaded');
@@ -373,6 +426,10 @@ $(document).ready(function() {
     // Auto-initialize elements with data-flatpickr attributes
     $('[data-flatpickr="standard"]').each(function() {
         CRM_Flatpickr.initStandard(this);
+    });
+
+    $('[data-flatpickr="past-only"]').each(function() {
+        CRM_Flatpickr.initPastDates(this);
     });
     
     $('[data-flatpickr="dob"]').each(function() {

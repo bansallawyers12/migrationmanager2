@@ -1801,7 +1801,19 @@ class ClientPersonalDetailsController extends Controller
                 'first_name' => 'required|max:255',
                 'last_name' => 'nullable|max:255',
                 'client_id' => 'required|max:255|unique:admins,client_id,' . $client->id,
-                'dob' => 'nullable|date_format:d/m/Y',
+                'dob' => [
+                    'nullable',
+                    'date_format:d/m/Y',
+                    function ($attribute, $value, $fail) {
+                        if (empty($value)) return;
+                        try {
+                            $date = Carbon::createFromFormat('d/m/Y', $value);
+                            if ($date->isFuture()) {
+                                $fail('The date of birth cannot be a future date.');
+                            }
+                        } catch (\Exception $e) {}
+                    }
+                ],
                 'age' => 'nullable|string',
                 'gender' => 'nullable|in:Male,Female,Other',
                 'marital_status' => 'nullable|in:Never Married,Engaged,Married,De Facto,Defacto,Separated,Divorced,Widowed,Single'
@@ -2417,8 +2429,14 @@ class ClientPersonalDetailsController extends Controller
                     $expiryDate = null;
                     
                     if (!empty($passportData['issue_date'])) {
-                        $issueDate = \DateTime::createFromFormat('d/m/Y', $passportData['issue_date']);
-                        $issueDate = $issueDate ? $issueDate->format('Y-m-d') : null;
+                        $issueDateObj = \DateTime::createFromFormat('d/m/Y', $passportData['issue_date']);
+                        if ($issueDateObj && Carbon::instance($issueDateObj)->isFuture()) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'The document issue date cannot be a future date.'
+                            ], 422);
+                        }
+                        $issueDate = $issueDateObj ? $issueDateObj->format('Y-m-d') : null;
                     }
                     
                     if (!empty($passportData['expiry_date'])) {
@@ -2617,8 +2635,14 @@ class ClientPersonalDetailsController extends Controller
                     }
                     
                     if (!empty($visaData['visa_grant_date'])) {
-                        $grantDate = \DateTime::createFromFormat('d/m/Y', $visaData['visa_grant_date']);
-                        $grantDate = $grantDate ? $grantDate->format('Y-m-d') : null;
+                        $grantDateObj = \DateTime::createFromFormat('d/m/Y', $visaData['visa_grant_date']);
+                        if ($grantDateObj && Carbon::instance($grantDateObj)->isFuture()) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'The visa grant date cannot be a future date.'
+                            ], 422);
+                        }
+                        $grantDate = $grantDateObj ? $grantDateObj->format('Y-m-d') : null;
                     }
                     
                     $visaId = $visaData['id'] ?? null;
@@ -2819,6 +2843,12 @@ class ClientPersonalDetailsController extends Controller
                     if (!empty($start_date)) {
                         try {
                             $date = Carbon::createFromFormat('d/m/Y', $start_date);
+                            if ($date->isFuture()) {
+                                return response()->json([
+                                    'success' => false,
+                                    'message' => 'The address start date cannot be a future date.'
+                                ], 422);
+                            }
                             $formatted_start_date = $date->format('Y-m-d');
                         } catch (\Exception $e) {
                             return response()->json([
@@ -2832,6 +2862,12 @@ class ClientPersonalDetailsController extends Controller
                     if (!empty($end_date)) {
                         try {
                             $date = Carbon::createFromFormat('d/m/Y', $end_date);
+                            if ($date->isFuture()) {
+                                return response()->json([
+                                    'success' => false,
+                                    'message' => 'The address end date cannot be a future date.'
+                                ], 422);
+                            }
                             $formatted_end_date = $date->format('Y-m-d');
                         } catch (\Exception $e) {
                             return response()->json([
@@ -3488,13 +3524,25 @@ class ClientPersonalDetailsController extends Controller
                     $endDate = null;
                     
                     if (!empty($expData['job_start_date'])) {
-                        $startDate = \DateTime::createFromFormat('d/m/Y', $expData['job_start_date']);
-                        $startDate = $startDate ? $startDate->format('Y-m-d') : null;
+                        $startDateObj = \DateTime::createFromFormat('d/m/Y', $expData['job_start_date']);
+                        if ($startDateObj && Carbon::instance($startDateObj)->isFuture()) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'The employment start date cannot be a future date.'
+                            ], 422);
+                        }
+                        $startDate = $startDateObj ? $startDateObj->format('Y-m-d') : null;
                     }
                     
                     if (!empty($expData['job_finish_date'])) {
-                        $endDate = \DateTime::createFromFormat('d/m/Y', $expData['job_finish_date']);
-                        $endDate = $endDate ? $endDate->format('Y-m-d') : null;
+                        $endDateObj = \DateTime::createFromFormat('d/m/Y', $expData['job_finish_date']);
+                        if ($endDateObj && Carbon::instance($endDateObj)->isFuture()) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'The employment finish date cannot be a future date.'
+                            ], 422);
+                        }
+                        $endDate = $endDateObj ? $endDateObj->format('Y-m-d') : null;
                     }
                     
                     $experienceId = $expData['id'] ?? null;

@@ -36,7 +36,7 @@
                    name="visa_grant_date[{{ $index }}]" 
                    value="{{ $visa && $visa->visa_grant_date ? date('d/m/Y', strtotime($visa->visa_grant_date)) : '' }}" 
                    placeholder="dd/mm/yyyy" 
-                   class="visa-grant-field date-picker">
+                   class="visa-grant-field date-picker date-picker-past-only">
         </div>
         
         <div class="form-group">

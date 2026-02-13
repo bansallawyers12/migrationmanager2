@@ -70,7 +70,7 @@
                    name="job_start_date[{{ $index }}]" 
                    value="{{ $experience && $experience->job_start_date ? date('d/m/Y', strtotime($experience->job_start_date)) : '' }}" 
                    placeholder="dd/mm/yyyy" 
-                   class="date-picker">
+                   class="date-picker date-picker-past-only">
         </div>
         
         <div class="form-group">
@@ -79,7 +79,7 @@
                    name="job_finish_date[{{ $index }}]" 
                    value="{{ $experience && $experience->job_finish_date ? date('d/m/Y', strtotime($experience->job_finish_date)) : '' }}" 
                    placeholder="dd/mm/yyyy" 
-                   class="date-picker">
+                   class="date-picker date-picker-past-only">
         </div>
         
         <div class="form-group" style="align-items: center;">

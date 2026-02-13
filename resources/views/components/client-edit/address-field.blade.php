@@ -108,7 +108,7 @@
                    name="address_start_date[]" 
                    value="{{ $address && $address->start_date ? date('d/m/Y', strtotime($address->start_date)) : '' }}"
                    placeholder="dd/mm/yyyy"
-                   class="date-picker">
+                   class="date-picker date-picker-past-only">
         </div>
         
         <div class="form-group">
@@ -118,7 +118,7 @@
                    name="address_end_date[]" 
                    value="{{ $address && $address->end_date ? date('d/m/Y', strtotime($address->end_date)) : '' }}"
                    placeholder="dd/mm/yyyy"
-                   class="date-picker">
+                   class="date-picker date-picker-past-only">
         </div>
     </div>
 </div>

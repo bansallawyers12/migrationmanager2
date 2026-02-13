@@ -4125,6 +4125,18 @@ class ClientPortalPersonalDetailsController extends Controller
                             // Date format validation already handled above
                         }
                     }
+                    // Validate: issue date cannot be a future date (expiry can be future)
+                    if (!empty($passport['issue_date'])) {
+                        try {
+                            $issueDate = Carbon::createFromFormat('d/m/Y', $passport['issue_date']);
+                            if ($issueDate->isFuture()) {
+                                $validator->errors()->add(
+                                    "passports.{$index}.issue_date",
+                                    "The document issue date cannot be a future date."
+                                );
+                            }
+                        } catch (\Exception $e) {}
+                    }
                 }
             });
 
@@ -6998,6 +7010,18 @@ class ClientPortalPersonalDetailsController extends Controller
                             "Visa type must be provided for each visa entry."
                         );
                     }
+                    // Validate: visa grant date cannot be a future date (expiry can be future)
+                    if (!empty($visa['visa_grant_date'])) {
+                        try {
+                            $grantDate = Carbon::createFromFormat('d/m/Y', $visa['visa_grant_date']);
+                            if ($grantDate->isFuture()) {
+                                $validator->errors()->add(
+                                    "visas.{$index}.visa_grant_date",
+                                    "The visa grant date cannot be a future date."
+                                );
+                            }
+                        } catch (\Exception $e) {}
+                    }
                 }
             });
 
@@ -7652,6 +7676,29 @@ class ClientPortalPersonalDetailsController extends Controller
                             // Date format validation already handled above
                         }
                     }
+                    // Validate: start_date and end_date cannot be future dates
+                    if (!empty($address['start_date'])) {
+                        try {
+                            $startDate = Carbon::createFromFormat('d/m/Y', $address['start_date']);
+                            if ($startDate->isFuture()) {
+                                $validator->errors()->add(
+                                    "addresses.{$index}.start_date",
+                                    "The address start date cannot be a future date."
+                                );
+                            }
+                        } catch (\Exception $e) {}
+                    }
+                    if (!empty($address['end_date'])) {
+                        try {
+                            $endDate = Carbon::createFromFormat('d/m/Y', $address['end_date']);
+                            if ($endDate->isFuture()) {
+                                $validator->errors()->add(
+                                    "addresses.{$index}.end_date",
+                                    "The address end date cannot be a future date."
+                                );
+                            }
+                        } catch (\Exception $e) {}
+                    }
                 }
             });
 
@@ -8053,6 +8100,29 @@ class ClientPortalPersonalDetailsController extends Controller
                         } catch (\Exception $e) {
                             // Date format validation already handled above
                         }
+                    }
+                    // Validate: travel dates cannot be future dates
+                    if (!empty($travel['arrival_date'])) {
+                        try {
+                            $arrivalDate = Carbon::createFromFormat('d/m/Y', $travel['arrival_date']);
+                            if ($arrivalDate->isFuture()) {
+                                $validator->errors()->add(
+                                    "travels.{$index}.arrival_date",
+                                    "The travel arrival date cannot be a future date."
+                                );
+                            }
+                        } catch (\Exception $e) {}
+                    }
+                    if (!empty($travel['departure_date'])) {
+                        try {
+                            $departureDate = Carbon::createFromFormat('d/m/Y', $travel['departure_date']);
+                            if ($departureDate->isFuture()) {
+                                $validator->errors()->add(
+                                    "travels.{$index}.departure_date",
+                                    "The travel departure date cannot be a future date."
+                                );
+                            }
+                        } catch (\Exception $e) {}
                     }
                 }
             });
@@ -8814,6 +8884,29 @@ class ClientPortalPersonalDetailsController extends Controller
                         } catch (\Exception $e) {
                             // Date format validation already handled above
                         }
+                    }
+                    // Validate: employment dates cannot be future dates
+                    if (!empty($experience['start_date'])) {
+                        try {
+                            $startDate = Carbon::createFromFormat('d/m/Y', $experience['start_date']);
+                            if ($startDate->isFuture()) {
+                                $validator->errors()->add(
+                                    "experiences.{$index}.start_date",
+                                    "The employment start date cannot be a future date."
+                                );
+                            }
+                        } catch (\Exception $e) {}
+                    }
+                    if (!empty($experience['finish_date'])) {
+                        try {
+                            $finishDate = Carbon::createFromFormat('d/m/Y', $experience['finish_date']);
+                            if ($finishDate->isFuture()) {
+                                $validator->errors()->add(
+                                    "experiences.{$index}.finish_date",
+                                    "The employment finish date cannot be a future date."
+                                );
+                            }
+                        } catch (\Exception $e) {}
                     }
                 }
             });

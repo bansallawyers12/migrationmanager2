@@ -1148,6 +1148,7 @@
                                                             @case(2) Military/ Intelligence Work @break
                                                             @case(3) Visa/ Citizenship/ refusal/ cancellation/ deportation @break
                                                             @case(4) Health Declaration @break
+                                                            @case(5) Other @break
                                                             @default Not set
                                                         @endswitch
                                                     </span>
@@ -1183,6 +1184,7 @@
                                                     <option value="2" {{ $character->type_of_character == 2 ? 'selected' : '' }}>Military/ Intelligence Work</option>
                                                     <option value="3" {{ $character->type_of_character == 3 ? 'selected' : '' }}>Visa/ Citizenship/ refusal/ cancellation/ deportation</option>
                                                     <option value="4" {{ $character->type_of_character == 4 ? 'selected' : '' }}>Health Declaration</option>
+                                                    <option value="5" {{ $character->type_of_character == 5 ? 'selected' : '' }}>Other</option>
                                                 </select>
                                             </div>
                                             <div class="form-group">

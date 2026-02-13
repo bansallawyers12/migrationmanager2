@@ -31,7 +31,7 @@
                    name="travel_arrival_date[{{ $index }}]" 
                    value="{{ $travel && $travel->arrival_date ? date('d/m/Y', strtotime($travel->arrival_date)) : old("travel_arrival_date.$index") }}" 
                    placeholder="dd/mm/yyyy" 
-                   class="date-picker">
+                   class="date-picker date-picker-past-only">
         </div>
         
         <div class="form-group">
@@ -40,7 +40,7 @@
                    name="travel_departure_date[{{ $index }}]" 
                    value="{{ $travel && $travel->departure_date ? date('d/m/Y', strtotime($travel->departure_date)) : old("travel_departure_date.$index") }}" 
                    placeholder="dd/mm/yyyy" 
-                   class="date-picker">
+                   class="date-picker date-picker-past-only">
         </div>
         
         <div class="form-group">

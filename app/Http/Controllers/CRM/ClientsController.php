@@ -574,7 +574,21 @@ class ClientsController extends Controller
             $validated = $request->validate([
                 'first_name' => 'required|string|max:255',
                 'last_name' => 'nullable|string|max:255',
-                'dob' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
+                'dob' => [
+                    'nullable',
+                    'regex:/^\d{2}\/\d{2}\/\d{4}$/',
+                    function ($attribute, $value, $fail) {
+                        if (empty($value)) return;
+                        try {
+                            $date = \Carbon\Carbon::createFromFormat('d/m/Y', $value);
+                            if ($date->isFuture()) {
+                                $fail('The date of birth cannot be a future date.');
+                            }
+                        } catch (\Exception $e) {
+                            // Format validation handles invalid dates
+                        }
+                    }
+                ],
                 'dob_verified' => 'nullable|in:1',
                 'dob_verify_document' => 'nullable|string|max:255',
                 'age' => 'nullable|string',
@@ -589,22 +603,94 @@ class ClientsController extends Controller
                 'email.*' => 'nullable|email|max:255',
                 'visa_country.*' => 'nullable|string|max:255',
                 'passports.*.passport_number' => 'nullable|string|max:50',
-                'passports.*.issue_date' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
+                'passports.*.issue_date' => [
+                    'nullable',
+                    'regex:/^\d{2}\/\d{2}\/\d{4}$/',
+                    function ($attribute, $value, $fail) {
+                        if (empty($value)) return;
+                        try {
+                            $date = \Carbon\Carbon::createFromFormat('d/m/Y', $value);
+                            if ($date->isFuture()) {
+                                $fail('The document issue date cannot be a future date.');
+                            }
+                        } catch (\Exception $e) {}
+                    }
+                ],
                 'passports.*.expiry_date' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
                 'visas.*.visa_type' => 'nullable|exists:matters,id',
                 'visas.*.expiry_date' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
-                'visas.*.grant_date' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
+                'visas.*.grant_date' => [
+                    'nullable',
+                    'regex:/^\d{2}\/\d{2}\/\d{4}$/',
+                    function ($attribute, $value, $fail) {
+                        if (empty($value)) return;
+                        try {
+                            $date = \Carbon\Carbon::createFromFormat('d/m/Y', $value);
+                            if ($date->isFuture()) {
+                                $fail('The visa grant date cannot be a future date.');
+                            }
+                        } catch (\Exception $e) {}
+                    }
+                ],
                 'visas.*.description' => 'nullable|string|max:255',
                 'visa_expiry_verified' => 'nullable|in:1',
                 'is_current_address' => 'nullable|in:1',
                 'address.*' => 'nullable|string|max:1000',
                 'zip.*' => 'nullable|string|max:20',
                 'regional_code.*' => 'nullable|string|max:50',
-                'address_start_date.*' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
-                'address_end_date.*' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
+                'address_start_date.*' => [
+                    'nullable',
+                    'regex:/^\d{2}\/\d{2}\/\d{4}$/',
+                    function ($attribute, $value, $fail) {
+                        if (empty($value)) return;
+                        try {
+                            $date = \Carbon\Carbon::createFromFormat('d/m/Y', $value);
+                            if ($date->isFuture()) {
+                                $fail('The address start date cannot be a future date.');
+                            }
+                        } catch (\Exception $e) {}
+                    }
+                ],
+                'address_end_date.*' => [
+                    'nullable',
+                    'regex:/^\d{2}\/\d{2}\/\d{4}$/',
+                    function ($attribute, $value, $fail) {
+                        if (empty($value)) return;
+                        try {
+                            $date = \Carbon\Carbon::createFromFormat('d/m/Y', $value);
+                            if ($date->isFuture()) {
+                                $fail('The address end date cannot be a future date.');
+                            }
+                        } catch (\Exception $e) {}
+                    }
+                ],
                 'travel_country_visited.*' => 'nullable|string|max:255',
-                'travel_arrival_date.*' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
-                'travel_departure_date.*' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
+                'travel_arrival_date.*' => [
+                    'nullable',
+                    'regex:/^\d{2}\/\d{2}\/\d{4}$/',
+                    function ($attribute, $value, $fail) {
+                        if (empty($value)) return;
+                        try {
+                            $date = \Carbon\Carbon::createFromFormat('d/m/Y', $value);
+                            if ($date->isFuture()) {
+                                $fail('The travel arrival date cannot be a future date.');
+                            }
+                        } catch (\Exception $e) {}
+                    }
+                ],
+                'travel_departure_date.*' => [
+                    'nullable',
+                    'regex:/^\d{2}\/\d{2}\/\d{4}$/',
+                    function ($attribute, $value, $fail) {
+                        if (empty($value)) return;
+                        try {
+                            $date = \Carbon\Carbon::createFromFormat('d/m/Y', $value);
+                            if ($date->isFuture()) {
+                                $fail('The travel departure date cannot be a future date.');
+                            }
+                        } catch (\Exception $e) {}
+                    }
+                ],
                 'travel_purpose.*' => 'nullable|string|max:500',
                 'level_hidden.*' => 'nullable|string|max:255',
                 'name.*' => 'nullable|string|max:255',
@@ -615,8 +701,32 @@ class ClientsController extends Controller
                 'job_title.*' => 'nullable|string|max:255',
                 'job_code.*' => 'nullable|string|max:50',
                 'job_country_hidden.*' => 'nullable|string|max:255',
-                'job_start_date.*' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
-                'job_finish_date.*' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
+                'job_start_date.*' => [
+                    'nullable',
+                    'regex:/^\d{2}\/\d{2}\/\d{4}$/',
+                    function ($attribute, $value, $fail) {
+                        if (empty($value)) return;
+                        try {
+                            $date = \Carbon\Carbon::createFromFormat('d/m/Y', $value);
+                            if ($date->isFuture()) {
+                                $fail('The employment start date cannot be a future date.');
+                            }
+                        } catch (\Exception $e) {}
+                    }
+                ],
+                'job_finish_date.*' => [
+                    'nullable',
+                    'regex:/^\d{2}\/\d{2}\/\d{4}$/',
+                    function ($attribute, $value, $fail) {
+                        if (empty($value)) return;
+                        try {
+                            $date = \Carbon\Carbon::createFromFormat('d/m/Y', $value);
+                            if ($date->isFuture()) {
+                                $fail('The employment finish date cannot be a future date.');
+                            }
+                        } catch (\Exception $e) {}
+                    }
+                ],
                 'relevant_experience_hidden.*' => 'nullable|in:1',
                 'nomi_occupation.*' => 'nullable|string|max:500',
                 'occupation_code.*' => 'nullable|string|max:500',
@@ -1540,18 +1650,28 @@ class ClientsController extends Controller
 
 	public function downloadpdf(Request $request, $id = NULL){
 	    $fetchd = \App\Models\Document::where('id',$id)->first();
-        $admin = DB::table('admins')->select('client_id')->where('id', @$fetchd->client_id)->first();
-        if($fetchd->doc_type == 'migration'){
-            $filePath = $admin->client_id.'/'.$fetchd->folder_name.'/'.$fetchd->myfile;
-        } else {
-            $filePath = $admin->client_id.'/'.$fetchd->doc_type.'/'.$fetchd->myfile;
+        if (!$fetchd || empty($fetchd->myfile)) {
+            abort(404, 'Document not found.');
         }
-        // Get the image URL from S3
-        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
-        $disk = Storage::disk('s3');
-        $imageUrl = $disk->url($filePath); //dd($imageUrl);
-
-        $data = ['title' => 'Welcome to codeplaners.com','image' => $imageUrl];
+        $admin = DB::table('admins')->select('client_id')->where('id', $fetchd->client_id)->first();
+        if (!$admin) {
+            abort(404, 'Client not found.');
+        }
+        // When myfile is already a full S3 URL (modern docs with myfile_key), use it directly
+        if (str_starts_with($fetchd->myfile, 'http')) {
+            $imageUrl = $fetchd->myfile;
+        } else {
+            // Legacy: construct S3 path using myfile_key (filename) or myfile, then get URL
+            $fileName = $fetchd->myfile_key ?? $fetchd->myfile;
+            if ($fetchd->doc_type == 'migration') {
+                $filePath = $admin->client_id.'/'.$fetchd->folder_name.'/'.$fileName;
+            } else {
+                $filePath = $admin->client_id.'/'.$fetchd->doc_type.'/'.$fileName;
+            }
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+            $disk = Storage::disk('s3');
+            $imageUrl = $disk->url($filePath);
+        }
         // Generate the PDF using service container to avoid facade type issues
         /** @var \Barryvdh\DomPDF\PDF $pdf */
         $pdf = app('dompdf.wrapper');
