@@ -386,6 +386,24 @@ class ClientPortalController extends Controller
                     }
                 }
 
+                // Notify client (for List Notifications API)
+                $clientMatter = DB::table('client_matters')->where('id', $clientMatterId)->first();
+                $matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatterId) : 'ID: ' . $clientMatterId;
+                $notificationMessage = 'Basic detail ' . $fieldLabel . ' change approved for matter ' . $matterNo;
+                DB::table('notifications')->insert([
+                    'sender_id' => $senderId,
+                    'receiver_id' => $clientId,
+                    'module_id' => $clientMatterId,
+                    'url' => '/details',
+                    'notification_type' => 'detail_approved',
+                    'message' => $notificationMessage,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                    'sender_status' => 1,
+                    'receiver_status' => 0,
+                    'seen' => 0
+                ]);
+
                 DB::commit();
 
                 return response()->json([
@@ -556,6 +574,24 @@ class ClientPortalController extends Controller
                         }
                     }
                 }
+
+                // Notify client (for List Notifications API)
+                $clientMatter = DB::table('client_matters')->where('id', $clientMatterId)->first();
+                $matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatterId) : 'ID: ' . $clientMatterId;
+                $notificationMessage = 'Basic detail ' . $fieldLabel . ' change rejected for matter ' . $matterNo;
+                DB::table('notifications')->insert([
+                    'sender_id' => $senderId,
+                    'receiver_id' => $clientId,
+                    'module_id' => $clientMatterId,
+                    'url' => '/details',
+                    'notification_type' => 'detail_rejected',
+                    'message' => $notificationMessage,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                    'sender_status' => 1,
+                    'receiver_status' => 0,
+                    'seen' => 0
+                ]);
 
                 DB::commit();
 
