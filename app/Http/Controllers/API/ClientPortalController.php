@@ -331,7 +331,7 @@ class ClientPortalController extends Controller
         
         if (!$admin) {
             return response()->json([
-                'success' => true,
+                'success' => false,
                 'message' => 'User is not exist in database.'
             ], 200);
         }
@@ -341,7 +341,7 @@ class ClientPortalController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Your record exists in DB but your role is not Client. So you cannot access this mobile app.'
-            ], 403);
+            ], 200);
         }
         
         // Check if client portal status is active
@@ -349,7 +349,7 @@ class ClientPortalController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'You are not authorized to access this mobile app because your client portal is not active from website. Please contact Administrator.'
-            ], 403);
+            ], 200);
         }
         
         // Generate 6-digit random code
