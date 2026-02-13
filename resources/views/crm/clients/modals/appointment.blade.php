@@ -258,8 +258,14 @@
                                                         <i class="fas fa-unlock-alt mr-2"></i>Slot Overwrite
                                                     </label>
                                                     <input type="hidden" name="slot_overwrite_hidden" id="slot_overwrite_hidden" value="0">
-                                                    </div>
                                                 </div>
+                                                <div class="custom-control custom-checkbox mt-2">
+                                                    <input type="checkbox" class="custom-control-input" name="send_confirmation_email" id="send_confirmation_email" value="1" checked>
+                                                    <label class="custom-control-label" for="send_confirmation_email">
+                                                        <i class="fas fa-envelope mr-2"></i>Send confirmation email to client
+                                                    </label>
+                                                </div>
+                                            </div>
 
                                                     <div class="slotTimeOverwriteDivCls" style="display: none;">
 														<?php
@@ -815,6 +821,11 @@ document.addEventListener('DOMContentLoaded', function() {
 		document.querySelectorAll('.service-card-compact').forEach(card => {
 			card.classList.remove('selected');
 		});
+		// Reset "Send confirmation email" checkbox to checked (default)
+		const sendConfirmationCheckbox = document.getElementById('send_confirmation_email');
+		if (sendConfirmationCheckbox) {
+			sendConfirmationCheckbox.checked = true;
+		}
 		// Hide services and appointment sections
 		document.getElementById('services').style.display = 'none';
 		document.getElementById('appointment_details').style.display = 'none';

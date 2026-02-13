@@ -143,6 +143,40 @@
     </div>
 </div>
 
+<!-- Cancellation Confirmation Modal -->
+<div class="modal fade" id="cancellationConfirmModal" tabindex="-1" role="dialog" data-backdrop="static">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Cancellation</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">Are you sure you want to change the status to <strong>cancelled</strong>?</p>
+                <div class="form-group">
+                    <label for="cancelReasonInput">Cancellation reason <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="cancelReasonInput" placeholder="Enter cancellation reason" required>
+                    <small class="text-danger d-none" id="cancelReasonError">Cancellation reason is required.</small>
+                </div>
+                <div class="form-group mb-0">
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="sendCancellationEmailCheck" checked>
+                        <label class="custom-control-label" for="sendCancellationEmailCheck">Send cancellation confirmation to client</label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmCancelBtn">
+                    <i class="fas fa-times"></i> Confirm Cancellation
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="{{URL::asset('js/moment.min.js')}}"></script>
 
 @vite(['resources/js/app.js'])
@@ -613,35 +647,67 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Global functions for modal actions
+    // Pending cancellation data (used when showing cancellation modal)
+    let pendingCancellationData = null;
+
     window.updateAppointmentStatus = function(appointmentId, newStatus) {
+        // For cancellation, show custom modal with reason and email checkbox
+        if (newStatus === 'cancelled') {
+            pendingCancellationData = { appointmentId, button: event.target };
+            document.getElementById('cancelReasonInput').value = '';
+            document.getElementById('cancelReasonError').classList.add('d-none');
+            document.getElementById('sendCancellationEmailCheck').checked = true;
+            $('#cancellationConfirmModal').modal('show');
+            return;
+        }
+
         if (!confirm(`Are you sure you want to change the status to "${newStatus}"?`)) {
             return;
         }
-        
-        // If cancelling, require cancellation reason
-        let cancellationReason = null;
-        if (newStatus === 'cancelled') {
-            cancellationReason = prompt('Please enter cancellation reason (required):');
-            if (!cancellationReason || cancellationReason.trim() === '') {
-                alert('Cancellation reason is required. Operation cancelled.');
-                return;
-            }
+
+        performStatusUpdate(appointmentId, newStatus, null, false, event.target);
+    };
+
+    // Handler for Confirm Cancellation button in modal (attach when script runs - DOM is ready)
+    (function attachCancelConfirmHandler() {
+        const confirmBtn = document.getElementById('confirmCancelBtn');
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', function() {
+                if (!pendingCancellationData) return;
+                const reason = document.getElementById('cancelReasonInput').value.trim();
+                if (!reason) {
+                    document.getElementById('cancelReasonError').classList.remove('d-none');
+                    return;
+                }
+                document.getElementById('cancelReasonError').classList.add('d-none');
+                const sendEmail = document.getElementById('sendCancellationEmailCheck').checked;
+                $('#cancellationConfirmModal').modal('hide');
+                performStatusUpdate(pendingCancellationData.appointmentId, 'cancelled', reason, sendEmail, pendingCancellationData.button);
+                pendingCancellationData = null;
+            });
         }
-        
+    })();
+
+    function performStatusUpdate(appointmentId, newStatus, cancellationReason, sendCancellationConfirmation, buttonEl) {
         // Show loading state
-        const button = event.target;
-        const originalText = button.innerHTML;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
-        button.disabled = true;
-        
+        const button = buttonEl || event?.target;
+        const originalText = button ? button.innerHTML : '';
+        if (button) {
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+            button.disabled = true;
+        }
+
         const requestData = {
             status: newStatus
         };
-        
+
         if (cancellationReason) {
-            requestData.cancellation_reason = cancellationReason.trim();
+            requestData.cancellation_reason = cancellationReason;
         }
-        
+        if (newStatus === 'cancelled' && sendCancellationConfirmation) {
+            requestData.send_cancellation_confirmation = true;
+        }
+
         fetch(`/booking/appointments/${appointmentId}/update-status`, {
             method: 'POST',
             headers: {
@@ -676,10 +742,12 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .finally(() => {
             // Restore button state
-            button.innerHTML = originalText;
-            button.disabled = false;
+            if (button) {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
         });
-    };
+    }
     
     window.updateAppointmentConsultant = function(appointmentId, consultantId) {
         if (!consultantId) {

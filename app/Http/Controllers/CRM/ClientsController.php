@@ -6234,6 +6234,7 @@ class ClientsController extends Controller
                 'appointment_details' => 'required|in:phone,in_person,video_call',
                 'preferred_language' => 'required|string',
                 'inperson_address' => 'required|in:1,2',
+                'send_confirmation_email' => 'nullable|boolean',
             ]);
 
             if ($validator->fails()) {
@@ -6539,15 +6540,41 @@ class ClientsController extends Controller
             // Log activity with detailed appointment information
             $this->createActivityLogForBookingAppointment($appointment, $serviceId, $requestData['noe_id']);
 
+            // Send confirmation email if checkbox was checked
+            $confirmationEmailSent = false;
+            $confirmationEmailFailed = false;
+            if ($request->has('send_confirmation_email') && $request->boolean('send_confirmation_email')) {
+                try {
+                    $notificationService = app(\App\Services\BansalAppointmentSync\NotificationService::class);
+                    $confirmationEmailSent = $notificationService->sendDetailedConfirmationEmail($appointment);
+                    $confirmationEmailFailed = !$confirmationEmailSent;
+                } catch (\Exception $e) {
+                    $confirmationEmailFailed = true;
+                    Log::error('Failed to send appointment confirmation email', [
+                        'appointment_id' => $appointment->id,
+                        'client_email' => $appointment->client_email,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                }
+            }
+
             // Prepare response message
-            $successMessage = 'Appointment booked successfully';
             if ($bansalApiError) {
-                $successMessage .= '. Note: Appointment created in CRM but could not be synced to Bansal website. Error: ' . $bansalApiError;
                 Log::warning('Appointment created locally but Bansal API sync failed', [
                     'appointment_id' => $appointment->id,
                     'bansal_appointment_id' => $bansalAppointmentId,
                     'api_error' => $bansalApiError
                 ]);
+            }
+            $successMessage = 'Appointment booked successfully';
+            if ($confirmationEmailFailed) {
+                $successMessage = 'Appointment saved, but the confirmation email could not be sent.';
+                if ($bansalApiError) {
+                    $successMessage .= ' Note: Appointment created in CRM but could not be synced to Bansal website. Error: ' . $bansalApiError;
+                }
+            } elseif ($bansalApiError) {
+                $successMessage .= '. Note: Appointment created in CRM but could not be synced to Bansal website. Error: ' . $bansalApiError;
             }
 
             // Return JSON response matching expected format

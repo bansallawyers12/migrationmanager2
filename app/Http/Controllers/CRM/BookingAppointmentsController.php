@@ -445,6 +445,24 @@ class BookingAppointmentsController extends Controller
             $activityLog->save();
         }
 
+        // Send cancellation confirmation email to client if requested
+        if ($request->status === 'cancelled' && $request->boolean('send_cancellation_confirmation')) {
+            try {
+                $notificationService = app(\App\Services\BansalAppointmentSync\NotificationService::class);
+                $notificationService->sendCancellationConfirmationEmail(
+                    $appointment->fresh(),
+                    $request->cancellation_reason
+                );
+            } catch (Exception $e) {
+                Log::error('Failed to send appointment cancellation confirmation email', [
+                    'appointment_id' => $appointment->id,
+                    'client_email' => $appointment->client_email,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
+        }
+
         $message = $syncError
             ? 'Status updated locally. Sync with website failed: ' . $syncError
             : 'Status updated successfully';

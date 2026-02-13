@@ -63,6 +63,41 @@ class NotificationService
     }
 
     /**
+     * Send cancellation confirmation email to client
+     */
+    public function sendCancellationConfirmationEmail(BookingAppointment $appointment, ?string $cancellationReason = null): bool
+    {
+        try {
+            $details = [
+                'client_name' => $appointment->client_name,
+                'appointment_datetime' => $appointment->appointment_datetime,
+                'timeslot_full' => $appointment->timeslot_full,
+                'location' => $appointment->location,
+                'consultant' => $appointment->consultant?->name,
+                'service_type' => $appointment->service_type,
+                'cancellation_reason' => $cancellationReason,
+            ];
+
+            Mail::to($appointment->client_email)->send(
+                new \App\Mail\AppointmentCancellation($details)
+            );
+
+            Log::info('Sent cancellation confirmation email', [
+                'appointment_id' => $appointment->id,
+                'email' => $appointment->client_email,
+            ]);
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Failed to send cancellation confirmation email', [
+                'appointment_id' => $appointment->id,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
+    /**
      * Send reminder SMS (24 hours before appointment)
      */
     public function sendReminderSms(BookingAppointment $appointment): bool
