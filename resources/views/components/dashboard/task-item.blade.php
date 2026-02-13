@@ -65,7 +65,7 @@
         <input type="checkbox" 
                id="task-{{ $note->id }}" 
                class="task-complete-checkbox"
-               onclick="event.stopPropagation(); handleTaskComplete({{ $note->id }}, '{{ $note->unique_group_id }}')">
+               onclick="event.stopPropagation(); handleTaskComplete({{ $note->id }}, {{ json_encode($note->unique_group_id) }})">
         <label for="task-{{ $note->id }}"></label>
     </div>
     

@@ -50,63 +50,62 @@
                         </h3>
                         <span class="todo-count-badge">{{ $count_note_deadline }}</span>
                     </div>
-                    <button class="todo-add-btn add_my_task" data-container="body" data-placement="bottom-start" data-html="true" data-content="
-                        <div class='modern-popover-content add-task-layout'>
-                            <div class='form-group'>
-                                <label class='control-label'><i class='fa fa-user-circle'></i> Client</label>
-                                <select id='assign_client_id' class='form-control js-data-example-ajaxccsearch__addmytask' placeholder='Search and select client...'></select>
-                                <div id='client-error' class='error-message'></div>
+                    {{-- Add Task popover template (outside attribute to avoid unescaped & in JS) --}}
+                    <div id="add-task-popover-template" style="display:none;">
+                        <div class="modern-popover-content add-task-layout">
+                            <div class="form-group">
+                                <label class="control-label"><i class="fa fa-user-circle"></i> Client</label>
+                                <select id="assign_client_id" class="form-control js-data-example-ajaxccsearch__addmytask" placeholder="Search and select client..."></select>
+                                <div id="client-error" class="error-message"></div>
                             </div>
-                            
-                            <div class='form-group'>
-                                <label class='control-label'><i class='fa fa-users'></i> Assignees</label>
-                                <div class='dropdown-multi-select' style='width: 100%;'>
-                                    <button type='button' class='btn btn-default dropdown-toggle' id='dropdownMenuButton' data-toggle='dropdown' aria-haspopup='true' aria-expanded='false' style='width: 100%;'>
-                                        Select assignees <span class='selected-count'></span>
+                            <div class="form-group">
+                                <label class="control-label"><i class="fa fa-users"></i> Assignees</label>
+                                <div class="dropdown-multi-select" style="width: 100%;">
+                                    <button type="button" class="btn btn-default dropdown-toggle" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="width: 100%;">
+                                        Select assignees <span class="selected-count"></span>
                                     </button>
-                                    <div class='dropdown-menu' aria-labelledby='dropdownMenuButton' style='width: 100%;'>
-                                        <div class='dropdown-search-wrapper' style='padding: 8px; border-bottom: 1px solid #e2e8f0;'>
-                                            <input type='text' class='form-control assignee-search-input' placeholder='Search assignees...' style='font-size: 13px; padding: 6px 10px;'>
+                                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton" style="width: 100%;">
+                                        <div class="dropdown-search-wrapper" style="padding: 8px; border-bottom: 1px solid #e2e8f0;">
+                                            <input type="text" class="form-control assignee-search-input" placeholder="Search assignees..." style="font-size: 13px; padding: 6px 10px;">
                                         </div>
-                                        <label class='dropdown-item'><input type='checkbox' id='select-all' /> <strong>Select All</strong></label>
-                                        <div style='border-top: 1px solid #e2e8f0; margin: 5px 0;'></div>
-                                        <div class='assignee-list'>
+                                        <label class="dropdown-item"><input type="checkbox" id="select-all" /> <strong>Select All</strong></label>
+                                        <div style="border-top: 1px solid #e2e8f0; margin: 5px 0;"></div>
+                                        <div class="assignee-list">
                                             @foreach(\App\Models\Admin::where('role','!=',7)->where('status',1)->orderby('first_name','ASC')->get() as $admin)
-                                                <?php 
+                                                @php
                                                     $branchname = \App\Models\Branch::where('id',$admin->office_id)->first();
-                                                    $searchText = strtolower($admin->first_name . $admin->last_name . @$branchname->office_name);
+                                                    $searchText = strtolower($admin->first_name . $admin->last_name . (@$branchname->office_name ?? ''));
                                                     $searchText = str_replace(' ', '', $searchText);
-                                                ?>
-                                                <label class='dropdown-item assignee-item' data-searchtext='{{ $searchText }}'>
-                                                    <input type='checkbox' class='checkbox-item' value='{{ $admin->id }}'>
-                                                    {{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})
+                                                @endphp
+                                                <label class="dropdown-item assignee-item" data-searchtext="{{ e($searchText) }}">
+                                                    <input type="checkbox" class="checkbox-item" value="{{ $admin->id }}">
+                                                    {{ e($admin->first_name) }} {{ e($admin->last_name) }} ({{ e(@$branchname->office_name ?? '') }})
                                                 </label>
                                             @endforeach
                                         </div>
                                     </div>
                                 </div>
-                                <select class='d-none' id='rem_cat' name='rem_cat[]' multiple='multiple'>
+                                <select class="d-none" id="rem_cat" name="rem_cat[]" multiple="multiple">
                                     @foreach(\App\Models\Admin::where('role','!=',7)->where('status',1)->orderby('first_name','ASC')->get() as $admin)
-                                        <option value='{{ $admin->id }}'>{{ $admin->first_name }} {{ $admin->last_name }}</option>
+                                        <option value="{{ $admin->id }}">{{ e($admin->first_name) }} {{ e($admin->last_name) }}</option>
                                     @endforeach
                                 </select>
-                                <div id='assignees-error' class='error-message'></div>
+                                <div id="assignees-error" class="error-message"></div>
                             </div>
-                            
-                            <div class='form-group form-group-full-width'>
-                                <label class='control-label'><i class='fa fa-comment'></i> Task Description</label>
-                                <textarea id='assignnote' class='form-control' rows='3' placeholder='Enter task description...'></textarea>
-                                <div id='note-error' class='error-message'></div>
+                            <div class="form-group form-group-full-width">
+                                <label class="control-label"><i class="fa fa-comment"></i> Task Description</label>
+                                <textarea id="assignnote" class="form-control" rows="3" placeholder="Enter task description..."></textarea>
+                                <div id="note-error" class="error-message"></div>
                             </div>
-                            
-                            <input id='task_group' name='task_group' type='hidden' value='Personal Action'>
-                            
-                            <div class='text-center'>
-                                <button type='button' class='btn btn-primary' id='add_my_task'>
-                                    <i class='fa fa-plus-circle'></i> Add My Task
+                            <input id="task_group" name="task_group" type="hidden" value="Personal Action">
+                            <div class="text-center">
+                                <button type="button" class="btn btn-primary" id="add_my_task">
+                                    <i class="fa fa-plus-circle"></i> Add My Task
                                 </button>
                             </div>
-                        </div>" title="Add New Task">
+                        </div>
+                    </div>
+                    <button class="todo-add-btn add_my_task" data-container="body" data-placement="bottom-start" data-html="true" data-content-id="add-task-popover-template" title="Add New Task">
                         <i class="fas fa-plus"></i>
                     </button>
                 </div>
@@ -131,63 +130,7 @@
                             </div>
                             <h4>All caught up!</h4>
                             <p>You have no actions at the moment.</p>
-                            <button class="todo-empty-add-btn add_my_task" data-container="body" data-placement="bottom-start" data-html="true" data-content="
-                        <div class='modern-popover-content add-task-layout'>
-                            <div class='form-group'>
-                                <label class='control-label'><i class='fa fa-user-circle'></i> Client</label>
-                                <select id='assign_client_id' class='form-control js-data-example-ajaxccsearch__addmytask' placeholder='Search and select client...'></select>
-                                <div id='client-error' class='error-message'></div>
-                            </div>
-                            
-                            <div class='form-group'>
-                                <label class='control-label'><i class='fa fa-users'></i> Assignees</label>
-                                <div class='dropdown-multi-select' style='width: 100%;'>
-                                    <button type='button' class='btn btn-default dropdown-toggle' id='dropdownMenuButton' data-toggle='dropdown' aria-haspopup='true' aria-expanded='false' style='width: 100%;'>
-                                        Select assignees <span class='selected-count'></span>
-                                    </button>
-                                    <div class='dropdown-menu' aria-labelledby='dropdownMenuButton' style='width: 100%;'>
-                                        <div class='dropdown-search-wrapper' style='padding: 8px; border-bottom: 1px solid #e2e8f0;'>
-                                            <input type='text' class='form-control assignee-search-input' placeholder='Search assignees...' style='font-size: 13px; padding: 6px 10px;'>
-                                        </div>
-                                        <label class='dropdown-item'><input type='checkbox' id='select-all' /> <strong>Select All</strong></label>
-                                        <div style='border-top: 1px solid #e2e8f0; margin: 5px 0;'></div>
-                                        <div class='assignee-list'>
-                                            @foreach(\App\Models\Admin::where('role','!=',7)->where('status',1)->orderby('first_name','ASC')->get() as $admin)
-                                                <?php 
-                                                    $branchname = \App\Models\Branch::where('id',$admin->office_id)->first();
-                                                    $searchText = strtolower($admin->first_name . $admin->last_name . @$branchname->office_name);
-                                                    $searchText = str_replace(' ', '', $searchText);
-                                                ?>
-                                                <label class='dropdown-item assignee-item' data-searchtext='{{ $searchText }}'>
-                                                    <input type='checkbox' class='checkbox-item' value='{{ $admin->id }}'>
-                                                    {{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})
-                                                </label>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                </div>
-                                <select class='d-none' id='rem_cat' name='rem_cat[]' multiple='multiple'>
-                                    @foreach(\App\Models\Admin::where('role','!=',7)->where('status',1)->orderby('first_name','ASC')->get() as $admin)
-                                        <option value='{{ $admin->id }}'>{{ $admin->first_name }} {{ $admin->last_name }}</option>
-                                    @endforeach
-                                </select>
-                                <div id='assignees-error' class='error-message'></div>
-                            </div>
-                            
-                            <div class='form-group form-group-full-width'>
-                                <label class='control-label'><i class='fa fa-comment'></i> Task Description</label>
-                                <textarea id='assignnote' class='form-control' rows='3' placeholder='Enter task description...'></textarea>
-                                <div id='note-error' class='error-message'></div>
-                            </div>
-                            
-                            <input id='task_group' name='task_group' type='hidden' value='Personal Action'>
-                            
-                            <div class='text-center'>
-                                <button type='button' class='btn btn-primary' id='add_my_task'>
-                                    <i class='fa fa-plus-circle'></i> Add My Task
-                                </button>
-                            </div>
-                        </div>" title="Add New Task">
+                            <button class="todo-empty-add-btn add_my_task" data-container="body" data-placement="bottom-start" data-html="true" data-content-id="add-task-popover-template" title="Add New Task">
                                 <i class="fas fa-plus"></i>
                                 Add an action
                             </button>
@@ -1247,7 +1190,7 @@
     };
     
     window.dashboardData = {
-        visibleColumns: {!! json_encode($visibleColumns) !!}
+        visibleColumns: {!! json_encode($visibleColumns, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}
     };
     
     // Error handling for missing routes
@@ -1258,16 +1201,24 @@
 <script src="{{ asset('js/dashboard-optimized.js') }}"></script>
 <script>
 $(function () {
-    // Initialize Add New Task popover - matching action page
-    $('.add_my_task').popover({
-        html: true,
-        sanitize: false,
-        trigger: 'click',
-        placement: 'top',
-        boundary: 'viewport',
-        container: 'body',
-        title: '<i class="fa fa-plus-circle"></i> Add New Task',
-        template: '<div class="popover add-my-task-popover" role="tooltip"><div class="popover-header"></div><div class="popover-body"></div></div>'
+    // Initialize Add New Task popover - content from template (avoids unescaped & in data-content attribute)
+    $('.add_my_task').each(function() {
+        var $btn = $(this);
+        var contentId = $btn.data('content-id');
+        var popoverOpts = {
+            html: true,
+            sanitize: false,
+            trigger: 'click',
+            placement: 'top',
+            boundary: 'viewport',
+            container: 'body',
+            title: '<i class="fa fa-plus-circle"></i> Add New Task',
+            template: '<div class="popover add-my-task-popover" role="tooltip"><div class="popover-header"></div><div class="popover-body"></div></div>'
+        };
+        if (contentId && $('#' + contentId).length) {
+            popoverOpts.content = function() { return $('#' + contentId).html(); };
+        }
+        $btn.popover(popoverOpts);
     });
     
     // Initialize client select for Add My Task popover
@@ -1367,27 +1318,24 @@ $(function () {
         if (repo.loading) {
             return repo.text;
         }
-
+        var cidSafe = String(repo.cid || '').replace(/'/g, '&#39;').replace(/&/g, '&amp;');
         var $container = $(
-            "<div dataid="+(repo.cid || '')+" class='selectclient select2-result-repository ag-flex ag-space-between ag-align-center')'>" +
-            "<div  class='ag-flex ag-align-start'>" +
-                "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'></span>&nbsp;</div>" +
-                "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'></small ></div>" +
+            "<div dataid='" + cidSafe + "' class='selectclient select2-result-repository ag-flex ag-space-between ag-align-center'>" +
+            "<div class='ag-flex ag-align-start'>" +
+                "<div class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span class='select2-result-repository__title text-semi-bold'></span>\u00A0</div>" +
+                "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'></small></div>" +
             "</div>" +
             "</div>" +
             "<div class='ag-flex ag-flex-column ag-align-end'>" +
-                "<span class='select2resultrepositorystatistics'>" +
-                "</span>" +
+                "<span class='select2resultrepositorystatistics'></span>" +
             "</div>" +
             "</div>"
         );
-
         $container.find(".select2-result-repository__title").text(repo.name || '');
         $container.find(".select2-result-repository__description").text(repo.email || '');
-        if(repo.status == 'Archived'){
-            $container.find(".select2resultrepositorystatistics").append('<span class="ui label  select2-result-repository__statistics">'+(repo.status || '')+'</span>');
-        } else if(repo.status) {
-            $container.find(".select2resultrepositorystatistics").append('<span class="ui label yellow select2-result-repository__statistics">'+(repo.status || '')+'</span>');
+        var statClass = (repo.status == 'Archived') ? 'ui label select2-result-repository__statistics' : 'ui label yellow select2-result-repository__statistics';
+        if (repo.status) {
+            $container.find(".select2resultrepositorystatistics").append($('<span class="' + statClass + '"></span>').text(repo.status));
         }
         return $container;
     }

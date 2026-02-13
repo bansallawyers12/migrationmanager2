@@ -707,7 +707,7 @@
     <script src="{{asset('js/iziToast.min.js')}}"></script>
     <script src="{{asset('js/custom.js')}}"></script>
     @auth('admin')
-    <script>window.crmLoginUrl = {{ json_encode(route('crm.login')) }};</script>
+    <script>window.crmLoginUrl = {!! json_encode(route('crm.login')) !!};</script>
     <script src="{{asset('js/cross-tab-logout.js')}}"></script>
     @endauth
     <script>
@@ -750,10 +750,10 @@
                 }
 
                 var $container = $(
-                    "<div dataid="+repo.cid+" class='selectclient select2-result-repository ag-flex ag-space-between ag-align-center')'>" +
+                    "<div dataid='" + (repo.cid || '').toString().replace(/'/g, '&#39;').replace(/&/g, '&amp;') + "' class='selectclient select2-result-repository ag-flex ag-space-between ag-align-center'>" +
 
                     "<div  class='ag-flex ag-align-start'>" +
-                        "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'></span>&nbsp;</div>" +
+                        "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'></span>\u00A0</div>" +
                         "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'></small ></div>" +
 
                     "</div>" +
@@ -769,11 +769,8 @@
 
                 $container.find(".select2-result-repository__title").text(repo.name);
                 $container.find(".select2-result-repository__description").text(repo.email);
-                if(repo.status == 'Archived'){
-                    $container.find(".select2resultrepositorystatistics").append('<span class="ui label  select2-result-repository__statistics">'+repo.status+'</span>');
-                } else {
-                    $container.find(".select2resultrepositorystatistics").append('<span class="ui label yellow select2-result-repository__statistics">'+repo.status+'</span>');
-                }
+                var statClass = (repo.status == 'Archived') ? 'ui label select2-result-repository__statistics' : 'ui label yellow select2-result-repository__statistics';
+                $container.find(".select2resultrepositorystatistics").append($('<span class="' + statClass + '"></span>').text(repo.status || ''));
                 return $container;
             }
 
@@ -1343,7 +1340,7 @@
                     "<div  class='select2-result-repository ag-flex ag-space-between ag-align-center'>" +
 
                     "<div  class='ag-flex ag-align-start'>" +
-                        "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'></span>&nbsp;</div>" +
+                        "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'></span>\u00A0</div>" +
                         "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'></small ></div>" +
 
                     "</div>" +
@@ -1359,11 +1356,8 @@
 
                 $container.find(".select2-result-repository__title").text(repo.name);
                 $container.find(".select2-result-repository__description").text(repo.email);
-                if(repo.status == 'Archived'){
-                    $container.find(".select2resultrepositorystatistics").append('<span class="ui label  select2-result-repository__statistics">'+repo.status+'</span>');
-                }else{
-                    $container.find(".select2resultrepositorystatistics").append('<span class="ui label yellow select2-result-repository__statistics">'+repo.status+'</span>');
-                }
+                var statClass = (repo.status == 'Archived') ? 'ui label select2-result-repository__statistics' : 'ui label yellow select2-result-repository__statistics';
+                $container.find(".select2resultrepositorystatistics").append($('<span class="' + statClass + '"></span>').text(repo.status || ''));
                 return $container;
             }
 

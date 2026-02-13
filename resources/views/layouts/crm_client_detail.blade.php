@@ -1645,7 +1645,7 @@
     <script src="{{asset('js/iziToast.min.js')}}"></script>
     <script src="{{asset('js/custom.js')}}"></script>
     @auth('admin')
-    <script>window.crmLoginUrl = {{ json_encode(route('crm.login')) }};</script>
+    <script>window.crmLoginUrl = {!! json_encode(route('crm.login')) !!};</script>
     <script src="{{asset('js/cross-tab-logout.js')}}"></script>
     @endauth
     <script>

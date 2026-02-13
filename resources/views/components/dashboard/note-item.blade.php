@@ -84,14 +84,14 @@
         </span>
         <div class="note-actions">
             <button class="btn-note-action btn-complete" 
-                    onclick="closeNotesDeadlineAction({{ $note->id }}, '{{ $note->unique_group_id }}')"
+                    onclick="closeNotesDeadlineAction({{ $note->id }}, {{ json_encode($note->unique_group_id) }})"
                     title="Mark as Complete">
                 <i class="fas fa-check"></i> Complete
             </button>
             <button class="btn-note-action btn-extend btn-extend_note_deadline" 
                     data-noteid="{{ $note->id }}" 
                     data-uniquegroupid="{{ $note->unique_group_id }}" 
-                    data-assignnote="{{ $note->description }}" 
+                    data-assignnote="{{ e($note->description ?? '') }}" 
                     data-deadlinedate="{{ $note->note_deadline }}"
                     title="Extend Deadline">
                 <i class="fas fa-calendar-plus"></i> Extend
