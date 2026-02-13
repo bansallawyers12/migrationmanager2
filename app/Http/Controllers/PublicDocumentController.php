@@ -57,8 +57,12 @@ class PublicDocumentController extends Controller
             if (isset($document->doc_type) && $document->doc_type == 'agreement') {
                 $signer = $document->signers()->where('document_id', $documentId)->first();
                 if ($signer) {
-                    $signer->update(['token' => $token, 'status' => 'pending']);
-                    $signer = $document->signers()->where('token', $token)->first();
+                    // Only update token/status when still pending - never overwrite 'signed' or 'cancelled'
+                    if ($signer->status === 'pending') {
+                        $signer->update(['token' => $token, 'status' => 'pending']);
+                        $signer = $document->signers()->where('token', $token)->first();
+                    }
+                    // If signed or cancelled, $signer stays as-is; status check below will redirect
                 } else {
                     $signer = $document->signers()->create([
                         'token' => $token,

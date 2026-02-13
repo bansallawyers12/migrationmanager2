@@ -2421,9 +2421,13 @@ class DocumentController extends Controller
                 $isDocumentExistInSignerTbl = $document->signers()->where('document_id', $documentId )->first(); //dd($isDocumentExistInSignerTbl);
                 if($isDocumentExistInSignerTbl)
                 {
-                    // Update existing document in signer table
-                    $isDocumentExistInSignerTbl->update(['token' => $token,'status' => 'pending']);
-                    $signer = $document->signers()->where('token', $token)->first();
+                    // Only update token/status when still pending - never overwrite 'signed' or 'cancelled'
+                    if ($isDocumentExistInSignerTbl->status === 'pending') {
+                        $isDocumentExistInSignerTbl->update(['token' => $token,'status' => 'pending']);
+                        $signer = $document->signers()->where('token', $token)->first();
+                    } else {
+                        $signer = $isDocumentExistInSignerTbl;
+                    }
                 }
                 else
                 {
