@@ -1647,6 +1647,29 @@ class ClientPortalController extends Controller
 				$response['status'] 	= 	true;
 				$response['message'] 	= 	'Record removed successfully';
 
+				// Notify client (for List Notifications API)
+				$app = DB::table('applications')->where('id', $appdoc->application_id)->first();
+				if ($app && !empty($app->client_id) && !empty($app->client_matter_id)) {
+					$clientMatter = DB::table('client_matters')->where('id', $app->client_matter_id)->first();
+					$matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID: ' . $app->client_matter_id) : 'ID: ' . $app->client_matter_id;
+					$docList = DB::table('application_document_lists')->where('id', $appdoc->list_id)->first();
+					$docType = $docList ? $docList->document_type : ($appdoc->file_name ?? 'Document');
+					$notificationMessage = 'Document "' . $docType . '" removed for matter ' . $matterNo;
+					DB::table('notifications')->insert([
+						'sender_id' => Auth::guard('admin')->id(),
+						'receiver_id' => $app->client_id,
+						'module_id' => $app->client_matter_id,
+						'url' => '/documents',
+						'notification_type' => 'document_deleted',
+						'message' => $notificationMessage,
+						'created_at' => now(),
+						'updated_at' => now(),
+						'sender_status' => 1,
+						'receiver_status' => 0,
+						'seen' => 0
+					]);
+				}
+
 				$doclists = \App\Models\ApplicationDocument::where('application_id',$appdoc->application_id)->orderby('created_at','DESC')->get();
 		$doclistdata = '';
 		foreach($doclists as $doclist){
@@ -1726,6 +1749,29 @@ class ClientPortalController extends Controller
 			if($res){
 				$response['status'] 	= 	true;
 				$response['message'] 	= 	'Record removed successfully';
+
+				// Notify client (for List Notifications API)
+				$app = DB::table('applications')->where('id', $appdoc->application_id)->first();
+				if ($app && !empty($app->client_id) && !empty($app->client_matter_id)) {
+					$clientMatter = DB::table('client_matters')->where('id', $app->client_matter_id)->first();
+					$matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID: ' . $app->client_matter_id) : 'ID: ' . $app->client_matter_id;
+					$docList = DB::table('application_document_lists')->where('id', $appdoc->list_id)->first();
+					$docType = $docList ? $docList->document_type : ($appdoc->file_name ?? 'Document');
+					$notificationMessage = 'Document "' . $docType . '" removed for matter ' . $matterNo;
+					DB::table('notifications')->insert([
+						'sender_id' => Auth::guard('admin')->id(),
+						'receiver_id' => $app->client_id,
+						'module_id' => $app->client_matter_id,
+						'url' => '/documents',
+						'notification_type' => 'document_deleted',
+						'message' => $notificationMessage,
+						'created_at' => now(),
+						'updated_at' => now(),
+						'sender_status' => 1,
+						'receiver_status' => 0,
+						'seen' => 0
+					]);
+				}
 
 				$doclists = \App\Models\ApplicationDocument::where('application_id',$appdoc->application_id)->orderby('created_at','DESC')->get();
 		$doclistdata = '';
@@ -1898,6 +1944,28 @@ class ClientPortalController extends Controller
 							'created_at' => now(),
 							'updated_at' => now()
 						]);
+
+						// Notify client (for List Notifications API)
+						if (!empty($app->client_matter_id)) {
+							$clientMatter = DB::table('client_matters')->where('id', $app->client_matter_id)->first();
+							$matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID: ' . $app->client_matter_id) : 'ID: ' . $app->client_matter_id;
+							$docList = DB::table('application_document_lists')->where('id', $doc->list_id)->first();
+							$docType = $docList ? $docList->document_type : ($doc->file_name ?? 'Document');
+							$notificationMessage = 'Document "' . $docType . '" approved for matter ' . $matterNo;
+							DB::table('notifications')->insert([
+								'sender_id' => Auth::guard('admin')->id(),
+								'receiver_id' => $app->client_id,
+								'module_id' => $app->client_matter_id,
+								'url' => '/documents',
+								'notification_type' => 'document_approved',
+								'message' => $notificationMessage,
+								'created_at' => now(),
+								'updated_at' => now(),
+								'sender_status' => 1,
+								'receiver_status' => 0,
+								'seen' => 0
+							]);
+						}
 					}
 				}
 				$response['status'] = true;
@@ -1965,6 +2033,28 @@ class ClientPortalController extends Controller
 							'created_at' => now(),
 							'updated_at' => now()
 						]);
+
+						// Notify client (for List Notifications API)
+						if (!empty($app->client_matter_id)) {
+							$clientMatter = DB::table('client_matters')->where('id', $app->client_matter_id)->first();
+							$matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID: ' . $app->client_matter_id) : 'ID: ' . $app->client_matter_id;
+							$docList = DB::table('application_document_lists')->where('id', $doc->list_id)->first();
+							$docType = $docList ? $docList->document_type : ($doc->file_name ?? 'Document');
+							$notificationMessage = 'Document "' . $docType . '" rejected for matter ' . $matterNo;
+							DB::table('notifications')->insert([
+								'sender_id' => Auth::guard('admin')->id(),
+								'receiver_id' => $app->client_id,
+								'module_id' => $app->client_matter_id,
+								'url' => '/documents',
+								'notification_type' => 'document_rejected',
+								'message' => $notificationMessage,
+								'created_at' => now(),
+								'updated_at' => now(),
+								'sender_status' => 1,
+								'receiver_status' => 0,
+								'seen' => 0
+							]);
+						}
 					}
 				}
 				$response['status'] = true;
@@ -2059,6 +2149,29 @@ class ClientPortalController extends Controller
 			
 			// Ensure filename is properly encoded
 			$encodedFileName = rawurlencode($fileName);
+			
+			// Notify client (for List Notifications API)
+			$app = DB::table('applications')->where('id', $document->application_id)->first();
+			if ($app && !empty($app->client_id) && !empty($app->client_matter_id) && Auth::guard('admin')->check()) {
+				$clientMatter = DB::table('client_matters')->where('id', $app->client_matter_id)->first();
+				$matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID: ' . $app->client_matter_id) : 'ID: ' . $app->client_matter_id;
+				$docList = DB::table('application_document_lists')->where('id', $document->list_id)->first();
+				$docType = $docList ? $docList->document_type : ($document->file_name ?? 'Document');
+				$notificationMessage = 'Document "' . $docType . '" downloaded for matter ' . $matterNo;
+				DB::table('notifications')->insert([
+					'sender_id' => Auth::guard('admin')->id(),
+					'receiver_id' => $app->client_id,
+					'module_id' => $app->client_matter_id,
+					'url' => '/documents',
+					'notification_type' => 'document_downloaded',
+					'message' => $notificationMessage,
+					'created_at' => now(),
+					'updated_at' => now(),
+					'sender_status' => 1,
+					'receiver_status' => 0,
+					'seen' => 0
+				]);
+			}
 			
 			// Return file as download with proper headers to force download
 			return response($fileContent, 200)
