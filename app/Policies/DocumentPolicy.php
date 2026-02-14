@@ -2,10 +2,9 @@
 
 namespace App\Policies;
 
-use App\Models\Admin;
 use App\Models\Document;
-use App\Models\Lead;
 use Illuminate\Auth\Access\HandlesAuthorization;
+use Illuminate\Contracts\Auth\Authenticatable;
 
 class DocumentPolicy
 {
@@ -14,16 +13,16 @@ class DocumentPolicy
     /**
      * Determine if the user can view any documents
      */
-    public function viewAny(Admin $user): bool
+    public function viewAny(Authenticatable $user): bool
     {
-        // All authenticated admin users can view documents
+        // All authenticated CRM users (Admin/Staff) can view documents
         return true;
     }
 
     /**
      * Determine if the user can view the document
      */
-    public function view(Admin $user, Document $document): bool
+    public function view(Authenticatable $user, Document $document): bool
     {
         // Global access - everyone can view all documents
         return true;
@@ -32,16 +31,16 @@ class DocumentPolicy
     /**
      * Determine if the user can create documents
      */
-    public function create(Admin $user): bool
+    public function create(Authenticatable $user): bool
     {
-        // All staff members can create documents (not client portal users)
+        // All staff members can create documents (not client portal users, role 7)
         return $user->role !== 7;
     }
 
     /**
      * Determine if the user can update the document
      */
-    public function update(Admin $user, Document $document): bool
+    public function update(Authenticatable $user, Document $document): bool
     {
         // Global access - everyone can update all documents
         return true;
@@ -50,7 +49,7 @@ class DocumentPolicy
     /**
      * Determine if the user can delete the document
      */
-    public function delete(Admin $user, Document $document): bool
+    public function delete(Authenticatable $user, Document $document): bool
     {
         // Global access - everyone can delete documents (only if not signed)
         return $document->status !== 'signed';
@@ -59,7 +58,7 @@ class DocumentPolicy
     /**
      * Determine if the user can view all documents (admin-only view)
      */
-    public function viewAll(Admin $user): bool
+    public function viewAll(Authenticatable $user): bool
     {
         // Only super admins can view all documents
         return $user->role === 1;
@@ -68,7 +67,7 @@ class DocumentPolicy
     /**
      * Determine if the user can send reminders for this document
      */
-    public function sendReminder(Admin $user, Document $document): bool
+    public function sendReminder(Authenticatable $user, Document $document): bool
     {
         // Global access - everyone can send reminders for any document
         return true;
@@ -77,7 +76,7 @@ class DocumentPolicy
     /**
      * Determine if the user can void this document
      */
-    public function void(Admin $user, Document $document): bool
+    public function void(Authenticatable $user, Document $document): bool
     {
         // Global access - everyone can void documents (only if not signed)
         return $document->status !== 'signed';
@@ -86,7 +85,7 @@ class DocumentPolicy
     /**
      * Determine if the user can associate/detach documents
      */
-    public function associate(Admin $user, Document $document): bool
+    public function associate(Authenticatable $user, Document $document): bool
     {
         // Global access - everyone can associate/detach documents
         return true;
