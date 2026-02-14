@@ -155,16 +155,17 @@ Route::middleware(['auth:admin'])->group(function() {
             ->where('batchUuid', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}');
     });
 
-    // User Login Analytics Routes
-    Route::get('/user-login-analytics', [\App\Http\Controllers\CRM\UserLoginAnalyticsController::class, 'index'])->name('user-login-analytics.index');
-    Route::prefix('api/user-login-analytics')->name('api.user-login-analytics.')->group(function () {
-        Route::get('/daily', [\App\Http\Controllers\CRM\UserLoginAnalyticsController::class, 'daily'])->name('daily');
-        Route::get('/weekly', [\App\Http\Controllers\CRM\UserLoginAnalyticsController::class, 'weekly'])->name('weekly');
-        Route::get('/monthly', [\App\Http\Controllers\CRM\UserLoginAnalyticsController::class, 'monthly'])->name('monthly');
-        Route::get('/hourly', [\App\Http\Controllers\CRM\UserLoginAnalyticsController::class, 'hourly'])->name('hourly');
-        Route::get('/summary', [\App\Http\Controllers\CRM\UserLoginAnalyticsController::class, 'summary'])->name('summary');
-        Route::get('/top-users', [\App\Http\Controllers\CRM\UserLoginAnalyticsController::class, 'topUsers'])->name('top-users');
-        Route::get('/trends', [\App\Http\Controllers\CRM\UserLoginAnalyticsController::class, 'trends'])->name('trends');
+    // Staff Login Analytics Routes (was user-login-analytics)
+    Route::redirect('/user-login-analytics', '/staff-login-analytics', 301);
+    Route::get('/staff-login-analytics', [\App\Http\Controllers\CRM\StaffLoginAnalyticsController::class, 'index'])->name('staff-login-analytics.index');
+    Route::prefix('api/staff-login-analytics')->name('api.staff-login-analytics.')->group(function () {
+        Route::get('/daily', [\App\Http\Controllers\CRM\StaffLoginAnalyticsController::class, 'daily'])->name('daily');
+        Route::get('/weekly', [\App\Http\Controllers\CRM\StaffLoginAnalyticsController::class, 'weekly'])->name('weekly');
+        Route::get('/monthly', [\App\Http\Controllers\CRM\StaffLoginAnalyticsController::class, 'monthly'])->name('monthly');
+        Route::get('/hourly', [\App\Http\Controllers\CRM\StaffLoginAnalyticsController::class, 'hourly'])->name('hourly');
+        Route::get('/summary', [\App\Http\Controllers\CRM\StaffLoginAnalyticsController::class, 'summary'])->name('summary');
+        Route::get('/top-users', [\App\Http\Controllers\CRM\StaffLoginAnalyticsController::class, 'topUsers'])->name('top-users');
+        Route::get('/trends', [\App\Http\Controllers\CRM\StaffLoginAnalyticsController::class, 'trends'])->name('trends');
     });
 
     /*---------- Reports Routes ----------*/

@@ -9,7 +9,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
-class UserLoginAnalyticsService
+class StaffLoginAnalyticsService
 {
     /**
      * Get daily login counts for a date range
@@ -233,7 +233,7 @@ class UserLoginAnalyticsService
     }
 
     /**
-     * Get top users by login count
+     * Get top staff by login count
      */
     public function getTopUsers(int $limit = 10, ?Carbon $startDate = null, ?Carbon $endDate = null): Collection
     {
@@ -316,4 +316,3 @@ class UserLoginAnalyticsService
         ];
     }
 }
-

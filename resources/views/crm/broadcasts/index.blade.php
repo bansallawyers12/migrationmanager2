@@ -228,7 +228,7 @@
                                             </div>
                                         </div>
                                         <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                                            <a href="{{ route('user-login-analytics.index') }}" class="btn btn-light btn-sm active-users-action-btn">
+                                            <a href="{{ route('staff-login-analytics.index') }}" class="btn btn-light btn-sm active-users-action-btn">
                                                 <i class="fas fa-chart-line"></i>
                                                 <span class="d-none d-md-inline">Analytics</span>
                                             </a>

@@ -3,25 +3,25 @@
 namespace App\Http\Controllers\CRM;
 
 use App\Http\Controllers\Controller;
-use App\Services\UserLoginAnalyticsService;
+use App\Services\StaffLoginAnalyticsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
-class UserLoginAnalyticsController extends Controller
+class StaffLoginAnalyticsController extends Controller
 {
     public function __construct(
-        protected UserLoginAnalyticsService $analytics
+        protected StaffLoginAnalyticsService $analytics
     ) {
         $this->middleware('auth:admin');
     }
 
     /**
-     * Display the analytics dashboard
+     * Display the staff login analytics dashboard
      */
     public function index(Request $request)
     {
-        return view('crm.user-login-analytics.index');
+        return view('crm.staff-login-analytics.index');
     }
 
     /**
@@ -110,7 +110,7 @@ class UserLoginAnalyticsController extends Controller
     }
 
     /**
-     * Get top users
+     * Get top staff by login count
      */
     public function topUsers(Request $request): JsonResponse
     {
@@ -142,4 +142,3 @@ class UserLoginAnalyticsController extends Controller
         ]);
     }
 }
-

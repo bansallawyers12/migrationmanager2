@@ -1,13 +1,13 @@
 @extends('layouts.crm_client_detail')
-@section('title', 'User Login Analytics')
+@section('title', 'Staff Login Analytics')
 
 @section('content')
 <div class="main-content">
     <section class="section">
         <div class="section-header">
             <div>
-                <h1 class="mb-0">User Login Analytics</h1>
-                <p class="mb-0 text-secondary" style="font-size: 0.95rem;">Track and analyze user login patterns over time</p>
+                <h1 class="mb-0">Staff Login Analytics</h1>
+                <p class="mb-0 text-secondary" style="font-size: 0.95rem;">Track and analyze staff login patterns over time</p>
             </div>
         </div>
 
@@ -17,11 +17,11 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-3">
-                            <label for="user-filter" class="font-weight-semibold text-dark">User</label>
+                            <label for="user-filter" class="font-weight-semibold text-dark">Staff</label>
                             <select id="user-filter" class="form-control">
-                                <option value="">All Users</option>
-                                @foreach(\App\Models\Admin::where('status', 1)->where('role', '!=', 7)->orderBy('first_name')->get() as $user)
-                                    <option value="{{ $user->id }}">{{ trim($user->first_name . ' ' . $user->last_name) ?: $user->email }}</option>
+                                <option value="">All Staff</option>
+                                @foreach(\App\Models\Staff::where('status', 1)->orderBy('first_name')->get() as $staff)
+                                    <option value="{{ $staff->id }}">{{ trim($staff->first_name . ' ' . $staff->last_name) ?: $staff->email }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -86,7 +86,7 @@
                         </div>
                         <div class="card-wrap">
                             <div class="card-header">
-                                <h4>Unique Users</h4>
+                                <h4>Unique Staff</h4>
                             </div>
                             <div class="card-body" id="unique-users">
                                 <span class="spinner-border spinner-border-sm"></span>
@@ -155,7 +155,7 @@
                 <div class="col-lg-6">
                     <div class="card">
                         <div class="card-header">
-                            <h4>Top Users by Login Count</h4>
+                            <h4>Top Staff by Login Count</h4>
                         </div>
                         <div class="card-body">
                             <canvas id="topUsersChart" height="100"></canvas>
@@ -174,12 +174,12 @@
                 </div>
             </div>
 
-            <!-- Top Users Table -->
+            <!-- Top Staff Table -->
             <div class="row mt-4">
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
-                            <h4>Top Users</h4>
+                            <h4>Top Staff</h4>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
@@ -187,7 +187,7 @@
                                     <thead>
                                         <tr>
                                             <th>Rank</th>
-                                            <th>User</th>
+                                            <th>Staff</th>
                                             <th>Email</th>
                                             <th>Login Count</th>
                                             <th>Last Login</th>
@@ -248,7 +248,7 @@
 
     async function loadSummary() {
         try {
-            const response = await fetch(`/api/user-login-analytics/summary?${getQueryParams()}`, {
+            const response = await fetch(`/api/staff-login-analytics/summary?${getQueryParams()}`, {
                 headers: { 'Accept': 'application/json' },
                 credentials: 'include'
             });
@@ -269,7 +269,7 @@
         try {
             const period = periodFilter.value;
             const endpoint = period === 'daily' ? 'daily' : (period === 'weekly' ? 'weekly' : 'monthly');
-            const response = await fetch(`/api/user-login-analytics/${endpoint}?${getQueryParams()}`, {
+            const response = await fetch(`/api/staff-login-analytics/${endpoint}?${getQueryParams()}`, {
                 headers: { 'Accept': 'application/json' },
                 credentials: 'include'
             });
@@ -298,7 +298,7 @@
                             tension: 0.4,
                             fill: true
                         }, {
-                            label: 'Unique Users',
+                            label: 'Unique Staff',
                             data: uniqueUsers,
                             borderColor: 'rgb(17, 153, 142)',
                             backgroundColor: 'rgba(17, 153, 142, 0.1)',
@@ -333,7 +333,7 @@
 
     async function loadHourly() {
         try {
-            const response = await fetch(`/api/user-login-analytics/hourly?${getQueryParams()}`, {
+            const response = await fetch(`/api/staff-login-analytics/hourly?${getQueryParams()}`, {
                 headers: { 'Accept': 'application/json' },
                 credentials: 'include'
             });
@@ -390,7 +390,7 @@
 
     async function loadTopUsers() {
         try {
-            const response = await fetch(`/api/user-login-analytics/top-users?${getQueryParams()}`, {
+            const response = await fetch(`/api/staff-login-analytics/top-users?${getQueryParams()}`, {
                 headers: { 'Accept': 'application/json' },
                 credentials: 'include'
             });
@@ -450,13 +450,13 @@
                 });
             }
         } catch (error) {
-            console.error('Failed to load top users:', error);
+            console.error('Failed to load top staff:', error);
         }
     }
 
     async function loadSuccessFailed() {
         try {
-            const response = await fetch(`/api/user-login-analytics/summary?${getQueryParams()}`, {
+            const response = await fetch(`/api/staff-login-analytics/summary?${getQueryParams()}`, {
                 headers: { 'Accept': 'application/json' },
                 credentials: 'include'
             });
@@ -526,4 +526,3 @@
 })();
 </script>
 @endpush
-
