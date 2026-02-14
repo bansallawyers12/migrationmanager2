@@ -368,15 +368,15 @@ class AssigneeController extends Controller
                                 $lastName = Utf8Helper::safeSanitize($data->noteClient->last_name ?? '');
                                 $clientId = Utf8Helper::safeSanitize($data->noteClient->client_id ?? '');
                                 
-                                $user_name = $firstName . ' ' . $lastName;
-                                $user_name .= "<br>";
+                                $client_name = $firstName . ' ' . $lastName;
+                                $client_name .= "<br>";
                                 $client_encoded_id = base64_encode(convert_uuencode(@$data->client_id));
-                                $user_name .= '<a href="'.url('/clients/detail/'.$client_encoded_id).'" target="_blank">'.$clientId.'</a>';
+                                $client_name .= '<a href="'.url('/clients/detail/'.$client_encoded_id).'" target="_blank">'.$clientId.'</a>';
                             } else {
                                 // Personal Action - no client assigned
-                                $user_name = '<span class="badge badge-info">Personal Action</span>';
+                                $client_name = '<span class="badge badge-info">Personal Action</span>';
                             }
-                            return $user_name;
+                            return $client_name;
                         } catch (\Exception $e) {
                             return 'N/P';
                         }

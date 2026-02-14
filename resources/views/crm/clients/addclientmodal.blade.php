@@ -56,7 +56,7 @@
 
 <!-- Upload inbox/sent email modals removed - now in modals/emails.blade.php -->
 
-<!-- Assign User Modal (create_action_popup), styles, and popuploader removed - now in modals/client-management.blade.php -->
+<!-- Assign Staff Modal (create_action_popup), styles, and popuploader removed - now in modals/client-management.blade.php -->
 
 <!-- Financial Modals (Edit Ledger Entry, Cost Assignments) removed - now in modals/financial.blade.php -->
 <!-- Change Matter Assignee Modal removed - now in modals/client-management.blade.php -->
@@ -75,7 +75,7 @@ $(document).ready(function() {
 
     // Handle checkbox changes
     $('.checkbox-item').on('change', function() {
-        updateSelectedUsers();
+        updateSelectedStaff();
         updateHiddenSelect();
         
         // Clear any existing timer
@@ -93,7 +93,7 @@ $(document).ready(function() {
 
     // Handle search functionality in main input
     var searchTimeout;
-    $('#user-search-input').on('input keyup', function() {
+    $('#staff-search-input').on('input keyup', function() {
         var $input = $(this);
         var $wrapper = $('.enhanced-dropdown-input-wrapper');
         var searchTerm = $input.val().toLowerCase();
@@ -113,13 +113,13 @@ $(document).ready(function() {
         
         // Debounce search
         searchTimeout = setTimeout(function() {
-            filterUsers(searchTerm);
+            filterStaff(searchTerm);
         }, 200);
     });
 
     // Open dropdown on focus
-    $('#user-search-input').on('focus click', function() {
-        var $dropdown = $('#userDropdownMenu');
+    $('#staff-search-input').on('focus click', function() {
+        var $dropdown = $('#staffDropdownMenu');
         var $wrapper = $('.enhanced-dropdown-input-wrapper');
         
         // If users are selected, clear input to show search placeholder
@@ -146,7 +146,7 @@ $(document).ready(function() {
     });
 
     // Prevent dropdown from closing when clicking on specific elements (but NOT checkboxes)
-    $('#userDropdownMenu').on('click', function(e) {
+    $('#staffDropdownMenu').on('click', function(e) {
         // Allow checkboxes to close the dropdown - don't stop propagation
         if ($(e.target).hasClass('checkbox-item') || $(e.target).hasClass('modern-checkbox')) {
             return; // Let the click propagate to close the dropdown
@@ -157,7 +157,7 @@ $(document).ready(function() {
     });
 
     // Handle select all button - prevent closing for bulk operations
-    $('#select-all-users').on('click', function(e) {
+    $('#select-all-staff').on('click', function(e) {
         e.stopPropagation(); // Keep dropdown open for bulk operations
         
         // Clear any existing auto-close timer when using bulk operations
@@ -170,7 +170,7 @@ $(document).ready(function() {
     });
 
     // Handle select none button - prevent closing for bulk operations
-    $('#select-none-users').on('click', function(e) {
+    $('#select-none-staff').on('click', function(e) {
         e.stopPropagation(); // Keep dropdown open for bulk operations
         
         // Clear any existing auto-close timer when using bulk operations
@@ -185,72 +185,72 @@ $(document).ready(function() {
 
 function initializeMultiSelectDropdown() {
     // Update the button text initially
-    updateSelectedUsers();
+    updateSelectedStaff();
 }
 
 function closeDropdown() {
-    $('#userDropdownMenu').removeClass('show');
-    $('#user-search-input').attr('aria-expanded', 'false');
+    $('#staffDropdownMenu').removeClass('show');
+    $('#staff-search-input').attr('aria-expanded', 'false');
     // Clear search when closing
-    $('#user-search-input').val('');
-    filterUsers('');
+    $('#staff-search-input').val('');
+    filterStaff('');
     
     // Show selected users if any are selected
     var $wrapper = $('.enhanced-dropdown-input-wrapper');
     if ($('.checkbox-item:checked').length > 0) {
         $wrapper.addClass('has-selection');
-        updateSelectedUsers();
+        updateSelectedStaff();
     } else {
         $wrapper.removeClass('has-selection');
     }
 }
 
-function updateSelectedUsers() {
-    var selectedUsers = [];
-    var selectedUsersWithDetails = [];
+function updateSelectedStaff() {
+    var selectedStaff = [];
+    var selectedStaffWithDetails = [];
     
     $('.checkbox-item:checked').each(function() {
-        var userItem = $(this).closest('.modern-user-item');
-        var fullName = userItem.find('.user-name').text().trim();
-        var userId = $(this).val();
+        var staffItem = $(this).closest('.modern-staff-item');
+        var fullName = staffItem.find('.staff-name').text().trim();
+        var staffId = $(this).val();
         
         // Only add the name (not the branch) for display
-        selectedUsers.push(fullName);
+        selectedStaff.push(fullName);
         
         // Get full details for tooltip (includes branch)
-        var branch = userItem.find('.user-branch').text().trim();
-        selectedUsersWithDetails.push(fullName + ' ' + branch);
+        var branch = staffItem.find('.staff-branch').text().trim();
+        selectedStaffWithDetails.push(fullName + ' ' + branch);
     });
 
     var displayText = '';
     var tooltipText = '';
     
-    if (selectedUsers.length === 0) {
+    if (selectedStaff.length === 0) {
         displayText = '';
-        tooltipText = 'No users selected';
-    } else if (selectedUsers.length === 1) {
-        displayText = selectedUsers[0];
-        tooltipText = 'Selected: ' + selectedUsersWithDetails[0];
-    } else if (selectedUsers.length === 2) {
+        tooltipText = 'No staff selected';
+    } else if (selectedStaff.length === 1) {
+        displayText = selectedStaff[0];
+        tooltipText = 'Selected: ' + selectedStaffWithDetails[0];
+    } else if (selectedStaff.length === 2) {
         // Show both names
-        displayText = selectedUsers.join(', ');
-        tooltipText = 'Selected Users:\n• ' + selectedUsersWithDetails.join('\n• ');
+        displayText = selectedStaff.join(', ');
+        tooltipText = 'Selected Staff:\n• ' + selectedStaffWithDetails.join('\n• ');
     } else {
         // Show first 2 names and count (e.g., "Ajay Bansal, Shubam +3")
-        var firstTwo = selectedUsers.slice(0, 2).join(', ');
-        var remaining = selectedUsers.length - 2;
+        var firstTwo = selectedStaff.slice(0, 2).join(', ');
+        var remaining = selectedStaff.length - 2;
         displayText = firstTwo + ' +' + remaining;
-        tooltipText = 'Selected Users:\n• ' + selectedUsersWithDetails.join('\n• ');
+        tooltipText = 'Selected Staff:\n• ' + selectedStaffWithDetails.join('\n• ');
     }
 
     // Update display text
-    $('#selected-users-display').text(displayText);
+    $('#selected-staff-display').text(displayText);
     
     // Update visual state
     var $wrapper = $('.enhanced-dropdown-input-wrapper');
-    var $input = $('#user-search-input');
+    var $input = $('#staff-search-input');
     
-    if (selectedUsers.length > 0) {
+    if (selectedStaff.length > 0) {
         $wrapper.addClass('has-selection');
         
         // Clear input if it's not focused (to show selected users)
@@ -270,12 +270,12 @@ function updateHiddenSelect() {
     $('#rem_cat').val(selectedValues).trigger('change');
 }
 
-function filterUsers(searchTerm) {
+function filterStaff(searchTerm) {
     searchTerm = searchTerm.toLowerCase();
     
-    $('.user-item').each(function() {
-        var userName = $(this).data('name') || '';
-        if (searchTerm === '' || userName.includes(searchTerm)) {
+    $('.staff-item').each(function() {
+        var staffName = $(this).data('name') || '';
+        if (searchTerm === '' || staffName.includes(searchTerm)) {
             $(this).show();
         } else {
             $(this).hide();
@@ -287,14 +287,14 @@ function filterUsers(searchTerm) {
     var checkedVisibleCheckboxes = $('.checkbox-item:visible:checked');
 
     if (checkedVisibleCheckboxes.length === visibleCheckboxes.length && visibleCheckboxes.length > 0) {
-        $('#select-all-users').text('Select None').removeClass('btn-outline-primary').addClass('btn-outline-secondary');
+        $('#select-all-staff').text('Select None').removeClass('btn-outline-primary').addClass('btn-outline-secondary');
     } else {
-        $('#select-all-users').text('Select All').removeClass('btn-outline-secondary').addClass('btn-outline-primary');
+        $('#select-all-staff').text('Select All').removeClass('btn-outline-secondary').addClass('btn-outline-primary');
     }
 }
 
 // Enhanced select all/none functionality
-$('#select-all-users').on('click', function() {
+$('#select-all-staff').on('click', function() {
     var $button = $(this);
     if ($button.text() === 'Select All') {
         $('.checkbox-item:visible').prop('checked', true).trigger('change');
@@ -305,8 +305,8 @@ $('#select-all-users').on('click', function() {
     }
 });
 
-// Clear search when input loses focus (but keep selected users visible)
-$('#user-search-input').on('blur', function() {
+// Clear search when input loses focus (but keep selected staff visible)
+$('#staff-search-input').on('blur', function() {
     var $input = $(this);
     var $wrapper = $('.enhanced-dropdown-input-wrapper');
     
@@ -314,12 +314,12 @@ $('#user-search-input').on('blur', function() {
     setTimeout(function() {
         // Clear search input
         $input.val('');
-        filterUsers('');
+        filterStaff('');
         
-        // Show selected users if any are selected
+        // Show selected staff if any are selected
         if ($('.checkbox-item:checked').length > 0) {
             $wrapper.addClass('has-selection');
-            updateSelectedUsers(); // Refresh display
+            updateSelectedStaff(); // Refresh display
         } else {
             $wrapper.removeClass('has-selection');
         }
@@ -347,13 +347,13 @@ $('#create_action_popup').on('hidden.bs.modal', function() {
     $('#assignnote').val('');
     $('#task_group').val('');
     $('.checkbox-item').prop('checked', false);
-    $('#user-search-input').val('');
-    filterUsers('');
-    updateSelectedUsers();
+    $('#staff-search-input').val('');
+    filterStaff('');
+    updateSelectedStaff();
     updateHiddenSelect();
     // Close dropdown
-    $('#userDropdownMenu').removeClass('show');
-    $('#user-search-input').attr('aria-expanded', 'false');
+    $('#staffDropdownMenu').removeClass('show');
+    $('#staff-search-input').attr('aria-expanded', 'false');
 });
 
 //Start Convert Activity to Note functionality - Using event delegation for dynamic content

@@ -107,9 +107,9 @@
 										<tr>
                                             <?php
 												if($list->noteClient){
-													$user_name=$list->noteClient->first_name.' '.$list->noteClient->last_name;
+													$client_name=$list->noteClient->first_name.' '.$list->noteClient->last_name;
 												}else{
-													$user_name='N/P';
+													$client_name='N/P';
 												}
 											?>
 											<td>{{ ++$i }} &nbsp;
@@ -161,7 +161,7 @@
 
 													<button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure want to delete?');">Delete</button>
 													<button type="button" class="btn btn-primary btn-block" data-container="body" data-role="popover" data-placement="bottom" data-html="true" data-content="<div id=&quot;popover-content&quot;>
-														<h4 class=&quot;text-center&quot;>Re-Assign User</h4>
+														<h4 class=&quot;text-center&quot;>Re-Assign Staff</h4>
 														<div class=&quot;clearfix&quot;></div>
 													<div class=&quot;box-header with-border&quot;>
 														<div class=&quot;form-group row&quot; style=&quot;margin-bottom:12px&quot; >
@@ -221,7 +221,7 @@
 													</div>
 													<div class=&quot;row text-center&quot;>
 														<div class=&quot;col-md-12 text-center&quot;>
-														<button  class=&quot;btn btn-info&quot; id=&quot;assignUser&quot;>Assign User</button>
+														<button  class=&quot;btn btn-info&quot; id=&quot;assignStaff&quot;>Assign Staff</button>
 														</div>
 													</div>
 											</div>" data-original-title="" title="" style="width: 82px;display: inline;">Reassign</button>
@@ -283,9 +283,9 @@
 										<tr>
                                             <?php
 												if($listC->noteClient){
-													$user_name=$listC->noteClient->first_name.' '.$listC->noteClient->last_name;
+													$client_name=$listC->noteClient->first_name.' '.$listC->noteClient->last_name;
 												}else{
-													$user_name='N/P';
+													$client_name='N/P';
 												}
 											?>
 											<td>{{ ($keyC+1) }} &nbsp;
@@ -337,7 +337,7 @@
 
 													<button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure want to delete?');">Delete</button>
 													<button type="button" class="btn btn-primary btn-block" data-container="body" data-role="popover" data-placement="bottom" data-html="true" data-content="<div id=&quot;popover-content&quot;>
-														<h4 class=&quot;text-center&quot;>Re-Assign User</h4>
+														<h4 class=&quot;text-center&quot;>Re-Assign Staff</h4>
 														<div class=&quot;clearfix&quot;></div>
 													<div class=&quot;box-header with-border&quot;>
 														<div class=&quot;form-group row&quot; style=&quot;margin-bottom:12px&quot; >
@@ -397,7 +397,7 @@
 													</div>
 													<div class=&quot;row text-center&quot;>
 														<div class=&quot;col-md-12 text-center&quot;>
-														<button  class=&quot;btn btn-info&quot; id=&quot;assignUser&quot;>Assign User</button>
+														<button  class=&quot;btn btn-info&quot; id=&quot;assignStaff&quot;>Assign Staff</button>
 														</div>
 													</div>
 											</div>" data-original-title="" title="" style="width: 82px;display: inline;">Reassign</button>
@@ -576,7 +576,7 @@
     });
 
 
-    $(document).delegate('#assignUser','click', function(){
+    $(document).delegate('#assignStaff','click', function(){
 		$(".popuploader").show();
 		var flag = true;
 		var error ="";

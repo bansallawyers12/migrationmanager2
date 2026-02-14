@@ -124,12 +124,12 @@
         padding: 12px !important;
     }
 
-    #create_action_popup .user-item {
+    #create_action_popup .staff-item {
         margin-bottom: 8px !important;
         padding-left: 0 !important;
     }
 
-    #create_action_popup .user-item label {
+    #create_action_popup .staff-item label {
         margin-bottom: 0 !important;
         padding-left: 0 !important;
         margin-left: 0 !important;
@@ -144,7 +144,7 @@
         flex-shrink: 0 !important;
     }
 
-    #create_action_popup .user-item span {
+    #create_action_popup .staff-item span {
         margin-left: 0 !important;
         padding-left: 0 !important;
         flex: 1 !important;
@@ -152,17 +152,17 @@
         text-indent: 0 !important;
     }
 
-    #create_action_popup #users-list {
+    #create_action_popup #staff-list {
         margin-left: 0 !important;
         padding-left: 0 !important;
     }
 
     /* ========================================
-       MODERN ASSIGN USER MODAL STYLES
+       MODERN ASSIGN STAFF MODAL STYLES
        ======================================== */
 
     /* Modal Container */
-    .assign-user-modal {
+    .assign-staff-modal {
         border-radius: 12px;
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
         border: none;
@@ -170,7 +170,7 @@
     }
 
     /* Header Styling */
-    .assign-user-header {
+    .assign-staff-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         border-bottom: none;
@@ -209,7 +209,7 @@
     }
 
     /* Body Styling */
-    .assign-user-body {
+    .assign-staff-body {
         padding: 30px 25px;
         background: #fafbfc;
     }
@@ -320,7 +320,7 @@
         box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
 
-    .selected-users-display {
+    .selected-staff-display {
         position: absolute;
         left: 50px;
         top: 50%;
@@ -335,7 +335,7 @@
         z-index: 1;
     }
 
-    .enhanced-dropdown-input-wrapper.has-selection .selected-users-display {
+    .enhanced-dropdown-input-wrapper.has-selection .selected-staff-display {
         color: #667eea;
         font-weight: 500;
     }
@@ -427,24 +427,24 @@
         border-color: #e2e8f0;
     }
 
-    .users-list-container {
+    .staff-list-container {
         max-height: 200px;
         overflow-y: auto;
     }
 
-    /* Modern User Items */
-    .modern-user-item {
+    /* Modern Staff Items */
+    .modern-staff-item {
         margin-bottom: 8px;
         padding: 8px;
         border-radius: 6px;
         transition: background-color 0.2s ease;
     }
 
-    .modern-user-item:hover {
+    .modern-staff-item:hover {
         background-color: #f7fafc;
     }
 
-    .modern-user-label {
+    .modern-staff-label {
         margin: 0;
         cursor: pointer;
         display: flex;
@@ -454,7 +454,7 @@
         color: #2d3748;
     }
 
-    .modern-user-label .text-muted {
+    .modern-staff-label .text-muted {
         color: #2d3748 !important;
     }
 
@@ -466,13 +466,13 @@
         height: 16px;
     }
 
-    .user-name {
+    .staff-name {
         font-weight: 500;
         color: #2d3748;
         margin-right: 5px;
     }
 
-    .user-branch {
+    .staff-branch {
         font-size: 0.85rem;
         color: #2d3748 !important;
         font-weight: 400;
@@ -488,7 +488,7 @@
         border-top: 1px solid #e2e8f0;
     }
 
-    .btn-assign-user {
+    .btn-assign-staff {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         border: none;
         border-radius: 8px;
@@ -499,7 +499,7 @@
         box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
     }
 
-    .btn-assign-user:hover {
+    .btn-assign-staff:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
         background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
@@ -541,7 +541,7 @@
 
     /* Responsive Design */
     @media (max-width: 768px) {
-        .assign-user-body {
+        .assign-staff-body {
             padding: 20px 15px;
         }
         
@@ -550,7 +550,7 @@
             gap: 10px;
         }
         
-        .btn-assign-user,
+        .btn-assign-staff,
         .btn-outline-secondary {
             width: 100%;
             padding: 15px 20px;
@@ -633,14 +633,14 @@
     }
 </style>
 
-<!-- Assign User Modal -->
+<!-- Assign Staff Modal -->
 <div class="modal fade custom_modal" id="create_action_popup" tabindex="-1" role="dialog" aria-labelledby="create_action_popupLabel" aria-hidden="true">
     <div class="modal-dialog">
-        <div class="modal-content assign-user-modal">
-            <div class="modal-header assign-user-header">
+        <div class="modal-content assign-staff-modal">
+            <div class="modal-header assign-staff-header">
                 <div class="modal-title-section">
                     <i class="fas fa-user-plus text-white mr-2"></i>
-                    <h5 class="modal-title mb-0" id="create_action_popupLabel">Assign User</h5>
+                    <h5 class="modal-title mb-0" id="create_action_popupLabel">Assign Staff</h5>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -649,11 +649,11 @@
                 </div>
             </div>
 
-            <div class="modal-body assign-user-body">
+            <div class="modal-body assign-staff-body">
                 <div class="row">
                     <div class="col-12">
                         <div class="form-group enhanced-form-group">
-                            <label for="user-search-input" class="form-label">
+                            <label for="staff-search-input" class="form-label">
                                 <i class="fas fa-users text-muted mr-1"></i>
                                 Select Assignee <span class="text-danger">*</span>
                             </label>
@@ -661,32 +661,32 @@
                                 <div class="enhanced-dropdown-input-wrapper">
                                     <i class="fas fa-user-plus dropdown-input-icon"></i>
                                     <input type="text" 
-                                           id="user-search-input" 
+                                           id="staff-search-input" 
                                            class="form-control enhanced-dropdown-input" 
-                                           placeholder="Search or select users..." 
+                                           placeholder="Search or select staff..." 
                                            autocomplete="off"
                                            aria-haspopup="true" 
                                            aria-expanded="false" style="padding-left: 38px !important;">
-                                    <span id="selected-users-display" class="selected-users-display"></span>
+                                    <span id="selected-staff-display" class="selected-staff-display"></span>
                                     <i class="fas fa-chevron-down dropdown-chevron-icon"></i>
                                 </div>
-                                <div class="dropdown-menu modern-dropdown-menu" id="userDropdownMenu" aria-labelledby="user-search-input">
+                                <div class="dropdown-menu modern-dropdown-menu" id="staffDropdownMenu" aria-labelledby="staff-search-input">
                                     <!-- Select All/None buttons -->
                                     <div class="dropdown-actions">
-                                        <button type="button" id="select-all-users" class="btn btn-sm btn-outline-primary">Select All</button>
-                                        <button type="button" id="select-none-users" class="btn btn-sm btn-outline-secondary">Select None</button>
+                                        <button type="button" id="select-all-staff" class="btn btn-sm btn-outline-primary">Select All</button>
+                                        <button type="button" id="select-none-staff" class="btn btn-sm btn-outline-secondary">Select None</button>
                                     </div>
                                     <hr class="dropdown-divider">
-                                    <!-- Users list -->
-                                    <div id="users-list" class="users-list-container">
+                                    <!-- Staff list -->
+                                    <div id="staff-list" class="staff-list-container">
                                         @foreach(\App\Models\Staff::where('status',1)->orderby('first_name','ASC')->get() as $admin)
                                         <?php $branchname = \App\Models\Branch::where('id',$admin->office_id)->first(); ?>
-                                        <div class="user-item modern-user-item" data-name="{{ strtolower($admin->first_name.' '.$admin->last_name.' '.@$branchname->office_name) }}">
-                                            <label class="modern-user-label">
+                                        <div class="staff-item modern-staff-item" data-name="{{ strtolower($admin->first_name.' '.$admin->last_name.' '.@$branchname->office_name) }}">
+                                            <label class="modern-staff-label">
                                                 <input type="checkbox" class="checkbox-item modern-checkbox" value="{{ $admin->id }}" data-name="{{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})">
                                                 <i class="fas fa-user-circle mr-2 text-muted"></i>
-                                                <span class="user-name">{{ $admin->first_name }} {{ $admin->last_name }}</span>
-                                                <span class="user-branch text-muted">({{ @$branchname->office_name }})</span>
+                                                <span class="staff-name">{{ $admin->first_name }} {{ $admin->last_name }}</span>
+                                                <span class="staff-branch text-muted">({{ @$branchname->office_name }})</span>
                                             </label>
                                         </div>
                                         @endforeach
@@ -783,8 +783,8 @@
                 <input type="hidden" value="" id="popoverrealdate" name="popoverrealdate" />
                 
                 <div class="modal-footer-buttons">
-                    <button class="btn btn-primary btn-lg btn-assign-user" id="assignUser">
-                        <i class="fas fa-user-plus mr-2"></i>Assign User
+                    <button class="btn btn-primary btn-lg btn-assign-staff" id="assignStaff">
+                        <i class="fas fa-user-plus mr-2"></i>Assign Staff
                     </button>
                     <button type="button" class="btn btn-outline-secondary btn-lg" data-dismiss="modal">
                         <i class="fas fa-times mr-2"></i>Cancel

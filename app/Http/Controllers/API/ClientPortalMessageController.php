@@ -1031,8 +1031,8 @@ class ClientPortalMessageController extends Controller
 
             // Log for debugging
             Log::info('Get Unread Count API', [
-                'user_id' => $clientId,
-                'user_name' => $admin->first_name . ' ' . $admin->last_name,
+                'client_id' => $clientId,
+                'client_name' => $admin->first_name . ' ' . $admin->last_name,
                 'client_matter_id' => $clientMatterId,
                 'total_sent_messages' => $totalSentMessages,
                 'read_messages_count' => $readMessagesCount,

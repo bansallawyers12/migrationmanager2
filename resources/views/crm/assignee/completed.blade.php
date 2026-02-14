@@ -96,14 +96,14 @@
 										<tr>
                                             <?php
 												if($list->noteClient){
-													$user_name=$list->noteClient->first_name.' '.$list->noteClient->last_name;
+													$client_name=$list->noteClient->first_name.' '.$list->noteClient->last_name;
 												}else{
-													$user_name='N/P';
+													$client_name='N/P';
 												}
 											?>
 											<td>{{ ++$i }}</td>
 											<td>{{ $list->assigned_user->first_name ?? ''}}  {{$list->assigned_user->last_name ?? ''}}</td>
-											<td>{{ $user_name??'N/P' }}</td>
+											<td>{{ $client_name??'N/P' }}</td>
                                             <td><a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->client_id)))}}" target="_blank" >{{ $list->noteClient->client_id ?? 'N/P' }}</a></td>
 											<td>{{ date('d/m/Y h:i:s',strtotime($list->followup_date)) ?? 'N/P'}} </td>
                                             <td>{{ $list->task_group??'N/P' }}</td>
@@ -144,7 +144,7 @@
 
 													<button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure want to delete?');">Delete</button>
 													<button type="button" class="btn btn-primary btn-block" data-container="body" data-role="popover" data-placement="bottom" data-html="true" data-content="<div id=&quot;popover-content&quot;>
-														<h4 class=&quot;text-center&quot;>Re-Assign User</h4>
+														<h4 class=&quot;text-center&quot;>Re-Assign Staff</h4>
 														<div class=&quot;clearfix&quot;></div>
 													<div class=&quot;box-header with-border&quot;>
 														<div class=&quot;form-group row&quot; style=&quot;margin-bottom:12px&quot; >
@@ -204,7 +204,7 @@
 													</div>
 													<div class=&quot;row text-center&quot;>
 														<div class=&quot;col-md-12 text-center&quot;>
-														<button  class=&quot;btn btn-info&quot; id=&quot;assignUser&quot;>Assign User</button>
+														<button  class=&quot;btn btn-info&quot; id=&quot;assignStaff&quot;>Assign Staff</button>
 														</div>
 													</div>
 											</div>" data-original-title="" title="" style="width: 82px;display: inline;">Reassign</button>
@@ -272,7 +272,7 @@
 	});
 
 
-    $(document).delegate('#assignUser','click', function(){
+    $(document).delegate('#assignStaff','click', function(){
 		$(".popuploader").show();
 		var flag = true;
 		var error ="";

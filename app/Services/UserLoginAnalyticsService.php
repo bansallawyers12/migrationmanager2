@@ -256,7 +256,7 @@ class UserLoginAnalyticsService
                 $user = \App\Models\Staff::find($item->user_id);
                 return [
                     'user_id' => $item->user_id,
-                    'user_name' => $user ? trim("{$user->first_name} {$user->last_name}") : "User #{$item->user_id}",
+                    'staff_name' => $user ? trim("{$user->first_name} {$user->last_name}") : "Staff #{$item->user_id}",
                     'user_email' => $user ? $user->email : null,
                     'login_count' => (int) $item->login_count,
                     'last_login' => $item->last_login,

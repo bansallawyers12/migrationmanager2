@@ -153,7 +153,7 @@
                                                 @php
                                                     $admin = \App\Models\Admin::where('id', $list->assigned_to)->first();
                                                     $full_name = $admin ? ($admin->first_name ?? 'N/A') . ' ' . ($admin->last_name ?? 'N/A') : 'N/P';
-                                                    $user_name = $list->noteClient ? $list->noteClient->first_name . ' ' . $list->noteClient->last_name : 'N/P';
+                                                    $client_name = $list->noteClient ? $list->noteClient->first_name . ' ' . $list->noteClient->last_name : 'N/P';
                                                 @endphp
                                                 <tr>
                                                     <td style="text-align: center;">{{ ++$i }}</td>
@@ -162,7 +162,7 @@
                                                     </td>
                                                     <td>{{ $full_name }}</td>
                                                     <td>
-                                                        {{ $user_name }}
+                                                        {{ $client_name }}
                                                         <br>
                                                         @if ($list->noteClient)
                                                             <a href="{{ URL::to('/clients/detail/' . base64_encode(convert_uuencode($list->client_id))) }}" target="_blank">{{ $list->noteClient->client_id }}</a>

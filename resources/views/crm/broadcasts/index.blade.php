@@ -1090,7 +1090,7 @@
                             ? '<span class="badge badge-success">Read</span>'
                             : '<span class="badge badge-secondary">Unread</span>';
                         row.innerHTML = `
-                            <td>${recipient.receiver_name || `User #${recipient.receiver_id}`}</td>
+                            <td>${recipient.receiver_name || `Staff #${recipient.receiver_id}`}</td>
                             <td>${statusBadge}</td>
                             <td>${recipient.read_at ? formatDate(recipient.read_at) : '-'}</td>
                         `;
@@ -1459,7 +1459,7 @@
                         return {
                             results: items.map((item) => ({
                                 id: item.id,
-                                text: item.assignee || item.agent_id || `User #${item.id}`,
+                                text: item.assignee || item.agent_id || `Staff #${item.id}`,
                             })),
                         };
                     },

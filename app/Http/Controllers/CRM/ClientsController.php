@@ -3158,16 +3158,16 @@ class ClientsController extends Controller
     //not picked call button click
     public function notpickedcall(Request $request){
         $data = $request->all(); //dd($data);
-        //Get user Phone no and send message via UnifiedSmsManager
-        $userInfo = Admin::select('id','country_code','phone')->where('id', $data['id'])->first();//dd($userInfo);
+        //Get client phone and send message via UnifiedSmsManager
+        $clientInfo = Admin::select('id','country_code','phone')->where('id', $data['id'])->first();//dd($clientInfo);
         
         $smsResult = null;
-        if ($userInfo) {
+        if ($clientInfo) {
             $message = $data['message'];
-            $userPhone = $userInfo->country_code."".$userInfo->phone;
+            $clientPhone = $clientInfo->country_code."".$clientInfo->phone;
             
             // Use UnifiedSmsManager with proper context (auto-creates activity log)
-            $smsResult = $this->smsManager->sendSms($userPhone, $message, 'notification', [
+            $smsResult = $this->smsManager->sendSms($clientPhone, $message, 'notification', [
                 'client_id' => $data['id']
             ]);
         }
@@ -5545,7 +5545,7 @@ class ClientsController extends Controller
             $id = $this->decodeString($id);
             if(Admin::where('id', '=', $id)->where('role', '=', 7)->exists()) {
                 $obj = Admin::find($id);
-                $user_type = $obj->type;
+                $client_type = $obj->type;
                 if($slug == 'client') {
                     $obj->type = $slug;
                     $obj->user_id = $request['user_id'];
@@ -5573,7 +5573,7 @@ class ClientsController extends Controller
                     $matter->matter_status = 1; // Active by default
                     $matter->save();
                     
-                    if($user_type == 'lead'){
+                    if($client_type == 'lead'){
                         $activity = new \App\Models\ActivitiesLog;
                         $activity->client_id = $request['client_id'];
                         $activity->created_by = Auth::user()->id;
@@ -5584,7 +5584,7 @@ class ClientsController extends Controller
                         $activity->save();
 
                         $msg = 'Lead converted to client. Matter '.$matter->client_unique_matter_no. ' created';
-                    }  else if($user_type == 'client'){
+                    }  else if($client_type == 'client'){
                         $activity = new \App\Models\ActivitiesLog;
                         $activity->client_id = $request['client_id'];
                         $activity->created_by = Auth::user()->id;
@@ -5614,7 +5614,7 @@ class ClientsController extends Controller
 
     /**
      * Store action with assignee information
-     * Handles the "Assign User" popup functionality
+     * Handles the "Assign Staff" popup functionality
      * Supports both single and multiple assignees
      *
      * @param Request $request

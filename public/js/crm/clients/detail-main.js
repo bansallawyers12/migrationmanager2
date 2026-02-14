@@ -8565,9 +8565,9 @@ Bansal Immigration`;
 
 
 
-        // assignUser function is now handled in addclientmodal.blade.php to avoid conflicts
+        // assignStaff function is now handled in addclientmodal.blade.php to avoid conflicts
 
-        $(document).on('click', '#assignUser', function(e) {
+        $(document).on('click', '#assignStaff', function(e) {
 
             e.preventDefault();
 

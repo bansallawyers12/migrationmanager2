@@ -90,7 +90,7 @@ class Lead extends Admin
     }
     
     /**
-     * Get the user who created this lead
+     * Get the staff member who created this lead
      */
     public function createdBy()
     {

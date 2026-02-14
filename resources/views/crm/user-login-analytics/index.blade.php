@@ -405,7 +405,7 @@
                     tbody.innerHTML = result.data.map((user, index) => `
                         <tr>
                             <td>${index + 1}</td>
-                            <td>${user.user_name}</td>
+                            <td>${user.staff_name}</td>
                             <td>${user.user_email || '—'}</td>
                             <td><span class="badge badge-primary">${user.login_count}</span></td>
                             <td>${new Date(user.last_login).toLocaleDateString()}</td>
@@ -414,7 +414,7 @@
                 }
 
                 // Update chart
-                const labels = result.data.slice(0, 10).map(u => u.user_name);
+                const labels = result.data.slice(0, 10).map(u => u.staff_name);
                 const counts = result.data.slice(0, 10).map(u => u.login_count);
 
                 if (topUsersChart) topUsersChart.destroy();

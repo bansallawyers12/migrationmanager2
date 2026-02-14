@@ -39,22 +39,22 @@
                             </button>
                             <div class="dropdown-menu modern-dropdown-menu" aria-labelledby="dashboard_dropdownMenuButton">
                                 <div class="dropdown-search">
-                                    <input type="text" id="dashboard-user-search" class="form-control" placeholder="Search users...">
+                                    <input type="text" id="dashboard-staff-search" class="form-control" placeholder="Search staff...">
                                 </div>
                                 <div class="dropdown-actions">
-                                    <button type="button" id="dashboard-select-all-users" class="btn btn-sm btn-outline-primary">Select All</button>
-                                    <button type="button" id="dashboard-select-none-users" class="btn btn-sm btn-outline-secondary">Select None</button>
+                                    <button type="button" id="dashboard-select-all-staff" class="btn btn-sm btn-outline-primary">Select All</button>
+                                    <button type="button" id="dashboard-select-none-staff" class="btn btn-sm btn-outline-secondary">Select None</button>
                                 </div>
                                 <hr class="dropdown-divider">
-                                <div id="dashboard-users-list" class="users-list-container">
+                                <div id="dashboard-staff-list" class="staff-list-container">
                                     @foreach(\App\Models\Staff::where('status',1)->orderby('first_name','ASC')->get() as $admin)
                                     <?php $branchname = \App\Models\Branch::where('id',$admin->office_id)->first(); ?>
-                                    <div class="user-item modern-user-item" data-name="{{ strtolower($admin->first_name.' '.$admin->last_name.' '.@$branchname->office_name) }}">
-                                        <label class="modern-user-label">
+                                    <div class="staff-item modern-staff-item" data-name="{{ strtolower($admin->first_name.' '.$admin->last_name.' '.@$branchname->office_name) }}">
+                                        <label class="modern-staff-label">
                                             <input type="checkbox" class="checkbox-item modern-checkbox dashboard-checkbox-item" value="{{ $admin->id }}" data-name="{{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})">
                                             <i class="fas fa-user-circle mr-2 text-muted"></i>
-                                            <span class="user-name">{{ $admin->first_name }} {{ $admin->last_name }}</span>
-                                            <span class="user-branch text-muted">({{ @$branchname->office_name }})</span>
+                                            <span class="staff-name">{{ $admin->first_name }} {{ $admin->last_name }}</span>
+                                            <span class="staff-branch text-muted">({{ @$branchname->office_name }})</span>
                                         </label>
                                     </div>
                                     @endforeach
@@ -110,7 +110,7 @@
                     </div>
 
                     <div class="simple-modal-footer">
-                        <button type="button" class="btn btn-primary simple-submit-btn-action" id="dashboard_assignUser">
+                        <button type="button" class="btn btn-primary simple-submit-btn-action" id="dashboard_assignStaff">
                             <i class="fas fa-plus"></i> ADD MY TASK
                         </button>
                     </div>
@@ -237,17 +237,17 @@
     margin: 8px 0;
 }
 
-.modern-user-item {
+.modern-staff-item {
     padding: 8px;
     border-radius: 6px;
     transition: background 0.2s ease;
 }
 
-.modern-user-item:hover {
+.modern-staff-item:hover {
     background: #f5f5f5;
 }
 
-.modern-user-label {
+.modern-staff-label {
     display: flex;
     align-items: center;
     cursor: pointer;
@@ -258,7 +258,7 @@
     margin-right: 10px;
 }
 
-.users-list-container {
+.staff-list-container {
     max-height: 250px;
     overflow-y: auto;
 }
