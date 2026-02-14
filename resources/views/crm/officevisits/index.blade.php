@@ -126,9 +126,20 @@ body, html { overflow-x: hidden !important; max-width: 100% !important; }
 													<td style="white-space: initial;">{{$list->contact_type}}</td>
 													<td style="white-space: initial;">{{$list->visit_purpose}}</td>
 													<td style="white-space: initial;">
-														<?php $admin = \App\Models\Admin::where('role', '!=', '7')->where('id', '=', $list->user_id)->first(); ?>
+														<?php
+														$admin = \App\Models\Admin::where('role', '!=', '7')->where('id', '=', $list->user_id)->first();
+														$staffId = null;
+														if ($admin && \Illuminate\Support\Facades\Schema::hasTable('admin_staff_id_mapping')) {
+															$mapping = DB::table('admin_staff_id_mapping')->where('old_admin_id', $admin->id)->first();
+															$staffId = $mapping->new_staff_id ?? null;
+														}
+														?>
 														@if($admin)
-															<a href="{{route('adminconsole.system.users.view', $admin->id)}}">{{$admin->first_name}} {{$admin->last_name}}</a><br>{{$admin->email}}
+															@if($staffId)
+																<a href="{{route('adminconsole.staff.view', $staffId)}}">{{$admin->first_name}} {{$admin->last_name}}</a><br>{{$admin->email}}
+															@else
+																{{$admin->first_name}} {{$admin->last_name}}<br>{{$admin->email}}
+															@endif
 														@else
 															<span class="text-muted">Not Assigned</span>
 														@endif

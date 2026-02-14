@@ -134,11 +134,11 @@
 											</thead>
 											<tbody class="applicationtdata">
 											<?php
-											foreach(\App\Models\Admin::where('role', '!=',7)->where('office_id',$fetchedData->id)->with(['usertype'])->get() as $alist){
+											foreach(\App\Models\Staff::where('office_id',$fetchedData->id)->with(['usertype'])->get() as $alist){
 												
 												?>
 												<tr id="id_{{$alist->id}}">
-													<td><a class="" data-id="{{$alist->id}}" href="{{route('adminconsole.system.users.view', base64_encode(convert_uuencode(@$alist->id)))}}" style="display:block;">{{$alist->first_name}}</a> </td> 
+													<td><a class="" data-id="{{$alist->id}}" href="{{route('adminconsole.staff.view', $alist->id)}}" style="display:block;">{{$alist->first_name}}</a> </td> 
 													<td>{{$alist->email}}</td>
 													
 													<td>{{ @$alist->usertype->name == "" ? config('constants.empty') : Str::limit(@$alist->usertype->name, '50', '...') }}</td>

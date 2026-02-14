@@ -1,0 +1,238 @@
+<?php
+namespace App\Http\Controllers\AdminConsole;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Log;
+
+use App\Models\Admin;
+use App\Models\UserRole;
+
+use Auth;
+use App\Services\ClientReferenceService;
+
+class ClientController extends Controller
+{
+    /**
+     * Create a new controller instance.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->middleware('auth:admin');
+    }
+
+	public function clientlist(Request $request)
+	{
+		//check authorization start
+			$check = $this->checkAuthorizationAction('user_management', $request->route()->getActionMethod(), Auth::user()->role);
+			if($check)
+			{
+				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
+			}
+		//check authorization end
+		$query 		= Admin::where('role', '=', 7);
+
+		$totalData 	= $query->count();	//for all data
+
+		$lists		= $query->sortable(['id' => 'desc'])->paginate(config('constants.limit'));
+
+		return view('AdminConsole.system.clients.clientlist',compact(['lists', 'totalData']));
+	}
+
+	public function createclient(Request $request)
+	{
+		//check authorization start
+			$check = $this->checkAuthorizationAction('user_management', $request->route()->getActionMethod(), Auth::user()->role);
+			if($check)
+			{
+				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
+			}
+		//check authorization end
+		return view('AdminConsole.system.clients.createclient');
+	}
+
+	public function storeclient(Request $request)
+	{
+		//check authorization start
+			$check = $this->checkAuthorizationAction('user_management', $request->route()->getActionMethod(), Auth::user()->role);
+			if($check)
+			{
+				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
+			}
+		//check authorization end
+		if ($request->isMethod('post'))
+		{
+			$this->validate($request, [
+										'company_name' => 'required|max:255',
+										'first_name' => 'required|max:255',
+										'last_name' => 'required|max:255',
+										'company_website' => 'required|max:255',
+										'email' => 'required|max:255|unique:admins',
+										'password' => 'required|max:255',
+										'phone' => 'required|max:255',
+										'profile_img' => 'required|max:255'
+									  ]);
+
+			$requestData 		= 	$request->all();
+
+			$obj				= 	new Admin;
+			$obj->company_name	=	@$requestData['company_name'];
+			$obj->first_name	=	@$requestData['first_name'];
+			$obj->last_name		=	@$requestData['last_name'];
+			$obj->company_website		=	@$requestData['company_website'];
+			$obj->email			=	@$requestData['email'];
+			$obj->password	=	Hash::make(@$requestData['password']);
+			$obj->phone	=	@$requestData['phone'];
+			$obj->country	=	@$requestData['country'];
+			$obj->city	=	@$requestData['city'];
+			$obj->verified	=	1;
+			$obj->role	=	7;
+			
+			// Set required NOT NULL fields with default values (PostgreSQL doesn't apply DB defaults on explicit INSERT)
+			$obj->australian_study = isset($requestData['australian_study']) ? (int)$requestData['australian_study'] : 0;
+			$obj->specialist_education = isset($requestData['specialist_education']) ? (int)$requestData['specialist_education'] : 0;
+			$obj->regional_study = isset($requestData['regional_study']) ? (int)$requestData['regional_study'] : 0;
+			$obj->cp_status = isset($requestData['cp_status']) ? (int)$requestData['cp_status'] : 0;
+			$obj->cp_code_verify = isset($requestData['cp_code_verify']) ? (int)$requestData['cp_code_verify'] : 0;
+			
+			/* Profile Image Upload Function Start */
+					if($request->hasfile('profile_img'))
+					{
+						$profile_img = $this->uploadFile($request->file('profile_img'), config('constants.profile_imgs'));
+					}
+					else
+					{
+						$profile_img = NULL;
+					}
+				/* Profile Image Upload Function End */
+			$obj->profile_img			=	@$profile_img;
+			$saved				=	$obj->save();
+
+			if(!$saved)
+			{
+				return redirect()->back()->with('error', config('constants.server_error'));
+			}
+			else
+			{
+				return redirect()->route('adminconsole.system.clients.clientlist')->with('success', 'Client Added Successfully');
+			}
+		}
+
+		return view('AdminConsole.system.clients.createclient');
+	}
+
+	/**
+	 * Show the form for editing the specified client.
+	 */
+	public function editclient($id)
+	{
+		//check authorization start
+			$check = $this->checkAuthorizationAction('user_management', 'editclient', Auth::user()->role);
+			if($check)
+			{
+				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
+			}
+		//check authorization end
+		$usertype = UserRole::all();
+		
+		if(isset($id) && !empty($id))
+		{
+			$id = $this->decodeString($id);
+			if(Admin::where('id', '=', $id)->exists())
+			{
+				$fetchedData = Admin::find($id);
+				return view('AdminConsole.system.clients.editclient', compact(['fetchedData', 'usertype']));
+			}
+			else
+			{
+				return redirect()->route('adminconsole.system.clients.clientlist')->with('error', 'Client Not Exist');
+			}
+		}
+		else
+		{
+			return redirect()->route('adminconsole.system.clients.clientlist')->with('error', config('constants.unauthorized'));
+		}
+	}
+
+	/**
+	 * Update the specified client in storage.
+	 */
+	public function updateclient(Request $request, $id)
+	{
+		//check authorization start
+			$check = $this->checkAuthorizationAction('user_management', 'updateclient', Auth::user()->role);
+			if($check)
+			{
+				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
+			}
+		//check authorization end
+		
+		$requestData = $request->all();
+
+		$this->validate($request, [
+			'company_name' => 'required|max:255',
+			'first_name' => 'required|max:255',
+			'last_name' => 'required|max:255',
+			'company_website' => 'required|max:255',
+			'email' => 'required|max:255|unique:admins,email,'.$id,
+			'password' => 'required|max:255',
+			'phone' => 'required|max:255'
+		]);
+
+		$obj = Admin::find($id);
+		if (!$obj) {
+			return redirect()->route('adminconsole.system.clients.clientlist')->with('error', 'Client Not Found');
+		}
+
+		$obj->company_name = @$requestData['company_name'];
+		$obj->first_name = @$requestData['first_name'];
+		$obj->last_name = @$requestData['last_name'];
+		$obj->company_website = @$requestData['company_website'];
+		$obj->email = @$requestData['email'];
+
+		if(!empty(@$requestData['password']))
+		{
+			$obj->password = Hash::make(@$requestData['password']);
+		}
+		
+		$obj->phone = @$requestData['phone'];
+		$obj->country = @$requestData['country'];
+		$obj->city = @$requestData['city'];
+		$obj->role = 7;
+
+		/* Profile Image Upload Function Start */
+		if($request->hasfile('profile_img'))
+		{
+			/* Unlink File Function Start */
+				if($requestData['profile_img'] != '')
+					{
+						$this->unlinkFile($requestData['old_profile_img'], config('constants.profile_imgs'));
+					}
+			/* Unlink File Function End */
+
+			$profile_img = $this->uploadFile($request->file('profile_img'), config('constants.profile_imgs'));
+		}
+		else
+		{
+			$profile_img = @$requestData['old_profile_img'];
+		}
+		/* Profile Image Upload Function End */
+		
+		$obj->profile_img = @$profile_img;
+		$saved = $obj->save();
+
+		if(!$saved)
+		{
+			return redirect()->back()->with('error', config('constants.server_error'));
+		}
+		else
+		{
+			return redirect()->route('adminconsole.system.clients.clientlist')->with('success', 'Client Updated Successfully');
+		}
+	}
+}

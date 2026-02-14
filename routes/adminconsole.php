@@ -10,7 +10,7 @@ use App\Http\Controllers\AdminConsole\MatterOtherEmailTemplateController;
 use App\Http\Controllers\AdminConsole\PersonalDocumentTypeController;
 use App\Http\Controllers\AdminConsole\VisaDocumentTypeController;
 use App\Http\Controllers\AdminConsole\DocumentChecklistController;
-use App\Http\Controllers\AdminConsole\UserController;
+use App\Http\Controllers\AdminConsole\ClientController;
 use App\Http\Controllers\AdminConsole\StaffController;
 use App\Http\Controllers\AdminConsole\UserroleController;
 use App\Http\Controllers\AdminConsole\TeamController;
@@ -168,22 +168,13 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin'])
     // System routes - System management
     Route::prefix('system')->name('system.')->group(function() {
         
-        // Users routes
-        Route::get('/users', [UserController::class, 'index'])->name('users.index');
-        Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
-        Route::post('/users/store', [UserController::class, 'store'])->name('users.store');
-        Route::get('/users/edit/{id}', [UserController::class, 'edit'])->name('users.edit');
-        Route::get('/users/view/{id}', [UserController::class, 'view'])->name('users.view');
-        Route::put('/users/{id}', [UserController::class, 'update'])->name('users.update');
-        Route::post('/users/savezone', [UserController::class, 'savezone']);
-        Route::get('/users/active', [UserController::class, 'active'])->name('users.active');
-        Route::get('/users/inactive', [UserController::class, 'inactive'])->name('users.inactive');
-        Route::get('/users/invited', [UserController::class, 'invited'])->name('users.invited');
-        Route::get('/users/clientlist', [UserController::class, 'clientlist'])->name('users.clientlist');
-        Route::get('/users/createclient', [UserController::class, 'createclient'])->name('users.createclient');
-        Route::post('/users/storeclient', [UserController::class, 'storeclient'])->name('users.storeclient');
-        Route::get('/users/editclient/{id}', [UserController::class, 'editclient'])->name('users.editclient');
-        Route::put('/users/client/{id}', [UserController::class, 'updateclient'])->name('users.updateclient');
+        // Clients routes (role=7 in admins table)
+        Route::get('/users', fn () => redirect()->route('adminconsole.system.clients.clientlist'))->name('users.index'); // backwards compat
+        Route::get('/clients', [ClientController::class, 'clientlist'])->name('clients.clientlist');
+        Route::get('/clients/create', [ClientController::class, 'createclient'])->name('clients.createclient');
+        Route::post('/clients/store', [ClientController::class, 'storeclient'])->name('clients.storeclient');
+        Route::get('/clients/edit/{id}', [ClientController::class, 'editclient'])->name('clients.editclient');
+        Route::put('/clients/{id}', [ClientController::class, 'updateclient'])->name('clients.updateclient');
         
         // Roles routes
         Route::get('/roles', [UserroleController::class, 'index'])->name('roles.index');

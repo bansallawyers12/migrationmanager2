@@ -141,7 +141,7 @@
 												$b = \App\Models\Branch::where('id', $alist->office_id)->first();
 												?>
 												<tr id="id_{{$alist->id}}">
-													<td><a class="" data-id="{{$alist->id}}" href="{{route('adminconsole.system.users.view', base64_encode(convert_uuencode(@$alist->id)))}}" style="display:block;">{{$alist->first_name}}</a> </td> 
+													<td><a class="" data-id="{{$alist->id}}" href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode($alist->id)))}}" style="display:block;">{{$alist->first_name}}</a> </td> 
 													<td>{{$alist->dob}}</td>
 													<td>{{$alist->email}}</td>
 													<td></td>

@@ -69,8 +69,17 @@ class AdminConsoleRoutesTest extends TestCase
     /** @test */
     public function admin_can_access_adminconsole_system_users_index()
     {
+        // /users redirects to clientlist
         $this->actingAs($this->admin, 'admin')
              ->get('/adminconsole/system/users')
+             ->assertRedirect(route('adminconsole.system.clients.clientlist'));
+    }
+
+    /** @test */
+    public function admin_can_access_adminconsole_system_clients_clientlist()
+    {
+        $this->actingAs($this->admin, 'admin')
+             ->get('/adminconsole/system/clients')
              ->assertStatus(200);
     }
 
@@ -158,6 +167,10 @@ class AdminConsoleRoutesTest extends TestCase
             url('/adminconsole/system/users'),
             route('adminconsole.system.users.index')
         );
+        $this->assertEquals(
+            url('/adminconsole/system/clients'),
+            route('adminconsole.system.clients.clientlist')
+        );
         
         $this->assertEquals(
             url('/adminconsole/database/anzsco'),
@@ -182,8 +195,8 @@ class AdminConsoleRoutesTest extends TestCase
         $response = $this->get('/adminconsole/features/matter');
         $response->assertSee('adminconsole.features.matter.index');
         
-        $response = $this->get('/adminconsole/system/users');
-        $response->assertSee('adminconsole.system.users.index');
+        $response = $this->get('/adminconsole/system/clients');
+        $response->assertSee('adminconsole.system.clients.clientlist');
     }
 
     /** @test */
@@ -195,9 +208,9 @@ class AdminConsoleRoutesTest extends TestCase
         $response = $this->get('/adminconsole/features/matter/create');
         $response->assertSee('adminconsole.features.matter.store');
         
-        // Test user creation form
-        $response = $this->get('/adminconsole/system/users/create');
-        $response->assertSee('adminconsole.system.users.store');
+        // Test client creation form
+        $response = $this->get('/adminconsole/system/clients/create');
+        $response->assertSee('adminconsole.system.clients.storeclient');
     }
 
     /** @test */
@@ -209,7 +222,7 @@ class AdminConsoleRoutesTest extends TestCase
         $response = $this->get('/adminconsole/features/matter/create');
         $response->assertSee('adminconsole.features.matter.index');
         
-        $response = $this->get('/adminconsole/system/users/create');
-        $response->assertSee('adminconsole.system.users.index');
+        $response = $this->get('/adminconsole/system/clients/create');
+        $response->assertSee('adminconsole.system.clients.clientlist');
     }
 }

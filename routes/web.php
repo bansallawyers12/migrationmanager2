@@ -172,7 +172,8 @@ Route::middleware(['auth:admin'])->group(function() {
 
 	/*---------- CRM & User Management Routes ----------*/
     // All user management routes moved to routes/adminconsole.php
-    // - Staff management: Use adminconsole.system.users routes
+    // - Staff management: Use adminconsole.staff routes
+    // - Clients (role=7): Use adminconsole.system.clients routes (ClientController)
     // - User types/roles: Use adminconsole.system.roles routes
 
     /*---------- Leads Management (Modern Laravel Syntax) ----------*/

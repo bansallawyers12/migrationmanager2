@@ -7,7 +7,7 @@
 <div class="main-content">
 	<section class="section">
 		<div class="section-body"> 
-			<form action="{{ route('adminconsole.system.users.updateclient', $fetchedData->id) }}" method="POST" name="edit-client" autocomplete="off" enctype="multipart/form-data">
+			<form action="{{ route('adminconsole.system.clients.updateclient', $fetchedData->id) }}" method="POST" name="edit-client" autocomplete="off" enctype="multipart/form-data">
 				@csrf
 				@method('PUT')
 				<div class="row">
@@ -16,7 +16,7 @@
 							<div class="card-header">
 								<h4>Edit Client</h4>
 								<div class="card-header-action">
-									<a href="{{route('adminconsole.system.users.clientlist')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
+									<a href="{{route('adminconsole.system.clients.clientlist')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
 								</div>
 							</div>
 						</div>

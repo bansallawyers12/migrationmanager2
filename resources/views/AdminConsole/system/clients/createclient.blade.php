@@ -7,7 +7,7 @@
 <div class="main-content">
 	<section class="section">
 		<div class="section-body">
-			<form action="{{ url('adminconsole/system/users/storeclient') }}" name="add-client" autocomplete="off" enctype="multipart/form-data" method="POST">
+			<form action="{{ route('adminconsole.system.clients.storeclient') }}" name="add-client" autocomplete="off" enctype="multipart/form-data" method="POST">
 			@csrf
 				<div class="row">
 					<div class="col-12 col-md-12 col-lg-12">
@@ -15,7 +15,7 @@
 							<div class="card-header">
 								<h4>Add Client</h4>
 								<div class="card-header-action">
-									<a href="{{route('adminconsole.system.users.clientlist')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
+									<a href="{{route('adminconsole.system.clients.clientlist')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
 								</div>
 							</div>
 						</div>
