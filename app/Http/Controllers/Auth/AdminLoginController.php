@@ -10,7 +10,6 @@ use Illuminate\Foundation\Auth\AuthenticatesUsers;
 
 use Symfony\Component\HttpFoundation\IpUtils;
 use Cookie;
-use App\Services\ServiceAccountTokenService;
 
 class AdminLoginController extends Controller
 {
@@ -121,43 +120,6 @@ class AdminLoginController extends Controller
             $obj->message = 'Logged in successfully';
             $obj->save();
 
-            // Generate service account token in background
-            try {
-                $tokenService = new ServiceAccountTokenService();
-                // Pass the actual login password
-                $loginPassword = $request->password;
-                
-                \Log::info('Starting token generation on login', [
-                    'admin_id' => $user->id,
-                    'admin_email' => $user->email,
-                    'password_length' => strlen($loginPassword)
-                ]);
-                
-                $result = $tokenService->generateTokenSync($user, null, null, $loginPassword);
-                if ($result) {
-                    \Log::info('Token generated successfully on login', [
-                        'admin_id' => $user->id,
-                        'admin_email' => $user->email,
-                        'token' => $result['token'] ?? 'N/A'
-                    ]);
-                } else {
-                    \Log::error('Token generation failed on login', [
-                        'admin_id' => $user->id,
-                        'admin_email' => $user->email
-                    ]);
-                }
-                // Also dispatch background job for future use with password
-                $tokenService->generateTokenInBackground($user, null, null, $loginPassword);
-            } catch (\Exception $e) {
-                // Log error but don't interrupt the login process
-                \Log::error('Failed to generate token on admin login', [
-                    'admin_id' => $user->id,
-                    'admin_email' => $user->email,
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
-                ]);
-            }
-
             return redirect()->intended($this->redirectPath());
         }
     }
@@ -166,10 +128,10 @@ class AdminLoginController extends Controller
     {
         $errors = [$this->username() => trans('auth.failed')];
 
-        // Load admin from database (using Admin model, not User)
-        $admin = \App\Models\Admin::where($this->username(), $request->{$this->username()})->first();
+        // Load staff from database (CRM login uses staff table)
+        $staff = \App\Models\Staff::where($this->username(), $request->{$this->username()})->first();
 
-        if ($admin && !\Hash::check($request->password, $admin->password)) {
+        if ($staff && !\Hash::check($request->password, $staff->password)) {
             $errors = ['password' => 'Wrong password'];
         }
 
@@ -178,7 +140,7 @@ class AdminLoginController extends Controller
         }
 		$obj = new \App\Models\UserLog;
 		$obj->level = 'critical';
-		$obj->user_id = $admin ? $admin->id : null;
+		$obj->user_id = $staff ? $staff->id : null;
 		$obj->ip_address = $request->getClientIp();
 		$obj->user_agent = $_SERVER['HTTP_USER_AGENT'];
 		$obj->message = 'Invalid Email or Password !';

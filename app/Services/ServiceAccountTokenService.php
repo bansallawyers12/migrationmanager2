@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Jobs\GenerateServiceAccountToken;
 use App\Models\Admin;
+use App\Models\Staff;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\API\ServiceAccountController;
 use Illuminate\Http\Request;
@@ -13,12 +14,12 @@ class ServiceAccountTokenService
     /**
      * Dispatch a background job to generate service account token
      *
-     * @param Admin $admin
+     * @param Admin|Staff $admin
      * @param string|null $serviceName
      * @param string|null $description
      * @return void
      */
-    public function generateTokenInBackground(Admin $admin, $serviceName = null, $description = null, $password = null)
+    public function generateTokenInBackground(Admin|Staff $admin, $serviceName = null, $description = null, $password = null)
     {
         try {
             // Dispatch the job to run in background
@@ -41,13 +42,13 @@ class ServiceAccountTokenService
     /**
      * Generate token synchronously (for testing or immediate use)
      *
-     * @param Admin $admin
+     * @param Admin|Staff $admin
      * @param string|null $serviceName
      * @param string|null $description
      * @param string|null $password
      * @return array|null
      */
-    public function generateTokenSync(Admin $admin, $serviceName = null, $description = null, $password = null)
+    public function generateTokenSync(Admin|Staff $admin, $serviceName = null, $description = null, $password = null)
     {
         try {
             // Use provided password or default (decrypt_password column removed Phase 4)

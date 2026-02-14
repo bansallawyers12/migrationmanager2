@@ -29,7 +29,7 @@ return new class extends Migration
                 $table->dropForeign(['archived_by']);
             });
 
-            $staffColumns = [
+            $possibleColumns = [
                 'id', 'first_name', 'last_name', 'email', 'password',
                 'country_code', 'phone', 'telephone',
                 'profile_img', 'status', 'verified',
@@ -42,6 +42,7 @@ return new class extends Migration
                 'is_archived', 'archived_by', 'archived_on',
                 'remember_token', 'created_at', 'updated_at',
             ];
+            $staffColumns = array_filter($possibleColumns, fn ($col) => Schema::hasColumn('admins', $col));
 
             $staff = DB::table('admins')
                 ->where('role', '!=', 7)

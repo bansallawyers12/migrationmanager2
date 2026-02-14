@@ -15,11 +15,15 @@ return [
 
     'defaults' => [
         'guard' => 'admin',
-        'passwords' => 'admins',
+        'passwords' => 'staff',  // Staff CRM password resets
     ],
 	'admins' => [
         'driver' => 'eloquent',
         'model' => App\Models\Admin::class,
+    ],
+	'staff' => [
+        'driver' => 'eloquent',
+        'model' => App\Models\Staff::class,
     ],
 
     /*
@@ -51,7 +55,7 @@ return [
         ],
 		'admin' => [
             'driver' => 'session',
-            'provider' => 'admins',
+            'provider' => 'staff',  // CRM login uses staff table
         ],
 		'provider' => [
             'driver' => 'session',
@@ -86,6 +90,10 @@ return [
             'driver' => 'eloquent',
             'model' => App\Models\Admin::class,
         ],
+		'staff' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Staff::class,
+        ],
 		'providers' => [
             'driver' => 'eloquent',
             'model' => App\Provider::class,
@@ -116,6 +124,11 @@ return [
         // ],
 		'admins' => [
             'provider' => 'admins',
+            'table' => 'password_reset_tokens',
+            'expire' => 15,
+        ],
+		'staff' => [
+            'provider' => 'staff',
             'table' => 'password_reset_tokens',
             'expire' => 15,
         ],
