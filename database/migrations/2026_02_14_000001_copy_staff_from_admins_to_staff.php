@@ -24,25 +24,20 @@ return new class extends Migration
         }
 
         DB::transaction(function () {
-            // Drop archived_by FK temporarily (self-referential; inserts may be in any order)
-            Schema::table('staff', function (Blueprint $table) {
-                $table->dropForeign(['archived_by']);
-            });
-
+            // Columns to copy (excludes: telephone, profile_img, verified, ABN_number, is_archived, archived_by, archived_on - dropped by later migrations)
             $possibleColumns = [
                 'id', 'first_name', 'last_name', 'email', 'password',
-                'country_code', 'phone', 'telephone',
-                'profile_img', 'status', 'verified',
+                'country_code', 'phone',
+                'status',
                 'role', 'position', 'team', 'permission', 'office_id',
                 'show_dashboard_per', 'time_zone',
                 'is_migration_agent', 'marn_number', 'legal_practitioner_number',
                 'company_name', 'company_website',
                 'business_address', 'business_phone', 'business_mobile',
-                'business_email', 'tax_number', 'ABN_number',
-                'is_archived', 'archived_by', 'archived_on',
+                'business_email', 'tax_number',
                 'remember_token', 'created_at', 'updated_at',
             ];
-            $staffColumns = array_filter($possibleColumns, fn ($col) => Schema::hasColumn('admins', $col));
+            $staffColumns = array_filter($possibleColumns, fn ($col) => Schema::hasColumn('admins', $col) && Schema::hasColumn('staff', $col));
 
             $staff = DB::table('admins')
                 ->where('role', '!=', 7)
@@ -51,7 +46,6 @@ return new class extends Migration
                 ->get($staffColumns);
 
             if ($staff->isEmpty()) {
-                $this->restoreArchivedByFk();
                 return;
             }
 
@@ -62,8 +56,6 @@ return new class extends Migration
             $validRoleIds = Schema::hasTable('user_roles')
                 ? DB::table('user_roles')->pluck('id')->flip()->all()
                 : [];
-            $validArchivedByIds = $staff->pluck('id')->flip()->all(); // only copied staff exist; archived_by references staff.id
-
             foreach ($staff->chunk(50) as $chunk) {
                 foreach ($chunk as $row) {
                     $insert = (array) $row;
@@ -73,22 +65,10 @@ return new class extends Migration
                     if (isset($insert['role']) && $insert['role'] !== null && !isset($validRoleIds[$insert['role']])) {
                         $insert['role'] = null;
                     }
-                    if (isset($insert['archived_by']) && $insert['archived_by'] !== null && !isset($validArchivedByIds[$insert['archived_by']])) {
-                        $insert['archived_by'] = null;
-                    }
                     DB::table('staff')->insert($insert);
                 }
             }
-
-            $this->restoreArchivedByFk();
             $this->updateSequence();
-        });
-    }
-
-    protected function restoreArchivedByFk(): void
-    {
-        Schema::table('staff', function (Blueprint $table) {
-            $table->foreign('archived_by')->references('id')->on('staff')->onDelete('set null');
         });
     }
 

@@ -34,7 +34,6 @@ class Staff extends Authenticatable
         'country_code',
         'phone',
         'status',
-        'verified',
         'role',
         'position',
         'team',
@@ -52,10 +51,6 @@ class Staff extends Authenticatable
         'business_mobile',
         'business_email',
         'tax_number',
-        'ABN_number',
-        'is_archived',
-        'archived_by',
-        'archived_on',
     ];
 
     /**
@@ -71,11 +66,8 @@ class Staff extends Authenticatable
      */
     protected $casts = [
         'status' => 'integer',
-        'verified' => 'integer',
         'show_dashboard_per' => 'integer',
         'is_migration_agent' => 'integer',
-        'is_archived' => 'integer',
-        'archived_on' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -111,14 +103,6 @@ class Staff extends Authenticatable
     public function usertype(): BelongsTo
     {
         return $this->belongsTo(UserRole::class, 'role', 'id');
-    }
-
-    /**
-     * Get the staff member who archived this record.
-     */
-    public function archivedBy(): BelongsTo
-    {
-        return $this->belongsTo(Staff::class, 'archived_by');
     }
 
     /**
@@ -198,11 +182,4 @@ class Staff extends Authenticatable
         return $query->where('status', 1);
     }
 
-    /**
-     * Scope for non-archived staff.
-     */
-    public function scopeNotArchived($query)
-    {
-        return $query->where('is_archived', 0);
-    }
 }

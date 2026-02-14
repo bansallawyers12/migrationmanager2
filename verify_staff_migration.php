@@ -94,7 +94,7 @@ echo "   " . ($idMismatch === 0 ? "✓ All IDs preserved" : "✗ Some IDs differ
 
 // 5. Nullable/optional columns - check a few critical ones exist
 echo "5. COLUMN PRESENCE (staff table)\n";
-$cols = ['first_name', 'last_name', 'email', 'password', 'role', 'position', 'team', 'office_id', 'is_migration_agent', 'is_archived'];
+$cols = ['first_name', 'last_name', 'email', 'password', 'role', 'position', 'team', 'office_id', 'is_migration_agent'];
 foreach ($cols as $c) {
     $has = Schema::hasColumn('staff', $c);
     echo "   " . ($has ? '✓' : '✗') . " {$c}\n";
