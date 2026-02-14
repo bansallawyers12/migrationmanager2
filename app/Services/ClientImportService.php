@@ -90,7 +90,6 @@ class ClientImportService
             $client->email = $clientData['email']; // Required field (unique, NOT NULL)
             $client->phone = $clientData['phone'] ?? null;
             $client->country_code = $clientData['country_code'] ?? null;
-            $client->telephone = $clientData['telephone'] ?? null;
             
             // Personal Information
             $client->dob = $this->parseDate($clientData['dob'] ?? null);
@@ -144,15 +143,11 @@ class ClientImportService
             // Other
             $client->naati_test = $clientData['naati_test'] ?? null;
             $client->naati_date = $this->parseDate($clientData['naati_date'] ?? null);
-            $client->nati_language = $clientData['nati_language'] ?? null;
             $client->py_test = $clientData['py_test'] ?? null;
             $client->py_date = $this->parseDate($clientData['py_date'] ?? null);
-            $client->py_field = $clientData['py_field'] ?? null;
-            $client->regional_points = $clientData['regional_points'] ?? null;
             $client->source = $clientData['source'] ?? null;
             $client->type = $clientData['type'] ?? 'client';
             $client->status = $clientData['status'] ?? 1;
-            $client->profile_img = $clientData['profile_img'] ?? null;
             $client->agent_id = $clientData['agent_id'] ?? null;
             
             // Verification metadata (dates only, not staff IDs)

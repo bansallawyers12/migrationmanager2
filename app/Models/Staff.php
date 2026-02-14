@@ -33,8 +33,6 @@ class Staff extends Authenticatable
         'password',
         'country_code',
         'phone',
-        'telephone',
-        'profile_img',
         'status',
         'verified',
         'role',
@@ -142,6 +140,14 @@ class Staff extends Authenticatable
     public function getFullNameAttribute(): string
     {
         return trim($this->first_name . ' ' . $this->last_name) ?: $this->email;
+    }
+
+    /**
+     * Get avatar URL (replaces profile_img - uses static avatar.png).
+     */
+    public function getProfileImgAttribute(): string
+    {
+        return asset('img/avatar.png');
     }
 
     /**

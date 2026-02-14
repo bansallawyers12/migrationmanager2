@@ -62,7 +62,7 @@ class ActiveUserService
             }
 
             $query = Staff::query()
-                ->select(['id', 'first_name', 'last_name', 'email', 'role', 'team', 'office_id', 'profile_img', 'updated_at'])
+                ->select(['id', 'first_name', 'last_name', 'email', 'role', 'team', 'office_id', 'updated_at'])
                 ->whereIn('id', $staffIds)
                 ->with(['usertype']);
 

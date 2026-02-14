@@ -1021,11 +1021,8 @@ class ClientsController extends Controller
 
             $client->naati_test = isset($validated['naati_test']) ? 1 : 0;
             $client->naati_date = $validated['naati_date'] ? date('Y-m-d', strtotime(str_replace('/', '-', $validated['naati_date']))) : null;
-            $client->nati_language = $requestData['nati_language'] ?? null;
             $client->py_test = isset($validated['py_test']) ? 1 : 0;
             $client->py_date = $validated['py_date'] ? date('Y-m-d', strtotime(str_replace('/', '-', $validated['py_date']))) : null;
-            $client->py_field = $requestData['py_field'] ?? null;
-            $client->regional_points = $requestData['regional_points'] ?? null;
             $client->source = $validated['source'] ?? null;
             $client->type = $validated['type'];
 

@@ -927,23 +927,6 @@ class LeadController extends Controller
             $lead->source = $requestData['lead_source'] ?? null;
             $lead->related_files = rtrim($related_files, ',');
 
-            // Handle profile image upload with error handling
-            if ($request->hasfile('profile_img')) {
-                $new_profile_img = $this->uploadFile($request->file('profile_img'), config('constants.profile_imgs'));
-                
-                if ($new_profile_img) {
-                    // Only delete old image after successful upload
-                    if (!empty($requestData['old_profile_img'])) {
-                        $this->unlinkFile($requestData['old_profile_img'], config('constants.profile_imgs'));
-                    }
-                    $lead->profile_img = $new_profile_img;
-                } else {
-                    throw new \Exception('Profile image upload failed');
-                }
-            } else {
-                $lead->profile_img = $requestData['old_profile_img'] ?? null;
-            }
-
             // Additional fields with null coalescing
             $lead->country_passport = $requestData['country_passport'] ?? null;
             $lead->address = $requestData['address'] ?? null;

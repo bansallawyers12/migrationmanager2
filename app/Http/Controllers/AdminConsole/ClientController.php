@@ -83,8 +83,7 @@ class ClientController extends Controller
 										'company_website' => 'required|max:255',
 										'email' => 'required|max:255|unique:admins',
 										'password' => 'required|max:255',
-										'phone' => 'required|max:255',
-										'profile_img' => 'required|max:255'
+										'phone' => 'required|max:255'
 									  ]);
 
 			$requestData 		= 	$request->all();
@@ -107,18 +106,7 @@ class ClientController extends Controller
 			$obj->regional_study = isset($requestData['regional_study']) ? (int)$requestData['regional_study'] : 0;
 			$obj->cp_status = isset($requestData['cp_status']) ? (int)$requestData['cp_status'] : 0;
 			$obj->cp_code_verify = isset($requestData['cp_code_verify']) ? (int)$requestData['cp_code_verify'] : 0;
-			
-			/* Profile Image Upload Function Start */
-					if($request->hasfile('profile_img'))
-					{
-						$profile_img = $this->uploadFile($request->file('profile_img'), config('constants.profile_imgs'));
-					}
-					else
-					{
-						$profile_img = NULL;
-					}
-				/* Profile Image Upload Function End */
-			$obj->profile_img			=	@$profile_img;
+
 			$saved				=	$obj->save();
 
 			if(!$saved)
@@ -222,25 +210,6 @@ class ClientController extends Controller
 		$obj->city = @$requestData['city'];
 		$obj->role = 7;
 
-		/* Profile Image Upload Function Start */
-		if($request->hasfile('profile_img'))
-		{
-			/* Unlink File Function Start */
-				if($requestData['profile_img'] != '')
-					{
-						$this->unlinkFile($requestData['old_profile_img'], config('constants.profile_imgs'));
-					}
-			/* Unlink File Function End */
-
-			$profile_img = $this->uploadFile($request->file('profile_img'), config('constants.profile_imgs'));
-		}
-		else
-		{
-			$profile_img = @$requestData['old_profile_img'];
-		}
-		/* Profile Image Upload Function End */
-		
-		$obj->profile_img = @$profile_img;
 		$saved = $obj->save();
 
 		if(!$saved)

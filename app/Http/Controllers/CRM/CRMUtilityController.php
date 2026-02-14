@@ -107,24 +107,6 @@ class CRMUtilityController extends Controller
 										'zip' => 'required'
 									  ]);
 
-			/* Profile Image Upload Function Start */
-				if($request->hasfile('profile_img'))
-				{
-					/* Unlink File Function Start */
-						if($requestData['profile_img'] != '')
-							{
-								$this->unlinkFile($requestData['old_profile_img'], config('constants.profile_imgs'));
-							}
-					/* Unlink File Function End */
-
-					$profile_img = $this->uploadFile($request->file('profile_img'), config('constants.profile_imgs'));
-				}
-				else
-				{
-					$profile_img = @$requestData['old_profile_img'];
-				}
-			/* Profile Image Upload Function End */
-
 			$obj							= 	\App\Models\Staff::find(Auth::user()->id);
 
 			$obj->first_name				=	@$requestData['first_name'];
@@ -133,7 +115,6 @@ class CRMUtilityController extends Controller
 			$obj->address					=	@$requestData['address'];
 			$obj->company_name				=	@$requestData['company_name'];
 			$obj->company_website			=	@$requestData['company_website'];
-			$obj->profile_img				=	@$profile_img;
 
 			$saved							=	$obj->save();
 

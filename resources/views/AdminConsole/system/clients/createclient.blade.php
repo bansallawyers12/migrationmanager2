@@ -93,16 +93,10 @@
 								@endif
 							</div>
 								<div class="form-group">
-									<label for="profile_img">Company Logo</label>
-									<div class="custom-file">
-										<input type="file" name="profile_img" class="form-control custom-file-input" id="customFile" autocomplete="off" data-valid="required" />							
-										<label class="custom-file-label" for="customFile">Choose file</label>									
-										@if ($errors->has('profile_img'))
-											<span class="custom-error" role="alert">
-												<strong>{{ @$errors->first('profile_img') }}</strong>
-											</span> 
-										@endif 
-									</div> 
+									<label>Company Logo</label>
+									<div class="show-uploded-img" style="width:140px;">
+										<img style="width:100%;" src="{{ asset('img/avatar.png') }}" class="img-avatar" alt="Avatar"/>
+									</div>
 								</div>
 								<div class="form-group country_field"> 
 									<label for="country" class="">Country <span style="color:#ff0000;">*</span></label>

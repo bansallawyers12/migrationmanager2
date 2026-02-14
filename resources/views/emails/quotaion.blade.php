@@ -23,7 +23,7 @@ $admin = \App\Models\Staff::where('role',1)->where('id',$fetchedData->user_id)->
 				<tbody>
 				    
 					<tr>
-						<td><img style="width:150px;" src="{{URL::to('/public/img/profile_imgs/')}}/{{$admin->profile_img}}" alt=""/></td>
+						<td><img style="width:150px;" src="{{ $admin->profile_img }}" alt=""/></td>
 						<td>
 							
 						</td>

@@ -904,7 +904,7 @@ class ClientPortalController extends Controller
                         'state' => $updatedClient->state,
                         'zip' => $updatedClient->zip,
                         'country' => $updatedClient->country,
-                        'profile_img' => $updatedClient->profile_img,
+                        'profile_img' => asset('img/avatar.png'),
                         'status' => $updatedClient->status,
                         'role' => $updatedClient->role,
                         'cp_status' => $updatedClient->cp_status,

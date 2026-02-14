@@ -28,11 +28,11 @@ class Admin extends Authenticatable
         // Role (clients have role=7)
         'role',
         // Contact Information
-        'phone', 'country_code', 'telephone',
+        'phone', 'country_code',
         // Address
         'country', 'state', 'city', 'address', 'zip',
-        // Profile
-        'profile_img', 'status', 'verified',
+        // Profile (profile_img removed - use avatar.png)
+        'status', 'verified',
         // Company Lead/Client Flag (company data stored in companies table)
         'is_company',
         // API/Service Tokens
@@ -92,9 +92,17 @@ class Admin extends Authenticatable
 	/**
      * Get full name attribute
     */
-    public function getFullNameAttribute(): string
+	public function getFullNameAttribute(): string
     {
         return trim($this->first_name . ' ' . $this->last_name);
+    }
+
+    /**
+     * Get avatar URL (replaces profile_img - uses static avatar.png).
+     */
+    public function getProfileImgAttribute(): string
+    {
+        return asset('img/avatar.png');
     }
 
     /**

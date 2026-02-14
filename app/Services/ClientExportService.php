@@ -81,7 +81,6 @@ class ClientExportService
             'email' => $client->email,
             'phone' => $client->phone,
             'country_code' => $client->country_code,
-            'telephone' => $client->telephone ?? null,
 
             // Personal Information
             'dob' => $client->dob,
@@ -113,7 +112,6 @@ class ClientExportService
             'source' => $client->source,
             'type' => $client->type,
             'status' => $client->status,
-            'profile_img' => $client->profile_img,
             'agent_id' => $client->agent_id ?? null,
         ];
 
@@ -161,22 +159,12 @@ class ClientExportService
         if (Schema::hasColumn('admins', 'naati_date')) {
             $data['naati_date'] = $client->naati_date ? ($client->naati_date instanceof \DateTimeInterface ? $client->naati_date->format('Y-m-d') : $client->naati_date) : null;
         }
-        if (Schema::hasColumn('admins', 'nati_language')) {
-            $data['nati_language'] = $client->nati_language ?? null;
-        }
         if (Schema::hasColumn('admins', 'py_test')) {
             $data['py_test'] = $client->py_test ?? null;
         }
         if (Schema::hasColumn('admins', 'py_date')) {
             $data['py_date'] = $client->py_date ? ($client->py_date instanceof \DateTimeInterface ? $client->py_date->format('Y-m-d') : $client->py_date) : null;
         }
-        if (Schema::hasColumn('admins', 'py_field')) {
-            $data['py_field'] = $client->py_field ?? null;
-        }
-        if (Schema::hasColumn('admins', 'regional_points')) {
-            $data['regional_points'] = $client->regional_points ?? null;
-        }
-
         // Verification metadata (migrationmanager2)
         if (Schema::hasColumn('admins', 'dob_verified_date')) {
             $data['dob_verified_date'] = $client->dob_verified_date ? ($client->dob_verified_date instanceof \DateTimeInterface ? $client->dob_verified_date->toIso8601String() : $client->dob_verified_date) : null;
