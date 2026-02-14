@@ -253,6 +253,14 @@ class Admin extends Authenticatable
     // ============================================================
 
     /**
+     * Get the client matters for this client.
+     */
+    public function clientMatters(): HasMany
+    {
+        return $this->hasMany(\App\Models\ClientMatter::class, 'client_id');
+    }
+
+    /**
      * Get the company data for this admin (if it's a company)
      */
     public function company()
@@ -303,5 +311,21 @@ class Admin extends Authenticatable
             return $this->company->company_name ?? 'Unnamed Company';
         }
         return trim($this->first_name . ' ' . $this->last_name);
+    }
+
+    /**
+     * Get company name from companies table (for clients with is_company=1).
+     */
+    public function getCompanyNameAttribute(): ?string
+    {
+        return $this->company?->company_name;
+    }
+
+    /**
+     * Get company website from companies table.
+     */
+    public function getCompanyWebsiteAttribute(): ?string
+    {
+        return $this->company?->company_website;
     }
 }

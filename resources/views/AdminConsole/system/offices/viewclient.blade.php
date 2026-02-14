@@ -36,7 +36,7 @@
 											<h5>TOTAL USERS : {{\App\Models\Staff::where('role', 1)->where('office_id',$fetchedData->id)->count()}}</h5>
 										</div>
 										<div class="col-md-3">
-											<h5>TOTAL CLIENTS : {{\App\Models\Admin::where('role', 7)->where('office_id',$fetchedData->id)->count()}}</h5>
+											<h5>TOTAL CLIENTS : {{\App\Models\Admin::where('role', 7)->whereHas('clientMatters', fn($q) => $q->where('office_id', $fetchedData->id))->count()}}</h5>
 										</div>
 									</div>
 									
@@ -136,9 +136,8 @@
 											</thead>
 											<tbody class="applicationtdata">
 											<?php
-											$lists = \App\Models\Admin::where('role', 7)->where('office_id',$fetchedData->id)->with(['usertype'])->paginate(10);
+											$lists = \App\Models\Admin::where('role', 7)->whereHas('clientMatters', fn($q) => $q->where('office_id', $fetchedData->id))->with(['usertype'])->paginate(10);
 											foreach($lists as $alist){
-												$b = \App\Models\Branch::where('id', $alist->office_id)->first();
 												?>
 												<tr id="id_{{$alist->id}}">
 													<td><a class="" data-id="{{$alist->id}}" href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode($alist->id)))}}" style="display:block;">{{$alist->first_name}}</a> </td> 
@@ -148,7 +147,7 @@
 													
 													<td></td>
 													
-													<td>{{$b->office_name}}</td> 
+													<td>{{$fetchedData->office_name}}</td> 
 													
 												</tr>
 												<?php

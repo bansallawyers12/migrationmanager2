@@ -50,7 +50,7 @@ class ArtSheetController extends Controller
         });
 
         $activeFilterCount = $this->countActiveFilters($request);
-        $agents = Admin::where('is_migration_agent', 1)->where('status', 1)->orderBy('first_name')->get(['id', 'first_name', 'last_name']);
+        $agents = \App\Models\Staff::where('is_migration_agent', 1)->where('status', 1)->orderBy('first_name')->get(['id', 'first_name', 'last_name']);
         $statusOptions = $this->getStatusOptions();
 
         return view('crm.clients.sheets.art', compact('rows', 'perPage', 'activeFilterCount', 'agents', 'statusOptions'));

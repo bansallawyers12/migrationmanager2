@@ -130,13 +130,9 @@ class CRMUtilityController extends Controller
 			$obj->first_name				=	@$requestData['first_name'];
 			$obj->last_name					=	@$requestData['last_name'];
 			$obj->phone						=	@$requestData['phone'];
-			$obj->country					=	@$requestData['country'];
-			$obj->state						=	@$requestData['state'];
-			$obj->city						=	@$requestData['city'];
 			$obj->address					=	@$requestData['address'];
-			$obj->zip						=	@$requestData['zip'];
-			$obj->company_name						=	@$requestData['company_name'];
-			$obj->company_website						=	@$requestData['company_website'];
+			$obj->company_name				=	@$requestData['company_name'];
+			$obj->company_website			=	@$requestData['company_website'];
 			$obj->profile_img				=	@$profile_img;
 
 			$saved							=	$obj->save();

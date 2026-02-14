@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Log;
 
 use App\Models\Admin;
+use App\Models\Company;
 use App\Models\UserRole;
 
 use Auth;
@@ -43,7 +44,7 @@ class ClientController extends Controller
 				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
 			}
 		//check authorization end
-		$query 		= Admin::where('role', '=', 7);
+		$query 		= Admin::with('company')->where('role', '=', 7);
 
 		$totalData 	= $query->count();	//for all data
 
@@ -89,10 +90,9 @@ class ClientController extends Controller
 			$requestData 		= 	$request->all();
 
 			$obj				= 	new Admin;
-			$obj->company_name	=	@$requestData['company_name'];
+			$obj->is_company	=	1;
 			$obj->first_name	=	@$requestData['first_name'];
 			$obj->last_name		=	@$requestData['last_name'];
-			$obj->company_website		=	@$requestData['company_website'];
 			$obj->email			=	@$requestData['email'];
 			$obj->password	=	Hash::make(@$requestData['password']);
 			$obj->phone	=	@$requestData['phone'];
@@ -125,10 +125,16 @@ class ClientController extends Controller
 			{
 				return redirect()->back()->with('error', config('constants.server_error'));
 			}
-			else
-			{
-				return redirect()->route('adminconsole.system.clients.clientlist')->with('success', 'Client Added Successfully');
-			}
+
+			Company::create([
+				'admin_id' => $obj->id,
+				'company_name' => @$requestData['company_name'],
+				'company_website' => @$requestData['company_website'],
+				'created_at' => now(),
+				'updated_at' => now(),
+			]);
+
+			return redirect()->route('adminconsole.system.clients.clientlist')->with('success', 'Client Added Successfully');
 		}
 
 		return view('AdminConsole.system.clients.createclient');
@@ -153,7 +159,7 @@ class ClientController extends Controller
 			$id = $this->decodeString($id);
 			if(Admin::where('id', '=', $id)->exists())
 			{
-				$fetchedData = Admin::find($id);
+				$fetchedData = Admin::with('company')->find($id);
 				return view('AdminConsole.system.clients.editclient', compact(['fetchedData', 'usertype']));
 			}
 			else
@@ -197,11 +203,14 @@ class ClientController extends Controller
 			return redirect()->route('adminconsole.system.clients.clientlist')->with('error', 'Client Not Found');
 		}
 
-		$obj->company_name = @$requestData['company_name'];
 		$obj->first_name = @$requestData['first_name'];
 		$obj->last_name = @$requestData['last_name'];
-		$obj->company_website = @$requestData['company_website'];
 		$obj->email = @$requestData['email'];
+
+		$company = Company::firstOrNew(['admin_id' => $obj->id]);
+		$company->company_name = @$requestData['company_name'];
+		$company->company_website = @$requestData['company_website'];
+		$company->save();
 
 		if(!empty(@$requestData['password']))
 		{

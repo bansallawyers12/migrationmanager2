@@ -145,6 +145,46 @@ class Staff extends Authenticatable
     }
 
     /**
+     * Alias for business_address (used by views expecting address).
+     */
+    public function getAddressAttribute(): ?string
+    {
+        return $this->business_address;
+    }
+
+    /**
+     * Set address (maps to business_address).
+     */
+    public function setAddressAttribute(?string $value): void
+    {
+        $this->attributes['business_address'] = $value;
+    }
+
+    /**
+     * State from office/branch if available.
+     */
+    public function getStateAttribute(): ?string
+    {
+        return $this->office?->state ?? null;
+    }
+
+    /**
+     * City from office/branch if available.
+     */
+    public function getCityAttribute(): ?string
+    {
+        return $this->office?->city ?? null;
+    }
+
+    /**
+     * Zip from office/branch if available.
+     */
+    public function getZipAttribute(): ?string
+    {
+        return $this->office?->zip ?? null;
+    }
+
+    /**
      * Scope for active staff (status = 1).
      */
     public function scopeActive($query)
