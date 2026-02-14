@@ -85,8 +85,7 @@ CREATE TABLE staff (
     password VARCHAR(255) NOT NULL,
     country_code VARCHAR(20) NULL,
     phone VARCHAR(100) NULL,
-    telephone VARCHAR(100) NULL,
-    profile_img VARCHAR(500) NULL,
+    -- telephone, profile_img removed (Feb 2026): use phone+country_code, static avatar.png
     status TINYINT DEFAULT 1,
     verified TINYINT DEFAULT 0,
     
@@ -153,7 +152,7 @@ class Staff extends Authenticatable
 
     protected $fillable = [
         'first_name', 'last_name', 'email', 'password',
-        'country_code', 'phone', 'telephone', 'profile_img',
+        'country_code', 'phone',  // telephone, profile_img removed
         'status', 'verified',
         'role', 'position', 'team', 'permission', 'office_id',
         'show_dashboard_per', 'time_zone',
@@ -317,8 +316,7 @@ DB::transaction(function () {
             'password' => $row->password,
             'country_code' => $row->country_code,
             'phone' => $row->phone,
-            'telephone' => $row->telephone,
-            'profile_img' => $row->profile_img,
+            // telephone, profile_img removed
             'status' => $row->status,
             'verified' => $row->verified,
             'role' => $row->role,

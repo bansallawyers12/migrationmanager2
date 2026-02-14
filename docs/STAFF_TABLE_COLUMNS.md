@@ -17,10 +17,8 @@
 | 5 | `password` | string(255) | admins | Required for auth |
 | 6 | `country_code` | string(20) | admins | Contact |
 | 7 | `phone` | string(100) | admins | Contact |
-| 8 | `telephone` | string(100) | admins | Contact |
-| 9 | `profile_img` | string(500) | admins | Avatar |
-| 10 | `status` | tinyint | admins | Active/inactive (default 1) |
-| 11 | `verified` | tinyint | admins | Verification flag |
+| 8 | `status` | tinyint | admins | Active/inactive (default 1) |
+| 9 | `verified` | tinyint | admins | Verification flag |
 | 12 | `role` | integer | admins | FK to user_roles |
 | 13 | `position` | string(255) | admins | Job title (AdminConsole) |
 | 14 | `team` | string(255) | admins | Department (AdminConsole, ActiveUserService) |
@@ -46,7 +44,7 @@
 | 34 | `created_at` | timestamp | admins | |
 | 35 | `updated_at` | timestamp | admins | |
 
-**Total: 35 columns** (34 from admins + id)
+**Total: 33 columns** (telephone, profile_img removed – use phone+country_code, static avatar.png)
 
 ---
 
@@ -70,7 +68,7 @@
 | `australian_study`, `australian_study_date`, etc. | EOI (clients) |
 | `naati_test`, `py_test`, `naati_date`, `py_date` | EOI qualifications |
 | `qualification_level`, `qualification_name` | EOI |
-| `total_points`, `nati_language`, `py_field`, `regional_points` | EOI |
+| `total_points` | EOI (nati_language, py_field, regional_points removed) |
 | `source`, `tagname`, `related_files` | Lead/client CRM |
 | `lead_status`, `contact_type`, `email_type`, `followup_date` | Lead/client |
 | `email_verified_at` | Client Portal |

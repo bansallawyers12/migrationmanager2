@@ -96,7 +96,6 @@ class ClientExportService
             'email' => $client->email,
             'phone' => $client->phone,
             'country_code' => $client->country_code,
-            'telephone' => $client->telephone ?? null,
             
             // Personal Information
             'dob' => $client->dob,
@@ -132,16 +131,13 @@ class ClientExportService
             'naati_py' => $client->naati_py ?? null,
             'naati_test' => $client->naati_test ?? null,
             'naati_date' => $client->naati_date,
-            'nati_language' => $client->nati_language ?? null,
             'py_test' => $client->py_test ?? null,
             'py_date' => $client->py_date,
-            'py_field' => $client->py_field ?? null,
             'total_points' => $client->total_points ?? null,
             'start_process' => $client->start_process ?? null,
             'source' => $client->source,
             'type' => $client->type,
             'status' => $client->status,
-            'profile_img' => $client->profile_img,
             'agent_id' => $client->agent_id ?? null,
             
             // Verification metadata (dates only, not staff IDs)
@@ -465,7 +461,6 @@ class ClientImportService
             $client->email = $clientData['email'];
             $client->phone = $clientData['phone'] ?? null;
             $client->country_code = $clientData['country_code'] ?? null;
-            $client->telephone = $clientData['telephone'] ?? null;
             
             // Personal Information
             $client->dob = $this->parseDate($clientData['dob'] ?? null);
@@ -501,16 +496,13 @@ class ClientImportService
             $client->naati_py = $clientData['naati_py'] ?? null;
             $client->naati_test = $clientData['naati_test'] ?? null;
             $client->naati_date = $this->parseDate($clientData['naati_date'] ?? null);
-            $client->nati_language = $clientData['nati_language'] ?? null;
             $client->py_test = $clientData['py_test'] ?? null;
             $client->py_date = $this->parseDate($clientData['py_date'] ?? null);
-            $client->py_field = $clientData['py_field'] ?? null;
             $client->total_points = $clientData['total_points'] ?? null;
             $client->start_process = $clientData['start_process'] ?? null;
             $client->source = $clientData['source'] ?? null;
             $client->type = $clientData['type'] ?? 'client';
             $client->status = $clientData['status'] ?? 1;
-            $client->profile_img = $clientData['profile_img'] ?? null;
             $client->agent_id = $clientData['agent_id'] ?? null;
             
             // Verification metadata (dates only, not staff IDs)

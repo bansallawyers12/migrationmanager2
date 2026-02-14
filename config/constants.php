@@ -20,7 +20,7 @@ return [
 	'test_suggestion_pdfs' => public_path().'/img/test_suggestion_pdfs',
 	'test_submitted_copies' => public_path().'/img/test_submitted_copies',
 	'test_reviewed_copies' => public_path().'/img/test_reviewed_copies',
-	'profile_imgs' => public_path().'/img/profile_imgs',
+	// profile_imgs removed – avatars use static img/avatar.png
 	'invoice' => public_path().'/img/invoice', 
 	// removed legacy tour-package paths: destination_img, topinclusion_img
 	'pdfs' => public_path().'/img/pdfs',

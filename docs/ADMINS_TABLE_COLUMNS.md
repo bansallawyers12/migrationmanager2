@@ -32,8 +32,8 @@ In active use; keep unless you are intentionally deprecating the feature.
 
 | Column | Usage |
 |--------|--------|
-| **phone**, **country_code**, **telephone**, **country**, **state**, **city**, **address**, **zip** | Contact and address. |
-| **profile_img**, **company_website**, **passport_number** | Profile and documents. |
+| **phone**, **country_code**, **country**, **state**, **city**, **address**, **zip** | Contact and address. (**telephone** removed.) |
+| **company_website**, **passport_number** | Profile and documents. (**profile_img** removed – use static avatar.png.) |
 | **user_id**, **agent_id**, **office_id** | Assignments and structure. |
 | **source**, **tagname**, **related_files** | CRM and merge. |
 | **dob**, **age**, **gender**, **marital_status**, **country_passport**, **visa_type**, **visaExpiry**, **visaGrant** | Client personal and visa. |
@@ -41,7 +41,7 @@ In active use; keep unless you are intentionally deprecating the feature.
 | **archived_on**, **archived_by** | Archive audit. |
 | **qualification_level**, **qualification_name**, **naati_test**, **py_test**, **naati_date**, **py_date** | EOI and qualifications. |
 | **specialist_education_date**, **australian_study_date**, **regional_study_date** | EOI dates. |
-| **nati_language**, **py_field**, **regional_points**, **total_points** | EOI points. |
+| **total_points** | EOI points. (**nati_language**, **py_field**, **regional_points** removed.) |
 | **dob_verified_***, **phone_verified_***, **visa_expiry_verified_*** | Verification audit. |
 | **dob_verify_document** | DOB verification. |
 | **marn_number**, **legal_practitioner_number**, **business_address**, **business_phone**, **business_email**, **tax_number** | Migration agent / Form956 / export. (**business_fax** is marked for deletion.) |
@@ -122,7 +122,7 @@ Remove or refactor the listed code before dropping the column.
 
 | Column | Usage |
 |--------|--------|
-| **phone**, **country_code**, **telephone** | Primary contact; used in leads, clients, search. |
+| **phone**, **country_code** | Primary contact; used in leads, clients, search. (**telephone** removed.) |
 | **country**, **state**, **city**, **address**, **zip** | Address; used in forms, merge, export. |
 | **latitude**, **longitude** | ⚠️ **Not referenced in code – likely unused.** |
 | ~~**att_email**, **att_country_code**, **att_phone**~~ | **Dropped Phase 2.** |
@@ -133,7 +133,7 @@ Remove or refactor the listed code before dropping the column.
 
 | Column | Usage |
 |--------|--------|
-| **profile_img** | Avatar. |
+| *profile_img* | **Removed.** Use static avatar.png; accessor on Admin/Staff. |
 | **status** | Active/inactive; used in lists and filters. |
 | **verified** | Verification flag. |
 | **user_id** | Creator/owner (e.g. who created the lead); used in Lead (createdBy), ClientAccountsController, Document policy. |
@@ -203,7 +203,7 @@ Remove or refactor the listed code before dropping the column.
 | **qualification_level**, **qualification_name**, **experience_job_title**, **experience_country** | Denormalized quals/experience; used in ClientPersonalDetailsController, PointsService. |
 | **naati_test**, **py_test**, **naati_date**, **py_date** | NAATI/PY. |
 | **australian_study**, **australian_study_date**, **specialist_education**, **specialist_education_date**, **regional_study**, **regional_study_date** | EOI qualification dates. |
-| **nati_language**, **py_field**, **regional_points** | Used in ClientsController, import/export. |
+| *nati_language*, *py_field*, *regional_points* | **Removed.** No form UI; import/export references removed. |
 | **dob_verified_date**, **dob_verified_by**, **phone_verified_date**, **phone_verified_by** | Verification audit. |
 | **dob_verify_document** | DOB verification document; used in validation and import/export. |
 | **visa_expiry_verified_at**, **visa_expiry_verified_by** | Visa expiry verification. |
@@ -311,7 +311,7 @@ See **Column removal guide** above for: **Critical**, **Recommended to keep**, *
 | **latitude** | 🗑️ **Can remove** | No references in app. |
 | **longitude** | 🗑️ **Can remove** | No references in app. |
 | **visa_opt** | 🗑️ **Can remove** | No references in app. |
-| **profile_img** | ❌ Keep | ClientController (adminconsole), LeadController, CRMUtilityController, ClientPortal, ActiveUserService, import/export. |
+| **profile_img** | **Removed** | Replaced with static avatar.png; accessor provides URL. |
 | **company_website** | ❌ Keep | ClientController (adminconsole), LeadController, CRMUtilityController. |
 | **passport_number** | ❌ Keep | LeadController writes to admins; passport tables/API use same name. |
 | **archived_on** | ❌ Keep | ClientsController sets when archiving. |
