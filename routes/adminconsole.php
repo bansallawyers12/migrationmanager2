@@ -11,6 +11,7 @@ use App\Http\Controllers\AdminConsole\PersonalDocumentTypeController;
 use App\Http\Controllers\AdminConsole\VisaDocumentTypeController;
 use App\Http\Controllers\AdminConsole\DocumentChecklistController;
 use App\Http\Controllers\AdminConsole\UserController;
+use App\Http\Controllers\AdminConsole\StaffController;
 use App\Http\Controllers\AdminConsole\UserroleController;
 use App\Http\Controllers\AdminConsole\TeamController;
 use App\Http\Controllers\AdminConsole\BranchesController;
@@ -150,6 +151,20 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin'])
         
     });
     
+    // Staff routes (dedicated staff table)
+    Route::prefix('staff')->name('staff.')->group(function() {
+        Route::get('/', [StaffController::class, 'index'])->name('index');
+        Route::get('/active', [StaffController::class, 'active'])->name('active');
+        Route::get('/inactive', [StaffController::class, 'inactive'])->name('inactive');
+        Route::get('/invited', [StaffController::class, 'invited'])->name('invited');
+        Route::get('/create', [StaffController::class, 'create'])->name('create');
+        Route::post('/store', [StaffController::class, 'store'])->name('store');
+        Route::get('/edit/{id}', [StaffController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [StaffController::class, 'update'])->name('update');
+        Route::get('/view/{id}', [StaffController::class, 'view'])->name('view');
+        Route::post('/savezone', [StaffController::class, 'savezone']);
+    });
+
     // System routes - System management
     Route::prefix('system')->name('system.')->group(function() {
         
