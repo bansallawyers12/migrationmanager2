@@ -1,7 +1,21 @@
 # Plan: Rename "User" to Client/Staff Terminology
 
-**Status:** Planning only — do not apply until approved.  
-**Created:** 2026-02-14
+**Status:** Phases 1–3 **COMPLETED**. Phases 4–5 **PLANNING ONLY** — do not apply until approved.  
+**Created:** 2026-02-14  
+**Last Updated:** 2026-02-14
+
+---
+
+## Completion Status
+
+| Phase | Description | Status |
+|-------|-------------|--------|
+| 1 | Code-only (variables, UI text, comments) | ✅ COMPLETED |
+| 2 | JS/CSS identifiers (Assign Staff modal) | ✅ COMPLETED |
+| 3 | Route/view rename (staff-login-analytics) | ✅ COMPLETED |
+| 4 | Database migrations (column renames) | 📋 PLANNED — DO NOT APPLY |
+| 5 | Codebase update for new column names | 📋 PLANNED — DO NOT APPLY |
+| 6 | Testing | Pending |
 
 ---
 
@@ -67,13 +81,13 @@ Apply these changes first. No DB schema changes; safe to deploy independently.
 |---|------|--------|
 | 17 | `app/Models/Lead.php` | "Get the user who created this lead" → "Get the staff member who created this lead" (line 92-93) |
 
-### 1.4 Staff — Service/API Response Keys (Client-Facing)
+### 1.4 Staff — Service/API Response Keys (Client-Facing) — ✅ COMPLETED
 
 | # | File | Change |
 |---|------|--------|
-| 18 | `app/Services/UserLoginAnalyticsService.php` | `'user_name'` → `'staff_name'`, fallback `"User #..."` → `"Staff #..."` (line 259) |
-| 19 | `resources/views/crm/user-login-analytics/index.blade.php` | `user.user_name` → `user.staff_name` (lines 408, 417) |
-| 20 | `resources/views/crm/broadcasts/index.blade.php` | `User #${recipient.receiver_id}` → `Staff #${recipient.receiver_id}` (lines 1093, 1462) |
+| 18 | `app/Services/StaffLoginAnalyticsService.php` | `'user_name'` → `'staff_name'`, fallback `"User #..."` → `"Staff #..."` |
+| 19 | `resources/views/crm/staff-login-analytics/index.blade.php` | `user.staff_name` |
+| 20 | `resources/views/crm/broadcasts/index.blade.php` | `Staff #${recipient.receiver_id}` |
 
 ### 1.5 ImportUser Class Rename (Optional)
 
@@ -146,93 +160,78 @@ Update jQuery/JS event handlers that reference the button:
 
 ---
 
-## Phase 3: Route & View Path (Optional)
+## Phase 3: Route & View Path — ✅ COMPLETED
 
-Rename "user-login-analytics" to "staff-login-analytics" for consistency.
-
-| # | File | Change |
-|---|------|--------|
-| 1 | `routes/web.php` | Route name/path `user-login-analytics` → `staff-login-analytics` |
-| 2 | `app/Http/Controllers/CRM/UserLoginAnalyticsController.php` | Rename to `StaffLoginAnalyticsController` (or keep controller name, update view path only) |
-| 3 | `resources/views/crm/user-login-analytics/` | Rename directory to `staff-login-analytics/` |
-| 4 | `resources/views/crm/broadcasts/index.blade.php` | Update `route('user-login-analytics.index')` → `route('staff-login-analytics.index')` |
-| 5 | All links/redirects | Update any references to old route |
-
-**Note:** This may break bookmarks. Consider keeping route as `user-login-analytics` and only renaming internal variable/service names.
+**Status:** Done. Route `user-login-analytics` → `staff-login-analytics`; controller `StaffLoginAnalyticsController`; service `StaffLoginAnalyticsService`; view directory `staff-login-analytics/`. Redirect added for old URL.
 
 ---
 
 ## Phase 4: Database Column Renames (Migrations)
 
-**Warning:** Column renames require migrations and will affect all code that reads/writes these columns.
+**⚠️ DO NOT APPLY — PLANNING ONLY**
 
-### 4.1 Columns to Rename: Staff References (`user_id` → `staff_id`)
+Column renames require migrations and will affect all code that reads/writes these columns. Execute only during a maintenance window with full backup.
 
-These tables have `user_id` that references **staff** (Admin with role != 7, or Staff table after dedicated staff migration):
+### 4.1 Pre-Migration Verification
 
-| Table | Column | References | New Column | Migration Order |
-|-------|--------|------------|------------|------------------|
-| `admins` | `user_id` | Staff (lead owner) | `staff_id` | 1 |
-| `user_logs` | `user_id` | Staff (login log) | `staff_id` | 2 |
-| `notes` | `user_id` | Staff (note owner) | `staff_id` | 3 |
-| `notes` | `assigned_to` | Staff | Keep or rename to `assigned_staff_id` | Optional |
-| `email_labels` | `user_id` | Staff (label owner) | `staff_id` | 4 |
-| `documents` | `user_id` | Staff (document owner) | `staff_id` | 5 |
-| `documents` | `created_by` | Staff | Keep (semantic) or rename | Optional |
-| `mail_reports` | `user_id` | Staff (sender) | `staff_id` | 6 |
-| `applications` | `user_id` | Staff (creator) | `staff_id` | 7 |
-| `checkin_log` | `user_id` | Staff (attending staff) | `staff_id` | 8 |
-| `sessions` | `user_id` | Staff | `staff_id` | 9 |
+Before creating migrations, run:
 
-### 4.2 Columns to Rename: Client References
+```sql
+-- Verify client_matters has user_id (code sets it but model fillable doesn't include it)
+SELECT column_name, data_type FROM information_schema.columns 
+WHERE table_schema = 'public' AND table_name = 'client_matters' AND column_name IN ('user_id', 'client_id');
 
-| Table | Column | References | New Column | Notes |
-|-------|--------|------------|------------|-------|
-| `device_tokens` | `user_id` | Client (admins) | `client_id` | Client Portal only |
-| `refresh_tokens` | `user_id` | Client (admins) | `client_id` | Client Portal only |
+-- List all tables with user_id
+SELECT table_name, column_name FROM information_schema.columns 
+WHERE table_schema = 'public' AND column_name = 'user_id' ORDER BY table_name;
 
-**Caution:** `client_id` may already exist in some tables for a different purpose (e.g. `client_matters.client_id` = the client for the matter). Verify before renaming.
+-- Check existing foreign keys on user_id columns
+SELECT tc.table_name, tc.constraint_name, kcu.column_name, ccu.table_name AS foreign_table
+FROM information_schema.table_constraints tc
+JOIN information_schema.key_column_usage kcu ON tc.constraint_name = kcu.constraint_name
+JOIN information_schema.constraint_column_usage ccu ON ccu.constraint_name = tc.constraint_name
+WHERE tc.constraint_type = 'FOREIGN KEY' AND kcu.column_name = 'user_id';
+```
 
-### 4.3 client_matters.user_id (Verify If Column Exists)
+### 4.2 Tables: Staff References (`user_id` → `staff_id`)
 
-**Status:** Code sets `user_id` in LeadConversionController and ClientsController changetype methods, BUT `ClientMatter` model `$fillable` does NOT include `user_id`.
+| # | Table | Column | FK Target | New Column | Notes |
+|---|-------|--------|-----------|------------|-------|
+| 1 | `admins` | `user_id` | admins (staff) | `staff_id` | Lead/client owner; admins table stores both |
+| 2 | `user_logs` | `user_id` | admins | `staff_id` | Staff who logged in |
+| 3 | `notes` | `user_id` | staff | `staff_id` | Note creator (Note model already uses Staff) |
+| 4 | `email_labels` | `user_id` | admins | `staff_id` | Label owner |
+| 5 | `documents` | `user_id` | admins | `staff_id` | Document owner |
+| 6 | `mail_reports` | `user_id` | admins | `staff_id` | Email sender |
+| 7 | `applications` | `user_id` | admins | `staff_id` | Application creator |
+| 8 | `checkin_log` | `user_id` | staff | `staff_id` | Attending staff |
+| 9 | `sessions` | `user_id` | admins | `staff_id` | Staff session (Laravel sessions) |
+| 10 | `account_client_receipts` | `user_id` | admins | `staff_id` | Staff who created receipt |
+| 11 | `account_all_invoice_receipts` | `user_id` | admins | `staff_id` | Staff who created |
+| 12 | `booking_appointments` | `user_id` | admins | `staff_id` | Assigned staff |
+| 13 | `client_matters` | `user_id` | admins | `staff_id` | **Verify column exists first** |
 
-**Investigation needed:**
-1. Check if `client_matters` table actually has a `user_id` column in production/dev DB
-2. If column exists: It likely references **staff** (the person who created/assigned the matter)
-3. If column does NOT exist: Remove the code that attempts to set `user_id` in controllers
+### 4.3 Tables: Client References (`user_id` → `client_id`)
 
-**If column exists:**
-- **Action:** Add migration to rename `user_id` → `created_by_staff_id` or `assigned_staff_id` (more descriptive than generic `staff_id`)
-- **Action:** Add to `ClientMatter` model `$fillable`
+| # | Table | Column | FK Target | New Column | Notes |
+|---|-------|--------|-----------|------------|-------|
+| 1 | `device_tokens` | `user_id` | admins (clients) | `client_id` | Client Portal API only |
+| 2 | `refresh_tokens` | `user_id` | admins (clients) | `client_id` | Client Portal API only |
 
-**If column does NOT exist:**
-- **Action:** Remove these lines:
-  - `LeadConversionController.php` line 79: `$matter->user_id = ...`
-  - `ClientsController.php` line 5552: `$matter->user_id = ...`
-  - `ClientsController.php` line 5555: `$obj->user_id = ...`
+**Note:** `device_tokens` and `refresh_tokens` FK to admins (clients, role=7). Rename only if no conflict with existing `client_id` in same table.
 
-### 4.4 Migration Strategy
+### 4.4 Migration File Templates
 
-**Option A: Single Migration per Table**
-- One migration per table for clarity and easy rollback.
+Create migrations in this order. Use ` doctrine/dbal` package (composer require doctrine/dbal) for `renameColumn` if using PostgreSQL.
 
-**Option B: Batched Migrations**
-- Migration 1: `admins.user_id` → `admins.staff_id`
-- Migration 2: `user_logs`, `notes`, `email_labels` (audit/log tables)
-- Migration 3: `documents`, `mail_reports`, `applications` (content tables)
-- Migration 4: `checkin_log`, `sessions`, `client_matters` (operational tables)
-- Migration 5: `device_tokens`, `refresh_tokens` (client portal)
-
-**Recommended:** Option A for maximum control and rollback granularity.
-
-### 4.5 Migration Template (Example)
+#### Migration 1: admins.user_id → staff_id
 
 ```php
 // database/migrations/YYYY_MM_DD_HHMMSS_rename_user_id_to_staff_id_on_admins.php
 public function up()
 {
     Schema::table('admins', function (Blueprint $table) {
+        // admins.user_id may not have explicit FK - check with verification query
         $table->renameColumn('user_id', 'staff_id');
     });
 }
@@ -245,60 +244,267 @@ public function down()
 }
 ```
 
-### 4.6 Model Updates After Column Renames
+#### Migration 2: user_logs.user_id → staff_id
 
-| Model | Update |
-|-------|--------|
-| `Admin` | `$fillable`: replace `user_id` with `staff_id`; update `createdBy()` if it uses `user_id` |
-| `Lead` | `createdBy()`: change `'user_id'` to `'staff_id'` in belongsTo |
-| `UserLog` | `$fillable` / `$casts`: `user_id` → `staff_id` |
-| `Note` | `$fillable`: `user_id` → `staff_id` |
-| `EmailLabel` | `$fillable`: `user_id` → `staff_id` |
-| `Document` | `$fillable`: `user_id` → `staff_id` |
-| `MailReport` | `$fillable`: `user_id` → `staff_id` |
-| `ClientMatter` | Add `staff_id` to `$fillable` if column exists |
-| `CheckinLog` | `user_id` → `staff_id` |
-| `DeviceToken`, `RefreshToken` | `user_id` → `client_id` |
+```php
+// database/migrations/YYYY_MM_DD_HHMMSS_rename_user_id_to_staff_id_on_user_logs.php
+public function up()
+{
+    Schema::table('user_logs', function (Blueprint $table) {
+        $table->renameColumn('user_id', 'staff_id');
+    });
+}
+
+public function down()
+{
+    Schema::table('user_logs', function (Blueprint $table) {
+        $table->renameColumn('staff_id', 'user_id');
+    });
+}
+```
+
+#### Migration 3: notes.user_id → staff_id
+
+```php
+// database/migrations/YYYY_MM_DD_HHMMSS_rename_user_id_to_staff_id_on_notes.php
+public function up()
+{
+    Schema::table('notes', function (Blueprint $table) {
+        $table->renameColumn('user_id', 'staff_id');
+    });
+}
+
+public function down()
+{
+    Schema::table('notes', function (Blueprint $table) {
+        $table->renameColumn('staff_id', 'user_id');
+    });
+}
+```
+
+#### Migration 4: email_labels.user_id → staff_id
+
+```php
+// Same pattern - renameColumn('user_id', 'staff_id')
+```
+
+#### Migration 5: documents.user_id → staff_id
+
+```php
+// Same pattern
+```
+
+#### Migration 6: mail_reports.user_id → staff_id
+
+```php
+// Same pattern
+```
+
+#### Migration 7: applications.user_id → staff_id
+
+```php
+// Same pattern
+```
+
+#### Migration 8: checkin_log.user_id → staff_id
+
+```php
+// Same pattern
+```
+
+#### Migration 9: sessions.user_id → staff_id
+
+```php
+// Same pattern - Laravel sessions table
+```
+
+#### Migration 10: account_client_receipts.user_id → staff_id
+
+```php
+// Same pattern
+```
+
+#### Migration 11: account_all_invoice_receipts.user_id → staff_id
+
+```php
+// Same pattern
+```
+
+#### Migration 12: booking_appointments.user_id → staff_id
+
+```php
+// Same pattern
+```
+
+#### Migration 13: client_matters.user_id → staff_id (conditional)
+
+Only run if verification query confirms column exists.
+
+#### Migration 14–15: device_tokens, refresh_tokens user_id → client_id
+
+```php
+// For device_tokens and refresh_tokens:
+$table->renameColumn('user_id', 'client_id');
+// Verify no client_id column already exists
+```
+
+### 4.5 Foreign Key Handling
+
+If a table has a foreign key on `user_id`, the migration must:
+
+1. Drop the foreign key constraint
+2. Rename the column
+3. Re-add the foreign key on the new column name
+
+Example for a table with FK:
+
+```php
+public function up()
+{
+    Schema::table('email_labels', function (Blueprint $table) {
+        $table->dropForeign(['user_id']);  // Use actual constraint name from verification query
+    });
+    Schema::table('email_labels', function (Blueprint $table) {
+        $table->renameColumn('user_id', 'staff_id');
+    });
+    Schema::table('email_labels', function (Blueprint $table) {
+        $table->foreign('staff_id')->references('id')->on('admins')->onDelete('set null');
+    });
+}
+```
+
+Run the FK verification query and adjust each migration accordingly.
+
+### 4.6 Model Updates (Apply with Phase 5)
+
+| Model | File | Changes |
+|-------|------|---------|
+| `Admin` | `app/Models/Admin.php` | Add `staff_id` to `$fillable` if present; remove `user_id` from fillable if listed |
+| `Lead` | `app/Models/Lead.php` | `createdBy()`: `'user_id'` → `'staff_id'` in belongsTo |
+| `UserLog` | `app/Models/UserLog.php` | `$fillable` / `$casts`: `user_id` → `staff_id` |
+| `Note` | `app/Models/Note.php` | `$fillable`: `user_id` → `staff_id`; `user()`: `'user_id'` → `'staff_id'` |
+| `EmailLabel` | `app/Models/EmailLabel.php` | `$fillable`: `user_id` → `staff_id`; relationship FK |
+| `Document` | `app/Models/Document.php` | `$fillable`: `user_id` → `staff_id`; relationship FK; `$lead->user_id` → `$lead->staff_id` |
+| `MailReport` | `app/Models/MailReport.php` | `$fillable`: `user_id` → `staff_id` |
+| `Application` | `app/Models/Application.php` | Relationship: `'user_id'` → `'staff_id'` |
+| `CheckinLog` | `app/Models/CheckinLog.php` | `$fillable`: `user_id` → `staff_id`; relationship FK |
+| `ClientMatter` | `app/Models/ClientMatter.php` | Add `staff_id` to `$fillable` if column exists |
+| `AccountClientReceipt` | `app/Models/AccountClientReceipt.php` | `$fillable`: `user_id` → `staff_id`; relationship |
+| `AccountAllInvoiceReceipt` | `app/Models/AccountAllInvoiceReceipt.php` | `$fillable`: `user_id` → `staff_id`; relationship |
+| `BookingAppointment` | `app/Models/BookingAppointment.php` | `$fillable`: `user_id` → `staff_id` |
+| `DeviceToken` | `app/Models/DeviceToken.php` | `$fillable`: `user_id` → `client_id`; relationship FK |
+| `RefreshToken` | `app/Models/RefreshToken.php` | `$fillable`: `user_id` → `client_id`; relationship FK; scope/query |
 
 ---
 
 ## Phase 5: Full Codebase Update After Migrations
 
-After migrations run, update all PHP/Blade/JS that reference old column names:
+**⚠️ DO NOT APPLY — PLANNING ONLY**
 
-### 5.1 Grep for Old Column Names
+Apply these changes **in the same release** as Phase 4 migrations. The code must use the new column names *after* migrations have run.
+
+### 5.1 Constants
+
+| File | Line | Current | New |
+|------|------|---------|-----|
+| `config/constants.php` | 55 | `'reception_user_id'` | `'reception_staff_id'` |
+| `config/constants.php` | — | Add `.env` | `RECEPTION_STAFF_ID` (document; keep `RECEPTION_USER_ID` as fallback during transition) |
+
+| File | Change |
+|------|--------|
+| `app/Http/Controllers/CRM/OfficeVisitController.php` | `config('constants.reception_user_id')` → `config('constants.reception_staff_id')` |
+
+### 5.2 Models (Complete List)
+
+| Model | File | Changes |
+|-------|------|---------|
+| Lead | `app/Models/Lead.php` | `belongsTo(..., 'user_id', ...)` → `'staff_id'` |
+| Note | `app/Models/Note.php` | `$fillable` `user_id`→`staff_id`; `user()` relationship `user_id`→`staff_id` |
+| UserLog | `app/Models/UserLog.php` | `$fillable` `user_id`→`staff_id` |
+| CheckinLog | `app/Models/CheckinLog.php` | `$fillable` `user_id`→`staff_id`; `belongsTo` FK `user_id`→`staff_id` |
+| Document | `app/Models/Document.php` | `$fillable` `user_id`→`staff_id`; relationship; `$lead->user_id`→`$lead->staff_id` (line ~294) |
+| EmailLabel | `app/Models/EmailLabel.php` | `$fillable` `user_id`→`staff_id`; relationship; scope `user_id`→`staff_id` |
+| MailReport | `app/Models/MailReport.php` | `$fillable` `user_id`→`staff_id`; relationship |
+| Application | `app/Models/Application.php` | relationship `user_id`→`staff_id` |
+| AccountClientReceipt | `app/Models/AccountClientReceipt.php` | `$fillable` `user_id`→`staff_id`; relationship |
+| AccountAllInvoiceReceipt | `app/Models/AccountAllInvoiceReceipt.php` | `$fillable` `user_id`→`staff_id`; relationship |
+| BookingAppointment | `app/Models/BookingAppointment.php` | `$fillable` `user_id`→`staff_id` |
+| ClientMatter | `app/Models/ClientMatter.php` | Add `staff_id` to `$fillable` if column exists |
+| DeviceToken | `app/Models/DeviceToken.php` | `$fillable` `user_id`→`client_id`; relationship; scope `user_id`→`client_id` |
+| RefreshToken | `app/Models/RefreshToken.php` | `$fillable` `user_id`→`client_id`; relationship; scope/query |
+
+### 5.3 Controllers — staff_id Updates
+
+| File | Approx. Lines | Change (all `user_id` → `staff_id` for staff context) |
+|------|----------------|-------------------------------------------------------|
+| `app/Http/Controllers/CRM/ClientsController.php` | 1987, 2682, 2781, 2835, 2855, 2921, 2947, 2980, 3008, 3026, 3061, 3081, 3112, 3285, 3293, 3366, 3374, 5015, 5363, 5428, 5551, 5555, 5603, 5664, 5875, 6003, 6204, 6577, 6685, 6738 | `$obj->user_id`, `->user_id`, `'user_id'=>` → `staff_id` |
+| `app/Http/Controllers/CRM/Leads/LeadConversionController.php` | 79 (if exists) | `$client->user_id`, `$matter->user_id` → `staff_id` |
+| `app/Http/Controllers/CRM/Leads/LeadController.php` | 492 | `'user_id'` → `'staff_id'` |
+| `app/Http/Controllers/CRM/ClientAccountsController.php` | 188, 354, 414, 465, 626, 812, 848, 991, 1033, 1123, 1478, 1530, 1834, 1929, 2361, 2595, 2647, 3021, 3182, 3247, 3285, 3410, 3475, 3513, 3637, 3701, 3739, 3903, 4332, 4334, 4438, 4591, 4731, 4905, 4989, 5142 | `$obj->user_id`, `'user_id'`, `$fetch->user_id`, `$document->user_id`, `$receipt->user_id` → `staff_id`; `AccountClientReceipt::select('user_id',...)` → `staff_id` |
+| `app/Http/Controllers/CRM/ClientPortalController.php` | 642, 653, 1501, 1580, 1615, 1718, 1821, 1880 | `$obj->user_id`, `$doclist->user_id` → `staff_id` |
+| `app/Http/Controllers/CRM/AssigneeController.php` | 155, 265, 739 | `where('user_id',...)`, `notes.user_id`, `$newAction->user_id` → `staff_id` |
+| `app/Http/Controllers/CRM/CRMUtilityController.php` | 1011, 1267 | `$obj->user_id`, `'user_id'` → `staff_id` |
+| `app/Http/Controllers/CRM/OfficeVisitController.php` | 125, 337, 504, 584 | `$obj->user_id`, `$CheckinLog->user_id`, `$objs->user_id`, `reception_user_id` → `staff_id` / `reception_staff_id` |
+| `app/Http/Controllers/Auth/AdminLoginController.php` | 117, 153 | `$obj->user_id` → `staff_id` |
+| `app/Http/Controllers/API/ClientPortalController.php` | 70, 81, 100, 185, 209, 257, 261, 290, 294, 560, 591, 615, 655, 656, 672, 680, 711, 719, 729, 773, 787, 796, 926 | Client Portal: `user_id` in device_tokens, refresh_tokens → `client_id`; error messages may stay as `user_id` for backward compat |
+| `app/Http/Controllers/API/ClientPortalMessageController.php` | 272, 574, 730, 846, 953, 966, 1051 | Log keys; some refer to client → `client_id` where appropriate |
+| `app/Services/ActiveUserService.php` | 45, 46, 49, 172 | `user_id` in sessions table → `staff_id` (sessions migration) |
+| `app/Services/StaffLoginAnalyticsService.php` | 27, 60, 99, 138, 170, 174, 182, 199, 247, 251, 256, 258, 259 | `user_id` in UserLog queries → `staff_id`; keep `user_id` param name for API compat or rename to `staff_id` |
+| `app/Services/DashboardService.php` | 436, 523 | `'user_id'`, `$note->user_id` → `staff_id` |
+| `app/Services/SignatureAnalyticsService.php` | 264 | `'user_id'` in array → `staff_id` |
+
+### 5.4 Views — staff_id Updates
+
+| File | Change |
+|------|--------|
+| `resources/views/crm/assignee/assign_to_me.blade.php` | `$list->user_id`, `$listC->user_id` → `staff_id` (lines ~98, 274) |
+| `resources/views/crm/assignee/action_completed.blade.php` | `$list->user_id` → `staff_id` (line ~276) |
+| `resources/views/crm/officevisits/index.blade.php` | `CheckinLog::where('user_id',...)`, `$list->user_id` → `staff_id` (lines 12–14, 130) |
+| `resources/views/crm/clients/tabs/visa_documents.blade.php` | `$fetch->user_id` → `staff_id` (lines 152, 246) |
+| `resources/views/crm/clients/tabs/client_portal.blade.php` | `$document->user_id` → `staff_id` (line ~352) |
+| `resources/views/crm/clients/tabs/appointments.blade.php` | `$appointmentlist->user_id`, `$appointmentlistslast->user_id` → `staff_id` (lines 19, 73) |
+| `resources/views/crm/clients/detail.blade.php` | `$appointmentlist->user_id` → `staff_id` (line ~1413) |
+| `resources/views/emails/quotaion.blade.php` | `$fetchedData->user_id` → `staff_id` (line 18) |
+| `resources/views/crm/clients/modals/client-management.blade.php` | `name="user_id"` in hidden input → `name="staff_id"` (lines 16, 821) — **only if form posts to code that expects staff_id** |
+
+### 5.5 API & Routes
+
+| File | Change |
+|------|--------|
+| `routes/api.php` | Broadcast channel auth: `user_id` in logs → `staff_id` if logging staff; keep as-is if channel is client |
+| `app/Http/Controllers/API/ClientPortalController.php` | All `user_id` in device_tokens, refresh_tokens, personal_access_tokens → `client_id` for client context |
+
+### 5.6 Request/Form Field Names
+
+- Forms that post `user_id` (e.g. convert lead to client, assign staff) may need to send `staff_id` if backend expects it.
+- Alternatively: keep form field `user_id` and map to `staff_id` in controller during transition.
+- Decision: Prefer updating form `name="user_id"` → `name="staff_id"` for consistency.
+
+### 5.7 StaffLoginAnalyticsService & Controller
+
+The service queries `UserLog` which will have `staff_id` after migration. Update:
+
+- `StaffLoginAnalyticsService`: All `->where('user_id', ...)`, `->select('user_id')`, `->groupBy('user_id')`, `$item->user_id` → `staff_id`
+- Query param `user_id` in API: consider keeping for backward compat or add `staff_id` as alias
+- `resources/views/crm/staff-login-analytics/index.blade.php`: `params.append('user_id', ...)` → `params.append('staff_id', ...)` (and update controller to read `staff_id`)
+
+### 5.8 Verification Commands After Phase 5
+
 ```bash
-rg "user_id" --type php
-rg "'user_id'" app/
-rg "user_id" resources/
+# Should return no results (or only comments/docs) after Phase 5
+rg "->user_id|'user_id'|\.user_id" app/ --type php
+rg "user_id" resources/views/ --type blade
+rg "user_id" app/Models/
 ```
 
-### 5.2 Key Files to Update (staff_id)
-- `app/Http/Controllers/CRM/ClientsController.php` — multiple `user_id` assignments
-- `app/Http/Controllers/CRM/Leads/LeadConversionController.php`
-- `app/Http/Controllers/CRM/ClientAccountsController.php`
-- `app/Http/Controllers/API/ClientPortalController.php` (for client_id on device_tokens/refresh_tokens)
-- `app/Http/Controllers/Auth/AdminLoginController.php`
-- All views that use `$list->user_id`, `$fetch->user_id`, etc.
-- `resources/views/crm/assignee/*.blade.php`
-- `resources/views/crm/clients/tabs/*.blade.php`
-- `resources/views/crm/officevisits/index.blade.php`
+### 5.9 client_matters Cleanup (If user_id Column Does NOT Exist)
 
-### 5.3 Constants
-- `config/constants.php` line 55: `'reception_user_id'` → `'reception_staff_id'` (references staff member for office visit notifications)
-- Update all code using `config('constants.reception_user_id')` → `config('constants.reception_staff_id')`
+If verification query in 4.1 shows `client_matters` has no `user_id` column:
 
-### 5.4 Service/Controller Renames (Optional - Phase 3 Alternative)
-
-If you decide to rename "user-login-analytics" services but keep the route:
-
-| Class | Current | New |
-|-------|---------|-----|
-| `app/Services/UserLoginAnalyticsService.php` | `UserLoginAnalyticsService` | `StaffLoginAnalyticsService` |
-| `app/Http/Controllers/CRM/UserLoginAnalyticsController.php` | `UserLoginAnalyticsController` | `StaffLoginAnalyticsController` |
-| `app/Models/UserLog.php` | `UserLog` | `StaffLog` (and table `user_logs` → `staff_logs`) |
-
-**Note:** Renaming `UserLog` model and table is high-risk. Only do this if you're already running Phase 4 migrations.
+| File | Remove/Change |
+|------|---------------|
+| `app/Http/Controllers/CRM/Leads/LeadConversionController.php` | Remove `$matter->user_id = ...` |
+| `app/Http/Controllers/CRM/ClientsController.php` | Remove `$matter->user_id = ...` and `$obj->user_id = ...` (lines ~5552, 5555) |
 
 ---
 
@@ -363,7 +569,15 @@ If you decide to rename "user-login-analytics" services but keep the route:
 | 5 | Codebase update for new column names | Medium |
 | 6 | Testing | — |
 
-**Recommended approach:** Complete Phases 1–2 first, deploy, verify. Then do Phase 4–5 in a separate release with a maintenance window.
+**Recommended approach:** Phases 1–3 are done. For Phase 4–5: schedule maintenance window, run migrations, deploy Phase 5 code changes, verify.
+
+### Phase 4–5 Execution Order
+
+1. **Backup** database.
+2. **Run Phase 4 migrations** (all 13–15 migration files).
+3. **Deploy Phase 5 code** (models, controllers, views, constants, services).
+4. **Test** per Phase 6 checklist.
+5. **Rollback** if needed: `php artisan migrate:rollback` (each migration), then revert Phase 5 code.
 
 ---
 
@@ -434,4 +648,17 @@ If Phase 4 renames `device_tokens.user_id` → `client_id`, this MAY break mobil
 
 ---
 
-*End of plan. Review complete.*
+## Quick Reference: Files Touched in Phase 5
+
+| Category | Count | Files |
+|----------|-------|-------|
+| Config | 1 | `config/constants.php` |
+| Models | 14+ | Lead, Note, UserLog, CheckinLog, Document, EmailLabel, MailReport, Application, AccountClientReceipt, AccountAllInvoiceReceipt, BookingAppointment, ClientMatter, DeviceToken, RefreshToken |
+| Controllers | 12+ | ClientsController, LeadConversionController, LeadController, ClientAccountsController, ClientPortalController, AssigneeController, CRMUtilityController, OfficeVisitController, AdminLoginController, ClientPortalController (API), ClientPortalMessageController |
+| Services | 4 | ActiveUserService, StaffLoginAnalyticsService, DashboardService, SignatureAnalyticsService |
+| Views | 8+ | assign_to_me, action_completed, officevisits, visa_documents, client_portal, appointments, detail, quotaion, client-management |
+| Migrations | 13–15 | One per table in Phase 4.2–4.3 |
+
+---
+
+*End of plan. Phases 4–5: DO NOT APPLY until approved. Review complete.*
