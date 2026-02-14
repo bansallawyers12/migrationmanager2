@@ -168,8 +168,10 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin'])
     // System routes - System management
     Route::prefix('system')->name('system.')->group(function() {
         
-        // Clients routes (role=7 in admins table)
-        Route::get('/users', fn () => redirect()->route('adminconsole.system.clients.clientlist'))->name('users.index'); // backwards compat
+        // DEPRECATED: Legacy /users - Staff moved to adminconsole.staff.* (StaffController + staff table).
+        // Clients (role=7) now at adminconsole.system.clients.* (ClientController).
+        // Redirect /users for backwards compatibility.
+        Route::get('/users', fn () => redirect()->route('adminconsole.system.clients.clientlist'))->name('users.index');
         Route::get('/clients', [ClientController::class, 'clientlist'])->name('clients.clientlist');
         Route::get('/clients/create', [ClientController::class, 'createclient'])->name('clients.createclient');
         Route::post('/clients/store', [ClientController::class, 'storeclient'])->name('clients.storeclient');

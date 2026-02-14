@@ -128,18 +128,10 @@ body, html { overflow-x: hidden !important; max-width: 100% !important; }
 													<td style="white-space: initial;">
 														<?php
 														$admin = \App\Models\Admin::where('role', '!=', '7')->where('id', '=', $list->user_id)->first();
-														$staffId = null;
-														if ($admin && \Illuminate\Support\Facades\Schema::hasTable('admin_staff_id_mapping')) {
-															$mapping = DB::table('admin_staff_id_mapping')->where('old_admin_id', $admin->id)->first();
-															$staffId = $mapping->new_staff_id ?? null;
-														}
+														// Staff IDs preserved - use admin->id for staff.view (no mapping table)
 														?>
 														@if($admin)
-															@if($staffId)
-																<a href="{{route('adminconsole.staff.view', $staffId)}}">{{$admin->first_name}} {{$admin->last_name}}</a><br>{{$admin->email}}
-															@else
-																{{$admin->first_name}} {{$admin->last_name}}<br>{{$admin->email}}
-															@endif
+															<a href="{{ route('adminconsole.staff.view', $admin->id) }}">{{$admin->first_name}} {{$admin->last_name}}</a><br>{{$admin->email}}
 														@else
 															<span class="text-muted">Not Assigned</span>
 														@endif

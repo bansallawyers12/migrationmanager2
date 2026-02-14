@@ -62,7 +62,7 @@ The `admins` table currently stores **staff** (internal users) and **clients/lea
 | `position` | Job title (AdminConsole) |
 | `team` | Department (AdminConsole, ActiveUserService filter) |
 | `permission` | Granular access (Notes, Documents, etc.) |
-| `time_zone` | Optional (UserController::savezone) |
+| `time_zone` | Optional (StaffController::savezone) |
 | `office_id` | FK to branches |
 | `role` | FK to user_roles (staff roles) |
 | `show_dashboard_per` | Dashboard permission |
@@ -755,7 +755,7 @@ Staff::query()...
 
 **Files to update:**
 
-- `UserController` – use `Staff` for CRUD
+- `ClientController` (adminconsole) – clients only; `StaffController` – use `Staff` for CRUD
 - `ActiveUserService` – use `Staff`
 - Dashboard, assignee, booking views – staff dropdowns
 - `Lead` model – `user_id` → `staff_id` (or keep user_id pointing to staff)
@@ -763,9 +763,9 @@ Staff::query()...
 
 ### 5.5 Views
 
-- `AdminConsole.system.users.*` – change `$lists` from Admin to Staff
+- `AdminConsole.system.clients.*` – clients (role=7); `AdminConsole.staff.*` – staff from Staff table
 - Dropdowns: `Admin::where('role','!=',7)` → `Staff::where('status', 1)`
-- Links: `adminconsole.system.users.view` – pass `Staff` id
+- Links: `adminconsole.staff.view` – pass `Staff` id
 
 ---
 
@@ -899,7 +899,7 @@ Staff::query()...
    
 3. **Code revert:** 
    - `git checkout pre-staff-migration`
-   - Restore Admin model usage, UserController, ActiveUserService, etc.
+   - Restore Admin model usage, ClientController/StaffController, ActiveUserService, etc.
    - Redeploy application code.
    
 4. **Session flush:** 
@@ -929,7 +929,7 @@ Staff::query()...
 | 8 | Update `AdminLoginController` to authenticate Staff | Step 6 |
 | 9 | Migration: Change FKs to staff for staff-only columns (see Phase 4.1) | Step 3 |
 | 10 | Update all models: BelongsTo Staff for staff FKs; polymorphic for mixed | Steps 2, 9 |
-| 11 | Update `UserController` and AdminConsole to use Staff | Steps 2, 10 |
+| 11 | Update `ClientController`/`StaffController` and AdminConsole to use Staff | Steps 2, 10 |
 | 12 | Update `ActiveUserService` to query Staff model | Steps 2, 10 |
 | 13 | Update all views and controllers with staff queries (`Admin::where('role','!=',7)` → `Staff::`) | Steps 2, 10 |
 | 14 | Test thoroughly (see Testing Checklist) | All previous steps |
@@ -1024,7 +1024,7 @@ Staff::query()...
 |----------|-------|-------|
 | **New** | `app/Models/Staff.php`, migrations for staff table and FK updates | Staff model, create_staff_table, copy_staff_data, update_fks_to_staff, add_polymorphic_type_columns |
 | **Config** | `config/auth.php` | Add `staff` provider and guard, update default broker to `staff` |
-| **Controllers** | `AdminLoginController`, `UserController`, many CRM controllers | ~15 files: use Staff instead of Admin for staff operations |
+| **Controllers** | `AdminLoginController`, `ClientController` (clients), `StaffController` (staff), many CRM controllers | ~15 files: use Staff instead of Admin for staff operations |
 | **Models** | ~30+ models with Admin FK to staff | Add BelongsTo Staff or polymorphic relationships |
 | **Services** | `ActiveUserService` | Change Admin query to Staff |
 | **Views** | AdminConsole users views, dashboard, assignee, booking, client detail | Replace `Admin::where('role','!=',7)` with `Staff::` queries |

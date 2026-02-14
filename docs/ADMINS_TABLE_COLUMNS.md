@@ -49,7 +49,7 @@ In active use; keep unless you are intentionally deprecating the feature.
 | **company_name**, **smtp_*** (if ever used from admins), **service_token**, **token_generated_at** | Company and API. |
 | **email_verified_at** | Client portal. |
 | **not_picked_call** | Client detail flag. |
-| **time_zone**, **position**, **team**, **permission** | **Staff-only. KEEP – staff system is ACTIVE.** Used in AdminConsole UserController, views, and ActiveUserService (team filter). Among 96 staff users: position 97.9% adoption, team 91.7%, permission 89.6%, time_zone 1% (optional). These appear "nearly empty" in table stats because 99% of rows are clients/leads who never use them. See **Staff Management Columns** below. |
+| **time_zone**, **position**, **team**, **permission** | **Staff-only. KEEP – staff system is ACTIVE.** Used in AdminConsole StaffController, views, and ActiveUserService (team filter). Among 96 staff users: position 97.9% adoption, team 91.7%, permission 89.6%, time_zone 1% (optional). These appear "nearly empty" in table stats because 99% of rows are clients/leads who never use them. See **Staff Management Columns** below. |
 
 ### Safe to delete
 
@@ -260,7 +260,7 @@ See **Column removal guide** above for: **Critical**, **Recommended to keep**, *
 | **staff_id** | Empty | Only in `Admin::$fillable`; no controller or view reads/writes it. | ✅ Yes |
 | **decrypt_password** | Empty | **Used:** `ServiceAccountTokenService` and `GenerateServiceAccountToken` job use it as password fallback; `ClientImportService` sets null. | 🗑️ **Marked for deletion** (legacy) |
 | **primary_email** | Empty | **Used:** My Profile form, receipt/quotation/printpreview emails, appointments blade, `ClientAccountsController` (client email fallback). | 🗑️ **Marked for deletion** (legacy) |
-| **gst_no** | Empty | **Used:** My Profile, AdminConsole user create/edit; `UserController` saves it. | 🗑️ **Marked for deletion** (legacy) |
+| **gst_no** | Empty | **Used:** My Profile, AdminConsole user create/edit; `ClientController` (adminconsole) saves it. | 🗑️ **Marked for deletion** (legacy) |
 | **is_business_gst** | Empty | **Used:** `CRMUtilityController` saves it; return setting view (GST Yes/No). | 🗑️ **Marked for deletion** (legacy) |
 | **gstin** | Empty | **Used:** `CRMUtilityController` saves it; return setting view (GSTIN field). | 🗑️ **Marked for deletion** (legacy) |
 | **gst_date** | Empty | **Used:** `CRMUtilityController` saves it; return setting view; import command date list. | 🗑️ **Marked for deletion** (legacy) |
@@ -311,18 +311,18 @@ See **Column removal guide** above for: **Critical**, **Recommended to keep**, *
 | **latitude** | 🗑️ **Can remove** | No references in app. |
 | **longitude** | 🗑️ **Can remove** | No references in app. |
 | **visa_opt** | 🗑️ **Can remove** | No references in app. |
-| **profile_img** | ❌ Keep | UserController, LeadController, CRMUtilityController, ClientPortal, ActiveUserService, import/export. |
-| **company_website** | ❌ Keep | UserController, LeadController, CRMUtilityController. |
+| **profile_img** | ❌ Keep | ClientController (adminconsole), LeadController, CRMUtilityController, ClientPortal, ActiveUserService, import/export. |
+| **company_website** | ❌ Keep | ClientController (adminconsole), LeadController, CRMUtilityController. |
 | **passport_number** | ❌ Keep | LeadController writes to admins; passport tables/API use same name. |
 | **archived_on** | ❌ Keep | ClientsController sets when archiving. |
 | **att_country_code** | 🗑️ Marked for deletion | With att_email/att_phone; remove when refactoring that group. |
 | **company_fax** | 🗑️ **Marked for deletion** | Remove CRMUtilityController and AdminConsole view refs before dropping. |
 | ~~**nomi_occupation, skill_assessment, high_quali_aus, high_quali_overseas, relevant_work_exp_over, married_partner**~~ | **Dropped Phase 3.** | — |
 | **exempt_person_reason** | 🗑️ **Marked for deletion** | Remove Form956Controller, ClientsController export, AgentDetails refs before dropping. |
-| **ABN_number** | ❌ Keep | LeadController, Company, UserController. |
-| **business_mobile** | ❌ Keep | UserController, Form956Controller, ClientsController, AgentDetails. |
+| **ABN_number** | ❌ Keep | LeadController, Company, ClientController (adminconsole). |
+| **business_mobile** | ❌ Keep | ClientController (adminconsole), Form956Controller, ClientsController, AgentDetails. |
 | **is_star_client** | 🗑️ **Marked for deletion** | Remove ClientsController merge refs before dropping. |
-| **marn_number, business_address, business_phone, business_email, tax_number** | ❌ Keep | UserController, Form956Controller, ClientsController, AgentDetails. |
+| **marn_number, business_address, business_phone, business_email, tax_number** | ❌ Keep | StaffController (staff), Form956Controller, ClientsController, AgentDetails. |
 
 **Quick reference:** See **Column removal guide** at the top for the four categories: **Critical**, **Recommended to keep**, **Safe to delete**, **Marked for deletion**.
 
@@ -337,7 +337,7 @@ See **Column removal guide** above for: **Critical**, **Recommended to keep**, *
 | **position** | 94/96 = 97.9% | Job title. AdminConsole create/edit forms, user view. |
 | **team** | 88/96 = 91.7% | Department. AdminConsole forms, ActiveUserService team filter. |
 | **permission** | 86/96 = 89.6% | Granular access (Notes, Documents, etc.). AdminConsole forms. |
-| **time_zone** | 1/96 = 1.0% | Optional. `UserController::savezone()` only; not in main create/edit forms. Consider for removal if feature is deprecated. |
+| **time_zone** | 1/96 = 1.0% | Optional. `StaffController::savezone()` only; not in main create/edit forms. Consider for removal if feature is deprecated. |
 
 **Why these appear "nearly empty":** 99% of the table (9,345 rows) is clients/leads who never use staff-only fields. Among the 96 staff users (1% of table), adoption is 90–98%. Wrong denominator: 94/9,441 = 1% (misleading). Right denominator: 94/96 = 97.9% (actual usage).
 
@@ -377,7 +377,7 @@ See **Column removal guide** above for: **Critical**, **Recommended to keep**, *
 **Risk:** Medium. Requires removing form fields and controller logic.
 
 **Steps:**
-1. Remove GST fields from: `my_profile.blade.php`, `returnsetting.blade.php` (crm/settings), AdminConsole `createclient.blade.php`, `editclient.blade.php`, `UserController` (gst_no save)
+1. Remove GST fields from: `my_profile.blade.php`, `returnsetting.blade.php` (crm/settings), AdminConsole `createclient.blade.php`, `editclient.blade.php`, `ClientController` (gst_no save)
 2. Remove GST logic from `CRMUtilityController` (is_business_gst, gstin, gst_date)
 3. Remove `company_fax` from `CRMUtilityController`, AdminConsole view, My Profile
 4. Remove `business_fax` from AdminConsole user view, ClientsController export, `AgentDetails` model
@@ -443,7 +443,7 @@ See **Column removal guide** above for: **Critical**, **Recommended to keep**, *
 
 **Steps:**
 1. Confirm time_zone feature is not needed
-2. Remove route `POST /users/savezone` (routes/adminconsole.php), `UserController::savezone()`, and any view that calls it
+2. Remove route `POST /staff/savezone` (routes/adminconsole.php), `StaffController::savezone()`, and any view that calls it (staff timezone feature)
 3. Remove from `Admin::$fillable`
 4. Create migration to drop `time_zone`
 5. Test; deploy

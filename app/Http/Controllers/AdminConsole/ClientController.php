@@ -14,6 +14,14 @@ use App\Models\UserRole;
 use Auth;
 use App\Services\ClientReferenceService;
 
+/**
+ * ClientController - Manages clients (role=7 in admins table).
+ *
+ * DEPRECATED SPLIT: Former UserController was split into:
+ * - StaffController + staff table: Staff management (active, inactive, invited, create, edit, view).
+ * - This ClientController: Client management (clientlist, createclient, editclient, etc.).
+ * Staff CRUD is now at adminconsole.staff.* routes.
+ */
 class ClientController extends Controller
 {
     /**

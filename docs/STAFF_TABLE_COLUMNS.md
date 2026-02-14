@@ -27,7 +27,7 @@
 | 15 | `permission` | text | admins | Granular access (Notes, Documents, etc.) |
 | 16 | `office_id` | bigint unsigned | admins | FK to branches |
 | 17 | `show_dashboard_per` | tinyint | admins | Dashboard permission |
-| 18 | `time_zone` | string(50) | admins | Optional (UserController::savezone) |
+| 18 | `time_zone` | string(50) | admins | Optional (StaffController::savezone) |
 | 19 | `is_migration_agent` | tinyint | admins | Migration agent flag |
 | 20 | `marn_number` | string(100) | admins | Migration agent |
 | 21 | `legal_practitioner_number` | string(100) | admins | Migration agent |
@@ -62,7 +62,7 @@
 | `agent_id` | Client's assigned agent (staff); staff don't have this |
 | `user_id` | Lead's owner; staff don't have this |
 | `cp_status`, `cp_random_code`, `cp_code_verify`, `cp_token_generated_at` | Client Portal (clients only) |
-| `country`, `state`, `city`, `address`, `zip` | Not used in UserController for staff |
+| `country`, `state`, `city`, `address`, `zip` | Not used in StaffController for staff (ClientController handles clients in admins) |
 | `dob`, `age`, `gender`, `marital_status` | Client personal |
 | `passport_number`, `country_passport` | Client |
 | `visa_type`, `visaExpiry`, `visaGrant` | Client visa |
@@ -82,10 +82,10 @@
 
 ## Verification
 
-**UserController store (staff create)** saves: first_name, last_name, email, password, country_code, phone, position, role, office_id, team, permission, show_dashboard_per, is_migration_agent, marn_number, company_name, business_address, business_phone, business_mobile, business_email, tax_number, status
+**StaffController store (staff create)** saves: first_name, last_name, email, password, country_code, phone, position, role, office_id, team, permission, show_dashboard_per, is_migration_agent, marn_number, company_name, business_address, business_phone, business_mobile, business_email, tax_number, status
 
-**UserController savezone** saves: time_zone
+**StaffController savezone** saves: time_zone
 
-**UserController update (staff edit)** saves: same as store + legal_practitioner_number (if present in form), company_website (migration agent)
+**StaffController update (staff edit)** saves: same as store + legal_practitioner_number (if present in form), company_website (migration agent)
 
 All listed columns are covered. ✓
