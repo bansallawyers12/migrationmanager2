@@ -54,9 +54,27 @@ return new class extends Migration
                 return;
             }
 
+            // Valid FK references - null out orphaned values to avoid constraint violations
+            $validBranchIds = Schema::hasTable('branches')
+                ? DB::table('branches')->pluck('id')->flip()->all()
+                : [];
+            $validRoleIds = Schema::hasTable('user_roles')
+                ? DB::table('user_roles')->pluck('id')->flip()->all()
+                : [];
+            $validArchivedByIds = $staff->pluck('id')->flip()->all(); // only copied staff exist; archived_by references staff.id
+
             foreach ($staff->chunk(50) as $chunk) {
                 foreach ($chunk as $row) {
                     $insert = (array) $row;
+                    if (isset($insert['office_id']) && $insert['office_id'] !== null && !isset($validBranchIds[$insert['office_id']])) {
+                        $insert['office_id'] = null;
+                    }
+                    if (isset($insert['role']) && $insert['role'] !== null && !isset($validRoleIds[$insert['role']])) {
+                        $insert['role'] = null;
+                    }
+                    if (isset($insert['archived_by']) && $insert['archived_by'] !== null && !isset($validArchivedByIds[$insert['archived_by']])) {
+                        $insert['archived_by'] = null;
+                    }
                     DB::table('staff')->insert($insert);
                 }
             }
