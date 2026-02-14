@@ -2833,11 +2833,13 @@ function customValidate(formName, savetype = '')
 							processData: false,
 							contentType: false,
 							data: fd,
+							dataType: 'json',  // Expect JSON so Laravel returns 401/419 JSON instead of HTML redirect
 							xhrFields: {
 								withCredentials: true  // Ensure session cookies are sent
 							},
 							headers: {
-								'X-CSRF-TOKEN': csrfToken  // Use same token in header
+								'X-CSRF-TOKEN': csrfToken,
+								'Accept': 'application/json'  // Tell Laravel to return JSON for auth/CSRF errors
 							},
 							success: function(response){
 								$('.popuploader').hide();
@@ -2859,22 +2861,40 @@ function customValidate(formName, savetype = '')
 								$('.popuploader').hide();
 								var errorMessage = 'Failed to send email. Please try again.';
 								
+								// JSON parse error (server returned non-JSON e.g. HTML)
+								if (status === 'parsererror') {
+									$('.custom-error-msg').html('<span class="alert alert-danger">Invalid server response. Please refresh the page and try again.</span>');
+									return;
+								}
+								
+								// 401 Unauthenticated - session expired
+								if(xhr.status === 401){
+									$('.custom-error-msg').html('<span class="alert alert-warning">Your session has expired. Refreshing page...</span>');
+									setTimeout(function(){ location.reload(); }, 1500);
+									return;
+								}
+								// 419 CSRF token mismatch - token expired (modal open too long)
+								if(xhr.status === 419){
+									$('.custom-error-msg').html('<span class="alert alert-warning">Security token expired. Refreshing page...</span>');
+									setTimeout(function(){ location.reload(); }, 1500);
+									return;
+								}
+								// 403 Forbidden - often session/access issues; offer refresh
 								if(xhr.status === 403){
-									// Check if it's a CSRF token issue
 									var responseText = xhr.responseText || '';
 									var responseJSON = xhr.responseJSON || {};
-									
-									if(responseText.includes('CSRF') || responseText.includes('csrf') || 
-									   responseJSON.message && (responseJSON.message.includes('CSRF') || responseJSON.message.includes('csrf'))){
-										// CSRF token expired - refresh page to get new token
-										$('.custom-error-msg').html('<span class="alert alert-warning">Your session has expired. Refreshing page...</span>');
-										setTimeout(function(){
-											location.reload();
-										}, 1500);
+									if(responseText.includes('CSRF') || responseText.includes('csrf') ||
+									   (responseJSON.message && (responseJSON.message.includes('CSRF') || responseJSON.message.includes('csrf')))){
+										$('.custom-error-msg').html('<span class="alert alert-warning">Security token expired. Refreshing page...</span>');
+										setTimeout(function(){ location.reload(); }, 1500);
 										return;
 									}
-									errorMessage = 'Access denied. Your session may have expired. Please refresh the page and try again.';
-								} else if(xhr.status === 422){
+									// 403 without CSRF in body - likely session/access; auto-refresh for better UX
+									$('.custom-error-msg').html('<span class="alert alert-warning">Access denied. Your session may have expired. Refreshing page...</span>');
+									setTimeout(function(){ location.reload(); }, 1500);
+									return;
+								}
+								if(xhr.status === 422){
 									var errors = xhr.responseJSON && xhr.responseJSON.errors ? xhr.responseJSON.errors : {};
 									var errorHtml = '<span class="alert alert-danger">Validation errors:<ul>';
 									for(var field in errors){
@@ -2885,7 +2905,8 @@ function customValidate(formName, savetype = '')
 									errorHtml += '</ul></span>';
 									$('.custom-error-msg').html(errorHtml);
 									return;
-								} else if(xhr.responseJSON && xhr.responseJSON.message){
+								}
+								if(xhr.responseJSON && xhr.responseJSON.message){
 									errorMessage = xhr.responseJSON.message;
 								}
 								
