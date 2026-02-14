@@ -168,7 +168,7 @@
 															<div class=&quot;col-sm-9&quot;>
 																<select class=&quot;assigneeselect2 form-control selec_reg&quot; id=&quot;rem_cat&quot; name=&quot;rem_cat&quot; onchange=&quot;&quot;>
 																	<option value=&quot;&quot; >Select</option>
-																	@foreach(\App\Models\Admin::where('role','!=',7)->orderby('first_name','ASC')->get() as $admin)
+																	@foreach(\App\Models\Staff::orderby('first_name','ASC')->get() as $admin)
 																	<?php
 																	$branchname = \App\Models\Branch::where('id',$admin->office_id)->first();
 																	?>

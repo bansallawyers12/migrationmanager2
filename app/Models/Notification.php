@@ -26,7 +26,7 @@ class Notification extends Model
      */
     public function sender()
     {
-        return $this->belongsTo(Admin::class, 'sender_id');
+        return $this->belongsTo(Staff::class, 'sender_id');
     }
     
     /**
@@ -34,6 +34,6 @@ class Notification extends Model
      */
     public function receiver()
     {
-        return $this->belongsTo(Admin::class, 'receiver_id');
+        return $this->belongsTo(Staff::class, 'receiver_id');
     }
 }

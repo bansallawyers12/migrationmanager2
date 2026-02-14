@@ -29,7 +29,7 @@ class CheckinLog extends Model
      */
     public function assignee()
     {
-        return $this->belongsTo(Admin::class, 'user_id');
+        return $this->belongsTo(Staff::class, 'user_id');
     }
 
     /**

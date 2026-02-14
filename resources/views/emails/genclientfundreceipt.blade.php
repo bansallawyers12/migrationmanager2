@@ -163,7 +163,7 @@
 	</head>
 	<body>
 	<?php
-	$admin = \App\Models\Admin::where('role',1)->first();
+	$admin = \App\Models\Staff::where('role',1)->first();
 	?>
 		<div class="invoice_table" style="padding: 20px;">
 			<table width="100%" border="0">

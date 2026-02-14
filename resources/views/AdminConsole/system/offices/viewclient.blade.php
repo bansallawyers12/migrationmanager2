@@ -33,7 +33,7 @@
 											<h5>Overview</h5>
 										</div>
 										<div class="col-md-3">
-											<h5>TOTAL USERS : {{\App\Models\Admin::where('role', 1)->where('office_id',$fetchedData->id)->count()}}</h5>
+											<h5>TOTAL USERS : {{\App\Models\Staff::where('role', 1)->where('office_id',$fetchedData->id)->count()}}</h5>
 										</div>
 										<div class="col-md-3">
 											<h5>TOTAL CLIENTS : {{\App\Models\Admin::where('role', 7)->where('office_id',$fetchedData->id)->count()}}</h5>

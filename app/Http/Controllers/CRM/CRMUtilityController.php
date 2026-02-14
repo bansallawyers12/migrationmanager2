@@ -125,7 +125,7 @@ class CRMUtilityController extends Controller
 				}
 			/* Profile Image Upload Function End */
 
-			$obj							= 	Admin::find(Auth::user()->id);
+			$obj							= 	\App\Models\Staff::find(Auth::user()->id);
 
 			$obj->first_name				=	@$requestData['first_name'];
 			$obj->last_name					=	@$requestData['last_name'];
@@ -153,7 +153,7 @@ class CRMUtilityController extends Controller
 		else
 		{
 			$id = Auth::user()->id;
-			$fetchedData = Admin::find($id);
+			$fetchedData = \App\Models\Staff::find($id);
 
 			return view('crm.my_profile', compact(['fetchedData', 'countries']));
 		}
@@ -184,7 +184,7 @@ class CRMUtilityController extends Controller
 			$requestData 	= 	$request->all();
 			$admin_id = Auth::user()->id;
 
-			$fetchedData = Admin::where('id', '=', $admin_id)->first();
+			$fetchedData = \App\Models\Staff::where('id', '=', $admin_id)->first();
 			if(!empty($fetchedData))
 				{
 					if($admin_id == trim($requestData['admin_id']))
@@ -195,7 +195,7 @@ class CRMUtilityController extends Controller
 								}
 							else
 								{
-									$admin = Admin::find($requestData['admin_id']);
+									$admin = \App\Models\Staff::find($requestData['admin_id']);
 									$admin->password = Hash::make($requestData['password']);
 									if($admin->save())
 										{
@@ -283,7 +283,7 @@ class CRMUtilityController extends Controller
 		//check authorization end
 		if ($request->isMethod('post'))
 		{
-			$obj	= 	Admin::find(Auth::user()->id);
+			$obj	= 	\App\Models\Staff::find(Auth::user()->id);
 			$obj->client_id	=	md5(Auth::user()->id.time());
 			$saved				=	$obj->save();
 			if(!$saved)
@@ -1293,8 +1293,8 @@ public function getpartnerbranch(Request $request){
 	    try {
 	        $squery = $request->likevalue;
 	        
-	        $query = \App\Models\Admin::where('role', '!=', 7)  // Exclude clients (role=7)
-                ->where('status', 1);  // Only active users
+	        $query = \App\Models\Staff::query()
+                ->where('status', 1);  // Only active staff
                 
             // Apply search filter if provided
             if (!empty($squery)) {
@@ -1303,7 +1303,6 @@ public function getpartnerbranch(Request $request){
                     $q->whereRaw('LOWER(email) LIKE ?', ['%'.$squeryLower.'%'])
                       ->orWhereRaw('LOWER(first_name) LIKE ?', ['%'.$squeryLower.'%'])
                       ->orWhereRaw('LOWER(last_name) LIKE ?', ['%'.$squeryLower.'%'])
-                      ->orWhereRaw('LOWER(client_id) LIKE ?', ['%'.$squeryLower.'%'])
                       ->orWhereRaw('LOWER(phone) LIKE ?', ['%'.$squeryLower.'%'])
                       ->orWhereRaw("LOWER(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) LIKE ?", ['%'.$squeryLower.'%']);
                 });
@@ -1431,7 +1430,7 @@ public function getpartnerbranch(Request $request){
             : collect();
         
         $admins = !empty($adminIds)
-            ? Admin::where('role', '7')->whereIn('id', $adminIds)->get()->keyBy('id')
+            ? \App\Models\Admin::where('role', '7')->whereIn('id', $adminIds)->get()->keyBy('id')
             : collect();
 
         // Build response data

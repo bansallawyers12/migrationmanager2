@@ -19,7 +19,7 @@
                                                     <label for="checklist_migration_agent">Migration Agent <span class="span_req">*</span></label>
                                                     <select data-valid="required" class="form-control select2 checklist-field" name="checklist_migration_agent" id="checklist_migration_agent">
                                                         <option value="">Select Migration Agent</option>
-                                                        @foreach(\App\Models\Admin::where('role',16)->select('id','first_name','last_name','email')->where('status',1)->get() as $migAgntlist)
+                                                        @foreach(\App\Models\Staff::where('role',16)->select('id','first_name','last_name','email')->where('status',1)->get() as $migAgntlist)
                                                             <option value="{{$migAgntlist->id}}">{{@$migAgntlist->first_name}} {{@$migAgntlist->last_name}} ({{@$migAgntlist->email}})</option>
                                                         @endforeach
                                                     </select>
@@ -32,7 +32,7 @@
                                                     <label for="checklist_person_responsible">Person Responsible <span class="span_req">*</span></label>
                                                     <select data-valid="required" class="form-control select2 checklist-field" name="checklist_person_responsible" id="checklist_person_responsible">
                                                         <option value="">Select Person Responsible</option>
-                                                        @foreach(\App\Models\Admin::where('role',12)->select('id','first_name','last_name','email')->where('status',1)->get() as $perreslist)
+                                                        @foreach(\App\Models\Staff::where('role',12)->select('id','first_name','last_name','email')->where('status',1)->get() as $perreslist)
                                                             <option value="{{$perreslist->id}}">{{@$perreslist->first_name}} {{@$perreslist->last_name}} ({{@$perreslist->email}})</option>
                                                         @endforeach
                                                     </select>
@@ -45,7 +45,7 @@
                                                     <label for="checklist_person_assisting">Person Assisting <span class="span_req">*</span></label>
                                                     <select data-valid="required" class="form-control select2 checklist-field" name="checklist_person_assisting" id="checklist_person_assisting">
                                                         <option value="">Select Person Assisting</option>
-                                                        @foreach(\App\Models\Admin::where('role',13)->select('id','first_name','last_name','email')->where('status',1)->get() as $perassislist)
+                                                        @foreach(\App\Models\Staff::where('role',13)->select('id','first_name','last_name','email')->where('status',1)->get() as $perassislist)
                                                             <option value="{{$perassislist->id}}">{{@$perassislist->first_name}} {{@$perassislist->last_name}} ({{@$perassislist->email}})</option>
                                                         @endforeach
                                                     </select>

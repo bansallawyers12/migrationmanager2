@@ -47,7 +47,7 @@ class ClientMatter extends Model
      */
     public function migrationAgent()
     {
-        return $this->belongsTo(Admin::class, 'sel_migration_agent');
+        return $this->belongsTo(Staff::class, 'sel_migration_agent');
     }
 
     /**
@@ -55,7 +55,7 @@ class ClientMatter extends Model
      */
     public function personResponsible()
     {
-        return $this->belongsTo(Admin::class, 'sel_person_responsible');
+        return $this->belongsTo(Staff::class, 'sel_person_responsible');
     }
 
     /**
@@ -63,7 +63,7 @@ class ClientMatter extends Model
      */
     public function personAssisting()
     {
-        return $this->belongsTo(Admin::class, 'sel_person_assisting');
+        return $this->belongsTo(Staff::class, 'sel_person_assisting');
     }
 
     /**

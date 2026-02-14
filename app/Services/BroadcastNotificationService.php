@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Events\BroadcastNotificationCreated;
-use App\Models\Admin;
+use App\Models\Staff;
 use App\Models\Notification;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -280,7 +280,7 @@ class BroadcastNotificationService
         static $senderCache = [];
         
         if (!isset($senderCache[$senderId])) {
-            $sender = Admin::find($senderId);
+            $sender = Staff::find($senderId);
             $senderCache[$senderId] = $sender ? $this->formatSenderName($sender) : 'Unknown';
         }
         
@@ -449,13 +449,12 @@ class BroadcastNotificationService
      */
     protected function allRecipients(int $senderId): Collection
     {
-        $adminIds = Admin::query()
-            ->where('role', '!=', 7)  // Exclude clients (role=7)
-            ->where('status', 1)  // Only active users
+        $staffIds = Staff::query()
+            ->where('status', 1)  // Only active staff
             ->pluck('id')
             ->map(fn ($id) => (int) $id);
 
-        return $adminIds
+        return $staffIds
             ->reject(fn (int $id) => $id === $senderId)
             ->values();
     }

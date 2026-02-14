@@ -228,8 +228,7 @@ class ClientsController extends Controller
                 $perPage = 20;
             }
 
-            $teamMembers = Admin::where('role', '!=', '7')
-                ->whereNull('is_deleted')
+            $teamMembers = \App\Models\Staff::query()
                 ->orderBy('first_name', 'asc')
                 ->select('id', 'first_name', 'last_name')
                 ->get();
@@ -3884,7 +3883,7 @@ class ClientsController extends Controller
         try { //dd($request->all());
             $id = $request->client_id;
             $client = Admin::findOrFail($request->client_id);
-            $responsiblePerson = Admin::findOrFail($request->agent_id); //dd($responsiblePerson);
+            $responsiblePerson = \App\Models\Staff::findOrFail($request->agent_id); //dd($responsiblePerson);
             if (!$responsiblePerson) {
                 return response()->json([
                     'success' => false,
@@ -5770,8 +5769,8 @@ class ClientsController extends Controller
     // Helper function to get assignee name
     protected function getAssigneeName($assigneeId)
     {
-        $admin = \App\Models\Admin::find($assigneeId);
-        return $admin ? $admin->first_name . ' ' . $admin->last_name : 'Unknown Assignee';
+        $staff = \App\Models\Staff::find($assigneeId);
+        return $staff ? $staff->first_name . ' ' . $staff->last_name : 'Unknown Assignee';
     }
 
     /**

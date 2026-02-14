@@ -23,10 +23,10 @@ class CheckinHistory extends Model
 	}
 
 	/**
-	 * Get the admin who created this history record
+	 * Get the staff who created this history record
 	 */
 	public function creator()
 	{
-		return $this->belongsTo(Admin::class, 'created_by');
+		return $this->belongsTo(Staff::class, 'created_by');
 	}
 }

@@ -93,8 +93,8 @@ class SignatureDashboardController extends Controller
         // Provide errors variable for the layout
         $errors = $request->session()->get('errors') ?? new \Illuminate\Support\MessageBag();
 
-        // Load clients and leads for attach modal
-        $clients = Admin::where('role', '!=', 7)
+        // Load staff and leads for attach modal
+        $clients = \App\Models\Staff::query()
             ->select('id', 'first_name', 'last_name', 'email')
             ->get();
         $leads = Lead::select('id', 'first_name', 'last_name', 'email')
@@ -327,8 +327,8 @@ class SignatureDashboardController extends Controller
             ->orderBy('email')
             ->get();
 
-        // Load clients and leads for attach functionality
-        $clients = Admin::where('role', '!=', 7)
+        // Load staff and leads for attach functionality
+        $clients = \App\Models\Staff::query()
             ->select('id', 'first_name', 'last_name', 'email')
             ->orderBy('first_name')
             ->get();

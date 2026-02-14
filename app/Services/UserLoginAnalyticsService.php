@@ -253,7 +253,7 @@ class UserLoginAnalyticsService
             ->limit($limit)
             ->get()
             ->map(function ($item) {
-                $user = Admin::find($item->user_id);
+                $user = \App\Models\Staff::find($item->user_id);
                 return [
                     'user_id' => $item->user_id,
                     'user_name' => $user ? trim("{$user->first_name} {$user->last_name}") : "User #{$item->user_id}",

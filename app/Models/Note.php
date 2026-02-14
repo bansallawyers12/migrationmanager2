@@ -44,7 +44,7 @@ class Note extends Model
      */
     public function user()
     {
-        return $this->belongsTo(Admin::class, 'user_id');
+        return $this->belongsTo(Staff::class, 'user_id');
     }
 
     /**
@@ -52,7 +52,7 @@ class Note extends Model
      */
     public function assignedUser()
     {
-        return $this->belongsTo(Admin::class, 'assigned_to');
+        return $this->belongsTo(Staff::class, 'assigned_to');
     }
 
     /**

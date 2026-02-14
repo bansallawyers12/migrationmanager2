@@ -103,8 +103,8 @@ class OfficeVisitController extends Controller
 				return redirect()->back()->with('error', 'Selected contact does not exist.');
 			}
 
-			// Verify assignee exists
-			$assigneeExists = Admin::where('role', '!=', '7')->where('id', $assigneeId)->exists();
+			// Verify assignee exists (staff table)
+			$assigneeExists = \App\Models\Staff::where('id', $assigneeId)->exists();
 			if (!$assigneeExists) {
 				return redirect()->back()->with('error', 'Selected assignee does not exist.');
 			}
@@ -334,7 +334,7 @@ class OfficeVisitController extends Controller
 						<b>In Person Assignee </b> <a class="openassignee" href="javascript:;"><i class="fa fa-edit"></i></a>
 						<br>
 						<?php
-						$admin = \App\Models\Admin::where('role', '!=', '7')->where('id', '=', $CheckinLog->user_id)->first();
+						$admin = \App\Models\Staff::find($CheckinLog->user_id);
 						?>
 						<a href=""><?php echo @$admin->first_name.' '.@$admin->last_name; ?></a>
 						<br>
@@ -345,7 +345,7 @@ class OfficeVisitController extends Controller
 						        <div class="col-md-8">
 						            <select class="form-control select2" id="changeassignee" name="changeassignee">
 						                 <?php
-											foreach(\App\Models\Admin::where('role','!=',7)->orderby('first_name','ASC')->get() as $admin){
+											foreach(\App\Models\Staff::orderby('first_name','ASC')->get() as $admin){
 												$branchname = \App\Models\Branch::where('id',$admin->office_id)->first();
 										?>
 												<option value="<?php echo $admin->id; ?>"><?php echo $admin->first_name.' '.$admin->last_name.' ('.@$branchname->office_name.')'; ?></option>
@@ -388,13 +388,13 @@ class OfficeVisitController extends Controller
 						<?php
 						$logslist = CheckinHistory::where('checkin_id',$CheckinLog->id)->orderby('created_at', 'DESC')->get();
 						foreach($logslist as $llist){
-							$admin = \App\Models\Admin::where('id', $llist->created_by)->first();
+							$admin = \App\Models\Staff::find($llist->created_by);
 						?>
 							<div class="logsitem">
 								<div class="row">
 									<div class="col-md-7">
-										<span class="ag-avatar"><?php echo substr($admin->first_name, 0, 1); ?></span>
-										<span class="text_info"><span><?php echo $admin->first_name; ?></span><?php echo $llist->subject; ?></span>
+										<span class="ag-avatar"><?php echo $admin ? substr($admin->first_name ?? '', 0, 1) : '?'; ?></span>
+										<span class="text_info"><span><?php echo $admin ? ($admin->first_name ?? '') : 'System'; ?></span><?php echo $llist->subject; ?></span>
 									</div>
 									<div class="col-md-5">
 										<span class="logs_date"><?php echo date('d M Y h:i A', strtotime($llist->created_at)); ?></span>

@@ -35,16 +35,15 @@ class ActivitySearchController extends Controller
             return Redirect::to('/dashboard')->with('error', 'Unauthorized: Only Super Admins can access Activity Search.');
         }
 
-        // Get all active staff (not clients - role != 7)
-        $staffList = Admin::where('role', '!=', 7)
-            ->where('status', 1)
+        // Get all active staff
+        $staffList = \App\Models\Staff::where('status', 1)
             ->orderBy('first_name', 'ASC')
             ->get()
-            ->map(function($admin) {
+            ->map(function($staff) {
                 return [
-                    'id' => $admin->id,
-                    'name' => $admin->first_name . ' ' . $admin->last_name,
-                    'email' => $admin->email
+                    'id' => $staff->id,
+                    'name' => $staff->first_name . ' ' . $staff->last_name,
+                    'email' => $staff->email
                 ];
             });
 

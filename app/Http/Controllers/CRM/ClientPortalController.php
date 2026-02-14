@@ -1015,11 +1015,11 @@ class ClientPortalController extends Controller
 				<div class="accordion-body collapse" id="<?php echo $stagname; ?>_accor" data-parent="#accordion" style="">
 					<div class="activity_list">
 					<?php foreach($applicationlists as $applicationlist){
-						$admin = \App\Models\Admin::where('id',$applicationlist->created_by)->first();
+						$staff = \App\Models\Staff::where('id',$applicationlist->created_by)->first();
 					?>
 						<div class="activity_col">
 							<div class="activity_txt_time">
-								<span class="span_txt"><b><?php echo $admin->first_name; ?></b> <?php echo $applicationlist->description; ?></span>
+								<span class="span_txt"><b><?php echo $staff ? $staff->first_name : 'System'; ?></b> <?php echo $applicationlist->description; ?></span>
 								<span class="span_time"><?php echo date('d D, M Y h:i A', strtotime($applicationlist->created_at)); ?></span>
 							</div>
 							<?php if($applicationlist->subject != ''){ ?>
@@ -1080,7 +1080,7 @@ class ClientPortalController extends Controller
 			<div class="note_term_list">
 				<?php
 				foreach($lists as $list){
-					$admin = \App\Models\Admin::where('id', $list->created_by)->first();
+					$staff = \App\Models\Staff::where('id', $list->created_by)->first();
 				?>
 					<div class="note_col" id="note_id_<?php echo $list->id; ?>">
 						<div class="note_content">
@@ -1090,7 +1090,7 @@ class ClientPortalController extends Controller
 						<div class="extra_content">
 							<div class="left">
 								<div class="author">
-									<a href="#"><?php echo substr($admin->first_name, 0, 1); ?></a>
+									<a href="#"><?php echo $staff ? substr($staff->first_name, 0, 1) : '?'; ?></a>
 								</div>
 								<div class="note_modify">
 									<small>Last Modified <span><?php echo date('Y-m-d', strtotime($list->updated_at)); ?></span></small>
@@ -1612,9 +1612,9 @@ class ClientPortalController extends Controller
 				$doclistdata .= '<td>';
 					$doclistdata .=  $doclist->typename;
 				$doclistdata .= '</td>';
-				$admin = \App\Models\Admin::where('id', @$doclist->user_id)->first();
+				$staff = \App\Models\Staff::where('id', @$doclist->user_id)->first();
 
-			$doclistdata .= '<td><span style="    position: relative;background: rgb(3, 169, 244);font-size: .8rem;height: 24px;line-height: 24px;min-width: 24px;width: 24px;color: #fff;display: block;font-weight: 600;letter-spacing: 1px;text-align: center;border-radius: 50%;overflow: hidden;">'.substr(@$admin->first_name, 0, 1).'</span>'.@$admin->first_name.'</td>';
+			$doclistdata .= '<td><span style="    position: relative;background: rgb(3, 169, 244);font-size: .8rem;height: 24px;line-height: 24px;min-width: 24px;width: 24px;color: #fff;display: block;font-weight: 600;letter-spacing: 1px;text-align: center;border-radius: 50%;overflow: hidden;">'.($staff ? substr($staff->first_name, 0, 1) : '?').'</span>'.($staff ? $staff->first_name : 'System').'</td>';
 			$doclistdata .= '<td>'.date('Y-m-d',strtotime($doclist->created_at)).'</td>';
 			$doclistdata .= '<td>';
 			if($doclist->status == 1){
@@ -1715,9 +1715,9 @@ class ClientPortalController extends Controller
 				$doclistdata .= '<td>';
 				if($doclist->type == 'application'){ $doclistdata .= 'Application'; }else if($doclist->type == 'acceptance'){ $doclistdata .=  'Acceptance'; }else if($doclist->type == 'payment'){ $doclistdata .=  'Payment'; }else if($doclist->type == 'formi20'){ $doclistdata .=  'Form I 20'; }else if($doclist->type == 'visaapplication'){ $doclistdata .=  'Visa Application'; }else if($doclist->type == 'interview'){ $doclistdata .=  'Interview'; }else if($doclist->type == 'enrolment'){ $doclistdata .=  'Enrolment'; }else if($doclist->type == 'courseongoing'){ $doclistdata .=  'Course Ongoing'; }
 				$doclistdata .= '</td>';
-				$admin = \App\Models\Admin::where('id', $doclist->user_id)->first();
+				$staff = \App\Models\Staff::where('id', $doclist->user_id)->first();
 
-			$doclistdata .= '<td><span style="    position: relative;background: rgb(3, 169, 244);font-size: .8rem;height: 24px;line-height: 24px;min-width: 24px;width: 24px;color: #fff;display: block;font-weight: 600;letter-spacing: 1px;text-align: center;border-radius: 50%;overflow: hidden;">'.substr($admin->first_name, 0, 1).'</span>'.$admin->first_name.'</td>';
+			$doclistdata .= '<td><span style="    position: relative;background: rgb(3, 169, 244);font-size: .8rem;height: 24px;line-height: 24px;min-width: 24px;width: 24px;color: #fff;display: block;font-weight: 600;letter-spacing: 1px;text-align: center;border-radius: 50%;overflow: hidden;">'.($staff ? substr($staff->first_name, 0, 1) : '?').'</span>'.($staff ? $staff->first_name : 'System').'</td>';
 			$doclistdata .= '<td>'.date('Y-m-d',strtotime($doclist->created_at)).'</td>';
 			$doclistdata .= '<td>';
 			if($doclist->status == 1){
@@ -1818,9 +1818,9 @@ class ClientPortalController extends Controller
 				$doclistdata .= '<td>';
 				if($doclist->type == 'application'){ $doclistdata .= 'Application'; }else if($doclist->type == 'acceptance'){ $doclistdata .=  'Acceptance'; }else if($doclist->type == 'payment'){ $doclistdata .=  'Payment'; }else if($doclist->type == 'formi20'){ $doclistdata .=  'Form I 20'; }else if($doclist->type == 'visaapplication'){ $doclistdata .=  'Visa Application'; }else if($doclist->type == 'interview'){ $doclistdata .=  'Interview'; }else if($doclist->type == 'enrolment'){ $doclistdata .=  'Enrolment'; }else if($doclist->type == 'courseongoing'){ $doclistdata .=  'Course Ongoing'; }
 				$doclistdata .= '</td>';
-				$admin = \App\Models\Admin::where('id', $doclist->user_id)->first();
+				$staff = \App\Models\Staff::where('id', $doclist->user_id)->first();
 
-			$doclistdata .= '<td><span style="    position: relative;background: rgb(3, 169, 244);font-size: .8rem;height: 24px;line-height: 24px;min-width: 24px;width: 24px;color: #fff;display: block;font-weight: 600;letter-spacing: 1px;text-align: center;border-radius: 50%;overflow: hidden;">'.substr($admin->first_name, 0, 1).'</span>'.$admin->first_name.'</td>';
+			$doclistdata .= '<td><span style="    position: relative;background: rgb(3, 169, 244);font-size: .8rem;height: 24px;line-height: 24px;min-width: 24px;width: 24px;color: #fff;display: block;font-weight: 600;letter-spacing: 1px;text-align: center;border-radius: 50%;overflow: hidden;">'.($staff ? substr($staff->first_name, 0, 1) : '?').'</span>'.($staff ? $staff->first_name : 'System').'</td>';
 			$doclistdata .= '<td>'.date('Y-m-d',strtotime($doclist->created_at)).'</td>';
 			$doclistdata .= '<td>';
 			if($doclist->status == 1){
@@ -1877,9 +1877,9 @@ class ClientPortalController extends Controller
 				$doclistdata .= '<td>';
 				if($doclist->type == 'application'){ $doclistdata .= 'Application'; }else if($doclist->type == 'acceptance'){ $doclistdata .=  'Acceptance'; }else if($doclist->type == 'payment'){ $doclistdata .=  'Payment'; }else if($doclist->type == 'formi20'){ $doclistdata .=  'Form I 20'; }else if($doclist->type == 'visaapplication'){ $doclistdata .=  'Visa Application'; }else if($doclist->type == 'interview'){ $doclistdata .=  'Interview'; }else if($doclist->type == 'enrolment'){ $doclistdata .=  'Enrolment'; }else if($doclist->type == 'courseongoing'){ $doclistdata .=  'Course Ongoing'; }
 				$doclistdata .= '</td>';
-				$admin = \App\Models\Admin::where('id', $doclist->user_id)->first();
+				$staff = \App\Models\Staff::where('id', $doclist->user_id)->first();
 
-			$doclistdata .= '<td><span style="    position: relative;background: rgb(3, 169, 244);font-size: .8rem;height: 24px;line-height: 24px;min-width: 24px;width: 24px;color: #fff;display: block;font-weight: 600;letter-spacing: 1px;text-align: center;border-radius: 50%;overflow: hidden;">'.substr($admin->first_name, 0, 1).'</span>'.$admin->first_name.'</td>';
+			$doclistdata .= '<td><span style="    position: relative;background: rgb(3, 169, 244);font-size: .8rem;height: 24px;line-height: 24px;min-width: 24px;width: 24px;color: #fff;display: block;font-weight: 600;letter-spacing: 1px;text-align: center;border-radius: 50%;overflow: hidden;">'.($staff ? substr($staff->first_name, 0, 1) : '?').'</span>'.($staff ? $staff->first_name : 'System').'</td>';
 			$doclistdata .= '<td>'.date('Y-m-d',strtotime($doclist->created_at)).'</td>';
 			$doclistdata .= '<td>';
 			if($doclist->status == 1){

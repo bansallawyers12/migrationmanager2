@@ -15,7 +15,7 @@
 	</head>
 	<body>
 	<?php
-$admin = \App\Models\Admin::where('role',1)->where('id',$fetchedData->user_id)->first();
+$admin = \App\Models\Staff::where('role',1)->where('id',$fetchedData->user_id)->first();
 	
 	?>
 		<div class="invoice_table" style="padding: 10px;">

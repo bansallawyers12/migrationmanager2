@@ -301,7 +301,7 @@ class DashboardService
      */
     private function getAssignees()
     {
-        return Admin::select('id', 'first_name', 'email')
+        return \App\Models\Staff::select('id', 'first_name', 'email')
             ->where('role', '!=', 1)
             ->get();
     }

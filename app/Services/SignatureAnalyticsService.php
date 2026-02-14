@@ -254,7 +254,7 @@ class SignatureAnalyticsService
      */
     public function getUserPerformance()
     {
-        return Admin::where('role', '!=', 7) // Exclude leads
+        return \App\Models\Staff::query()  // Staff only (leads/clients in admins)
             ->select('id', 'first_name', 'last_name', 'email')
             ->get()
             ->map(function($user) {

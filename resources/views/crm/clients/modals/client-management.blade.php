@@ -19,7 +19,7 @@
                                 <label for="migration_agent">Migration Agent <span class="span_req">*</span></label>
                                 <select data-valid="required" class="form-control select2" name="migration_agent" id="sel_migration_agent_id">
                                     <option value="">Select Migration Agent</option>
-                                    @foreach(\App\Models\Admin::where('role',16)->select('id','first_name','last_name','email')->where('status',1)->get() as $migAgntlist)
+                                    @foreach(\App\Models\Staff::where('role',16)->select('id','first_name','last_name','email')->where('status',1)->get() as $migAgntlist)
                                         <option value="{{$migAgntlist->id}}">{{@$migAgntlist->first_name}} {{@$migAgntlist->last_name}} ({{@$migAgntlist->email}})</option>
                                     @endforeach
                                 </select>
@@ -31,7 +31,7 @@
                                 <label for="person_responsible">Person Responsible <span class="span_req">*</span></label>
                                 <select data-valid="required" class="form-control select2" name="person_responsible" id="sel_person_responsible_id">
                                     <option value="">Select Person Responsible</option>
-                                    @foreach(\App\Models\Admin::where('role',12)->select('id','first_name','last_name','email')->where('status',1)->get() as $perreslist)
+                                    @foreach(\App\Models\Staff::where('role',12)->select('id','first_name','last_name','email')->where('status',1)->get() as $perreslist)
                                         <option value="{{$perreslist->id}}">{{@$perreslist->first_name}} {{@$perreslist->last_name}} ({{@$perreslist->email}})</option>
                                     @endforeach
                                 </select>
@@ -43,7 +43,7 @@
                                 <label for="person_assisting">Person Assisting <span class="span_req">*</span></label>
                                 <select data-valid="required" class="form-control select2" name="person_assisting" id="sel_person_assisting_id">
                                     <option value="">Select Person Assisting</option>
-                                    @foreach(\App\Models\Admin::where('role',13)->select('id','first_name','last_name','email')->where('status',1)->get() as $perassislist)
+                                    @foreach(\App\Models\Staff::where('role',13)->select('id','first_name','last_name','email')->where('status',1)->get() as $perassislist)
                                         <option value="{{$perassislist->id}}">{{@$perassislist->first_name}} {{@$perassislist->last_name}} ({{@$perassislist->email}})</option>
                                     @endforeach
                                 </select>
@@ -679,7 +679,7 @@
                                     <hr class="dropdown-divider">
                                     <!-- Users list -->
                                     <div id="users-list" class="users-list-container">
-                                        @foreach(\App\Models\Admin::where('role','!=',7)->where('status',1)->orderby('first_name','ASC')->get() as $admin)
+                                        @foreach(\App\Models\Staff::where('status',1)->orderby('first_name','ASC')->get() as $admin)
                                         <?php $branchname = \App\Models\Branch::where('id',$admin->office_id)->first(); ?>
                                         <div class="user-item modern-user-item" data-name="{{ strtolower($admin->first_name.' '.$admin->last_name.' '.@$branchname->office_name) }}">
                                             <label class="modern-user-label">
@@ -697,7 +697,7 @@
 
                         <!-- Hidden input to store selected values -->
                         <select class="d-none" id="rem_cat" name="rem_cat[]" multiple="multiple">
-                            @foreach(\App\Models\Admin::where('role','!=',7)->where('status',1)->orderby('first_name','ASC')->get() as $admin)
+                            @foreach(\App\Models\Staff::where('status',1)->orderby('first_name','ASC')->get() as $admin)
                             <?php $branchname = \App\Models\Branch::where('id',$admin->office_id)->first(); ?>
                             <option value="{{ $admin->id }}">{{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})</option>
                             @endforeach
@@ -825,7 +825,7 @@
                                 <label for="migration_agent">Migration Agent <span class="span_req">*</span></label>
                                 <select data-valid="required" class="form-control select2" name="migration_agent" id="change_sel_migration_agent_id">
                                     <option value="">Select Migration Agent</option>
-                                    @foreach(\App\Models\Admin::where('role',16)->select('id','first_name','last_name','email')->where('status',1)->get() as $migAgntlist)
+                                    @foreach(\App\Models\Staff::where('role',16)->select('id','first_name','last_name','email')->where('status',1)->get() as $migAgntlist)
                                         <option value="{{$migAgntlist->id}}">{{@$migAgntlist->first_name}} {{@$migAgntlist->last_name}} ({{@$migAgntlist->email}})</option>
                                     @endforeach
                                 </select>
@@ -837,7 +837,7 @@
                                 <label for="person_responsible">Person Responsible <span class="span_req">*</span></label>
                                 <select data-valid="required" class="form-control select2" name="person_responsible" id="change_sel_person_responsible_id">
                                     <option value="">Select Person Responsible</option>
-                                    @foreach(\App\Models\Admin::where('role',12)->select('id','first_name','last_name','email')->where('status',1)->get() as $perreslist)
+                                    @foreach(\App\Models\Staff::where('role',12)->select('id','first_name','last_name','email')->where('status',1)->get() as $perreslist)
                                         <option value="{{$perreslist->id}}">{{@$perreslist->first_name}} {{@$perreslist->last_name}} ({{@$perreslist->email}})</option>
                                     @endforeach
                                 </select>
@@ -849,7 +849,7 @@
                                 <label for="person_assisting">Person Assisting <span class="span_req">*</span></label>
                                 <select data-valid="required" class="form-control select2" name="person_assisting" id="change_sel_person_assisting_id">
                                     <option value="">Select Person Assisting</option>
-                                    @foreach(\App\Models\Admin::where('role',13)->select('id','first_name','last_name','email')->where('status',1)->get() as $perassislist)
+                                    @foreach(\App\Models\Staff::where('role',13)->select('id','first_name','last_name','email')->where('status',1)->get() as $perassislist)
                                         <option value="{{$perassislist->id}}">{{@$perassislist->first_name}} {{@$perassislist->last_name}} ({{@$perassislist->email}})</option>
                                     @endforeach
                                 </select>

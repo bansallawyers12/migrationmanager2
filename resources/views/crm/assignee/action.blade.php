@@ -537,7 +537,7 @@
                                         <label class='dropdown-item'><input type='checkbox' id='select-all' /> <strong>Select All</strong></label>
                                         <div style='border-top: 1px solid #e2e8f0; margin: 5px 0;'></div>
                                         <div class='assignee-list'>
-                                            @foreach(\App\Models\Admin::where('role','!=',7)->where('status',1)->orderby('first_name','ASC')->get() as $admin)
+                                            @foreach(\App\Models\Staff::where('status',1)->orderby('first_name','ASC')->get() as $admin)
                                                 <?php 
                                                     $branchname = \App\Models\Branch::where('id',$admin->office_id)->first();
                                                     $searchText = strtolower($admin->first_name . $admin->last_name . @$branchname->office_name);
@@ -552,7 +552,7 @@
                                     </div>
                                 </div>
                                 <select class='d-none' id='rem_cat' name='rem_cat[]' multiple='multiple'>
-                                    @foreach(\App\Models\Admin::where('role','!=',7)->where('status',1)->orderby('first_name','ASC')->get() as $admin)
+                                    @foreach(\App\Models\Staff::where('status',1)->orderby('first_name','ASC')->get() as $admin)
                                         <option value='{{ $admin->id }}'>{{ $admin->first_name }} {{ $admin->last_name }}</option>
                                     @endforeach
                                 </select>
@@ -1193,7 +1193,7 @@ $(function () {
                     <label class="control-label"><i class="fa fa-user"></i> Select Assignee</label>
                     <select class="assigneeselect2 form-control" id="rem_cat" name="rem_cat">
                         <option value="">Select Assignee...</option>
-                        @foreach(\App\Models\Admin::where('role','!=',7)->where('status',1)->orderby('first_name','ASC')->get() as $admin)
+                        @foreach(\App\Models\Staff::where('status',1)->orderby('first_name','ASC')->get() as $admin)
                             <?php $branchname = \App\Models\Branch::where('id',$admin->office_id)->first(); ?>
                             <option value="{{ $admin->id }}" ${assignedTo == '{{ $admin->id }}' ? 'selected' : ''}>
                                 {{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})

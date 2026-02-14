@@ -7,6 +7,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Kyslik\ColumnSortable\Sortable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Staff;
 
 class Branch extends Authenticatable
 {
@@ -67,8 +68,7 @@ class Branch extends Authenticatable
      */
     public function staff(): HasMany
     {
-        return $this->hasMany(Admin::class, 'office_id')
-                    ->whereIn('role', [1, 2, 3, 4, 5, 6]); // Non-client roles
+        return $this->hasMany(Staff::class, 'office_id');
     }
 
     /**
@@ -76,9 +76,7 @@ class Branch extends Authenticatable
      */
     public function activeStaff(): HasMany
     {
-        return $this->hasMany(Admin::class, 'office_id')
-                    ->whereIn('role', [1, 2, 3, 4, 5, 6])
-                    ->where('status', 1);
+        return $this->hasMany(Staff::class, 'office_id')->where('status', 1);
     }
 
     /**

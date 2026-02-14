@@ -127,7 +127,7 @@ body, html { overflow-x: hidden !important; max-width: 100% !important; }
 													<td style="white-space: initial;">{{$list->visit_purpose}}</td>
 													<td style="white-space: initial;">
 														<?php
-														$admin = \App\Models\Admin::where('role', '!=', '7')->where('id', '=', $list->user_id)->first();
+														$admin = \App\Models\Staff::find($list->user_id);
 														// Staff IDs preserved - use admin->id for staff.view (no mapping table)
 														?>
 														@if($admin)

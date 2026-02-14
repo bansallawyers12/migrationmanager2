@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Admin;
+use App\Models\Staff;
 use App\Models\UserLog;
 use App\Models\Team;
 use App\Models\Branch;
@@ -55,15 +55,15 @@ class ActiveUserService
                     ];
                 });
 
-            $adminIds = $sessions->keys();
+            $staffIds = $sessions->keys();
 
-            if ($adminIds->isEmpty()) {
+            if ($staffIds->isEmpty()) {
                 return collect();
             }
 
-            $query = Admin::query()
+            $query = Staff::query()
                 ->select(['id', 'first_name', 'last_name', 'email', 'role', 'team', 'office_id', 'profile_img', 'updated_at'])
-                ->whereIn('id', $adminIds)
+                ->whereIn('id', $staffIds)
                 ->with(['usertype']);
 
             // Apply search filter
@@ -98,35 +98,35 @@ class ActiveUserService
                 $query->orderBy('first_name', 'asc');
             }
 
-            $admins = $query->get();
+            $staffList = $query->get();
 
             // Get team and office data
-            $teamIds = $admins->pluck('team')->filter()->unique();
-            $officeIds = $admins->pluck('office_id')->filter()->unique();
+            $teamIds = $staffList->pluck('team')->filter()->unique();
+            $officeIds = $staffList->pluck('office_id')->filter()->unique();
 
             $teams = Team::whereIn('id', $teamIds)->get()->keyBy('id');
             $offices = Branch::whereIn('id', $officeIds)->get()->keyBy('id');
 
-            $mapped = $admins->map(function (Admin $admin) use ($sessions, $teams, $offices) {
-                $session = $sessions->get($admin->id);
-                $lastLogin = $this->resolveLastLogin($admin->id, $admin->updated_at);
-                $team = $admin->team ? $teams->get($admin->team) : null;
-                $office = $admin->office_id ? $offices->get($admin->office_id) : null;
-                $roleName = $admin->usertype ? $admin->usertype->name : null;
+            $mapped = $staffList->map(function (Staff $staff) use ($sessions, $teams, $offices) {
+                $session = $sessions->get($staff->id);
+                $lastLogin = $this->resolveLastLogin($staff->id, $staff->updated_at);
+                $team = $staff->team ? $teams->get($staff->team) : null;
+                $office = $staff->office_id ? $offices->get($staff->office_id) : null;
+                $roleName = $staff->usertype ? $staff->usertype->name : null;
 
                 return [
-                    'id' => $admin->id,
-                    'name' => trim("{$admin->first_name} {$admin->last_name}") ?: $admin->email,
-                    'first_name' => $admin->first_name,
-                    'last_name' => $admin->last_name,
-                    'email' => $admin->email,
-                    'profile_img' => $admin->profile_img,
-                    'role_id' => $admin->role,
+                    'id' => $staff->id,
+                    'name' => trim("{$staff->first_name} {$staff->last_name}") ?: $staff->email,
+                    'first_name' => $staff->first_name,
+                    'last_name' => $staff->last_name,
+                    'email' => $staff->email,
+                    'profile_img' => $staff->profile_img,
+                    'role_id' => $staff->role,
                     'role_name' => $roleName,
-                    'team_id' => $admin->team,
+                    'team_id' => $staff->team,
                     'team_name' => $team ? $team->name : null,
                     'team_color' => $team ? $team->color : null,
-                    'office_id' => $admin->office_id,
+                    'office_id' => $staff->office_id,
                     'office_name' => $office ? $office->office_name : null,
                     'status' => 'online',
                     'last_activity' => $session ? $session['last_activity']->toIso8601String() : null,

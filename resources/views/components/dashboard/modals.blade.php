@@ -47,7 +47,7 @@
                                 </div>
                                 <hr class="dropdown-divider">
                                 <div id="dashboard-users-list" class="users-list-container">
-                                    @foreach(\App\Models\Admin::where('role','!=',7)->where('status',1)->orderby('first_name','ASC')->get() as $admin)
+                                    @foreach(\App\Models\Staff::where('status',1)->orderby('first_name','ASC')->get() as $admin)
                                     <?php $branchname = \App\Models\Branch::where('id',$admin->office_id)->first(); ?>
                                     <div class="user-item modern-user-item" data-name="{{ strtolower($admin->first_name.' '.$admin->last_name.' '.@$branchname->office_name) }}">
                                         <label class="modern-user-label">
@@ -62,7 +62,7 @@
                             </div>
                         </div>
                         <select class="d-none" id="dashboard_rem_cat" name="rem_cat[]" multiple="multiple">
-                            @foreach(\App\Models\Admin::where('role','!=',7)->where('status',1)->orderby('first_name','ASC')->get() as $admin)
+                            @foreach(\App\Models\Staff::where('status',1)->orderby('first_name','ASC')->get() as $admin)
                             <?php $branchname = \App\Models\Branch::where('id',$admin->office_id)->first(); ?>
                             <option value="{{ $admin->id }}">{{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})</option>
                             @endforeach

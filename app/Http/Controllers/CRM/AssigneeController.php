@@ -544,7 +544,7 @@ class AssigneeController extends Controller
             $objs->client_id = $appointment->client_id;
             $objs->created_by = Auth::user()->id;
 
-            $assign_user = Admin::find($appointment->assigned_to);
+            $assign_user = \App\Models\Staff::find($appointment->assigned_to);
             if($assign_user){
                 $assign_full_name = $assign_user->first_name." ".$assign_user->last_name;
                 $objs->subject = 'deleted action for '.@$assign_full_name;
@@ -585,7 +585,7 @@ class AssigneeController extends Controller
             $objs->client_id = $appointment->client_id;
             $objs->created_by = Auth::user()->id;
 
-            $assign_user = Admin::find($appointment->assigned_to);
+            $assign_user = \App\Models\Staff::find($appointment->assigned_to);
             if($assign_user){
                 $assign_full_name = $assign_user->first_name." ".$assign_user->last_name;
                 $objs->subject = 'deleted action for '.@$assign_full_name;
@@ -619,7 +619,7 @@ class AssigneeController extends Controller
             $objs->client_id = $appointment->client_id;
             $objs->created_by = Auth::user()->id;
 
-            $assign_user = Admin::find($appointment->assigned_to);
+            $assign_user = \App\Models\Staff::find($appointment->assigned_to);
             if($assign_user){
                 $assign_full_name = $assign_user->first_name." ".$assign_user->last_name;
                 $objs->subject = 'deleted completed action for '.@$assign_full_name;
@@ -648,7 +648,7 @@ class AssigneeController extends Controller
         $assignedto = $request->assignedto;
 
         $content1 = array();
-        foreach(\App\Models\Admin::where('role','!=',7)->where('status',1)->orderby('first_name','ASC')->get() as $admin)
+        foreach(\App\Models\Staff::where('status',1)->orderby('first_name','ASC')->get() as $admin)
         {
             $branchname = \App\Models\Branch::where('id',$admin->office_id)->first();
             $option_value =  $admin->first_name.' '.$admin->last_name.' ('.@$branchname->office_name.')';
@@ -667,8 +667,8 @@ class AssigneeController extends Controller
     // Helper function to get assignee name
     protected function getAssigneeName($assigneeId)
     {
-        $admin = \App\Models\Admin::find($assigneeId);
-        return $admin ? $admin->first_name . ' ' . $admin->last_name : 'Unknown Assignee';
+        $staff = \App\Models\Staff::find($assigneeId);
+        return $staff ? $staff->first_name . ' ' . $staff->last_name : 'Unknown Assignee';
     }
 
     /**
@@ -684,7 +684,7 @@ class AssigneeController extends Controller
         $validated = $request->validate([
             'id' => 'required|exists:notes,id', // Ensure the action ID exists in the notes table
             'client_id' => 'nullable|string', // Client ID is optional for Personal Actions
-            'assigned_to' => 'required|exists:admins,id', // Check against the admins table instead of users
+            'assigned_to' => 'required|exists:staff,id',
             'description' => 'required|string',
             'task_group' => 'required|string|in:Call,Checklist,Review,Query,Urgent,Personal Action', // Include Personal Action
         ]);
