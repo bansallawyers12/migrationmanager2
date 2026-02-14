@@ -1127,7 +1127,7 @@ public function getpartnerbranch(Request $request){
 			}
 
 			$message = str_replace('{Client Assignee Name}',$client->first_name, $message);
-			$message = str_replace('{Company Name}',Auth::user()->company_name, $message);
+			$message = str_replace('{Company Name}', optional(Auth::user())->company_name ?? '', $message);
 			$ccarray = array();
 			if(isset($requestData['email_cc']) && !empty($requestData['email_cc'])){
 				foreach($requestData['email_cc'] as $cc){

@@ -4388,7 +4388,7 @@ class ClientsController extends Controller
             }
 
             $sel_migration_agent = $clientMatterInfo->sel_migration_agent;
-            $agentInfo = DB::table('admins')->select(
+            $agentInfo = DB::table('staff')->select(
                 'id as agentId',
                 'first_name',
                 'last_name',
@@ -4401,7 +4401,7 @@ class ClientsController extends Controller
                 'business_mobile',
                 'business_email',
                 'tax_number'
-            )->where('id',$sel_migration_agent)->first();
+            )->where('id', $sel_migration_agent)->first();
             //dd($agentInfo);
             if($agentInfo){
                 $response['agentInfo'] 	= $agentInfo;
@@ -4434,7 +4434,7 @@ class ClientsController extends Controller
             }
 
             $sel_migration_agent = $clientMatterInfo->sel_migration_agent;
-            $agentInfo = DB::table('admins')->select(
+            $agentInfo = DB::table('staff')->select(
                 'id as agentId',
                 'first_name',
                 'last_name',
@@ -4447,7 +4447,7 @@ class ClientsController extends Controller
                 'business_mobile',
                 'business_email',
                 'tax_number'
-            )->where('id',$sel_migration_agent)->first();
+            )->where('id', $sel_migration_agent)->first();
             //dd($agentInfo);
             if($agentInfo){
                 $response['agentInfo'] 	= $agentInfo;
@@ -4489,7 +4489,7 @@ class ClientsController extends Controller
             }
 
             $sel_migration_agent = $clientMatterInfo->sel_migration_agent;
-            $agentInfo = DB::table('admins')->select(
+            $agentInfo = DB::table('staff')->select(
                 'id as agentId',
                 'first_name',
                 'last_name',
@@ -4502,7 +4502,7 @@ class ClientsController extends Controller
                 'business_mobile',
                 'business_email',
                 'tax_number'
-            )->where('id',$sel_migration_agent)->first();
+            )->where('id', $sel_migration_agent)->first();
             //dd($agentInfo);
             if($agentInfo){
                 $response['agentInfo'] 	= $agentInfo;
@@ -5017,7 +5017,7 @@ class ClientsController extends Controller
             $obj5 = new ClientMatter();
             $obj5->user_id = Auth::user()->id;
             $obj5->client_id = $requestData['client_id'];
-            $obj5->office_id = $requestData['office_id'] ?? Auth::user()->office_id ?? null;
+            $obj5->office_id = $requestData['office_id'] ?? optional(Auth::user())->office_id ?? null;
             $obj5->sel_migration_agent = $requestData['migration_agent'];
             $obj5->sel_person_responsible = $requestData['person_responsible'];
             $obj5->sel_person_assisting = $requestData['person_assisting'];
@@ -5557,7 +5557,7 @@ class ClientsController extends Controller
                     $matter = new ClientMatter();
                     $matter->user_id = $request['user_id'];
                     $matter->client_id = $request['client_id'];
-                    $matter->office_id = $request['office_id'] ?? Auth::user()->office_id ?? null;
+                    $matter->office_id = $request['office_id'] ?? optional(Auth::user())->office_id ?? null;
                     $matter->sel_migration_agent = $request['migration_agent'];
                     $matter->sel_person_responsible = $request['person_responsible'];
                     $matter->sel_person_assisting = $request['person_assisting'];

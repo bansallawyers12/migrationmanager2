@@ -4588,7 +4588,7 @@ class ClientAccountsController extends Controller
       if($record_get){
           $clientname = DB::table('admins')->select('first_name','last_name','address','state','city','zip','country')->where('id',$record_get[0]->client_id)->first();
           $agentname = DB::table('agents')->where('id',$record_get[0]->agent_id)->first();
-          $admin = DB::table('admins')->select('company_name','address','state','city','zip','email','phone')->where('id',$record_get[0]->user_id)->first();
+          $admin = DB::table('staff')->select('company_name','business_address as address','state','city','zip','email','business_phone as phone')->where('id',$record_get[0]->user_id)->first();
       }
       $pdf = PDF::setOptions([
           'isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true,

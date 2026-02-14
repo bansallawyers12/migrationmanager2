@@ -1123,7 +1123,7 @@ class ClientPortalController extends Controller
 		$subject = str_replace('{Client First Name}', $client->first_name, $subject);
 		$message = str_replace('{Client First Name}', $client->first_name, $message);
 		$message = str_replace('{Client Assignee Name}', $client->first_name, $message);
-		$message = str_replace('{Company Name}', Auth::user()->company_name, $message);
+		$message = str_replace('{Company Name}', optional(Auth::user())->company_name ?? '', $message);
 		$message .= '<br><br>Consumer guide: <a href="https://www.mara.gov.au/get-help-visa-subsite/FIles/consumer_guide_english.pdf">https://www.mara.gov.au/get-help-visa-subsite/FIles/consumer_guide_english.pdf</a>';
 			$array = array();
 			$ccarray = array();

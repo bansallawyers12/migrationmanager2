@@ -122,7 +122,7 @@ class ClientImportService
                 'att_email', 'att_phone', 'att_country_code',
                 'nomi_occupation', 'skill_assessment', 'high_quali_aus', 'high_quali_overseas',
                 'relevant_work_exp_aus', 'relevant_work_exp_over',
-                'naati_py', 'total_points', 'office_id',
+                'naati_py', 'total_points',
                 'service', 'assignee', 'lead_quality', 'comments_note', 'married_partner',
                 'tagname', 'related_files',
             ];
@@ -167,7 +167,6 @@ class ClientImportService
             $client->role = 7; // Client role
             $client->password = Hash::make('CLIENT_IMPORT_' . time()); // Temporary password
             $client->verified = 0;
-            $client->show_dashboard_per = 0;
             $client->cp_status = 0;
             $client->cp_code_verify = 0;
             $client->australian_study = 0;

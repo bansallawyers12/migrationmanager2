@@ -8,7 +8,6 @@ use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Models\Branch;
 
 class Admin extends Authenticatable
 {
@@ -23,25 +22,17 @@ class Admin extends Authenticatable
       * @var array
 	*/
 	protected $fillable = [
-        'id', 
+        'id',
         // Core Identity
         'first_name', 'last_name', 'email', 'password',
-        // Role & Permissions
-        'role', 'position', 'team', 'permission', 'office_id',
+        // Role (clients have role=7)
+        'role',
         // Contact Information
         'phone', 'country_code', 'telephone',
         // Address
         'country', 'state', 'city', 'address', 'zip',
         // Profile
         'profile_img', 'status', 'verified',
-        // Migration Agent Flag & Details
-        'is_migration_agent',
-        // Business/Professional Info
-        'marn_number', 'legal_practitioner_number',
-        'business_address', 'business_phone', 'business_mobile', 'business_email',
-        'tax_number',
-        'company_name', 'company_website',
-        'ABN_number',
         // Company Lead/Client Flag (company data stored in companies table)
         'is_company',
         // API/Service Tokens
@@ -52,12 +43,10 @@ class Admin extends Authenticatable
         'australian_study', 'australian_study_date', 'specialist_education', 'specialist_education_date', 'regional_study', 'regional_study_date',
         // Verification (staff can verify documents)
         'visa_expiry_verified_at', 'visa_expiry_verified_by',
-        // Permissions
-        'show_dashboard_per',
         // Archive fields
         'is_archived', 'archived_by', 'archived_on',
-        // Personal (staff might need some personal info)
-        'marital_status', 'time_zone',
+        // Personal
+        'marital_status',
         // Client/Lead Tags
         'tagname',
         // Timestamps
@@ -141,16 +130,8 @@ class Admin extends Authenticatable
     }
 
     // ============================================================
-    // STAFF RELATIONSHIPS
+    // STAFF RELATIONSHIPS (agent_id, created_by, verified_by reference admins or staff)
     // ============================================================
-
-    /**
-     * Get the office this staff member belongs to
-     */
-    public function office()
-    {
-        return $this->belongsTo(Branch::class, 'office_id');
-    }
 
     /**
      * Get the clients assigned to this staff member (as agent)

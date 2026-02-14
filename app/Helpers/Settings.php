@@ -14,7 +14,7 @@ class Settings
         }
         
         // For other fields, still check database if needed
-        $siteData = \App\Models\Setting::where('office_id', '=', @Auth::user()->office_id)->first();
+        $siteData = \App\Models\Setting::where('office_id', '=', optional(Auth::user())->office_id)->first();
         if($siteData){
              return $siteData->$fieldname;
         }else{
