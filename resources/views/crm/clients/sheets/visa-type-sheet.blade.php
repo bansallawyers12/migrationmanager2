@@ -481,22 +481,33 @@ jQuery(document).ready(function($) {
     });
     $('.datepicker').datepicker({ format: 'dd/mm/yyyy', autoclose: true, todayHighlight: true });
 
-    // Handle star/pin clicks
-    $(document).on('click', '.pin-star', function(e) {
+    // Handle star/pin clicks - use capture phase (true) so we run before td's stopPropagation blocks bubble
+    var visaTable = document.getElementById('visa-sheet-table');
+    if (visaTable) {
+        visaTable.addEventListener('click', function(e) {
+        var star = e.target.closest('.pin-star');
+        if (!star) return;
+        
         e.preventDefault();
         e.stopPropagation();
         
-        var $star = $(this);
+        var $star = $(star);
         var clientId = $star.data('client-id');
         var matterId = $star.data('matter-id');
         var visaType = $star.data('visa-type');
-        var isPinned = $star.hasClass('pinned');
+        
+        if (!clientId || !matterId) {
+            if (typeof iziToast !== 'undefined') {
+                iziToast.warning({ title: 'Error', message: 'Cannot pin: missing data', position: 'topRight' });
+            }
+            return;
+        }
         
         // Disable clicking during request
         $star.css('pointer-events', 'none');
         
         $.ajax({
-            url: '/clients/sheets/' + visaType + '/toggle-pin',
+            url: '{{ url("/clients/sheets") }}/' + visaType + '/toggle-pin',
             method: 'POST',
             data: {
                 client_id: clientId,
@@ -545,7 +556,8 @@ jQuery(document).ready(function($) {
                 $star.css('pointer-events', 'auto');
             }
         });
-    });
+    }, true); // capture phase
+    }
 });
 </script>
 @endpush

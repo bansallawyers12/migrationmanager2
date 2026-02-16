@@ -229,7 +229,7 @@ class TrSheetController extends Controller
                 'admins.first_name',
                 'admins.last_name',
                 'admins.dob',
-                'admins.visaExpiry as visa_expiry',
+                DB::raw('admins."visaExpiry" as visa_expiry'),
                 'latest_tr.client_unique_matter_no',
                 'latest_tr.matter_title',
                 'latest_tr.other_reference',
@@ -341,13 +341,13 @@ class TrSheetController extends Controller
         if ($request->filled('visa_expiry_from')) {
             try {
                 $from = Carbon::createFromFormat('d/m/Y', $request->input('visa_expiry_from'))->startOfDay();
-                $query->whereDate('admins.visaExpiry', '>=', $from);
+                $query->whereRaw('admins."visaExpiry" >= ?', [$from]);
             } catch (\Exception $e) {}
         }
         if ($request->filled('visa_expiry_to')) {
             try {
                 $to = Carbon::createFromFormat('d/m/Y', $request->input('visa_expiry_to'))->endOfDay();
-                $query->whereDate('admins.visaExpiry', '<=', $to);
+                $query->whereRaw('admins."visaExpiry" <= ?', [$to]);
             } catch (\Exception $e) {}
         }
         if ($request->filled('search')) {
@@ -366,7 +366,8 @@ class TrSheetController extends Controller
     protected function applySorting($query, Request $request, string $tab)
     {
         // First priority: pinned items (is_pinned DESC) - pinned items on top
-        $query->orderByRaw("COALESCE(tr_ref.is_pinned, 0) DESC");
+        // Use CASE to convert boolean to integer for PostgreSQL compatibility
+        $query->orderByRaw("CASE WHEN tr_ref.is_pinned = true THEN 1 ELSE 0 END DESC");
         
         // Second priority: checklist hold status (only for checklist tab)
         if ($tab === 'checklist') {
@@ -375,8 +376,9 @@ class TrSheetController extends Controller
         
         // Third priority: visa expiry (ASC) - closest expiry dates first
         // NULL expiry dates go to the end
-        $query->orderByRaw("CASE WHEN admins.visaExpiry IS NULL OR admins.visaExpiry = '0000-00-00' THEN 1 ELSE 0 END ASC");
-        $query->orderBy('admins.visaExpiry', 'asc');
+        // Use quoted "visaExpiry" for PostgreSQL (case-sensitive column)
+        $query->orderByRaw("CASE WHEN admins.\"visaExpiry\" IS NULL OR admins.\"visaExpiry\"::text = '0000-00-00' THEN 1 ELSE 0 END ASC");
+        $query->orderByRaw('admins."visaExpiry" ASC');
         
         // Fourth priority: custom user sort if provided
         $sortField = $request->get('sort');
