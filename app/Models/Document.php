@@ -10,6 +10,7 @@ use Kyslik\ColumnSortable\Sortable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\Admin;
 use App\Models\Lead;
+use App\Models\Staff;
 
 class Document extends Model
 {
@@ -95,7 +96,7 @@ class Document extends Model
 
     public function creator(): BelongsTo
     {
-        return $this->belongsTo(Admin::class, 'created_by');
+        return $this->belongsTo(Staff::class, 'created_by');
     }
 
     public function user(): BelongsTo

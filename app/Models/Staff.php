@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Document;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -112,6 +113,14 @@ class Staff extends Authenticatable
     public function assignedClients(): HasMany
     {
         return $this->hasMany(Admin::class, 'agent_id');
+    }
+
+    /**
+     * Get documents created by this staff member.
+     */
+    public function documents(): HasMany
+    {
+        return $this->hasMany(Document::class, 'created_by');
     }
 
     // ============================================================
