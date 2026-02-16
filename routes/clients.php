@@ -46,7 +46,7 @@ Route::get('/clients/sheets/art', [\App\Http\Controllers\CRM\ArtSheetController:
 Route::get('/clients/sheets/art/insights', [\App\Http\Controllers\CRM\ArtSheetController::class, 'insights'])->name('clients.sheets.art.insights');
 
 Route::get('/clients/sheets/{visaType}', [\App\Http\Controllers\CRM\VisaTypeSheetController::class, 'index'])
-    ->where('visaType', 'tr|visitor|student|pr')
+    ->where('visaType', 'tr|visitor|student|pr|employer-sponsored')
     ->name('clients.sheets.visa-type');
 
 // EOI Confirmation Workflow (Staff actions - requires auth)
