@@ -20,7 +20,6 @@ use Auth;
 use App\Models\ActivitiesLog;
 use App\Models\Note;
 use App\Models\ClientMatter;
-use App\Models\ClientTrReference;
 use Carbon\Carbon;
 use App\Models\ClientVisaCountry;
 use App\Services\EmailService;
@@ -1091,34 +1090,13 @@ public function getpartnerbranch(Request $request){
             }
         }
 
-        // TR sheet integration: when checklist sent for a TR matter, update client_tr_references and tr_matter_reminders
+        // Visa sheet integration: when checklist sent, update the correct reference table per subclass (TR, Visitor, Student, PR, Employer Sponsored)
         $checklistWasSent = (!empty($requestData['checklistfile']) || !empty($requestData['checklistfile_document']));
         $clientMatterId = $requestData['compose_client_matter_id'] ?? null;
-        $clientId = $requestData['client_id'] ?? null;
-        if ($checklistWasSent && $clientMatterId && $clientId && Schema::hasTable('client_tr_references')) {
+        if ($checklistWasSent && $clientMatterId) {
             $clientMatter = ClientMatter::with('matter')->find($clientMatterId);
-            if ($clientMatter && $clientMatter->isTrMatter()) {
-                $staffId = Auth::user()->id;
-                $now = now();
-
-                $ref = ClientTrReference::firstOrCreate(
-                    ['client_id' => $clientId, 'client_matter_id' => $clientMatterId],
-                    ['checklist_sent_at' => $now, 'created_by' => $staffId, 'updated_by' => $staffId]
-                );
-                if (!$ref->wasRecentlyCreated) {
-                    $ref->update(['checklist_sent_at' => $now, 'updated_by' => $staffId]);
-                }
-
-                if (Schema::hasTable('tr_matter_reminders')) {
-                    DB::table('tr_matter_reminders')->insert([
-                        'client_matter_id' => $clientMatterId,
-                        'type' => 'email',
-                        'reminded_at' => $now,
-                        'reminded_by' => $staffId,
-                        'created_at' => $now,
-                        'updated_at' => $now,
-                    ]);
-                }
+            if ($clientMatter) {
+                $clientMatter->recordChecklistSent(Auth::user()->id);
             }
         }
 

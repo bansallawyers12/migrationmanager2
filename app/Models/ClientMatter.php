@@ -200,25 +200,79 @@ class ClientMatter extends Model
      */
     public function isTrMatter(): bool
     {
+        return $this->getVisaSheetType() === 'tr';
+    }
+
+    /**
+     * Get the visa sheet type for this matter (tr, visitor, student, pr, employer-sponsored).
+     * Used for checklist-sent integration - updates the correct reference table per subclass.
+     */
+    public function getVisaSheetType(): ?string
+    {
         $matter = $this->matter;
         if (!$matter) {
-            return false;
+            return null;
         }
-        $nickNames = config('sheets.tr.matter_nick_names', ['tr', 'tr checklist']);
-        $patterns = config('sheets.tr.matter_title_patterns', ['tr', 'tr checklist', 'temporary residence']);
         $nick = strtolower(trim($matter->nick_name ?? ''));
         $title = strtolower(trim($matter->title ?? ''));
-        foreach ($nickNames as $n) {
-            if ($nick === strtolower($n)) {
-                return true;
+
+        $visaTypes = config('sheets.visa_types', []);
+        foreach ($visaTypes as $sheetType => $config) {
+            $nickNames = $config['matter_nick_names'] ?? [];
+            $patterns = $config['matter_title_patterns'] ?? [];
+            foreach ($nickNames as $n) {
+                if ($nick === strtolower(trim((string) $n))) {
+                    return $sheetType;
+                }
+            }
+            foreach ($patterns as $p) {
+                if (str_contains($title, strtolower(trim((string) $p)))) {
+                    return $sheetType;
+                }
             }
         }
-        foreach ($patterns as $p) {
-            if (str_contains($title, strtolower($p))) {
-                return true;
-            }
+        return null;
+    }
+
+    /**
+     * When a checklist is sent for this matter, update the sheet reference table and log reminder.
+     * Works for TR, Visitor, Student, PR, Employer Sponsored (by subclass).
+     */
+    public function recordChecklistSent(int $staffId = null): bool
+    {
+        $sheetType = $this->getVisaSheetType();
+        if (!$sheetType) {
+            return false;
         }
-        return false;
+        $config = config("sheets.visa_types.{$sheetType}", []);
+        $modelClass = $config['reference_model'] ?? null;
+        $remindersTable = $config['reminders_table'] ?? null;
+
+        if (!$modelClass || !class_exists($modelClass)) {
+            return false;
+        }
+
+        $now = now();
+        $ref = $modelClass::firstOrCreate(
+            ['client_id' => $this->client_id, 'client_matter_id' => $this->id],
+            ['checklist_sent_at' => $now, 'created_by' => $staffId, 'updated_by' => $staffId]
+        );
+        if (!$ref->wasRecentlyCreated) {
+            $ref->update(['checklist_sent_at' => $now, 'updated_by' => $staffId]);
+        }
+
+        if ($remindersTable && \Illuminate\Support\Facades\Schema::hasTable($remindersTable)) {
+            \Illuminate\Support\Facades\DB::table($remindersTable)->insert([
+                'client_matter_id' => $this->id,
+                'type' => 'email',
+                'reminded_at' => $now,
+                'reminded_by' => $staffId,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        }
+
+        return true;
     }
 
     /**
