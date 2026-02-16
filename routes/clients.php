@@ -326,7 +326,8 @@ Route::post('/clients/action/personal/store', 'CRM\ClientsController@storePerson
 Route::post('/clients/action/update', 'CRM\ClientsController@updateAction');
 Route::post('/clients/action/reassign', 'CRM\ClientsController@reassignAction');
 Route::post('/clients/update-session-completed', 'CRM\ClientsController@updatesessioncompleted')->name('clients.updatesessioncompleted');
-Route::post('/clients/getAllUser', 'CRM\ClientsController@getAllUser')->name('clients.getAllUser');
+Route::post('/clients/getAllStaff', [ClientsController::class, 'getAllStaff'])->name('clients.getAllStaff');
+Route::post('/clients/getAllUser', [ClientsController::class, 'getAllStaff'])->name('clients.getAllUser'); // deprecated, use getAllStaff
 
 /*---------- Appointments ----------*/
 Route::post('/add-appointment', 'CRM\ClientsController@addAppointment');

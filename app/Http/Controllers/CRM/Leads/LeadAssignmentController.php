@@ -5,7 +5,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Auth;
-use App\Models\Admin;
+use App\Models\Staff;
 use App\Models\Lead;
 
 class LeadAssignmentController extends Controller
@@ -21,7 +21,7 @@ class LeadAssignmentController extends Controller
     }
 
     /**
-     * Assign lead to a user/agent (deprecated - assignee column removed)
+     * Assign lead to staff/agent (deprecated - assignee column removed)
      */
     public function assign(Request $request) 
     {
@@ -29,10 +29,10 @@ class LeadAssignmentController extends Controller
     }
 
     /**
-     * Get assignable users for leads
+     * Get assignable staff for leads
      * Only lead owner can access
      */
-    public function getAssignableUsers(Request $request)
+    public function getAssignableStaff(Request $request)
     {
         // Check if requesting for a specific lead (ownership verification)
         $leadId = $request->input('lead_id');
@@ -44,20 +44,18 @@ class LeadAssignmentController extends Controller
             }
         }
         
-        return Admin::select('id', 'first_name', 'last_name', 'email')
-            ->where('type', '!=', 'lead')
-            ->where('type', '!=', 'client')
+        return Staff::select('id', 'first_name', 'last_name', 'email')
             ->where('status', 1)
             ->get();
     }
 
     /**
-     * Bulk assign leads to a user
+     * Bulk assign leads to staff
      * Only super admin can perform bulk assignments
      */
     public function bulkAssign(Request $request)
     {
-        // Check if user is super admin (role = 1)
+        // Check if staff is super admin (role = 1)
         if (Auth::user()->role != 1) {
             return redirect()->back()->with('error', 'Only super admin can perform bulk assignments');
         }

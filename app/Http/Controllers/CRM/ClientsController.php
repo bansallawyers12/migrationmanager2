@@ -2555,12 +2555,17 @@ class ClientsController extends Controller
         return response()->json(['items' => []]);
     }
 
-    public function getAllUser(Request $request, Admin $product) {
-            $products = $request->q
-                ? Admin::select('id', 'first_name')->whereRaw('LOWER(first_name) LIKE ?', ['%' . strtolower($request->q) . '%'])
-                : new Admin();
-
-            return $products->paginate(10, ['*'], 'page', $request->page)->toArray();
+    /**
+     * Get staff for assignment/search (e.g. assignee dropdown).
+     * Returns staff from staff table with pagination.
+     */
+    public function getAllStaff(Request $request) {
+        $query = \App\Models\Staff::query()->select('id', 'first_name', 'last_name', 'email');
+        if ($request->q) {
+            $q = '%' . strtolower($request->q) . '%';
+            $query->whereRaw('LOWER(first_name) LIKE ? OR LOWER(last_name) LIKE ?', [$q, $q]);
+        }
+        return $query->paginate(10, ['*'], 'page', $request->page ?? 1)->toArray();
     }
 
 	public function activities(Request $request){ 

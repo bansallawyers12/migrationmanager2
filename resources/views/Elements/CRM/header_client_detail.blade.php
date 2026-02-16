@@ -108,7 +108,7 @@
         @endif
         <div class="profile-dropdown js-dropdown-right">
             <a href="#" class="profile-trigger" id="profile-trigger">
-                <img alt="{{ Auth::user() ? Str::limit(Auth::user()->first_name.' '.Auth::user()->last_name, 150, '...') : 'User' }}" src="{{ Auth::user() ? Auth::user()->profile_img : asset('img/avatar.png') }}" class="user-img-radious-style"/>
+                <img alt="{{ Auth::user() ? Str::limit(Auth::user()->first_name.' '.Auth::user()->last_name, 150, '...') : 'Staff' }}" src="{{ Auth::user() ? Auth::user()->profile_img : asset('img/avatar.png') }}" class="user-img-radious-style"/>
             </a>
             <div class="profile-menu" id="profile-menu">
                 <a href="{{route('my_profile')}}">

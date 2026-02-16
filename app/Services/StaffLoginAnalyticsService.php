@@ -30,7 +30,7 @@ class StaffLoginAnalyticsService
         return $query->select(
             DB::raw("DATE(created_at) as date"),
             DB::raw('COUNT(*) as count'),
-            DB::raw('COUNT(DISTINCT user_id) as unique_users')
+            DB::raw('COUNT(DISTINCT user_id) as unique_staff')
         )
         ->groupBy(DB::raw("DATE(created_at)"))
         ->orderBy('date', 'asc')
@@ -39,7 +39,7 @@ class StaffLoginAnalyticsService
             return [
                 'date' => $item->date,
                 'count' => (int) $item->count,
-                'unique_users' => (int) $item->unique_users,
+                'unique_staff' => (int) $item->unique_staff,
             ];
         });
     }
@@ -65,7 +65,7 @@ class StaffLoginAnalyticsService
             DB::raw('EXTRACT(WEEK FROM created_at) as week'),
             DB::raw('MIN(DATE(created_at)) as week_start'),
             DB::raw('COUNT(*) as count'),
-            DB::raw('COUNT(DISTINCT user_id) as unique_users')
+            DB::raw('COUNT(DISTINCT user_id) as unique_staff')
         )
         ->groupBy(DB::raw('EXTRACT(YEAR FROM created_at)'), DB::raw('EXTRACT(WEEK FROM created_at)'))
         ->orderBy('year', 'asc')
@@ -77,7 +77,7 @@ class StaffLoginAnalyticsService
                 'week' => (int) $item->week,
                 'week_start' => $item->week_start,
                 'count' => (int) $item->count,
-                'unique_users' => (int) $item->unique_users,
+                'unique_staff' => (int) $item->unique_staff,
                 'label' => "Week {$item->week}, {$item->year}",
             ];
         });
@@ -104,7 +104,7 @@ class StaffLoginAnalyticsService
             DB::raw('EXTRACT(MONTH FROM created_at) as month'),
             DB::raw("TO_CHAR(created_at, 'YYYY-MM') as month_key"),
             DB::raw('COUNT(*) as count'),
-            DB::raw('COUNT(DISTINCT user_id) as unique_users')
+            DB::raw('COUNT(DISTINCT user_id) as unique_staff')
         )
         ->groupBy(DB::raw('EXTRACT(YEAR FROM created_at)'), DB::raw('EXTRACT(MONTH FROM created_at)'))
         ->orderBy('year', 'asc')
@@ -116,7 +116,7 @@ class StaffLoginAnalyticsService
                 'month' => (int) $item->month,
                 'month_key' => $item->month_key,
                 'count' => (int) $item->count,
-                'unique_users' => (int) $item->unique_users,
+                'unique_staff' => (int) $item->unique_staff,
                 'label' => Carbon::createFromDate($item->year, $item->month, 1)->format('M Y'),
             ];
         });
@@ -171,7 +171,7 @@ class StaffLoginAnalyticsService
         }
 
         $totalLogins = $query->count();
-        $uniqueUsers = $query->distinct('user_id')->count('user_id');
+        $uniqueStaff = $query->distinct('user_id')->count('user_id');
         
         $failedLogins = UserLog::query()
             ->where('level', 'critical')
@@ -210,7 +210,7 @@ class StaffLoginAnalyticsService
 
         return [
             'total_logins' => $totalLogins,
-            'unique_users' => $uniqueUsers,
+            'unique_staff' => $uniqueStaff,
             'failed_logins' => $failedCount,
             'success_rate' => $totalLogins > 0 ? round((($totalLogins - $failedCount) / $totalLogins) * 100, 2) : 100,
             'average_per_day' => $avgPerDay,
@@ -235,7 +235,7 @@ class StaffLoginAnalyticsService
     /**
      * Get top staff by login count
      */
-    public function getTopUsers(int $limit = 10, ?Carbon $startDate = null, ?Carbon $endDate = null): Collection
+    public function getTopStaff(int $limit = 10, ?Carbon $startDate = null, ?Carbon $endDate = null): Collection
     {
         $startDate = $startDate ?? Carbon::now()->subDays(30);
         $endDate = $endDate ?? Carbon::now();
@@ -253,11 +253,11 @@ class StaffLoginAnalyticsService
             ->limit($limit)
             ->get()
             ->map(function ($item) {
-                $user = \App\Models\Staff::find($item->user_id);
+                $staff = \App\Models\Staff::find($item->user_id);
                 return [
-                    'user_id' => $item->user_id,
-                    'staff_name' => $user ? trim("{$user->first_name} {$user->last_name}") : "Staff #{$item->user_id}",
-                    'user_email' => $user ? $user->email : null,
+                    'staff_id' => $item->user_id,
+                    'staff_name' => $staff ? trim("{$staff->first_name} {$staff->last_name}") : "Staff #{$item->user_id}",
+                    'staff_email' => $staff ? $staff->email : null,
                     'login_count' => (int) $item->login_count,
                     'last_login' => $item->last_login,
                 ];

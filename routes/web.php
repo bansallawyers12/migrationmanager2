@@ -14,7 +14,7 @@ use App\Http\Controllers\CRM\Leads\LeadAnalyticsController;
 use App\Http\Controllers\CRM\DashboardController;
 use App\Http\Controllers\CRM\CRMUtilityController;
 use App\Http\Controllers\CRM\AssigneeController;
-use App\Http\Controllers\CRM\ActiveUserController;
+use App\Http\Controllers\CRM\ActiveStaffController;
 use App\Http\Controllers\CRM\BroadcastNotificationAjaxController;
 use App\Http\Controllers\CRM\BroadcastController;
 // use App\Http\Controllers\CRM\EmailTemplateController; // DISABLED: email_templates table has been deleted
@@ -132,7 +132,8 @@ Route::middleware(['auth:admin'])->group(function() {
     Route::get('/checkclientexist', [CRMUtilityController::class, 'checkclientexist']);
 
     Route::get('/notifications/broadcasts/manage', [BroadcastController::class, 'index'])->name('notifications.broadcasts.index');
-    Route::get('/dashboard/active-users', [ActiveUserController::class, 'index'])->name('dashboard.active-users');
+    Route::redirect('/dashboard/active-users', '/dashboard/active-staff', 301);
+    Route::get('/dashboard/active-staff', [ActiveStaffController::class, 'index'])->name('dashboard.active-staff');
 
     Route::prefix('notifications/broadcasts')->name('notifications.broadcasts.')->group(function () {
         Route::post('/send', [BroadcastNotificationAjaxController::class, 'store'])->name('send');
@@ -164,18 +165,18 @@ Route::middleware(['auth:admin'])->group(function() {
         Route::get('/monthly', [\App\Http\Controllers\CRM\StaffLoginAnalyticsController::class, 'monthly'])->name('monthly');
         Route::get('/hourly', [\App\Http\Controllers\CRM\StaffLoginAnalyticsController::class, 'hourly'])->name('hourly');
         Route::get('/summary', [\App\Http\Controllers\CRM\StaffLoginAnalyticsController::class, 'summary'])->name('summary');
-        Route::get('/top-users', [\App\Http\Controllers\CRM\StaffLoginAnalyticsController::class, 'topUsers'])->name('top-users');
+        Route::get('/top-staff', [\App\Http\Controllers\CRM\StaffLoginAnalyticsController::class, 'topStaff'])->name('top-staff');
         Route::get('/trends', [\App\Http\Controllers\CRM\StaffLoginAnalyticsController::class, 'trends'])->name('trends');
     });
 
     /*---------- Reports Routes ----------*/
     Route::get('/reports/visaexpires', [ReportController::class, 'visaexpires'])->name('reports.visaexpires');
 
-	/*---------- CRM & User Management Routes ----------*/
-    // All user management routes moved to routes/adminconsole.php
+	/*---------- CRM & Staff Management Routes ----------*/
+    // All staff management routes moved to routes/adminconsole.php
     // - Staff management: Use adminconsole.staff routes
     // - Clients (role=7): Use adminconsole.system.clients routes (ClientController)
-    // - User types/roles: Use adminconsole.system.roles routes
+    // - Staff types/roles: Use adminconsole.system.roles routes
 
     /*---------- Leads Management (Modern Laravel Syntax) ----------*/
     // Lead CRUD operations
@@ -197,7 +198,7 @@ Route::middleware(['auth:admin'])->group(function() {
         // Assignment operations
         Route::post('/assign', [LeadAssignmentController::class, 'assign'])->name('assign');
         Route::post('/bulk-assign', [LeadAssignmentController::class, 'bulkAssign'])->name('bulk_assign');
-        Route::get('/assignable-users', [LeadAssignmentController::class, 'getAssignableUsers'])->name('assignable_users');
+        Route::get('/assignable-staff', [LeadAssignmentController::class, 'getAssignableStaff'])->name('assignable_staff');
         
         // Conversion operations
         Route::get('/convert', [LeadConversionController::class, 'convertToClient'])->name('convert');

@@ -3,20 +3,20 @@
 namespace App\Http\Controllers\CRM;
 
 use App\Http\Controllers\Controller;
-use App\Services\ActiveUserService;
+use App\Services\ActiveStaffService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class ActiveUserController extends Controller
+class ActiveStaffController extends Controller
 {
     public function __construct(
-        protected ActiveUserService $activeUsers
+        protected ActiveStaffService $activeStaff
     ) {
         $this->middleware('auth:admin');
     }
 
     /**
-     * Return the list of currently active users.
+     * Return the list of currently active staff.
      */
     public function index(Request $request): JsonResponse
     {
@@ -29,7 +29,7 @@ class ActiveUserController extends Controller
         $perPage = (int) $request->query('per_page', 15);
         $page = (int) $request->query('page', 1);
 
-        $result = $this->activeUsers->getActiveUsers(
+        $result = $this->activeStaff->getActiveStaff(
             max(1, $threshold),
             $search,
             $roleId,
@@ -43,5 +43,3 @@ class ActiveUserController extends Controller
         return response()->json($result);
     }
 }
-
-

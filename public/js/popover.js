@@ -312,7 +312,7 @@ console.log(timestring);
 
         /*$("#rem_cat").select2({
             ajax: {
-                url: "/clients/getAllUser",
+                url: "/clients/getAllStaff",
                 type: 'POST',
                 dataType: 'json',
                 delay: 250,

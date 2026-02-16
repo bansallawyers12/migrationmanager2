@@ -29,11 +29,12 @@ class StaffLoginAnalyticsController extends Controller
      */
     public function daily(Request $request): JsonResponse
     {
-        $userId = $request->query('user_id') ? (int) $request->query('user_id') : null;
+        $staffIdParam = $request->query('staff_id') ?? $request->query('user_id');
+        $staffId = $staffIdParam !== null && $staffIdParam !== '' ? (int) $staffIdParam : null;
         $startDate = $request->query('start_date') ? Carbon::parse($request->query('start_date')) : null;
         $endDate = $request->query('end_date') ? Carbon::parse($request->query('end_date')) : null;
 
-        $data = $this->analytics->getDailyLogins($userId, $startDate, $endDate);
+        $data = $this->analytics->getDailyLogins($staffId, $startDate, $endDate);
 
         return response()->json([
             'success' => true,
@@ -46,11 +47,12 @@ class StaffLoginAnalyticsController extends Controller
      */
     public function weekly(Request $request): JsonResponse
     {
-        $userId = $request->query('user_id') ? (int) $request->query('user_id') : null;
+        $staffIdParam = $request->query('staff_id') ?? $request->query('user_id');
+        $staffId = $staffIdParam !== null && $staffIdParam !== '' ? (int) $staffIdParam : null;
         $startDate = $request->query('start_date') ? Carbon::parse($request->query('start_date')) : null;
         $endDate = $request->query('end_date') ? Carbon::parse($request->query('end_date')) : null;
 
-        $data = $this->analytics->getWeeklyLogins($userId, $startDate, $endDate);
+        $data = $this->analytics->getWeeklyLogins($staffId, $startDate, $endDate);
 
         return response()->json([
             'success' => true,
@@ -63,11 +65,12 @@ class StaffLoginAnalyticsController extends Controller
      */
     public function monthly(Request $request): JsonResponse
     {
-        $userId = $request->query('user_id') ? (int) $request->query('user_id') : null;
+        $staffIdParam = $request->query('staff_id') ?? $request->query('user_id');
+        $staffId = $staffIdParam !== null && $staffIdParam !== '' ? (int) $staffIdParam : null;
         $startDate = $request->query('start_date') ? Carbon::parse($request->query('start_date')) : null;
         $endDate = $request->query('end_date') ? Carbon::parse($request->query('end_date')) : null;
 
-        $data = $this->analytics->getMonthlyLogins($userId, $startDate, $endDate);
+        $data = $this->analytics->getMonthlyLogins($staffId, $startDate, $endDate);
 
         return response()->json([
             'success' => true,
@@ -80,11 +83,12 @@ class StaffLoginAnalyticsController extends Controller
      */
     public function hourly(Request $request): JsonResponse
     {
-        $userId = $request->query('user_id') ? (int) $request->query('user_id') : null;
+        $staffIdParam = $request->query('staff_id') ?? $request->query('user_id');
+        $staffId = $staffIdParam !== null && $staffIdParam !== '' ? (int) $staffIdParam : null;
         $startDate = $request->query('start_date') ? Carbon::parse($request->query('start_date')) : null;
         $endDate = $request->query('end_date') ? Carbon::parse($request->query('end_date')) : null;
 
-        $data = $this->analytics->getHourlyDistribution($userId, $startDate, $endDate);
+        $data = $this->analytics->getHourlyDistribution($staffId, $startDate, $endDate);
 
         return response()->json([
             'success' => true,
@@ -97,11 +101,12 @@ class StaffLoginAnalyticsController extends Controller
      */
     public function summary(Request $request): JsonResponse
     {
-        $userId = $request->query('user_id') ? (int) $request->query('user_id') : null;
+        $staffIdParam = $request->query('staff_id') ?? $request->query('user_id');
+        $staffId = $staffIdParam !== null && $staffIdParam !== '' ? (int) $staffIdParam : null;
         $startDate = $request->query('start_date') ? Carbon::parse($request->query('start_date')) : null;
         $endDate = $request->query('end_date') ? Carbon::parse($request->query('end_date')) : null;
 
-        $data = $this->analytics->getSummary($userId, $startDate, $endDate);
+        $data = $this->analytics->getSummary($staffId, $startDate, $endDate);
 
         return response()->json([
             'success' => true,
@@ -112,13 +117,13 @@ class StaffLoginAnalyticsController extends Controller
     /**
      * Get top staff by login count
      */
-    public function topUsers(Request $request): JsonResponse
+    public function topStaff(Request $request): JsonResponse
     {
         $limit = $request->query('limit', 10);
         $startDate = $request->query('start_date') ? Carbon::parse($request->query('start_date')) : null;
         $endDate = $request->query('end_date') ? Carbon::parse($request->query('end_date')) : null;
 
-        $data = $this->analytics->getTopUsers((int) $limit, $startDate, $endDate);
+        $data = $this->analytics->getTopStaff((int) $limit, $startDate, $endDate);
 
         return response()->json([
             'success' => true,
@@ -131,10 +136,11 @@ class StaffLoginAnalyticsController extends Controller
      */
     public function trends(Request $request): JsonResponse
     {
-        $userId = $request->query('user_id') ? (int) $request->query('user_id') : null;
+        $staffIdParam = $request->query('staff_id') ?? $request->query('user_id');
+        $staffId = $staffIdParam !== null && $staffIdParam !== '' ? (int) $staffIdParam : null;
         $period = $request->query('period', 'month'); // day, week, month
 
-        $data = $this->analytics->getTrends($userId, $period);
+        $data = $this->analytics->getTrends($staffId, $period);
 
         return response()->json([
             'success' => true,

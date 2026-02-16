@@ -95,10 +95,10 @@
 										</tr>
                                         @foreach ($assignees_notCompleted as $list)
                                         <?php  //echo "<pre>list==";print_r($list);
-                                            $admin = \App\Models\Admin::where('id', $list->user_id)->first();//dd($admin);
-                                            if($admin){
-                                                $first_name = $admin->first_name ?? 'N/A';
-                                                $last_name = $admin->last_name ?? 'N/A';
+                                            $staff = \App\Models\Staff::find($list->user_id); // user_id = staff who created/owns
+                                            if($staff){
+                                                $first_name = $staff->first_name ?? 'N/A';
+                                                $last_name = $staff->last_name ?? 'N/A';
                                                 $full_name = $first_name.' '.$last_name;
                                             } else {
                                                 $full_name = 'N/A';
@@ -271,10 +271,10 @@
 										</tr>
                                         @foreach ($assignees_completed as $keyC=>$listC)
                                         <?php  //echo "<pre>$listC==";print_r($listC);
-                                            $adminC = \App\Models\Admin::where('id', $listC->user_id)->first();//dd($admin);
-                                            if($adminC){
-                                                $first_nameC = $adminC->first_name ?? 'N/A';
-                                                $last_nameC = $adminC->last_name ?? 'N/A';
+                                            $staffC = \App\Models\Staff::find($listC->user_id); // user_id = staff who created
+                                            if($staffC){
+                                                $first_nameC = $staffC->first_name ?? 'N/A';
+                                                $last_nameC = $staffC->last_name ?? 'N/A';
                                                 $full_nameC = $first_nameC.' '.$last_nameC;
                                             } else {
                                                 $full_nameC = 'N/A';

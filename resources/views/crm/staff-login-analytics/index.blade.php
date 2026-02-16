@@ -17,8 +17,8 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-3">
-                            <label for="user-filter" class="font-weight-semibold text-dark">Staff</label>
-                            <select id="user-filter" class="form-control">
+                            <label for="staff-filter" class="font-weight-semibold text-dark">Staff</label>
+                            <select id="staff-filter" class="form-control">
                                 <option value="">All Staff</option>
                                 @foreach(\App\Models\Staff::where('status', 1)->orderBy('first_name')->get() as $staff)
                                     <option value="{{ $staff->id }}">{{ trim($staff->first_name . ' ' . $staff->last_name) ?: $staff->email }}</option>
@@ -88,7 +88,7 @@
                             <div class="card-header">
                                 <h4>Unique Staff</h4>
                             </div>
-                            <div class="card-body" id="unique-users">
+                            <div class="card-body" id="unique-staff">
                                 <span class="spinner-border spinner-border-sm"></span>
                             </div>
                         </div>
@@ -158,7 +158,7 @@
                             <h4>Top Staff by Login Count</h4>
                         </div>
                         <div class="card-body">
-                            <canvas id="topUsersChart" height="100"></canvas>
+                            <canvas id="topStaffChart" height="100"></canvas>
                         </div>
                     </div>
                 </div>
@@ -183,7 +183,7 @@
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table class="table table-striped" id="top-users-table">
+                                <table class="table table-striped" id="top-staff-table">
                                     <thead>
                                         <tr>
                                             <th>Rank</th>
@@ -193,7 +193,7 @@
                                             <th>Last Login</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="top-users-body">
+                                    <tbody id="top-staff-body">
                                         <tr>
                                             <td colspan="5" class="text-center">
                                                 <span class="spinner-border spinner-border-sm"></span> Loading...
@@ -216,10 +216,10 @@
 <script>
 (function() {
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-    let trendsChart, hourlyChart, topUsersChart, successFailedChart;
+    let trendsChart, hourlyChart, topStaffChart, successFailedChart;
 
     // Filter elements
-    const userFilter = document.getElementById('user-filter');
+    const staffFilter = document.getElementById('staff-filter');
     const periodFilter = document.getElementById('period-filter');
     const dateRangePreset = document.getElementById('date-range-preset');
     const startDate = document.getElementById('start-date');
@@ -240,7 +240,7 @@
 
     function getQueryParams() {
         const params = new URLSearchParams();
-        if (userFilter.value) params.append('user_id', userFilter.value);
+        if (staffFilter.value) params.append('staff_id', staffFilter.value);
         if (startDate.value) params.append('start_date', startDate.value);
         if (endDate.value) params.append('end_date', endDate.value);
         return params.toString();
@@ -256,7 +256,7 @@
             
             if (result.success && result.data) {
                 document.getElementById('total-logins').textContent = result.data.total_logins.toLocaleString();
-                document.getElementById('unique-users').textContent = result.data.unique_users.toLocaleString();
+                document.getElementById('unique-staff').textContent = (result.data.unique_staff ?? result.data.unique_users ?? 0).toLocaleString();
                 document.getElementById('failed-logins').textContent = result.data.failed_logins.toLocaleString();
                 document.getElementById('avg-per-day').textContent = result.data.average_per_day.toLocaleString();
             }
@@ -281,7 +281,7 @@
                     (period === 'weekly' ? item.label : item.label)
                 );
                 const counts = result.data.map(item => item.count);
-                const uniqueUsers = result.data.map(item => item.unique_users || 0);
+                const uniqueStaff = result.data.map(item => item.unique_staff ?? item.unique_users ?? 0);
 
                 if (trendsChart) trendsChart.destroy();
                 
@@ -299,7 +299,7 @@
                             fill: true
                         }, {
                             label: 'Unique Staff',
-                            data: uniqueUsers,
+                            data: uniqueStaff,
                             borderColor: 'rgb(17, 153, 142)',
                             backgroundColor: 'rgba(17, 153, 142, 0.1)',
                             tension: 0.4,
@@ -388,9 +388,9 @@
         }
     }
 
-    async function loadTopUsers() {
+    async function loadTopStaff() {
         try {
-            const response = await fetch(`/api/staff-login-analytics/top-users?${getQueryParams()}`, {
+            const response = await fetch(`/api/staff-login-analytics/top-staff?${getQueryParams()}`, {
                 headers: { 'Accept': 'application/json' },
                 credentials: 'include'
             });
@@ -398,29 +398,29 @@
             
             if (result.success && result.data) {
                 // Update table
-                const tbody = document.getElementById('top-users-body');
+                const tbody = document.getElementById('top-staff-body');
                 if (result.data.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="5" class="text-center">No data available</td></tr>';
                 } else {
-                    tbody.innerHTML = result.data.map((user, index) => `
+                    tbody.innerHTML = result.data.map((staff, index) => `
                         <tr>
                             <td>${index + 1}</td>
-                            <td>${user.staff_name}</td>
-                            <td>${user.user_email || '—'}</td>
-                            <td><span class="badge badge-primary">${user.login_count}</span></td>
-                            <td>${new Date(user.last_login).toLocaleDateString()}</td>
+                            <td>${staff.staff_name}</td>
+                            <td>${staff.staff_email ?? staff.user_email ?? '—'}</td>
+                            <td><span class="badge badge-primary">${staff.login_count}</span></td>
+                            <td>${new Date(staff.last_login).toLocaleDateString()}</td>
                         </tr>
                     `).join('');
                 }
 
                 // Update chart
-                const labels = result.data.slice(0, 10).map(u => u.staff_name);
-                const counts = result.data.slice(0, 10).map(u => u.login_count);
+                const labels = result.data.slice(0, 10).map(s => s.staff_name);
+                const counts = result.data.slice(0, 10).map(s => s.login_count);
 
-                if (topUsersChart) topUsersChart.destroy();
+                if (topStaffChart) topStaffChart.destroy();
                 
-                const ctx = document.getElementById('topUsersChart').getContext('2d');
-                topUsersChart = new Chart(ctx, {
+                const ctx = document.getElementById('topStaffChart').getContext('2d');
+                topStaffChart = new Chart(ctx, {
                     type: 'bar',
                     data: {
                         labels: labels,
@@ -516,7 +516,7 @@
             loadSummary(),
             loadTrends(),
             loadHourly(),
-            loadTopUsers(),
+            loadTopStaff(),
             loadSuccessFailed()
         ]);
     }

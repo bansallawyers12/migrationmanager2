@@ -77,7 +77,8 @@ class BroadcastNotificationAjaxController extends Controller
 
         return response()->json([
             'data' => $history,
-            'current_user_id' => $currentUserId,
+            'current_staff_id' => $currentUserId,
+            'current_user_id' => $currentUserId, // deprecated, use current_staff_id
             'is_super_admin' => $isSuperAdmin,
         ]);
     }

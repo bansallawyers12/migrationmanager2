@@ -84,7 +84,7 @@ $(document).ready(function() {
         }
         
         // Start a new 3-second timer for auto-close
-        // This allows users to select multiple items quickly
+        // This allows staff to select multiple items quickly
         autoCloseTimer = setTimeout(function() {
             closeDropdown();
             autoCloseTimer = null; // Reset timer reference
@@ -101,11 +101,11 @@ $(document).ready(function() {
         // Clear previous timeout
         clearTimeout(searchTimeout);
         
-        // When user types, temporarily hide selected users display to show search
+        // When staff types, temporarily hide selected staff display to show search
         if (searchTerm.length > 0) {
             $wrapper.removeClass('has-selection');
         } else {
-            // Restore selected users display if search is cleared and users are selected
+            // Restore selected staff display if search is cleared and staff are selected
             if ($('.checkbox-item:checked').length > 0) {
                 $wrapper.addClass('has-selection');
             }
@@ -122,7 +122,7 @@ $(document).ready(function() {
         var $dropdown = $('#staffDropdownMenu');
         var $wrapper = $('.enhanced-dropdown-input-wrapper');
         
-        // If users are selected, clear input to show search placeholder
+        // If staff are selected, clear input to show search placeholder
         if ($('.checkbox-item:checked').length > 0 && $(this).val() === '') {
             $wrapper.removeClass('has-selection');
         }
@@ -195,7 +195,7 @@ function closeDropdown() {
     $('#staff-search-input').val('');
     filterStaff('');
     
-    // Show selected users if any are selected
+    // Show selected staff if any are selected
     var $wrapper = $('.enhanced-dropdown-input-wrapper');
     if ($('.checkbox-item:checked').length > 0) {
         $wrapper.addClass('has-selection');
@@ -253,7 +253,7 @@ function updateSelectedStaff() {
     if (selectedStaff.length > 0) {
         $wrapper.addClass('has-selection');
         
-        // Clear input if it's not focused (to show selected users)
+        // Clear input if it's not focused (to show selected staff)
         if (!$input.is(':focus')) {
             $input.val('');
         }

@@ -19,8 +19,8 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" id="active-users-tab" data-toggle="tab" href="#active-users" role="tab" aria-controls="active-users" aria-selected="false">
-                        <i class="fas fa-users mr-1"></i> Active Users
+                    <a class="nav-link" id="active-staff-tab" data-toggle="tab" href="#active-staff" role="tab" aria-controls="active-staff" aria-selected="false">
+                        <i class="fas fa-users mr-1"></i> Active Staff
                     </a>
                 </li>
             </ul>
@@ -55,7 +55,7 @@
                                         <div class="form-group">
                                             <label for="broadcast-scope">Audience</label>
                                             <select id="broadcast-scope" name="scope" class="form-control">
-                                                <option value="all" selected>All users</option>
+                                                <option value="all" selected>All staff</option>
                                                 <option value="specific">Specific team members</option>
                                                 <option value="team" disabled>Teams (coming soon)</option>
                                             </select>
@@ -64,7 +64,7 @@
                                         <div class="form-group d-none" id="broadcast-recipient-group">
                                             <label for="broadcast-recipient-select">Select recipients</label>
                                             <select id="broadcast-recipient-select" class="form-control" name="recipient_ids[]" multiple="multiple" data-placeholder="Search team members"></select>
-                                            <small class="form-text text-muted">Start typing to search for staff members. Portal user targeting will be added soon.</small>
+                                            <small class="form-text text-muted">Start typing to search for staff members. Portal client targeting will be added soon.</small>
                                         </div>
 
                                         <div class="d-flex justify-content-between align-items-center mt-4">
@@ -192,33 +192,33 @@
                                     </div>
                                 </div>
                                 <div class="card-footer text-muted small">
-                                    <i class="fas fa-info-circle"></i> All users can view broadcast history. Only super admins can delete broadcasts.
+                                    <i class="fas fa-info-circle"></i> All staff can view broadcast history. Only super admins can delete broadcasts.
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Active Users Tab -->
-                <div class="tab-pane fade" id="active-users" role="tabpanel" aria-labelledby="active-users-tab">
+                <!-- Active Staff Tab -->
+                <div class="tab-pane fade" id="active-staff" role="tabpanel" aria-labelledby="active-staff-tab">
                     <div class="row mt-4">
                         <div class="col-12">
-                            <div class="card shadow-sm border-0 active-users-modern-card" id="active-users-card">
+                            <div class="card shadow-sm border-0 active-staff-modern-card" id="active-staff-card">
                                 <!-- Modern Header Section -->
-                                <div class="active-users-header">
+                                <div class="active-staff-header">
                                     <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
                                         <div class="flex-grow-1">
                                             <div class="d-flex align-items-center gap-3 mb-2">
-                                                <div class="active-users-icon-wrapper">
+                                                <div class="active-staff-icon-wrapper">
                                                     <i class="fas fa-users"></i>
                                                 </div>
                                                 <div>
-                                                    <h4 class="mb-1 active-users-title">Active Users</h4>
-                                                    <p class="mb-0 active-users-subtitle">Monitor real-time user presence and activity</p>
+                                                    <h4 class="mb-1 active-staff-title">Active Staff</h4>
+                                                    <p class="mb-0 active-staff-subtitle">Monitor real-time staff presence and activity</p>
                                                 </div>
                                             </div>
-                                            <div class="active-users-stats">
-                                                <span class="badge badge-pill active-users-count-badge" id="active-users-count">
+                                            <div class="active-staff-stats">
+                                                <span class="badge badge-pill active-staff-count-badge" id="active-staff-count">
                                                     <i class="fas fa-circle status-dot-online"></i>
                                                     <span class="count-text">1</span> online
                                                 </span>
@@ -228,11 +228,11 @@
                                             </div>
                                         </div>
                                         <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                                            <a href="{{ route('staff-login-analytics.index') }}" class="btn btn-light btn-sm active-users-action-btn">
+                                            <a href="{{ route('staff-login-analytics.index') }}" class="btn btn-light btn-sm active-staff-action-btn">
                                                 <i class="fas fa-chart-line"></i>
                                                 <span class="d-none d-md-inline">Analytics</span>
                                             </a>
-                                            <button type="button" class="btn btn-sm active-users-refresh-btn" id="active-users-refresh">
+                                            <button type="button" class="btn btn-sm active-staff-refresh-btn" id="active-staff-refresh">
                                                 <i class="fas fa-sync-alt"></i>
                                                 <span class="d-none d-md-inline">Refresh</span>
                                             </button>
@@ -240,7 +240,7 @@
                                     </div>
                                     
                                     <!-- Enhanced Search and Filters -->
-                                    <div class="active-users-filters">
+                                    <div class="active-staff-filters">
                                         <div class="row g-3">
                                             <div class="col-md-5 col-lg-4">
                                                 <div class="input-group input-group-sm">
@@ -250,13 +250,13 @@
                                                         </span>
                                                     </div>
                                                     <input type="text" 
-                                                           class="form-control border-left-0 active-users-search-input" 
-                                                           id="active-users-search" 
+                                                           class="form-control border-left-0 active-staff-search-input" 
+                                                           id="active-staff-search" 
                                                            placeholder="Search by name or email...">
                                                 </div>
                                             </div>
                                             <div class="col-md-3 col-lg-2">
-                                                <select class="form-control form-control-sm active-users-filter-select" id="active-users-role-filter">
+                                                <select class="form-control form-control-sm active-staff-filter-select" id="active-staff-role-filter">
                                                     <option value="">All Roles</option>
                                                     @foreach(\App\Models\UserRole::all() as $role)
                                                         <option value="{{ $role->id }}">{{ $role->name ?? 'Role #' . $role->id }}</option>
@@ -264,7 +264,7 @@
                                                 </select>
                                             </div>
                                             <div class="col-md-3 col-lg-2">
-                                                <select class="form-control form-control-sm active-users-filter-select" id="active-users-team-filter">
+                                                <select class="form-control form-control-sm active-staff-filter-select" id="active-staff-team-filter">
                                                     <option value="">All Teams</option>
                                                     @foreach(\App\Models\Team::all() as $team)
                                                         <option value="{{ $team->id }}">{{ $team->name }}</option>
@@ -273,8 +273,8 @@
                                             </div>
                                             <div class="col-md-1 col-lg-1">
                                                 <button type="button" 
-                                                        class="btn btn-outline-secondary btn-sm btn-block active-users-clear-btn" 
-                                                        id="active-users-clear-filters"
+                                                        class="btn btn-outline-secondary btn-sm btn-block active-staff-clear-btn" 
+                                                        id="active-staff-clear-filters"
                                                         title="Clear filters">
                                                     <i class="fas fa-times"></i>
                                                 </button>
@@ -286,13 +286,13 @@
                                 <!-- Modern Table Section -->
                                 <div class="card-body p-0">
                                     <div class="table-responsive">
-                                        <table class="table table-hover mb-0 active-users-table-modern" id="active-users-table">
+                                        <table class="table table-hover mb-0 active-staff-table-modern" id="active-staff-table">
                                             <thead>
                                                 <tr>
                                                     <th class="sortable" data-sort="name">
                                                         <span class="th-content">
                                                             <i class="fas fa-user"></i>
-                                                            <span>User</span>
+                                                            <span>Staff</span>
                                                             <i class="fas fa-sort sort-icon"></i>
                                                         </span>
                                                     </th>
@@ -331,15 +331,15 @@
                                                     </th>
                                                 </tr>
                                             </thead>
-                                            <tbody id="active-users-body">
+                                            <tbody id="active-staff-body">
                                                 <tr>
                                                     <td colspan="6" class="text-center py-5">
-                                                        <div class="active-users-empty-state">
-                                                            <div class="spinner-border spinner-border-sm text-primary mb-3" role="status" id="active-users-loading" style="display: none;">
+                                                        <div class="active-staff-empty-state">
+                                                            <div class="spinner-border spinner-border-sm text-primary mb-3" role="status" id="active-staff-loading" style="display: none;">
                                                                 <span class="sr-only">Loading...</span>
                                                             </div>
                                                             <i class="fas fa-users mb-3 empty-state-icon"></i>
-                                                            <div id="active-users-empty-message" class="empty-state-message">Click the tab to load active users.</div>
+                                                            <div id="active-staff-empty-message" class="empty-state-message">Click the tab to load active staff.</div>
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -349,14 +349,14 @@
                                 </div>
                                 
                                 <!-- Modern Footer -->
-                                <div class="card-footer bg-white border-top active-users-footer">
+                                <div class="card-footer bg-white border-top active-staff-footer">
                                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                                         <div class="text-muted small">
                                             <i class="fas fa-info-circle text-primary"></i>
-                                            <span id="active-users-info">Refreshing manually will recalculate active sessions in real time.</span>
-                                            <span id="active-users-last-refresh" class="ml-2"></span>
+                                            <span id="active-staff-info">Refreshing manually will recalculate active sessions in real time.</span>
+                                            <span id="active-staff-last-refresh" class="ml-2"></span>
                                         </div>
-                                        <nav aria-label="Active users pagination" id="active-users-pagination">
+                                        <nav aria-label="Active staff pagination" id="active-staff-pagination">
                                             <!-- Pagination will be inserted here by JavaScript -->
                                         </nav>
                                     </div>
@@ -498,21 +498,21 @@
         const detailMeta = document.getElementById('broadcast-detail-meta');
         const detailBody = document.getElementById('broadcast-detail-body');
 
-        const activeUsersBody = document.getElementById('active-users-body');
-        const activeUsersCount = document.getElementById('active-users-count');
-        const activeUsersRefresh = document.getElementById('active-users-refresh');
-        const activeUsersSearch = document.getElementById('active-users-search');
-        const activeUsersRoleFilter = document.getElementById('active-users-role-filter');
-        const activeUsersTeamFilter = document.getElementById('active-users-team-filter');
-        const activeUsersClearFilters = document.getElementById('active-users-clear-filters');
-        const activeUsersLoading = document.getElementById('active-users-loading');
-        const activeUsersEmptyMessage = document.getElementById('active-users-empty-message');
-        const activeUsersLastRefresh = document.getElementById('active-users-last-refresh');
-        const activeUsersPagination = document.getElementById('active-users-pagination');
-        const activeUsersTab = document.getElementById('active-users-tab');
+        const activeStaffBody = document.getElementById('active-staff-body');
+        const activeStaffCount = document.getElementById('active-staff-count');
+        const activeStaffRefresh = document.getElementById('active-staff-refresh');
+        const activeStaffSearch = document.getElementById('active-staff-search');
+        const activeStaffRoleFilter = document.getElementById('active-staff-role-filter');
+        const activeStaffTeamFilter = document.getElementById('active-staff-team-filter');
+        const activeStaffClearFilters = document.getElementById('active-staff-clear-filters');
+        const activeStaffLoading = document.getElementById('active-staff-loading');
+        const activeStaffEmptyMessage = document.getElementById('active-staff-empty-message');
+        const activeStaffLastRefresh = document.getElementById('active-staff-last-refresh');
+        const activeStaffPagination = document.getElementById('active-staff-pagination');
+        const activeStaffTab = document.getElementById('active-staff-tab');
 
-        // Active Users State
-        let activeUsersState = {
+        // Active Staff State
+        let activeStaffState = {
             loaded: false,
             loading: false,
             currentPage: 1,
@@ -577,10 +577,10 @@
             }).format(date);
         }
 
-        // State to track current user and permissions
+        // State to track current staff and permissions
         let currentState = {
             isSuperAdmin: false,
-            currentUserId: null
+            currentStaffId: null
         };
 
         // Helper function to truncate HTML message for display
@@ -772,56 +772,56 @@
             return name.substring(0, 2).toUpperCase();
         }
 
-        function renderActiveUsers(data, meta) {
-            activeUsersBody.innerHTML = '';
-            activeUsersLoading.style.display = 'none';
+        function renderActiveStaff(data, meta) {
+            activeStaffBody.innerHTML = '';
+            activeStaffLoading.style.display = 'none';
 
             if (!data || !data.length) {
-                activeUsersBody.innerHTML = `<tr>
+                activeStaffBody.innerHTML = `<tr>
                     <td colspan="6" class="text-center py-5">
-                        <div class="active-users-empty-state">
+                        <div class="active-staff-empty-state">
                             <i class="fas fa-users mb-3 empty-state-icon"></i>
-                            <div class="empty-state-message">No active users detected in the last few minutes.</div>
+                            <div class="empty-state-message">No active staff detected in the last few minutes.</div>
                         </div>
                     </td>
                 </tr>`;
-                const countBadge = activeUsersCount.querySelector('.count-text') || activeUsersCount;
+                const countBadge = activeStaffCount.querySelector('.count-text') || activeStaffCount;
                 if (countBadge.tagName === 'SPAN') {
                     countBadge.textContent = '0';
                 } else {
-                    activeUsersCount.innerHTML = `<i class="fas fa-circle status-dot-online"></i><span class="count-text">0</span> online`;
+                    activeStaffCount.innerHTML = `<i class="fas fa-circle status-dot-online"></i><span class="count-text">0</span> online`;
                 }
-                activeUsersCount.className = 'badge badge-pill active-users-count-badge';
-                activeUsersEmptyMessage.textContent = 'No active users detected in the last few minutes.';
+                activeStaffCount.className = 'badge badge-pill active-staff-count-badge';
+                activeStaffEmptyMessage.textContent = 'No active staff detected in the last few minutes.';
                 renderPagination(null);
                 return;
             }
 
             const total = meta?.total || data.length;
-            const countBadge = activeUsersCount.querySelector('.count-text');
+            const countBadge = activeStaffCount.querySelector('.count-text');
             if (countBadge) {
                 countBadge.textContent = total;
             } else {
-                activeUsersCount.innerHTML = `<i class="fas fa-circle status-dot-online"></i><span class="count-text">${total}</span> online`;
+                activeStaffCount.innerHTML = `<i class="fas fa-circle status-dot-online"></i><span class="count-text">${total}</span> online`;
             }
-            activeUsersCount.className = 'badge badge-pill active-users-count-badge';
-            activeUsersEmptyMessage.textContent = '';
+            activeStaffCount.className = 'badge badge-pill active-staff-count-badge';
+            activeStaffEmptyMessage.textContent = '';
 
-            data.forEach((user) => {
+            data.forEach((staff) => {
                 const row = document.createElement('tr');
-                row.className = 'active-user-row';
+                row.className = 'active-staff-row';
                 
-                const avatar = user.profile_img 
-                    ? `<img src="${user.profile_img}" alt="${user.name}" class="user-avatar" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">`
+                const avatar = staff.profile_img 
+                    ? `<img src="${staff.profile_img}" alt="${staff.name}" class="user-avatar" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">`
                     : '';
-                const avatarFallback = `<div class="user-avatar-fallback" style="${user.profile_img ? 'display:none;' : ''}">${getInitials(user.name)}</div>`;
+                const avatarFallback = `<div class="user-avatar-fallback" style="${staff.profile_img ? 'display:none;' : ''}">${getInitials(staff.name)}</div>`;
                 
-                const teamBadge = user.team_name 
-                    ? `<span class="badge badge-light team-badge" ${user.team_color ? `style="background-color: ${user.team_color}20; color: ${user.team_color}; border: 1px solid ${user.team_color}40;"` : ''}>${user.team_name}</span>`
+                const teamBadge = staff.team_name 
+                    ? `<span class="badge badge-light team-badge" ${staff.team_color ? `style="background-color: ${staff.team_color}20; color: ${staff.team_color}; border: 1px solid ${staff.team_color}40;"` : ''}>${staff.team_name}</span>`
                     : '<span class="text-muted">—</span>';
                 
-                const roleName = user.role_name || `Role #${user.role_id || '—'}`;
-                const officeInfo = user.office_name ? `<br><small class="text-muted"><i class="fas fa-building mr-1"></i>${user.office_name}</small>` : '';
+                const roleName = staff.role_name || `Role #${staff.role_id || '—'}`;
+                const officeInfo = staff.office_name ? `<br><small class="text-muted"><i class="fas fa-building mr-1"></i>${staff.office_name}</small>` : '';
 
                 row.innerHTML = `
                     <td>
@@ -831,9 +831,9 @@
                                 ${avatarFallback}
                             </div>
                             <div>
-                                <strong>${user.name}</strong>
+                                <strong>${staff.name}</strong>
                                 <br>
-                                <span class="text-muted small">#${user.id}</span>
+                                <span class="text-muted small">#${staff.id}</span>
                                 ${officeInfo}
                             </div>
                         </div>
@@ -844,12 +844,12 @@
                     <td>${roleName}</td>
                     <td>${teamBadge}</td>
                     <td>
-                        <div>${formatTimeAgo(user.last_activity)}</div>
-                        <small class="text-muted">Active for ${getActivityDuration(user.last_activity)}</small>
+                        <div>${formatTimeAgo(staff.last_activity)}</div>
+                        <small class="text-muted">Active for ${getActivityDuration(staff.last_activity)}</small>
                     </td>
-                    <td>${user.last_login ? formatTimeAgo(user.last_login) : '—'}</td>
+                    <td>${staff.last_login ? formatTimeAgo(staff.last_login) : '—'}</td>
                 `;
-                activeUsersBody.appendChild(row);
+                activeStaffBody.appendChild(row);
             });
 
             renderPagination(meta);
@@ -858,7 +858,7 @@
 
         function renderPagination(meta) {
             if (!meta || meta.last_page <= 1) {
-                activeUsersPagination.innerHTML = '';
+                activeStaffPagination.innerHTML = '';
                 return;
             }
 
@@ -903,16 +903,16 @@
             </li>`;
 
             html += '</ul>';
-            activeUsersPagination.innerHTML = html;
+            activeStaffPagination.innerHTML = html;
 
             // Add click handlers
-            activeUsersPagination.querySelectorAll('a[data-page]').forEach(link => {
+            activeStaffPagination.querySelectorAll('a[data-page]').forEach(link => {
                 link.addEventListener('click', (e) => {
                     e.preventDefault();
                     const page = parseInt(link.getAttribute('data-page'));
-                    if (page && page !== activeUsersState.currentPage) {
-                        activeUsersState.currentPage = page;
-                        loadActiveUsers();
+                    if (page && page !== activeStaffState.currentPage) {
+                        activeStaffState.currentPage = page;
+                        loadActiveStaff();
                     }
                 });
             });
@@ -924,9 +924,9 @@
                 if (!sortIcon) return;
                 
                 const sortValue = th.getAttribute('data-sort');
-                if (sortValue === activeUsersState.sortBy) {
+                if (sortValue === activeStaffState.sortBy) {
                     th.classList.add('active');
-                    sortIcon.className = `fas fa-sort-${activeUsersState.sortDir === 'asc' ? 'up' : 'down'} sort-icon`;
+                    sortIcon.className = `fas fa-sort-${activeStaffState.sortDir === 'asc' ? 'up' : 'down'} sort-icon`;
                     sortIcon.style.color = '#005792';
                 } else {
                     th.classList.remove('active');
@@ -950,9 +950,9 @@
                     return response.json();
                 })
                 .then((payload) => {
-                    // Store current user info
+                    // Store current staff info
                     currentState.isSuperAdmin = payload.is_super_admin || false;
-                    currentState.currentUserId = payload.current_user_id || null;
+                    currentState.currentStaffId = payload.current_staff_id || payload.current_user_id || null;
                     
                     renderHistoryTable(payload.data || [], currentState.isSuperAdmin);
                 })
@@ -1105,34 +1105,34 @@
                 });
         }
 
-        function loadActiveUsers(showLoading = true) {
-            if (activeUsersState.loading) return;
+        function loadActiveStaff(showLoading = true) {
+            if (activeStaffState.loading) return;
             
-            activeUsersState.loading = true;
+            activeStaffState.loading = true;
             if (showLoading) {
-                activeUsersLoading.style.display = 'inline-block';
-                activeUsersEmptyMessage.textContent = 'Loading active users...';
+                activeStaffLoading.style.display = 'inline-block';
+                activeStaffEmptyMessage.textContent = 'Loading active staff...';
             }
 
             const params = new URLSearchParams({
                 threshold: 5,
-                page: activeUsersState.currentPage,
-                per_page: activeUsersState.perPage,
-                sort_by: activeUsersState.sortBy,
-                sort_dir: activeUsersState.sortDir,
+                page: activeStaffState.currentPage,
+                per_page: activeStaffState.perPage,
+                sort_by: activeStaffState.sortBy,
+                sort_dir: activeStaffState.sortDir,
             });
 
-            if (activeUsersState.search) {
-                params.append('search', activeUsersState.search);
+            if (activeStaffState.search) {
+                params.append('search', activeStaffState.search);
             }
-            if (activeUsersState.roleId) {
-                params.append('role_id', activeUsersState.roleId);
+            if (activeStaffState.roleId) {
+                params.append('role_id', activeStaffState.roleId);
             }
-            if (activeUsersState.teamId) {
-                params.append('team_id', activeUsersState.teamId);
+            if (activeStaffState.teamId) {
+                params.append('team_id', activeStaffState.teamId);
             }
 
-            fetch(`/dashboard/active-users?${params.toString()}`, {
+            fetch(`/dashboard/active-staff?${params.toString()}`, {
                 method: 'GET',
                 headers: { Accept: 'application/json' },
                 credentials: 'include',
@@ -1140,59 +1140,59 @@
                 .then(async (response) => {
                     if (!response.ok) {
                         const error = await response.json().catch(() => ({}));
-                        throw new Error(error.message || `HTTP ${response.status}: Unable to load active users.`);
+                        throw new Error(error.message || `HTTP ${response.status}: Unable to load active staff.`);
                     }
                     return response.json();
                 })
                 .then((payload) => {
-                    activeUsersState.loaded = true;
-                    activeUsersState.loading = false;
-                    renderActiveUsers(payload.data || [], payload.meta || {});
-                    activeUsersLastRefresh.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+                    activeStaffState.loaded = true;
+                    activeStaffState.loading = false;
+                    renderActiveStaff(payload.data || [], payload.meta || {});
+                    activeStaffLastRefresh.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
                 })
                 .catch((error) => {
-                    console.error('Active users load error:', error);
-                    activeUsersState.loading = false;
-                    activeUsersLoading.style.display = 'none';
-                    activeUsersBody.innerHTML = `<tr>
+                    console.error('Active staff load error:', error);
+                    activeStaffState.loading = false;
+                    activeStaffLoading.style.display = 'none';
+                    activeStaffBody.innerHTML = `<tr>
                         <td colspan="6" class="text-center py-5">
-                            <div class="active-users-empty-state">
+                            <div class="active-staff-empty-state">
                                 <i class="fas fa-exclamation-triangle mb-3 empty-state-icon text-warning"></i>
                                 <div class="empty-state-message">
-                                    <strong class="text-danger d-block mb-2">Failed to load active users</strong>
+                                    <strong class="text-danger d-block mb-2">Failed to load active staff</strong>
                                     <span class="text-muted">${error.message || 'Please try again or refresh the page.'}</span>
                                 </div>
-                                <button class="btn btn-sm mt-3" id="active-users-retry-btn">
+                                <button class="btn btn-sm mt-3" id="active-staff-retry-btn">
                                     <i class="fas fa-redo mr-1"></i> Retry
                                 </button>
                             </div>
                         </td>
                     </tr>`;
-                    activeUsersCount.innerHTML = `<i class="fas fa-circle status-dot-online"></i><span class="count-text">—</span> unavailable`;
-                    activeUsersCount.className = 'badge badge-pill active-users-count-badge';
+                    activeStaffCount.innerHTML = `<i class="fas fa-circle status-dot-online"></i><span class="count-text">—</span> unavailable`;
+                    activeStaffCount.className = 'badge badge-pill active-staff-count-badge';
                     
                     // Add retry button handler
-                    const retryBtn = activeUsersBody.querySelector('#active-users-retry-btn');
+                    const retryBtn = activeStaffBody.querySelector('#active-staff-retry-btn');
                     if (retryBtn) {
-                        retryBtn.addEventListener('click', () => loadActiveUsers(true));
+                        retryBtn.addEventListener('click', () => loadActiveStaff(true));
                     }
                 });
         }
 
-        function debounceLoadActiveUsers(delay = 300) {
-            clearTimeout(activeUsersState.debounceTimeout);
-            activeUsersState.debounceTimeout = setTimeout(() => {
-                activeUsersState.currentPage = 1; // Reset to first page on filter change
-                loadActiveUsers();
+        function debounceLoadActiveStaff(delay = 300) {
+            clearTimeout(activeStaffState.debounceTimeout);
+            activeStaffState.debounceTimeout = setTimeout(() => {
+                activeStaffState.currentPage = 1; // Reset to first page on filter change
+                loadActiveStaff();
             }, delay);
         }
 
         // Tab-based loading
-        if (activeUsersTab) {
+        if (activeStaffTab) {
             // Use jQuery for Bootstrap tab events
-            $('#active-users-tab').on('shown.bs.tab', function() {
-                if (!activeUsersState.loaded && !activeUsersState.loading) {
-                    loadActiveUsers();
+            $('#active-staff-tab').on('shown.bs.tab', function() {
+                if (!activeStaffState.loaded && !activeStaffState.loading) {
+                    loadActiveStaff();
                 }
             });
         }
@@ -1231,7 +1231,7 @@
             }
 
             if (scopeSelect.value === 'specific' && recipientSelect.val().length === 0) {
-                showFeedback('warning', 'Select at least one recipient or switch back to All users.');
+                showFeedback('warning', 'Select at least one recipient or switch back to All staff.');
                 return;
             }
 
@@ -1353,47 +1353,47 @@
             loadMyRead();
         });
 
-        // Active Users Event Listeners
-        if (activeUsersRefresh) {
-            activeUsersRefresh.addEventListener('click', (event) => {
+        // Active Staff Event Listeners
+        if (activeStaffRefresh) {
+            activeStaffRefresh.addEventListener('click', (event) => {
                 event.preventDefault();
-                if (activeUsersState.loading) return;
-                loadActiveUsers(true);
+                if (activeStaffState.loading) return;
+                loadActiveStaff(true);
             });
         }
 
-        if (activeUsersSearch) {
-            activeUsersSearch.addEventListener('input', (e) => {
-                activeUsersState.search = e.target.value.trim();
-                debounceLoadActiveUsers(500);
+        if (activeStaffSearch) {
+            activeStaffSearch.addEventListener('input', (e) => {
+                activeStaffState.search = e.target.value.trim();
+                debounceLoadActiveStaff(500);
             });
         }
 
-        if (activeUsersRoleFilter) {
-            activeUsersRoleFilter.addEventListener('change', (e) => {
-                activeUsersState.roleId = e.target.value ? parseInt(e.target.value) : null;
-                debounceLoadActiveUsers();
+        if (activeStaffRoleFilter) {
+            activeStaffRoleFilter.addEventListener('change', (e) => {
+                activeStaffState.roleId = e.target.value ? parseInt(e.target.value) : null;
+                debounceLoadActiveStaff();
             });
         }
 
-        if (activeUsersTeamFilter) {
-            activeUsersTeamFilter.addEventListener('change', (e) => {
-                activeUsersState.teamId = e.target.value ? parseInt(e.target.value) : null;
-                debounceLoadActiveUsers();
+        if (activeStaffTeamFilter) {
+            activeStaffTeamFilter.addEventListener('change', (e) => {
+                activeStaffState.teamId = e.target.value ? parseInt(e.target.value) : null;
+                debounceLoadActiveStaff();
             });
         }
 
-        if (activeUsersClearFilters) {
-            activeUsersClearFilters.addEventListener('click', (e) => {
+        if (activeStaffClearFilters) {
+            activeStaffClearFilters.addEventListener('click', (e) => {
                 e.preventDefault();
-                activeUsersState.search = '';
-                activeUsersState.roleId = null;
-                activeUsersState.teamId = null;
-                activeUsersState.currentPage = 1;
-                if (activeUsersSearch) activeUsersSearch.value = '';
-                if (activeUsersRoleFilter) activeUsersRoleFilter.value = '';
-                if (activeUsersTeamFilter) activeUsersTeamFilter.value = '';
-                loadActiveUsers();
+                activeStaffState.search = '';
+                activeStaffState.roleId = null;
+                activeStaffState.teamId = null;
+                activeStaffState.currentPage = 1;
+                if (activeStaffSearch) activeStaffSearch.value = '';
+                if (activeStaffRoleFilter) activeStaffRoleFilter.value = '';
+                if (activeStaffTeamFilter) activeStaffTeamFilter.value = '';
+                loadActiveStaff();
             });
         }
 
@@ -1402,13 +1402,13 @@
             th.style.cursor = 'pointer';
             th.addEventListener('click', () => {
                 const sortValue = th.getAttribute('data-sort');
-                if (sortValue === activeUsersState.sortBy) {
-                    activeUsersState.sortDir = activeUsersState.sortDir === 'asc' ? 'desc' : 'asc';
+                if (sortValue === activeStaffState.sortBy) {
+                    activeStaffState.sortDir = activeStaffState.sortDir === 'asc' ? 'desc' : 'asc';
                 } else {
-                    activeUsersState.sortBy = sortValue;
-                    activeUsersState.sortDir = 'asc';
+                    activeStaffState.sortBy = sortValue;
+                    activeStaffState.sortDir = 'asc';
                 }
-                loadActiveUsers();
+                loadActiveStaff();
             });
         });
 
@@ -1686,24 +1686,24 @@
        ============================================ */
     
     /* Card Container */
-    .active-users-modern-card {
+    .active-staff-modern-card {
         border-radius: 12px;
         overflow: hidden;
         transition: box-shadow 0.3s ease;
     }
 
-    .active-users-modern-card:hover {
+    .active-staff-modern-card:hover {
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
     }
 
     /* Header Section */
-    .active-users-header {
+    .active-staff-header {
         background: linear-gradient(135deg, #005792 0%, #00BBF0 100%);
         padding: 2rem;
         color: #ffffff;
     }
 
-    .active-users-icon-wrapper {
+    .active-staff-icon-wrapper {
         width: 56px;
         height: 56px;
         border-radius: 12px;
@@ -1716,7 +1716,7 @@
         flex-shrink: 0;
     }
 
-    .active-users-title {
+    .active-staff-title {
         font-size: 1.75rem;
         font-weight: 700;
         color: #ffffff;
@@ -1724,14 +1724,14 @@
         letter-spacing: -0.5px;
     }
 
-    .active-users-subtitle {
+    .active-staff-subtitle {
         color: rgba(255, 255, 255, 0.9);
         font-size: 0.9375rem;
         font-weight: 400;
         margin: 0;
     }
 
-    .active-users-stats {
+    .active-staff-stats {
         margin-top: 1rem;
         display: flex;
         align-items: center;
@@ -1739,7 +1739,7 @@
         gap: 0.75rem;
     }
 
-    .active-users-count-badge {
+    .active-staff-count-badge {
         background: rgba(255, 255, 255, 0.95) !important;
         color: #28a745 !important;
         font-weight: 600;
@@ -1772,8 +1772,8 @@
         font-size: 1rem;
     }
 
-    .active-users-action-btn,
-    .active-users-refresh-btn {
+    .active-staff-action-btn,
+    .active-staff-refresh-btn {
         border-radius: 8px;
         font-weight: 600;
         padding: 0.5rem 1rem;
@@ -1781,57 +1781,57 @@
         border: none;
     }
 
-    .active-users-action-btn {
+    .active-staff-action-btn {
         background: rgba(255, 255, 255, 0.95);
         color: #005792;
     }
 
-    .active-users-action-btn:hover {
+    .active-staff-action-btn:hover {
         background: #ffffff;
         color: #005792;
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 
-    .active-users-refresh-btn {
+    .active-staff-refresh-btn {
         background: rgba(255, 255, 255, 0.95);
         color: #005792;
     }
 
-    .active-users-refresh-btn:hover {
+    .active-staff-refresh-btn:hover {
         background: #ffffff;
         color: #005792;
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 
-    .active-users-refresh-btn:active {
+    .active-staff-refresh-btn:active {
         transform: translateY(0);
     }
 
     /* Filters Section */
-    .active-users-filters {
+    .active-staff-filters {
         margin-top: 1.5rem;
         padding-top: 1.5rem;
         border-top: 1px solid rgba(255, 255, 255, 0.2);
     }
 
-    .active-users-search-input,
-    .active-users-filter-select {
+    .active-staff-search-input,
+    .active-staff-filter-select {
         border-radius: 8px;
         border: 1px solid rgba(255, 255, 255, 0.3);
         background: #ffffff;
         transition: all 0.2s ease;
     }
 
-    .active-users-search-input:focus,
-    .active-users-filter-select:focus {
+    .active-staff-search-input:focus,
+    .active-staff-filter-select:focus {
         border-color: #005792;
         box-shadow: 0 0 0 3px rgba(0, 87, 146, 0.1);
         outline: none;
     }
 
-    .active-users-clear-btn {
+    .active-staff-clear-btn {
         border-radius: 8px;
         border: 1px solid rgba(255, 255, 255, 0.3);
         background: #ffffff;
@@ -1839,22 +1839,22 @@
         transition: all 0.2s ease;
     }
 
-    .active-users-clear-btn:hover {
+    .active-staff-clear-btn:hover {
         background: #f8f9fa;
         border-color: #dee2e6;
         color: #495057;
     }
 
     /* Table Styling */
-    .active-users-table-modern {
+    .active-staff-table-modern {
         margin: 0;
     }
 
-    .active-users-table-modern thead {
+    .active-staff-table-modern thead {
         background: #f8f9fa;
     }
 
-    .active-users-table-modern thead th {
+    .active-staff-table-modern thead th {
         font-weight: 600;
         font-size: 0.8125rem;
         text-transform: uppercase;
@@ -1865,34 +1865,34 @@
         vertical-align: middle;
     }
 
-    .active-users-table-modern thead th .th-content {
+    .active-staff-table-modern thead th .th-content {
         display: flex;
         align-items: center;
         gap: 0.5rem;
     }
 
-    .active-users-table-modern thead th .th-content i:first-child {
+    .active-staff-table-modern thead th .th-content i:first-child {
         color: #005792;
         font-size: 0.875rem;
     }
 
-    .active-users-table-modern tbody td {
+    .active-staff-table-modern tbody td {
         padding: 1rem 1.25rem;
         vertical-align: middle;
         border-bottom: 1px solid #f1f3f5;
         transition: background-color 0.2s ease;
     }
 
-    .active-users-table-modern tbody tr {
+    .active-staff-table-modern tbody tr {
         transition: all 0.2s ease;
     }
 
-    .active-users-table-modern tbody tr:hover {
+    .active-staff-table-modern tbody tr:hover {
         background-color: #f8f9fa;
         cursor: pointer;
     }
 
-    .active-users-table-modern tbody tr:last-child td {
+    .active-staff-table-modern tbody tr:last-child td {
         border-bottom: none;
     }
 
@@ -1986,7 +1986,7 @@
     }
 
     /* Empty State */
-    .active-users-empty-state {
+    .active-staff-empty-state {
         padding: 3rem 1rem;
     }
 
@@ -2002,41 +2002,41 @@
         margin-top: 0.5rem;
     }
 
-    #active-users-retry-btn {
+    #active-staff-retry-btn {
         background-color: #005792 !important;
         color: #ffffff !important;
         border-color: #005792 !important;
     }
 
-    #active-users-retry-btn:hover {
+    #active-staff-retry-btn:hover {
         background-color: #00BBF0 !important;
         border-color: #00BBF0 !important;
         color: #ffffff !important;
     }
 
     /* Footer Styling */
-    .active-users-footer {
+    .active-staff-footer {
         background: #ffffff;
         border-top: 1px solid #e9ecef;
         padding: 1rem 1.5rem;
     }
 
-    .active-users-footer .text-muted {
+    .active-staff-footer .text-muted {
         color: #6c757d !important;
         font-size: 0.875rem;
     }
 
-    .active-users-footer .text-muted i {
+    .active-staff-footer .text-muted i {
         margin-right: 0.5rem;
         color: #005792;
     }
 
     /* Pagination Styling */
-    #active-users-pagination .pagination {
+    #active-staff-pagination .pagination {
         margin-bottom: 0;
     }
 
-    #active-users-pagination .page-link {
+    #active-staff-pagination .page-link {
         color: #005792;
         border-color: #dee2e6;
         border-radius: 6px;
@@ -2045,40 +2045,40 @@
         transition: all 0.2s ease;
     }
 
-    #active-users-pagination .page-item.active .page-link {
+    #active-staff-pagination .page-item.active .page-link {
         background-color: #005792;
         border-color: #005792;
         color: #ffffff;
     }
 
-    #active-users-pagination .page-link:hover {
+    #active-staff-pagination .page-link:hover {
         color: #00BBF0;
         background-color: #f8f9fa;
         border-color: #dee2e6;
     }
 
     /* Typography Improvements */
-    .active-users-table-modern strong {
+    .active-staff-table-modern strong {
         font-weight: 600;
         color: #212529;
     }
 
-    .active-users-table-modern .text-muted {
+    .active-staff-table-modern .text-muted {
         color: #6c757d !important;
         font-size: 0.8125rem;
     }
 
     /* Responsive Design */
     @media (max-width: 992px) {
-        .active-users-header {
+        .active-staff-header {
             padding: 1.5rem;
         }
 
-        .active-users-title {
+        .active-staff-title {
             font-size: 1.5rem;
         }
 
-        .active-users-icon-wrapper {
+        .active-staff-icon-wrapper {
             width: 48px;
             height: 48px;
             font-size: 1.25rem;
@@ -2086,42 +2086,42 @@
     }
 
     @media (max-width: 768px) {
-        .active-users-header {
+        .active-staff-header {
             padding: 1.25rem;
         }
 
-        .active-users-title {
+        .active-staff-title {
             font-size: 1.25rem;
         }
 
-        .active-users-subtitle {
+        .active-staff-subtitle {
             font-size: 0.875rem;
         }
 
-        .active-users-icon-wrapper {
+        .active-staff-icon-wrapper {
             width: 40px;
             height: 40px;
             font-size: 1rem;
         }
 
-        .active-users-stats {
+        .active-staff-stats {
             flex-direction: column;
             align-items: flex-start;
             gap: 0.5rem;
         }
 
-        .active-users-count-badge {
+        .active-staff-count-badge {
             font-size: 0.8125rem;
             padding: 0.4rem 0.8rem;
         }
 
-        .active-users-filters .row {
+        .active-staff-filters .row {
             margin: 0;
         }
 
-        .active-users-filters .col-md-5,
-        .active-users-filters .col-md-3,
-        .active-users-filters .col-md-1 {
+        .active-staff-filters .col-md-5,
+        .active-staff-filters .col-md-3,
+        .active-staff-filters .col-md-1 {
             margin-bottom: 0.75rem;
         }
 
@@ -2132,13 +2132,13 @@
             font-size: 0.75rem;
         }
 
-        .active-users-table-modern thead th,
-        .active-users-table-modern tbody td {
+        .active-staff-table-modern thead th,
+        .active-staff-table-modern tbody td {
             padding: 0.75rem 0.5rem;
             font-size: 0.8125rem;
         }
 
-        .active-users-table-modern thead th {
+        .active-staff-table-modern thead th {
             font-size: 0.75rem;
         }
 
@@ -2147,7 +2147,7 @@
             height: 8px;
         }
 
-        .active-users-footer {
+        .active-staff-footer {
             padding: 0.75rem 1rem;
             flex-direction: column;
             align-items: flex-start !important;
@@ -2156,21 +2156,21 @@
     }
 
     @media (max-width: 576px) {
-        .active-users-header {
+        .active-staff-header {
             padding: 1rem;
         }
 
-        .active-users-filters .row > div {
+        .active-staff-filters .row > div {
             margin-bottom: 0.5rem;
         }
 
-        .active-users-action-btn span,
-        .active-users-refresh-btn span {
+        .active-staff-action-btn span,
+        .active-staff-refresh-btn span {
             display: none;
         }
     }
 
-    #active-users-last-refresh {
+    #active-staff-last-refresh {
         color: #6c757d;
         font-weight: 500;
     }

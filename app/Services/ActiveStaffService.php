@@ -11,10 +11,10 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
-class ActiveUserService
+class ActiveStaffService
 {
     /**
-     * Fetch active users leveraging session and login logs.
+     * Fetch active staff leveraging session and login logs.
      *
      * @param  int  $onlineThresholdMinutes
      * @param  string|null  $search
@@ -26,7 +26,7 @@ class ActiveUserService
      * @param  int  $page
      * @return array{data: Collection, meta: array}
      */
-    public function getActiveUsers(
+    public function getActiveStaff(
         int $onlineThresholdMinutes = 5,
         ?string $search = null,
         ?int $roleId = null,
@@ -36,7 +36,7 @@ class ActiveUserService
         int $perPage = 15,
         int $page = 1
     ): array {
-        $cacheKey = "active_users_{$onlineThresholdMinutes}_" . md5(json_encode([$search, $roleId, $teamId, $sortBy, $sortDir]));
+        $cacheKey = "active_staff_{$onlineThresholdMinutes}_" . md5(json_encode([$search, $roleId, $teamId, $sortBy, $sortDir]));
 
         $result = Cache::remember($cacheKey, 30, function () use ($onlineThresholdMinutes, $search, $roleId, $teamId, $sortBy, $sortDir) {
             $threshold = Carbon::now()->subMinutes($onlineThresholdMinutes)->timestamp;
@@ -137,8 +137,8 @@ class ActiveUserService
 
             // Apply client-side sorting for last_activity if needed
             if ($sortBy === 'last_activity') {
-                $mapped = $mapped->sortBy(function ($user) {
-                    return $user['last_activity_timestamp'] ?? 0;
+                $mapped = $mapped->sortBy(function ($staff) {
+                    return $staff['last_activity_timestamp'] ?? 0;
                 }, SORT_REGULAR, $sortDir === 'desc');
             }
 
@@ -164,12 +164,12 @@ class ActiveUserService
     }
 
     /**
-     * Resolve the most recent login timestamp for a user.
+     * Resolve the most recent login timestamp for staff.
      */
-    protected function resolveLastLogin(int $userId, ?Carbon $fallback): ?Carbon
+    protected function resolveLastLogin(int $staffId, ?Carbon $fallback): ?Carbon
     {
         $userLog = UserLog::query()
-            ->where('user_id', $userId)
+            ->where('user_id', $staffId)
             ->where(function ($query) {
                 $query->where('message', 'like', '%Logged in%')
                     ->orWhere('message', 'like', '%Logged in successfully%');
@@ -184,5 +184,3 @@ class ActiveUserService
         return $fallback ? Carbon::parse($fallback) : null;
     }
 }
-
-
