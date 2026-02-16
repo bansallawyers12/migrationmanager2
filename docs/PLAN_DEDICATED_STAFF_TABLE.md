@@ -1,8 +1,75 @@
 # Plan: Dedicated Staff Table Migration
 
-**Status:** Plan only — NOT YET APPLIED  
+**Status:** In progress — Phase 1 & 2 DONE  
 **Created:** Feb 2026  
 **Scope:** Extract staff users from `admins` table into a dedicated `staff` table; keep clients/leads in `admins`.
+
+---
+
+## ✅ Completed (Do Not Redo)
+
+- **Staff table created** — Migration `2026_02_14_000000_create_staff_table.php` has been run.
+- **Staff data migrated** — Migration `2026_02_14_000001_copy_staff_from_admins_to_staff.php` has copied all staff (role != 7) from `admins` to `staff`, preserving IDs.
+- **Auth config updated** — `admin` guard now uses `staff` provider; CRM login authenticates against `Staff` model.
+- **Code references updated** — `role != 7` checks replaced with `Staff` model / `instanceof` where appropriate; client validation uses `type` (with role fallback) for future role removal:
+  - `DocumentPolicy::create` → `$user instanceof Staff`
+  - `ClientPortalController::adminLogin` → uses `Staff` model
+  - Client portal guards → `$user instanceof Admin` (clients = Admin, staff = Staff)
+  - `LeadController`, `ClientsController` → validate client/lead via `type` with role fallback
+  - `ClientPortalController::forgotPassword`, `refresh` → use `type` with role fallback for client check
+
+**Do not** re-run staff table creation or data copy migrations. Subsequent steps build on this.
+
+---
+
+## Deep Audit: role != 7 / Staff vs Admin
+
+Audit of all code that distinguishes staff (role != 7) from clients/leads (role = 7). Items needing replacement with `Staff` model are flagged.
+
+### ✅ Already Using Staff (no change needed)
+
+| Location | Usage |
+|----------|-------|
+| `AssigneeController` | `Staff::where()`, `Staff::orderby()` for assignees |
+| `OfficeVisitController` | `Staff::orderby()` for staff list |
+| `DashboardService::getAssignees()` | `Staff::select()->where('role','!=',1)` (excludes super admin) |
+| `BroadcastNotificationService::allRecipients()` | `Staff::query()->where('status',1)` |
+| `ActiveStaffService` | Uses `Staff` model throughout |
+| `StaffLoginAnalyticsService` | `Staff::find()` |
+| `BookingAppointment` | `belongsTo(Staff::class)` for assigned_by |
+| Views: assign_by_me, assign_to_me, action_completed, modals, client-management | `Staff::where('status',1)` for staff dropdowns |
+
+### ✅ Correct: Admin for Clients (role = 7)
+
+These use `Admin::where('role', 7)` or `where('type','client')` to fetch **clients/leads**. Do not replace with Staff.
+
+- ClientsController, LeadController, ClientImportService, ClientExportService, etc.
+- OfficeVisitController, CheckinLog, DashboardService (client lookup)
+- ArtSheetController, VisaTypeSheetController, TrSheetController, EoiRoiSheetController
+- SignatureDashboardController, ClientReferenceService, Form956Controller, ReportController
+- Console commands: UpdateClientAges, ResetSampleAppointments, RandomClientSelectionReward, FixDuplicateClientReferences, VisaExpireReminderEmail
+- BansalAppointmentSync services
+- `ClientQueries` trait, `Lead` model
+- Views: companies/detail, clients/detail, offices/view, offices/viewclient
+
+### ⚠️ May Need Staff Replacement
+
+| File | Line | Current | Action |
+|------|------|---------|--------|
+| `ProcessServiceAccountTokens` | 51 | `Admin::where('status', 1)->get()` | If service tokens are for **staff** API access, switch to `Staff::where('status', 1)`. If for clients, keep Admin. |
+| `LeadAnalyticsService` | 100 | `Admin::where('type', 'admin')` | `admins.type` is typically `client`/`lead`. Likely broken. Replace with `Staff::query()` for agent metrics. |
+
+### ✅ Intentional (keep as-is)
+
+- **Migrations** (`copy_staff_from_admins_to_staff`, etc.): Historical; copy logic uses `role != 7`.
+- **verify_staff_migration.php**, **verify_staff_data.php**: Comparison scripts; intentionally query admins for staff count.
+- **BroadcastNotificationService** line 505: Comment only; implementation already uses Staff.
+
+### Summary
+
+- **Staff fetches:** All main staff lists/dropdowns use `Staff` model. No remaining `Admin::where('role','!=',7)` in application code.
+- **Client fetches:** All use `Admin::where('role', 7)` or type filters; correct.
+- **Review recommended:** ProcessServiceAccountTokens, LeadAnalyticsService.
 
 ---
 
@@ -17,7 +84,7 @@
 | **Polymorphic references incorrect** – Messages/notifications point to wrong table | Medium | Medium | Backfill type columns carefully; add tests for mixed sender/recipient |
 | **Performance degradation** – More joins for staff/client queries | Low | Low | Add indexes on FK columns; monitor query performance |
 | **Data loss on rollback** – New staff/client records created post-migration | Medium | Low | Keep staff in admins during migration; only drop after stability |
-| **Code references old model** – Some controller still uses Admin for staff | Medium | Medium | Comprehensive code review; search for `Admin::where('role','!=',7)` |
+| **Code references old model** – Some controller still uses Admin for staff | ~~Medium~~ **Largely resolved** | Low | Main staff queries use Staff; audit above. ProcessServiceAccountTokens, LeadAnalyticsService may need review. |
 | **All staff locked out** – Auth config error | Critical | Low | Test login in staging; have rollback ready; deploy in maintenance window |
 | **FK migration incomplete** – Some tables still point to admins | Medium | Medium | Checklist of all 30+ tables; verify each FK after migration; mapping table ensures consistency |
 | **ID mapping errors** – Mapping table incorrect after copy | High | Low | Verify mapping count = staff count; spot-check sample mappings; use transactions |
@@ -48,12 +115,14 @@ The `admins` table currently stores **staff** (internal users) and **clients/lea
 | Count | ~96 | ~9,345 |
 | Auth | Yes (login to CRM) | Clients use Client Portal; leads no login |
 
-### Auth Configuration (`config/auth.php`)
+### Auth Configuration (`config/auth.php`) — UPDATED
 
-- Default guard: `admin`
-- Provider: `admins` → `App\Models\Admin`
-- Guards `web`, `api`, `admin` all use `admins` provider
-- Sessions store `user_id` = `admins.id`
+- Default guard: `admin` (uses `staff` provider)
+- Provider `admins` → `App\Models\Admin` (clients/leads)
+- Provider `staff` → `App\Models\Staff`
+- Guard `admin` → `staff` provider (CRM login = Staff model)
+- Guard `api` → `admins` provider (Client Portal = Admin model)
+- Sessions store `user_id` = `staff.id` for CRM
 
 ### Staff-Specific Columns (in `admins`)
 

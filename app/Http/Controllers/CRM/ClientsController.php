@@ -1723,7 +1723,8 @@ class ClientsController extends Controller
 
             // Verify client exists
             $client = Admin::find($clientId);
-            if (!$client || $client->role != 7) {
+            $isClient = in_array($client->type ?? '', ['client']) || ($client->role ?? 0) == 7;
+            if (!$client || !$isClient) {
                 return redirect()->back()->withErrors(['error' => 'Client not found'])->withInput();
             }
 

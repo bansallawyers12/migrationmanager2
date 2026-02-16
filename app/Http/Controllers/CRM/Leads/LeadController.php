@@ -300,7 +300,8 @@ class LeadController extends Controller
                             'exists:admins,id',
                             function ($attribute, $value, $fail) {
                                 $contactPerson = Admin::find($value);
-                                if (!$contactPerson || $contactPerson->role != 7) {
+                                $isClientOrLead = in_array($contactPerson->type ?? '', ['client', 'lead']) || ($contactPerson->role ?? 0) == 7;
+                                if (!$contactPerson || !$isClientOrLead) {
                                     $fail('The selected contact person must be a client or lead.');
                                 }
                                 if ($contactPerson && $contactPerson->is_company) {

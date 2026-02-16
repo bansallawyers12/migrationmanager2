@@ -28,8 +28,8 @@ class ClientPortalPersonalDetailsController extends Controller
             $admin = $request->user();
             $clientId = (int) $admin->id;
 
-            // Verify the authenticated user is a client (role=7)
-            if ($admin->role != 7) {
+            // Verify the authenticated user is a client (Admin model; Staff use Staff model)
+            if (!$admin instanceof Admin) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Access denied. This endpoint is only available for clients.'
@@ -294,8 +294,8 @@ class ClientPortalPersonalDetailsController extends Controller
             $admin = $request->user();
             $clientId = (int) $admin->id;
 
-            // Verify the authenticated user is a client (role=7)
-            if ($admin->role != 7) {
+            // Verify the authenticated user is a client (Admin model; Staff use Staff model)
+            if (!$admin instanceof Admin) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Access denied. This endpoint is only available for clients.'
@@ -497,8 +497,8 @@ class ClientPortalPersonalDetailsController extends Controller
             $admin = $request->user();
             $clientId = (int) $admin->id;
 
-            // Verify the authenticated user is a client (role=7)
-            if ($admin->role != 7) {
+            // Verify the authenticated user is a client (Admin model; Staff use Staff model)
+            if (!$admin instanceof Admin) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Access denied. This endpoint is only available for clients.'
@@ -4072,8 +4072,8 @@ class ClientPortalPersonalDetailsController extends Controller
             $admin = $request->user();
             $clientId = (int) $admin->id;
 
-            // Verify the authenticated user is a client (role=7)
-            if ($admin->role != 7) {
+            // Verify the authenticated user is a client (Admin model; Staff use Staff model)
+            if (!$admin instanceof Admin) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Access denied. This endpoint is only available for clients.'
@@ -4381,8 +4381,8 @@ class ClientPortalPersonalDetailsController extends Controller
             $admin = $request->user();
             $clientId = (int) $admin->id;
 
-            // Verify the authenticated user is a client (role=7)
-            if ($admin->role != 7) {
+            // Verify the authenticated user is a client (Admin model; Staff use Staff model)
+            if (!$admin instanceof Admin) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Access denied. This endpoint is only available for clients.'
@@ -6739,8 +6739,8 @@ class ClientPortalPersonalDetailsController extends Controller
             $admin = $request->user();
             $clientId = (int) $admin->id;
 
-            // Verify the authenticated user is a client (role=7)
-            if ($admin->role != 7) {
+            // Verify the authenticated user is a client (Admin model; Staff use Staff model)
+            if (!$admin instanceof Admin) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Access denied. This endpoint is only available for clients.'
@@ -6967,8 +6967,8 @@ class ClientPortalPersonalDetailsController extends Controller
             $admin = $request->user();
             $clientId = (int) $admin->id;
 
-            // Verify the authenticated user is a client (role=7)
-            if ($admin->role != 7) {
+            // Verify the authenticated user is a client (Admin model; Staff use Staff model)
+            if (!$admin instanceof Admin) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Access denied. This endpoint is only available for clients.'
@@ -7276,8 +7276,8 @@ class ClientPortalPersonalDetailsController extends Controller
             $admin = $request->user();
             $clientId = (int) $admin->id;
 
-            // Verify the authenticated user is a client (role=7)
-            if ($admin->role != 7) {
+            // Verify the authenticated user is a client (Admin model; Staff use Staff model)
+            if (!$admin instanceof Admin) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Access denied. This endpoint is only available for clients.'
@@ -7612,8 +7612,8 @@ class ClientPortalPersonalDetailsController extends Controller
             $admin = $request->user();
             $clientId = (int) $admin->id;
 
-            // Verify the authenticated user is a client (role=7)
-            if ($admin->role != 7) {
+            // Verify the authenticated user is a client (Admin model; Staff use Staff model)
+            if (!$admin instanceof Admin) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Access denied. This endpoint is only available for clients.'
@@ -8049,8 +8049,8 @@ class ClientPortalPersonalDetailsController extends Controller
             $admin = $request->user();
             $clientId = (int) $admin->id;
 
-            // Verify the authenticated user is a client (role=7)
-            if ($admin->role != 7) {
+            // Verify the authenticated user is a client (Admin model; Staff use Staff model)
+            if (!$admin instanceof Admin) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Access denied. This endpoint is only available for clients.'
@@ -8379,8 +8379,8 @@ class ClientPortalPersonalDetailsController extends Controller
             $admin = $request->user();
             $clientId = (int) $admin->id;
 
-            // Verify the authenticated user is a client (role=7)
-            if ($admin->role != 7) {
+            // Verify the authenticated user is a client (Admin model; Staff use Staff model)
+            if (!$admin instanceof Admin) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Access denied. This endpoint is only available for clients.'
@@ -8824,8 +8824,8 @@ class ClientPortalPersonalDetailsController extends Controller
             $admin = $request->user();
             $clientId = (int) $admin->id;
 
-            // Verify the authenticated user is a client (role=7)
-            if ($admin->role != 7) {
+            // Verify the authenticated user is a client (Admin model; Staff use Staff model)
+            if (!$admin instanceof Admin) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Access denied. This endpoint is only available for clients.'
@@ -9271,8 +9271,8 @@ class ClientPortalPersonalDetailsController extends Controller
             $admin = $request->user();
             $clientId = (int) $admin->id;
 
-            // Verify the authenticated user is a client (role=7)
-            if ($admin->role != 7) {
+            // Verify the authenticated user is a client (Admin model; Staff use Staff model)
+            if (!$admin instanceof Admin) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Access denied. This endpoint is only available for clients.'
@@ -9687,8 +9687,8 @@ class ClientPortalPersonalDetailsController extends Controller
             $admin = $request->user();
             $clientId = (int) $admin->id;
 
-            // Verify the authenticated user is a client (role=7)
-            if ($admin->role != 7) {
+            // Verify the authenticated user is a client (Admin model; Staff use Staff model)
+            if (!$admin instanceof Admin) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Access denied. This endpoint is only available for clients.'

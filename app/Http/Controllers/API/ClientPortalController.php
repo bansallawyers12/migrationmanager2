@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
+use App\Models\Staff;
 use App\Models\DeviceToken;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -135,7 +136,7 @@ class ClientPortalController extends Controller
      * Admin Login
      * POST /api/admin-login
      * 
-     * Login for admin users with roles 1, 12, 13, 16
+     * Login for staff users with roles 1, 12, 13, 16 (Staff model)
      */
     public function adminLogin(Request $request)
     {   
@@ -154,12 +155,12 @@ class ClientPortalController extends Controller
             ], 422);
         }
 
-        $admin = Admin::where('email', $request->email)
+        $staff = Staff::where('email', $request->email)
                      ->whereIn('role', [1, 12, 13, 16]) // Admin roles
                      ->where('status', 1) // Active status
                      ->first(); 
 
-        if (!$admin || !Hash::check($request->password, $admin->password)) {
+        if (!$staff || !Hash::check($request->password, $staff->password)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid credentials'
@@ -168,11 +169,11 @@ class ClientPortalController extends Controller
 
         // Create Sanctum token with device information
         $deviceName = $request->device_name ?? 'admin-portal-app';
-        $token = $admin->createToken($deviceName)->plainTextToken;
+        $token = $staff->createToken($deviceName)->plainTextToken;
 
         // Handle device token for push notifications
         if ($request->device_token) {
-            $this->handleDeviceToken($admin->id, $request->device_token, $deviceName);
+            $this->handleDeviceToken($staff->id, $request->device_token, $deviceName);
         }
 
         // Generate refresh token using DB query
@@ -182,7 +183,7 @@ class ClientPortalController extends Controller
             
             // Prepare insert data
             $insertData = [
-                'user_id' => $admin->id,
+                'user_id' => $staff->id,
                 'token' => $refreshTokenValue,
                 'device_name' => $deviceName,
                 'expires_at' => $expiresAt->format('Y-m-d H:i:s'),
@@ -194,7 +195,7 @@ class ClientPortalController extends Controller
             $refreshTokenId = DB::table('refresh_tokens')->insertGetId($insertData);
             
         } catch (\Illuminate\Database\QueryException $e) {
-            $errorDetails = $this->handleRefreshTokenError($e, $admin->id, $insertData ?? [], $refreshTokenValue ?? '');
+            $errorDetails = $this->handleRefreshTokenError($e, $staff->id, $insertData ?? [], $refreshTokenValue ?? '');
             
             return response()->json([
                 'success' => false,
@@ -206,7 +207,7 @@ class ClientPortalController extends Controller
             
         } catch (\Exception $e) {
             Log::error('Failed to generate refresh token during admin login (non-database error)', [
-                'user_id' => $admin->id,
+                'user_id' => $staff->id,
                 'error' => $e->getMessage(),
                 'error_code' => $e->getCode(),
                 'file' => $e->getFile(),
@@ -223,7 +224,7 @@ class ClientPortalController extends Controller
         }
 
         // Update last login timestamp
-        $admin->touch();
+        $staff->touch();
 
         return response()->json([
             'success' => true,
@@ -231,10 +232,10 @@ class ClientPortalController extends Controller
                 'token' => $token,
                 'refresh_token' => $refreshTokenValue,
                 'user' => [
-                    'id' => $admin->id,
-                    'name' => $admin->first_name . ' ' . $admin->last_name,
-                    'email' => $admin->email,
-                    'role' => $admin->role
+                    'id' => $staff->id,
+                    'name' => $staff->first_name . ' ' . $staff->last_name,
+                    'email' => $staff->email,
+                    'role' => $staff->role
                 ]
             ]
         ], 200);
@@ -336,8 +337,8 @@ class ClientPortalController extends Controller
             ], 200);
         }
 
-        // Check if user role is client (7)
-        if ($admin->role != 7) {
+        // Verify this is a client (type=client or role=7 for legacy; role will be removed eventually)
+        if (($admin->type ?? '') !== 'client' && ($admin->role ?? 0) != 7) {
             return response()->json([
                 'success' => false,
                 'message' => 'Your record exists in DB but your role is not Client. So you cannot access this mobile app.'
@@ -556,11 +557,12 @@ class ClientPortalController extends Controller
             ], 401);
         }
 
-        // Get admin user
+        // Get client (Admin model; refresh tokens for clients only)
         $admin = Admin::find($refreshTokenData->user_id);
 
-        // Check if user is still active
-        if (!$admin || $admin->role != 7 || $admin->cp_status != 1) {
+        // Check if user is still active client (type=client or role=7 for legacy)
+        $isClient = $admin && (in_array($admin->type ?? '', ['client']) || ($admin->role ?? 0) == 7);
+        if (!$isClient || ($admin?->cp_status ?? 0) != 1) {
             // Revoke the token
             DB::table('refresh_tokens')
                 ->where('id', $refreshTokenData->id)

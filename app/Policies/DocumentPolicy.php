@@ -3,6 +3,7 @@
 namespace App\Policies;
 
 use App\Models\Document;
+use App\Models\Staff;
 use Illuminate\Auth\Access\HandlesAuthorization;
 use Illuminate\Contracts\Auth\Authenticatable;
 
@@ -15,7 +16,7 @@ class DocumentPolicy
      */
     public function viewAny(Authenticatable $user): bool
     {
-        // All authenticated CRM users (Admin/Staff) can view documents
+        // All authenticated CRM users (Staff) can view documents
         return true;
     }
 
@@ -33,8 +34,8 @@ class DocumentPolicy
      */
     public function create(Authenticatable $user): bool
     {
-        // All staff members can create documents (not client portal users, role 7)
-        return $user->role !== 7;
+        // Only Staff can create documents (clients use Admin model, no document creation in CRM)
+        return $user instanceof Staff;
     }
 
     /**
