@@ -539,7 +539,7 @@ use App\Http\Controllers\Controller;
 							<div class="form-group">
 								<label for="template">Templates </label>
                                 <?php
-                                $assignee = \App\Models\Admin::select('first_name')->where('id',@$fetchedData->assignee)->first();
+                                $assignee = \App\Models\Staff::select('first_name')->where('id',@$fetchedData->assignee)->first();
                                 if($assignee){
                                     $clientAssigneeName = $assignee->first_name;
                                 } else {
@@ -1419,7 +1419,7 @@ $(document).ready(function() {
         ->get();
     
     foreach($appointmentlists as $appointmentlist){
-        $admin = \App\Models\Admin::select('id', 'first_name','email')
+        $admin = \App\Models\Staff::select('id', 'first_name','email')
             ->where('id', $appointmentlist->user_id)
             ->first();
         $first_name= $admin->first_name ?? 'N/A';

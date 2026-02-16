@@ -695,7 +695,7 @@
                                 <span class="field-value">
                                     <?php
                                     if( isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->sel_migration_agent != '') {
-                                        $mig_agent_info_arr = \App\Models\Admin::select('first_name','last_name')->where('id', $matter_dis_ref_info_arr->sel_migration_agent)->first();
+                                        $mig_agent_info_arr = \App\Models\Staff::select('first_name','last_name')->where('id', $matter_dis_ref_info_arr->sel_migration_agent)->first();
                                         if($mig_agent_info_arr){
                                             echo $mig_agent_info_arr->first_name.' '.$mig_agent_info_arr->last_name;
                                         }
@@ -710,7 +710,7 @@
                                 <span class="field-value">
                                     <?php
                                     if( isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->sel_person_responsible != ''){
-                                        $sel_person_responsible_info_arr = \App\Models\Admin::select('first_name','last_name')->where('id', $matter_dis_ref_info_arr->sel_person_responsible)->first();
+                                        $sel_person_responsible_info_arr = \App\Models\Staff::select('first_name','last_name')->where('id', $matter_dis_ref_info_arr->sel_person_responsible)->first();
                                         if($sel_person_responsible_info_arr){
                                             echo $sel_person_responsible_info_arr->first_name.' '.$sel_person_responsible_info_arr->last_name;
                                         }
@@ -725,7 +725,7 @@
                                 <span class="field-value">
                                     <?php
                                     if( isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->sel_person_assisting != ''){
-                                        $sel_person_assisting_info_arr = \App\Models\Admin::select('first_name','last_name')->where('id', $matter_dis_ref_info_arr->sel_person_assisting)->first();
+                                        $sel_person_assisting_info_arr = \App\Models\Staff::select('first_name','last_name')->where('id', $matter_dis_ref_info_arr->sel_person_assisting)->first();
                                         if($sel_person_assisting_info_arr){
                                             echo $sel_person_assisting_info_arr->first_name.' '.$sel_person_assisting_info_arr->last_name;
                                         }

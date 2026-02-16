@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Admin;
+use App\Models\Staff;
 
 class ClientArtReference extends Model
 {
@@ -51,16 +53,16 @@ class ClientArtReference extends Model
 
     public function verifier(): BelongsTo
     {
-        return $this->belongsTo(Admin::class, 'verified_by');
+        return $this->belongsTo(Staff::class, 'verified_by');
     }
 
     public function creator(): BelongsTo
     {
-        return $this->belongsTo(Admin::class, 'created_by');
+        return $this->belongsTo(Staff::class, 'created_by');
     }
 
     public function updater(): BelongsTo
     {
-        return $this->belongsTo(Admin::class, 'updated_by');
+        return $this->belongsTo(Staff::class, 'updated_by');
     }
 }

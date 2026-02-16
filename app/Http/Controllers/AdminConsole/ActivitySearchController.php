@@ -90,8 +90,8 @@ class ActivitySearchController extends Controller
                     'client.last_name as client_last_name',
                     'client.email as client_email'
                 )
-                ->leftJoin('admins as creator', 'activities_logs.created_by', '=', 'creator.id')
-                ->leftJoin('admins as assignee', 'activities_logs.use_for', '=', 'assignee.id')
+                ->leftJoin('staff as creator', 'activities_logs.created_by', '=', 'creator.id')
+                ->leftJoin('staff as assignee', 'activities_logs.use_for', '=', 'assignee.id')
                 ->leftJoin('admins as client', 'activities_logs.client_id', '=', 'client.id');
 
             // Filter by Assigner (created_by)
@@ -188,8 +188,8 @@ class ActivitySearchController extends Controller
                 'client.last_name as client_last_name',
                 'client.email as client_email'
             )
-            ->leftJoin('admins as creator', 'activities_logs.created_by', '=', 'creator.id')
-            ->leftJoin('admins as assignee', 'activities_logs.use_for', '=', 'assignee.id')
+            ->leftJoin('staff as creator', 'activities_logs.created_by', '=', 'creator.id')
+            ->leftJoin('staff as assignee', 'activities_logs.use_for', '=', 'assignee.id')
             ->leftJoin('admins as client', 'activities_logs.client_id', '=', 'client.id');
 
         // Apply same filters as index

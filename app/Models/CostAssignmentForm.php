@@ -73,7 +73,7 @@ class CostAssignmentForm extends Model
      */
     public function agent(): BelongsTo
     {
-        return $this->belongsTo(Admin::class, 'agent_id');
+        return $this->belongsTo(Staff::class, 'agent_id');
     }
 
     /**

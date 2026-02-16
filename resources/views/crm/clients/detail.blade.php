@@ -1409,7 +1409,7 @@ $(document).ready(function() {
         ->get();
     
     foreach($appointmentlists as $appointmentlist){
-        $admin = \App\Models\Admin::select('id', 'first_name','email')
+        $admin = \App\Models\Staff::select('id', 'first_name','email')
             ->where('id', $appointmentlist->user_id)
             ->first();
         $first_name= $admin->first_name ?? 'N/A';

@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Admin;
+use App\Models\Staff;
 
 class ClientTrReference extends Model
 {
@@ -38,11 +40,11 @@ class ClientTrReference extends Model
 
     public function creator(): BelongsTo
     {
-        return $this->belongsTo(Admin::class, 'created_by');
+        return $this->belongsTo(Staff::class, 'created_by');
     }
 
     public function updater(): BelongsTo
     {
-        return $this->belongsTo(Admin::class, 'updated_by');
+        return $this->belongsTo(Staff::class, 'updated_by');
     }
 }

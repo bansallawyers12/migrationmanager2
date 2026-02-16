@@ -101,12 +101,12 @@ class Document extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(Admin::class, 'user_id');
+        return $this->belongsTo(Staff::class, 'user_id');
     }
 
     public function verifiedBy(): BelongsTo
     {
-        return $this->belongsTo(Admin::class, 'checklist_verified_by');
+        return $this->belongsTo(Staff::class, 'checklist_verified_by');
     }
 
     public function documentable(): MorphTo

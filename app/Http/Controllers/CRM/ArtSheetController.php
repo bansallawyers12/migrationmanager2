@@ -132,7 +132,7 @@ class ArtSheetController extends Controller
                     ->on('art.client_matter_id', '=', 'latest_art_matter.matter_id');
             })
             ->join('admins', 'latest_art_matter.client_id', '=', 'admins.id')
-            ->leftJoin('admins as agents', 'latest_art_matter.sel_migration_agent', '=', 'agents.id')
+            ->leftJoin('staff as agents', 'latest_art_matter.sel_migration_agent', '=', 'agents.id')
             ->select(
                 'art.id as art_id',
                 'art.submission_last_date',

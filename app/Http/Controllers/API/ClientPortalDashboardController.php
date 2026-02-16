@@ -105,9 +105,9 @@ class ClientPortalDashboardController extends Controller
             $query = DB::table('client_matters')
                 ->join('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
                 ->join('workflow_stages', 'client_matters.workflow_stage_id', '=', 'workflow_stages.id')
-                ->leftJoin('admins as migration_agent', 'client_matters.sel_migration_agent', '=', 'migration_agent.id')
-                ->leftJoin('admins as person_responsible', 'client_matters.sel_person_responsible', '=', 'person_responsible.id')
-                ->leftJoin('admins as person_assisting', 'client_matters.sel_person_assisting', '=', 'person_assisting.id')
+                ->leftJoin('staff as migration_agent', 'client_matters.sel_migration_agent', '=', 'migration_agent.id')
+                ->leftJoin('staff as person_responsible', 'client_matters.sel_person_responsible', '=', 'person_responsible.id')
+                ->leftJoin('staff as person_assisting', 'client_matters.sel_person_assisting', '=', 'person_assisting.id')
                 ->where('client_matters.client_id', $clientId)
                 ->where('client_matters.matter_status', 1);   // 1 for active case
                 //->where('client_matters.workflow_stage_id','!=', 14);   // 14 for file closed stage
@@ -850,9 +850,9 @@ class ClientPortalDashboardController extends Controller
         $query = DB::table('client_matters')
             ->leftJoin('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
             ->join('workflow_stages', 'client_matters.workflow_stage_id', '=', 'workflow_stages.id')
-            ->leftJoin('admins as migration_agent', 'client_matters.sel_migration_agent', '=', 'migration_agent.id')
-            ->leftJoin('admins as person_responsible', 'client_matters.sel_person_responsible', '=', 'person_responsible.id')
-            ->leftJoin('admins as person_assisting', 'client_matters.sel_person_assisting', '=', 'person_assisting.id')
+            ->leftJoin('staff as migration_agent', 'client_matters.sel_migration_agent', '=', 'migration_agent.id')
+            ->leftJoin('staff as person_responsible', 'client_matters.sel_person_responsible', '=', 'person_responsible.id')
+            ->leftJoin('staff as person_assisting', 'client_matters.sel_person_assisting', '=', 'person_assisting.id')
             ->where('client_matters.client_id', $clientId)
             ->where('client_matters.matter_status', 1)   // 1 for active case
             ->where('client_matters.workflow_stage_id','!=', 14);   // 14 for file closed stage

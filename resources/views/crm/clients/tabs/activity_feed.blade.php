@@ -113,7 +113,7 @@
         @if($activities->count() > 0)
             @foreach($activities as $activit)
                 @php
-                    $admin = \App\Models\Admin::where('id', $activit->created_by)->first();
+                    $admin = \App\Models\Staff::where('id', $activit->created_by)->first();
                 @endphp
                 @include('crm.clients.tabs.partials._activity_item', [
                     'activity' => $activit,

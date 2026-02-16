@@ -3244,7 +3244,7 @@ class ClientAccountsController extends Controller
                : collect(); // Return empty collection if no document ID was stored
            ob_start();
            foreach($fetchd as $fetch){
-               $admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
+               $admin = \App\Models\Staff::where('id', $fetch->user_id)->first();
                ?>
                <tr class="drow" id="id_<?php echo $fetch->id; ?>">
                    <td><div data-id="<?php echo $fetch->id; ?>" data-name="<?php echo $fetch->file_name; ?>" class="doc-row">
@@ -3282,7 +3282,7 @@ class ClientAccountsController extends Controller
            $data = ob_get_clean();
            ob_start();
            foreach($fetchd as $fetch){
-               $admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
+               $admin = \App\Models\Staff::where('id', $fetch->user_id)->first();
                ?>
                <div class="grid_list">
                    <div class="grid_col">
@@ -3472,7 +3472,7 @@ class ClientAccountsController extends Controller
                : collect(); // Return empty collection if no document ID was stored
            ob_start();
            foreach($fetchd as $fetch){
-               $admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
+               $admin = \App\Models\Staff::where('id', $fetch->user_id)->first();
                ?>
                <tr class="drow" id="id_<?php echo $fetch->id; ?>">
                    <td><div data-id="<?php echo $fetch->id; ?>" data-name="<?php echo $fetch->file_name; ?>" class="doc-row">
@@ -3510,7 +3510,7 @@ class ClientAccountsController extends Controller
            $data = ob_get_clean();
            ob_start();
            foreach($fetchd as $fetch){
-               $admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
+               $admin = \App\Models\Staff::where('id', $fetch->user_id)->first();
                ?>
                <div class="grid_list">
                    <div class="grid_col">
@@ -3698,7 +3698,7 @@ class ClientAccountsController extends Controller
                : collect(); // Return empty collection if no document ID was stored
            ob_start();
            foreach($fetchd as $fetch){
-               $admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
+               $admin = \App\Models\Staff::where('id', $fetch->user_id)->first();
                ?>
                <tr class="drow" id="id_<?php echo $fetch->id; ?>">
                    <td><div data-id="<?php echo $fetch->id; ?>" data-name="<?php echo $fetch->file_name; ?>" class="doc-row">
@@ -3736,7 +3736,7 @@ class ClientAccountsController extends Controller
            $data = ob_get_clean();
            ob_start();
            foreach($fetchd as $fetch){
-               $admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
+               $admin = \App\Models\Staff::where('id', $fetch->user_id)->first();
                ?>
                <div class="grid_list">
                    <div class="grid_col">

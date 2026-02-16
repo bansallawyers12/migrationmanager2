@@ -516,7 +516,7 @@
                 <input id="mlead_id" name="mlead_id" type="hidden" value="">
                 <select name="assignto" class="form-control select2 " style="width: 100%;" data-select2-id="1" tabindex="-1" aria-hidden="true">
                     <option value="">Select</option>
-                    @foreach(\App\Models\Admin::Where('role', '!=', '7')->get() as $ulist)
+                    @foreach(\App\Models\Staff::where('status', 1)->orderBy('first_name')->get() as $ulist)
                     <option value="{{@$ulist->id}}">{{@$ulist->first_name}} {{@$ulist->last_name}}</option>
                     @endforeach
                 </select>

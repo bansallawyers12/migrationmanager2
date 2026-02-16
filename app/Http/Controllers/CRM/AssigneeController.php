@@ -14,6 +14,7 @@ use App\Models\Note;
 use App\Models\Notification;
 use Carbon\Carbon;
 use App\Models\Admin;
+use App\Models\Staff;
 use App\Models\ActivitiesLog;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -78,7 +79,7 @@ class AssigneeController extends Controller
         if($note){
             $note_data = Note::where('id',$data['id'])->first(); //dd($note_data);
             if($note_data){
-                $admin_data = Admin::where('id',$note_data['assigned_to'])->first(); //dd($admin_data);
+                $admin_data = Staff::where('id',$note_data['assigned_to'])->first(); //dd($admin_data);
                 if($admin_data){
                     $assignee_name = $admin_data['first_name']." ".$admin_data['last_name'];
                 } else {
@@ -319,8 +320,8 @@ class AssigneeController extends Controller
                     // Map DataTables column names to database columns
                     switch ($columnName) {
                         case 'assigner_name':
-                            $query->leftJoin('admins as assigner_admins', 'notes.user_id', '=', 'assigner_admins.id')
-                                ->orderByRaw("COALESCE(assigner_admins.first_name, '') " . $orderDirection . ", COALESCE(assigner_admins.last_name, '') " . $orderDirection);
+                            $query->leftJoin('staff as assigner_staff', 'notes.user_id', '=', 'assigner_staff.id')
+                                ->orderByRaw("COALESCE(assigner_staff.first_name, '') " . $orderDirection . ", COALESCE(assigner_staff.last_name, '') " . $orderDirection);
                             break;
                         case 'client_reference':
                             $query->leftJoin('admins as client_admins', 'notes.client_id', '=', 'client_admins.id')
@@ -703,7 +704,7 @@ class AssigneeController extends Controller
             $currentAction = Note::findOrFail($validated['id']);
 
             // Get assignee information for activity logs
-            $admin_data_old = Admin::where('id', $currentAction->assigned_to)->first();
+            $admin_data_old = Staff::where('id', $currentAction->assigned_to)->first();
             $assignee_name_old = $admin_data_old ? $admin_data_old->first_name . " " . $admin_data_old->last_name : 'N/A';
 
             // Step 1: Mark the current action as complete
@@ -728,7 +729,7 @@ class AssigneeController extends Controller
                 $completionLog->save();
             }
 
-            $admin_data = Admin::where('id', $validated['assigned_to'])->first();
+            $admin_data = Staff::where('id', $validated['assigned_to'])->first();
             $assignee_name = $admin_data ? $admin_data->first_name . " " . $admin_data->last_name : 'N/A';
 
             // Use the original action's followup_date or today's date if not available

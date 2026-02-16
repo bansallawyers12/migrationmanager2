@@ -517,9 +517,9 @@
                                 <?php $i=0; ?>
                                     @foreach (@$lists as $list)
                                         <?php
-                                        $mig_agent_info = \App\Models\Admin::select('first_name','last_name')->where('id', $list->sel_migration_agent)->first();
-                                        $person_responsible = \App\Models\Admin::select('first_name','last_name')->where('id', $list->sel_person_responsible)->first();
-                                        $person_assisting = \App\Models\Admin::select('first_name','last_name')->where('id', $list->sel_person_assisting)->first();
+                                        $mig_agent_info = \App\Models\Staff::select('first_name','last_name')->where('id', $list->sel_migration_agent)->first();
+                                        $person_responsible = \App\Models\Staff::select('first_name','last_name')->where('id', $list->sel_person_responsible)->first();
+                                        $person_assisting = \App\Models\Staff::select('first_name','last_name')->where('id', $list->sel_person_assisting)->first();
                                         $matter_office = $list->office_id ? \App\Models\Branch::find($list->office_id) : null;
                                         ?>
                                         <tr id="id_{{@$list->id}}">

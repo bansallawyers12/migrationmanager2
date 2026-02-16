@@ -2,6 +2,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use App\Models\Staff;
 use Illuminate\Notifications\Notifiable;
 use Kyslik\ColumnSortable\Sortable;
 
@@ -90,11 +91,19 @@ class Lead extends Admin
     }
     
     /**
-     * Get the staff member who created this lead
+     * Get the staff member assigned to this lead
+     */
+    public function assignedTo()
+    {
+        return $this->belongsTo(Staff::class, 'user_id', 'id');
+    }
+
+    /**
+     * @deprecated Use assignedTo() - kept for backward compatibility
      */
     public function createdBy()
     {
-        return $this->belongsTo(Admin::class, 'user_id', 'id');
+        return $this->assignedTo();
     }
     
     /**

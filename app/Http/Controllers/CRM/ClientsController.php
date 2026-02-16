@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 use App\Models\Admin;
+use App\Models\Staff;
 use App\Models\Company;
 use App\Models\Lead;
 use App\Models\ActivitiesLog;
@@ -311,7 +312,7 @@ class ClientsController extends Controller
         ];
 
         $mattersByAgent = DB::table('client_matters as cm')
-            ->leftJoin('admins as agent', 'agent.id', '=', 'cm.sel_migration_agent')
+            ->leftJoin('staff as agent', 'agent.id', '=', 'cm.sel_migration_agent')
             ->select(
                 DB::raw("COALESCE(agent.first_name || ' ' || agent.last_name, 'Unassigned') as agent_name"),
                 DB::raw('COUNT(*) as total')
@@ -323,7 +324,7 @@ class ClientsController extends Controller
 
         $recentMatters = DB::table('client_matters as cm')
             ->join('admins as client', 'client.id', '=', 'cm.client_id')
-            ->leftJoin('admins as agent', 'agent.id', '=', 'cm.sel_migration_agent')
+            ->leftJoin('staff as agent', 'agent.id', '=', 'cm.sel_migration_agent')
             ->select(
                 'cm.client_unique_matter_no',
                 'cm.created_at',
@@ -2608,7 +2609,7 @@ class ClientsController extends Controller
 				$data = array();
 				
 				foreach($activities as $activit){
-					$admin = Admin::where('id', $activit->created_by)->first();
+					$admin = Staff::where('id', $activit->created_by)->first();
 					$data[] = array(
 						'activity_id' => $activit->id,
 						'subject' => $activit->subject ?? '',
@@ -6686,7 +6687,7 @@ class ClientsController extends Controller
 
         $rr = 0;
         foreach ($appointmentlists as $appointmentlist) {
-            $admin = Admin::select('id', 'first_name', 'email')
+            $admin = Staff::select('id', 'first_name', 'email')
                 ->where('id', $appointmentlist->user_id)
                 ->first();
             $first_name = $admin->first_name ?? 'N/A';
@@ -6739,7 +6740,7 @@ class ClientsController extends Controller
                 <div class="editappointment">';
 
         if ($appointmentlistslast) {
-            $adminfirst = Admin::select('id', 'first_name', 'email')
+            $adminfirst = Staff::select('id', 'first_name', 'email')
                 ->where('id', $appointmentlistslast->user_id)
                 ->first();
             

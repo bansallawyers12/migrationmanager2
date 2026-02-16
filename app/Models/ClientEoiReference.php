@@ -4,6 +4,8 @@ namespace App\Models;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Admin;
+use App\Models\Staff;
 
 class ClientEoiReference extends Model
 {
@@ -127,27 +129,27 @@ class ClientEoiReference extends Model
     }
 
     /**
-     * Relationship to admin who created
+     * Relationship to staff who created
      */
     public function creator(): BelongsTo
     {
-        return $this->belongsTo(Admin::class, 'created_by');
+        return $this->belongsTo(Staff::class, 'created_by');
     }
 
     /**
-     * Relationship to admin who last updated
+     * Relationship to staff who last updated
      */
     public function updater(): BelongsTo
     {
-        return $this->belongsTo(Admin::class, 'updated_by');
+        return $this->belongsTo(Staff::class, 'updated_by');
     }
 
     /**
-     * Relationship to admin who verified EOI
+     * Relationship to staff who verified EOI
      */
     public function verifier(): BelongsTo
     {
-        return $this->belongsTo(Admin::class, 'checked_by');
+        return $this->belongsTo(Staff::class, 'checked_by');
     }
 
     /**
