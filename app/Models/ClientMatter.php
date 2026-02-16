@@ -195,6 +195,33 @@ class ClientMatter extends Model
     }
 
     /**
+     * Check if this client matter is a TR (Temporary Residence) matter.
+     * Used for TR sheet integration (e.g. when checklist is sent).
+     */
+    public function isTrMatter(): bool
+    {
+        $matter = $this->matter;
+        if (!$matter) {
+            return false;
+        }
+        $nickNames = config('sheets.tr.matter_nick_names', ['tr', 'tr checklist']);
+        $patterns = config('sheets.tr.matter_title_patterns', ['tr', 'tr checklist', 'temporary residence']);
+        $nick = strtolower(trim($matter->nick_name ?? ''));
+        $title = strtolower(trim($matter->title ?? ''));
+        foreach ($nickNames as $n) {
+            if ($nick === strtolower($n)) {
+                return true;
+            }
+        }
+        foreach ($patterns as $p) {
+            if (str_contains($title, strtolower($p))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Boot method to add model events for debugging
      */
     protected static function boot()

@@ -1392,6 +1392,30 @@ class DocumentController extends Controller
                                     Log::error('Failed to save MailReport', [
                                         'data' => $obj5->toArray()
                                     ]);
+                                } elseif (!empty($request->checklistfile) && \Illuminate\Support\Facades\Schema::hasTable('client_tr_references')) {
+                                    // TR sheet integration: update when checklist sent with document email
+                                    $clientMatter = \App\Models\ClientMatter::with('matter')->find($document->client_matter_id);
+                                    if ($clientMatter && $clientMatter->isTrMatter()) {
+                                        $staffId = Auth::guard('admin')->id();
+                                        $now = now();
+                                        $ref = \App\Models\ClientTrReference::firstOrCreate(
+                                            ['client_id' => $document->client_id, 'client_matter_id' => $document->client_matter_id],
+                                            ['checklist_sent_at' => $now, 'created_by' => $staffId, 'updated_by' => $staffId]
+                                        );
+                                        if (!$ref->wasRecentlyCreated) {
+                                            $ref->update(['checklist_sent_at' => $now, 'updated_by' => $staffId]);
+                                        }
+                                        if (\Illuminate\Support\Facades\Schema::hasTable('tr_matter_reminders')) {
+                                            \Illuminate\Support\Facades\DB::table('tr_matter_reminders')->insert([
+                                                'client_matter_id' => $document->client_matter_id,
+                                                'type' => 'email',
+                                                'reminded_at' => $now,
+                                                'reminded_by' => $staffId,
+                                                'created_at' => $now,
+                                                'updated_at' => $now,
+                                            ]);
+                                        }
+                                    }
                                 }
                             } catch (\Exception $e) {
                                 Log::error('Exception while saving MailReport', [
