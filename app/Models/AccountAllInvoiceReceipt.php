@@ -39,11 +39,11 @@ class AccountAllInvoiceReceipt extends Model
     ];
 
     /**
-     * Get the user that created this receipt
+     * Get the staff member who created this receipt
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(Admin::class, 'user_id');
+        return $this->belongsTo(Staff::class, 'user_id');
     }
 
     /**

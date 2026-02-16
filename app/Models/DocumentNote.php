@@ -30,11 +30,11 @@ class DocumentNote extends Model
     }
 
     /**
-     * Get the admin who created this note
+     * Get the staff member who created this note
      */
     public function creator(): BelongsTo
     {
-        return $this->belongsTo(Admin::class, 'created_by');
+        return $this->belongsTo(Staff::class, 'created_by');
     }
 
     /**

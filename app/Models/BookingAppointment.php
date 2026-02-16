@@ -113,11 +113,11 @@ class BookingAppointment extends Model
     }
 
     /**
-     * Get the admin who assigned the consultant.
+     * Get the staff member who assigned the consultant.
      */
     public function assignedBy(): BelongsTo
     {
-        return $this->belongsTo(Admin::class, 'assigned_by_admin_id');
+        return $this->belongsTo(Staff::class, 'assigned_by_admin_id');
     }
 
     /**

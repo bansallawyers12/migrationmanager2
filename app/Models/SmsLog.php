@@ -58,7 +58,7 @@ class SmsLog extends Model
      */
     public function sender()
     {
-        return $this->belongsTo(Admin::class, 'sender_id');
+        return $this->belongsTo(Staff::class, 'sender_id');
     }
 
     /**

@@ -62,11 +62,11 @@ class ActivitiesLog extends Authenticatable
 	}
 
 	/**
-	 * Get the admin user who created this activity
+	 * Get the staff member who created this activity
 	 */
 	public function creator()
 	{
-		return $this->belongsTo(Admin::class, 'created_by');
+		return $this->belongsTo(Staff::class, 'created_by');
 	}
 
 	/**

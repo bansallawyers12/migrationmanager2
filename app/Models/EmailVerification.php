@@ -41,7 +41,7 @@ class EmailVerification extends Model
 
     public function verifier()
     {
-        return $this->belongsTo(Admin::class, 'verified_by');
+        return $this->belongsTo(Staff::class, 'verified_by');
     }
 
     // Scopes

@@ -31,12 +31,12 @@ class Tag extends Authenticatable
 
 	public function createddetail()
     {
-        return $this->belongsTo('App\\Models\\Admin','created_by', 'id');
+        return $this->belongsTo(Staff::class, 'created_by', 'id');
     }	
 	
 	public function updateddetail()
     {
-        return $this->belongsTo('App\\Models\\Admin','updated_by', 'id');
+        return $this->belongsTo(Staff::class, 'updated_by', 'id');
     }
 	
 	/**

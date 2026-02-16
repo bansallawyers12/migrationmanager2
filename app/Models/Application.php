@@ -29,7 +29,7 @@ class Application extends Authenticatable
     
     public function application_assignee()
     {
-        return $this->belongsTo('App\\Models\\Admin', 'user_id', 'id');
+        return $this->belongsTo(Staff::class, 'user_id', 'id');
     }
 	
 }

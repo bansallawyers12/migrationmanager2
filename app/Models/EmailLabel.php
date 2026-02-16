@@ -30,7 +30,7 @@ class EmailLabel extends Model
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(Admin::class, 'user_id');
+        return $this->belongsTo(Staff::class, 'user_id');
     }
 
     /**

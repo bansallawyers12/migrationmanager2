@@ -40,7 +40,7 @@ class SmsTemplate extends Model
      */
     public function creator()
     {
-        return $this->belongsTo(Admin::class, 'created_by');
+        return $this->belongsTo(Staff::class, 'created_by');
     }
 
     /**
