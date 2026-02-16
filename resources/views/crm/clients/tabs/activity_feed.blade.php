@@ -68,11 +68,11 @@
             if ($user_search != "" && $keyword_search != "") {
                 // Both user and keyword search
                 $activities = \App\Models\ActivitiesLog::select('activities_logs.*')
-                    ->leftJoin('admins', 'activities_logs.created_by', '=', 'admins.id')
+                    ->leftJoin('staff', 'activities_logs.created_by', '=', 'staff.id')
                     ->where('activities_logs.client_id', $fetchedData->id)
                     ->where(function($query) use ($user_search) {
                         $userSearchLower = strtolower($user_search);
-                        $query->whereRaw('LOWER(admins.first_name) LIKE ?', ['%'.$userSearchLower.'%']);
+                        $query->whereRaw('LOWER(staff.first_name) LIKE ?', ['%'.$userSearchLower.'%']);
                     })
                     ->where(function($query) use ($keyword_search) {
                         $query->where('activities_logs.description', 'like', '%'.$keyword_search.'%');
@@ -92,12 +92,12 @@
                     ->get();
             } else if ($user_search != "" && $keyword_search == "") {
                 // User search only
-                $activities = \App\Models\ActivitiesLog::select('activities_logs.*','admins.first_name','admins.last_name','admins.email')
-                    ->leftJoin('admins', 'activities_logs.created_by', '=', 'admins.id')
+                $activities = \App\Models\ActivitiesLog::select('activities_logs.*','staff.first_name','staff.last_name','staff.email')
+                    ->leftJoin('staff', 'activities_logs.created_by', '=', 'staff.id')
                     ->where('activities_logs.client_id', $fetchedData->id)
                     ->where(function($query) use ($user_search) {
                         $userSearchLower = strtolower($user_search);
-                        $query->whereRaw('LOWER(admins.first_name) LIKE ?', ['%'.$userSearchLower.'%']);
+                        $query->whereRaw('LOWER(staff.first_name) LIKE ?', ['%'.$userSearchLower.'%']);
                     })
                     ->orderby('activities_logs.created_at', 'DESC')
                     ->get();

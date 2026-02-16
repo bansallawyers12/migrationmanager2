@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Broadcast;
 use App\Models\Message;
 use App\Models\MessageRecipient;
+use App\Models\Staff;
+use App\Models\Admin;
 use App\Events\MessageSent;
 use App\Events\MessageReceived;
 use App\Events\MessageDeleted;
@@ -75,10 +77,7 @@ class ClientPortalMessageController extends Controller
             $sender = null;
             $senderShortname = null;
             if ($senderId) {
-                $sender = DB::table('admins')
-                    ->select('id', 'first_name', 'last_name', 'email')
-                    ->where('id', $senderId)
-                    ->first();
+                $sender = Staff::find($senderId) ?? Admin::find($senderId);
                 
                 // Generate 2-character shortname from sender's name
                 if ($sender) {
@@ -350,9 +349,8 @@ class ClientPortalMessageController extends Controller
                 });
             }
 
-            // Get superadmin users
-            $superadmins = DB::table('admins')
-                ->where('role', 1)
+            // Get superadmin users (staff with role 1)
+            $superadmins = Staff::where('role', 1)
                 ->where('status', 1)
                 ->pluck('id')
                 ->toArray();
@@ -386,9 +384,8 @@ class ClientPortalMessageController extends Controller
             $messageId = DB::table('messages')->insertGetId($messageData);
 
             if ($messageId) {
-                // Get recipient details for all target recipients
-                $recipientUsers = DB::table('admins')
-                    ->whereIn('id', $targetRecipients)
+                // Get recipient details (matterUsers and superadmins are staff)
+                $recipientUsers = Staff::whereIn('id', $targetRecipients)
                     ->select('id', 'first_name', 'last_name', DB::raw("(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) as full_name"))
                     ->get()
                     ->keyBy('id');
@@ -653,11 +650,20 @@ class ClientPortalMessageController extends Controller
                     $recipientIds = $recipients->pluck('recipient_id')->toArray();
                     $recipientIdsWithDetails = [];
                     if (!empty($recipientIds)) {
-                        $recipientUsers = DB::table('admins')
-                            ->whereIn('id', $recipientIds)
-                            ->select('id', 'first_name', 'last_name', DB::raw("(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) as full_name"))
-                            ->get()
-                            ->keyBy('id');
+                        $recipientUsers = collect();
+                        $staffUsers = Staff::whereIn('id', $recipientIds)->get(['id', 'first_name', 'last_name'])->keyBy('id');
+                        $adminUsers = Admin::whereIn('id', $recipientIds)->get(['id', 'first_name', 'last_name'])->keyBy('id');
+                        foreach ($recipientIds as $rid) {
+                            $u = $staffUsers->get($rid) ?? $adminUsers->get($rid);
+                            if ($u) {
+                                $recipientUsers->put($rid, (object)[
+                                    'id' => $u->id,
+                                    'first_name' => $u->first_name,
+                                    'last_name' => $u->last_name,
+                                    'full_name' => trim(($u->first_name ?? '') . ' ' . ($u->last_name ?? ''))
+                                ]);
+                            }
+                        }
                         
                         foreach ($recipientIds as $recipientId) {
                             $recipientUser = $recipientUsers->get($recipientId);
@@ -675,14 +681,10 @@ class ClientPortalMessageController extends Controller
                         }
                     }
 
-                    // Get sender's shortname
+                    // Get sender's shortname (sender can be staff or client)
                     $senderShortname = null;
                     if ($msg->sender_id) {
-                        $senderInfo = DB::table('admins')
-                            ->where('id', $msg->sender_id)
-                            ->select('first_name', 'last_name')
-                            ->first();
-                        
+                        $senderInfo = Staff::find($msg->sender_id) ?? Admin::find($msg->sender_id);
                         if ($senderInfo) {
                             $firstInitial = $senderInfo->first_name ? strtoupper(substr($senderInfo->first_name, 0, 1)) : '';
                             $lastInitial = $senderInfo->last_name ? strtoupper(substr($senderInfo->last_name, 0, 1)) : '';
@@ -777,30 +779,28 @@ class ClientPortalMessageController extends Controller
                 ], 403);
             }
 
-            // Get all recipients with their read status and names
-            $recipients = MessageRecipient::join('admins', 'message_recipients.recipient_id', '=', 'admins.id')
-                ->where('message_id', $id)
-                ->select(
-                    'message_recipients.recipient_id',
-                    'admins.first_name',
-                    'admins.last_name',
-                    DB::raw("(COALESCE(admins.first_name, '') || ' ' || COALESCE(admins.last_name, '')) as recipient_name"),
-                    'message_recipients.is_read',
-                    'message_recipients.read_at'
-                )
-                ->get();
+            // Get all recipients with their read status and names (recipient can be staff or client)
+            $recipientRows = MessageRecipient::where('message_id', $id)->get();
+            $recipients = $recipientRows->map(function ($row) {
+                $user = Staff::find($row->recipient_id) ?? Admin::find($row->recipient_id);
+                $recipient_name = $user ? trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) : 'Unknown';
+                return (object)[
+                    'recipient_id' => $row->recipient_id,
+                    'first_name' => $user->first_name ?? null,
+                    'last_name' => $user->last_name ?? null,
+                    'recipient_name' => $recipient_name,
+                    'is_read' => $row->is_read,
+                    'read_at' => $row->read_at
+                ];
+            });
 
             // Get current user's read status if they're a recipient
             $currentUserRecipient = $recipients->firstWhere('recipient_id', $clientId);
 
-            // Get sender's shortname
+            // Get sender's shortname (sender can be staff or client)
             $senderShortname = null;
             if ($message->sender_id) {
-                $senderInfo = DB::table('admins')
-                    ->where('id', $message->sender_id)
-                    ->select('first_name', 'last_name')
-                    ->first();
-                
+                $senderInfo = Staff::find($message->sender_id) ?? Admin::find($message->sender_id);
                 if ($senderInfo) {
                     $firstInitial = $senderInfo->first_name ? strtoupper(substr($senderInfo->first_name, 0, 1)) : '';
                     $lastInitial = $senderInfo->last_name ? strtoupper(substr($senderInfo->last_name, 0, 1)) : '';

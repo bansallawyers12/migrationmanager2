@@ -4126,8 +4126,8 @@ class ClientAccountsController extends Controller
 
            //Get record For strike line through
            $record_data = DB::table('account_client_receipts')
-           ->leftJoin('admins', 'admins.id', '=', 'account_client_receipts.voided_or_validated_by')
-           ->select('account_client_receipts.id','account_client_receipts.voided_or_validated_by','admins.first_name','admins.last_name')
+           ->leftJoin('staff', 'staff.id', '=', 'account_client_receipts.voided_or_validated_by')
+           ->select('account_client_receipts.id','account_client_receipts.voided_or_validated_by','staff.first_name','staff.last_name')
            ->where('account_client_receipts.receipt_type', 3)
            ->whereIn('account_client_receipts.receipt_id', $request->clickedReceiptIds)
            ->where('account_client_receipts.void_invoice', 1)
@@ -4469,8 +4469,8 @@ class ClientAccountsController extends Controller
 
            //Get record validate_receipt =1
            $record_data = DB::table('account_client_receipts')
-           ->leftJoin('admins', 'admins.id', '=', 'account_client_receipts.voided_or_validated_by')
-           ->select('account_client_receipts.id','account_client_receipts.voided_or_validated_by','account_client_receipts.trans_date','admins.first_name','admins.last_name')
+           ->leftJoin('staff', 'staff.id', '=', 'account_client_receipts.voided_or_validated_by')
+           ->select('account_client_receipts.id','account_client_receipts.voided_or_validated_by','account_client_receipts.trans_date','staff.first_name','staff.last_name')
            ->where('account_client_receipts.receipt_type', $request->receipt_type)
            ->whereIn('account_client_receipts.id', $request->clickedReceiptIds)
            ->where('account_client_receipts.validate_receipt', 1)

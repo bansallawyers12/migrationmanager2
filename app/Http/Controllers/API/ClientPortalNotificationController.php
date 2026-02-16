@@ -48,7 +48,8 @@ class ClientPortalNotificationController extends Controller
             $clientMatterId = $request->get('client_matter_id');
 
             $query = DB::table('notifications')
-                ->leftJoin('admins as sender', 'notifications.sender_id', '=', 'sender.id')
+                ->leftJoin('staff as sender_staff', 'notifications.sender_id', '=', 'sender_staff.id')
+                ->leftJoin('admins as sender_admin', 'notifications.sender_id', '=', 'sender_admin.id')
                 ->where('notifications.receiver_id', $clientId)
                 ->whereIn('notifications.notification_type', self::CLIENT_PORTAL_NOTIFICATION_TYPES)
                 ->select(
@@ -62,7 +63,7 @@ class ClientPortalNotificationController extends Controller
                     'notifications.seen',
                     'notifications.created_at',
                     'notifications.updated_at',
-                    DB::raw("(COALESCE(sender.first_name, '') || ' ' || COALESCE(sender.last_name, '')) as sender_name")
+                    DB::raw("(COALESCE(sender_staff.first_name, sender_admin.first_name, '') || ' ' || COALESCE(sender_staff.last_name, sender_admin.last_name, '')) as sender_name")
                 );
 
             if ($clientMatterId) {
@@ -114,7 +115,8 @@ class ClientPortalNotificationController extends Controller
             $clientId = $admin->id;
 
             $notification = DB::table('notifications')
-                ->leftJoin('admins as sender', 'notifications.sender_id', '=', 'sender.id')
+                ->leftJoin('staff as sender_staff', 'notifications.sender_id', '=', 'sender_staff.id')
+                ->leftJoin('admins as sender_admin', 'notifications.sender_id', '=', 'sender_admin.id')
                 ->where('notifications.id', $id)
                 ->where('notifications.receiver_id', $clientId)
                 ->whereIn('notifications.notification_type', self::CLIENT_PORTAL_NOTIFICATION_TYPES)
@@ -129,7 +131,7 @@ class ClientPortalNotificationController extends Controller
                     'notifications.seen',
                     'notifications.created_at',
                     'notifications.updated_at',
-                    DB::raw("(COALESCE(sender.first_name, '') || ' ' || COALESCE(sender.last_name, '')) as sender_name")
+                    DB::raw("(COALESCE(sender_staff.first_name, sender_admin.first_name, '') || ' ' || COALESCE(sender_staff.last_name, sender_admin.last_name, '')) as sender_name")
                 )
                 ->first();
 
