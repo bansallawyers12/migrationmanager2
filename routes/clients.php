@@ -49,6 +49,12 @@ Route::get('/clients/sheets/{visaType}', [\App\Http\Controllers\CRM\VisaTypeShee
     ->where('visaType', 'tr|visitor|student|pr|employer-sponsored')
     ->name('clients.sheets.visa-type');
 
+// Sheet Pin/Star Actions
+Route::post('/clients/sheets/{visaType}/toggle-pin', [\App\Http\Controllers\CRM\VisaTypeSheetController::class, 'togglePin'])
+    ->where('visaType', 'tr|visitor|student|pr|employer-sponsored')
+    ->name('clients.sheets.visa-type.toggle-pin');
+Route::post('/clients/sheets/tr/toggle-pin', [\App\Http\Controllers\CRM\TrSheetController::class, 'togglePin'])->name('clients.sheets.tr.toggle-pin');
+
 // EOI Confirmation Workflow (Staff actions - requires auth)
 Route::post('/clients/sheets/eoi-roi/{eoiId}/verify', [\App\Http\Controllers\CRM\EoiRoiSheetController::class, 'verifyByStaff'])->name('clients.sheets.eoi-roi.verify');
 Route::post('/clients/sheets/eoi-roi/{eoiId}/send-confirmation', [\App\Http\Controllers\CRM\EoiRoiSheetController::class, 'sendConfirmationEmail'])->name('clients.sheets.eoi-roi.send-confirmation');

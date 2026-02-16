@@ -244,6 +244,7 @@ class TrSheetController extends Controller
                 'tr_ref.institute_override',
                 'tr_ref.comments as sheet_comment_text',
                 'tr_ref.checklist_sent_at',
+                'tr_ref.is_pinned',
                 'latest_tr.tr_checklist_status'
             )
             ->where('admins.is_archived', 0)
@@ -364,22 +365,37 @@ class TrSheetController extends Controller
 
     protected function applySorting($query, Request $request, string $tab)
     {
-        $sortField = $request->get('sort', 'crm_ref');
-        $sortDirection = $request->get('direction', 'asc');
-        if (!in_array(strtolower($sortDirection), ['asc', 'desc'])) {
-            $sortDirection = 'asc';
-        }
-        $sortable = [
-            'crm_ref' => 'admins.client_id',
-            'name' => 'admins.first_name',
-            'dob' => 'admins.dob',
-            'stage' => 'ws.name',
-        ];
-        $actual = $sortable[$sortField] ?? 'admins.client_id';
+        // First priority: pinned items (is_pinned DESC) - pinned items on top
+        $query->orderByRaw("COALESCE(tr_ref.is_pinned, 0) DESC");
+        
+        // Second priority: checklist hold status (only for checklist tab)
         if ($tab === 'checklist') {
             $query->orderByRaw("CASE WHEN COALESCE(latest_tr.tr_checklist_status, 'active') = 'hold' THEN 1 ELSE 0 END ASC");
         }
-        $query->orderBy($actual, $sortDirection)->orderBy('latest_tr.matter_id', 'asc');
+        
+        // Third priority: visa expiry (ASC) - closest expiry dates first
+        // NULL expiry dates go to the end
+        $query->orderByRaw("CASE WHEN admins.visaExpiry IS NULL OR admins.visaExpiry = '0000-00-00' THEN 1 ELSE 0 END ASC");
+        $query->orderBy('admins.visaExpiry', 'asc');
+        
+        // Fourth priority: custom user sort if provided
+        $sortField = $request->get('sort');
+        $sortDirection = $request->get('direction', 'asc');
+        if ($sortField && in_array(strtolower($sortDirection), ['asc', 'desc'])) {
+            $sortable = [
+                'crm_ref' => 'admins.client_id',
+                'name' => 'admins.first_name',
+                'dob' => 'admins.dob',
+                'stage' => 'ws.name',
+            ];
+            if (isset($sortable[$sortField])) {
+                $query->orderBy($sortable[$sortField], $sortDirection);
+            }
+        }
+        
+        // Final tiebreaker: matter ID
+        $query->orderBy('latest_tr.matter_id', 'asc');
+        
         return $query;
     }
 
@@ -415,5 +431,62 @@ class TrSheetController extends Controller
             })
             ->sum(DB::raw('COALESCE(balance_amount, 0)'));
         return ['total' => number_format($total, 2), 'pending' => number_format($pending, 2)];
+    }
+
+    /**
+     * Toggle pin status for a matter in the TR sheet.
+     */
+    public function togglePin(Request $request)
+    {
+        $clientId = $request->input('client_id');
+        $matterInternalId = $request->input('matter_internal_id');
+
+        if (!$clientId || !$matterInternalId) {
+            return response()->json(['success' => false, 'message' => 'Missing required parameters'], 400);
+        }
+
+        if (!Schema::hasTable('client_tr_references')) {
+            return response()->json(['success' => false, 'message' => 'Reference table not found'], 404);
+        }
+
+        try {
+            $reference = DB::table('client_tr_references')
+                ->where('client_id', $clientId)
+                ->where('client_matter_id', $matterInternalId)
+                ->first();
+
+            if ($reference) {
+                // Toggle existing pin
+                $newPinStatus = !($reference->is_pinned ?? false);
+                DB::table('client_tr_references')
+                    ->where('client_id', $clientId)
+                    ->where('client_matter_id', $matterInternalId)
+                    ->update([
+                        'is_pinned' => $newPinStatus,
+                        'updated_by' => Auth::id(),
+                        'updated_at' => now(),
+                    ]);
+            } else {
+                // Create new reference record with pin
+                DB::table('client_tr_references')->insert([
+                    'client_id' => $clientId,
+                    'client_matter_id' => $matterInternalId,
+                    'is_pinned' => true,
+                    'created_by' => Auth::id(),
+                    'updated_by' => Auth::id(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                $newPinStatus = true;
+            }
+
+            return response()->json([
+                'success' => true,
+                'is_pinned' => $newPinStatus,
+                'message' => $newPinStatus ? 'Item pinned to top' : 'Item unpinned'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error updating pin status: ' . $e->getMessage()], 500);
+        }
     }
 }

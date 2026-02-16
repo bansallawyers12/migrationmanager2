@@ -5,36 +5,175 @@
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
 <link rel="stylesheet" href="{{ asset('css/bootstrap-datepicker.min.css') }}">
 <style>
-    .visa-sheet-page.listing-container { margin-top: 0 !important; padding-top: 0 !important; }
+    /* Remove top blank space */
+    .visa-sheet-page.listing-container { 
+        margin-top: 0 !important; 
+        padding-top: 0 !important; 
+    }
+    .visa-sheet-page .listing-section {
+        padding-top: 0 !important;
+    }
+    .visa-sheet-page .art-sheet-card {
+        margin-top: 0 !important;
+    }
+    
+    /* CRM Color Theme - Using #005792 */
     .visa-sheet-page .art-sheet-sticky-header {
         position: sticky; top: 70px; z-index: 100;
-        background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
-        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
-        border-bottom: 1px solid #e2e8f0;
+        background: linear-gradient(180deg, #f0f7fa 0%, #e6f2f7 100%);
+        box-shadow: 0 2px 8px rgba(0, 87, 146, 0.1);
+        border-bottom: 1px solid #b3d9ea;
+        margin: 0 -1px 0 -1px;
+    }
+    .visa-sheet-page .art-sheet-top-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 10px 20px 0;
+        border-bottom: 1px solid #b3d9ea;
+    }
+    .visa-sheet-page .art-sheet-title { 
+        font-size: 1.2rem; 
+        font-weight: 600; 
+        color: #005792; 
+        margin: 0;
+        display: flex;
+        align-items: center;
+    }
+    .visa-sheet-page .art-sheet-title i {
+        margin-right: 8px;
+        color: #005792;
+    }
+    .visa-sheet-page .btn-theme,
+    .visa-sheet-page .btn-theme-sm {
+        background: linear-gradient(135deg, #005792 0%, #004670 100%) !important;
+        color: #fff !important;
+        border: 1px solid #005792 !important;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 14px;
+        transition: all 0.2s ease;
+    }
+    .visa-sheet-page .btn-theme:hover,
+    .visa-sheet-page .btn-theme-sm:hover {
+        background: linear-gradient(135deg, #004670 0%, #003a58 100%) !important;
+        color: #fff !important;
+        border-color: #004670 !important;
+        box-shadow: 0 2px 8px rgba(0, 87, 146, 0.2);
     }
     .visa-sheet-page .visa-tabs-row {
         display: flex; align-items: center; gap: 12px;
-        padding: 12px 20px; background: #f1f5f9; border-bottom: 1px solid #e2e8f0;
+        padding: 12px 20px; background: #f0f7fa; border-bottom: 1px solid #b3d9ea;
     }
     .visa-sheet-page .sheet-tabs {
-        background: #e2e8f0; padding: 4px; border-radius: 8px;
+        background: #b3d9ea; padding: 4px; border-radius: 8px;
         display: flex; gap: 2px; flex-wrap: wrap;
     }
     .visa-sheet-page .sheet-tab {
-        padding: 10px 18px; color: #64748b; text-decoration: none;
+        padding: 10px 18px; color: #005792; text-decoration: none;
         font-weight: 600; font-size: 14px; border-radius: 6px;
         white-space: nowrap; transition: all 0.2s ease;
     }
-    .visa-sheet-page .sheet-tab:hover { color: #334155; background: #cbd5e1; text-decoration: none; }
-    .visa-sheet-page .sheet-tab.active {
-        color: #fff; background: linear-gradient(135deg, #475569 0%, #334155 100%);
-        box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    .visa-sheet-page .sheet-tab:hover { 
+        color: #003a58; 
+        background: #cce4f0; 
+        text-decoration: none; 
     }
-    .visa-sheet-page .art-sheet-title { font-size: 1.2rem; font-weight: 600; color: #1e293b; margin: 0; }
-    .visa-sheet-page .comment-cell .sheet-comment-text { max-height: 3.6em; overflow: hidden; text-overflow: ellipsis; white-space: pre-wrap; word-break: break-word; }
-    .visa-sheet-page .checklist-status-cell .checklist-status-select { min-width: 140px; max-width: 180px; }
+    .visa-sheet-page .sheet-tab.active {
+        color: #fff; 
+        background: linear-gradient(135deg, #005792 0%, #004670 100%);
+        box-shadow: 0 1px 3px rgba(0, 87, 146, 0.3);
+    }
+    .visa-sheet-page .art-sheet-filter-bar {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 10px 20px 12px;
+        background: #fff;
+        border-bottom: 1px solid #e6f2f7;
+    }
+    .visa-sheet-page .art-sheet-filter-bar .filter_btn {
+        margin: 0;
+        background: linear-gradient(135deg, #005792 0%, #004670 100%) !important;
+        color: #fff !important;
+        border: none !important;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 500;
+    }
+    .visa-sheet-page .art-sheet-filter-bar .filter_btn:hover {
+        background: linear-gradient(135deg, #004670 0%, #003a58 100%) !important;
+        box-shadow: 0 2px 8px rgba(0, 87, 146, 0.2);
+    }
+    .visa-sheet-page .art-sheet-filter-bar .clear-filter-btn {
+        margin: 0;
+        background: #0087c3 !important;
+        color: #fff !important;
+        border: none !important;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .visa-sheet-page .art-sheet-filter-bar .clear-filter-btn:hover {
+        background: #006a9a !important;
+        text-decoration: none;
+    }
+    .visa-sheet-page .active-filters-badge {
+        background: #ff6b6b;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        margin-left: 4px;
+    }
+    .visa-sheet-page .comment-cell .sheet-comment-text { 
+        max-height: 3.6em; 
+        overflow: hidden; 
+        text-overflow: ellipsis; 
+        white-space: pre-wrap; 
+        word-break: break-word; 
+    }
+    .visa-sheet-page .checklist-status-cell .checklist-status-select { 
+        min-width: 140px; 
+        max-width: 180px; 
+    }
     .visa-sheet-page .reminder-cell { min-width: 120px; }
     .visa-sheet-page .checklist-sent-cell { min-width: 120px; }
+    
+    /* Star/Pin Column Styles */
+    .visa-sheet-page .pin-cell {
+        width: 45px;
+        min-width: 45px;
+        max-width: 45px;
+        text-align: center;
+        padding: 8px !important;
+    }
+    .visa-sheet-page .pin-star {
+        font-size: 18px;
+        cursor: pointer;
+        color: #cbd5e0;
+        transition: all 0.2s ease;
+    }
+    .visa-sheet-page .pin-star:hover {
+        color: #f59e0b;
+        transform: scale(1.2);
+    }
+    .visa-sheet-page .pin-star.pinned {
+        color: #f59e0b;
+        text-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
+    }
+    .visa-sheet-page .pin-star.pinned:hover {
+        color: #cbd5e0;
+    }
 </style>
 @endsection
 
@@ -155,6 +294,7 @@
                             <table class="table table-bordered table-hover art-table" id="visa-sheet-table">
                                 <thead>
                                     <tr>
+                                        <th class="pin-cell" title="Click star to pin row to top"><i class="fas fa-star"></i></th>
                                         <th>Matter / Course</th>
                                         @if($tab !== 'checklist')
                                         <th>CRM Ref</th>
@@ -183,7 +323,7 @@
                                 <tbody>
                                     @if($rows->isEmpty())
                                         <tr>
-                                            <td colspan="{{ $tab === 'checklist' ? 13 : 11 }}" class="text-center text-muted py-4">
+                                            <td colspan="{{ $tab === 'checklist' ? 14 : 12 }}" class="text-center text-muted py-4">
                                                 @if($setupRequired ?? false)
                                                     <i class="fas fa-info-circle"></i> Run migrations to enable data. Add a {{ strtoupper($visaType) }} matter type and assign matters to clients.
                                                 @else
@@ -202,6 +342,13 @@
                                                 $smsReminderUrl = $detailUrl . ($matterId ? '?matterId=' . $matterId . '&open_sms_reminder=1' : '');
                                             @endphp
                                             <tr style="cursor: pointer;" onclick="window.location.href='{{ $detailUrl }}'">
+                                                <td class="pin-cell" onclick="event.stopPropagation();">
+                                                    <i class="fas fa-star pin-star {{ ($row->is_pinned ?? false) ? 'pinned' : '' }}" 
+                                                       data-client-id="{{ $row->client_id }}" 
+                                                       data-matter-id="{{ $matterId }}"
+                                                       data-visa-type="{{ $visaType }}"
+                                                       title="{{ ($row->is_pinned ?? false) ? 'Unpin from top' : 'Pin to top' }}"></i>
+                                                </td>
                                                 <td onclick="event.stopPropagation();"><a href="{{ $detailUrl }}" class="art-link">{{ $row->matter_title ?? $row->client_unique_matter_no ?? $row->other_reference ?? '—' }}</a></td>
                                                 @if($tab !== 'checklist')
                                                 <td onclick="event.stopPropagation();"><a href="{{ $detailUrl }}" class="art-link">{{ $row->crm_ref ?? '—' }}</a></td>
@@ -333,6 +480,72 @@ jQuery(document).ready(function($) {
         $('.filter_panel').toggleClass('show');
     });
     $('.datepicker').datepicker({ format: 'dd/mm/yyyy', autoclose: true, todayHighlight: true });
+
+    // Handle star/pin clicks
+    $(document).on('click', '.pin-star', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        var $star = $(this);
+        var clientId = $star.data('client-id');
+        var matterId = $star.data('matter-id');
+        var visaType = $star.data('visa-type');
+        var isPinned = $star.hasClass('pinned');
+        
+        // Disable clicking during request
+        $star.css('pointer-events', 'none');
+        
+        $.ajax({
+            url: '/clients/sheets/' + visaType + '/toggle-pin',
+            method: 'POST',
+            data: {
+                client_id: clientId,
+                matter_internal_id: matterId,
+                _token: '{{ csrf_token() }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Toggle star appearance
+                    $star.toggleClass('pinned');
+                    $star.attr('title', response.is_pinned ? 'Unpin from top' : 'Pin to top');
+                    
+                    // Show success message
+                    if (typeof iziToast !== 'undefined') {
+                        iziToast.success({
+                            title: 'Success',
+                            message: response.message,
+                            position: 'topRight',
+                            timeout: 2000
+                        });
+                    }
+                    
+                    // Reload page after short delay to show updated order
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 500);
+                } else {
+                    if (typeof iziToast !== 'undefined') {
+                        iziToast.error({
+                            title: 'Error',
+                            message: response.message || 'Failed to update pin status',
+                            position: 'topRight'
+                        });
+                    }
+                    $star.css('pointer-events', 'auto');
+                }
+            },
+            error: function(xhr) {
+                if (typeof iziToast !== 'undefined') {
+                    iziToast.error({
+                        title: 'Error',
+                        message: 'Failed to update pin status. Please try again.',
+                        position: 'topRight'
+                    });
+                }
+                $star.css('pointer-events', 'auto');
+            }
+        });
+    });
 });
 </script>
 @endpush
