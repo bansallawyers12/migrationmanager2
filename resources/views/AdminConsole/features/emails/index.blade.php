@@ -138,9 +138,9 @@
 									<?php
 										$userids = json_decode($list->user_id);
 										$username = '';
-										foreach($userids as $userid){
-											$users = \App\Models\Admin::where('id', $userid)->first();
-											$username .= $users->first_name.', ';
+										foreach(($userids ?? []) as $userid){
+											$users = \App\Models\Staff::where('id', $userid)->first();
+											$username .= ($users ? $users->first_name.', ' : '');
 										}
 									?>
 									<tr id="id_{{@$list->id}}">

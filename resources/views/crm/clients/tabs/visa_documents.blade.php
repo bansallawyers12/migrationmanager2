@@ -149,7 +149,7 @@
                                                 ?>
                                                 <?php foreach ($documents as $visaKey => $fetch): ?>
                                                     <?php
-                                                    $admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
+                                                    $admin = \App\Models\Staff::where('id', $fetch->user_id)->first();
                                                     
                                                     // Ensure $fileUrl is always a valid full URL
                                                     if (!empty($fetch->myfile) && strpos($fetch->myfile, 'http') === 0) {
@@ -243,7 +243,7 @@
                                                 ->get();
                                             foreach ($documents as $fetch):
                                                 if ($fetch->myfile):
-                                                    $admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
+                                                    $admin = \App\Models\Staff::where('id', $fetch->user_id)->first();
                                                     ?>
                                                     <div class="grid_list" id="gid_<?= $fetch->id ?>">
                                                         <div class="grid_col">

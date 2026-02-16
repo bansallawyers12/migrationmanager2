@@ -121,7 +121,7 @@
 								@endif
 								</div>
 								<?php
-									$assignee = \App\Models\Admin::where('id',@$fetchedData->assignee)->first();
+									$assignee = \App\Models\Staff::where('id',@$fetchedData->user_id)->first();
 								?>
 								<div class="col-md-12"> 
 									<div class="client_assign client_info_tags"> 

@@ -240,7 +240,7 @@
                                         <td style="white-space: initial;">-</td>
                                         <td style="white-space: initial;">{{@$list->city}}</td>
                                         <?php
-                                        $assignee = \App\Models\Admin::where('id',@$list->assignee)->first();
+                                        $assignee = \App\Models\Staff::where('id',@$list->assignee)->first();
                                         ?>
                                         <td style="white-space: initial;">{{ @$assignee->first_name == "" ? config('constants.empty') : Str::limit(@$assignee->first_name, '50', '...') }}</td>
                                         <td style="white-space: initial;">{{date('d/m/Y', strtotime($list->archived_on))}}</td>

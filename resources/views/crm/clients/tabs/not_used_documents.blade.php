@@ -29,7 +29,7 @@
                                         })->orderBy('type', 'DESC')->get();
                                         foreach($fetchd as $notuseKey=>$fetch)
                                         {
-                                            $admin = \App\Models\Admin::where('id', $fetch->user_id)->first();
+                                            $admin = \App\Models\Staff::where('id', $fetch->user_id)->first();
                                             ?>
                                             <tr class="drow" id="id_{{$fetch->id}}">
                                                 <td style="white-space: initial;">

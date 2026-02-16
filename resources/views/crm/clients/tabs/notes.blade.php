@@ -199,7 +199,7 @@
                             ->orderBy('updated_at', 'DESC')
                             ->get();
                         foreach($notelist as $list) {
-                            $admin = \App\Models\Admin::where('id', $list->user_id)->first();
+                            $admin = \App\Models\Staff::where('id', $list->user_id)->first();
                             // Determine type label and color
                             if($list->task_group === null || $list->task_group === '') {
                                 // Handle NULL or empty task_group - assign to "Others"

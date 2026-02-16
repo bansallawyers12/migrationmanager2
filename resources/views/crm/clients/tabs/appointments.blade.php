@@ -16,7 +16,7 @@
 
                             $appointmentlistslast = \App\Models\BookingAppointment::where('client_id', $fetchedData->id)->orderby('created_at', 'DESC')->first();
                             foreach($appointmentlists as $appointmentlist){
-                                $admin = \App\Models\Admin::select('id', 'first_name','email')->where('id', $appointmentlist->user_id)->first();
+                                $admin = \App\Models\Staff::select('id', 'first_name','email')->where('id', $appointmentlist->user_id)->first();
                                 $first_name= $admin->first_name ?? 'N/A';
                                 $datetime = $appointmentlist->created_at;
                                 $timeago = \App\Http\Controllers\Controller::time_elapsed_string($datetime);
@@ -70,7 +70,7 @@
                             <div class="editappointment">
                             @if($appointmentlistslast)
                                 <?php
-                                $adminfirst = \App\Models\Admin::select('id', 'first_name','email')->where('id', @$appointmentlistslast->user_id)->first();
+                                $adminfirst = \App\Models\Staff::select('id', 'first_name','email')->where('id', @$appointmentlistslast->user_id)->first();
                                 ?>
                                 <div class="content">
                                     <h4 class="appointmentname"><?php echo @$appointmentlistslast->service_type; ?></h4>
