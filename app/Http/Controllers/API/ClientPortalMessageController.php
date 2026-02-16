@@ -96,7 +96,7 @@ class ClientPortalMessageController extends Controller
             if (!$recipientUser) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Client user not found'
+                    'message' => 'Client not found'
                 ], 404);
             }
 

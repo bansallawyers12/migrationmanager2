@@ -28,7 +28,7 @@ class ClientPortalPersonalDetailsController extends Controller
             $admin = $request->user();
             $clientId = (int) $admin->id;
 
-            // Verify the authenticated user is a client (Admin model; Staff use Staff model)
+            // Verify the authenticated client (Admin model; Staff use Staff model)
             if (!$admin instanceof Admin) {
                 return response()->json([
                     'success' => false,
@@ -294,7 +294,7 @@ class ClientPortalPersonalDetailsController extends Controller
             $admin = $request->user();
             $clientId = (int) $admin->id;
 
-            // Verify the authenticated user is a client (Admin model; Staff use Staff model)
+            // Verify the authenticated client (Admin model; Staff use Staff model)
             if (!$admin instanceof Admin) {
                 return response()->json([
                     'success' => false,
@@ -497,7 +497,7 @@ class ClientPortalPersonalDetailsController extends Controller
             $admin = $request->user();
             $clientId = (int) $admin->id;
 
-            // Verify the authenticated user is a client (Admin model; Staff use Staff model)
+            // Verify the authenticated client (Admin model; Staff use Staff model)
             if (!$admin instanceof Admin) {
                 return response()->json([
                     'success' => false,
@@ -4072,7 +4072,7 @@ class ClientPortalPersonalDetailsController extends Controller
             $admin = $request->user();
             $clientId = (int) $admin->id;
 
-            // Verify the authenticated user is a client (Admin model; Staff use Staff model)
+            // Verify the authenticated client (Admin model; Staff use Staff model)
             if (!$admin instanceof Admin) {
                 return response()->json([
                     'success' => false,
@@ -4381,7 +4381,7 @@ class ClientPortalPersonalDetailsController extends Controller
             $admin = $request->user();
             $clientId = (int) $admin->id;
 
-            // Verify the authenticated user is a client (Admin model; Staff use Staff model)
+            // Verify the authenticated client (Admin model; Staff use Staff model)
             if (!$admin instanceof Admin) {
                 return response()->json([
                     'success' => false,
@@ -6739,7 +6739,7 @@ class ClientPortalPersonalDetailsController extends Controller
             $admin = $request->user();
             $clientId = (int) $admin->id;
 
-            // Verify the authenticated user is a client (Admin model; Staff use Staff model)
+            // Verify the authenticated client (Admin model; Staff use Staff model)
             if (!$admin instanceof Admin) {
                 return response()->json([
                     'success' => false,
@@ -6967,7 +6967,7 @@ class ClientPortalPersonalDetailsController extends Controller
             $admin = $request->user();
             $clientId = (int) $admin->id;
 
-            // Verify the authenticated user is a client (Admin model; Staff use Staff model)
+            // Verify the authenticated client (Admin model; Staff use Staff model)
             if (!$admin instanceof Admin) {
                 return response()->json([
                     'success' => false,
@@ -7276,7 +7276,7 @@ class ClientPortalPersonalDetailsController extends Controller
             $admin = $request->user();
             $clientId = (int) $admin->id;
 
-            // Verify the authenticated user is a client (Admin model; Staff use Staff model)
+            // Verify the authenticated client (Admin model; Staff use Staff model)
             if (!$admin instanceof Admin) {
                 return response()->json([
                     'success' => false,
@@ -7612,7 +7612,7 @@ class ClientPortalPersonalDetailsController extends Controller
             $admin = $request->user();
             $clientId = (int) $admin->id;
 
-            // Verify the authenticated user is a client (Admin model; Staff use Staff model)
+            // Verify the authenticated client (Admin model; Staff use Staff model)
             if (!$admin instanceof Admin) {
                 return response()->json([
                     'success' => false,
@@ -8049,7 +8049,7 @@ class ClientPortalPersonalDetailsController extends Controller
             $admin = $request->user();
             $clientId = (int) $admin->id;
 
-            // Verify the authenticated user is a client (Admin model; Staff use Staff model)
+            // Verify the authenticated client (Admin model; Staff use Staff model)
             if (!$admin instanceof Admin) {
                 return response()->json([
                     'success' => false,
@@ -8379,7 +8379,7 @@ class ClientPortalPersonalDetailsController extends Controller
             $admin = $request->user();
             $clientId = (int) $admin->id;
 
-            // Verify the authenticated user is a client (Admin model; Staff use Staff model)
+            // Verify the authenticated client (Admin model; Staff use Staff model)
             if (!$admin instanceof Admin) {
                 return response()->json([
                     'success' => false,
@@ -8824,7 +8824,7 @@ class ClientPortalPersonalDetailsController extends Controller
             $admin = $request->user();
             $clientId = (int) $admin->id;
 
-            // Verify the authenticated user is a client (Admin model; Staff use Staff model)
+            // Verify the authenticated client (Admin model; Staff use Staff model)
             if (!$admin instanceof Admin) {
                 return response()->json([
                     'success' => false,
@@ -9271,7 +9271,7 @@ class ClientPortalPersonalDetailsController extends Controller
             $admin = $request->user();
             $clientId = (int) $admin->id;
 
-            // Verify the authenticated user is a client (Admin model; Staff use Staff model)
+            // Verify the authenticated client (Admin model; Staff use Staff model)
             if (!$admin instanceof Admin) {
                 return response()->json([
                     'success' => false,
@@ -9687,7 +9687,7 @@ class ClientPortalPersonalDetailsController extends Controller
             $admin = $request->user();
             $clientId = (int) $admin->id;
 
-            // Verify the authenticated user is a client (Admin model; Staff use Staff model)
+            // Verify the authenticated client (Admin model; Staff use Staff model)
             if (!$admin instanceof Admin) {
                 return response()->json([
                     'success' => false,

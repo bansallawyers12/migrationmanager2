@@ -3411,7 +3411,7 @@ class ClientsController extends Controller
 		}
     }
 
-    //Fetch selected client all matters at assign email to user popup
+    //Fetch selected client all matters at assign email to client popup
     public function listAllMattersWRTSelClient(Request $request){ //dd($request->all());
         if( ClientMatter::where('client_id', $request->client_id)->exists()){
             //Fetch All client matters

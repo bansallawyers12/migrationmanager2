@@ -2279,7 +2279,7 @@ class ClientPortalController extends Controller
 								'recipient_name' => $recipient->recipient,
 								'is_read' => $recipient->is_read,
 								'read_at' => $recipient->read_at,
-								'user' => $recipientUser
+								'client' => $recipientUser
 							];
 						});
 

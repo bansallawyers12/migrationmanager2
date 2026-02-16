@@ -5591,7 +5591,7 @@ $(document).ready(function() {
 
         $(document).delegate('.not_picked_call', 'click', function (e) {
 
-            var clientName = window.ClientDetailConfig.clientFirstName || 'user';
+            var clientName = window.ClientDetailConfig.clientFirstName || 'client';
 
             clientName = clientName.charAt(0).toUpperCase() + clientName.slice(1).toLowerCase(); //alert(clientName);
 

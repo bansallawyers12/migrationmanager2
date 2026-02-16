@@ -1043,8 +1043,8 @@ use App\Http\Controllers\Controller;
                         <input id="uploaded_doc_id" name="uploaded_doc_id" type="hidden" value="">
 						<select id="reassign_client_id" name="reassign_client_id" class="form-control select2" style="width: 100%;" data-select2-id="1" tabindex="-1" aria-hidden="true" data-valid="required">
 							<option value="">Select Client</option>
-							@foreach(\App\Models\Admin::Where('role','7')->Where('type','client')->get() as $ulist)
-							<option value="{{@$ulist->id}}">{{@$ulist->first_name}} {{@$ulist->last_name}}({{@$ulist->client_id}})</option>
+							@foreach(\App\Models\Admin::Where('role','7')->Where('type','client')->get() as $clientItem)
+							<option value="{{@$clientItem->id}}">{{@$clientItem->first_name}} {{@$clientItem->last_name}}({{@$clientItem->client_id}})</option>
 							@endforeach
 						</select>
 					</div>
@@ -1087,8 +1087,8 @@ use App\Http\Controllers\Controller;
                         <input id="uploaded_doc_id" name="uploaded_doc_id" type="hidden" value="">
 						<select id="reassign_sent_client_id" name="reassign_sent_client_id" class="form-control select2" style="width: 100%;" data-select2-id="1" tabindex="-1" aria-hidden="true" data-valid="required">
 							<option value="">Select Client</option>
-							@foreach(\App\Models\Admin::Where('role','7')->Where('type','client')->get() as $ulist)
-							<option value="{{@$ulist->id}}">{{@$ulist->first_name}} {{@$ulist->last_name}}({{@$ulist->client_id}})</option>
+							@foreach(\App\Models\Admin::Where('role','7')->Where('type','client')->get() as $clientItem)
+							<option value="{{@$clientItem->id}}">{{@$clientItem->first_name}} {{@$clientItem->last_name}}({{@$clientItem->client_id}})</option>
 							@endforeach
 						</select>
 					</div>
@@ -1316,7 +1316,7 @@ $(document).ready(function() {
         matterId: @json(($id1 ?? '')),
         activeTab: @json(($activeTab ?? 'personaldetails')),
         matterRefNo: @json(($id1 ?? '')),
-        clientFirstName: @json(($fetchedData->first_name ?? 'user')),
+        clientFirstName: @json(($fetchedData->first_name ?? 'client')),
         // SMS Template Variables
         staffName: @json(($staffName ?? '')),
         matterNumber: @json(($matterNumber ?? '')),

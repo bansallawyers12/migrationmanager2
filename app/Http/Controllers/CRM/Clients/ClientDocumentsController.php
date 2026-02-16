@@ -282,7 +282,7 @@ class ClientDocumentsController extends Controller
             } elseif (strpos($errorMessage, 'null value') !== false || strpos($errorMessage, 'NOT NULL') !== false) {
                 $response['message'] = 'Required field is missing. Please check all fields are filled.';
             } elseif (strpos($errorMessage, 'foreign key') !== false) {
-                $response['message'] = 'Invalid client or user reference. Please refresh and try again.';
+                $response['message'] = 'Invalid client or staff reference. Please refresh and try again.';
             } else {
                 $response['message'] = 'Database error: ' . substr($errorMessage, 0, 100);
             }

@@ -122,7 +122,7 @@ class ClientPortalController extends Controller
             'data' => [
                 'token' => $token,
                 'refresh_token' => $refreshTokenValue,
-                'user' => [
+                'client' => [
                     'id' => $admin->id,
                     'name' => $admin->first_name . ' ' . $admin->last_name,
                     'email' => $admin->email,
@@ -560,7 +560,7 @@ class ClientPortalController extends Controller
         // Get client (Admin model; refresh tokens for clients only)
         $admin = Admin::find($refreshTokenData->user_id);
 
-        // Check if user is still active client (type=client or role=7 for legacy)
+        // Check if client is still active (type=client or role=7 for legacy)
         $isClient = $admin && (in_array($admin->type ?? '', ['client']) || ($admin->role ?? 0) == 7);
         if (!$isClient || ($admin?->cp_status ?? 0) != 1) {
             // Revoke the token
@@ -635,7 +635,7 @@ class ClientPortalController extends Controller
             'data' => [
                 'token' => $newAccessToken,
                 'refresh_token' => $newRefreshTokenValue,
-                'user' => [
+                'client' => [
                     'id' => $admin->id,
                     'name' => $admin->first_name . ' ' . $admin->last_name,
                     'email' => $admin->email,
