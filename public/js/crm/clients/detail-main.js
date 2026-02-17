@@ -10809,49 +10809,41 @@ Bansal Immigration`;
 
                     var subjct_message = res.subject.replace('{Client First Name}', client_firstname).replace('{client reference}', client_reference_number);
 
+                    var subjct_description = res.description
+                    .replace('{Client First Name}', client_firstname)
+                    .replace('{Company Name}', company_name)
+                    .replace('{Visa Valid Upto}', visa_valid_upto)
+                    .replace('{Client Assignee Name}', clientassignee_name)
+                    .replace('{client reference}', client_reference_number);
+
+                    // Apply First email macro values when available (from getComposeDefaults)
+                    var macroVals = $('#emailmodal').data('composeMacroValues');
+                    if (macroVals) {
+                        var repl = function(str) {
+                            if (!str) return '';
+                            str = str.replace(/\{ClientID\}/g, macroVals.ClientID || '');
+                            str = str.replace(/\{ApplicantGivenNames\}/g, macroVals.ApplicantGivenNames || macroVals.client_firstname || client_firstname || '');
+                            str = str.replace(/\{visa_apply\}/g, macroVals.visa_apply || '');
+                            str = str.replace(/\{Blocktotalfeesincltax\}/g, macroVals.Blocktotalfeesincltax || '');
+                            str = str.replace(/\$\{Blocktotalfeesincltax\}/g, macroVals.Blocktotalfeesincltax || '');
+                            str = str.replace(/\{TotalDoHASurcharges\}/g, macroVals.TotalDoHASurcharges || '');
+                            str = str.replace(/\$\{TotalDoHASurcharges\}/g, macroVals.TotalDoHASurcharges || '');
+                            str = str.replace(/\{TotalEstimatedOthCosts\}/g, macroVals.TotalEstimatedOthCosts || '');
+                            str = str.replace(/\$\{TotalEstimatedOthCosts\}/g, macroVals.TotalEstimatedOthCosts || '');
+                            str = str.replace(/\{GrandTotalFeesAndCosts\}/g, macroVals.GrandTotalFeesAndCosts || '');
+                            str = str.replace(/\$\{GrandTotalFeesAndCosts\}/g, macroVals.GrandTotalFeesAndCosts || '');
+                            var pdfUrl = macroVals.PDF_url_for_sign || '';
+                            var pdfLink = pdfUrl ? '<a href="' + pdfUrl + '" target="_blank">' + pdfUrl + '</a>' : '';
+                            str = str.replace(/\{PDF_url_for_sign\}/g, pdfLink);
+                            return str;
+                        };
+                        subjct_message = repl(subjct_message);
+                        subjct_description = repl(subjct_description);
+                    }
+
                     $('.selectedsubject').val(subjct_message);
 
-
-
                     clearEditor("#emailmodal .summernote-simple");
-
-                    //setEditorContent("#emailmodal .summernote-simple", res.description);
-
-                    //$("#emailmodal .summernote-simple").val(res.description);
-
-                    //var subjct_description = res.description.replace('{Client First Name}', client_firstname);
-
-
-
-                    //var subjct_description = res.description
-
-                    //.replace(/Dear\s*\.{2,}\s*/, 'Dear ' + client_firstname)
-
-                    //.replace('{Client First Name}', client_firstname)
-
-                // .replace('{Company Name}', company_name)
-
-                    //.replace('{Visa Valid Upto}', visa_valid_upto)
-
-                    //.replace('{Client Assignee Name}', clientassignee_name)
-
-                    //.replace(/Reference:\s*\.{2,}\s*/, 'Reference: ' + client_reference_number)
-
-                    //.replace('{client reference}', client_reference_number);
-
-
-
-                    var subjct_description = res.description
-
-                    .replace('{Client First Name}', client_firstname)
-
-                    .replace('{Company Name}', company_name)
-
-                    .replace('{Visa Valid Upto}', visa_valid_upto)
-
-                    .replace('{Client Assignee Name}', clientassignee_name)
-
-                    .replace('{client reference}', client_reference_number);
 
 
 

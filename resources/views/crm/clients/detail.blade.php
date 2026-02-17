@@ -1299,21 +1299,35 @@ $(document).ready(function() {
         var $checklistRows = $('#emailmodal .checklistfile-cb').closest('tr');
         if (!clientMatterId || !window.ClientDetailConfig || !window.ClientDetailConfig.urls || !window.ClientDetailConfig.urls.getComposeDefaults) {
             $checklistRows.show(); // No matter context: show all checklists
+            $('#emailmodal').removeData('composeMacroValues').removeData('pdfUrlForSign').removeData('fromSignatureSend');
             return;
         }
         $.get(window.ClientDetailConfig.urls.getComposeDefaults, { client_matter_id: clientMatterId })
             .done(function(res) {
                 var $templateSelect = $('#emailmodal select.selecttemplate');
                 var $checklistCbs = $('#emailmodal .checklistfile-cb');
+                if (res.macro_values) {
+                    var macroVals = res.macro_values;
+                    var pdfUrl = $('#emailmodal').data('pdfUrlForSign');
+                    if (pdfUrl) {
+                        macroVals = Object.assign({}, macroVals, { PDF_url_for_sign: pdfUrl });
+                    }
+                    $('#emailmodal').data('composeMacroValues', macroVals);
+                } else {
+                    $('#emailmodal').removeData('composeMacroValues');
+                }
                 if (res.matter_templates && res.matter_templates.length && $templateSelect.length) {
                     $templateSelect.find('option.matter-template-option').remove();
                     res.matter_templates.slice().reverse().forEach(function(t) {
                         var $opt = $('<option></option>').attr('value', t.id).text(t.name || 'Template').addClass('matter-template-option');
                         $templateSelect.prepend($opt);
                     });
+                    var fromSignature = $('#emailmodal').data('fromSignatureSend');
                     var toSelect = res.template ? res.template.id : (res.matter_templates[0] ? res.matter_templates[0].id : null);
-                    if (toSelect) {
+                    if (toSelect && !fromSignature) {
                         $templateSelect.val(toSelect).trigger('change');
+                    } else if (fromSignature) {
+                        $('#emailmodal').removeData('fromSignatureSend');
                     }
                 }
                 // Show only matter-related checklists; hide all others

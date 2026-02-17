@@ -972,6 +972,8 @@
                 $('#sel_matter_id_client_detail').val(clientMatterId).trigger('change');
             }
             $('#emailmodal #compose_client_matter_id').val(clientMatterId || '');
+            $('#emailmodal').data('pdfUrlForSign', signingUrl || '');
+            $('#emailmodal').data('fromSignatureSend', true);
 
             // Default subject and message for checklist signature email
             var subject = 'Action Required: Please Sign Your Visa Agreement';

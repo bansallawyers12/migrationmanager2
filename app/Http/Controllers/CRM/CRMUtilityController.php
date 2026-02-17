@@ -1013,19 +1013,21 @@ public function getpartnerbranch(Request $request){
 	}
 
 	/**
-	 * Get compose defaults for a client matter: first email template and dedicated checklist IDs.
+	 * Get compose defaults for a client matter: first email template, dedicated checklist IDs, and macro values.
 	 * Used to auto-select matter's first email and checklists when opening compose modal.
+	 * macro_values enables replacement of {ClientID}, {ApplicantGivenNames}, {visa_apply}, etc. in First email template.
 	 */
 	public function getComposeDefaults(Request $request){
 		$clientMatterId = $request->client_matter_id;
 		if (!$clientMatterId) {
-			return response()->json(['template' => null, 'checklist_ids' => []]);
+			return response()->json(['template' => null, 'checklist_ids' => [], 'macro_values' => null]);
 		}
 		$clientMatter = ClientMatter::find($clientMatterId);
 		if (!$clientMatter || !$clientMatter->sel_matter_id) {
-			return response()->json(['template' => null, 'checklist_ids' => []]);
+			return response()->json(['template' => null, 'checklist_ids' => [], 'macro_values' => null]);
 		}
 		$matterId = $clientMatter->sel_matter_id;
+		$clientId = $clientMatter->client_id;
 
 		// First Email template (MatterEmailTemplate) - one per matter
 		$firstTemplate = \App\Models\MatterEmailTemplate::where('matter_id', $matterId)->orderBy('id', 'asc')->first();
@@ -1044,11 +1046,77 @@ public function getpartnerbranch(Request $request){
 
 		$checklistIds = \App\Models\UploadChecklist::where('matter_id', $matterId)->pluck('id')->toArray();
 
+		// Build macro values for First email template replacement
+		$macroValues = $this->getComposeMacroValues($clientId, $clientMatterId);
+
 		return response()->json([
 			'template' => $firstTemplate ? ['id' => $firstTemplate->id, 'name' => $firstTemplate->name, 'subject' => $firstTemplate->subject, 'description' => $firstTemplate->description] : null,
 			'matter_templates' => $allTemplates,
 			'checklist_ids' => $checklistIds,
+			'macro_values' => $macroValues,
 		]);
+	}
+
+	/**
+	 * Get macro replacement values for a client matter (ClientID, ApplicantGivenNames, visa_apply, fees, etc.)
+	 */
+	protected function getComposeMacroValues($clientId, $clientMatterId)
+	{
+		$client = Admin::find($clientId);
+		if (!$client) {
+			return null;
+		}
+
+		$clientMatter = ClientMatter::find($clientMatterId);
+		if (!$clientMatter) {
+			return null;
+		}
+
+		$values = [
+			'ClientID' => $client->client_id ?? '',
+			'ApplicantGivenNames' => $client->first_name ?? '',
+			'ApplicantSurname' => $client->last_name ?? '',
+			'client_firstname' => ($client->first_name ?? '') ? ucfirst($client->first_name) : '',
+			'client_reference' => $client->client_id ?? '',
+			'visa_apply' => '',
+			'Blocktotalfeesincltax' => '',
+			'TotalDoHASurcharges' => '',
+			'TotalEstimatedOthCosts' => '',
+			'GrandTotalFeesAndCosts' => '',
+			'PDF_url_for_sign' => '',
+		];
+
+		// Get matter/cost assignment info
+		$matterInfo = null;
+		$costAssignment = \App\Models\CostAssignmentForm::where('client_id', $clientId)->where('client_matter_id', $clientMatterId)->first();
+		if ($costAssignment) {
+			$matterInfo = DB::table('cost_assignment_forms')->where('client_id', $clientId)->where('client_matter_id', $clientMatterId)->first();
+		}
+		if (!$matterInfo && $clientMatter->sel_matter_id) {
+			$clientMatterInfo = DB::table('client_matters')->select('sel_matter_id')->where('id', $clientMatterId)->first();
+			if ($clientMatterInfo) {
+				$matterInfo = DB::table('matters')->where('id', $clientMatterInfo->sel_matter_id)->first();
+			}
+		}
+
+		if ($matterInfo) {
+			$values['visa_apply'] = $matterInfo->title ?? '';
+
+			$block1 = floatval($matterInfo->Block_1_Ex_Tax ?? 0);
+			$block2 = floatval($matterInfo->Block_2_Ex_Tax ?? 0);
+			$block3 = floatval($matterInfo->Block_3_Ex_Tax ?? 0);
+			$blockTotal = $block1 + $block2 + $block3;
+			$totalSurcharges = floatval($matterInfo->TotalDoHASurcharges ?? 0);
+			$totalOther = floatval($matterInfo->additional_fee_1 ?? 0);
+			$grandTotal = $blockTotal + $totalSurcharges + $totalOther;
+
+			$values['Blocktotalfeesincltax'] = number_format($blockTotal, 2, '.', '');
+			$values['TotalDoHASurcharges'] = number_format($totalSurcharges, 2, '.', '');
+			$values['TotalEstimatedOthCosts'] = number_format($totalOther, 2, '.', '');
+			$values['GrandTotalFeesAndCosts'] = number_format($grandTotal, 2, '.', '');
+		}
+
+		return $values;
 	}
 
     public function sendmail(Request $request){
@@ -1153,6 +1221,23 @@ public function getpartnerbranch(Request $request){
 
 		$subject = $requestData['subject'];
 		$message = $requestData['message'];
+
+		// Replace First email macros when matter context is present
+		$clientMatterIdForMacros = $requestData['compose_client_matter_id'] ?? null;
+		$clientIdForMacros = $requestData['client_id'] ?? null;
+		if ($clientMatterIdForMacros && $clientIdForMacros) {
+			$macroValues = $this->getComposeMacroValues($clientIdForMacros, $clientMatterIdForMacros);
+		if ($macroValues) {
+			foreach ($macroValues as $key => $val) {
+				if ((string)$val === '' || $key === 'PDF_url_for_sign') continue;
+				$subject = str_replace('{' . $key . '}', $val, $subject);
+				$subject = str_replace('${' . $key . '}', $val, $subject);
+				$message = str_replace('{' . $key . '}', $val, $message);
+				$message = str_replace('${' . $key . '}', $val, $message);
+			}
+		}
+		}
+
 		foreach($requestData['email_to'] as $l){
 			if(@$requestData['type'] == 'agent'){
 				$client = \App\Models\AgentDetails::Where('id', $l)->first();
