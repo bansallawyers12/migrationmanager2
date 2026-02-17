@@ -16412,7 +16412,67 @@ Bansal Immigration`;
 			handleSendToHubdoc($(this));
 		});
 
+		// Send to Client Application functionality
+		function handleSendToClientApplication($btn) {
+			var invoiceId = $btn.data('invoice-id');
+			var invoiceNo = $btn.data('invoice-no') || '';
 
+			$btn.html('<i class="fas fa-spinner fa-spin"></i> Sending...');
+			$btn.prop('disabled', true);
+
+			$.ajax({
+				url: window.ClientDetailConfig.urls.sendToClientApplication + '/' + invoiceId,
+				type: 'POST',
+				data: {
+					_token: window.ClientDetailConfig.csrfToken
+				},
+				success: function(response) {
+					if (response.status) {
+						alert(response.message);
+						var now = new Date();
+						var formattedDate = now.getDate().toString().padStart(2, '0') + '/' +
+							(now.getMonth() + 1).toString().padStart(2, '0') + '/' +
+							now.getFullYear() + ' ' +
+							now.getHours().toString().padStart(2, '0') + ':' +
+							now.getMinutes().toString().padStart(2, '0');
+						var $newContent = $('<span class="dropdown-item" style="color: #28a745;"><i class="fas fa-check"></i> Already Sent to Client<br>Application</span><div class="dropdown-item-text" style="font-size: 11px; color: #666; padding: 0.25rem 1rem;">Sent: ' + formattedDate + '</div>');
+						$btn.replaceWith($newContent);
+					} else {
+						alert('Error: ' + response.message);
+						$btn.html('<i class="fas fa-mobile-alt"></i> Send to Client Application');
+						$btn.prop('disabled', false);
+					}
+				},
+				error: function(xhr, status, error) {
+					alert('Error sending invoice to Client Application. Please try again.');
+					$btn.html('<i class="fas fa-mobile-alt"></i> Send to Client Application');
+					$btn.prop('disabled', false);
+				}
+			});
+		}
+
+		function attachSendToClientApplicationHandlers() {
+			$('.dropdown-menu .send-to-client-application-btn').off('click').on('click', function(e) {
+				e.preventDefault();
+				e.stopPropagation();
+				handleSendToClientApplication($(this));
+			});
+		}
+
+		setTimeout(function() {
+			attachSendToClientApplicationHandlers();
+		}, 500);
+
+		$(document).on('shown.bs.dropdown', function() {
+			attachSendToClientApplicationHandlers();
+		});
+
+		$(document).on('click', '.send-to-client-application-btn', function() {
+			if ($(this).closest('.dropdown-menu').length > 0) {
+				return;
+			}
+			handleSendToClientApplication($(this));
+		});
 
 		// Refresh Hubdoc status button
 		// FIX: Extract logic to reusable function

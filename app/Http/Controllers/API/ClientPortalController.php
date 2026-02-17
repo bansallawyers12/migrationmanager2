@@ -40,7 +40,8 @@ class ClientPortalController extends Controller
             ], 422);
         }
 
-        $admin = Admin::where('email', $request->email)
+        $email = strtolower(trim($request->email));
+        $admin = Admin::whereRaw('LOWER(email) = ?', [$email])
                      ->where('role', 7)
                      ->where('cp_status', 1)
                      ->first();
@@ -364,7 +365,7 @@ class ClientPortalController extends Controller
         ]);
 
         // Send verification email
-        try {
+        try { 
             Mail::raw("Your password reset verification code is: {$verificationCode}\n\nThis code will expire in 10 minutes.\n\nIf you did not request this password reset, please ignore this email.\n\nConsumer guide: https://www.mara.gov.au/get-help-visa-subsite/FIles/consumer_guide_english.pdf", function ($message) use ($email) {
                 $message->to($email)
                         ->subject('Client Portal - Password Reset Verification Code');
