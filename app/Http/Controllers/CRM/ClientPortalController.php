@@ -2657,6 +2657,17 @@ class ClientPortalController extends Controller
 					// Determine if message is from current user (sent) or to current user (received)
 					$isSent = ($message->sender_id == $currentUserId);
 					
+					// For sent messages: check if any recipient has read (for WhatsApp-style read receipt icon)
+					$readByRecipient = false;
+					$readAtEarliest = null;
+					if ($isSent && $recipients->isNotEmpty()) {
+						$readByRecipient = $recipients->contains(fn ($r) => (bool) ($r['is_read'] ?? false));
+						if ($readByRecipient) {
+							$readRecipients = $recipients->filter(fn ($r) => (bool) ($r['is_read'] ?? false));
+							$readAtEarliest = $readRecipients->min('read_at');
+						}
+					}
+					
 					// Generate sender initials
 					$senderInitials = '';
 					if ($sender) {
@@ -2683,6 +2694,8 @@ class ClientPortalController extends Controller
 						'client_matter_id' => $message->client_matter_id,
 						'recipients' => $recipients,
 						'is_sent' => $isSent,
+						'read_by_recipient' => $readByRecipient,
+						'read_at' => $readAtEarliest,
 						'attachments' => $attachments
 					];
 				});

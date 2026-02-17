@@ -47,8 +47,12 @@
                 $matterName = '';
                 $matterNumber = '';
                 
-                if(isset($id1) && $id1 != "") {
-                    // If client unique reference id is present in URL
+                // Tab names that should NOT be treated as matter reference - use latest matter instead
+                $validTabNames = ['personaldetails', 'noteterm', 'personaldocuments', 'visadocuments', 'eoiroi', 'emails', 'formgenerations', 'formgenerationsL', 'application', 'workflow', 'checklists'];
+                $isMatterIdInUrl = isset($id1) && $id1 != "" && !in_array(strtolower($id1), array_map('strtolower', $validTabNames));
+                
+                if ($isMatterIdInUrl) {
+                    // If client unique reference id is present in URL (and is not a tab name)
                     $selectedMatter = DB::table('client_matters as cm')
                         ->leftJoin('matters as m', 'cm.sel_matter_id', '=', 'm.id')
                         ->where('cm.client_id', $fetchedData->id)
@@ -56,7 +60,7 @@
                         ->select('cm.id', 'cm.client_unique_matter_no', 'm.title', 'cm.sel_matter_id', 'cm.workflow_stage_id', 'cm.matter_status', 'cm.sel_migration_agent')
                         ->first();
                 } else {
-                    // Get the latest matter (active or inactive)
+                    // Get the latest matter (active or inactive) - used when no matter in URL or URL has tab name
                     $selectedMatter = DB::table('client_matters as cm')
                         ->leftJoin('matters as m', 'cm.sel_matter_id', '=', 'm.id')
                         ->where('cm.client_id', $fetchedData->id)
@@ -522,6 +526,24 @@
                                         
                                         <!-- Messages Tab -->
                                         <div class="application-tab-pane" id="messages-tab">
+                                            <!-- Message info modal (WhatsApp-style) -->
+                                            <div class="message-info-modal-overlay" id="message-info-modal">
+                                                <div class="message-info-modal">
+                                                    <div class="message-info-modal-header">
+                                                        <button type="button" class="message-info-close" id="message-info-close" aria-label="Close">&times;</button>
+                                                        <div class="message-info-title">
+                                                            <i class="fas fa-info-circle"></i>
+                                                            <span>Message info</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="message-info-modal-body">
+                                                        <div class="message-info-preview-bubble" id="message-info-preview">
+                                                            <div class="message-content" id="message-info-content"></div>
+                                                        </div>
+                                                        <div id="message-info-status-container"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                             <div class="whatsapp-chat-container" id="whatsapp-chat-container">
                                                 <div class="messages-loading" id="messages-loading" style="display: none;">
                                                     <div class="loading-spinner"></div>
@@ -1360,6 +1382,164 @@
 
 .message-received .message-timestamp {
     text-align: left;
+}
+
+/* WhatsApp-style read receipt icon (sent messages only) */
+.message-timestamp-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.message-received .message-timestamp-row {
+    justify-content: flex-start;
+}
+
+.message-read-icon {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+}
+
+.message-read-icon svg {
+    width: 16px;
+    height: 14px;
+}
+
+.message-read-icon--unread {
+    color: #8696a0;
+}
+
+.message-read-icon--read {
+    color: #53bdeb;
+}
+
+/* Message info chevron trigger */
+.message-info-chevron {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    margin-left: 2px;
+    cursor: pointer;
+    color: #667781;
+    opacity: 0.8;
+    flex-shrink: 0;
+}
+.message-info-chevron:hover {
+    color: #333;
+    opacity: 1;
+}
+
+/* Message info modal */
+.message-info-modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 1050;
+    align-items: center;
+    justify-content: center;
+}
+.message-info-modal-overlay.active {
+    display: flex;
+}
+.message-info-modal {
+    background: #fff;
+    border-radius: 12px;
+    max-width: 400px;
+    width: 90%;
+    max-height: 85vh;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+}
+.message-info-modal-header {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e9edef;
+}
+.message-info-modal-header .message-info-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    margin-right: 12px;
+    color: #667781;
+    font-size: 20px;
+}
+.message-info-modal-header .message-info-close:hover {
+    color: #333;
+}
+.message-info-modal-header .message-info-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #111b21;
+}
+.message-info-modal-header .message-info-title i {
+    color: #667781;
+}
+.message-info-modal-body {
+    padding: 20px;
+    overflow-y: auto;
+}
+.message-info-preview-bubble {
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 20px;
+}
+.message-info-preview-bubble.sent {
+    background: #dcf8c6;
+}
+.message-info-preview-bubble.received {
+    background: #f0f2f5;
+}
+.message-info-preview-bubble .message-content {
+    font-size: 14px;
+    color: #111b21;
+    white-space: pre-wrap;
+}
+.message-info-status-section {
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f2f5;
+}
+.message-info-status-section:last-child {
+    border-bottom: none;
+}
+.message-info-status-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111b21;
+    margin-bottom: 4px;
+}
+.message-info-status-time {
+    font-size: 13px;
+    color: #667781;
+}
+.message-info-status-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+.message-info-status-icon {
+    flex-shrink: 0;
+    color: #53bdeb;
+}
+.message-info-status-icon.message-info-status-icon--grey {
+    color: #8696a0;
+}
+.message-info-status-icon svg {
+    width: 18px;
+    height: 14px;
 }
 
 .messages-loading {
@@ -2619,8 +2799,12 @@
 </style>
                                           
 <?php
- if(isset($id1) && $id1 != "") {
-                    // If client unique reference id is present in URL
+                // Tab names that should NOT be treated as matter reference
+                $validTabNames = ['personaldetails', 'noteterm', 'personaldocuments', 'visadocuments', 'eoiroi', 'emails', 'formgenerations', 'formgenerationsL', 'application', 'workflow', 'checklists'];
+                $isMatterIdInUrl = isset($id1) && $id1 != "" && !in_array(strtolower($id1), array_map('strtolower', $validTabNames));
+                
+                if ($isMatterIdInUrl) {
+                    // If client unique reference id is present in URL (and is not a tab name)
                     $selectedMatter = DB::table('client_matters as cm')
                         ->leftJoin('matters as m', 'cm.sel_matter_id', '=', 'm.id')
                         ->where('cm.client_id', $fetchedData->id)
@@ -2972,9 +3156,19 @@ document.addEventListener('DOMContentLoaded', function() {
   
     
     
-    // Store client matter ID and user info for messages
-    const clientMatterId = @json(($selectedMatter && isset($selectedMatter->id)) ? $selectedMatter->id : null);
+    // Store client matter ID and user info for messages (server value; fallback to dropdown)
+    let clientMatterId = @json(($selectedMatter && isset($selectedMatter->id)) ? $selectedMatter->id : null);
     const currentUserId = @json(Auth::guard('admin')->id() ?? null);
+    
+    // Get effective client matter ID: server value or dropdown fallback (for URLs like /application/application)
+    function getEffectiveClientMatterId() {
+        if (clientMatterId) return clientMatterId;
+        const generalCheckbox = document.querySelector('.general_matter_checkbox_client_detail:checked');
+        if (generalCheckbox && generalCheckbox.value) return generalCheckbox.value;
+        const dropdown = document.getElementById('sel_matter_id_client_detail');
+        if (dropdown && dropdown.value) return dropdown.value;
+        return null;
+    }
     // Use Reverb configuration (compatible with Pusher protocol)
     const pusherAppKey = '{{ config("broadcasting.connections.reverb.key") ?: config("broadcasting.connections.pusher.key") }}';
     const pusherCluster = '{{ config("broadcasting.connections.reverb.options.cluster") ?: config("broadcasting.connections.pusher.options.cluster", "ap2") }}';
@@ -3024,18 +3218,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Initialize messages if Messages tab is clicked
                     if (targetTab === 'messages') {
+                        const effectiveMatterId = getEffectiveClientMatterId();
                         console.log('Messages tab clicked', {
-                            clientMatterId: clientMatterId,
+                            clientMatterId: effectiveMatterId,
                             currentUserId: currentUserId
                         });
                         
-                        if (clientMatterId && currentUserId) {
+                        if (effectiveMatterId && currentUserId) {
                             initializeMessages();
                         } else {
                             const emptyDiv = document.getElementById('messages-empty');
                             if (emptyDiv) {
                                 emptyDiv.style.display = 'block';
-                                if (!clientMatterId) {
+                                if (!effectiveMatterId) {
                                     emptyDiv.innerHTML = '<p class="text-muted">Please select a matter to view messages.</p>';
                                 } else {
                                     emptyDiv.innerHTML = '<p class="text-muted">No messages yet. Start a conversation!</p>';
@@ -3057,22 +3252,24 @@ document.addEventListener('DOMContentLoaded', function() {
         const isMessagesTabActive = (messagesTab && messagesTab.classList.contains('active')) || 
                                     (messagesTabLink && messagesTabLink.classList.contains('active'));
         
-        if (isMessagesTabActive && clientMatterId && currentUserId) {
+        const effectiveMatterId = getEffectiveClientMatterId();
+        
+        if (isMessagesTabActive && effectiveMatterId && currentUserId) {
             console.log('Messages tab is active on page load, initializing...');
             initializeMessages();
-        } else if (!clientMatterId) {
+        } else if (!effectiveMatterId && isMessagesTabActive) {
             console.warn('Cannot load messages: clientMatterId is missing');
             const emptyDiv = document.getElementById('messages-empty');
             if (emptyDiv) {
                 emptyDiv.style.display = 'block';
                 emptyDiv.innerHTML = '<p class="text-muted">Please select a matter to view messages.</p>';
             }
-        } else if (!currentUserId) {
+        } else if (!currentUserId && isMessagesTabActive) {
             console.warn('Cannot load messages: currentUserId is missing');
-        } else {
+        } else if (!isMessagesTabActive) {
             console.log('Messages tab not active on page load', {
                 isMessagesTabActive: isMessagesTabActive,
-                clientMatterId: clientMatterId,
+                clientMatterId: effectiveMatterId,
                 currentUserId: currentUserId
             });
         }
@@ -3085,7 +3282,8 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        if (!clientMatterId) {
+        const effectiveMatterId = getEffectiveClientMatterId();
+        if (!effectiveMatterId) {
             console.warn('Cannot initialize messages: clientMatterId is missing');
             return;
         }
@@ -3099,7 +3297,7 @@ document.addEventListener('DOMContentLoaded', function() {
         messagesLoaded = true;
         
         // Load existing messages first
-        loadMessages();
+        loadMessages(getEffectiveClientMatterId());
         
         // Then connect to Pusher for real-time updates (non-blocking)
         setTimeout(() => {
@@ -3108,7 +3306,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Load existing messages from database
-    async function loadMessages() {
+    async function loadMessages(matterIdParam) {
+        const matterId = matterIdParam || getEffectiveClientMatterId();
         const messagesContainer = document.getElementById('whatsapp-chat-messages');
         const loadingDiv = document.getElementById('messages-loading');
         const emptyDiv = document.getElementById('messages-empty');
@@ -3118,7 +3317,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        if (!clientMatterId) {
+        if (!matterId) {
             console.warn('Client Matter ID is missing. Cannot load messages.');
             if (emptyDiv) {
                 emptyDiv.style.display = 'block';
@@ -3127,13 +3326,13 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        console.log('Loading messages for client_matter_id:', clientMatterId);
+        console.log('Loading messages for client_matter_id:', matterId);
         
         if (loadingDiv) loadingDiv.style.display = 'block';
         if (emptyDiv) emptyDiv.style.display = 'none';
         
         try {
-            const url = `{{ URL::to('/clients/matter-messages') }}?client_matter_id=${clientMatterId}`;
+            const url = `{{ URL::to('/clients/matter-messages') }}?client_matter_id=${matterId}`;
             console.log('Fetching messages from:', url);
             
             const response = await fetch(url, {
@@ -3282,8 +3481,18 @@ document.addEventListener('DOMContentLoaded', function() {
             // Listen for new messages
             subscribedChannel.bind('message.sent', (data) => {
                 console.log('📨 New message received:', data);
-                if (data.message && data.message.client_matter_id == clientMatterId) {
+                const effectiveMatterId = getEffectiveClientMatterId();
+                if (data.message && data.message.client_matter_id == effectiveMatterId) {
                     addMessageToDisplay(data.message, data.message.sender_id == currentUserId);
+                }
+            });
+            
+            // Listen for message read status updates (recipient marked as read - show blue icon to sender)
+            subscribedChannel.bind('message.updated', (data) => {
+                console.log('📬 Message read status updated:', data);
+                const effectiveMatterId = getEffectiveClientMatterId();
+                if (data.message && data.message.client_matter_id == effectiveMatterId && data.message.sender_id == currentUserId && data.message.is_read) {
+                    updateMessageReadIcon(data.message.id, true, data.message.read_at);
                 }
             });
             
@@ -3363,7 +3572,10 @@ document.addEventListener('DOMContentLoaded', function() {
         messageContent.textContent = message.message || '';
         messageBubble.appendChild(messageContent);
         
-        // Timestamp
+        // Timestamp and read receipt (for sent messages: WhatsApp-style double-check icon)
+        const timestampRow = document.createElement('div');
+        timestampRow.className = 'message-timestamp-row';
+        
         const timestamp = document.createElement('div');
         timestamp.className = 'message-timestamp';
         if (message.sent_at || message.created_at) {
@@ -3373,12 +3585,77 @@ document.addEventListener('DOMContentLoaded', function() {
                 timestamp.textContent = formatMessageTime(date);
             }
         }
-        messageBubble.appendChild(timestamp);
+        timestampRow.appendChild(timestamp);
+        
+        // Read receipt icon: only for sent messages - grey (unread) or blue (read)
+        if (isSent) {
+            const readByRecipient = message.read_by_recipient === true;
+            const readIcon = document.createElement('span');
+            readIcon.className = 'message-read-icon ' + (readByRecipient ? 'message-read-icon--read' : 'message-read-icon--unread');
+            readIcon.setAttribute('data-read-status', readByRecipient ? 'read' : 'unread');
+            readIcon.innerHTML = readByRecipient
+                ? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5l2.5 2.5L7 2"/><path d="M6 5l2.5 2.5L14 1"/></svg>'
+                : '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5l2.5 2.5L7 2"/></svg>';
+            timestampRow.appendChild(readIcon);
+        }
+        
+        // Message info chevron - opens Message info popup
+        const messageInfoData = {
+            id: message.id,
+            message: message.message || '',
+            sent_at: message.sent_at || message.created_at,
+            read_at: message.read_at || null,
+            read_by_recipient: message.read_by_recipient === true,
+            is_sent: isSent
+        };
+        const chevronBtn = document.createElement('span');
+        chevronBtn.className = 'message-info-chevron';
+        chevronBtn.title = 'Message info';
+        chevronBtn.setAttribute('data-message-info', JSON.stringify(messageInfoData));
+        chevronBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>';
+        chevronBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            try {
+                const data = JSON.parse(this.getAttribute('data-message-info') || '{}');
+                showMessageInfo(data);
+            } catch (err) {
+                console.error('Failed to parse message info:', err);
+            }
+        });
+        timestampRow.appendChild(chevronBtn);
+        
+        messageBubble.appendChild(timestampRow);
         
         messageDiv.appendChild(messageBubble);
         messagesContainer.appendChild(messageDiv);
         
         scrollToBottom();
+    }
+    
+    // Update read receipt icon when recipient marks message as read (real-time)
+    function updateMessageReadIcon(messageId, isRead, readAt) {
+        const messagesContainer = document.getElementById('whatsapp-chat-messages');
+        if (!messagesContainer) return;
+        const messageEl = messagesContainer.querySelector(`[data-message-id="${messageId}"]`);
+        if (!messageEl) return;
+        const readIcon = messageEl.querySelector('.message-read-icon');
+        if (readIcon) {
+            readIcon.className = 'message-read-icon ' + (isRead ? 'message-read-icon--read' : 'message-read-icon--unread');
+            readIcon.setAttribute('data-read-status', isRead ? 'read' : 'unread');
+            readIcon.innerHTML = isRead
+                ? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5l2.5 2.5L7 2"/><path d="M6 5l2.5 2.5L14 1"/></svg>'
+                : '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5l2.5 2.5L7 2"/></svg>';
+        }
+        // Update Message info chevron data so popup shows correct read status
+        const chevron = messageEl.querySelector('.message-info-chevron');
+        if (chevron) {
+            try {
+                const data = JSON.parse(chevron.getAttribute('data-message-info') || '{}');
+                data.read_by_recipient = isRead;
+                if (readAt) data.read_at = readAt;
+                chevron.setAttribute('data-message-info', JSON.stringify(data));
+            } catch (e) {}
+        }
     }
     
     // Format message time
@@ -3401,6 +3678,77 @@ document.addEventListener('DOMContentLoaded', function() {
             return `${day} ${month}, ${displayHours}:${displayMinutes} ${ampm}`;
         }
     }
+    
+    // Format time for Message info (e.g. "Today at 12:51")
+    function formatMessageInfoTime(dateStr) {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return '';
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const messageDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const hours = date.getHours();
+        const minutes = date.getMinutes();
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        const displayHours = hours % 12 || 12;
+        const displayMinutes = minutes < 10 ? '0' + minutes : minutes;
+        if (messageDate.getTime() === today.getTime()) {
+            return 'Today at ' + displayHours + ':' + displayMinutes + ' ' + ampm;
+        } else {
+            const day = date.getDate();
+            const month = date.toLocaleString('default', { month: 'short' });
+            return day + ' ' + month + ' at ' + displayHours + ':' + displayMinutes + ' ' + ampm;
+        }
+    }
+    
+    // Show Message info modal (WhatsApp-style)
+    function showMessageInfo(msg) {
+        const modal = document.getElementById('message-info-modal');
+        const contentEl = document.getElementById('message-info-content');
+        const container = document.getElementById('message-info-status-container');
+        if (!modal || !contentEl || !container) return;
+        
+        contentEl.textContent = msg.message || '(No message content)';
+        contentEl.style.whiteSpace = 'pre-wrap';
+        
+        const previewBubble = document.getElementById('message-info-preview');
+        if (previewBubble) {
+            previewBubble.classList.remove('sent', 'received');
+            previewBubble.classList.add(msg.is_sent ? 'sent' : 'received');
+        }
+        
+        const doubleCheckSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 11" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 5l2.5 2.5L7 2"/><path d="M6 5l2.5 2.5L14 1"/></svg>';
+        
+        let html = '';
+        
+        // Read (only for sent messages, when read) - blue icon
+        if (msg.is_sent && msg.read_by_recipient) {
+            const readTime = formatMessageInfoTime(msg.read_at) || formatMessageInfoTime(msg.sent_at);
+            html += '<div class="message-info-status-section"><div class="message-info-status-row"><span class="message-info-status-icon">' + doubleCheckSvg + '</span><div><div class="message-info-status-label">Read</div><div class="message-info-status-time">' + readTime + '</div></div></div></div>';
+        }
+        
+        // Delivered (always for sent messages; for received, show as "Received") - grey icon
+        const deliveredLabel = msg.is_sent ? 'Delivered' : 'Received';
+        const deliveredTime = formatMessageInfoTime(msg.sent_at);
+        html += '<div class="message-info-status-section"><div class="message-info-status-row"><span class="message-info-status-icon message-info-status-icon--grey">' + doubleCheckSvg + '</span><div><div class="message-info-status-label">' + deliveredLabel + '</div><div class="message-info-status-time">' + deliveredTime + '</div></div></div></div>';
+        
+        container.innerHTML = html;
+        modal.classList.add('active');
+    }
+    
+    // Close Message info modal
+    function closeMessageInfoModal() {
+        document.getElementById('message-info-modal')?.classList.remove('active');
+    }
+    document.getElementById('message-info-close')?.addEventListener('click', closeMessageInfoModal);
+    document.getElementById('message-info-modal')?.addEventListener('click', function(e) {
+        if (e.target === this) closeMessageInfoModal();
+    });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && document.getElementById('message-info-modal')?.classList.contains('active')) {
+            closeMessageInfoModal();
+        }
+    });
     
     // Scroll to bottom
     function scrollToBottom() {
@@ -3439,7 +3787,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const input = document.getElementById('message-input');
         const messageText = input?.value.trim();
         
-        if (!messageText || !clientMatterId) return;
+        const effectiveMatterId = getEffectiveClientMatterId();
+        if (!messageText || !effectiveMatterId) return;
         
         if (sendBtn) sendBtn.disabled = true;
         
@@ -3453,7 +3802,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({
                     message: messageText,
-                    client_matter_id: clientMatterId
+                    client_matter_id: effectiveMatterId
                 })
             });
             
@@ -3474,8 +3823,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         sender_id: messageData.sender_id || currentUserId,
                         sender_shortname: messageData.sender_initials || messageData.sender_shortname || 'AD',
                         sent_at: messageData.sent_at || messageData.created_at || new Date().toISOString(),
-                        client_matter_id: messageData.client_matter_id || clientMatterId,
-                        is_sent: true
+                        client_matter_id: messageData.client_matter_id || effectiveMatterId,
+                        is_sent: true,
+                        read_by_recipient: false
                     };
                     addMessageToDisplay(formattedMessage, true, true);
                     scrollToBottom();
