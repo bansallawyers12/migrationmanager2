@@ -40,7 +40,8 @@ class ClientPortalController extends Controller
             ], 422);
         }
 
-        $admin = Admin::where('email', $request->email)
+        $email = strtolower(trim($request->email));
+        $admin = Admin::whereRaw('LOWER(email) = ?', [$email])
                      ->where('role', 7)
                      ->where('cp_status', 1)
                      ->first();
