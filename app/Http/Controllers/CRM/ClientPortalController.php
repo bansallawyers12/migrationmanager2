@@ -874,6 +874,40 @@ class ClientPortalController extends Controller
 				}
 			}
 
+			// When advancing FROM "Verification: Payment, Service Agreement, Forms", only a Migration Agent can proceed.
+			// Any Migration Agent (role 16) can verify and proceed. They must tick and may add optional text.
+			$currentStageName = $currentStage->name ?? '';
+			$verificationStageNames = ['payment verified', 'verification: payment, service agreement, forms'];
+			$isAtVerificationStage = in_array(strtolower(trim($currentStageName)), $verificationStageNames);
+			if ($isAtVerificationStage) {
+				$user = Auth::guard('admin')->user();
+				$userRole = $user ? (int) $user->role : 0;
+				// Role 16 = Migration Agent; Role 1 = Admin (typically can do anything - allow admin too)
+				if ($userRole !== 16 && $userRole !== 1) {
+					return response()->json([
+						'status' => false,
+						'message' => 'Only a Migration Agent (or Admin) can verify and proceed to the next stage.'
+					], 403);
+				}
+				$userId = Auth::guard('admin')->id();
+				$verificationConfirm = $request->input('verification_confirm');
+				if (!filter_var($verificationConfirm, FILTER_VALIDATE_BOOLEAN)) {
+					return response()->json([
+						'status' => false,
+						'message' => 'Please confirm that you have verified Payment, Service Agreement, and Forms before proceeding.'
+					], 422);
+				}
+				// Record the verification
+				DB::table('client_matter_payment_forms_verifications')->insert([
+					'client_matter_id' => (int) $matterId,
+					'verified_by' => $userId,
+					'verified_at' => now(),
+					'note' => $request->input('verification_note'),
+					'created_at' => now(),
+					'updated_at' => now(),
+				]);
+			}
+
 			// Update client_matters table
 			$clientMatter->workflow_stage_id = $nextStage->id;
 			$saved = $clientMatter->save();
@@ -933,6 +967,7 @@ class ClientPortalController extends Controller
 				$isLastStage = !WorkflowStage::whereRaw('COALESCE(sort_order, id) > ?', [$nextOrder])->exists();
 
 				// Log activity (Client Portal tab - website)
+				$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $matterId;
 				$comments = 'moved the stage from <b>' . $currentStage->name . '</b> to <b>' . $nextStage->name . '</b>';
 				if ($isAdvancingToDecisionReceived) {
 					$decisionOutcome = $request->input('decision_outcome');
@@ -942,11 +977,17 @@ class ClientPortalController extends Controller
 						$comments .= '<br>Note: ' . e($decisionNote);
 					}
 				}
+				if ($isAtVerificationStage) {
+					$verificationNote = $request->input('verification_note', '');
+					if (!empty(trim($verificationNote))) {
+						$comments .= '<br>Verification note: ' . e($verificationNote);
+					}
+				}
 
 				$activityLog = new ActivitiesLog;
 				$activityLog->client_id = $clientMatter->client_id;
 				$activityLog->created_by = Auth::user()->id;
-				$activityLog->subject = 'Stage: ' . $currentStage->name;
+				$activityLog->subject = $matterNo . ' Stage: ' . $currentStage->name;
 				$activityLog->description = $comments;
 				$activityLog->activity_type = 'stage';
 				// Note: use_for is an integer field in PostgreSQL, so we don't set it here
@@ -957,7 +998,6 @@ class ClientPortalController extends Controller
 				$activityLog->save();
 
 				// Notify client of stage change (for List Notifications API)
-				$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $matterId;
 				$notificationMessage = 'Stage moved from ' . $currentStage->name . ' to ' . $nextStage->name . ' for matter ' . $matterNo;
 				DB::table('notifications')->insert([
 					'sender_id' => Auth::user()->id,
@@ -1106,20 +1146,19 @@ class ClientPortalController extends Controller
 				$progressPercentage = $totalStages > 0 ? round(($currentStageIndex / $totalStages) * 100) : 0;
 				$isFirstStage = !WorkflowStage::whereRaw('COALESCE(sort_order, id) < ?', [$prevOrder])->exists();
 
+				$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $matterId;
 				$comments = 'moved the stage from <b>' . $currentStage->name . '</b> to <b>' . $prevStage->name . '</b>';
 
 				$activityLog = new ActivitiesLog;
 				$activityLog->client_id = $clientMatter->client_id;
 				$activityLog->created_by = Auth::user()->id;
-				$activityLog->subject = 'Stage: ' . $currentStage->name;
+				$activityLog->subject = $matterNo . ' Stage: ' . $currentStage->name;
 				$activityLog->description = $comments;
 				$activityLog->activity_type = 'stage';
 				$activityLog->task_status = 0;
 				$activityLog->pin = 0;
 				$activityLog->source = 'client_portal_web';
 				$activityLog->save();
-
-				$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $matterId;
 				$notificationMessage = 'Stage moved from ' . $currentStage->name . ' to ' . $prevStage->name . ' for matter ' . $matterNo;
 				DB::table('notifications')->insert([
 					'sender_id' => Auth::user()->id,

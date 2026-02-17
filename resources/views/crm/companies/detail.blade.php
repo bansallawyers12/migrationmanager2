@@ -1478,6 +1478,9 @@ $(document).ready(function() {
                         } else if (activityType === 'activity') {
                             subjectIcon = '<i class="fas fa-bolt"></i>';
                             iconClass = 'feed-icon-activity';
+                        } else if (activityType === 'stage') {
+                            subjectIcon = '<i class="fas fa-route"></i>';
+                            iconClass = 'feed-icon-stage';
                         } else if (activityType === 'financial' || 
                                    subjectLower.includes('invoice') || 
                                    subjectLower.includes('receipt') || 
@@ -1504,17 +1507,30 @@ $(document).ready(function() {
                         var taskGroupHtml = taskGroup !== '' ? '<p>' + taskGroup + '</p>' : '';
                         var followupDateHtml = followupDate !== '' ? '<p>' + followupDate + '</p>' : '';
 
-                        html += '<li class="feed-item feed-item--email activity ' + activityTypeClass + '" id="activity_' + v.activity_id + '">' +
-                            '<span class="feed-icon ' + iconClass + '">' +
-                                subjectIcon +
-                            '</span>' +
-                            '<div class="feed-content">' +
-                                '<p><strong>' + fullName + ' ' + subject + '</strong></p>' +
+                        var feedItemClass = activityType === 'stage' ? 'feed-item--stage' : 'feed-item--email';
+                        var contentHtml;
+                        if (activityType === 'stage') {
+                            contentHtml = '<div class="feed-item-stage">' +
+                                '<div class="feed-item-stage-header">' +
+                                    '<span class="feed-item-user">' + fullName + '</span>' +
+                                    '<span class="feed-timestamp">' + date + '</span>' +
+                                '</div>' +
+                                '<div class="feed-item-stage-body">' + (v.message ? v.message : '') + '</div>' +
+                            '</div>';
+                        } else {
+                            contentHtml = '<p><strong>' + fullName + ' ' + subject + '</strong></p>' +
                                 descriptionHtml +
                                 taskGroupHtml +
                                 followupDateHtml +
-                                '<span class="feed-timestamp">' + date + '</span>' +
-                            '</div>' +
+                                '<span class="feed-timestamp">' + date + '</span>';
+                        }
+
+                        var createdAtYmd = v.created_at_ymd || '';
+                        html += '<li class="feed-item ' + feedItemClass + ' activity ' + activityTypeClass + '" id="activity_' + v.activity_id + '" data-created-at="' + createdAtYmd + '">' +
+                            '<span class="feed-icon ' + iconClass + '">' +
+                                subjectIcon +
+                            '</span>' +
+                            '<div class="feed-content">' + contentHtml + '</div>' +
                         '</li>';
                     });
 

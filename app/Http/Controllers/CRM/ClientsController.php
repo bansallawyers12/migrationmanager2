@@ -2611,17 +2611,20 @@ class ClientsController extends Controller
 				
 				foreach($activities as $activit){
 					$admin = Staff::where('id', $activit->created_by)->first();
+					$fullName = $admin ? trim(($admin->first_name ?? '') . ' ' . ($admin->last_name ?? '')) : 'Unknown';
+					if (empty(trim($fullName))) $fullName = $admin ? $admin->first_name : 'Unknown';
 					$data[] = array(
 						'activity_id' => $activit->id,
 						'subject' => $activit->subject ?? '',
 						'createdname' => $admin ? substr($admin->first_name, 0, 1) : '?',
-						'name' => $admin ? $admin->first_name : 'Unknown',
+						'name' => $fullName,
 						'message' => $activit->description ?? '',
 						'date' => date('d M Y, H:i A', strtotime($activit->created_at)),
-					   'followup_date' => $activit->followup_date ?? '',
-					   'task_group' => $activit->task_group ?? '',
-					   'pin' => $activit->pin ?? 0,
-					   'activity_type' => $activit->activity_type ?? 'note'
+						'created_at_ymd' => $activit->created_at ? \Carbon\Carbon::parse($activit->created_at)->format('Y-m-d') : '',
+						'followup_date' => $activit->followup_date ?? '',
+						'task_group' => $activit->task_group ?? '',
+						'pin' => $activit->pin ?? 0,
+						'activity_type' => $activit->activity_type ?? 'note'
 					);
 				}
 

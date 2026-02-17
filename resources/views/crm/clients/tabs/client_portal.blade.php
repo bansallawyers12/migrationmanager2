@@ -53,14 +53,14 @@
                         ->leftJoin('matters as m', 'cm.sel_matter_id', '=', 'm.id')
                         ->where('cm.client_id', $fetchedData->id)
                         ->where('cm.client_unique_matter_no', $id1)
-                        ->select('cm.id', 'cm.client_unique_matter_no', 'm.title', 'cm.sel_matter_id', 'cm.workflow_stage_id', 'cm.matter_status')
+                        ->select('cm.id', 'cm.client_unique_matter_no', 'm.title', 'cm.sel_matter_id', 'cm.workflow_stage_id', 'cm.matter_status', 'cm.sel_migration_agent')
                         ->first();
                 } else {
                     // Get the latest matter (active or inactive)
                     $selectedMatter = DB::table('client_matters as cm')
                         ->leftJoin('matters as m', 'cm.sel_matter_id', '=', 'm.id')
                         ->where('cm.client_id', $fetchedData->id)
-                        ->select('cm.id', 'cm.client_unique_matter_no', 'm.title', 'cm.sel_matter_id', 'cm.workflow_stage_id', 'cm.matter_status')
+                        ->select('cm.id', 'cm.client_unique_matter_no', 'm.title', 'cm.sel_matter_id', 'cm.workflow_stage_id', 'cm.matter_status', 'cm.sel_migration_agent')
                         ->orderBy('cm.id', 'desc')
                         ->first();
                 }
@@ -82,6 +82,18 @@
                 $allWorkflowStages = DB::table('workflow_stages')
                     ->orderByRaw('COALESCE(sort_order, id) ASC')
                     ->get();
+
+                $currentStageName = null;
+                $isVerificationStage = false;
+                $canVerifyAndProceed = false;
+                if ($selectedMatter && $currentWorkflowStageId && $allWorkflowStages->count() > 0) {
+                    $currentStageRow = $allWorkflowStages->firstWhere('id', $currentWorkflowStageId);
+                    $currentStageName = $currentStageRow ? $currentStageRow->name : null;
+                    $verificationStageNames = ['payment verified', 'verification: payment, service agreement, forms'];
+                    $isVerificationStage = $currentStageName && in_array(strtolower(trim($currentStageName)), $verificationStageNames);
+                    $currentUserRole = (int) (Auth::guard('admin')->user()->role ?? 0);
+                    $canVerifyAndProceed = in_array($currentUserRole, [1, 16]); // Admin (1) or Migration Agent (16)
+                }
                 ?>
                 
                 @if($selectedMatter)
@@ -145,7 +157,15 @@
                                         <button class="btn btn-outline-primary btn-sm" id="back-to-previous-stage" data-matter-id="{{ $selectedMatter->id }}" title="Back to Previous Stage" {{ $isFirstStage ? 'disabled' : '' }}>
                                             <i class="fas fa-angle-left"></i> Back to Previous Stage
                                         </button>
-                                        <button class="btn btn-success btn-sm" id="proceed-to-next-stage" data-matter-id="{{ $selectedMatter->id }}" data-next-stage-name="{{ $nextStageName ?? '' }}" title="Proceed to Next Stage">
+                                        @php
+                                            $portalNextBtnDisabled = false;
+                                            $portalNextBtnTitle = 'Proceed to Next Stage';
+                                            if (isset($isVerificationStage) && $isVerificationStage && (!isset($canVerifyAndProceed) || !$canVerifyAndProceed)) {
+                                                $portalNextBtnDisabled = true;
+                                                $portalNextBtnTitle = 'Only a Migration Agent (or Admin) can verify and proceed.';
+                                            }
+                                        @endphp
+                                        <button class="btn btn-success btn-sm" id="proceed-to-next-stage" data-matter-id="{{ $selectedMatter->id }}" data-next-stage-name="{{ $nextStageName ?? '' }}" data-current-stage-name="{{ $currentStageName ?? '' }}" data-is-verification-stage="{{ isset($isVerificationStage) && $isVerificationStage ? '1' : '0' }}" data-can-verify-and-proceed="{{ isset($canVerifyAndProceed) && $canVerifyAndProceed ? '1' : '0' }}" title="{{ $portalNextBtnTitle }}" {{ $portalNextBtnDisabled ? 'disabled' : '' }}>
                                             Proceed to Next Stage <i class="fas fa-angle-right"></i>
                                         </button>
                                         <button class="btn btn-outline-danger btn-sm client-portal-discontinue-btn" data-matter-id="{{ $selectedMatter->id }}" title="Discontinue Matter">
@@ -2758,8 +2778,21 @@ document.addEventListener('DOMContentLoaded', function() {
         nextStageBtn.addEventListener('click', function() {
             const matterId = this.getAttribute('data-matter-id');
             const nextStageName = (this.getAttribute('data-next-stage-name') || '').trim();
+            const isVerificationStage = this.getAttribute('data-is-verification-stage') === '1';
+            const canVerifyAndProceed = this.getAttribute('data-can-verify-and-proceed') === '1';
             if (!matterId) {
                 alert('Error: Matter ID not found');
+                return;
+            }
+
+            // If at Verification stage (Payment, Service Agreement, Forms), Migration Agent must tick and add optional note
+            if (isVerificationStage && canVerifyAndProceed) {
+                document.getElementById('verification-payment-forms-matter-id').value = matterId;
+                document.getElementById('verification-confirm-checkbox').checked = false;
+                document.getElementById('verification-note').value = '';
+                const errEl = document.querySelector('.verification-confirm-error strong');
+                if (errEl) errEl.textContent = '';
+                $('#verification-payment-forms-modal').modal('show');
                 return;
             }
 
@@ -2823,6 +2856,51 @@ document.addEventListener('DOMContentLoaded', function() {
             if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
         });
     }
+
+    // Verification: Payment, Service Agreement, Forms modal - Submit (shared, works from Workflow tab or Client Portal tab)
+    $(document).on('click', '#verification-payment-forms-submit', function() {
+        const matterId = document.getElementById('verification-payment-forms-matter-id')?.value;
+        const confirmed = document.getElementById('verification-confirm-checkbox')?.checked;
+        const note = (document.getElementById('verification-note') && document.getElementById('verification-note').value) || '';
+        const errEl = document.querySelector('.verification-confirm-error strong');
+        if (errEl) errEl.textContent = '';
+        if (!confirmed) {
+            if (errEl) errEl.textContent = 'Please confirm that you have verified Payment, Service Agreement, and Forms.';
+            return;
+        }
+
+        const btn = this;
+        const orig = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        $('#verification-payment-forms-modal').modal('hide');
+
+        const payload = { matter_id: matterId, verification_confirm: true, verification_note: note };
+        fetch('{{ route("clients.matter.update-next-stage") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '' },
+            body: JSON.stringify(payload)
+        })
+        .then(r => r.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = orig;
+            if (data.status) {
+                alert(data.message || 'Matter has been successfully moved to the next stage.');
+                window.location.reload();
+            } else {
+                alert(data.message || 'Failed to move to next stage.');
+                $('#verification-payment-forms-modal').modal('show');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            btn.disabled = false;
+            btn.innerHTML = orig;
+            alert('An error occurred.');
+            $('#verification-payment-forms-modal').modal('show');
+        });
+    });
 
     // Decision Received modal: Submit (shared - does the API call directly)
     $(document).on('click', '#decision-received-submit', function() {

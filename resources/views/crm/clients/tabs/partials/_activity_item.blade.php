@@ -28,14 +28,16 @@
     }
 @endphp
 
-<li class="feed-item feed-item--email activity {{ $activity->activity_type ? 'activity-type-' . $activity->activity_type : '' }} {{ $noteTypeClass }}" id="activity_{{ $activity->id }}" data-created-at="{{ $activity->created_at ? \Carbon\Carbon::parse($activity->created_at)->format('Y-m-d') : '' }}">
-    <span class="feed-icon {{ $activity->activity_type === 'sms' ? 'feed-icon-sms' : '' }} {{ $activity->activity_type === 'activity' ? 'feed-icon-activity' : '' }} {{ $activity->activity_type === 'financial' ? 'feed-icon-accounting' : '' }} {{ $activity->activity_type === 'note' ? 'feed-icon-note ' . str_replace('activity-type-', 'feed-icon-', $noteTypeClass) : '' }}">
+<li class="feed-item feed-item--{{ $activity->activity_type === 'stage' ? 'stage' : 'email' }} activity {{ $activity->activity_type ? 'activity-type-' . $activity->activity_type : '' }} {{ $noteTypeClass }}" id="activity_{{ $activity->id }}" data-created-at="{{ $activity->created_at ? \Carbon\Carbon::parse($activity->created_at)->format('Y-m-d') : '' }}">
+    <span class="feed-icon {{ $activity->activity_type === 'sms' ? 'feed-icon-sms' : '' }} {{ $activity->activity_type === 'activity' ? 'feed-icon-activity' : '' }} {{ $activity->activity_type === 'stage' ? 'feed-icon-stage' : '' }} {{ $activity->activity_type === 'financial' ? 'feed-icon-accounting' : '' }} {{ $activity->activity_type === 'note' ? 'feed-icon-note ' . str_replace('activity-type-', 'feed-icon-', $noteTypeClass) : '' }}">
         @if($activity->activity_type === 'sms')
             <i class="fas fa-sms"></i>
         @elseif($activity->activity_type === 'note')
             <i class="fas {{ $noteIcon }}"></i>
         @elseif($activity->activity_type === 'activity')
             <i class="fas fa-bolt"></i>
+        @elseif($activity->activity_type === 'stage')
+            <i class="fas fa-route"></i>
         @elseif($activity->activity_type === 'financial')
             <i class="fas fa-dollar-sign"></i>
         @elseif(str_contains(strtolower($activity->subject ?? ''), "invoice") || 
@@ -51,25 +53,37 @@
         @endif
     </span>
     <div class="feed-content">
-        <p>
-            <strong>{{ $admin->first_name ?? 'NA' }}  {{ $activity->subject ?? '' }}</strong>
-            @if(str_contains($activity->subject ?? '', 'added a note') || str_contains($activity->subject ?? '', 'updated a note'))
-                <i class="fas fa-ellipsis-v convert-activity-to-note" 
-                   style="margin-left: 5px; cursor: pointer;" 
-                   title="Convert to Note"
-                   data-activity-id="{{ $activity->id }}"
-                   data-activity-subject="{{ $activity->subject }}"
-                   data-activity-description="{{ $activity->description }}"
-                   data-activity-created-by="{{ $activity->created_by }}"
-                   data-activity-created-at="{{ $activity->created_at }}"
-                   data-client-id="{{ $clientId }}"></i>
-            @endif
-            -
-            @if($activity->description != '')
-                <p>{!! $activity->description !!}</p>
-            @endif
-        </p>
-        <span class="feed-timestamp">{{ date('d M Y, H:i A', strtotime($activity->created_at)) }}</span>
+        @if($activity->activity_type === 'stage')
+            <div class="feed-item-stage">
+                <div class="feed-item-stage-header">
+                    <span class="feed-item-user">{{ $admin->first_name ?? 'NA' }}{{ isset($admin->last_name) ? ' ' . $admin->last_name : '' }}</span>
+                    <span class="feed-timestamp">{{ date('d M Y, H:i', strtotime($activity->created_at)) }}</span>
+                </div>
+                <div class="feed-item-stage-body">
+                    {!! $activity->description ?? '' !!}
+                </div>
+            </div>
+        @else
+            <p>
+                <strong>{{ $admin->first_name ?? 'NA' }}  {{ $activity->subject ?? '' }}</strong>
+                @if(str_contains($activity->subject ?? '', 'added a note') || str_contains($activity->subject ?? '', 'updated a note'))
+                    <i class="fas fa-ellipsis-v convert-activity-to-note" 
+                       style="margin-left: 5px; cursor: pointer;" 
+                       title="Convert to Note"
+                       data-activity-id="{{ $activity->id }}"
+                       data-activity-subject="{{ $activity->subject }}"
+                       data-activity-description="{{ $activity->description }}"
+                       data-activity-created-by="{{ $activity->created_by }}"
+                       data-activity-created-at="{{ $activity->created_at }}"
+                       data-client-id="{{ $clientId }}"></i>
+                @endif
+                -
+                @if($activity->description != '')
+                    <p>{!! $activity->description !!}</p>
+                @endif
+            </p>
+            <span class="feed-timestamp">{{ date('d M Y, H:i A', strtotime($activity->created_at)) }}</span>
+        @endif
     </div>
 </li>
 

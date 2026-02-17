@@ -13,6 +13,24 @@
         setupFilterButtons();
         setupWidthToggle();
         setupExtendedFilters();
+        setupRefreshButton();
+    }
+
+    /**
+     * Setup refresh button to reload activities
+     */
+    function setupRefreshButton() {
+        $('#activity-feed-refresh').on('click', function() {
+            var $btn = $(this).find('i');
+            $btn.addClass('fa-spin');
+            if (typeof window.loadActivities === 'function') {
+                window.loadActivities();
+            }
+            if (typeof getallactivities === 'function') {
+                getallactivities();
+            }
+            setTimeout(function() { $btn.removeClass('fa-spin'); }, 800);
+        });
     }
 
     /**
@@ -40,16 +58,17 @@
         if (filterType === 'all') {
             $('.feed-item.activity').show();
         } else if (filterType === 'activity') {
-            // Show both activity-type-activity AND activity-type-sms (merged)
+            // Show activity-type-activity, activity-type-sms, and activity-type-stage (workflow)
             $('.feed-item.activity').hide();
-            $('.feed-item.activity-type-activity, .feed-item.activity-type-sms').show();
+            $('.feed-item.activity-type-activity, .feed-item.activity-type-sms, .feed-item.activity-type-stage').show();
         } else if (filterType === 'note') {
             // Show only actual notes (exclude activity edits, SMS, documents, and accounting)
             $('.feed-item.activity').each(function() {
                 var $item = $(this);
-                // Hide Activity edits, SMS, document, and accounting activities, show everything else (notes)
+                // Hide Activity edits, SMS, stage, document, and accounting activities, show everything else (notes)
                 if (!$item.hasClass('activity-type-sms') && 
                     !$item.hasClass('activity-type-activity') &&
+                    !$item.hasClass('activity-type-stage') &&
                     !$item.hasClass('activity-type-document') && 
                     !$item.hasClass('activity-type-financial')) {
                     $item.show();
@@ -262,10 +281,11 @@
     function matchesTypeFilter($item, filterType) {
         if (filterType === 'all') return true;
         if (filterType === 'activity') {
-            return $item.hasClass('activity-type-activity') || $item.hasClass('activity-type-sms');
+            return $item.hasClass('activity-type-activity') || $item.hasClass('activity-type-sms') || $item.hasClass('activity-type-stage');
         }
         if (filterType === 'note') {
             return !$item.hasClass('activity-type-sms') && !$item.hasClass('activity-type-activity') &&
+                !$item.hasClass('activity-type-stage') &&
                 !$item.hasClass('activity-type-document') && !$item.hasClass('activity-type-financial');
         }
         if (filterType === 'document') {

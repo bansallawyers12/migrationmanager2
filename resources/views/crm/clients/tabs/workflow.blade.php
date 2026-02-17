@@ -12,13 +12,13 @@
                 ->leftJoin('matters as m', 'cm.sel_matter_id', '=', 'm.id')
                 ->where('cm.client_id', $fetchedData->id)
                 ->where('cm.client_unique_matter_no', $id1)
-                ->select('cm.id', 'cm.client_unique_matter_no', 'm.title', 'cm.sel_matter_id', 'cm.workflow_stage_id', 'cm.matter_status', 'cm.deadline')
+                ->select('cm.id', 'cm.client_unique_matter_no', 'm.title', 'cm.sel_matter_id', 'cm.workflow_stage_id', 'cm.matter_status', 'cm.deadline', 'cm.sel_migration_agent')
                 ->first();
         } else {
             $workflowSelectedMatter = DB::table('client_matters as cm')
                 ->leftJoin('matters as m', 'cm.sel_matter_id', '=', 'm.id')
                 ->where('cm.client_id', $fetchedData->id)
-                ->select('cm.id', 'cm.client_unique_matter_no', 'm.title', 'cm.sel_matter_id', 'cm.workflow_stage_id', 'cm.matter_status', 'cm.deadline')
+                ->select('cm.id', 'cm.client_unique_matter_no', 'm.title', 'cm.sel_matter_id', 'cm.workflow_stage_id', 'cm.matter_status', 'cm.deadline', 'cm.sel_migration_agent')
                 ->orderBy('cm.id', 'desc')
                 ->first();
         }
@@ -36,6 +36,18 @@
         }
 
         $workflowAllStages = DB::table('workflow_stages')->orderByRaw('COALESCE(sort_order, id) ASC')->get();
+
+        $workflowCurrentStageName = null;
+        $workflowIsVerificationStage = false;
+        $workflowCanVerifyAndProceed = false;
+        if ($workflowSelectedMatter && $workflowCurrentStageId && $workflowAllStages->count() > 0) {
+            $currentStageRow = $workflowAllStages->firstWhere('id', $workflowCurrentStageId);
+            $workflowCurrentStageName = $currentStageRow ? $currentStageRow->name : null;
+            $verificationStageNames = ['payment verified', 'verification: payment, service agreement, forms'];
+            $workflowIsVerificationStage = $workflowCurrentStageName && in_array(strtolower(trim($workflowCurrentStageName)), $verificationStageNames);
+            $currentUserRole = (int) (Auth::guard('admin')->user()->role ?? 0);
+            $workflowCanVerifyAndProceed = in_array($currentUserRole, [1, 16]); // Admin (1) or Migration Agent (16)
+        }
         ?>
 
         @if($workflowSelectedMatter)
@@ -125,7 +137,15 @@
                                 <button class="btn btn-outline-primary btn-sm" id="workflow-tab-back-to-previous-stage" data-matter-id="{{ $workflowSelectedMatter->id }}" title="Back to Previous Stage" {{ $workflowIsFirstStage ? 'disabled' : '' }}>
                                     <i class="fas fa-angle-left"></i> Back to Previous Stage
                                 </button>
-                                <button class="btn btn-success btn-sm" id="workflow-tab-proceed-to-next-stage" data-matter-id="{{ $workflowSelectedMatter->id }}" data-next-stage-name="{{ $workflowNextStageName ?? '' }}" title="Proceed to Next Stage" {{ $workflowIsLastStage ? 'disabled' : '' }}>
+                                @php
+                                    $workflowNextBtnDisabled = $workflowIsLastStage;
+                                    $workflowNextBtnTitle = 'Proceed to Next Stage';
+                                    if ($workflowIsVerificationStage && !$workflowCanVerifyAndProceed) {
+                                        $workflowNextBtnDisabled = true;
+                                        $workflowNextBtnTitle = 'Only a Migration Agent (or Admin) can verify and proceed.';
+                                    }
+                                @endphp
+                                <button class="btn btn-success btn-sm" id="workflow-tab-proceed-to-next-stage" data-matter-id="{{ $workflowSelectedMatter->id }}" data-next-stage-name="{{ $workflowNextStageName ?? '' }}" data-current-stage-name="{{ $workflowCurrentStageName ?? '' }}" data-is-verification-stage="{{ $workflowIsVerificationStage ? '1' : '0' }}" data-can-verify-and-proceed="{{ $workflowCanVerifyAndProceed ? '1' : '0' }}" title="{{ $workflowNextBtnTitle }}" {{ $workflowNextBtnDisabled ? 'disabled' : '' }}>
                                     Proceed to Next Stage <i class="fas fa-angle-right"></i>
                                 </button>
                                 <button class="btn btn-outline-danger btn-sm" id="workflow-tab-discontinue" data-matter-id="{{ $workflowSelectedMatter->id }}" title="Discontinue Matter">
@@ -240,7 +260,20 @@
             nextBtn.addEventListener('click', function() {
                 var matterId = this.getAttribute('data-matter-id');
                 var nextStageName = (this.getAttribute('data-next-stage-name') || '').trim();
+                var isVerificationStage = this.getAttribute('data-is-verification-stage') === '1';
+                var canVerifyAndProceed = this.getAttribute('data-can-verify-and-proceed') === '1';
                 if (!matterId) { alert('Error: Matter ID not found'); return; }
+
+                // If at Verification stage (Payment, Service Agreement, Forms), Migration Agent must tick and add optional note
+                if (isVerificationStage && canVerifyAndProceed) {
+                    document.getElementById('verification-payment-forms-matter-id').value = matterId;
+                    document.getElementById('verification-confirm-checkbox').checked = false;
+                    document.getElementById('verification-note').value = '';
+                    var errEl = document.querySelector('.verification-confirm-error strong');
+                    if (errEl) errEl.textContent = '';
+                    $('#verification-payment-forms-modal').modal('show');
+                    return;
+                }
 
                 // If next stage is "Decision Received", show outcome modal first
                 if (nextStageName && nextStageName.toLowerCase() === 'decision received') {
@@ -259,8 +292,8 @@
             });
         }
 
-        // Shared: Proceed to next stage (with optional decision_outcome and decision_note for Decision Received)
-        function doProceedToNextStage(matterId, decisionOutcome, decisionNote, btnEl) {
+        // Shared: Proceed to next stage (optional: decision_outcome/decision_note for Decision Received; verification_confirm/verification_note for Verification stage)
+        function doProceedToNextStage(matterId, decisionOutcome, decisionNote, btnEl, verificationConfirm, verificationNote) {
             var btn = btnEl || document.getElementById('workflow-tab-proceed-to-next-stage');
             var orig = btn ? btn.innerHTML : '';
             if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...'; }
@@ -268,6 +301,8 @@
             var payload = { matter_id: matterId };
             if (decisionOutcome) payload.decision_outcome = decisionOutcome;
             if (decisionNote) payload.decision_note = decisionNote;
+            if (verificationConfirm !== undefined) payload.verification_confirm = verificationConfirm;
+            if (verificationNote !== undefined) payload.verification_note = verificationNote;
 
             fetch('{{ route("clients.matter.update-next-stage") }}', {
                 method: 'POST',
@@ -290,6 +325,8 @@
                 if (btn) { btn.disabled = false; btn.innerHTML = orig; }
             });
         }
+
+        // Verification: Payment, Service Agreement, Forms modal - Submit handled by delegated handler in client_portal.blade.php
 
         // Decision Received modal: Submit - handled by delegated handler in client_portal.blade.php
 

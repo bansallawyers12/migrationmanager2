@@ -2,9 +2,14 @@
 <aside class="activity-feed" id="activity-feed">
     <div class="activity-feed-header">
         <h2><i class="fas fa-history"></i> Activity Feed</h2>
-        <label for="increase-activity-feed-width">
-           <input type="checkbox" id="increase-activity-feed-width" title="Expand Width">
-        </label>
+        <div class="activity-feed-header-actions">
+            <button type="button" class="btn btn-sm btn-link p-0 activity-feed-refresh" id="activity-feed-refresh" title="Refresh">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+            <label for="increase-activity-feed-width">
+                <input type="checkbox" id="increase-activity-feed-width" title="Expand Width">
+            </label>
+        </div>
     </div>
     
     <!-- Extended Filters (visible only when checkbox is ticked / wide-mode) -->

@@ -133,6 +133,7 @@ class ActivitiesLog extends Authenticatable
 		return match($this->activity_type) {
 			'sms' => 'fa-sms',
 			'activity' => 'fa-bolt',
+			'stage' => 'fa-route',
 			'email' => 'fa-envelope',
 			'document' => 'fa-file-alt',
 			'note' => 'fa-sticky-note',
@@ -154,6 +155,7 @@ class ActivitiesLog extends Authenticatable
 		return match($this->activity_type) {
 			'sms' => 'text-info',
 			'activity' => 'text-primary',
+			'stage' => 'text-primary',
 			'email' => 'text-primary',
 			'document' => 'text-info',
 			'note' => 'text-warning',
