@@ -297,6 +297,16 @@
                                                                         <a href="{{ $signingUrl }}" target="_blank" class="btn btn-outline-primary">
                                                                             <i class="fas fa-external-link-alt"></i> View
                                                                         </a>
+                                                                        <button type="button" class="btn btn-info btn-send-signature-email" title="Send Email with Signature Link"
+                                                                            data-signing-url="{{ $signingUrl }}"
+                                                                            data-signer-email="{{ $signerEmail }}"
+                                                                            data-signer-name="{{ $signerName }}"
+                                                                            data-client-id="{{ $fetchedData->id }}"
+                                                                            data-client-email="{{ $fetchedData->email ?? '' }}"
+                                                                            data-client-name="{{ $fetchedData->first_name ?? '' }} {{ $fetchedData->last_name ?? '' }}"
+                                                                            data-client-matter-id="{{ $form->client_matter_id }}">
+                                                                            <i class="fas fa-envelope mr-1"></i> Send Email
+                                                                        </button>
                                                                     </div>
                                                                 </div>
                                                                 <small class="text-muted d-block mt-2">
@@ -669,6 +679,16 @@
     color: #fff;
 }
 
+.btn-send-signature-email {
+    color: #fff;
+    border-color: #17a2b8;
+}
+.btn-send-signature-email:hover {
+    background-color: #138496;
+    border-color: #117a8b;
+    color: #fff;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .checklist-summary {
@@ -836,6 +856,89 @@
             
             // Deselect
             window.getSelection().removeAllRanges();
+        });
+
+        // Send Email with Signature Link - opens compose modal with default checklist/signature email
+        $(document).on('click', '.btn-send-signature-email', function(e) {
+            e.stopPropagation();
+            var $btn = $(this);
+            var signingUrl = $btn.data('signing-url');
+            var signerName = ($btn.data('signer-name') || '').trim() || 'there';
+            var clientId = $btn.data('client-id');
+            var clientEmail = ($btn.data('client-email') || '').trim();
+            var clientName = ($btn.data('client-name') || '').trim();
+            var clientMatterId = $btn.data('client-matter-id');
+
+            if (!signingUrl) {
+                alert('Signature link is not available.');
+                return;
+            }
+            if (!clientId || !clientEmail) {
+                alert('Client email is required to send. Please ensure the client has an email address.');
+                return;
+            }
+
+            // Set sidebar matter and compose matter ID
+            if (clientMatterId && $('#sel_matter_id_client_detail').length) {
+                $('#sel_matter_id_client_detail').val(clientMatterId).trigger('change');
+            }
+            $('#emailmodal #compose_client_matter_id').val(clientMatterId || '');
+
+            // Default subject and message for checklist signature email
+            var subject = 'Action Required: Please Sign Your Visa Agreement';
+            var message = '<p>Dear ' + (signerName !== 'there' ? signerName : 'there') + ',</p>' +
+                '<p>We have prepared an agreement document that requires your review and signature.</p>' +
+                '<p>Please click the link below to access and sign the document:</p>' +
+                '<p style="margin:20px 0;"><a href="' + signingUrl + '" style="display:inline-block;background-color:#2563eb;color:#fff;text-decoration:none;padding:12px 24px;font-weight:600;">Sign Document Now</a></p>' +
+                '<p>Or copy this link: <a href="' + signingUrl + '">' + signingUrl + '</a></p>' +
+                '<p>If you have any questions, please contact us.</p>' +
+                '<p><strong>Regards,</strong><br>Bansal Migration Team</p>';
+
+            $('#compose_email_subject').val(subject);
+
+            // Set To field: use client (recipient ID) for backend compatibility
+            var array = [];
+            var data = [];
+            if (clientId && clientEmail) {
+                array.push(clientId);
+                data.push({
+                    id: clientId,
+                    text: clientName || clientEmail,
+                    html: "<div class='select2-result-repository ag-flex ag-space-between ag-align-center'>" +
+                        "<div class='ag-flex ag-align-start'><div class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span class='select2-result-repository__title text-semi-bold'>" + (clientName || clientEmail) + "</span></div>" +
+                        "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'>" + clientEmail + "</small></div></div></div>" +
+                        "<div class='ag-flex ag-flex-column ag-align-end'><span class='ui label yellow select2-result-repository__statistics'>Client</span></div></div>",
+                    title: clientName || clientEmail
+                });
+            }
+
+            var $toSelect = $('.js-data-example-ajax');
+            if ($toSelect.length && $toSelect.data('select2')) {
+                $toSelect.select2('destroy');
+            }
+            $('.js-data-example-ajax').select2({
+                data: data,
+                escapeMarkup: function(markup) { return markup; },
+                templateResult: function(d) { return d.html; },
+                templateSelection: function(d) { return d.text; },
+                dropdownParent: $('#emailmodal'),
+                multiple: true,
+                closeOnSelect: false
+            });
+            $('.js-data-example-ajax').val(array).trigger('change');
+
+            // Set TinyMCE content after modal is shown
+            $('#emailmodal').one('shown.bs.modal', function() {
+                if (typeof setTinyMCEContent === 'function') {
+                    setTinyMCEContent('compose_email_message', message);
+                } else if (typeof tinymce !== 'undefined' && tinymce.get('compose_email_message')) {
+                    tinymce.get('compose_email_message').setContent(message);
+                } else {
+                    $('#compose_email_message').val(message);
+                }
+            });
+
+            $('#emailmodal').modal('show');
         });
 
         // Amend checklist - opens the cost assignment modal for editing
