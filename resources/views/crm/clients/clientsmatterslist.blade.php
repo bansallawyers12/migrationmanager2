@@ -293,6 +293,15 @@
                 </div>
                 
                 <div class="card-body">
+                    <ul class="nav nav-pills" id="matter_tabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="matters-tab" href="{{ route('clients.clientsmatterslist') }}">Matters</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="closed-matters-tab" href="{{ route('clients.closedmatterslist') }}">Closed Matters</a>
+                        </li>
+                    </ul>
+
                     @php
                         $matterFilters = collect([
                             'sel_matter_id' => request('sel_matter_id'),

@@ -158,11 +158,16 @@ class ClientsController extends Controller
             $query = DB::table('client_matters as cm')
             ->join('admins as ad', 'cm.client_id', '=', 'ad.id')
             ->join('matters as ma', 'ma.id', '=', 'cm.sel_matter_id')
+            ->leftJoin('workflow_stages as ws', 'cm.workflow_stage_id', '=', 'ws.id')
             ->select('cm.*', 'ad.client_id as client_unique_id','ad.first_name','ad.last_name','ad.email','ma.title','ma.nick_name','ad.dob')
             ->where('cm.matter_status', '=', '1')
             ->where('ad.is_archived', '=', '0')
             ->where('ad.role', '=', '7')
-            ->whereNull('ad.is_deleted');
+            ->whereNull('ad.is_deleted')
+            ->where(function ($q) {
+                $q->whereNull('ws.name')
+                    ->orWhereRaw('LOWER(TRIM(ws.name)) != ?', ['file closed']);
+            });
 
             if ($request->has('sel_matter_id')) {
                 $sel_matter_id = $request->input('sel_matter_id');
@@ -242,11 +247,16 @@ class ClientsController extends Controller
             $query = DB::table('client_matters as cm')
             ->join('admins as ad', 'cm.client_id', '=', 'ad.id')
             ->join('matters as ma', 'ma.id', '=', 'cm.sel_matter_id')
+            ->leftJoin('workflow_stages as ws', 'cm.workflow_stage_id', '=', 'ws.id')
             ->select('cm.*', 'ad.client_id as client_unique_id','ad.first_name','ad.last_name','ad.email','ma.title','ma.nick_name','ad.dob')
             ->where('cm.matter_status', '=', '1')
             ->where('ad.is_archived', '=', '0')
             ->where('ad.role', '=', '7')
             ->whereNull('ad.is_deleted')
+            ->where(function ($q) {
+                $q->whereNull('ws.name')
+                    ->orWhereRaw('LOWER(TRIM(ws.name)) != ?', ['file closed']);
+            })
             ->orderBy($sortField, $sortDirection);
             $allowedPerPage = [10, 20, 50, 100, 200];
             $perPage = (int) $request->get('per_page', 20);
@@ -258,6 +268,127 @@ class ClientsController extends Controller
         }
         //dd( $lists);
         return view('crm.clients.clientsmatterslist', compact(['lists', 'totalData', 'teamMembers', 'perPage']));
+    }
+
+    /**
+     * Display closed matters (matter_status=0 or workflow stage "File Closed").
+     * Mirrors clientsmatterslist but filters for archived/closed matters.
+     */
+    public function closedmatterslist(Request $request)
+    {
+        $teamMembers = collect();
+        if ($this->hasModuleAccess('20')) {
+            $sortField = $request->get('sort', 'cm.id');
+            $sortDirection = $request->get('direction', 'desc');
+
+            $query = DB::table('client_matters as cm')
+                ->join('admins as ad', 'cm.client_id', '=', 'ad.id')
+                ->join('matters as ma', 'ma.id', '=', 'cm.sel_matter_id')
+                ->leftJoin('workflow_stages as ws', 'cm.workflow_stage_id', '=', 'ws.id')
+                ->select('cm.*', 'ad.client_id as client_unique_id', 'ad.first_name', 'ad.last_name', 'ad.email', 'ma.title', 'ma.nick_name', 'ad.dob', 'ws.name as workflow_stage_name')
+                ->where('ad.is_archived', '=', '0')
+                ->where('ad.role', '=', '7')
+                ->whereNull('ad.is_deleted')
+                ->where(function ($q) {
+                    $q->where('cm.matter_status', '=', '0')
+                        ->orWhereRaw('LOWER(TRIM(ws.name)) = ?', ['file closed']);
+                });
+
+            if ($request->has('sel_matter_id')) {
+                $sel_matter_id = $request->input('sel_matter_id');
+                if (trim($sel_matter_id) != '') {
+                    $query->where('cm.sel_matter_id', '=', $sel_matter_id);
+                }
+            }
+
+            if ($request->has('client_id')) {
+                $client_id = $request->input('client_id');
+                if (trim($client_id) != '') {
+                    $query->where('ad.client_id', '=', $client_id);
+                }
+            }
+
+            if ($request->has('name')) {
+                $name = trim($request->input('name'));
+                if ($name != '') {
+                    $nameLower = strtolower($name);
+                    $query->where(function ($q) use ($nameLower) {
+                        $q->whereRaw('LOWER(ad.first_name) LIKE ?', ['%' . $nameLower . '%'])
+                            ->orWhereRaw('LOWER(ad.last_name) LIKE ?', ['%' . $nameLower . '%'])
+                            ->orWhereRaw("LOWER(COALESCE(ad.first_name, '') || ' ' || COALESCE(ad.last_name, '')) LIKE ?", ['%' . $nameLower . '%']);
+                    });
+                }
+            }
+
+            if ($request->filled('sel_migration_agent')) {
+                $query->where('cm.sel_migration_agent', '=', $request->input('sel_migration_agent'));
+            }
+
+            if ($request->filled('sel_person_responsible')) {
+                $query->where('cm.sel_person_responsible', '=', $request->input('sel_person_responsible'));
+            }
+
+            if ($request->filled('sel_person_assisting')) {
+                $query->where('cm.sel_person_assisting', '=', $request->input('sel_person_assisting'));
+            }
+
+            if (
+                $request->filled('quick_date_range') ||
+                $request->filled('from_date') ||
+                $request->filled('to_date')
+            ) {
+                [$startDate, $endDate] = $this->resolveClientDateRange($request);
+                $dateField = $request->input('date_filter_field', 'created_at') === 'updated_at'
+                    ? 'cm.updated_at'
+                    : 'cm.created_at';
+
+                if ($startDate && $endDate) {
+                    $query->whereBetween($dateField, [$startDate, $endDate]);
+                }
+            }
+
+            $totalData = $query->count();
+            $query->orderBy($sortField, $sortDirection);
+
+            $allowedPerPage = [10, 20, 50, 100, 200];
+            $perPage = (int) $request->get('per_page', 20);
+            if (!in_array($perPage, $allowedPerPage, true)) {
+                $perPage = 20;
+            }
+
+            $teamMembers = \App\Models\Staff::query()
+                ->orderBy('first_name', 'asc')
+                ->select('id', 'first_name', 'last_name')
+                ->get();
+
+            $lists = $query->paginate($perPage)->appends($request->except('page'));
+        } else {
+            $sortField = $request->get('sort', 'cm.id');
+            $sortDirection = $request->get('direction', 'desc');
+
+            $query = DB::table('client_matters as cm')
+                ->join('admins as ad', 'cm.client_id', '=', 'ad.id')
+                ->join('matters as ma', 'ma.id', '=', 'cm.sel_matter_id')
+                ->leftJoin('workflow_stages as ws', 'cm.workflow_stage_id', '=', 'ws.id')
+                ->select('cm.*', 'ad.client_id as client_unique_id', 'ad.first_name', 'ad.last_name', 'ad.email', 'ma.title', 'ma.nick_name', 'ad.dob', 'ws.name as workflow_stage_name')
+                ->where('ad.is_archived', '=', '0')
+                ->where('ad.role', '=', '7')
+                ->whereNull('ad.is_deleted')
+                ->where(function ($q) {
+                    $q->where('cm.matter_status', '=', '0')
+                        ->orWhereRaw('LOWER(TRIM(ws.name)) = ?', ['file closed']);
+                })
+                ->orderBy($sortField, $sortDirection);
+            $allowedPerPage = [10, 20, 50, 100, 200];
+            $perPage = (int) $request->get('per_page', 20);
+            if (!in_array($perPage, $allowedPerPage, true)) {
+                $perPage = 20;
+            }
+            $totalData = 0;
+            $lists = $query->paginate($perPage);
+        }
+
+        return view('crm.clients.closedmatterslist', compact(['lists', 'totalData', 'teamMembers', 'perPage']));
     }
 
     public function insights(Request $request)
