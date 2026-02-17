@@ -301,6 +301,36 @@ class EmailConfigService
     }
 
     /**
+     * Get email configuration for EOI verification/confirmation emails.
+     * Looks up admin@bansalimmigration from the emails table (or EOI_FROM_EMAIL from .env).
+     * Returns full SMTP config so it can be applied before sending.
+     *
+     * @return array|null Config array (from_address, from_name, host, port, etc.) or null if not found
+     */
+    public function getEoiFromAccount(): ?array
+    {
+        $preferredEmail = config('services.eoi.from_email', 'admin@bansalimmigration.com.au');
+
+        // Try exact match first (from config/env)
+        $emailConfig = Email::where('status', true)
+            ->where('email', $preferredEmail)
+            ->first();
+
+        // If not found, try pattern: admin@bansalimmigration% (any domain)
+        if (!$emailConfig) {
+            $emailConfig = Email::where('status', true)
+                ->where('email', 'like', 'admin@bansalimmigration%')
+                ->first();
+        }
+
+        if ($emailConfig) {
+            return $this->buildConfig($emailConfig);
+        }
+
+        return null;
+    }
+
+    /**
      * Validate email configuration by attempting connection
      *
      * @param array $config

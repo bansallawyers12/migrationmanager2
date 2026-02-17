@@ -9,6 +9,7 @@ use App\Models\Document;
 use App\Models\VisaDocumentType;
 use App\Models\ActivitiesLog;
 use App\Services\PointsService;
+use App\Services\EmailConfigService;
 use App\Traits\ClientAuthorization;
 use App\Mail\EoiConfirmationMail;
 use Illuminate\Http\Request;
@@ -25,15 +26,18 @@ class EoiRoiSheetController extends Controller
 
     protected PointsService $pointsService;
 
-    public function __construct(PointsService $pointsService)
+    protected EmailConfigService $emailConfigService;
+
+    public function __construct(PointsService $pointsService, EmailConfigService $emailConfigService)
     {
+        $this->pointsService = $pointsService;
+        $this->emailConfigService = $emailConfigService;
         $this->middleware('auth:admin')->except([
             'showConfirmationPage',
             'showAmendmentPage',
             'processClientConfirmation',
             'showSuccessPage'
         ]);
-        $this->pointsService = $pointsService;
     }
 
     /**
@@ -573,6 +577,12 @@ class EoiRoiSheetController extends Controller
             $attachmentsData = $this->getEoiRelatedAttachments($eoi->client, $eoi);
             $attachmentLabels = $attachmentsData['labels'];
             $attachments = $attachmentsData['attachments'];
+
+            // Apply admin@bansalimmigration from address from database when available
+            $eoiFromConfig = $this->emailConfigService->getEoiFromAccount();
+            if ($eoiFromConfig) {
+                $this->emailConfigService->applyConfig($eoiFromConfig);
+            }
 
             // Send email
             Mail::to($eoi->client->email)->send(new EoiConfirmationMail(

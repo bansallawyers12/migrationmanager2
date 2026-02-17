@@ -9,6 +9,7 @@ use App\Models\ActivitiesLog;
 use App\Models\Document;
 use App\Models\VisaDocumentType;
 use App\Services\PointsService;
+use App\Services\EmailConfigService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -25,10 +26,13 @@ class ClientEoiRoiController extends Controller
 {
     protected PointsService $pointsService;
 
-    public function __construct(PointsService $pointsService)
+    protected EmailConfigService $emailConfigService;
+
+    public function __construct(PointsService $pointsService, EmailConfigService $emailConfigService)
     {
         $this->middleware('auth:admin');
         $this->pointsService = $pointsService;
+        $this->emailConfigService = $emailConfigService;
     }
 
     /**
@@ -474,6 +478,12 @@ class ClientEoiRoiController extends Controller
             
             // Use custom body if provided, otherwise use default view
             $body = $request->input('body');
+
+            // Apply admin@bansalimmigration from address from database when available
+            $eoiFromConfig = $this->emailConfigService->getEoiFromAccount();
+            if ($eoiFromConfig) {
+                $this->emailConfigService->applyConfig($eoiFromConfig);
+            }
 
             // Send email
             Mail::to($client->email)->send(new EoiConfirmationMail(

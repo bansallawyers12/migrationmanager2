@@ -161,6 +161,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | EOI Verification Email Configuration
+    |--------------------------------------------------------------------------
+    |
+    | From address for EOI/ROI confirmation emails. Lookup order:
+    | 1. EOI_FROM_EMAIL in .env (exact match in emails table)
+    | 2. First active email in DB matching admin@bansalimmigration%
+    |
+    */
+
+    'eoi' => [
+        'from_email' => env('EOI_FROM_EMAIL', 'admin@bansalimmigration.com.au'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Firebase Cloud Messaging (FCM) Configuration
     |--------------------------------------------------------------------------
     |
