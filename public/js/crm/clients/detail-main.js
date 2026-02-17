@@ -11065,6 +11065,22 @@ Bansal Immigration`;
 
         }); */
 
+        // Custom search: filter checklist table by matter when composeChecklistFilterIds is set (register once)
+        if (!window.composeChecklistSearchRegistered && $.fn.dataTable && $.fn.dataTable.ext) {
+            window.composeChecklistSearchRegistered = true;
+            $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+            if ($(settings.nTable).attr('id') !== 'mychecklist-datatable') return true;
+            var filterIds = window.composeChecklistFilterIds;
+            if (filterIds === undefined || filterIds === null) return true;
+            var rowNode = settings.aoData && settings.aoData[dataIndex] ? settings.aoData[dataIndex].nTr : null;
+            if (!rowNode) return true;
+            var id = $(rowNode).attr('data-checklist-id') || $(rowNode).find('.checklistfile-cb').val();
+            if (!id) return true;
+            var idNum = parseInt(id, 10);
+            return filterIds.some(function(f) { return f == idNum || String(f) === String(id); });
+            });
+        }
+
         $('#mychecklist-datatable').dataTable({"searching": true,});
 
         $(".invoicetable").dataTable({

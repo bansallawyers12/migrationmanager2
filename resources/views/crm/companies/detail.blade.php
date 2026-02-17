@@ -587,7 +587,7 @@ use App\Http\Controllers\Controller;
 							    </thead>
 							    <tbody>
 							        @foreach(\App\Models\UploadChecklist::all() as $uclist)
-							        <tr data-matter-id="{{ $uclist->matter_id ?? '' }}">
+							        <tr data-matter-id="{{ $uclist->matter_id ?? '' }}" data-checklist-id="{{ $uclist->id }}">
 							            <td><input type="checkbox" name="checklistfile[]" value="<?php echo $uclist->id; ?>" class="checklistfile-cb"></td>
 							            <td><?php echo $uclist->name; ?></td>
 							             <td><a target="_blank" href="<?php echo URL::to('/checklists/'.$uclist->file); ?>"><?php echo $uclist->name; ?></a></td>
@@ -1298,12 +1298,14 @@ $(document).ready(function() {
     });
     
     // Auto-select matter first email and dedicated checklists when compose modal opens
-    // When matter is selected: show only that matter's checklists; otherwise show all
+    // When matter is selected: filter checklist table by matter (DataTables API); otherwise show all
     $('#emailmodal').on('shown.bs.modal', function() {
         var clientMatterId = $('#compose_client_matter_id').val();
-        var $checklistRows = $('#emailmodal .checklistfile-cb').closest('tr');
         if (!clientMatterId || !window.ClientDetailConfig || !window.ClientDetailConfig.urls || !window.ClientDetailConfig.urls.getComposeDefaults) {
-            $checklistRows.show(); // No matter context: show all checklists
+            window.composeChecklistFilterIds = null;
+            if ($('#mychecklist-datatable').length && $.fn.DataTable && $.fn.DataTable.isDataTable('#mychecklist-datatable')) {
+                $('#mychecklist-datatable').DataTable().draw();
+            }
             $('#emailmodal').removeData('composeMacroValues').removeData('pdfUrlForSign').removeData('fromSignatureSend');
             return;
         }
@@ -1334,18 +1336,24 @@ $(document).ready(function() {
                         if (fromSignature) $('#emailmodal').removeData('fromSignatureSend');
                     }
                 }
-                // Show only matter-related checklists; hide all others
-                $checklistRows.hide();
+                // Filter checklist table by matter using DataTables API
+                window.composeChecklistFilterIds = (res.checklist_ids && res.checklist_ids.length) ? res.checklist_ids : [];
+                if ($('#mychecklist-datatable').length && $.fn.DataTable && $.fn.DataTable.isDataTable('#mychecklist-datatable')) {
+                    $('#mychecklist-datatable').DataTable().draw();
+                }
+                $checklistCbs.prop('checked', false);
                 if (res.checklist_ids && res.checklist_ids.length) {
-                    $checklistCbs.prop('checked', false);
                     res.checklist_ids.forEach(function(id) {
-                        var $row = $('#emailmodal input.checklistfile-cb[value="' + id + '"]').closest('tr');
-                        $row.show();
-                        $row.find('.checklistfile-cb').prop('checked', true);
+                        $('#emailmodal input.checklistfile-cb[value="' + id + '"]').prop('checked', true);
                     });
                 }
             })
-            .fail(function() { $checklistRows.show(); }); // On error: show all to avoid empty list
+            .fail(function() {
+                window.composeChecklistFilterIds = null;
+                if ($('#mychecklist-datatable').length && $.fn.DataTable && $.fn.DataTable.isDataTable('#mychecklist-datatable')) {
+                    $('#mychecklist-datatable').DataTable().draw();
+                }
+            });
     });
 });
 </script>
