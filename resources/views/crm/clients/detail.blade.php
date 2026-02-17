@@ -311,7 +311,7 @@ use App\Http\Controllers\Controller;
             // Valid tab names that should NOT be treated as matter IDs
             $validTabNames = ['personaldetails', 'noteterm', 'personaldocuments', 'visadocuments', 
                               'eoiroi', 'emails', 
-                              'formgenerations', 'formgenerationsL', 'application', 'workflow', 'appointments', 'checklists'];
+                              'formgenerations', 'formgenerationsL', 'application', 'workflow', 'checklists'];
             
             // Check if $id1 is a valid matter ID (not a tab name)
             $isMatterIdInUrl = isset($id1) && $id1 != "" && !in_array($id1, $validTabNames);
@@ -358,10 +358,6 @@ use App\Http\Controllers\Controller;
                     <i class="fas fa-tasks"></i>
                     <span>Checklists</span>
                 </button>
-                <button class="client-nav-button" data-tab="appointments">
-                    <i class="fas fa-calendar"></i>
-                    <span>Appointments</span>
-                </button>
                 <button class="client-nav-button" data-tab="workflow">
                     <i class="fas fa-stream"></i>
                     <span>Workflow</span>
@@ -406,10 +402,6 @@ use App\Http\Controllers\Controller;
                     <i class="fas fa-tasks"></i>
                     <span>Checklists</span>
                 </button>
-                <button class="client-nav-button" data-tab="appointments">
-                    <i class="fas fa-calendar"></i>
-                    <span>Appointments</span>
-                </button>
             <?php
             }
             ?>
@@ -451,13 +443,11 @@ use App\Http\Controllers\Controller;
                 @include('crm.clients.tabs.emails')
                 @include('crm.clients.tabs.form_generation_client')
                 @include('crm.clients.tabs.checklists')
-                @include('crm.clients.tabs.appointments')
                 @include('crm.clients.tabs.workflow')
                 @include('crm.clients.tabs.client_portal')
             @else
                 @include('crm.clients.tabs.form_generation_lead')
                 @include('crm.clients.tabs.checklists')
-                @include('crm.clients.tabs.appointments')
             @endif
             
             @include('crm.clients.tabs.not_used_documents')
@@ -1407,39 +1397,6 @@ $(document).ready(function() {
         }
     };
     
-    // Appointment data for the appointments tab
-    @php
-    $appointmentdata = [];
-    $appointmentlists = \App\Models\BookingAppointment::where('client_id', $fetchedData->id)
-        ->orderby('created_at', 'DESC')
-        ->get();
-    
-    foreach($appointmentlists as $appointmentlist){
-        $admin = \App\Models\Staff::select('id', 'first_name','email')
-            ->where('id', $appointmentlist->user_id)
-            ->first();
-        $first_name= $admin->first_name ?? 'N/A';
-        
-        // Extract start time from timeslot_full (format: "10:00 AM - 10:15 AM" or just "10:00 AM")
-        $appointmentTime = '';
-        if($appointmentlist->timeslot_full) {
-            $timeslotParts = explode(' - ', $appointmentlist->timeslot_full);
-            $appointmentTime = trim($timeslotParts[0] ?? '');
-        }
-        
-        $appointmentdata[$appointmentlist->id] = [
-            'title' => $appointmentlist->service_type ?? 'N/A',
-            'time' => $appointmentTime,
-            'date' => $appointmentlist->appointment_datetime ? date('d D, M Y', strtotime($appointmentlist->appointment_datetime)) : '',
-            'description' => htmlspecialchars($appointmentlist->enquiry_details ?? '', ENT_QUOTES, 'UTF-8'),
-            'createdby' => substr($first_name ?? '', 0, 1),
-            'createdname' => $first_name ?? 'N/A',
-            'createdemail' => $admin->email ?? 'N/A',
-        ];
-    }
-    @endphp
-    window.appointmentData = {!! json_encode($appointmentdata, JSON_FORCE_OBJECT | JSON_HEX_APOS | JSON_HEX_QUOT) !!};
-    
     // Global function to load activities feed
     window.loadActivities = function() {
         $.ajax({
@@ -1776,29 +1733,6 @@ $('#sendSmsForm').on('submit', function(e) {
             submitBtn.prop('disabled', false).html(originalText);
         }
     });
-});
-
-// Handle appointment button click - switch to appointments tab
-$(document).on('click', '.show-appointments-tab', function(e) {
-    e.preventDefault();
-    
-    // Use SidebarTabs API if available (preferred method)
-    if (typeof SidebarTabs !== 'undefined' && typeof SidebarTabs.activateTab === 'function') {
-        SidebarTabs.activateTab('appointments');
-    } else {
-        // Fallback: Wait for initialization
-        var checkInit = setInterval(function() {
-            if (typeof SidebarTabs !== 'undefined' && typeof SidebarTabs.activateTab === 'function') {
-                clearInterval(checkInit);
-                SidebarTabs.activateTab('appointments');
-            }
-        }, 50);
-        
-        // Timeout after 2 seconds
-        setTimeout(function() {
-            clearInterval(checkInit);
-        }, 2000);
-    }
 });
 </script>
 
