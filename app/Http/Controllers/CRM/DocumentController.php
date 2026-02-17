@@ -956,6 +956,9 @@ class DocumentController extends Controller
         // Sanitize document ID
         $documentId = (int) $id;
         if ($documentId <= 0) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'Invalid document ID.'], 400);
+            }
             return back()->withErrors(['error' => 'Invalid document ID.']);
         }
 
@@ -1239,9 +1242,29 @@ class DocumentController extends Controller
             ]);
             
             // Default behavior: Redirect to the signature creation page where user can associate with client/lead and send
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Signature locations added. Please complete the process on the Signatures page.',
+                    'redirect_url' => route('signatures.create', ['document_id' => $document->id]),
+                ]);
+            }
             return redirect()->route('signatures.create', ['document_id' => $document->id])
                 ->with('success', 'Signature locations added successfully! Now associate with client/lead and send for signing.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
+            if ($request->expectsJson()) {
+                Log::error('Signature fields update failed', [
+                    'document_id' => $documentId,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => config('app.debug') ? $e->getMessage() : 'An error occurred while saving signature fields.',
+                ], 500);
+            }
             return $this->handleError(
                 $e,
                 'signature_fields_update',

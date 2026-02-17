@@ -119,6 +119,11 @@ class Document extends Model
         return $this->hasMany(DocumentNote::class)->orderBy('created_at', 'desc');
     }
 
+    public function client(): BelongsTo
+    {
+        return $this->belongsTo(Admin::class, 'client_id');
+    }
+
     public function clientMatter(): BelongsTo
     {
         return $this->belongsTo(ClientMatter::class, 'client_matter_id');

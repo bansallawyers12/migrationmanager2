@@ -107,8 +107,8 @@
 
 <!-- Inline Signature Placement Modal (Checklist Agreements) -->
 <div class="modal fade" id="signaturePlacementModal" tabindex="-1" role="dialog" aria-labelledby="signaturePlacementModalLabel" aria-hidden="true" data-backdrop="static">
-	<div class="modal-dialog modal-xl" role="document">
-		<div class="modal-content">
+	<div class="modal-dialog modal-xl modal-dialog-scrollable" role="document" style="max-width: 95%; max-height: 90vh;">
+		<div class="modal-content" style="max-height: 90vh;">
 			<div class="modal-header bg-warning text-dark">
 				<h5 class="modal-title" id="signaturePlacementModalLabel">
 					<i class="fas fa-pen-nib mr-2"></i>Place Signature Fields
@@ -117,7 +117,7 @@
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
-			<div class="modal-body p-4">
+			<div class="modal-body p-4" style="max-height: calc(90vh - 150px); overflow-y: auto;">
 				<div id="signature-placement-loading" class="text-center py-5">
 					<div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div>
 					<p class="mt-2 text-muted">Loading document...</p>

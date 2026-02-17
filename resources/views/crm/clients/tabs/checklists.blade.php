@@ -1044,32 +1044,41 @@
                 }
                 var signatures = sigState.signatureFields.map(function(f) {
                     return {
-                        page_number: f.page_number,
-                        x_percent: (f.x_percent * 100).toFixed(2),
-                        y_percent: (f.y_percent * 100).toFixed(2),
-                        w_percent: (f.w_percent * 100).toFixed(2),
-                        h_percent: (f.h_percent * 100).toFixed(2)
+                        page_number: parseInt(f.page_number, 10),
+                        x_percent: parseFloat((f.x_percent * 100).toFixed(2)),
+                        y_percent: parseFloat((f.y_percent * 100).toFixed(2)),
+                        w_percent: parseFloat((f.w_percent * 100).toFixed(2)),
+                        h_percent: parseFloat((f.h_percent * 100).toFixed(2))
                     };
                 });
                 var $btn = $(this);
                 $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm mr-1"></span>Saving...');
+                var postData = {
+                    _method: 'PATCH',
+                    _token: ($('meta[name="csrf-token"]').attr('content') || $('input[name="_token"]').val()),
+                    signatures: signatures
+                };
                 $.ajax({
                     url: '/documents/' + sigState.documentId,
                     method: 'POST',
-                    data: { _method: 'PATCH', signatures: signatures, _token: $('meta[name="csrf-token"]').attr('content') },
-                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                    data: postData,
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    traditional: true
                 }).done(function(resp) {
                     $('#signaturePlacementModal').modal('hide');
-                    if (resp.success) {
+                    if (resp && resp.success) {
                         alert(resp.message || 'Signature fields saved. The signing link is now available.');
+                        if (resp.redirect_url) window.location.href = resp.redirect_url;
                     } else {
-                        alert(resp.message || 'An error occurred.');
+                        alert((resp && resp.message) ? resp.message : 'An error occurred.');
                     }
                 }).fail(function(xhr) {
-                    var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Failed to save.';
-                    if (xhr.responseJSON && xhr.responseJSON.errors) {
-                        msg = Object.values(xhr.responseJSON.errors).flat().join(' ');
-                    }
+                    var msg = 'Failed to save signature fields.';
+                    if (xhr.responseJSON) {
+                        if (xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                        else if (xhr.responseJSON.errors) msg = Object.values(xhr.responseJSON.errors).flat().join(' ');
+                    } else if (xhr.status === 419) msg = 'Session expired. Please refresh the page and try again.';
+                    else if (xhr.responseText && xhr.responseText.length < 200) msg = xhr.responseText;
                     alert(msg);
                 }).always(function() {
                     $btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i>Save Signature Locations');
