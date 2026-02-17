@@ -80,7 +80,7 @@
                 
                 // Get all workflow stages
                 $allWorkflowStages = DB::table('workflow_stages')
-                    ->orderBy('id', 'asc')
+                    ->orderByRaw('COALESCE(sort_order, id) ASC')
                     ->get();
                 ?>
                 
@@ -132,16 +132,24 @@
                                         @php
                                             // Check if we're at the first stage (can't go back from first stage)
                                             $isFirstStage = false;
+                                            $nextStageName = null;
                                             if($currentWorkflowStageId && $allWorkflowStages->count() > 0) {
                                                 $firstStage = $allWorkflowStages->first();
                                                 $isFirstStage = ($currentWorkflowStageId == $firstStage->id);
+                                                $currentOrder = $allWorkflowStages->firstWhere('id', $currentWorkflowStageId);
+                                                $currentSort = $currentOrder ? ($currentOrder->sort_order ?? $currentOrder->id) : null;
+                                                $nextStage = $currentSort !== null ? $allWorkflowStages->first(fn($s) => ($s->sort_order ?? $s->id) > $currentSort) : $allWorkflowStages->where('id', '>', $currentWorkflowStageId)->first();
+                                                $nextStageName = $nextStage ? $nextStage->name : null;
                                             }
                                         @endphp
                                         <button class="btn btn-outline-primary btn-sm" id="back-to-previous-stage" data-matter-id="{{ $selectedMatter->id }}" title="Back to Previous Stage" {{ $isFirstStage ? 'disabled' : '' }}>
                                             <i class="fas fa-angle-left"></i> Back to Previous Stage
                                         </button>
-                                        <button class="btn btn-success btn-sm" id="proceed-to-next-stage" data-matter-id="{{ $selectedMatter->id }}" title="Proceed to Next Stage">
+                                        <button class="btn btn-success btn-sm" id="proceed-to-next-stage" data-matter-id="{{ $selectedMatter->id }}" data-next-stage-name="{{ $nextStageName ?? '' }}" title="Proceed to Next Stage">
                                             Proceed to Next Stage <i class="fas fa-angle-right"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger btn-sm client-portal-discontinue-btn" data-matter-id="{{ $selectedMatter->id }}" title="Discontinue Matter">
+                                            <i class="fas fa-ban"></i> Discontinue
                                         </button>
                                     </div>
                                 </div>
@@ -2749,57 +2757,136 @@ document.addEventListener('DOMContentLoaded', function() {
     if (nextStageBtn) {
         nextStageBtn.addEventListener('click', function() {
             const matterId = this.getAttribute('data-matter-id');
+            const nextStageName = (this.getAttribute('data-next-stage-name') || '').trim();
             if (!matterId) {
                 alert('Error: Matter ID not found');
                 return;
             }
+
+            // If next stage is "Decision Received", show outcome modal first
+            if (nextStageName && nextStageName.toLowerCase() === 'decision received') {
+                document.getElementById('decision-received-matter-id').value = matterId;
+                document.getElementById('decision-outcome').value = '';
+                document.getElementById('decision-note').value = '';
+                const outcomeErr = document.querySelector('.decision-outcome-error strong');
+                const noteErr = document.querySelector('.decision-note-error strong');
+                if (outcomeErr) outcomeErr.textContent = '';
+                if (noteErr) noteErr.textContent = '';
+                $('#decision-received-modal').modal('show');
+                return;
+            }
             
             if (confirm('Are you sure you want to proceed to the next stage?')) {
-                // Disable button to prevent double clicks
-                const btn = this;
-                const originalText = btn.innerHTML;
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-                
-                // Make AJAX call to update stage
-                fetch('{{ route("clients.matter.update-next-stage") }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-                    },
-                    body: JSON.stringify({
-                        matter_id: matterId
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status) {
-                        // Success - reload the page to show updated stage
-                        alert(data.message || 'Matter has been successfully moved to the next stage.');
-                        window.location.reload();
-                    } else {
-                        // Error - show message and re-enable button
-                        alert(data.message || 'Failed to move to next stage. Please try again.');
-                        btn.disabled = false;
-                        btn.innerHTML = originalText;
-                        
-                        // If already at last stage, disable the button
-                        if (data.is_last_stage) {
-                            btn.disabled = true;
-                            btn.classList.add('disabled');
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred while updating the stage. Please try again.');
-                    btn.disabled = false;
-                    btn.innerHTML = originalText;
-                });
+                clientPortalProceedToNextStage(matterId, null, null);
             }
         });
     }
+
+    // Client Portal: Proceed to next stage (shared helper)
+    function clientPortalProceedToNextStage(matterId, decisionOutcome, decisionNote) {
+        const btn = document.getElementById('proceed-to-next-stage');
+        const originalText = btn ? btn.innerHTML : '';
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...'; }
+
+        const payload = { matter_id: matterId };
+        if (decisionOutcome) payload.decision_outcome = decisionOutcome;
+        if (decisionNote) payload.decision_note = decisionNote;
+
+        fetch('{{ route("clients.matter.update-next-stage") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status) {
+                alert(data.message || 'Matter has been successfully moved to the next stage.');
+                window.location.reload();
+            } else {
+                alert(data.message || 'Failed to move to next stage. Please try again.');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                    if (data.is_last_stage) {
+                        btn.disabled = true;
+                        btn.classList.add('disabled');
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the stage. Please try again.');
+            if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
+        });
+    }
+
+    // Decision Received modal: Submit (shared - does the API call directly)
+    $(document).on('click', '#decision-received-submit', function() {
+        const outcome = document.getElementById('decision-outcome')?.value;
+        const note = document.getElementById('decision-note')?.value;
+        const matterId = document.getElementById('decision-received-matter-id')?.value;
+        const outcomeErr = document.querySelector('.decision-outcome-error strong');
+        const noteErr = document.querySelector('.decision-note-error strong');
+
+        if (outcomeErr) outcomeErr.textContent = '';
+        if (noteErr) noteErr.textContent = '';
+
+        if (!outcome || outcome.trim() === '') {
+            if (outcomeErr) outcomeErr.textContent = 'Please select an outcome.';
+            return;
+        }
+        if (!note || note.trim() === '') {
+            if (noteErr) noteErr.textContent = 'Please enter a note.';
+            return;
+        }
+
+        const btn = this;
+        const orig = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        $('#decision-received-modal').modal('hide');
+
+        fetch('{{ route("clients.matter.update-next-stage") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '' },
+            body: JSON.stringify({ matter_id: matterId, decision_outcome: outcome, decision_note: note })
+        })
+        .then(r => r.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = orig;
+            if (data.status) {
+                alert(data.message || 'Matter has been successfully moved to the next stage.');
+                window.location.reload();
+            } else {
+                alert(data.message || 'Failed to move to next stage.');
+                $('#decision-received-modal').modal('show');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            btn.disabled = false;
+            btn.innerHTML = orig;
+            alert('An error occurred.');
+            $('#decision-received-modal').modal('show');
+        });
+    });
+
+    // Discontinue button - opens modal (shared with Workflow tab)
+    $(document).on('click', '.client-portal-discontinue-btn', function() {
+        const matterId = this.getAttribute('data-matter-id');
+        if (!matterId) { alert('Error: Matter ID not found'); return; }
+        document.getElementById('discontinue-matter-id').value = matterId;
+        document.getElementById('discontinue-reason').value = '';
+        document.getElementById('discontinue-notes').value = '';
+        const errEl = document.querySelector('.discontinue-reason-error strong');
+        if (errEl) errEl.textContent = '';
+        $('#discontinue-matter-modal').modal('show');
+    });
     
     // Application Tabs Switching Functionality
     const applicationTabItems = document.querySelectorAll('.application-tab-item');

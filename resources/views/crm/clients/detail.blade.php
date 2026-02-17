@@ -310,7 +310,7 @@ use App\Http\Controllers\Controller;
             // Valid tab names that should NOT be treated as matter IDs
             $validTabNames = ['personaldetails', 'noteterm', 'personaldocuments', 'visadocuments', 
                               'eoiroi', 'emails', 
-                              'formgenerations', 'formgenerationsL', 'application','appointments', 'checklists'];
+                              'formgenerations', 'formgenerationsL', 'application', 'workflow', 'appointments', 'checklists'];
             
             // Check if $id1 is a valid matter ID (not a tab name)
             $isMatterIdInUrl = isset($id1) && $id1 != "" && !in_array($id1, $validTabNames);
@@ -360,6 +360,10 @@ use App\Http\Controllers\Controller;
                 <button class="client-nav-button" data-tab="appointments">
                     <i class="fas fa-calendar"></i>
                     <span>Appointments</span>
+                </button>
+                <button class="client-nav-button" data-tab="workflow">
+                    <i class="fas fa-stream"></i>
+                    <span>Workflow</span>
                 </button>
                 <button class="client-nav-button" data-tab="application">
                     <i class="fas fa-globe"></i>
@@ -447,6 +451,7 @@ use App\Http\Controllers\Controller;
                 @include('crm.clients.tabs.form_generation_client')
                 @include('crm.clients.tabs.checklists')
                 @include('crm.clients.tabs.appointments')
+                @include('crm.clients.tabs.workflow')
                 @include('crm.clients.tabs.client_portal')
             @else
                 @include('crm.clients.tabs.form_generation_lead')

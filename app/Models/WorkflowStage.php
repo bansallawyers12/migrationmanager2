@@ -18,7 +18,7 @@ class WorkflowStage extends Authenticatable
 	
 	
 	protected $fillable = [
-        'id', 'name', 'created_at', 'updated_at'
+        'id', 'name', 'sort_order', 'created_at', 'updated_at'
     ];
   
 	public $sortable = ['id', 'created_at', 'updated_at'];

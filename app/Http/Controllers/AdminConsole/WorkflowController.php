@@ -42,7 +42,7 @@ class WorkflowController extends Controller
 		//$query 		= Workflow::where('id', '!=', '');
         $query 		= WorkflowStage::query();
         $totalData 	= $query->count();	//for all data
-        $lists		= $query->sortable(['id' => 'asc'])->paginate(config('constants.limit')); //dd($lists);
+        $lists		= $query->orderByRaw('COALESCE(sort_order, id) ASC')->paginate(config('constants.limit')); //dd($lists);
         return view('AdminConsole.features.workflow.index',compact(['lists', 'totalData']));
     }
 
@@ -67,10 +67,12 @@ class WorkflowController extends Controller
 			$obj->name	 =	@$requestData['name'];
             $saved		 =	$obj->save();*/
 			$stages = $requestData['stage_name'];
+			$maxSortOrder = (int) (WorkflowStage::max('sort_order') ?? WorkflowStage::max('id') ?? 0);
             foreach($stages as $stage){
 				$o = new WorkflowStage;
 				//$o->w_id = $obj->id;
 				$o->name = $stage;
+				$o->sort_order = ++$maxSortOrder;
 				$save	 =	$o->save();
 			}
             if(!$save) {

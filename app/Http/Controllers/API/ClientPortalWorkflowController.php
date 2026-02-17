@@ -40,9 +40,9 @@ class ClientPortalWorkflowController extends Controller
                 }
             }
 
-            // Get all workflow stages
+            // Get all workflow stages (ordered by sort_order, then id)
             $workflowStages = DB::table('workflow_stages')
-                ->orderBy('id', 'asc')
+                ->orderByRaw('COALESCE(sort_order, id) ASC')
                 ->select(
                     'id',
                     'name',

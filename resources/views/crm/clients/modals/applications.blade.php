@@ -139,6 +139,104 @@
 	</div>
 </div>
 
+{{-- 2a. Decision Received Modal (Granted/Refused/Withdrawn + note) --}}
+<div class="modal fade custom_modal" id="decision-received-modal" tabindex="-1" role="dialog" aria-labelledby="decisionReceivedModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="decisionReceivedModalLabel">Decision Received</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<p class="text-muted mb-3">Please select the outcome and add a note.</p>
+				<form id="decision-received-form" name="decision-received-form" autocomplete="off">
+					@csrf
+					<input type="hidden" name="matter_id" id="decision-received-matter-id" value="">
+					<div class="row">
+						<div class="col-12 col-md-12 col-lg-12">
+							<div class="form-group">
+								<label for="decision-outcome">Outcome <span class="span_req">*</span></label>
+								<select class="form-control" id="decision-outcome" name="decision_outcome" data-valid="required" required>
+									<option value="">Please Select</option>
+									<option value="Granted">Granted</option>
+									<option value="Refused">Refused</option>
+									<option value="Withdrawn">Withdrawn</option>
+								</select>
+								<span class="custom-error decision-outcome-error" role="alert"><strong></strong></span>
+							</div>
+						</div>
+						<div class="col-12 col-md-12 col-lg-12">
+							<div class="form-group">
+								<label for="decision-note">Note <span class="span_req">*</span></label>
+								<textarea class="form-control" id="decision-note" name="decision_note" rows="3" placeholder="Enter note..." required></textarea>
+								<span class="custom-error decision-note-error" role="alert"><strong></strong></span>
+							</div>
+						</div>
+						<div class="col-12 col-md-12 col-lg-12">
+							<button type="button" class="btn btn-primary" id="decision-received-submit">
+								<i class="fas fa-check"></i> Proceed to Decision Received
+							</button>
+							<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+
+{{-- 2b. Discontinue Matter Modal (for Workflow tab - client_matters) --}}
+<div class="modal fade custom_modal" id="discontinue-matter-modal" tabindex="-1" role="dialog" aria-labelledby="discontinueMatterModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="discontinueMatterModalLabel">Discontinue Matter</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<form id="discontinue-matter-form" name="discontinue-matter-form" autocomplete="off">
+					@csrf
+					<input type="hidden" name="matter_id" id="discontinue-matter-id" value="">
+					<div class="row">
+						<div class="col-12 col-md-12 col-lg-12">
+							<div class="form-group">
+								<label for="discontinue-reason">Reason for Discontinue <span class="span_req">*</span></label>
+								<select class="form-control" id="discontinue-reason" name="discontinue_reason" data-valid="required" required>
+									<option value="">Please Select</option>
+									<option value="Change of Application">Change of Application</option>
+									<option value="Error by Team Member">Error by Team Member</option>
+									<option value="Financial Difficulties">Financial Difficulties</option>
+									<option value="Grant of Another visa">Grant of Another visa</option>
+									<option value="Loss of Competitor">Loss of Competitor</option>
+									<option value="Client Withdrew">Client Withdrew</option>
+									<option value="Other Reasons">Other Reasons</option>
+								</select>
+								<span class="custom-error discontinue-reason-error" role="alert"><strong></strong></span>
+							</div>
+						</div>
+						<div class="col-12 col-md-12 col-lg-12">
+							<div class="form-group">
+								<label for="discontinue-notes">Notes</label>
+								<textarea class="form-control" id="discontinue-notes" name="discontinue_notes" rows="3" placeholder="Optional additional notes"></textarea>
+							</div>
+						</div>
+						<div class="col-12 col-md-12 col-lg-12">
+							<button type="button" class="btn btn-danger" id="discontinue-matter-submit">
+								<i class="fas fa-ban"></i> Discontinue
+							</button>
+							<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+
 {{-- 3. Revert Discontinued Application Modal --}}
 <div class="modal fade custom_modal" id="revert_application" tabindex="-1" role="dialog" aria-labelledby="applicationModalLabel" aria-hidden="true">
 	<div class="modal-dialog">

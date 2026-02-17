@@ -834,9 +834,10 @@ class ClientPortalController extends Controller
 				], 404);
 			}
 
-			// Get next stage (ordered by id ascending)
-			$nextStage = WorkflowStage::where('id', '>', $currentStageId)
-				->orderBy('id', 'asc')
+			// Get next stage (ordered by sort_order, then id)
+			$currentOrder = $currentStage->sort_order ?? $currentStage->id;
+			$nextStage = WorkflowStage::whereRaw('COALESCE(sort_order, id) > ?', [$currentOrder])
+				->orderByRaw('COALESCE(sort_order, id) ASC')
 				->first();
 
 			if (!$nextStage) {
@@ -845,6 +846,32 @@ class ClientPortalController extends Controller
 					'message' => 'Already at the last stage',
 					'is_last_stage' => true
 				], 400);
+			}
+
+			// When advancing to "Decision Received", require decision_outcome and decision_note
+			$nextStageName = $nextStage->name ?? '';
+			$isAdvancingToDecisionReceived = (strtolower(trim($nextStageName)) === 'decision received');
+			if ($isAdvancingToDecisionReceived) {
+				$decisionOutcome = $request->input('decision_outcome');
+				$decisionNote = $request->input('decision_note', '');
+				if (!$decisionOutcome || trim($decisionOutcome) === '') {
+					return response()->json([
+						'status' => false,
+						'message' => 'Please select an outcome (Granted/Refused/Withdrawn) for Decision Received.'
+					], 422);
+				}
+				if (!in_array(trim($decisionOutcome), ['Granted', 'Refused', 'Withdrawn'])) {
+					return response()->json([
+						'status' => false,
+						'message' => 'Invalid outcome. Must be Granted, Refused, or Withdrawn.'
+					], 422);
+				}
+				if (!$decisionNote || trim($decisionNote) === '') {
+					return response()->json([
+						'status' => false,
+						'message' => 'Please enter a note for Decision Received.'
+					], 422);
+				}
 			}
 
 			// Update client_matters table
@@ -896,17 +923,26 @@ class ClientPortalController extends Controller
 					}
 				}
 
-				// Calculate progress percentage
+				// Calculate progress percentage (by sort_order)
 				$totalStages = WorkflowStage::count();
-				$currentStageIndex = WorkflowStage::where('id', '<=', $nextStage->id)->count();
+				$nextOrder = $nextStage->sort_order ?? $nextStage->id;
+				$currentStageIndex = WorkflowStage::whereRaw('COALESCE(sort_order, id) <= ?', [$nextOrder])->count();
 				$progressPercentage = $totalStages > 0 ? round(($currentStageIndex / $totalStages) * 100) : 0;
 
 				// Check if this is the last stage
-				$isLastStage = !WorkflowStage::where('id', '>', $nextStage->id)->exists();
+				$isLastStage = !WorkflowStage::whereRaw('COALESCE(sort_order, id) > ?', [$nextOrder])->exists();
 
 				// Log activity (Client Portal tab - website)
 				$comments = 'moved the stage from <b>' . $currentStage->name . '</b> to <b>' . $nextStage->name . '</b>';
-				
+				if ($isAdvancingToDecisionReceived) {
+					$decisionOutcome = $request->input('decision_outcome');
+					$decisionNote = $request->input('decision_note', '');
+					$comments .= '<br>Outcome: <b>' . e($decisionOutcome) . '</b>';
+					if (!empty(trim($decisionNote))) {
+						$comments .= '<br>Note: ' . e($decisionNote);
+					}
+				}
+
 				$activityLog = new ActivitiesLog;
 				$activityLog->client_id = $clientMatter->client_id;
 				$activityLog->created_by = Auth::user()->id;
@@ -961,6 +997,242 @@ class ClientPortalController extends Controller
 			return response()->json([
 				'status' => false,
 				'message' => 'An error occurred while updating the stage. Please try again.'
+			], 500);
+		}
+	}
+
+	/**
+	 * Move Client Matter to Previous Stage
+	 *
+	 * Updates the workflow_stage_id for a client_matter to the previous stage in sequence.
+	 * Also updates the applications table if it exists (for backward compatibility).
+	 *
+	 * @param Request $request
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function updateClientMatterPreviousStage(Request $request)
+	{
+		try {
+			$matterId = $request->input('matter_id');
+
+			if (!$matterId) {
+				return response()->json([
+					'status' => false,
+					'message' => 'Matter ID is required'
+				], 422);
+			}
+
+			$clientMatter = ClientMatter::find($matterId);
+
+			if (!$clientMatter) {
+				return response()->json([
+					'status' => false,
+					'message' => 'Client matter not found'
+				], 404);
+			}
+
+			$currentStageId = $clientMatter->workflow_stage_id;
+
+			if (!$currentStageId) {
+				return response()->json([
+					'status' => false,
+					'message' => 'Current stage not found'
+				], 404);
+			}
+
+			$currentStage = WorkflowStage::find($currentStageId);
+
+			if (!$currentStage) {
+				return response()->json([
+					'status' => false,
+					'message' => 'Current workflow stage not found'
+				], 404);
+			}
+
+			$currentOrder = $currentStage->sort_order ?? $currentStage->id;
+			$prevStage = WorkflowStage::whereRaw('COALESCE(sort_order, id) < ?', [$currentOrder])
+				->orderByRaw('COALESCE(sort_order, id) DESC')
+				->first();
+
+			if (!$prevStage) {
+				return response()->json([
+					'status' => false,
+					'message' => 'Already at the first stage',
+					'is_first_stage' => true
+				], 400);
+			}
+
+			$clientMatter->workflow_stage_id = $prevStage->id;
+			$saved = $clientMatter->save();
+
+			if ($saved) {
+				$application = DB::table('applications')
+					->where('client_matter_id', $matterId)
+					->where('client_id', $clientMatter->client_id)
+					->first();
+
+				if ($application) {
+					try {
+						$workflowInfo = DB::table('workflow_stages')
+							->where('id', $prevStage->id)
+							->select('workflow_stages.name', 'workflow_stages.w_id')
+							->first();
+
+						if ($workflowInfo) {
+							$updateData = [
+								'stage' => $workflowInfo->name,
+								'updated_at' => now()
+							];
+							if (isset($workflowInfo->w_id) && !is_null($workflowInfo->w_id)) {
+								$updateData['workflow'] = $workflowInfo->w_id;
+							}
+							DB::table('applications')
+								->where('id', $application->id)
+								->update($updateData);
+						}
+					} catch (\Exception $e) {
+						DB::table('applications')
+							->where('id', $application->id)
+							->update([
+								'stage' => $prevStage->name,
+								'updated_at' => now()
+							]);
+					}
+				}
+
+				$totalStages = WorkflowStage::count();
+				$prevOrder = $prevStage->sort_order ?? $prevStage->id;
+				$currentStageIndex = WorkflowStage::whereRaw('COALESCE(sort_order, id) <= ?', [$prevOrder])->count();
+				$progressPercentage = $totalStages > 0 ? round(($currentStageIndex / $totalStages) * 100) : 0;
+				$isFirstStage = !WorkflowStage::whereRaw('COALESCE(sort_order, id) < ?', [$prevOrder])->exists();
+
+				$comments = 'moved the stage from <b>' . $currentStage->name . '</b> to <b>' . $prevStage->name . '</b>';
+
+				$activityLog = new ActivitiesLog;
+				$activityLog->client_id = $clientMatter->client_id;
+				$activityLog->created_by = Auth::user()->id;
+				$activityLog->subject = 'Stage: ' . $currentStage->name;
+				$activityLog->description = $comments;
+				$activityLog->activity_type = 'stage';
+				$activityLog->task_status = 0;
+				$activityLog->pin = 0;
+				$activityLog->source = 'client_portal_web';
+				$activityLog->save();
+
+				$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $matterId;
+				$notificationMessage = 'Stage moved from ' . $currentStage->name . ' to ' . $prevStage->name . ' for matter ' . $matterNo;
+				DB::table('notifications')->insert([
+					'sender_id' => Auth::user()->id,
+					'receiver_id' => $clientMatter->client_id,
+					'module_id' => $matterId,
+					'url' => '/documents',
+					'notification_type' => 'stage_change',
+					'message' => $notificationMessage,
+					'created_at' => now(),
+					'updated_at' => now(),
+					'sender_status' => 1,
+					'receiver_status' => 0,
+					'seen' => 0
+				]);
+
+				return response()->json([
+					'status' => true,
+					'message' => 'Matter has been successfully moved to the previous stage.',
+					'stage_name' => $prevStage->name,
+					'stage_id' => $prevStage->id,
+					'progress_percentage' => $progressPercentage,
+					'is_first_stage' => $isFirstStage
+				]);
+			}
+
+			return response()->json([
+				'status' => false,
+				'message' => 'Failed to update matter stage. Please try again.'
+			], 500);
+
+		} catch (\Exception $e) {
+			Log::error('Error updating client matter previous stage: ' . $e->getMessage(), [
+				'matter_id' => $request->input('matter_id'),
+				'trace' => $e->getTraceAsString()
+			]);
+
+			return response()->json([
+				'status' => false,
+				'message' => 'An error occurred while updating the stage. Please try again.'
+			], 500);
+		}
+	}
+
+	/**
+	 * Discontinue a client matter (set matter_status = 0)
+	 * Requires discontinue_reason from dropdown. Logs activity with reason.
+	 *
+	 * @param Request $request
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function discontinueClientMatter(Request $request)
+	{
+		try {
+			$matterId = $request->input('matter_id');
+			$reason = $request->input('discontinue_reason');
+			$notes = $request->input('discontinue_notes', '');
+
+			if (!$matterId) {
+				return response()->json(['status' => false, 'message' => 'Matter ID is required'], 422);
+			}
+
+			if (!$reason || trim($reason) === '') {
+				return response()->json(['status' => false, 'message' => 'Please select a reason for discontinuing.'], 422);
+			}
+
+			$clientMatter = ClientMatter::find($matterId);
+
+			if (!$clientMatter) {
+				return response()->json(['status' => false, 'message' => 'Client matter not found.'], 404);
+			}
+
+			$clientMatter->matter_status = 0;
+			$saved = $clientMatter->save();
+
+			if ($saved) {
+				// Update applications table if exists (legacy sync)
+				DB::table('applications')
+					->where('client_matter_id', $matterId)
+					->where('client_id', $clientMatter->client_id)
+					->update(['status' => 2, 'updated_at' => now()]);
+
+				$description = 'Discontinued matter. Reason: <b>' . e($reason) . '</b>';
+				if (!empty(trim($notes))) {
+					$description .= '<br>Notes: ' . e($notes);
+				}
+
+				$activityLog = new ActivitiesLog;
+				$activityLog->client_id = $clientMatter->client_id;
+				$activityLog->created_by = Auth::user()->id;
+				$activityLog->subject = 'Matter Discontinued';
+				$activityLog->description = $description;
+				$activityLog->activity_type = 'stage';
+				$activityLog->task_status = 0;
+				$activityLog->pin = 0;
+				$activityLog->source = 'client_portal_web';
+				$activityLog->save();
+
+				return response()->json([
+					'status' => true,
+					'message' => 'Matter has been successfully discontinued.'
+				]);
+			}
+
+			return response()->json(['status' => false, 'message' => 'Failed to discontinue matter.'], 500);
+
+		} catch (\Exception $e) {
+			Log::error('Error discontinuing client matter: ' . $e->getMessage(), [
+				'matter_id' => $request->input('matter_id'),
+				'trace' => $e->getTraceAsString()
+			]);
+			return response()->json([
+				'status' => false,
+				'message' => 'An error occurred while discontinuing the matter.'
 			], 500);
 		}
 	}

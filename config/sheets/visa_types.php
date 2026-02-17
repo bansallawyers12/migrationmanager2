@@ -37,7 +37,7 @@ return [
         ],
         'lodged_stages' => ['Application Lodged', 'Immi Request Received'],
         'checklist_early_stages' => ['Checklist'],
-        'discontinue_stages' => ['Decision Received', 'File Closed', 'Ready to Close', 'Withdrawn', 'Refund', 'Discontinued'],
+        'discontinue_stages' => ['Decision Received', 'Ready to Close', 'File Closed', 'Withdrawn', 'Refund', 'Discontinued'],
         'checklist_convert_to_client_stage' => 'Initial Payment and Documents Received',
     ],
 
@@ -67,7 +67,7 @@ return [
         ],
         'lodged_stages' => ['Application Lodged', 'Immi Request Received'],
         'checklist_early_stages' => ['Checklist'],
-        'discontinue_stages' => ['Decision Received', 'File Closed', 'Ready to Close', 'Withdrawn', 'Refund', 'Discontinued'],
+        'discontinue_stages' => ['Decision Received', 'Ready to Close', 'File Closed', 'Withdrawn', 'Refund', 'Discontinued'],
         'checklist_convert_to_client_stage' => 'Initial Payment and Documents Received',
     ],
 
@@ -97,7 +97,7 @@ return [
         ],
         'lodged_stages' => ['Application Lodged', 'Immi Request Received'],
         'checklist_early_stages' => ['Checklist'],
-        'discontinue_stages' => ['Decision Received', 'File Closed', 'Ready to Close', 'Withdrawn', 'Refund', 'Discontinued'],
+        'discontinue_stages' => ['Decision Received', 'Ready to Close', 'File Closed', 'Withdrawn', 'Refund', 'Discontinued'],
         'checklist_convert_to_client_stage' => 'Initial Payment and Documents Received',
     ],
 
@@ -127,7 +127,7 @@ return [
         ],
         'lodged_stages' => ['Application Lodged', 'Immi Request Received'],
         'checklist_early_stages' => ['Checklist'],
-        'discontinue_stages' => ['Decision Received', 'File Closed', 'Ready to Close', 'Withdrawn', 'Refund', 'Discontinued'],
+        'discontinue_stages' => ['Decision Received', 'Ready to Close', 'File Closed', 'Withdrawn', 'Refund', 'Discontinued'],
         'checklist_convert_to_client_stage' => 'Initial Payment and Documents Received',
     ],
 
@@ -157,7 +157,7 @@ return [
         ],
         'lodged_stages' => ['Application Lodged', 'Immi Request Received'],
         'checklist_early_stages' => ['Checklist'],
-        'discontinue_stages' => ['Decision Received', 'File Closed', 'Ready to Close', 'Withdrawn', 'Refund', 'Discontinued'],
+        'discontinue_stages' => ['Decision Received', 'Ready to Close', 'File Closed', 'Withdrawn', 'Refund', 'Discontinued'],
         'checklist_convert_to_client_stage' => 'Initial Payment and Documents Received',
     ],
 ];

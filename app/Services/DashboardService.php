@@ -291,7 +291,7 @@ class DashboardService
     private function getWorkflowStages()
     {
         return Cache::remember('workflow_stages', 3600, function () {
-            return WorkflowStage::orderBy('id', 'ASC')
+            return WorkflowStage::orderByRaw('COALESCE(sort_order, id) ASC')
                 ->get();
         });
     }
