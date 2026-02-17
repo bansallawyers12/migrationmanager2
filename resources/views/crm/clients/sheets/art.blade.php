@@ -354,6 +354,7 @@
                                         <th class="sortable {{ request('sort') == 'client_name' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="client_name">Name</th>
                                         <th>Total Payment</th>
                                         <th>Pending Payment</th>
+                                        <th class="sortable {{ request('sort') == 'deadline' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="deadline">Deadline</th>
                                         <th class="sortable {{ request('sort') == 'submission_date' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="submission_date">Submission Last Date</th>
                                         <th class="sortable {{ request('sort') == 'agent_name' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="agent_name">Agent Name</th>
                                         <th class="sortable {{ request('sort') == 'status' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="status">Status of the File</th>
@@ -366,7 +367,7 @@
                                 <tbody>
                                     @if($rows->isEmpty())
                                         <tr>
-                                            <td colspan="13" class="text-center text-muted py-4">
+                                            <td colspan="14" class="text-center text-muted py-4">
                                                 <i class="fas fa-info-circle"></i> No ART records found. Add an ART matter type and assign matters to clients to see data here.
                                             </td>
                                         </tr>
@@ -386,6 +387,7 @@
                                                 <td><a href="{{ $clientDetailUrl }}" class="art-link">{{ trim(($row->first_name ?? '') . ' ' . ($row->last_name ?? '')) ?: '—' }}</a></td>
                                                 <td>${{ $row->total_payment ?? '0.00' }}</td>
                                                 <td>${{ $row->pending_payment ?? '0.00' }}</td>
+                                                <td>{{ $row->deadline ? \Carbon\Carbon::parse($row->deadline)->format('d/m/Y') : '—' }}</td>
                                                 <td>{{ $row->submission_last_date ? \Carbon\Carbon::parse($row->submission_last_date)->format('d/m/Y') : '—' }}</td>
                                                 <td>{{ trim($row->agent_name ?? '') ?: '—' }}</td>
                                                 <td>

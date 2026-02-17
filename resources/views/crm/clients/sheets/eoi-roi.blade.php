@@ -486,6 +486,7 @@
                                     <th>Partner Points</th>
                                     <th>State</th>
                                     <th>ROI Status</th>
+                                    <th class="sortable {{ request('sort') == 'deadline' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="deadline">Deadline</th>
                                     <th>Comments</th>
                                     <th class="sortable {{ request('sort') == 'submission_date' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="submission_date">Last EOI/ROI Sent</th>
                                     <th>Verification Date</th>
@@ -496,7 +497,7 @@
                             <tbody>
                                 @if($rows->isEmpty())
                                     <tr>
-                                        <td colspan="13" class="text-center text-muted py-4">
+                                        <td colspan="14" class="text-center text-muted py-4">
                                             <i class="fas fa-info-circle"></i> No EOI/ROI records found matching your criteria.
                                         </td>
                                     </tr>
@@ -540,6 +541,7 @@
                                                     —
                                                 @endif
                                             </td>
+                                            <td>{{ $row->deadline ? \Carbon\Carbon::parse($row->deadline)->format('d/m/Y') : '—' }}</td>
                                             <td class="eoi-comments-cell" title="{{ $row->warnings_text ?? '' }}">
                                                 @if(!empty($row->warnings_text))
                                                     <span class="warning-text">{{ $row->warnings_text }}</span>

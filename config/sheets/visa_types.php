@@ -25,8 +25,6 @@ return [
         'matter_title_patterns' => ['485'],
 
         'ongoing_stages' => [
-            'Initial consultation',
-            'Initial Payment and Documents Received',
             'Cost Agreement, form 956 and First email Sent',
             'Cost Agreement, form 956 Received',
             'Pending documents and payment requested',
@@ -38,7 +36,7 @@ return [
         'lodged_stages' => ['Application Lodged', 'Immi Request Received'],
         'checklist_early_stages' => ['Checklist'],
         'discontinue_stages' => ['Decision Received', 'Ready to Close', 'File Closed', 'Withdrawn', 'Refund', 'Discontinued'],
-        'checklist_convert_to_client_stage' => 'Initial Payment and Documents Received',
+        'checklist_convert_to_client_stage' => 'Cost Agreement, form 956 and First email Sent',
     ],
 
     'visitor' => [
@@ -55,8 +53,6 @@ return [
         'matter_title_patterns' => ['600 -'],
 
         'ongoing_stages' => [
-            'Initial consultation',
-            'Initial Payment and Documents Received',
             'Cost Agreement, form 956 and First email Sent',
             'Cost Agreement, form 956 Received',
             'Pending documents and payment requested',
@@ -68,7 +64,7 @@ return [
         'lodged_stages' => ['Application Lodged', 'Immi Request Received'],
         'checklist_early_stages' => ['Checklist'],
         'discontinue_stages' => ['Decision Received', 'Ready to Close', 'File Closed', 'Withdrawn', 'Refund', 'Discontinued'],
-        'checklist_convert_to_client_stage' => 'Initial Payment and Documents Received',
+        'checklist_convert_to_client_stage' => 'Cost Agreement, form 956 and First email Sent',
     ],
 
     'student' => [
@@ -85,8 +81,6 @@ return [
         'matter_title_patterns' => ['500 -'],
 
         'ongoing_stages' => [
-            'Initial consultation',
-            'Initial Payment and Documents Received',
             'Cost Agreement, form 956 and First email Sent',
             'Cost Agreement, form 956 Received',
             'Pending documents and payment requested',
@@ -98,7 +92,7 @@ return [
         'lodged_stages' => ['Application Lodged', 'Immi Request Received'],
         'checklist_early_stages' => ['Checklist'],
         'discontinue_stages' => ['Decision Received', 'Ready to Close', 'File Closed', 'Withdrawn', 'Refund', 'Discontinued'],
-        'checklist_convert_to_client_stage' => 'Initial Payment and Documents Received',
+        'checklist_convert_to_client_stage' => 'Cost Agreement, form 956 and First email Sent',
     ],
 
     'pr' => [
@@ -115,8 +109,6 @@ return [
         'matter_title_patterns' => ['189', '190', '191', '491'],
 
         'ongoing_stages' => [
-            'Initial consultation',
-            'Initial Payment and Documents Received',
             'Cost Agreement, form 956 and First email Sent',
             'Cost Agreement, form 956 Received',
             'Pending documents and payment requested',
@@ -128,7 +120,7 @@ return [
         'lodged_stages' => ['Application Lodged', 'Immi Request Received'],
         'checklist_early_stages' => ['Checklist'],
         'discontinue_stages' => ['Decision Received', 'Ready to Close', 'File Closed', 'Withdrawn', 'Refund', 'Discontinued'],
-        'checklist_convert_to_client_stage' => 'Initial Payment and Documents Received',
+        'checklist_convert_to_client_stage' => 'Cost Agreement, form 956 and First email Sent',
     ],
 
     'employer-sponsored' => [
@@ -145,8 +137,6 @@ return [
         'matter_title_patterns' => ['482', '494', '186', '407'],
 
         'ongoing_stages' => [
-            'Initial consultation',
-            'Initial Payment and Documents Received',
             'Cost Agreement, form 956 and First email Sent',
             'Cost Agreement, form 956 Received',
             'Pending documents and payment requested',
@@ -158,6 +148,6 @@ return [
         'lodged_stages' => ['Application Lodged', 'Immi Request Received'],
         'checklist_early_stages' => ['Checklist'],
         'discontinue_stages' => ['Decision Received', 'Ready to Close', 'File Closed', 'Withdrawn', 'Refund', 'Discontinued'],
-        'checklist_convert_to_client_stage' => 'Initial Payment and Documents Received',
+        'checklist_convert_to_client_stage' => 'Cost Agreement, form 956 and First email Sent',
     ],
 ];

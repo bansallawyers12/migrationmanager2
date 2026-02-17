@@ -249,6 +249,7 @@ class VisaTypeSheetController extends Controller
                 cm.office_id,
                 cm.workflow_stage_id,
                 cm.matter_status,
+                cm.deadline,
                 cm.{$checklistCol} as checklist_status,
                 m.title as matter_title
             FROM client_matters cm
@@ -262,8 +263,8 @@ class VisaTypeSheetController extends Controller
                 SELECT cm.id AS matter_id, cm.client_id, cm.client_unique_matter_no,
                        cm.other_reference, cm.department_reference, cm.sel_migration_agent,
                        cm.sel_person_responsible, cm.sel_person_assisting,
-                       cm.office_id, cm.workflow_stage_id, cm.matter_status, cm.{$checklistCol} as checklist_status,
-                       m.title as matter_title
+                       cm.office_id, cm.workflow_stage_id, cm.matter_status, cm.deadline,
+                       cm.{$checklistCol} as checklist_status, m.title as matter_title
                 FROM client_matters cm
                 INNER JOIN matters m ON m.id = cm.sel_matter_id
                 INNER JOIN (
@@ -295,6 +296,7 @@ class VisaTypeSheetController extends Controller
                 DB::raw('admins."visaExpiry" as visa_expiry'),
                 'latest_matter.client_unique_matter_no',
                 'latest_matter.matter_title',
+                'latest_matter.deadline',
                 'latest_matter.other_reference',
                 'latest_matter.department_reference',
                 'latest_matter.office_id',
@@ -435,13 +437,21 @@ class VisaTypeSheetController extends Controller
             $query->orderByRaw("CASE WHEN COALESCE(latest_matter.checklist_status, 'active') = 'hold' THEN 1 ELSE 0 END ASC");
         }
         
-        // Third priority: visa expiry (ASC) - closest expiry dates first
+        // Third priority: deadline (ASC) - nearest deadline first, nulls last
+        $driver = DB::connection()->getDriverName();
+        if ($driver === 'mysql') {
+            $query->orderByRaw('latest_matter.deadline IS NULL ASC, latest_matter.deadline ASC');
+        } else {
+            $query->orderByRaw('latest_matter.deadline ASC NULLS LAST');
+        }
+        
+        // Fourth priority: visa expiry (ASC) - closest expiry dates first
         // NULL expiry dates go to the end
         // Use quoted "visaExpiry" for PostgreSQL (case-sensitive column)
         $query->orderByRaw("CASE WHEN admins.\"visaExpiry\" IS NULL OR admins.\"visaExpiry\"::text = '0000-00-00' THEN 1 ELSE 0 END ASC");
         $query->orderByRaw('admins."visaExpiry" ASC');
         
-        // Fourth priority: custom user sort if provided
+        // Fifth priority: custom user sort if provided
         $sortField = $request->get('sort');
         $sortDirection = $request->get('direction', 'asc');
         if ($sortField && in_array(strtolower($sortDirection), ['asc', 'desc'])) {

@@ -5035,7 +5035,7 @@ class ClientsController extends Controller
                 $matterInfo = Matter::select('nick_name')->where('id', '=', $requestData['matter_id'])->first();
                 $obj5->client_unique_matter_no = $matterInfo->nick_name."_".$client_matters_current_no;
             }
-            $obj5->workflow_stage_id = 1;
+            $obj5->workflow_stage_id = \App\Models\WorkflowStage::orderByRaw('COALESCE(sort_order, id) ASC')->value('id') ?? 1;
             $obj5->matter_status = 1; // Active by default
             $saved5 = $obj5->save();
             $lastInsertedId = $obj5->id; // ← This gets the last inserted ID
@@ -5576,7 +5576,7 @@ class ClientsController extends Controller
                         $matter->client_unique_matter_no = $matterInfo->nick_name."_".$client_matters_current_no;
                     }
 
-                    $matter->workflow_stage_id = 1;
+                    $matter->workflow_stage_id = \App\Models\WorkflowStage::orderByRaw('COALESCE(sort_order, id) ASC')->value('id') ?? 1;
                     $matter->matter_status = 1; // Active by default
                     $matter->save();
                     

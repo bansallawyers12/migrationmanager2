@@ -135,7 +135,8 @@ class EoiRoiSheetController extends Controller
                 cm.client_id,
                 cm.client_unique_matter_no,
                 cm.id AS matter_id,
-                cm.office_id
+                cm.office_id,
+                cm.deadline
             FROM client_matters cm
             INNER JOIN matters m ON m.id = cm.sel_matter_id
             WHERE cm.matter_status = 1
@@ -168,7 +169,8 @@ class EoiRoiSheetController extends Controller
                 'admins.marital_status',
                 'latest_eoi_matter.client_unique_matter_no as matter_id',
                 'latest_eoi_matter.matter_id as matter_internal_id',
-                'latest_eoi_matter.office_id'
+                'latest_eoi_matter.office_id',
+                'latest_eoi_matter.deadline'
             )
             ->where('admins.is_archived', 0)
             ->where('admins.role', 7)
@@ -259,6 +261,14 @@ class EoiRoiSheetController extends Controller
      */
     protected function applySorting($query, Request $request)
     {
+        $driver = DB::connection()->getDriverName();
+        // Primary: nearest deadline first, nulls last
+        if ($driver === 'mysql') {
+            $query->orderByRaw('latest_eoi_matter.deadline IS NULL ASC, latest_eoi_matter.deadline ASC');
+        } else {
+            $query->orderByRaw('latest_eoi_matter.deadline ASC NULLS LAST');
+        }
+
         $sortField = $request->get('sort', 'submission_date');
         $sortDirection = $request->get('direction', 'desc');
 
@@ -277,10 +287,10 @@ class EoiRoiSheetController extends Controller
             'marital_status' => 'admins.marital_status',
             'eoi_status' => 'eoi.eoi_status',
             'submission_date' => 'eoi."EOI_submission_date"',
+            'deadline' => 'latest_eoi_matter.deadline',
         ];
 
         $actualSortField = $sortableFieldsRaw[$sortField] ?? 'eoi."EOI_submission_date"';
-
         $query->orderByRaw($actualSortField . ' ' . $dir);
 
         return $query;

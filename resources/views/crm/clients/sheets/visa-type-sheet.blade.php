@@ -308,6 +308,7 @@
                                         @endif
                                         <th>Assignee</th>
                                         <th>Visa Expiry</th>
+                                        <th>Deadline</th>
                                         @if($tab !== 'checklist')
                                         <th>Current Stage</th>
                                         @endif
@@ -324,7 +325,7 @@
                                 <tbody>
                                     @if($rows->isEmpty())
                                         <tr>
-                                            <td colspan="{{ $tab === 'checklist' ? 14 : 12 }}" class="text-center text-muted py-4">
+                                            <td colspan="{{ $tab === 'checklist' ? 15 : 13 }}" class="text-center text-muted py-4">
                                                 @if($setupRequired ?? false)
                                                     <i class="fas fa-info-circle"></i> Run migrations to enable data. Add a {{ strtoupper($visaType) }} matter type and assign matters to clients.
                                                 @else
@@ -370,6 +371,7 @@
                                                 @endif
                                                 <td>{{ trim($row->assignee_name ?? '') ?: '—' }}</td>
                                                 <td>{{ isset($row->visa_expiry) && $row->visa_expiry && $row->visa_expiry != '0000-00-00' ? \Carbon\Carbon::parse($row->visa_expiry)->format('d/m/Y') : '—' }}</td>
+                                                <td>{{ $row->deadline ? \Carbon\Carbon::parse($row->deadline)->format('d/m/Y') : '—' }}</td>
                                                 @if($tab !== 'checklist')
                                                 <td>{{ $row->application_stage ?? '—' }}</td>
                                                 @endif

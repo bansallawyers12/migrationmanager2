@@ -12,13 +12,13 @@
                 ->leftJoin('matters as m', 'cm.sel_matter_id', '=', 'm.id')
                 ->where('cm.client_id', $fetchedData->id)
                 ->where('cm.client_unique_matter_no', $id1)
-                ->select('cm.id', 'cm.client_unique_matter_no', 'm.title', 'cm.sel_matter_id', 'cm.workflow_stage_id', 'cm.matter_status')
+                ->select('cm.id', 'cm.client_unique_matter_no', 'm.title', 'cm.sel_matter_id', 'cm.workflow_stage_id', 'cm.matter_status', 'cm.deadline')
                 ->first();
         } else {
             $workflowSelectedMatter = DB::table('client_matters as cm')
                 ->leftJoin('matters as m', 'cm.sel_matter_id', '=', 'm.id')
                 ->where('cm.client_id', $fetchedData->id)
-                ->select('cm.id', 'cm.client_unique_matter_no', 'm.title', 'cm.sel_matter_id', 'cm.workflow_stage_id', 'cm.matter_status')
+                ->select('cm.id', 'cm.client_unique_matter_no', 'm.title', 'cm.sel_matter_id', 'cm.workflow_stage_id', 'cm.matter_status', 'cm.deadline')
                 ->orderBy('cm.id', 'desc')
                 ->first();
         }
@@ -36,19 +36,6 @@
         }
 
         $workflowAllStages = DB::table('workflow_stages')->orderByRaw('COALESCE(sort_order, id) ASC')->get();
-
-        // Get application for Documents tab
-        $workflowApplicationData = null;
-        $workflowApplicationId = null;
-        if ($workflowSelectedMatter) {
-            $workflowApplicationData = DB::table('applications')
-                ->where('client_matter_id', $workflowSelectedMatter->id)
-                ->where('client_id', $fetchedData->id)
-                ->first();
-            if ($workflowApplicationData) {
-                $workflowApplicationId = $workflowApplicationData->id;
-            }
-        }
         ?>
 
         @if($workflowSelectedMatter)
@@ -97,6 +84,28 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="deadline-section mt-3">
+                                <div class="form-group mb-0">
+                                    <div class="custom-control custom-checkbox">
+                                        <input type="checkbox" class="custom-control-input" id="workflow-set-deadline" data-matter-id="{{ $workflowSelectedMatter->id }}"
+                                            {{ $workflowSelectedMatter->deadline ? 'checked' : '' }}>
+                                        <label class="custom-control-label" for="workflow-set-deadline">Set Deadline</label>
+                                    </div>
+                                    <div class="workflow-deadline-date-wrapper mt-2" style="{{ $workflowSelectedMatter->deadline ? '' : 'display: none;' }}">
+                                        <label for="workflow-deadline-date" class="sr-only">Deadline Date</label>
+                                        <input type="date" class="form-control form-control-sm" id="workflow-deadline-date"
+                                            value="{{ $workflowSelectedMatter->deadline ? \Carbon\Carbon::parse($workflowSelectedMatter->deadline)->format('Y-m-d') : '' }}"
+                                            data-matter-id="{{ $workflowSelectedMatter->id }}"
+                                            style="max-width: 180px;">
+                                        <small class="form-text text-muted">Select the matter deadline date.</small>
+                                    </div>
+                                    @if($workflowSelectedMatter->deadline)
+                                        <div class="mt-2">
+                                            <span class="badge badge-info"><i class="fas fa-calendar-alt"></i> Deadline: {{ \Carbon\Carbon::parse($workflowSelectedMatter->deadline)->format('d/m/Y') }}</span>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
                             <div class="stage-navigation-buttons">
                                 @php
                                     $workflowIsFirstStage = false;
@@ -136,213 +145,21 @@
                         </h5>
 
                         @if($workflowAllStages->count() > 0)
-                            <div class="application-tabs-container mt-3">
-                                <ul class="application-tabs-nav workflow-tab-nav" role="tablist">
-                                    <li class="application-tab-item active" data-tab="workflow-stages">
-                                        <a href="javascript:void(0);" class="application-tab-link">Stages</a>
-                                    </li>
-                                    <li class="application-tab-item" data-tab="workflow-documents">
-                                        <a href="javascript:void(0);" class="application-tab-link">Documents</a>
-                                    </li>
-                                </ul>
-
-                                <div class="application-tabs-content">
-                                    <div class="application-tab-pane active" id="workflow-stages-tab">
-                                        <div class="workflow-stages-container mt-3">
-                                            <div class="workflow-stages-list">
-                                                @foreach($workflowAllStages as $stage)
-                                                    @php
-                                                        $wfIsActive = ($workflowCurrentStageId && $workflowCurrentStageId == $stage->id);
-                                                        $stageSort = $stage->sort_order ?? $stage->id;
-                                                        $currentStageRow = $workflowAllStages->firstWhere('id', $workflowCurrentStageId);
-                                                        $currentStageSort = $currentStageRow ? ($currentStageRow->sort_order ?? $currentStageRow->id) : null;
-                                                        $wfIsCompleted = ($workflowCurrentStageId && $currentStageSort !== null && $stageSort < $currentStageSort);
-                                                        $wfStageClass = $wfIsActive ? 'workflow-stage-active' : ($wfIsCompleted ? 'workflow-stage-completed' : 'workflow-stage-pending');
-                                                    @endphp
-                                                    <div class="workflow-stage-item {{ $wfStageClass }}">
-                                                        <span class="stage-name">{{ $stage->name }}</span>
-                                                    </div>
-                                                @endforeach
-                                            </div>
+                            <div class="workflow-stages-container mt-3">
+                                <div class="workflow-stages-list">
+                                    @foreach($workflowAllStages as $stage)
+                                        @php
+                                            $wfIsActive = ($workflowCurrentStageId && $workflowCurrentStageId == $stage->id);
+                                            $stageSort = $stage->sort_order ?? $stage->id;
+                                            $currentStageRow = $workflowAllStages->firstWhere('id', $workflowCurrentStageId);
+                                            $currentStageSort = $currentStageRow ? ($currentStageRow->sort_order ?? $currentStageRow->id) : null;
+                                            $wfIsCompleted = ($workflowCurrentStageId && $currentStageSort !== null && $stageSort < $currentStageSort);
+                                            $wfStageClass = $wfIsActive ? 'workflow-stage-active' : ($wfIsCompleted ? 'workflow-stage-completed' : 'workflow-stage-pending');
+                                        @endphp
+                                        <div class="workflow-stage-item {{ $wfStageClass }}">
+                                            <span class="stage-name">{{ $stage->name }}</span>
                                         </div>
-                                    </div>
-
-                                    <div class="application-tab-pane" id="workflow-documents-tab">
-                                        @if($workflowApplicationId)
-                                            <div class="documents-checklist-container">
-                                                <div class="row">
-                                                    <div class="col-md-5">
-                                                        <div class="stages-checklist-list">
-                                                            <ul class="stages-list">
-                                                                @foreach($workflowAllStages as $stage)
-                                                                    @php
-                                                                        $stageNameSlug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $stage->name)));
-                                                                        $isActiveStage = ($workflowCurrentStageId && $workflowCurrentStageId == $stage->id);
-                                                                        $stageChecklists = DB::table('application_document_lists')
-                                                                            ->where('application_id', $workflowApplicationId)
-                                                                            ->where('type', $stageNameSlug)
-                                                                            ->orderBy('id', 'asc')
-                                                                            ->get();
-                                                                    @endphp
-                                                                    <li class="stage-checklist-item {{ $isActiveStage ? 'active' : '' }}" data-stage-slug="{{ $stageNameSlug }}" data-stage-name="{{ $stage->name }}">
-                                                                        <div class="stage-header">
-                                                                            <span class="stage-title">{{ $stage->name }}</span>
-                                                                            <span class="stage-checklist-count">({{ count($stageChecklists) }})</span>
-                                                                        </div>
-
-                                                                        @if(count($stageChecklists) > 0)
-                                                                            <div class="stage-checklists {{ $stageNameSlug }}-checklists">
-                                                                                <table class="table checklist-table">
-                                                                                    <tbody>
-                                                                                        @foreach($stageChecklists as $checklist)
-                                                                                            @php
-                                                                                                $uploadCount = DB::table('application_documents')
-                                                                                                    ->where('list_id', $checklist->id)
-                                                                                                    ->count();
-                                                                                            @endphp
-                                                                                            <tr class="checklist-row">
-                                                                                                <td class="checklist-status">
-                                                                                                    @if($uploadCount > 0)
-                                                                                                        <span class="check"><i class="fa fa-check"></i></span>
-                                                                                                    @else
-                                                                                                        <span class="round"></span>
-                                                                                                    @endif
-                                                                                                </td>
-                                                                                                <td class="checklist-name">{{ $checklist->document_type ?? 'N/A' }}</td>
-                                                                                                <td class="checklist-count">
-                                                                                                    <div class="circular-box cursor-pointer">
-                                                                                                        <button class="transparent-button paddingNone">{{ $uploadCount }}</button>
-                                                                                                    </div>
-                                                                                                </td>
-                                                                                                <td class="checklist-action">
-                                                                                                    @if($uploadCount > 1)
-                                                                                                        <a href="javascript:void(0);"
-                                                                                                           class="openfileupload"
-                                                                                                           data-aid="{{ $workflowApplicationId }}"
-                                                                                                           data-type="{{ $stageNameSlug }}"
-                                                                                                           data-typename="{{ $stage->name }}"
-                                                                                                           data-id="{{ $checklist->id }}">
-                                                                                                            <i class="fa fa-plus"></i>
-                                                                                                        </a>
-                                                                                                    @endif
-                                                                                                </td>
-                                                                                            </tr>
-                                                                                        @endforeach
-                                                                                    </tbody>
-                                                                                </table>
-                                                                            </div>
-                                                                        @else
-                                                                            <div class="stage-checklists {{ $stageNameSlug }}-checklists" style="display: none;">
-                                                                                <p class="no-checklists text-muted">No checklists added yet.</p>
-                                                                            </div>
-                                                                        @endif
-
-                                                                        <a href="javascript:void(0);"
-                                                                           class="add-checklist-link openchecklist"
-                                                                           data-id="{{ $workflowApplicationId }}"
-                                                                           data-typename="{{ $stage->name }}"
-                                                                           data-type="{{ $stageNameSlug }}">
-                                                                            <i class="fa fa-plus"></i> Add New Checklist
-                                                                        </a>
-                                                                    </li>
-                                                                @endforeach
-                                                            </ul>
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="col-md-7">
-                                                        <div class="checklist-details-panel">
-                                                            <h5 class="panel-title">Checklist Details</h5>
-                                                            <div class="table-responsive">
-                                                                <table class="table text_wrap checklist-details-table">
-                                                                    <thead>
-                                                                        <tr>
-                                                                            <th style="white-space: normal; line-height: 1.4;">
-                                                                                <div>Checklist</div>
-                                                                                <div>Filename</div>
-                                                                            </th>
-                                                                            <th>Stage</th>
-                                                                            <th style="white-space: normal; line-height: 1.4;">
-                                                                                <div>Added By</div>
-                                                                                <div>Added At</div>
-                                                                            </th>
-                                                                            <th>Status</th>
-                                                                            <th>Action</th>
-                                                                        </tr>
-                                                                    </thead>
-                                                                    <tbody class="checklist-details-tbody">
-                                                                        @php
-                                                                            $workflowAllDocuments = DB::table('application_documents')
-                                                                                ->where('application_id', $workflowApplicationId)
-                                                                                ->orderBy('created_at', 'DESC')
-                                                                                ->get();
-                                                                        @endphp
-                                                                        @foreach($workflowAllDocuments as $document)
-                                                                            @php
-                                                                                $docList = DB::table('application_document_lists')->where('id', $document->list_id)->first();
-                                                                                $addedBy = DB::table('admins')->where('id', $document->user_id)->first();
-                                                                                $status = isset($document->status) ? (int)$document->status : 0;
-                                                                                $statusText = 'InProgress';
-                                                                                $statusClass = 'warning';
-                                                                                $rejectionReason = '';
-                                                                                if ($status == 1) {
-                                                                                    $statusText = 'Approved';
-                                                                                    $statusClass = 'success';
-                                                                                } elseif ($status == 2) {
-                                                                                    $statusText = 'Rejected';
-                                                                                    $statusClass = 'danger';
-                                                                                    $rejectionReason = $document->doc_rejection_reason ?? $document->reject_reason ?? '';
-                                                                                }
-                                                                            @endphp
-                                                                            <tr>
-                                                                                <td>
-                                                                                    <div style="margin-bottom: 5px;"><strong>{{ $docList->document_type ?? 'N/A' }}</strong></div>
-                                                                                    @if($document->file_name)
-                                                                                        <div><a href="{{ $document->myfile ?? '#' }}" target="_blank" style="color: #007bff;">{{ $document->file_name }}</a></div>
-                                                                                    @else
-                                                                                        <div><small class="text-muted">No file uploaded</small></div>
-                                                                                    @endif
-                                                                                </td>
-                                                                                <td>{{ $document->typename ?? 'N/A' }}</td>
-                                                                                <td>
-                                                                                    <div style="margin-bottom: 5px;">{{ $addedBy->first_name ?? 'N/A' }}</div>
-                                                                                    <div><small>{{ date('d/m/Y', strtotime($document->created_at)) }}</small></div>
-                                                                                </td>
-                                                                                <td>
-                                                                                    @if($status == 0)
-                                                                                        <span class="badge badge-warning">InProgress</span>
-                                                                                    @elseif($status == 1)
-                                                                                        <span class="badge badge-success">Approved</span>
-                                                                                    @elseif($status == 2)
-                                                                                        <span class="badge badge-danger" title="{{ $rejectionReason }}">Rejected</span>
-                                                                                    @else
-                                                                                        <span class="badge badge-warning">InProgress</span>
-                                                                                    @endif
-                                                                                </td>
-                                                                                <td>
-                                                                                    <a href="javascript:void(0);" class="btn btn-sm btn-primary download-document-btn" data-document-id="{{ $document->id }}" data-file-url="{{ $document->myfile ?? '#' }}" data-file-name="{{ $document->file_name ?? 'document' }}" title="Download"><i class="fa fa-download"></i></a>
-                                                                                    <a href="javascript:void(0);" class="btn btn-sm btn-danger delete-document-by-list" data-list-id="{{ $document->list_id }}" data-document-id="{{ $document->id }}" title="Delete"><i class="fa fa-trash"></i></a>
-                                                                                    @if($status == 0)
-                                                                                        <a href="javascript:void(0);" class="btn btn-sm btn-success approve-document-btn" data-document-id="{{ $document->id }}" title="Approve"><i class="fa fa-check-circle"></i></a>
-                                                                                        <a href="javascript:void(0);" class="btn btn-sm btn-warning reject-document-btn" data-document-id="{{ $document->id }}" title="Reject"><i class="fa fa-times-circle"></i></a>
-                                                                                    @endif
-                                                                                </td>
-                                                                            </tr>
-                                                                        @endforeach
-                                                                        @if(count($workflowAllDocuments) == 0)
-                                                                            <tr><td colspan="5" class="text-center text-muted">No documents uploaded yet.</td></tr>
-                                                                        @endif
-                                                                    </tbody>
-                                                                </table>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        @else
-                                            <p class="text-muted">No application found for this matter. Create an application from the Client Portal tab first.</p>
-                                        @endif
-                                    </div>
+                                    @endforeach
                                 </div>
                             </div>
                         @else
@@ -365,21 +182,55 @@
 <script>
 (function() {
     document.addEventListener('DOMContentLoaded', function() {
-        // Workflow tab: Stages/Documents sub-tabs
-        var workflowTabNav = document.querySelector('#workflow-tab .workflow-tab-nav');
-        if (workflowTabNav) {
-            workflowTabNav.querySelectorAll('.application-tab-item').forEach(function(item) {
-                var link = item.querySelector('.application-tab-link');
-                if (!link) return;
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    var tab = item.getAttribute('data-tab');
-                    workflowTabNav.querySelectorAll('.application-tab-item').forEach(function(i) { i.classList.remove('active'); });
-                    document.querySelectorAll('#workflow-tab .application-tab-pane').forEach(function(p) { p.classList.remove('active'); });
-                    item.classList.add('active');
-                    var pane = document.getElementById(tab + '-tab');
-                    if (pane) pane.classList.add('active');
-                });
+        // Workflow tab: Set Deadline checkbox - toggle date picker
+        var setDeadlineCb = document.getElementById('workflow-set-deadline');
+        var deadlineDateWrapper = document.querySelector('.workflow-deadline-date-wrapper');
+        var deadlineDateInput = document.getElementById('workflow-deadline-date');
+        if (setDeadlineCb && deadlineDateWrapper && deadlineDateInput) {
+            setDeadlineCb.addEventListener('change', function() {
+                var checked = this.checked;
+                deadlineDateWrapper.style.display = checked ? 'block' : 'none';
+                if (!checked) {
+                    deadlineDateInput.value = '';
+                    saveMatterDeadline(this.getAttribute('data-matter-id'), false, null);
+                } else if (deadlineDateInput.value) {
+                    saveMatterDeadline(this.getAttribute('data-matter-id'), true, deadlineDateInput.value);
+                }
+            });
+            deadlineDateInput.addEventListener('change', function() {
+                if (!setDeadlineCb.checked) return;
+                var val = this.value;
+                if (val) {
+                    saveMatterDeadline(this.getAttribute('data-matter-id'), true, val);
+                } else {
+                    setDeadlineCb.checked = false;
+                    deadlineDateWrapper.style.display = 'none';
+                    saveMatterDeadline(this.getAttribute('data-matter-id'), false, null);
+                }
+            });
+        }
+
+        function saveMatterDeadline(matterId, setDeadline, deadline) {
+            if (!matterId) return;
+            var payload = { matter_id: matterId, set_deadline: setDeadline };
+            if (setDeadline && deadline) payload.deadline = deadline;
+
+            fetch('{{ route("clients.matter.update-deadline") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '', 'Accept': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.status) {
+                    window.location.reload();
+                } else {
+                    alert(data.message || 'Failed to update deadline.');
+                }
+            })
+            .catch(function(err) {
+                console.error(err);
+                alert('An error occurred.');
             });
         }
 

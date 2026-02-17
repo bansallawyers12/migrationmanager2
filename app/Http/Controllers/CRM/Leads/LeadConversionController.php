@@ -106,7 +106,7 @@ class LeadConversionController extends Controller
                     $matter->client_unique_matter_no = $matterInfo->nick_name . "_" . $client_matters_current_no;
                 }
                 
-                $matter->workflow_stage_id = 1;
+                $matter->workflow_stage_id = \App\Models\WorkflowStage::orderByRaw('COALESCE(sort_order, id) ASC')->value('id') ?? 1;
                 $matter->matter_status = 1; // Active by default
                 $matter->save();
             }

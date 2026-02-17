@@ -251,11 +251,11 @@ use App\Http\Controllers\Controller;
                     }
                 }
 
-                // Display the workflow stage name or default to "Initial Consultation"
+                // Display the workflow stage name or default to N/A
                 if ($workflow_stage_arr && $workflow_stage_arr->name) {
                     echo $workflow_stage_arr->name;
                 } else {
-                    echo "Initial Consultation";
+                    echo "N/A";
                 }
                 ?>
             </div>

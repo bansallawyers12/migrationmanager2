@@ -1237,6 +1237,62 @@ class ClientPortalController extends Controller
 		}
 	}
 
+	/**
+	 * Update matter deadline. Accepts matter_id, set_deadline (bool), and deadline (date when set).
+	 *
+	 * @param Request $request
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function updateClientMatterDeadline(Request $request)
+	{
+		try {
+			$matterId = $request->input('matter_id');
+			$setDeadline = filter_var($request->input('set_deadline'), FILTER_VALIDATE_BOOLEAN);
+			$deadline = $request->input('deadline');
+
+			if (!$matterId) {
+				return response()->json(['status' => false, 'message' => 'Matter ID is required'], 422);
+			}
+
+			$clientMatter = ClientMatter::find($matterId);
+
+			if (!$clientMatter) {
+				return response()->json(['status' => false, 'message' => 'Client matter not found.'], 404);
+			}
+
+			if ($setDeadline) {
+				$request->validate(['deadline' => 'required|date']);
+				$clientMatter->deadline = $deadline;
+			} else {
+				$clientMatter->deadline = null;
+			}
+
+			$clientMatter->save();
+
+			return response()->json([
+				'status' => true,
+				'message' => $setDeadline ? 'Deadline has been set.' : 'Deadline has been cleared.',
+				'deadline' => $clientMatter->deadline ? $clientMatter->deadline->format('Y-m-d') : null,
+			]);
+
+		} catch (\Illuminate\Validation\ValidationException $e) {
+			return response()->json([
+				'status' => false,
+				'message' => 'Please select a valid date.',
+				'errors' => $e->errors(),
+			], 422);
+		} catch (\Exception $e) {
+			Log::error('Error updating matter deadline: ' . $e->getMessage(), [
+				'matter_id' => $request->input('matter_id'),
+				'trace' => $e->getTraceAsString()
+			]);
+			return response()->json([
+				'status' => false,
+				'message' => 'An error occurred while updating the deadline.'
+			], 500);
+		}
+	}
+
 	// LEGACY METHOD - Still used by some JavaScript but outputs HTML directly (old pattern)
 	// TODO: Refactor to return JSON and handle rendering in frontend
 	public function getapplicationslogs(Request $request){

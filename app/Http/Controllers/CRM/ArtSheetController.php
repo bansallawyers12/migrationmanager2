@@ -96,7 +96,8 @@ class ArtSheetController extends Controller
                 cm.sel_migration_agent,
                 cm.sel_person_responsible,
                 cm.sel_person_assisting,
-                cm.office_id
+                cm.office_id,
+                cm.deadline
             FROM client_matters cm
             INNER JOIN matters m ON m.id = cm.sel_matter_id
             WHERE cm.matter_status = 1
@@ -113,7 +114,8 @@ class ArtSheetController extends Controller
             $latestArtMatterSql = "
                 SELECT cm.client_id, cm.client_unique_matter_no, cm.id AS matter_id,
                        cm.other_reference, cm.department_reference, cm.sel_migration_agent,
-                       cm.sel_person_responsible, cm.sel_person_assisting, cm.office_id
+                       cm.sel_person_responsible, cm.sel_person_assisting, cm.office_id,
+                       cm.deadline
                 FROM client_matters cm
                 INNER JOIN matters m ON m.id = cm.sel_matter_id
                 INNER JOIN (
@@ -155,6 +157,7 @@ class ArtSheetController extends Controller
                 'admins.last_name',
                 'latest_art_matter.client_unique_matter_no as matter_id',
                 'latest_art_matter.matter_id as matter_internal_id',
+                'latest_art_matter.deadline',
                 'latest_art_matter.other_reference',
                 'latest_art_matter.department_reference',
                 'latest_art_matter.office_id',
@@ -255,6 +258,12 @@ class ArtSheetController extends Controller
 
     protected function applySorting($query, Request $request)
     {
+        $driver = DB::connection()->getDriverName();
+        // Primary: nearest deadline first, nulls last
+        $query->orderByRaw($driver === 'mysql'
+            ? 'latest_art_matter.deadline IS NULL ASC, latest_art_matter.deadline ASC'
+            : 'latest_art_matter.deadline ASC NULLS LAST');
+
         $sortField = $request->get('sort', 'submission_date');
         $sortDirection = $request->get('direction', 'desc');
         if (!in_array(strtolower($sortDirection), ['asc', 'desc'])) {
@@ -267,12 +276,13 @@ class ArtSheetController extends Controller
             'other_reference' => 'latest_art_matter.other_reference',
             'client_name' => 'admins.first_name',
             'submission_date' => 'art.submission_last_date',
+            'deadline' => 'latest_art_matter.deadline',
             'status' => 'art.status_of_file',
             'agent_name' => 'agents.first_name',
         ];
 
         $actualSortField = $sortableFields[$sortField] ?? 'art.submission_last_date';
-        $query->orderByRaw($actualSortField . ' ' . $dir);
+        $query->orderBy($actualSortField, $dir);
 
         return $query;
     }

@@ -16,6 +16,13 @@ class ClientMatter extends Model
     protected $table = 'client_matters';
 
     /**
+     * The attributes that should be cast.
+     */
+    protected $casts = [
+        'deadline' => 'date',
+    ];
+
+    /**
      * The attributes that are mass assignable.
      */
     protected $fillable = [
@@ -26,6 +33,7 @@ class ClientMatter extends Model
         'sel_person_assisting',
         'workflow_stage_id',
         'matter_status',
+        'deadline',
         'client_unique_matter_no',
         'sel_matter_id',
         'updated_at_type',

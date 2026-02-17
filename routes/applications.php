@@ -38,6 +38,7 @@ Route::get('/updatebackstage', [ClientPortalController::class, 'updatebackstage'
 Route::post('/clients/matter/update-next-stage', [ClientPortalController::class, 'updateClientMatterNextStage'])->name('clients.matter.update-next-stage');
 Route::post('/clients/matter/update-previous-stage', [ClientPortalController::class, 'updateClientMatterPreviousStage'])->name('clients.matter.update-previous-stage');
 Route::post('/clients/matter/discontinue', [ClientPortalController::class, 'discontinueClientMatter'])->name('clients.matter.discontinue');
+Route::post('/clients/matter/update-deadline', [ClientPortalController::class, 'updateClientMatterDeadline'])->name('clients.matter.update-deadline');
 Route::get('/get-applications-logs', [ClientPortalController::class, 'getapplicationslogs']);
 Route::get('/get-applications', [ClientPortalController::class, 'getapplications']);
 
