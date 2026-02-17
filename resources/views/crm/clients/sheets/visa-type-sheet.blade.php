@@ -356,7 +356,6 @@
                                                 $encodedId = base64_encode(convert_uuencode($row->client_id));
                                                 $detailUrl = route('clients.detail', ['client_id' => $encodedId, 'client_unique_matter_ref_no' => $row->client_unique_matter_no ?? '']);
                                                 $matterId = $row->matter_internal_id ?? '';
-                                                $checklistUrl = $detailUrl . ($matterId ? '?matterId=' . $matterId . '&open_checklist=1' : '');
                                                 $emailReminderUrl = $detailUrl . ($matterId ? '?matterId=' . $matterId . '&open_email_reminder=1' : '');
                                                 $smsReminderUrl = $detailUrl . ($matterId ? '?matterId=' . $matterId . '&open_sms_reminder=1' : '');
                                             @endphp
@@ -414,10 +413,8 @@
                                                 <td onclick="event.stopPropagation();" class="checklist-sent-cell">
                                                     @if(!empty($row->checklist_sent_at))
                                                         {{ \Carbon\Carbon::parse($row->checklist_sent_at)->format('d/m/Y') }}
-                                                        <br><a href="{{ $checklistUrl }}" class="btn btn-sm btn-outline-secondary mt-1" onclick="event.stopPropagation();" title="Resend checklist">Resend checklist</a>
                                                     @else
                                                         <span class="checklist-not-sent-text">Not sent</span>
-                                                        <br><a href="{{ $checklistUrl }}" class="btn btn-sm btn-outline-primary mt-1" onclick="event.stopPropagation();" title="Send checklist">Send checklist</a>
                                                     @endif
                                                 </td>
                                                 <td onclick="event.stopPropagation();" class="reminder-cell">

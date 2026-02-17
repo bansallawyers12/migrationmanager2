@@ -260,6 +260,13 @@
                                                                         <a href="{{ route('forms.preview', $form) }}" target="_blank" class="btn btn-outline-primary btn-sm btn-view-cost-assignment" title="View Cost Assignment" data-preview-url="{{ route('forms.preview', $form) }}">
                                                                             <i class="fas fa-eye mr-1"></i>View
                                                                         </a>
+                                                                        <button type="button" class="btn btn-outline-info btn-sm btn-send-checklist" title="Send Document Checklist to client"
+                                                                            data-client-id="{{ $fetchedData->id ?? '' }}"
+                                                                            data-client-email="{{ $fetchedData->email ?? '' }}"
+                                                                            data-client-name="{{ trim(($fetchedData->first_name ?? '') . ' ' . ($fetchedData->last_name ?? '')) ?: ($fetchedData->company_name ?? '') }}"
+                                                                            data-client-matter-id="{{ $form->client_matter_id ?? '' }}">
+                                                                            <i class="fas fa-paper-plane mr-1"></i>Send Checklist
+                                                                        </button>
                                                                         <button type="button" class="btn btn-primary btn-sm visaAgreementCreateForm" data-id="{{ $form->id }}" data-client-matter-id="{{ $form->client_matter_id }}" title="Create Visa Agreement">
                                                                             <i class="fas fa-file-contract mr-1"></i>Create Visa Agreement
                                                                         </button>
@@ -832,6 +839,88 @@
             if (url) {
                 window.open(url, '_blank', 'noopener,noreferrer');
             }
+        });
+
+        // Send Checklist - open compose modal with matter selected and matter checklists auto-selected
+        $(document).on('click', '.btn-send-checklist', function(e) {
+            e.stopPropagation();
+            var $btn = $(this);
+            var clientId = $btn.data('client-id');
+            var clientEmail = ($btn.data('client-email') || '').trim();
+            var clientName = ($btn.data('client-name') || '').trim();
+            var clientMatterId = $btn.data('client-matter-id');
+
+            if (!clientId || !clientEmail) {
+                alert('Client email is required to send checklist. Please ensure the client has an email address.');
+                return;
+            }
+            if (!clientMatterId) {
+                alert('Matter is required to send checklist.');
+                return;
+            }
+            if (!$('#emailmodal').length) {
+                alert('Email compose form not found. Please ensure you are on the client detail page.');
+                return;
+            }
+
+            // Set sidebar matter and compose matter ID
+            if ($('#sel_matter_id_client_detail').length) {
+                $('#sel_matter_id_client_detail').val(clientMatterId).trigger('change');
+            }
+            $('#emailmodal #compose_client_matter_id').val(clientMatterId || '');
+
+            // Default subject for checklist email
+            var subject = 'Checklist sent to client';
+            var message = '<p>Dear ' + (clientName.trim() || 'there') + ',</p>' +
+                '<p>Please find attached the checklist for your matter.</p>' +
+                '<p>If you have any questions, please contact us.</p>' +
+                '<p><strong>Regards,</strong><br>Bansal Migration Team</p>';
+
+            $('#compose_email_subject').val(subject);
+
+            // Set To field with client
+            var array = [];
+            var data = [];
+            if (clientId && clientEmail) {
+                array.push(clientId);
+                data.push({
+                    id: clientId,
+                    text: clientName || clientEmail,
+                    html: "<div class='select2-result-repository ag-flex ag-space-between ag-align-center'>" +
+                        "<div class='ag-flex ag-align-start'><div class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span class='select2-result-repository__title text-semi-bold'>" + (clientName || clientEmail) + "</span></div>" +
+                        "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'>" + clientEmail + "</small></div></div></div>" +
+                        "<div class='ag-flex ag-flex-column ag-align-end'><span class='ui label yellow select2-result-repository__statistics'>Client</span></div></div>",
+                    title: clientName || clientEmail
+                });
+            }
+
+            var $toSelect = $('#emailmodal .js-data-example-ajax');
+            if ($toSelect.data('select2')) {
+                $toSelect.select2('destroy');
+            }
+            $toSelect.select2({
+                data: data,
+                escapeMarkup: function(markup) { return markup; },
+                templateResult: function(d) { return d.html; },
+                templateSelection: function(d) { return d.text; },
+                dropdownParent: $('#emailmodal'),
+                multiple: true,
+                closeOnSelect: false
+            });
+            $toSelect.val(array).trigger('change');
+
+            // Set TinyMCE content after modal is shown
+            $('#emailmodal').one('shown.bs.modal', function() {
+                if (typeof setTinyMCEContent === 'function') {
+                    setTinyMCEContent('compose_email_message', message);
+                } else if (typeof tinymce !== 'undefined' && tinymce.get('compose_email_message')) {
+                    tinymce.get('compose_email_message').setContent(message);
+                } else {
+                    $('#compose_email_message').val(message);
+                }
+            });
+
+            $('#emailmodal').modal('show');
         });
 
         // Copy signature link to clipboard
