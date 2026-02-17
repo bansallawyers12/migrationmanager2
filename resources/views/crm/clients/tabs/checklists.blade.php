@@ -1018,17 +1018,7 @@
             });
             $('.js-data-example-ajax').val(array).trigger('change');
 
-            // Set TinyMCE content after modal is shown
-            $('#emailmodal').one('shown.bs.modal', function() {
-                if (typeof setTinyMCEContent === 'function') {
-                    setTinyMCEContent('compose_email_message', message);
-                } else if (typeof tinymce !== 'undefined' && tinymce.get('compose_email_message')) {
-                    tinymce.get('compose_email_message').setContent(message);
-                } else {
-                    $('#compose_email_message').val(message);
-                }
-            });
-
+            // Subject set above; message will come from First Email template when getComposeDefaults loads it
             $('#emailmodal').modal('show');
         });
 

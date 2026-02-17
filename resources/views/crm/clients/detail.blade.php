@@ -1325,13 +1325,8 @@ $(document).ready(function() {
                     var fromSignature = $('#emailmodal').data('fromSignatureSend');
                     var toSelect = res.template ? res.template.id : (res.matter_templates[0] ? res.matter_templates[0].id : null);
                     if (toSelect) {
-                        if (!fromSignature) {
-                            $templateSelect.val(toSelect).trigger('change');
-                        } else {
-                            $('#emailmodal').data('skipTemplateLoad', true);
-                            $templateSelect.val(toSelect).trigger('change');
-                            $('#emailmodal').removeData('fromSignatureSend');
-                        }
+                        $templateSelect.val(toSelect).trigger('change');
+                        if (fromSignature) $('#emailmodal').removeData('fromSignatureSend');
                     }
                 }
                 // Show only matter-related checklists; hide all others

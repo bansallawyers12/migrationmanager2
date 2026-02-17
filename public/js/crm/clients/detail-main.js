@@ -10733,11 +10733,6 @@ Bansal Immigration`;
 
         $(document).delegate('.selecttemplate', 'change', function(){
 
-            if ($('#emailmodal').data('skipTemplateLoad')) {
-                $('#emailmodal').removeData('skipTemplateLoad');
-                return;
-            }
-
             var client_id = $(this).data('clientid'); //alert(client_id);
 
             var client_firstname = $(this).data('clientfirstname'); //alert(client_firstname);
