@@ -975,6 +975,17 @@ class DocumentController extends Controller
             'all_attributes' => $document->toArray()
         ]);
 
+        // Normalize signatures to ensure it is always an array (fixes jQuery form-urlencoded serialization issues)
+        $signaturesInput = $request->input('signatures');
+        if (is_string($signaturesInput)) {
+            $decoded = json_decode($signaturesInput, true);
+            $signaturesInput = is_array($decoded) ? $decoded : $signaturesInput;
+        }
+        if (is_object($signaturesInput) || (is_array($signaturesInput) && !empty($signaturesInput) && !array_is_list($signaturesInput))) {
+            $signaturesInput = array_values((array) $signaturesInput);
+        }
+        $request->merge(['signatures' => $signaturesInput]);
+
         // Updated validation for percentages
         $request->validate([
             'signatures' => 'required|array|min:1|max:100',

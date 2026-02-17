@@ -1061,9 +1061,9 @@
                 $.ajax({
                     url: '/documents/' + sigState.documentId,
                     method: 'POST',
-                    data: postData,
-                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                    traditional: true
+                    contentType: 'application/json',
+                    data: JSON.stringify(postData),
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
                 }).done(function(resp) {
                     $('#signaturePlacementModal').modal('hide');
                     if (resp && resp.success) {
