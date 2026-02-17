@@ -247,6 +247,7 @@ use App\Http\Controllers\Controller;
             
             <!-- Matter References Section -->
             <div class="sidebar-references">
+                <div class="sidebar-references-label" style="font-size: 0.75rem; font-weight: 600; color: #374151; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Reference</div>
                 <?php
                 // Load reference values - SAME LOGIC AS ACCOUNTS TAB
                 $matter__ref_info_arr = [];
@@ -374,7 +375,7 @@ use App\Http\Controllers\Controller;
                 if (isset($fetchedData->updated_at) && $fetchedData->updated_at) {
                     try {
                         $updatedDate = \Carbon\Carbon::parse($fetchedData->updated_at);
-                        echo '<div style="margin-top: 15px; padding: 10px 15px; color: #6c757d; font-size: 0.85em; text-align: center; border-top: 1px solid #e2e8f0;">Last update on ' . $updatedDate->format('d/m/Y') . '</div>';
+                        echo '<div class="sidebar-last-updated" style="margin-top: 15px; padding: 10px 15px; color: #374151; font-size: 0.85em; text-align: center; border-top: 1px solid #e2e8f0;">Last update on ' . $updatedDate->format('d/m/Y') . '</div>';
                     } catch (\Exception $e) {
                         // Silently fail if date parsing fails
                     }

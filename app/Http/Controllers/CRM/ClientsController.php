@@ -5044,11 +5044,8 @@ class ClientsController extends Controller
             $lastInsertedId = $obj5->id; // ← This gets the last inserted ID
             if($saved5) 
             {
-                //update type client from lead in admins table - using Lead model
-                $lead = \App\Models\Lead::withArchived()->find($requestData['client_id']);
-                if($lead) {
-                    $lead->convertToClient();
-                }
+                // Lead conversion is now explicit: user must click "Convert to Client" button
+                // (Convert Lead to Client modal in sidebar - no auto-conversion here)
 
                 if( isset($requestData['surcharge']) && $requestData['surcharge'] != '') {
                     $surcharge = $requestData['surcharge'];
@@ -5618,9 +5615,43 @@ class ClientsController extends Controller
                 return Redirect::to('/clients')->with('error', 'Clients Not Exist');
             }
         } else {
-            return Redirect::to('/clients')->with('error', config('constants.unauthorized'));
-        }
+                return Redirect::to('/clients')->with('error', config('constants.unauthorized'));
+            }
 	}
+
+    /**
+     * Convert lead to client only (no new matter - for leads who already have matters from cost assignment)
+     */
+    public function convertLeadOnly(Request $request)
+    {
+        $clientId = $request->input('client_id');
+        if (empty($clientId)) {
+            return redirect()->back()->with('error', 'Client ID is required.');
+        }
+        $obj = Admin::where('id', $clientId)->where('role', 7)->first();
+        if (!$obj || $obj->type !== 'lead') {
+            return redirect()->back()->with('error', 'Only leads can be converted.');
+        }
+        $obj->type = 'client';
+        $obj->user_id = $request->input('user_id', Auth::user()->id);
+        $obj->save();
+
+        $activity = new \App\Models\ActivitiesLog;
+        $activity->client_id = $clientId;
+        $activity->created_by = Auth::user()->id;
+        $activity->subject = 'Lead converted to client';
+        $activity->description = 'Lead converted to client';
+        $activity->task_status = 0;
+        $activity->pin = 0;
+        $activity->save();
+
+        $firstMatter = \App\Models\ClientMatter::where('client_id', $clientId)->where('matter_status', 1)->orderBy('id')->first();
+        $redirectUrl = '/clients/detail/' . base64_encode(convert_uuencode($clientId));
+        if ($firstMatter) {
+            $redirectUrl .= '/' . $firstMatter->client_unique_matter_no;
+        }
+        return redirect($redirectUrl)->with('success', 'Lead converted to client.');
+    }
 
     /**
      * Store action with assignee information

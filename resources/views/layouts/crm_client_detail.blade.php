@@ -532,7 +532,7 @@
             margin: 12px 0 0 0;
             font-size: 0.9rem;
             font-weight: 600;
-            color: #4a5568;
+            color: #374151;
             text-align: center;
             padding: 6px 0;
             border-top: 1px solid #e8eaed;
@@ -552,7 +552,7 @@
             margin-bottom: 2px;
             border: none;
             background: transparent;
-            color: #64748b;
+            color: #475569;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.2s ease;

@@ -164,10 +164,13 @@
                                                             <i class="fas fa-chevron-right checklist-toggle-icon mr-2"></i>
                                                             <div>
                                                                 <strong class="checklist-matter-name">{{ $matterName }}</strong>
-                                                                <span class="text-muted ml-2 small">{{ $form->created_at ? $form->created_at->format('d/m/Y') : '' }}</span>
+                                                                <span class="checklist-date ml-2 small">{{ $form->created_at ? $form->created_at->format('d/m/Y') : '' }}</span>
                                                             </div>
                                                         </div>
-                                                        <div class="checklist-summary">
+                                                        <div class="checklist-summary d-flex align-items-center">
+                                                            <button type="button" class="btn btn-sm btn-outline-primary convertLeadToClient mr-2" onclick="event.stopPropagation();" title="Convert to Client">
+                                                                <i class="fas fa-user-check mr-1"></i> Convert to Client
+                                                            </button>
                                                             <span class="badge badge-info mr-2">
                                                                 <i class="fas fa-users"></i> {{ $office ? $office->office_name : 'No Office' }}
                                                             </span>
@@ -389,19 +392,21 @@
 
 .checklist-item-header[aria-expanded="true"] .checklist-matter-name,
 .checklist-item-header[aria-expanded="true"] .text-muted,
+.checklist-item-header[aria-expanded="true"] .checklist-date,
 .checklist-item-header[aria-expanded="true"] .checklist-toggle-icon {
     color: #fff !important;
 }
 
 .checklist-item-header[aria-expanded="true"] .badge {
-    background-color: rgba(255,255,255,0.2) !important;
+    background-color: rgba(255,255,255,0.35) !important;
     color: #fff !important;
-    border: 1px solid rgba(255,255,255,0.3);
+    border: 1px solid rgba(255,255,255,0.5);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 
 .checklist-toggle-icon {
     transition: transform 0.3s ease;
-    color: #6c757d;
+    color: #4b5563;
 }
 
 .checklist-item-header[aria-expanded="true"] .checklist-toggle-icon {
@@ -410,7 +415,7 @@
 
 .checklist-matter-name {
     font-size: 1rem;
-    color: #2c3e50;
+    color: #1f2937;
 }
 
 .checklist-summary {
@@ -418,6 +423,43 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 8px;
+}
+
+/* Badge contrast - ensure readable text on light backgrounds */
+.checklist-summary .badge-info {
+    background-color: #0d6efd !important;
+    color: #fff !important;
+    border: none;
+}
+
+.checklist-summary .badge-success {
+    background-color: #198754 !important;
+    color: #fff !important;
+    border: none;
+}
+
+/* Fallback for badge without office - ensure dark enough */
+.checklist-summary .badge {
+    font-weight: 600;
+}
+
+.checklist-summary .btn-outline-primary,
+.checklist-item-header .btn-outline-primary {
+    color: #0a58ca !important;
+    border-color: #0a58ca !important;
+    background-color: #e7f1ff;
+}
+
+.checklist-summary .btn-outline-primary:hover,
+.checklist-item-header .btn-outline-primary:hover {
+    color: #084298 !important;
+    border-color: #084298 !important;
+    background-color: #cfe2ff;
+}
+
+/* Date - avoid light grey on light background */
+.checklist-date {
+    color: #4b5563 !important;
 }
 
 .checklist-item-details {

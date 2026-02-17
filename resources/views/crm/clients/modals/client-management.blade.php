@@ -9,6 +9,24 @@
 				</button>
 			</div>
 			<div class="modal-body">
+				@php
+					$leadHasMatters = isset($fetchedData) && ($fetchedData->type ?? '') === 'lead' && \DB::table('client_matters')->where('client_id', $fetchedData->id)->where('matter_status', 1)->exists();
+				@endphp
+				@if($leadHasMatters)
+				<div class="alert alert-info mb-3">
+					<strong>This lead already has matter(s).</strong> You can convert to client without creating a new matter:
+				</div>
+				<form method="post" action="{{ route('clients.convertLeadOnly') }}" class="mb-4">
+					@csrf
+					<input type="hidden" name="client_id" value="{{ $fetchedData->id }}">
+					<input type="hidden" name="user_id" value="{{ @Auth::user()->id }}">
+					<button type="submit" class="btn btn-success">
+						<i class="fas fa-user-check mr-1"></i> Convert to Client only
+					</button>
+				</form>
+				<hr class="my-4">
+				<p class="text-muted small mb-2">Or create a new matter and convert:</p>
+				@endif
                 <form method="get" action="{{URL::to('/clients/changetype/'.base64_encode(convert_uuencode($fetchedData->id)).'/client')}}" name="convert_lead_to_client" autocomplete="off" id="convert_lead_to_client">
 				    @csrf
                     <div class="row">
