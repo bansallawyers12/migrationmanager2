@@ -7,10 +7,11 @@
 <div class="main-content">
 	<section class="section">
 		<div class="section-body">
+			<?php $effectiveMatterId = isset($matterId) && $matterId != '' ? $matterId : ($fetchedData->matter_id ?? null); ?>
 			<form action="{{ route('adminconsole.features.matteremailtemplate.update', $fetchedData->id) }}" method="POST" name="edit-matteremailtemplate" autocomplete="off" enctype="multipart/form-data">
 				@csrf
 				@method('PUT')
-				<input type="hidden" name="matter_id" value="{{ $matterId }}">
+				<input type="hidden" name="matter_id" value="{{ $effectiveMatterId ?? $fetchedData->matter_id ?? '' }}">
 				<div class="row">
 					<div class="col-12 col-md-12 col-lg-12">
 						<div class="card">
@@ -40,10 +41,10 @@
 														<label for="name">Matter Name</label>
 														<?php
 														$matterName = 'NA';
-														if( isset($matterId) && $matterId != '') {
-															$matterInfo = \App\Models\Matter::select('id','title','nick_name')->where('id', $matterId)->first();
+														if ($effectiveMatterId) {
+															$matterInfo = \App\Models\Matter::select('id','title','nick_name')->where('id', $effectiveMatterId)->first();
 															if($matterInfo){
-																$matterName = $matterInfo->title.' ('.$matterInfo->nick_name.')';
+																$matterName = $matterInfo->title . (isset($matterInfo->nick_name) && $matterInfo->nick_name ? ' (' . $matterInfo->nick_name . ')' : '');
 															}
 														} ?>
 
