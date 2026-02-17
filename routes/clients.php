@@ -28,6 +28,7 @@ use App\Http\Controllers\AdminConsole\AnzscoOccupationController;
 /*---------- Client CRUD Operations ----------*/
 Route::get('/clients', [ClientsController::class, 'index'])->name('clients.index');
 Route::get('/clientsmatterslist', [ClientsController::class, 'clientsmatterslist'])->name('clients.clientsmatterslist');
+Route::get('/clientsclosedmatterslist', [ClientsController::class, 'closedmatterslist'])->name('clients.closedmatterslist');
 Route::get('/clientsemaillist', [ClientsController::class, 'clientsemaillist'])->name('clients.clientsemaillist');
 Route::post('/clients/store', [ClientsController::class, 'store'])->name('clients.store');
 Route::get('/clients/edit/{id}', [ClientsController::class, 'edit'])->name('clients.edit');
