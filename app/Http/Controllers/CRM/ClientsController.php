@@ -165,8 +165,9 @@ class ClientsController extends Controller
             ->where('ad.role', '=', '7')
             ->whereNull('ad.is_deleted')
             ->where(function ($q) {
+                $closedStages = ['file closed', 'withdrawn', 'refund', 'discontinued'];
                 $q->whereNull('ws.name')
-                    ->orWhereRaw('LOWER(TRIM(ws.name)) != ?', ['file closed']);
+                    ->orWhereRaw('LOWER(TRIM(ws.name)) NOT IN (' . implode(',', array_fill(0, count($closedStages), '?')) . ')', $closedStages);
             });
 
             if ($request->has('sel_matter_id')) {
@@ -254,8 +255,9 @@ class ClientsController extends Controller
             ->where('ad.role', '=', '7')
             ->whereNull('ad.is_deleted')
             ->where(function ($q) {
+                $closedStages = ['file closed', 'withdrawn', 'refund', 'discontinued'];
                 $q->whereNull('ws.name')
-                    ->orWhereRaw('LOWER(TRIM(ws.name)) != ?', ['file closed']);
+                    ->orWhereRaw('LOWER(TRIM(ws.name)) NOT IN (' . implode(',', array_fill(0, count($closedStages), '?')) . ')', $closedStages);
             })
             ->orderBy($sortField, $sortDirection);
             $allowedPerPage = [10, 20, 50, 100, 200];
@@ -271,11 +273,13 @@ class ClientsController extends Controller
     }
 
     /**
-     * Display closed matters (matter_status=0 or workflow stage "File Closed").
+     * Display closed matters (matter_status=0 or workflow stages: File Closed, Withdrawn, Refund, Discontinued).
      * Mirrors clientsmatterslist but filters for archived/closed matters.
      */
     public function closedmatterslist(Request $request)
     {
+        $closedStages = ['file closed', 'withdrawn', 'refund', 'discontinued'];
+
         $teamMembers = collect();
         if ($this->hasModuleAccess('20')) {
             $sortField = $request->get('sort', 'cm.id');
@@ -289,9 +293,9 @@ class ClientsController extends Controller
                 ->where('ad.is_archived', '=', '0')
                 ->where('ad.role', '=', '7')
                 ->whereNull('ad.is_deleted')
-                ->where(function ($q) {
+                ->where(function ($q) use ($closedStages) {
                     $q->where('cm.matter_status', '=', '0')
-                        ->orWhereRaw('LOWER(TRIM(ws.name)) = ?', ['file closed']);
+                        ->orWhereRaw('LOWER(TRIM(ws.name)) IN (' . implode(',', array_fill(0, count($closedStages), '?')) . ')', $closedStages);
                 });
 
             if ($request->has('sel_matter_id')) {
@@ -374,9 +378,9 @@ class ClientsController extends Controller
                 ->where('ad.is_archived', '=', '0')
                 ->where('ad.role', '=', '7')
                 ->whereNull('ad.is_deleted')
-                ->where(function ($q) {
+                ->where(function ($q) use ($closedStages) {
                     $q->where('cm.matter_status', '=', '0')
-                        ->orWhereRaw('LOWER(TRIM(ws.name)) = ?', ['file closed']);
+                        ->orWhereRaw('LOWER(TRIM(ws.name)) IN (' . implode(',', array_fill(0, count($closedStages), '?')) . ')', $closedStages);
                 })
                 ->orderBy($sortField, $sortDirection);
             $allowedPerPage = [10, 20, 50, 100, 200];
