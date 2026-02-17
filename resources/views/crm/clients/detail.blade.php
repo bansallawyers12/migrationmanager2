@@ -1293,9 +1293,14 @@ $(document).ready(function() {
     });
     
     // Auto-select matter first email and dedicated checklists when compose modal opens
+    // When matter is selected: show only that matter's checklists; otherwise show all
     $('#emailmodal').on('shown.bs.modal', function() {
         var clientMatterId = $('#compose_client_matter_id').val();
-        if (!clientMatterId || !window.ClientDetailConfig || !window.ClientDetailConfig.urls || !window.ClientDetailConfig.urls.getComposeDefaults) return;
+        var $checklistRows = $('#emailmodal .checklistfile-cb').closest('tr');
+        if (!clientMatterId || !window.ClientDetailConfig || !window.ClientDetailConfig.urls || !window.ClientDetailConfig.urls.getComposeDefaults) {
+            $checklistRows.show(); // No matter context: show all checklists
+            return;
+        }
         $.get(window.ClientDetailConfig.urls.getComposeDefaults, { client_matter_id: clientMatterId })
             .done(function(res) {
                 var $templateSelect = $('#emailmodal select.selecttemplate');
@@ -1311,13 +1316,18 @@ $(document).ready(function() {
                         $templateSelect.val(toSelect).trigger('change');
                     }
                 }
+                // Show only matter-related checklists; hide all others
+                $checklistRows.hide();
                 if (res.checklist_ids && res.checklist_ids.length) {
                     $checklistCbs.prop('checked', false);
                     res.checklist_ids.forEach(function(id) {
-                        $('#emailmodal input.checklistfile-cb[value="' + id + '"]').prop('checked', true);
+                        var $row = $('#emailmodal input.checklistfile-cb[value="' + id + '"]').closest('tr');
+                        $row.show();
+                        $row.find('.checklistfile-cb').prop('checked', true);
                     });
                 }
-            });
+            })
+            .fail(function() { $checklistRows.show(); }); // On error: show all to avoid empty list
     });
 });
 </script>
