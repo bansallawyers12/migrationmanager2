@@ -429,7 +429,7 @@
                     .replace('{TotalDoHASurcharges}', Total_surcharge_fees)
                     .replace('{TotalEstimatedOthCosts}', Total_department_fees)
                     .replace('{GrandTotalFeesAndCosts}', Total_payable_fees)
-                    .replace('{PDF_url_for_sign}', '<a href="' + PDF_url_for_sign + '" target="_blank">'+PDF_url_for_sign+'</a>')
+                    .replace('{PDF_url_for_sign}', '<a href="' + PDF_url_for_sign + '" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline;word-break:break-all;">'+PDF_url_for_sign+'</a>')
                     .replace('{visa_apply}', mattertitle);
 
                     $("#preview_email_modal .summernote-simple").each(function() {

@@ -222,7 +222,7 @@
 
                 <!-- Call to Action Button -->
                 <div class="button-container">
-                    <a href="{{ $signingUrl }}" class="cta-button" style="display: inline-block; background-color: #2563eb; color: #ffffff; text-decoration: none; padding: 15px 40px; border: 2px solid #1e40af; font-weight: 700; font-size: 16px;">
+                    <a href="{{ $signingUrl }}" target="_blank" rel="noopener noreferrer" class="cta-button" style="display: inline-block; background-color: #2563eb; color: #ffffff; text-decoration: none; padding: 15px 40px; border: 2px solid #1e40af; font-weight: 700; font-size: 16px;">
                         Review & Sign Document
                     </a>
                 </div>

@@ -980,8 +980,8 @@
             var message = '<p>Dear ' + (signerName !== 'there' ? signerName : 'there') + ',</p>' +
                 '<p>We have prepared an agreement document that requires your review and signature.</p>' +
                 '<p>Please click the link below to access and sign the document:</p>' +
-                '<p style="margin:20px 0;"><a href="' + signingUrl + '" style="display:inline-block;background-color:#2563eb;color:#fff;text-decoration:none;padding:12px 24px;font-weight:600;">Sign Document Now</a></p>' +
-                '<p>Or copy this link: <a href="' + signingUrl + '">' + signingUrl + '</a></p>' +
+                '<p style="margin:20px 0;"><a href="' + signingUrl + '" target="_blank" rel="noopener noreferrer" style="display:inline-block;background-color:#2563eb;color:#fff;text-decoration:none;padding:12px 24px;font-weight:600;">Sign Document Now</a></p>' +
+                '<p>Or copy this link: <a href="' + signingUrl + '" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline;word-break:break-all;">' + signingUrl + '</a></p>' +
                 '<p>If you have any questions, please contact us.</p>' +
                 '<p><strong>Regards,</strong><br>Bansal Migration Team</p>';
 

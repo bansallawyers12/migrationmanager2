@@ -10833,7 +10833,7 @@ Bansal Immigration`;
                             str = str.replace(/\{GrandTotalFeesAndCosts\}/g, macroVals.GrandTotalFeesAndCosts || '');
                             str = str.replace(/\$\{GrandTotalFeesAndCosts\}/g, macroVals.GrandTotalFeesAndCosts || '');
                             var pdfUrl = macroVals.PDF_url_for_sign || '';
-                            var pdfLink = pdfUrl ? '<a href="' + pdfUrl + '" target="_blank">' + pdfUrl + '</a>' : '';
+                            var pdfLink = pdfUrl ? '<a href="' + pdfUrl + '" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline;word-break:break-all;">' + pdfUrl + '</a>' : '';
                             str = str.replace(/\{PDF_url_for_sign\}/g, pdfLink);
                             return str;
                         };

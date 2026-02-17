@@ -186,7 +186,7 @@
 
             <!-- Call to Action -->
             <div class="button-container">
-                <a href="{{ $signingUrl }}" class="cta-button" style="display: inline-block; background-color: #dc2626; color: #ffffff; text-decoration: none; padding: 15px 40px; border: 2px solid #b91c1c; font-weight: 700; font-size: 16px;">
+                <a href="{{ $signingUrl }}" target="_blank" rel="noopener noreferrer" class="cta-button" style="display: inline-block; background-color: #dc2626; color: #ffffff; text-decoration: none; padding: 15px 40px; border: 2px solid #b91c1c; font-weight: 700; font-size: 16px;">
                     Sign Now
                 </a>
             </div>

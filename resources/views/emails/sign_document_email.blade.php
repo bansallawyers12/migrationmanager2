@@ -150,14 +150,14 @@
                 </p>
                 
                 <div style="text-align: center; margin: 30px 0;">
-                    <a href="{{ $signingUrl }}" class="cta-button" style="display: inline-block; background-color: #2563eb; color: #ffffff; text-decoration: none; padding: 15px 40px; border: 2px solid #1e40af; font-weight: 700; font-size: 16px;">
+                    <a href="{{ $signingUrl }}" target="_blank" rel="noopener noreferrer" class="cta-button" style="display: inline-block; background-color: #2563eb; color: #ffffff; text-decoration: none; padding: 15px 40px; border: 2px solid #1e40af; font-weight: 700; font-size: 16px;">
                         Sign Document Now
                     </a>
                 </div>
                 
                 <div class="signing-link-box">
                     <div style="font-size: 13px; color: #1a1a1a; margin-bottom: 10px;">Or copy this link:</div>
-                    <a href="{{ $signingUrl }}" class="signing-link">{{ $signingUrl }}</a>
+                    <a href="{{ $signingUrl }}" target="_blank" rel="noopener noreferrer" class="signing-link" style="color:#2563eb;text-decoration:underline;word-break:break-all;">{{ $signingUrl }}</a>
                 </div>
                 
                 <div class="signature-section">
