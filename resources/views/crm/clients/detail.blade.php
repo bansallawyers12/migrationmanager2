@@ -122,7 +122,7 @@ use App\Http\Controllers\Controller;
                                             $matterName = $matterlist->title;
                                         }
                                     @endphp
-                                    <option value="{{$matterlist->id}}" {{ $matterlist->id == $latestClientMatterId ? 'selected' : '' }} data-clientuniquematterno="{{@$matterlist->client_unique_matter_no}}">{{$matterName}}({{@$matterlist->client_unique_matter_no}})</option>
+                                    <option value="{{$matterlist->id}}" {{ $matterlist->id == $latestClientMatterId ? 'selected' : '' }} data-clientuniquematterno="{{@$matterlist->client_unique_matter_no}}" data-sel-matter-id="{{@$matterlist->sel_matter_id}}">{{$matterName}}({{@$matterlist->client_unique_matter_no}})</option>
                                 @endforeach
                             </select>
                         <?php
@@ -157,7 +157,7 @@ use App\Http\Controllers\Controller;
                                                 $matterName = $matterlist->title;
                                             }
                                         @endphp
-                                        <option value="{{$matterlist->id}}" {{ $matterlist->id == $latestClientMatterId ? 'selected' : '' }} data-clientuniquematterno="{{@$matterlist->client_unique_matter_no}}">{{$matterName}}({{@$matterlist->client_unique_matter_no}})</option>
+                                        <option value="{{$matterlist->id}}" {{ $matterlist->id == $latestClientMatterId ? 'selected' : '' }} data-clientuniquematterno="{{@$matterlist->client_unique_matter_no}}" data-sel-matter-id="{{@$matterlist->sel_matter_id}}">{{$matterName}}({{@$matterlist->client_unique_matter_no}})</option>
                                     @endforeach
                                 </select>
                             <?php
@@ -194,7 +194,7 @@ use App\Http\Controllers\Controller;
                                             $matterName = $matterlist->title;
                                         }
                                     @endphp
-                                    <option value="{{$matterlist->id}}" {{ $matterlist->id == $latestClientMatterId ? 'selected' : '' }} data-clientuniquematterno="{{@$matterlist->client_unique_matter_no}}">{{$matterName}}({{@$matterlist->client_unique_matter_no}})</option>
+                                    <option value="{{$matterlist->id}}" {{ $matterlist->id == $latestClientMatterId ? 'selected' : '' }} data-clientuniquematterno="{{@$matterlist->client_unique_matter_no}}" data-sel-matter-id="{{@$matterlist->sel_matter_id}}">{{$matterName}}({{@$matterlist->client_unique_matter_no}})</option>
                                 @endforeach
                             </select>
                         <?php
@@ -592,8 +592,8 @@ use App\Http\Controllers\Controller;
 							    </thead>
 							    <tbody>
 							        @foreach(\App\Models\UploadChecklist::all() as $uclist)
-							        <tr>
-							            <td><input type="checkbox" name="checklistfile[]" value="<?php echo $uclist->id; ?>"></td>
+							        <tr data-matter-id="{{ $uclist->matter_id ?? '' }}">
+							            <td><input type="checkbox" name="checklistfile[]" value="<?php echo $uclist->id; ?>" class="checklistfile-cb"></td>
 							            <td><?php echo $uclist->name; ?></td>
 							             <td><a target="_blank" href="<?php echo URL::to('/checklists/'.$uclist->file); ?>"><?php echo $uclist->name; ?></a></td>
 							        </tr>
@@ -1291,6 +1291,28 @@ $(document).ready(function() {
             initTinyMCEForModals();
         }, 100);
     });
+    
+    // Auto-select matter first email and dedicated checklists when compose modal opens
+    $('#emailmodal').on('shown.bs.modal', function() {
+        var clientMatterId = $('#compose_client_matter_id').val();
+        if (!clientMatterId || !window.ClientDetailConfig || !window.ClientDetailConfig.urls || !window.ClientDetailConfig.urls.getComposeDefaults) return;
+        $.get(window.ClientDetailConfig.urls.getComposeDefaults, { client_matter_id: clientMatterId })
+            .done(function(res) {
+                var $templateSelect = $('#emailmodal select.selecttemplate');
+                var $checklistCbs = $('#emailmodal .checklistfile-cb');
+                if (res.template && $templateSelect.length) {
+                    $templateSelect.find('option.matter-first-email-option').remove();
+                    var $opt = $('<option></option>').attr('value', res.template.id).text(res.template.name || 'First Email').addClass('matter-first-email-option');
+                    $templateSelect.prepend($opt).val(res.template.id).trigger('change');
+                }
+                if (res.checklist_ids && res.checklist_ids.length) {
+                    $checklistCbs.prop('checked', false);
+                    res.checklist_ids.forEach(function(id) {
+                        $('#emailmodal input.checklistfile-cb[value="' + id + '"]').prop('checked', true);
+                    });
+                }
+            });
+    });
 });
 </script>
 <script src="{{URL::to('/')}}/js/popover.js"></script>
@@ -1377,6 +1399,7 @@ $(document).ready(function() {
             getPartnerBranch: '{{ URL::to("/getpartnerbranch") }}',
             changeClientStatus: '{{ URL::to("/change-client-status") }}',
             getTemplates: '{{ URL::to("/get-templates") }}',
+            getComposeDefaults: '{{ URL::to("/get-compose-defaults") }}',
             getPartner: '{{ URL::to("/getpartner") }}',
             convertApplication: '{{ URL::to("/convertapplication") }}',
             renameDoc: '{{ URL::to("/documents/rename") }}',

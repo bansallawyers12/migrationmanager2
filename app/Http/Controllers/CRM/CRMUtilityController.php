@@ -996,8 +996,36 @@ public function getpartnerbranch(Request $request){
 		if($CrmEmailTemplate){
 			echo json_encode(array('subject'=>$CrmEmailTemplate->subject, 'description'=>$CrmEmailTemplate->description));
 		}else{
-			echo json_encode(array('subject'=>'','description'=>''));
+			// Fallback: check MatterEmailTemplate (matter first email)
+			$MatterEmailTemplate = \App\Models\MatterEmailTemplate::where('id',$id)->first();
+			if($MatterEmailTemplate){
+				echo json_encode(array('subject'=>$MatterEmailTemplate->subject, 'description'=>$MatterEmailTemplate->description));
+			}else{
+				echo json_encode(array('subject'=>'','description'=>''));
+			}
 		}
+	}
+
+	/**
+	 * Get compose defaults for a client matter: first email template and dedicated checklist IDs.
+	 * Used to auto-select matter's first email and checklists when opening compose modal.
+	 */
+	public function getComposeDefaults(Request $request){
+		$clientMatterId = $request->client_matter_id;
+		if (!$clientMatterId) {
+			return response()->json(['template' => null, 'checklist_ids' => []]);
+		}
+		$clientMatter = ClientMatter::find($clientMatterId);
+		if (!$clientMatter || !$clientMatter->sel_matter_id) {
+			return response()->json(['template' => null, 'checklist_ids' => []]);
+		}
+		$matterId = $clientMatter->sel_matter_id;
+		$template = \App\Models\MatterEmailTemplate::where('matter_id', $matterId)->orderBy('id', 'asc')->first();
+		$checklistIds = \App\Models\UploadChecklist::where('matter_id', $matterId)->pluck('id')->toArray();
+		return response()->json([
+			'template' => $template ? ['id' => $template->id, 'name' => $template->name, 'subject' => $template->subject, 'description' => $template->description] : null,
+			'checklist_ids' => $checklistIds,
+		]);
 	}
 
     public function sendmail(Request $request){

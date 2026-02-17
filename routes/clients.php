@@ -88,6 +88,7 @@ Route::get('/clients/get-onlyclientrecipients', [ClientsController::class, 'geto
 Route::get('/clients/get-allclients', [ClientsController::class, 'getallclients'])->name('clients.getallclients');
 Route::get('/clients/change_assignee', [ClientsController::class, 'change_assignee']);
 Route::get('/get-templates', 'CRM\CRMUtilityController@gettemplates')->name('clients.gettemplates');
+Route::get('/get-compose-defaults', 'CRM\CRMUtilityController@getComposeDefaults')->name('clients.getComposeDefaults');
 Route::post('/sendmail', 'CRM\CRMUtilityController@sendmail')->name('clients.sendmail');
 
 Route::post('/upload-mail', 'CRM\ClientsController@uploadmail');
