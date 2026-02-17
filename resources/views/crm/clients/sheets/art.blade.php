@@ -308,6 +308,7 @@
                                         <label for="agent">Agent</label>
                                         <select name="agent" id="agent" class="form-control">
                                             <option value="">All Agents</option>
+                                            <option value="me" {{ request('agent') === 'me' ? 'selected' : '' }}>Me</option>
                                             @foreach($agents as $agent)
                                                 <option value="{{ $agent->id }}" {{ request('agent') == $agent->id ? 'selected' : '' }}>{{ $agent->first_name }} {{ $agent->last_name }}</option>
                                             @endforeach

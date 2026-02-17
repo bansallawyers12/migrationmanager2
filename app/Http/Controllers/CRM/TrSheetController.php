@@ -52,7 +52,7 @@ class TrSheetController extends Controller
         $request->merge($this->getFiltersFromSession($request, $sessionKey));
 
         if (!$request->has('assignee') || $request->input('assignee') === '') {
-            $request->merge(['assignee' => 'all']);
+            $request->merge(['assignee' => 'me']);
         }
 
         $perPage = (int) $request->get('per_page', 50);
@@ -143,8 +143,22 @@ class TrSheetController extends Controller
 
     protected function getAssignees()
     {
+        $allIds = DB::table('client_matters')
+            ->select('sel_migration_agent')
+            ->whereNotNull('sel_migration_agent')
+            ->distinct()
+            ->pluck('sel_migration_agent')
+            ->merge(
+                DB::table('client_matters')->select('sel_person_responsible')->whereNotNull('sel_person_responsible')->distinct()->pluck('sel_person_responsible')
+            )
+            ->merge(
+                DB::table('client_matters')->select('sel_person_assisting')->whereNotNull('sel_person_assisting')->distinct()->pluck('sel_person_assisting')
+            )
+            ->unique()
+            ->filter()
+            ->values();
         $assignees = \App\Models\Staff::where('status', 1)
-            ->whereIn('id', DB::table('client_matters')->select('sel_migration_agent')->whereNotNull('sel_migration_agent')->distinct()->pluck('sel_migration_agent'))
+            ->whereIn('id', $allIds)
             ->orderBy('first_name')->orderBy('last_name')
             ->get(['id', 'first_name', 'last_name']);
         $currentUser = Auth::user();
@@ -184,6 +198,8 @@ class TrSheetController extends Controller
                 cm.other_reference,
                 cm.department_reference,
                 cm.sel_migration_agent,
+                cm.sel_person_responsible,
+                cm.sel_person_assisting,
                 cm.office_id,
                 cm.workflow_stage_id,
                 cm.matter_status,
@@ -199,6 +215,7 @@ class TrSheetController extends Controller
             $latestSql = "
                 SELECT cm.id AS matter_id, cm.client_id, cm.client_unique_matter_no,
                        cm.other_reference, cm.department_reference, cm.sel_migration_agent,
+                       cm.sel_person_responsible, cm.sel_person_assisting,
                        cm.office_id, cm.workflow_stage_id, cm.matter_status, cm.tr_checklist_status,
                        m.title as matter_title
                 FROM client_matters cm
@@ -333,7 +350,14 @@ class TrSheetController extends Controller
             $query->whereIn('latest_tr.office_id', $branchIds);
         }
         if ($request->filled('assignee') && $request->input('assignee') !== 'all') {
-            $query->where('latest_tr.sel_migration_agent', $request->input('assignee'));
+            $assigneeId = $request->input('assignee') === 'me' ? Auth::id() : $request->input('assignee');
+            if ($assigneeId) {
+                $query->where(function ($q) use ($assigneeId) {
+                    $q->where('latest_tr.sel_migration_agent', $assigneeId)
+                        ->orWhere('latest_tr.sel_person_responsible', $assigneeId)
+                        ->orWhere('latest_tr.sel_person_assisting', $assigneeId);
+                });
+            }
         }
         if ($request->filled('current_stage')) {
             $query->where('ws.name', $request->input('current_stage'));

@@ -8,6 +8,7 @@ use App\Models\ClientArtReference;
 use App\Models\ActivitiesLog;
 use App\Traits\ClientAuthorization;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
@@ -36,6 +37,10 @@ class ArtSheetController extends Controller
             $perPage = 50;
         }
 
+        if (!$request->has('agent') || $request->input('agent') === '') {
+            $request->merge(['agent' => 'me']);
+        }
+
         $query = $this->buildBaseQuery($request);
         $query = $this->applyFilters($query, $request);
         $query = $this->applySorting($query, $request);
@@ -50,7 +55,7 @@ class ArtSheetController extends Controller
         });
 
         $activeFilterCount = $this->countActiveFilters($request);
-        $agents = \App\Models\Staff::where('is_migration_agent', 1)->where('status', 1)->orderBy('first_name')->get(['id', 'first_name', 'last_name']);
+        $agents = $this->getArtAgents();
         $statusOptions = $this->getStatusOptions();
 
         return view('crm.clients.sheets.art', compact('rows', 'perPage', 'activeFilterCount', 'agents', 'statusOptions'));
@@ -89,6 +94,8 @@ class ArtSheetController extends Controller
                 cm.other_reference,
                 cm.department_reference,
                 cm.sel_migration_agent,
+                cm.sel_person_responsible,
+                cm.sel_person_assisting,
                 cm.office_id
             FROM client_matters cm
             INNER JOIN matters m ON m.id = cm.sel_matter_id
@@ -105,7 +112,8 @@ class ArtSheetController extends Controller
         if ($driver === 'mysql') {
             $latestArtMatterSql = "
                 SELECT cm.client_id, cm.client_unique_matter_no, cm.id AS matter_id,
-                       cm.other_reference, cm.department_reference, cm.sel_migration_agent, cm.office_id
+                       cm.other_reference, cm.department_reference, cm.sel_migration_agent,
+                       cm.sel_person_responsible, cm.sel_person_assisting, cm.office_id
                 FROM client_matters cm
                 INNER JOIN matters m ON m.id = cm.sel_matter_id
                 INNER JOIN (
@@ -215,7 +223,14 @@ class ArtSheetController extends Controller
         }
 
         if ($request->filled('agent')) {
-            $query->where('latest_art_matter.sel_migration_agent', $request->input('agent'));
+            $agentId = $request->input('agent') === 'me' ? Auth::id() : $request->input('agent');
+            if ($agentId) {
+                $query->where(function ($q) use ($agentId) {
+                    $q->where('latest_art_matter.sel_migration_agent', $agentId)
+                        ->orWhere('latest_art_matter.sel_person_responsible', $agentId)
+                        ->orWhere('latest_art_matter.sel_person_assisting', $agentId);
+                });
+            }
         }
 
         if ($request->filled('search')) {
@@ -272,6 +287,54 @@ class ArtSheetController extends Controller
             }
         }
         return $count;
+    }
+
+    protected function getArtAgents()
+    {
+        $artCondition = "cm.matter_status = 1 AND (
+            LOWER(COALESCE(m.nick_name, '')) = 'art'
+            OR LOWER(COALESCE(m.title, '')) LIKE '%art%'
+            OR LOWER(COALESCE(m.title, '')) LIKE '%administrative appeals%'
+            OR LOWER(COALESCE(m.title, '')) LIKE '%tribunal%'
+        )";
+        $allIds = DB::table('client_matters as cm')
+            ->join('matters as m', 'cm.sel_matter_id', '=', 'm.id')
+            ->whereRaw($artCondition)
+            ->select('cm.sel_migration_agent')
+            ->whereNotNull('cm.sel_migration_agent')
+            ->distinct()
+            ->pluck('sel_migration_agent')
+            ->merge(
+                DB::table('client_matters as cm')
+                    ->join('matters as m', 'cm.sel_matter_id', '=', 'm.id')
+                    ->whereRaw($artCondition)
+                    ->select('cm.sel_person_responsible')
+                    ->whereNotNull('cm.sel_person_responsible')
+                    ->distinct()
+                    ->pluck('sel_person_responsible')
+            )
+            ->merge(
+                DB::table('client_matters as cm')
+                    ->join('matters as m', 'cm.sel_matter_id', '=', 'm.id')
+                    ->whereRaw($artCondition)
+                    ->select('cm.sel_person_assisting')
+                    ->whereNotNull('cm.sel_person_assisting')
+                    ->distinct()
+                    ->pluck('sel_person_assisting')
+            )
+            ->unique()
+            ->filter()
+            ->values();
+        $agents = \App\Models\Staff::where('status', 1)
+            ->whereIn('id', $allIds)
+            ->orderBy('first_name')->orderBy('last_name')
+            ->get(['id', 'first_name', 'last_name']);
+        $currentUser = Auth::user();
+        if ($currentUser && $agents->pluck('id')->doesntContain($currentUser->id)) {
+            $agents->push($currentUser);
+            $agents = $agents->sortBy(fn ($a) => trim(($a->first_name ?? '') . ' ' . ($a->last_name ?? '')))->values();
+        }
+        return $agents;
     }
 
     protected function getStatusOptions()

@@ -215,6 +215,7 @@
                         <label class="mb-0 mr-2" style="font-size: 13px;">Assignee:</label>
                         <select name="assignee" id="tr_assignee" class="form-control" style="max-width: 180px;">
                             <option value="all" {{ request('assignee') === 'all' ? 'selected' : '' }}>All</option>
+                            <option value="me" {{ request('assignee') === 'me' ? 'selected' : '' }}>Me</option>
                             @foreach($assignees as $a)
                                 <option value="{{ $a->id }}" {{ request('assignee') == $a->id ? 'selected' : '' }}>
                                     {{ trim(($a->first_name ?? '') . ' ' . ($a->last_name ?? '')) ?: '—' }}
