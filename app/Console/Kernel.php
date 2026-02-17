@@ -57,6 +57,9 @@ class Kernel extends ConsoleKernel
         '\App\Console\Commands\CompareDatabaseTables',
         '\App\Console\Commands\CheckMigrationTablesExist',
         '\App\Console\Commands\MarkMigrationsAsRunCommand',
+
+        // Visa Sheet Diagnostics
+        '\App\Console\Commands\DiagnoseVisaSheet',
     ];
 
     /**

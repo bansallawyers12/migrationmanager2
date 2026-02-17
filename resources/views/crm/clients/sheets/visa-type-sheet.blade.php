@@ -325,6 +325,10 @@
                                         @if($tab !== 'checklist')
                                         <th>Current Stage</th>
                                         @endif
+                                        @if($tab === 'discontinue')
+                                        <th>Outcome</th>
+                                        <th>Decision Note</th>
+                                        @endif
                                         <th>Comment</th>
                                         @if($tab === 'checklist')
                                         <th>Status</th>
@@ -338,7 +342,7 @@
                                 <tbody>
                                     @if($rows->isEmpty())
                                         <tr>
-                                            <td colspan="{{ $tab === 'checklist' ? 15 : 13 }}" class="text-center text-muted py-4">
+                                            <td colspan="{{ $tab === 'checklist' ? 15 : ($tab === 'discontinue' ? 15 : 13) }}" class="text-center text-muted py-4">
                                                 @if($setupRequired ?? false)
                                                     <i class="fas fa-info-circle"></i> Run migrations to enable data. Add a {{ strtoupper($visaType) }} matter type and assign matters to clients.
                                                 @else
@@ -387,6 +391,10 @@
                                                 <td>{{ $row->deadline ? \Carbon\Carbon::parse($row->deadline)->format('d/m/Y') : '—' }}</td>
                                                 @if($tab !== 'checklist')
                                                 <td>{{ $row->application_stage ?? '—' }}</td>
+                                                @endif
+                                                @if($tab === 'discontinue')
+                                                <td>{{ $row->decision_outcome ?? '—' }}</td>
+                                                <td class="comment-cell" title="{{ $row->decision_note ?? '' }}">{{ Str::limit($row->decision_note ?? '—', 50) }}</td>
                                                 @endif
                                                 <td class="art-comments-cell comment-cell" onclick="event.stopPropagation();" title="{{ $row->sheet_comment_text ?? '' }}">
                                                     <span class="sheet-comment-text">{{ Str::limit($row->sheet_comment_text ?? '—', 60) }}</span>

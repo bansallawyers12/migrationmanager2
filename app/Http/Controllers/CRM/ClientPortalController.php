@@ -910,6 +910,10 @@ class ClientPortalController extends Controller
 
 			// Update client_matters table
 			$clientMatter->workflow_stage_id = $nextStage->id;
+			if ($isAdvancingToDecisionReceived) {
+				$clientMatter->decision_outcome = trim($request->input('decision_outcome'));
+				$clientMatter->decision_note = trim($request->input('decision_note', ''));
+			}
 			$saved = $clientMatter->save();
 
 			if ($saved) {

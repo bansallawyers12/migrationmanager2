@@ -248,6 +248,8 @@ class VisaTypeSheetController extends Controller
                 cm.sel_person_assisting,
                 cm.office_id,
                 cm.workflow_stage_id,
+                cm.decision_outcome,
+                cm.decision_note,
                 cm.matter_status,
                 cm.deadline,
                 cm.{$checklistCol} as checklist_status,
@@ -263,7 +265,8 @@ class VisaTypeSheetController extends Controller
                 SELECT cm.id AS matter_id, cm.client_id, cm.client_unique_matter_no,
                        cm.other_reference, cm.department_reference, cm.sel_migration_agent,
                        cm.sel_person_responsible, cm.sel_person_assisting,
-                       cm.office_id, cm.workflow_stage_id, cm.matter_status, cm.deadline,
+                       cm.office_id, cm.workflow_stage_id, cm.decision_outcome, cm.decision_note,
+                       cm.matter_status, cm.deadline,
                        cm.{$checklistCol} as checklist_status, m.title as matter_title
                 FROM client_matters cm
                 INNER JOIN matters m ON m.id = cm.sel_matter_id
@@ -310,7 +313,9 @@ class VisaTypeSheetController extends Controller
                 "{$refAlias}.comments as sheet_comment_text",
                 "{$refAlias}.checklist_sent_at",
                 "{$refAlias}.is_pinned",
-                'latest_matter.checklist_status as tr_checklist_status'
+                'latest_matter.checklist_status as tr_checklist_status',
+                'latest_matter.decision_outcome',
+                'latest_matter.decision_note'
             )
             ->where('admins.is_archived', 0)
             ->where('admins.role', 7)

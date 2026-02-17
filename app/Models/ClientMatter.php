@@ -32,6 +32,8 @@ class ClientMatter extends Model
         'sel_person_responsible',
         'sel_person_assisting',
         'workflow_stage_id',
+        'decision_outcome',
+        'decision_note',
         'matter_status',
         'deadline',
         'client_unique_matter_no',
