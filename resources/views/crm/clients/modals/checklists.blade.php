@@ -105,3 +105,59 @@
 	</div>
 </div>
 
+<!-- Inline Signature Placement Modal (Checklist Agreements) -->
+<div class="modal fade" id="signaturePlacementModal" tabindex="-1" role="dialog" aria-labelledby="signaturePlacementModalLabel" aria-hidden="true" data-backdrop="static">
+	<div class="modal-dialog modal-xl" role="document">
+		<div class="modal-content">
+			<div class="modal-header bg-warning text-dark">
+				<h5 class="modal-title" id="signaturePlacementModalLabel">
+					<i class="fas fa-pen-nib mr-2"></i>Place Signature Fields
+				</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body p-4">
+				<div id="signature-placement-loading" class="text-center py-5">
+					<div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div>
+					<p class="mt-2 text-muted">Loading document...</p>
+				</div>
+				<div id="signature-placement-content" style="display: none;">
+					<div class="row">
+						<div class="col-lg-8">
+							<div class="mb-2">
+								<small class="text-muted">Document Preview — Click on the document to add signature fields, then drag to position them.</small>
+							</div>
+							<div id="signature-page-nav" class="mb-3" style="display: none;">
+								<div class="btn-group btn-group-sm">
+									<button type="button" class="btn btn-outline-secondary" id="sig-prev-page">&larr; Prev</button>
+									<span class="px-3 align-self-center" id="sig-page-info">Page 1</span>
+									<button type="button" class="btn btn-outline-secondary" id="sig-next-page">Next &rarr;</button>
+								</div>
+							</div>
+							<div class="position-relative d-inline-block border rounded overflow-hidden" id="sig-preview-container" style="min-height: 400px;">
+								<img id="sig-preview-image" src="" alt="PDF Preview" style="max-width: 100%; height: auto; display: block;">
+								<div id="sig-fields-preview"></div>
+							</div>
+						</div>
+						<div class="col-lg-4">
+							<h6 class="font-weight-bold mb-2">Signature Fields</h6>
+							<div id="sig-fields-container" class="mb-3" style="max-height: 280px; overflow-y: auto;"></div>
+							<button type="button" class="btn btn-outline-primary btn-sm btn-block mb-3" id="sig-add-field">
+								<i class="fas fa-plus mr-1"></i>Add Signature Field
+							</button>
+						</div>
+					</div>
+				</div>
+				<div id="signature-placement-error" class="alert alert-danger" style="display: none;"></div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-success" id="sig-save-btn">
+					<i class="fas fa-save mr-1"></i>Save Signature Locations
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+

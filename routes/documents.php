@@ -223,6 +223,9 @@ Route::get('/documents/{id}/edit', [AdminDocumentController::class, 'edit'])
 Route::patch('/documents/{id}', [AdminDocumentController::class, 'update'])
     ->name('documents.update');
 
+Route::get('/documents/{id}/signature-placement-data', [AdminDocumentController::class, 'getSignaturePlacementData'])
+    ->name('documents.signature-placement-data');
+
 /*---------- Admin Signing & Reminder Operations ----------*/
 // Removed duplicate admin submitSignatures route - using public route instead
 // Route::post('/documents/{document}/sign', [AdminDocumentController::class, 'submitSignatures'])

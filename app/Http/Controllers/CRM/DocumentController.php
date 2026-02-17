@@ -724,6 +724,94 @@ class DocumentController extends Controller
     }
 
     /**
+     * Get signature placement metadata for inline checklist modal (JSON API).
+     */
+    public function getSignaturePlacementData($id)
+    {
+        $documentId = (int) $id;
+        if ($documentId <= 0) {
+            return response()->json(['success' => false, 'message' => 'Invalid document ID.'], 400);
+        }
+
+        try {
+            $document = Document::findOrFail($documentId);
+            $url = $document->myfile;
+            $tmpPdfPath = null;
+            $isLocalFile = false;
+
+            if ($url && filter_var($url, FILTER_VALIDATE_URL) && strpos($url, 's3') !== false) {
+                $parsed = parse_url($url);
+                $s3Key = isset($parsed['path']) ? ltrim(urldecode($parsed['path']), '/') : null;
+                if (!$s3Key || !Storage::disk('s3')->exists($s3Key)) {
+                    return response()->json(['success' => false, 'message' => 'Document file not found.'], 404);
+                }
+                $tmpPdfPath = storage_path('app/tmp_' . uniqid() . '.pdf');
+                file_put_contents($tmpPdfPath, Storage::disk('s3')->get($s3Key));
+            } elseif ($url && file_exists(storage_path('app/public/' . $url))) {
+                $tmpPdfPath = storage_path('app/public/' . $url);
+                $isLocalFile = true;
+            } else {
+                if (!empty($document->myfile_key) && !empty($document->doc_type) && !empty($document->client_id)) {
+                    $admin = DB::table('admins')->select('client_id')->where('id', $document->client_id)->first();
+                    if ($admin && $admin->client_id) {
+                        $s3Key = $admin->client_id . '/' . $document->doc_type . '/' . $document->myfile_key;
+                        if (Storage::disk('s3')->exists($s3Key)) {
+                            $tmpPdfPath = storage_path('app/tmp_' . uniqid() . '.pdf');
+                            file_put_contents($tmpPdfPath, Storage::disk('s3')->get($s3Key));
+                        }
+                    }
+                }
+                if (!$tmpPdfPath || !file_exists($tmpPdfPath)) {
+                    return response()->json(['success' => false, 'message' => 'Document file not found.'], 404);
+                }
+            }
+
+            $pdfPages = 1;
+            $pdfWidthMM = 210;
+            $pdfHeightMM = 297;
+            $pagesDimensions = [];
+
+            if ($tmpPdfPath && file_exists($tmpPdfPath)) {
+                try {
+                    $pdfPages = $this->countPdfPages($tmpPdfPath) ?: 1;
+                    $pagesDimensions = $this->getPdfPageDimensions($tmpPdfPath, $pdfPages);
+                    $pdfWidthMM = $pagesDimensions[1]['width'] ?? 210;
+                    $pdfHeightMM = $pagesDimensions[1]['height'] ?? 297;
+                } catch (\Exception $e) {
+                    $pagesDimensions = [1 => ['width' => 210, 'height' => 297, 'orientation' => 'P']];
+                }
+            }
+
+            if ($tmpPdfPath && !$isLocalFile) {
+                @unlink($tmpPdfPath);
+            }
+
+            $existingFields = $document->signatureFields->map(function ($f) {
+                return [
+                    'page_number' => $f->page_number,
+                    'x_percent' => (float) ($f->x_percent ?? 0),
+                    'y_percent' => (float) ($f->y_percent ?? 0),
+                    'w_percent' => (float) ($f->width_percent ?? 0),
+                    'h_percent' => (float) ($f->height_percent ?? 0),
+                ];
+            })->values()->toArray();
+
+            return response()->json([
+                'success' => true,
+                'documentId' => $document->id,
+                'pdfPages' => $pdfPages,
+                'pdfWidthMM' => $pdfWidthMM,
+                'pdfHeightMM' => $pdfHeightMM,
+                'pagesDimensions' => $pagesDimensions,
+                'existingFields' => $existingFields,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('getSignaturePlacementData failed', ['id' => $id, 'error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Failed to load document.'], 500);
+        }
+    }
+
+    /**
      * Count the number of pages in a PDF file using Smalot\PdfParser.
      * Enhanced with configuration and better error handling.
      */
@@ -1105,6 +1193,12 @@ class DocumentController extends Controller
                         'redirect_url' => $redirectUrl
                     ]);
                     
+                    if ($request->expectsJson()) {
+                        return response()->json([
+                            'success' => true,
+                            'message' => 'Signature fields placed successfully! The signing link is now available in the checklist.',
+                        ]);
+                    }
                     return redirect($redirectUrl)
                         ->with('success', 'Signature fields placed successfully! The signing link is now available in the checklist.');
                         
@@ -1123,7 +1217,12 @@ class DocumentController extends Controller
                     if ($clientForRedirect) {
                         $encodedClientId = base64_encode(convert_uuencode($clientForRedirect->id));
                         $redirectUrl = url("/clients/detail/{$encodedClientId}/checklists");
-                        
+                        if ($request->expectsJson()) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'Signature fields saved, but failed to generate link automatically. Please try again from the checklist.',
+                            ], 422);
+                        }
                         return redirect($redirectUrl)
                             ->with('warning', 'Signature fields saved, but failed to generate link automatically. Please try again from the checklist.');
                     }

@@ -313,9 +313,9 @@
                                                             <div class="signature-section mt-3 p-3 bg-warning-light rounded border border-warning">
                                                                 <h6 class="font-weight-bold mb-2"><i class="fas fa-exclamation-triangle mr-2 text-warning"></i>Signature Setup Required</h6>
                                                                 <p class="mb-2 small">The agreement has been uploaded but signature fields haven't been placed yet.</p>
-                                                                <a href="{{ route('documents.edit', $agreementDoc->id) }}" target="_blank" class="btn btn-warning btn-sm">
+                                                                <button type="button" class="btn btn-warning btn-sm btn-place-signature-fields" data-document-id="{{ $agreementDoc->id }}" title="Place signature fields inline">
                                                                     <i class="fas fa-pen-nib mr-1"></i>Place Signature Fields
-                                                                </a>
+                                                                </button>
                                                             </div>
                                                             @endif
                                                         </div>
@@ -332,6 +332,35 @@
            </div>
 
 <style>
+/* Inline signature placement modal */
+#sig-preview-container { position: relative; }
+#sig-fields-preview {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+}
+.sig-field-preview {
+    position: absolute;
+    border: 2px dashed #3b82f6;
+    background: rgba(59, 130, 246, 0.15);
+    cursor: pointer;
+    pointer-events: auto;
+}
+.sig-field-preview:hover { background: rgba(59, 130, 246, 0.25); }
+.sig-field-label {
+    position: absolute;
+    top: -18px;
+    left: 0;
+    background: #3b82f6;
+    color: #fff;
+    padding: 2px 6px;
+    font-size: 10px;
+    border-radius: 3px;
+}
+
 .checklist-add-wrapper { position: relative; }
 .checklist-create-dropdown {
     position: fixed;
@@ -840,6 +869,218 @@
                 // Reload the checklist tab to show the signature link
                 location.reload();
             }
+        });
+
+        // --- Inline Signature Placement Modal ---
+        var sigState = {
+            documentId: null,
+            pdfPages: 1,
+            pagesDimensions: {},
+            pdfWidthMM: 210,
+            pdfHeightMM: 297,
+            currentPage: 1,
+            signatureFields: [],
+            selectedFieldIndex: -1,
+            isDragging: false,
+            dragStartX: 0,
+            dragStartY: 0
+        };
+
+        function openSignaturePlacementModal(docId) {
+            if (!docId) return;
+            sigState.documentId = docId;
+            sigState.signatureFields = [];
+            sigState.currentPage = 1;
+            sigState.selectedFieldIndex = -1;
+            $('#signaturePlacementModal').modal('show');
+            $('#signature-placement-loading').show();
+            $('#signature-placement-content').hide();
+            $('#signature-placement-error').hide();
+
+            $.ajax({
+                url: '/documents/' + docId + '/signature-placement-data',
+                method: 'GET',
+                headers: { 'Accept': 'application/json' }
+            }).done(function(data) {
+                if (!data.success) {
+                    $('#signature-placement-loading').hide();
+                    $('#signature-placement-error').text(data.message || 'Failed to load document.').show();
+                    return;
+                }
+                sigState.pdfPages = data.pdfPages || 1;
+                sigState.pagesDimensions = data.pagesDimensions || {};
+                sigState.pdfWidthMM = data.pdfWidthMM || 210;
+                sigState.pdfHeightMM = data.pdfHeightMM || 297;
+                sigState.signatureFields = (data.existingFields || []).map(function(f, i) {
+                    return { id: Date.now() + i, page_number: f.page_number, x_percent: f.x_percent, y_percent: f.y_percent, w_percent: f.w_percent, h_percent: f.h_percent };
+                });
+
+                $('#signature-placement-loading').hide();
+                $('#signature-placement-content').show();
+                $('#sig-preview-image').attr('src', '/debug-pdf-page/' + docId + '/1');
+                if (sigState.pdfPages > 1) {
+                    $('#signature-page-nav').show();
+                    $('#sig-prev-page').prop('disabled', true);
+                    $('#sig-next-page').prop('disabled', sigState.pdfPages <= 1);
+                } else {
+                    $('#signature-page-nav').hide();
+                }
+                sigState.currentPage = 1;
+                updateSigPageInfo();
+                updateSigForm();
+                updateSigPreview();
+                bindSigEvents();
+            }).fail(function(xhr) {
+                $('#signature-placement-loading').hide();
+                var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Failed to load document.';
+                $('#signature-placement-error').text(msg).show();
+            });
+        }
+
+        $(document).on('click', '.btn-place-signature-fields', function() {
+            openSignaturePlacementModal($(this).data('document-id'));
+        });
+
+        $(document).on('openSignaturePlacementModal', function(e, data) {
+            if (data && data.documentId) openSignaturePlacementModal(data.documentId);
+        });
+
+        function updateSigPageInfo() {
+            $('#sig-page-info').text('Page ' + sigState.currentPage + ' of ' + sigState.pdfPages);
+            $('#sig-prev-page').prop('disabled', sigState.currentPage <= 1);
+            $('#sig-next-page').prop('disabled', sigState.currentPage >= sigState.pdfPages);
+        }
+
+        function getSigDisplayDims() {
+            var $img = $('#sig-preview-image');
+            return { width: $img.length ? $img[0].clientWidth : 0, height: $img.length ? $img[0].clientHeight : 0 };
+        }
+
+        function sigSwitchPage(p) {
+            if (p < 1 || p > sigState.pdfPages) return;
+            sigState.currentPage = p;
+            $('#sig-preview-image').attr('src', '/debug-pdf-page/' + sigState.documentId + '/' + p);
+            updateSigPageInfo();
+            updateSigPreview();
+        }
+
+        function sigAddField(page, x, y) {
+            var dims = getSigDisplayDims();
+            var w = 150, h = 75;
+            var xP = dims.width ? x / dims.width : 0;
+            var yP = dims.height ? y / dims.height : 0;
+            var wP = dims.width ? w / dims.width : 0.2;
+            var hP = dims.height ? h / dims.height : 0.1;
+            sigState.signatureFields.push({ id: Date.now(), page_number: page, x_percent: xP, y_percent: yP, w_percent: wP, h_percent: hP });
+            updateSigForm();
+            updateSigPreview();
+            sigState.selectedFieldIndex = sigState.signatureFields.length - 1;
+        }
+
+        function updateSigForm() {
+            var html = '';
+            sigState.signatureFields.forEach(function(f, i) {
+                html += '<div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded sig-field-row" data-index="' + i + '">';
+                html += '<span class="small">Signature ' + (i + 1) + ' (Pg ' + f.page_number + ')</span>';
+                html += '<div><button type="button" class="btn btn-outline-secondary btn-sm sig-edit-field mr-1" data-index="' + i + '">Edit</button>';
+                html += '<button type="button" class="btn btn-outline-danger btn-sm sig-delete-field" data-index="' + i + '">Delete</button></div></div>';
+            });
+            $('#sig-fields-container').html(html || '<small class="text-muted">No fields. Click on the document or Add Signature Field.</small>');
+        }
+
+        function updateSigPreview() {
+            var $container = $('#sig-fields-preview');
+            $container.empty();
+            var dims = getSigDisplayDims();
+            sigState.signatureFields.forEach(function(f, i) {
+                if (f.page_number !== sigState.currentPage) return;
+                var $el = $('<div class="sig-field-preview" data-index="' + i + '"></div>');
+                $el.css({ left: (f.x_percent * dims.width) + 'px', top: (f.y_percent * dims.height) + 'px', width: (f.w_percent * dims.width) + 'px', height: (f.h_percent * dims.height) + 'px' });
+                $el.html('<span class="sig-field-label">Signature ' + (i + 1) + '</span>');
+                $container.append($el);
+            });
+        }
+
+        function bindSigEvents() {
+            $('#sig-preview-container').off('click.sig').on('click.sig', function(e) {
+                if ($(e.target).is('#sig-preview-image')) {
+                    var rect = e.target.getBoundingClientRect();
+                    sigAddField(sigState.currentPage, e.clientX - rect.left, e.clientY - rect.top);
+                }
+            });
+            $('#sig-add-field').off('click.sig').on('click.sig', function() {
+                var dims = getSigDisplayDims();
+                sigAddField(sigState.currentPage, dims.width / 2, dims.height / 2);
+            });
+            $('#sig-prev-page').off('click.sig').on('click.sig', function() { sigSwitchPage(sigState.currentPage - 1); });
+            $('#sig-next-page').off('click.sig').on('click.sig', function() { sigSwitchPage(sigState.currentPage + 1); });
+            $(document).off('click.sig', '.sig-delete-field').on('click.sig', '.sig-delete-field', function(e) {
+                e.preventDefault();
+                var i = parseInt($(this).data('index'));
+                if (!isNaN(i) && confirm('Delete this signature field?')) {
+                    sigState.signatureFields.splice(i, 1);
+                    sigState.selectedFieldIndex = -1;
+                    updateSigForm();
+                    updateSigPreview();
+                }
+            });
+            $(document).off('click.sig', '.sig-edit-field').on('click.sig', '.sig-edit-field', function(e) {
+                e.preventDefault();
+                var i = parseInt($(this).data('index'));
+                if (!isNaN(i) && sigState.signatureFields[i]) {
+                    sigState.selectedFieldIndex = i;
+                    if (sigState.signatureFields[i].page_number !== sigState.currentPage) {
+                        sigSwitchPage(sigState.signatureFields[i].page_number);
+                    }
+                    updateSigPreview();
+                }
+            });
+            $('#sig-preview-image').off('load.sig').on('load.sig', function() { updateSigPreview(); });
+
+            $('#sig-save-btn').off('click.sig').on('click.sig', function() {
+                if (sigState.signatureFields.length === 0) {
+                    alert('Please add at least one signature field.');
+                    return;
+                }
+                var signatures = sigState.signatureFields.map(function(f) {
+                    return {
+                        page_number: f.page_number,
+                        x_percent: (f.x_percent * 100).toFixed(2),
+                        y_percent: (f.y_percent * 100).toFixed(2),
+                        w_percent: (f.w_percent * 100).toFixed(2),
+                        h_percent: (f.h_percent * 100).toFixed(2)
+                    };
+                });
+                var $btn = $(this);
+                $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm mr-1"></span>Saving...');
+                $.ajax({
+                    url: '/documents/' + sigState.documentId,
+                    method: 'POST',
+                    data: { _method: 'PATCH', signatures: signatures, _token: $('meta[name="csrf-token"]').attr('content') },
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                }).done(function(resp) {
+                    $('#signaturePlacementModal').modal('hide');
+                    if (resp.success) {
+                        alert(resp.message || 'Signature fields saved. The signing link is now available.');
+                    } else {
+                        alert(resp.message || 'An error occurred.');
+                    }
+                }).fail(function(xhr) {
+                    var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Failed to save.';
+                    if (xhr.responseJSON && xhr.responseJSON.errors) {
+                        msg = Object.values(xhr.responseJSON.errors).flat().join(' ');
+                    }
+                    alert(msg);
+                }).always(function() {
+                    $btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i>Save Signature Locations');
+                });
+            });
+        }
+
+        $('#signaturePlacementModal').on('hidden.bs.modal', function() {
+            $('#sig-preview-image').attr('src', '');
+            localStorage.setItem('activeTab', 'checklists');
+            location.reload();
         });
     });
 })(jQuery);

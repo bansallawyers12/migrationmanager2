@@ -8229,21 +8229,13 @@ Bansal Immigration`;
 
                         $('#agreementModal').modal('hide');
 
-                        // Open signature placement page in new window
-                        if (response.edit_url) {
-                            var signatureWindow = window.open(response.edit_url, '_blank');
-                            if (signatureWindow) {
-                                alert('Agreement uploaded successfully!\n\nThe signature placement page has opened in a new window.\n\nPlace signature fields, then save and send for signing.');
-                            } else {
-                                alert('Agreement uploaded successfully!\n\nPlease allow pop-ups to open the signature placement page.');
-                            }
+                        // Open inline signature placement modal (stays on page)
+                        if (response.document_id) {
+                            $(document).trigger('openSignaturePlacementModal', { documentId: response.document_id });
+                        } else {
+                            localStorage.setItem('activeTab', 'checklists');
+                            setTimeout(function() { location.reload(); }, 1000);
                         }
-
-                        // Reload to show updated checklist
-                        localStorage.setItem('activeTab', 'checklists');
-                        setTimeout(function() {
-                            location.reload();
-                        }, 1000);
 
                     } else {
 
@@ -8309,21 +8301,13 @@ Bansal Immigration`;
 
                         $('#agreementModal').modal('hide');
 
-                        // Open signature placement page in new window
-                        if (response.edit_url) {
-                            var signatureWindow = window.open(response.edit_url, '_blank');
-                            if (signatureWindow) {
-                                alert('Agreement uploaded successfully!\n\nThe signature placement page has opened in a new window.\n\nPlace signature fields, then save and send for signing.');
-                            } else {
-                                alert('Agreement uploaded successfully!\n\nPlease allow pop-ups to open the signature placement page.');
-                            }
+                        // Open inline signature placement modal (stays on page)
+                        if (response.document_id) {
+                            $(document).trigger('openSignaturePlacementModal', { documentId: response.document_id });
+                        } else {
+                            localStorage.setItem('activeTab', 'checklists');
+                            setTimeout(function() { location.reload(); }, 1000);
                         }
-
-                        // Reload to show updated checklist
-                        localStorage.setItem('activeTab', 'checklists');
-                        setTimeout(function() {
-                            location.reload();
-                        }, 1000);
 
                     } else {
 
