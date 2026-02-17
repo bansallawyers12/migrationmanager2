@@ -68,6 +68,9 @@
         display: flex; align-items: center; gap: 12px;
         padding: 12px 20px; background: #f0f7fa; border-bottom: 1px solid #b3d9ea;
     }
+    .visa-sheet-page .visa-tabs-label {
+        color: #374151 !important;
+    }
     .visa-sheet-page .sheet-tabs {
         background: #b3d9ea; padding: 4px; border-radius: 8px;
         display: flex; gap: 2px; flex-wrap: wrap;
@@ -148,6 +151,8 @@
     }
     .visa-sheet-page .reminder-cell { min-width: 120px; }
     .visa-sheet-page .checklist-sent-cell { min-width: 120px; }
+    .visa-sheet-page .checklist-not-sent-text { color: #374151; font-weight: 500; }
+    .visa-sheet-page .filter_panel label { color: #374151; }
     
     /* Star/Pin Column Styles */
     .visa-sheet-page .pin-cell {
@@ -194,7 +199,7 @@
                         </a>
                     </div>
                     <div class="visa-tabs-row">
-                        <span class="text-muted font-weight-bold" style="font-size: 13px;">Tabs:</span>
+                        <span class="visa-tabs-label font-weight-bold" style="font-size: 13px; color: #374151;">Tabs:</span>
                         <div class="sheet-tabs">
                             @foreach(['ongoing' => 'Ongoing', 'lodged' => 'Lodged', 'checklist' => 'Checklist', 'discontinue' => 'Discontinue'] as $t => $label)
                                 <a href="{{ route($sheetRoute, array_merge($sheetRouteParams, request()->except('tab'), ['tab' => $t])) }}"
@@ -216,7 +221,15 @@
                                 <i class="fas fa-undo"></i> Clear Filters
                             </a>
                         @endif
-                        <label class="mb-0 mr-2" style="font-size: 13px;">Assignee:</label>
+                        <label class="mb-0 mr-2" style="font-size: 13px; color: #374151;">Branch:</label>
+                        <select name="branch" id="visa_branch" class="form-control" style="max-width: 180px;">
+                            <option value="">All</option>
+                            @foreach($branches as $b)
+                                @php $reqBranch = request('branch'); $branchIds = is_array($reqBranch) ? $reqBranch : ($reqBranch ? [$reqBranch] : []); @endphp
+                                <option value="{{ $b->id }}" {{ in_array($b->id, $branchIds) && count($branchIds) === 1 ? 'selected' : '' }}>{{ $b->office_name }}</option>
+                            @endforeach
+                        </select>
+                        <label class="mb-0 ml-2 mr-2" style="font-size: 13px; color: #374151;">Migration Agent:</label>
                         <select name="assignee" id="visa_assignee" class="form-control" style="max-width: 180px;">
                             <option value="all" {{ request('assignee') === 'all' ? 'selected' : '' }}>All</option>
                             <option value="me" {{ request('assignee') === 'me' ? 'selected' : '' }}>Me</option>
@@ -226,7 +239,7 @@
                                 </option>
                             @endforeach
                         </select>
-                        <label class="mb-0 ml-2 mr-1" style="font-size: 13px;">Show:</label>
+                        <label class="mb-0 ml-2 mr-1" style="font-size: 13px; color: #374151;">Show:</label>
                         <select name="per_page" id="visa_per_page" class="form-control per-page-select" style="max-width: 100px;">
                             @foreach([10, 25, 50, 100, 200] as $opt)
                                 <option value="{{ $opt }}" {{ $perPage == $opt ? 'selected' : '' }}>{{ $opt }}/page</option>
@@ -306,7 +319,7 @@
                                         @if($tab !== 'checklist')
                                         <th>Branch</th>
                                         @endif
-                                        <th>Assignee</th>
+                                        <th>Migration Agent</th>
                                         <th>Visa Expiry</th>
                                         <th>Deadline</th>
                                         @if($tab !== 'checklist')
@@ -358,10 +371,10 @@
                                                 <td onclick="event.stopPropagation();"><a href="{{ $detailUrl }}" class="art-link">{{ trim(($row->first_name ?? '') . ' ' . ($row->last_name ?? '')) ?: '—' }}</a></td>
                                                 <td>{{ $row->dob ? \Carbon\Carbon::parse($row->dob)->format('d/m/Y') : '—' }}</td>
                                                 <td>
-                                                    @if($row->payment_display_note ?? null)
-                                                        {{ $row->payment_display_note }}
-                                                    @elseif(($row->total_payment ?? 0) > 0)
+                                                    @if(($row->total_payment ?? 0) > 0)
                                                         ${{ number_format((float)($row->total_payment ?? 0), 2) }}
+                                                    @elseif($row->payment_display_note ?? null)
+                                                        {{ $row->payment_display_note }}
                                                     @else
                                                         —
                                                     @endif
@@ -395,7 +408,7 @@
                                                         {{ \Carbon\Carbon::parse($row->checklist_sent_at)->format('d/m/Y') }}
                                                         <br><a href="{{ $checklistUrl }}" class="btn btn-sm btn-outline-secondary mt-1" onclick="event.stopPropagation();" title="Resend checklist">Resend checklist</a>
                                                     @else
-                                                        Not sent
+                                                        <span class="checklist-not-sent-text">Not sent</span>
                                                         <br><a href="{{ $checklistUrl }}" class="btn btn-sm btn-outline-primary mt-1" onclick="event.stopPropagation();" title="Send checklist">Send checklist</a>
                                                     @endif
                                                 </td>
@@ -470,6 +483,18 @@ jQuery(document).ready(function($) {
     $('#visa_per_page').on('change', function() {
         var u = new URL(window.location.href);
         u.searchParams.set('per_page', $(this).val());
+        u.searchParams.delete('page');
+        window.location.href = u.toString();
+    });
+    $('#visa_branch').on('change', function() {
+        var u = new URL(window.location.href);
+        var val = $(this).val();
+        if (val) {
+            u.searchParams.set('branch[]', val);
+        } else {
+            u.searchParams.delete('branch');
+            u.searchParams.delete('branch[]');
+        }
         u.searchParams.delete('page');
         window.location.href = u.toString();
     });

@@ -489,13 +489,29 @@ class VisaTypeSheetController extends Controller
         if (!$clientId || !$matterInternalId) {
             return ['total' => '0.00', 'pending' => '0.00'];
         }
-        $total = (float) DB::table('account_all_invoice_receipts')
+        // Payment received = Client Fund Ledger (Deposits only) + Office Receipts
+        // Show total for client (sheet displays one row per client with their matter)
+        $total = (float) DB::table('account_client_receipts')
             ->where('client_id', $clientId)
-            ->where('client_matter_id', $matterInternalId)
             ->where(function ($q) {
-                $q->whereNull('invoice_status')->orWhere('invoice_status', '!=', 2);
+                $q->where(function ($q1) {
+                    // Client fund: only Deposits (exclude Fee Transfers which have deposit_amount=0)
+                    $q1->where('receipt_type', 1)
+                        ->where(function ($q2) {
+                            $q2->where('client_fund_ledger_type', 'Deposit')
+                                ->orWhereNull('client_fund_ledger_type');
+                        });
+                })->orWhere(function ($q2) {
+                    $q2->where('receipt_type', 2)->where('save_type', 'final'); // Office receipts (finalized only)
+                });
             })
-            ->sum(DB::raw('COALESCE(withdraw_amount, 0)'));
+            ->where(function ($q) {
+                $q->whereNull('void_fee_transfer')->orWhere('void_fee_transfer', '!=', 1);
+            })
+            ->where(function ($q) {
+                $q->whereNull('void_invoice')->orWhere('void_invoice', '!=', 1);
+            })
+            ->sum(DB::raw('COALESCE(deposit_amount, 0)'));
         $pending = (float) DB::table('account_client_receipts')
             ->where('client_id', $clientId)
             ->where('receipt_type', 3)
