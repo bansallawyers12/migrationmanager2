@@ -1391,6 +1391,7 @@ $(document).ready(function() {
             checklistUpload: '{{ URL::to("/application/checklistupload") }}',
             sendToHubdoc: '{{ url("/clients/sendToHubdoc") }}',
             checkHubdocStatus: '{{ url("/clients/checkHubdocStatus") }}',
+            sendToClientApplication: '{{ url("/clients/send-invoice-to-client-application") }}',
             updateMailReadBit: '{{ URL::to("/clients/updatemailreadbit") }}',
             listAllMatters: '{{ URL::to("/clients/listAllMattersWRTSelClient") }}',
             getActivities: '{{ route("clients.activities") }}',

@@ -242,6 +242,7 @@ Route::post('/clients/getInfoByReceiptId', 'CRM\ClientAccountsController@getInfo
 Route::get('/clients/genInvoice/{id}/{client_id?}', 'CRM\ClientAccountsController@genInvoice');
 Route::post('/clients/sendToHubdoc/{id}', 'CRM\ClientAccountsController@sendToHubdoc')->name('clients.sendToHubdoc');
 Route::get('/clients/checkHubdocStatus/{id}', 'CRM\ClientAccountsController@checkHubdocStatus')->name('clients.checkHubdocStatus');
+Route::post('/clients/send-invoice-to-client-application/{id}', 'CRM\ClientAccountsController@sendInvoiceToClientApplication')->name('clients.sendInvoiceToClientApplication');
 Route::get('/clients/printPreview/{id}', 'CRM\ClientAccountsController@printPreview');
 Route::post('/clients/getTopInvoiceNoFromDB', 'CRM\ClientAccountsController@getTopInvoiceNoFromDB')->name('clients.getTopInvoiceNoFromDB');
 Route::post('/clients/clientLedgerBalanceAmount', 'CRM\ClientAccountsController@clientLedgerBalanceAmount')->name('clients.clientLedgerBalanceAmount');

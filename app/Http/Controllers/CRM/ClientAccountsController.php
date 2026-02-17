@@ -16,6 +16,7 @@ use App\Models\AccountClientReceipt;
 use App\Models\AccountAllInvoiceReceipt;
 use App\Mail\HubdocInvoiceMail;
 use App\Services\FinancialStatsService;
+use App\Services\FCMService;
 use Auth;
 use PDF;
 use Carbon\Carbon;
@@ -5550,6 +5551,136 @@ public function getInvoiceAmount(Request $request)
              'hubdoc_sent_at' => null,
              'error' => $e->getMessage()
          ]);
+        }
+    }
+
+    /**
+     * Send Invoice to Client Application (Client Portal / Mobile App)
+     * Sends push notification to the client, sets client_application_sent=1 and client_application_sent_at, logs the activity.
+     */
+    public function sendInvoiceToClientApplication(Request $request, $id)
+    {
+        try {
+            // Get invoice record
+            $record_get = AccountAllInvoiceReceipt::where('receipt_type', 3)
+                ->where('receipt_id', $id)
+                ->first();
+
+            if (!$record_get) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invoice not found'
+                ], 404);
+            }
+
+            // Only allow for Pending (Unpaid) invoices - invoice_status 0 = Unpaid
+            $receipt_entry = DB::table('account_client_receipts')
+                ->where('receipt_id', $id)
+                ->where('receipt_type', 3)
+                ->first();
+
+            if (!$receipt_entry) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invoice receipt not found'
+                ], 404);
+            }
+
+            if (isset($receipt_entry->invoice_status) && $receipt_entry->invoice_status != 0) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invoice must be Pending (Unpaid) to send to Client Application'
+                ], 400);
+            }
+
+            // Check if already sent
+            if (!empty($receipt_entry->client_application_sent)) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invoice has already been sent to Client Application'
+                ], 400);
+            }
+
+            // Get client info (client_id in record is the admin id for client portal users)
+            $client = DB::table('admins')
+                ->where('id', $record_get->client_id)
+                ->first();
+
+            if (!$client) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Client not found'
+                ], 404);
+            }
+
+            $invoiceNo = $record_get->invoice_no ?? $record_get->trans_no ?? 'N/A';
+
+            // Send push notification to client's mobile app (if they have the app with FCM token)
+            try {
+                $fcmService = new FCMService();
+                $title = 'New Invoice Available';
+                $body = 'Invoice #' . $invoiceNo . ' has been sent to your client application.';
+                $data = [
+                    'type' => 'invoice',
+                    'invoice_id' => (string) $id,
+                    'invoice_no' => $invoiceNo,
+                ];
+                $fcmService->sendToUser($record_get->client_id, $title, $body, $data);
+            } catch (\Exception $e) {
+                // Log but don't fail - client may not have the app installed
+                Log::info('FCM notification skipped or failed for invoice', [
+                    'invoice_id' => $id,
+                    'client_id' => $record_get->client_id,
+                    'message' => $e->getMessage()
+                ]);
+            }
+
+            // Update client_application_sent = 1 and client_application_sent_at = now
+            DB::table('account_client_receipts')
+                ->where('receipt_type', 3)
+                ->where('receipt_id', $id)
+                ->update([
+                    'client_application_sent' => 1,
+                    'client_application_sent_at' => now()
+                ]);
+
+            // Insert in-app notification (visible in client portal notification center)
+            $clientMatterId = $receipt_entry->client_matter_id ?? $record_get->client_matter_id ?? null;
+            $notificationMessage = 'Invoice #' . $invoiceNo . ' has been sent to your client application.';
+            DB::table('notifications')->insert([
+                'sender_id' => Auth::user()->id,
+                'receiver_id' => $record_get->client_id,
+                'module_id' => $clientMatterId,
+                'url' => '/invoices',
+                'notification_type' => 'invoice_sent_to_client_app',
+                'message' => $notificationMessage,
+                'created_at' => now(),
+                'updated_at' => now(),
+                'sender_status' => 1,
+                'receiver_status' => 0,
+                'seen' => 0,
+            ]);
+
+            // Log activity
+            $objs = new ActivitiesLog;
+            $objs->client_id = $record_get->client_id;
+            $objs->created_by = Auth::user()->id;
+            $objs->description = 'Invoice #' . $invoiceNo . ' sent to Client Application';
+            $objs->subject = 'Invoice sent to client application';
+            $objs->task_status = 0;
+            $objs->pin = 0;
+            $objs->save();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Invoice sent to Client Application successfully!'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error sending invoice to client application: ' . $e->getMessage());
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to send: ' . $e->getMessage()
+            ], 500);
         }
     }
 
