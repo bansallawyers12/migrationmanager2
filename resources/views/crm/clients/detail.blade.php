@@ -1300,10 +1300,16 @@ $(document).ready(function() {
             .done(function(res) {
                 var $templateSelect = $('#emailmodal select.selecttemplate');
                 var $checklistCbs = $('#emailmodal .checklistfile-cb');
-                if (res.template && $templateSelect.length) {
-                    $templateSelect.find('option.matter-first-email-option').remove();
-                    var $opt = $('<option></option>').attr('value', res.template.id).text(res.template.name || 'First Email').addClass('matter-first-email-option');
-                    $templateSelect.prepend($opt).val(res.template.id).trigger('change');
+                if (res.matter_templates && res.matter_templates.length && $templateSelect.length) {
+                    $templateSelect.find('option.matter-template-option').remove();
+                    res.matter_templates.slice().reverse().forEach(function(t) {
+                        var $opt = $('<option></option>').attr('value', t.id).text(t.name || 'Template').addClass('matter-template-option');
+                        $templateSelect.prepend($opt);
+                    });
+                    var toSelect = res.template ? res.template.id : (res.matter_templates[0] ? res.matter_templates[0].id : null);
+                    if (toSelect) {
+                        $templateSelect.val(toSelect).trigger('change');
+                    }
                 }
                 if (res.checklist_ids && res.checklist_ids.length) {
                     $checklistCbs.prop('checked', false);

@@ -1001,7 +1001,13 @@ public function getpartnerbranch(Request $request){
 			if($MatterEmailTemplate){
 				echo json_encode(array('subject'=>$MatterEmailTemplate->subject, 'description'=>$MatterEmailTemplate->description));
 			}else{
-				echo json_encode(array('subject'=>'','description'=>''));
+				// Fallback: check MatterOtherEmailTemplate (matter additional templates)
+				$MatterOtherTemplate = \App\Models\MatterOtherEmailTemplate::where('id',$id)->first();
+				if($MatterOtherTemplate){
+					echo json_encode(array('subject'=>$MatterOtherTemplate->subject, 'description'=>$MatterOtherTemplate->description));
+				}else{
+					echo json_encode(array('subject'=>'','description'=>''));
+				}
 			}
 		}
 	}
@@ -1020,10 +1026,27 @@ public function getpartnerbranch(Request $request){
 			return response()->json(['template' => null, 'checklist_ids' => []]);
 		}
 		$matterId = $clientMatter->sel_matter_id;
-		$template = \App\Models\MatterEmailTemplate::where('matter_id', $matterId)->orderBy('id', 'asc')->first();
+
+		// First Email template (MatterEmailTemplate) - one per matter
+		$firstTemplate = \App\Models\MatterEmailTemplate::where('matter_id', $matterId)->orderBy('id', 'asc')->first();
+
+		// Additional matter templates (MatterOtherEmailTemplate) - multiple per matter
+		$otherTemplates = \App\Models\MatterOtherEmailTemplate::where('matter_id', $matterId)->orderBy('id', 'asc')->get();
+
+		// Build full list: first email first, then other templates
+		$allTemplates = [];
+		if ($firstTemplate) {
+			$allTemplates[] = ['id' => $firstTemplate->id, 'name' => $firstTemplate->name, 'subject' => $firstTemplate->subject, 'description' => $firstTemplate->description];
+		}
+		foreach ($otherTemplates as $t) {
+			$allTemplates[] = ['id' => $t->id, 'name' => $t->name, 'subject' => $t->subject, 'description' => $t->description];
+		}
+
 		$checklistIds = \App\Models\UploadChecklist::where('matter_id', $matterId)->pluck('id')->toArray();
+
 		return response()->json([
-			'template' => $template ? ['id' => $template->id, 'name' => $template->name, 'subject' => $template->subject, 'description' => $template->description] : null,
+			'template' => $firstTemplate ? ['id' => $firstTemplate->id, 'name' => $firstTemplate->name, 'subject' => $firstTemplate->subject, 'description' => $firstTemplate->description] : null,
+			'matter_templates' => $allTemplates,
 			'checklist_ids' => $checklistIds,
 		]);
 	}
