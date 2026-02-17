@@ -326,10 +326,10 @@ class ClientPortalController extends Controller
             ], 422);
         }
 
-        $email = $request->email;
+        $email = strtolower(trim($request->email));
         
-        // Check if admin exists
-        $admin = Admin::where('email', $email)->first();
+        // Check if admin exists (case-insensitive email lookup, same as login)
+        $admin = Admin::whereRaw('LOWER(email) = ?', [$email])->first();
         
         if (!$admin) {
             return response()->json([
@@ -364,10 +364,10 @@ class ClientPortalController extends Controller
             'cp_token_generated_at' => now() // Store when code was generated
         ]);
 
-        // Send verification email
+        // Send verification email (use admin's stored email for correct delivery)
         try { 
-            Mail::raw("Your password reset verification code is: {$verificationCode}\n\nThis code will expire in 10 minutes.\n\nIf you did not request this password reset, please ignore this email.\n\nConsumer guide: https://www.mara.gov.au/get-help-visa-subsite/FIles/consumer_guide_english.pdf", function ($message) use ($email) {
-                $message->to($email)
+            Mail::raw("Your password reset verification code is: {$verificationCode}\n\nThis code will expire in 10 minutes.\n\nIf you did not request this password reset, please ignore this email.\n\nConsumer guide: https://www.mara.gov.au/get-help-visa-subsite/FIles/consumer_guide_english.pdf", function ($message) use ($admin) {
+                $message->to($admin->email)
                         ->subject('Client Portal - Password Reset Verification Code');
             });
 
@@ -375,7 +375,7 @@ class ClientPortalController extends Controller
                 'success' => true,
                 'message' => 'Password reset verification code sent successfully',
                 'data' => [
-                    'email' => $email,
+                    'email' => $admin->email,
                     'expires_in' => 600 // 10 minutes in seconds
                 ]
             ], 200);
@@ -409,7 +409,8 @@ class ClientPortalController extends Controller
             ], 422);
         }
 
-        $admin = Admin::where('email', $request->email)
+        $email = strtolower(trim($request->email));
+        $admin = Admin::whereRaw('LOWER(email) = ?', [$email])
                      ->where('cp_random_code', $request->code)
                      ->where('role', 7)
                      ->where('cp_status', 1)

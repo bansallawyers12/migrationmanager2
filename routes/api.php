@@ -15,6 +15,7 @@ use App\Http\Controllers\API\ClientPortalNotificationController;
 use App\Http\Controllers\API\ClientPortalPersonalDetailsController;
 use App\Http\Controllers\API\ClientPortalCommonListingController;
 use App\Http\Controllers\API\ClientPortalAppointmentController;
+use App\Http\Controllers\API\ClientPortalBillingController;
 use App\Http\Controllers\API\FCMController;
 use App\Http\Controllers\API\OthersController;
 
@@ -85,6 +86,9 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Matters routes
     Route::get('/matters', [ClientPortalDashboardController::class, 'getAllMatters']);
+
+    // Billing routes
+    Route::get('/billing/list', [ClientPortalBillingController::class, 'list']);
     
     // Client Personal Details routes
     Route::get('/get-client-personal-detail', [ClientPortalPersonalDetailsController::class, 'getClientPersonalDetail']);
