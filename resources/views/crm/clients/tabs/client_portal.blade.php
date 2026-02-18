@@ -557,11 +557,26 @@
                                                 </div>
                                                 <div class="whatsapp-chat-input-container" id="whatsapp-chat-input-container">
                                                     <div class="chat-input-wrapper">
+                                                        <div class="chat-input-actions-left">
+                                                            <button type="button" id="attach-file-btn" class="chat-action-btn" title="Attach file">
+                                                                <i class="fas fa-plus"></i>
+                                                            </button>
+                                                            <input type="file" id="message-attachments" name="attachments[]" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" style="display:none">
+                                                            <div class="emoji-picker-wrapper">
+                                                                <button type="button" id="emoji-picker-btn" class="chat-action-btn" title="Emoji">
+                                                                    <i class="far fa-smile"></i>
+                                                                </button>
+                                                                <div id="emoji-picker-popover" class="emoji-picker-popover" style="display:none">
+                                                                    <div class="emoji-picker-grid"></div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                         <textarea id="message-input" class="message-input" placeholder="Type a message..." rows="1"></textarea>
                                                         <button id="send-message-btn" class="send-message-btn" title="Send message">
                                                             <i class="fas fa-paper-plane"></i>
                                                         </button>
                                                     </div>
+                                                    <div id="attachment-preview" class="attachment-preview" style="display:none"></div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1604,11 +1619,152 @@
 .chat-input-wrapper {
     display: flex;
     align-items: flex-end;
-    gap: 10px;
+    gap: 8px;
     background: #fff;
     border-radius: 21px;
     padding: 8px 12px;
     box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.chat-input-actions-left {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.chat-action-btn {
+    background: none;
+    border: none;
+    color: #667781;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: background 0.2s, color 0.2s;
+}
+
+.chat-action-btn:hover {
+    background: #f0f2f5;
+    color: #111;
+}
+
+.emoji-picker-wrapper {
+    position: relative;
+}
+
+.emoji-picker-popover {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    margin-bottom: 8px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    padding: 8px;
+    z-index: 1000;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.emoji-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 4px;
+}
+
+.emoji-picker-grid span {
+    font-size: 20px;
+    padding: 4px;
+    cursor: pointer;
+    border-radius: 6px;
+    text-align: center;
+    transition: background 0.2s;
+}
+
+.emoji-picker-grid span:hover {
+    background: #f0f2f5;
+}
+
+.attachment-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 0 0;
+    margin-top: 4px;
+    border-top: 1px solid #eee;
+}
+
+.attachment-preview-item {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f0f2f5;
+}
+
+.attachment-preview-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.attachment-preview-item.doc {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: #667781;
+}
+
+.attachment-preview-item .remove-attachment {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.message-attachment-img {
+    max-width: 240px;
+    max-height: 240px;
+    border-radius: 8px;
+    display: block;
+    margin-top: 4px;
+    cursor: pointer;
+}
+
+.message-attachment-doc {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #f0f2f5;
+    border-radius: 8px;
+    margin-top: 4px;
+    color: #111;
+    text-decoration: none;
+    font-size: 13px;
+    max-width: 200px;
+}
+
+.message-attachment-doc:hover {
+    background: #e4e6eb;
 }
 
 .message-input {
@@ -3569,10 +3725,43 @@ document.addEventListener('DOMContentLoaded', function() {
             messageBubble.appendChild(senderInfo);
         }
         
-        // Message content
+        // Message content (text + attachments)
         const messageContent = document.createElement('div');
         messageContent.className = 'message-content';
-        messageContent.textContent = message.message || '';
+        const textPart = (message.message || '').trim();
+        if (textPart) {
+            const textEl = document.createElement('span');
+            textEl.style.whiteSpace = 'pre-wrap';
+            textEl.textContent = textPart;
+            messageContent.appendChild(textEl);
+        }
+        const attachments = message.attachments || [];
+        attachments.forEach(function(att) {
+            if (att.type === 'image' && att.url) {
+                const img = document.createElement('a');
+                img.href = att.url;
+                img.target = '_blank';
+                img.rel = 'noopener';
+                img.className = 'message-attachment-img';
+                const imgEl = document.createElement('img');
+                imgEl.src = att.url;
+                imgEl.alt = att.filename || 'Image';
+                imgEl.style.maxWidth = '240px';
+                imgEl.style.maxHeight = '240px';
+                imgEl.style.borderRadius = '8px';
+                imgEl.style.display = 'block';
+                img.appendChild(imgEl);
+                messageContent.appendChild(img);
+            } else if (att.url) {
+                const link = document.createElement('a');
+                link.href = att.url;
+                link.target = '_blank';
+                link.rel = 'noopener';
+                link.className = 'message-attachment-doc';
+                link.innerHTML = '<i class="fas fa-file-alt"></i> ' + (att.filename || 'Document');
+                messageContent.appendChild(link);
+            }
+        });
         messageBubble.appendChild(messageContent);
         
         // Timestamp and read receipt (for sent messages: WhatsApp-style double-check icon)
@@ -3759,6 +3948,84 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Emoji picker - common emojis
+    const EMOJI_LIST = ['😀','😃','😄','😁','😅','😂','🤣','😊','😇','🙂','🙃','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😜','👍','👋','🙌','👏','❤️','😍','🔥','⭐','✨','💯','👍','👌','🙏','😊','🥳','🤗','😎','🤔','😅','😂','💪','🎉','✅','❌','⚠️','💡','📌'];
+    
+    const emojiPickerBtn = document.getElementById('emoji-picker-btn');
+    const emojiPickerPopover = document.getElementById('emoji-picker-popover');
+    const emojiPickerGrid = document.querySelector('.emoji-picker-grid');
+    if (emojiPickerBtn && emojiPickerPopover && emojiPickerGrid) {
+        emojiPickerGrid.innerHTML = EMOJI_LIST.map(e => '<span data-emoji="' + e + '">' + e + '</span>').join('');
+        emojiPickerBtn.addEventListener('click', function() {
+            const isOpen = emojiPickerPopover.style.display === 'block';
+            emojiPickerPopover.style.display = isOpen ? 'none' : 'block';
+        });
+        emojiPickerGrid.addEventListener('click', function(e) {
+            const span = e.target.closest('[data-emoji]');
+            if (span && messageInput) {
+                const emoji = span.getAttribute('data-emoji');
+                const start = messageInput.selectionStart;
+                const end = messageInput.selectionEnd;
+                const text = messageInput.value;
+                messageInput.value = text.slice(0, start) + emoji + text.slice(end);
+                messageInput.selectionStart = messageInput.selectionEnd = start + emoji.length;
+                messageInput.focus();
+            }
+        });
+        document.addEventListener('click', function(e) {
+            if (!emojiPickerPopover.contains(e.target) && e.target !== emojiPickerBtn) {
+                emojiPickerPopover.style.display = 'none';
+            }
+        });
+    }
+    
+    // Attachment button and file handling
+    const attachFileBtn = document.getElementById('attach-file-btn');
+    const messageAttachmentsInput = document.getElementById('message-attachments');
+    const attachmentPreviewEl = document.getElementById('attachment-preview');
+    let pendingFiles = [];
+    
+    if (attachFileBtn && messageAttachmentsInput) {
+        attachFileBtn.addEventListener('click', function() { messageAttachmentsInput.click(); });
+        messageAttachmentsInput.addEventListener('change', function() {
+            const files = Array.from(this.files || []);
+            pendingFiles = pendingFiles.concat(files);
+            renderAttachmentPreview();
+            this.value = '';
+        });
+    }
+    
+    function renderAttachmentPreview() {
+        if (!attachmentPreviewEl) return;
+        attachmentPreviewEl.innerHTML = '';
+        if (pendingFiles.length === 0) {
+            attachmentPreviewEl.style.display = 'none';
+            return;
+        }
+        attachmentPreviewEl.style.display = 'flex';
+        pendingFiles.forEach(function(file, idx) {
+            const item = document.createElement('div');
+            item.className = 'attachment-preview-item' + (file.type.startsWith('image/') ? '' : ' doc');
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'remove-attachment';
+            removeBtn.innerHTML = '×';
+            removeBtn.addEventListener('click', function() {
+                pendingFiles.splice(idx, 1);
+                renderAttachmentPreview();
+            });
+            if (file.type.startsWith('image/')) {
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                item.appendChild(img);
+            } else {
+                item.innerHTML = '<i class="fas fa-file-alt"></i>';
+            }
+            item.appendChild(removeBtn);
+            attachmentPreviewEl.appendChild(item);
+        });
+    }
+    
     // Send message functionality
     const messageInput = document.getElementById('message-input');
     const sendBtn = document.getElementById('send-message-btn');
@@ -3784,37 +4051,54 @@ document.addEventListener('DOMContentLoaded', function() {
     
     async function sendMessage() {
         const input = document.getElementById('message-input');
-        const messageText = input?.value.trim();
-        
+        const messageText = (input?.value || '').trim();
         const effectiveMatterId = getEffectiveClientMatterId();
-        if (!messageText || !effectiveMatterId) return;
+        const hasAttachments = typeof pendingFiles !== 'undefined' && pendingFiles && pendingFiles.length > 0;
+        
+        if (!effectiveMatterId) return;
+        if (!messageText && !hasAttachments) return;
         
         if (sendBtn) sendBtn.disabled = true;
         
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        
         try {
-            const response = await fetch('{{ route("clients.send-message") }}', {
+            let options = {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
-                },
-                body: JSON.stringify({
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            };
+            
+            if (hasAttachments) {
+                const formData = new FormData();
+                formData.append('message', messageText);
+                formData.append('client_matter_id', effectiveMatterId);
+                pendingFiles.forEach(function(f) { formData.append('attachments[]', f); });
+                options.body = formData;
+            } else {
+                options.headers['Content-Type'] = 'application/json';
+                options.body = JSON.stringify({
                     message: messageText,
                     client_matter_id: effectiveMatterId
-                })
-            });
+                });
+            }
             
+            const response = await fetch('{{ route("clients.send-message") }}', options);
             const data = await response.json();
             
             if (response.ok && data.success) {
                 input.value = '';
                 input.style.height = 'auto';
+                if (typeof pendingFiles !== 'undefined') pendingFiles = [];
+                const previewEl = document.getElementById('attachment-preview');
+                if (previewEl) { previewEl.innerHTML = ''; previewEl.style.display = 'none'; }
                 
-                // Immediately add the message to the UI (optimistic update) - no page refresh needed
+                // Immediately add the message to the UI (optimistic update)
                 if (data.data && data.data.message) {
                     const messageData = data.data.message;
-                    // Format message for display
                     const formattedMessage = {
                         id: messageData.id || data.data.message_id,
                         message: messageData.message || messageText,
@@ -3824,13 +4108,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         sent_at: messageData.sent_at || messageData.created_at || new Date().toISOString(),
                         client_matter_id: messageData.client_matter_id || effectiveMatterId,
                         is_sent: true,
-                        read_by_recipient: false
+                        read_by_recipient: false,
+                        attachments: messageData.attachments || []
                     };
                     addMessageToDisplay(formattedMessage, true, true);
                     scrollToBottom();
                     console.log('✅ Message added to UI immediately');
                 }
-                // Message will also appear via Reverb/Pusher event (for other users and as backup)
             } else {
                 alert('Failed to send message: ' + (data.message || 'Unknown error'));
             }
