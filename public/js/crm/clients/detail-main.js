@@ -192,7 +192,7 @@
 
         // Get the actual main-content height after reset
 
-        let mainContentHeight = $('.main-content').outerHeight(); console.log(mainContentHeight);
+        let mainContentHeight = $('.main-content').outerHeight();
 
         
 
@@ -203,9 +203,6 @@
         // Check if Activity Feed has substantial content (more than just empty space)
         let hasSubstantialContent = activityFeedContentHeight > 100; // Adjust threshold as needed
         
-        console.log('Activity Feed content height:', activityFeedContentHeight);
-        console.log('Activity Feed visible height:', activityFeedVisibleHeight);
-        console.log('Has substantial content:', hasSubstantialContent);
 
         // Set Activity Feed height based on content availability
         let targetHeight;
@@ -216,7 +213,6 @@
             // When Activity Feed has no data or less data, use Math.min to prevent large vacant space
             targetHeight = Math.min(mainContentHeight, maxAvailableHeight);
         }
-        console.log('Target height:', targetHeight);
         
 
         // Set Activity Feed height dynamically
@@ -416,7 +412,6 @@
 
                     success: function (response) {
 
-                        console.log('References saved:', response);
                         // Don't reload - the chips are already updated
                         // location.reload();
 
@@ -854,203 +849,10 @@
         
 
     });
-    
-    // DISABLED: Alternative vanilla JavaScript version as backup
-    // This was causing duplicate downloads - the jQuery delegated handler above is sufficient
 
-    /*
-    document.addEventListener('DOMContentLoaded', function () {
 
-        document.addEventListener('click', function (e) {
 
-            const target = e.target.closest('a.download-file');
-
-            if (!target) return;
-
-
-
-            e.preventDefault();
-
-            e.stopPropagation();
-
-
-
-    
-
-
-
-            const filelink = target.dataset.filelink;
-
-            const filename = target.dataset.filename;
-
-
-
-           
-
-
-
-            if (!filelink || !filename) {
-
-                console.error('Missing file info - filelink:', filelink, 'filename:', filename);
-
-                alert('Missing file info. Please try again.');
-
-                return;
-
-            }
-
-
-
-            // Show loading state
-
-            const originalText = target.innerHTML;
-
-            target.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Downloading...';
-
-            target.style.pointerEvents = 'none';
-
-
-
-            // Create and submit a hidden form
-
-            const form = document.createElement('form');
-
-            form.method = 'POST';
-
-            form.action = window.ClientDetailConfig.urls.downloadDocument;
-
-            form.target = '_blank';
-
-            form.style.display = 'none';
-
-
-
-            // CSRF token
-
-            const tokenElement = document.querySelector('meta[name="csrf-token"]');
-
-            if (!tokenElement) {
-
-                console.error('CSRF token not found');
-
-                alert('Security token not found. Please refresh the page and try again.');
-
-                target.innerHTML = originalText;
-
-                target.style.pointerEvents = 'auto';
-
-                return;
-
-            }
-
-            
-
-            const token = tokenElement.getAttribute('content');
-
-            
-
-            // Add form fields
-
-            const tokenInput = document.createElement('input');
-
-            tokenInput.type = 'hidden';
-
-            tokenInput.name = '_token';
-
-            tokenInput.value = token;
-
-            form.appendChild(tokenInput);
-
-
-
-            const filelinkInput = document.createElement('input');
-
-            filelinkInput.type = 'hidden';
-
-            filelinkInput.name = 'filelink';
-
-            filelinkInput.value = filelink;
-
-            form.appendChild(filelinkInput);
-
-
-
-            const filenameInput = document.createElement('input');
-
-            filenameInput.type = 'hidden';
-
-            filenameInput.name = 'filename';
-
-            filenameInput.value = filename;
-
-            form.appendChild(filenameInput);
-
-
-
-          
-
-
-
-            // Append form to body and submit
-
-            document.body.appendChild(form);
-
-            
-
-            try {
-
-                form.submit();
-
-                
-
-                // Reset button after a short delay
-
-                setTimeout(function() {
-
-                    target.innerHTML = originalText;
-
-                    target.style.pointerEvents = 'auto';
-
-                }, 2000);
-
-                
-
-            } catch (error) {
-
-                console.error('Error submitting form:', error);
-
-                alert('Error initiating download. Please try again.');
-
-                target.innerHTML = originalText;
-
-                target.style.pointerEvents = 'auto';
-
-            }
-
-
-
-            // Remove form after submission
-
-            setTimeout(function() {
-
-                if (form.parentNode) {
-
-                    form.parentNode.removeChild(form);
-
-                }
-
-            }, 1000);
-
-        });
-
-    });
-    */
-
-
-
-
-
-    //JavaScript to Show File Selection Hint
+        //JavaScript to Show File Selection Hint
 
     document.addEventListener('DOMContentLoaded', function() {
 
@@ -1128,10 +930,8 @@
         // DRAG AND DROP FUNCTIONALITY FOR CLIENT FUNDS LEDGER FORM
         // ============================================================================
         
-        console.log('📄 Ledger Drag & Drop Initialization...');
         
         function initLedgerDragDrop() {
-            console.log('🔄 Initializing Ledger Drag & Drop...');
             
             var $zone = $('#ledgerDragDropZone');
             if ($zone.length === 0) {
@@ -1139,7 +939,6 @@
                 return;
             }
             
-            console.log('✅ Ledger drag zone found');
             
             // Remove all existing handlers
             $zone.off('click dragenter dragover dragleave drop');
@@ -1153,7 +952,6 @@
             
             // DIRECT BINDING to ledger drag zone for priority
             $zone.on('dragenter', function(e) {
-                console.log('🔥 LEDGER DRAGENTER');
                 e.preventDefault();
                 e.stopPropagation();
                 e.stopImmediatePropagation();
@@ -1162,7 +960,6 @@
             });
             
             $zone.on('dragover', function(e) {
-                console.log('🔥 LEDGER DRAGOVER');
                 var event = e.originalEvent || e;
                 event.preventDefault();
                 event.stopPropagation();
@@ -1176,7 +973,6 @@
             });
 
             $zone.on('dragleave', function(e) {
-                console.log('⚠️ LEDGER DRAGLEAVE');
                 e.preventDefault();
                 e.stopPropagation();
                 
@@ -1192,7 +988,6 @@
             });
 
             $zone.on('drop', function(e) {
-                console.log('🎯 LEDGER DROP');
                 var event = e.originalEvent || e;
                 event.preventDefault();
                 event.stopPropagation();
@@ -1202,7 +997,6 @@
                 
                 var files = event.dataTransfer ? event.dataTransfer.files : null;
                 if (files && files.length > 0) {
-                    console.log('📄 Files dropped:', files.length);
                     handleLedgerFilesDrop(files);
                 } else {
                     console.error('❌ No files in drop event');
@@ -1212,19 +1006,16 @@
 
             // Click to browse
             $zone.on('click', function(e) {
-                console.log('🎯 LEDGER ZONE CLICKED');
                 e.preventDefault();
                 if (!$(e.target).closest('.remove-file, .remove-all-files').length) {
                     $('.docclientreceiptupload').click();
                 }
             });
             
-            console.log('✅ Ledger drag-drop handlers attached');
         }
         
         // Initialize when modal is shown
         $('#createreceiptmodal').on('shown.bs.modal', function() {
-            console.log('📄 Create receipt modal shown, initializing ledger drag-drop...');
             setTimeout(initLedgerDragDrop, 100);
         });
         
@@ -1410,19 +1201,16 @@
         // DRAG AND DROP FUNCTIONALITY FOR OFFICE RECEIPT FORM
         // ============================================================================
         
-        console.log('📄 Office Receipt Drag & Drop Initialization...');
         
         function initOfficeDragDrop() {
-            console.log('🔄 Initializing Office Receipt Drag & Drop...');
-            
+
             var $zones = $('.office-drag-drop-zone');
             if ($zones.length === 0) {
                 console.warn('⚠️ Office drag zones not found');
                 return;
             }
             
-            console.log('✅ Office drag zones found:', $zones.length);
-            
+
             // Remove all existing handlers
             $zones.off('click dragenter dragover dragleave drop');
             $(document).off('dragover.office dragenter.office');
@@ -1439,7 +1227,7 @@
                 var zoneId = $zone.attr('id');
                 
                 $zone.on('dragenter', function(e) {
-                    console.log('🔥 OFFICE DRAGENTER -', zoneId);
+
                     e.preventDefault();
                     e.stopPropagation();
                     e.stopImmediatePropagation();
@@ -1448,7 +1236,7 @@
                 });
                 
                 $zone.on('dragover', function(e) {
-                    console.log('🔥 OFFICE DRAGOVER -', zoneId);
+
                     var event = e.originalEvent || e;
                     event.preventDefault();
                     event.stopPropagation();
@@ -1462,7 +1250,7 @@
                 });
 
                 $zone.on('dragleave', function(e) {
-                    console.log('⚠️ OFFICE DRAGLEAVE -', zoneId);
+
                     e.preventDefault();
                     e.stopPropagation();
                     
@@ -1478,7 +1266,7 @@
                 });
 
                 $zone.on('drop', function(e) {
-                    console.log('🎯 OFFICE DROP -', zoneId);
+
                     var event = e.originalEvent || e;
                     event.preventDefault();
                     event.stopPropagation();
@@ -1488,7 +1276,6 @@
                     
                     var files = event.dataTransfer ? event.dataTransfer.files : null;
                     if (files && files.length > 0) {
-                        console.log('📄 Files dropped:', files.length);
                         handleOfficeFilesDrop(files, zoneId);
                     } else {
                         console.error('❌ No files in drop event');
@@ -1498,7 +1285,7 @@
 
                 // Click to browse
                 $zone.on('click', function(e) {
-                    console.log('🎯 OFFICE ZONE CLICKED -', zoneId);
+
                     e.preventDefault();
                     if (!$(e.target).closest('.remove-file, .remove-all-files-office').length) {
                         $('.docofficereceiptupload').click();
@@ -1506,12 +1293,12 @@
                 });
             });
             
-            console.log('✅ Office receipt drag-drop handlers attached');
+
         }
         
         // Initialize when either modal is shown
         $('#createreceiptmodal, #createofficereceiptmodal').on('shown.bs.modal', function() {
-            console.log('📄 Receipt modal shown, initializing office drag-drop...');
+
             setTimeout(initOfficeDragDrop, 100);
         });
         
@@ -2199,8 +1986,6 @@ $(document).ready(function() {
 
     // Initialize Sidebar Tabs Management
 
-    $(document).ready(function() {
-
         if (typeof SidebarTabs !== 'undefined' && window.ClientDetailConfig) {
 
             SidebarTabs.init({
@@ -2220,8 +2005,6 @@ $(document).ready(function() {
             console.error('[DetailMain] SidebarTabs or ClientDetailConfig not available');
 
         }
-
-    });
 
     
 
@@ -2326,7 +2109,7 @@ $(document).ready(function() {
                                                         data: {from: dateStr, appid: appliid},
                                                         success: function(result) {
                                                             $('#popuploader').hide();
-                                                            console.log("sent back -> do whatever you want now");
+
                                                         }
                                                     });
                                                 }
@@ -2359,7 +2142,6 @@ $(document).ready(function() {
 
                                         $('#popuploader').hide();
 
-                                        console.log("sent back -> do whatever you want now");
 
                                     }
 
@@ -2455,7 +2237,6 @@ $(document).ready(function() {
 
                                         }
 
-                                        console.log("sent back -> do whatever you want now");
 
                                     }
 
@@ -2509,7 +2290,6 @@ $(document).ready(function() {
 
                                         }
 
-                                        console.log("sent back -> do whatever you want now");
 
                                     }
 
@@ -3429,8 +3209,6 @@ $(document).ready(function() {
 
     // Update preview container styles when the document is ready
 
-    $(document).ready(function() {
-
         // Style all preview containers
 
         $('.preview-pane.file-preview-container').css({
@@ -3470,8 +3248,6 @@ $(document).ready(function() {
             adjustPreviewContainers();
 
         }).resize(); // Trigger on load
-
-    });
 
 
 
@@ -4177,7 +3953,6 @@ $(document).ready(function() {
 
         if (selectedMatter === '' || selectedMatter === null) {
 
-            console.log('Select Matters placeholder selected - no redirect');
 
             return;
 
@@ -5247,11 +5022,9 @@ $(document).ready(function() {
 
 
 
-                    console.log('Row ' + (index + 1) + ': withdrawAmount = ' + withdrawAmount + ', Payment Type = ' + paymentType);
 
                 } else {
 
-                    console.log('Row ' + (index + 1) + ': No withdraw amount found');
 
                 }
 
@@ -8856,7 +8629,6 @@ Bansal Immigration`;
                             var trimmedResponse = responses.trim();
                             if (trimmedResponse.startsWith('<!DOCTYPE') || trimmedResponse.startsWith('<html')) {
                                 console.error('Received HTML instead of JSON. User might be logged out.');
-                                console.log('Response received:', responses.substring(0, 200));
                                 return;
                             }
                             // Parse string response
@@ -9203,7 +8975,6 @@ Bansal Immigration`;
                     $('#confirmNotUseDocModal').modal('hide');
 
                     if(res.status){
-                        console.log('✓ Document moved to Not Used tab successfully', {doc_id: res.doc_id, doc_type: res.doc_type});
 
                         // Remove document from current tab (Personal or Visa)
                         if(res.doc_type == 'personal') {
@@ -9270,7 +9041,7 @@ Bansal Immigration`;
                             // Append to Not Used documents list
                             $('.notuseddocumnetlist').append(trRow);
                             
-                            console.log('✓ Document row added to Not Used tab', {doc_id: doc.id});
+
                         }
 
                         // Update activity log without page reload
@@ -9353,7 +9124,6 @@ Bansal Immigration`;
                     $('#confirmBackToDocModal').modal('hide');
 
                     if(res.status){
-                        console.log('✓ Document moved back from Not Used tab successfully', {doc_id: res.doc_id, doc_type: res.doc_type});
 
                         // Remove document from "Not Used" tab
                         $('.notuseddocumnetlist #id_'+res.doc_id).remove();
@@ -9367,7 +9137,6 @@ Bansal Immigration`;
                             toastr.success('Document moved back to ' + docTypeLabel + ' tab');
                         }
                         
-                        console.log('✓ Document is now available in ' + docTypeLabel + ' tab');
 
                     } else {
                         console.error('✗ Failed to move document back', res);
@@ -9941,25 +9710,6 @@ Bansal Immigration`;
             }
 
         });
-
-
-
-        // Old task modal removed - Task table/model no longer exists
-        /*
-        $(document).delegate('.opentaskmodal', 'click', function(){
-            $('#opentaskmodal').modal('show');
-            $('#opentaskmodal input[name="mailid"]').val(0);
-            $('#opentaskmodal input[name="title"]').val('');
-            $('#opentaskmodal #appliationModalLabel').html('Create Note');
-            $('#opentaskmodal input[name="attachments"]').val('');
-            $('#opentaskmodal input[name="title"]').val('');
-            $('#opentaskmodal .showattachment').val('Choose file');
-            var datasubject = $(this).attr('datasubject');
-            var datamailid = $(this).attr('datamailid');
-            $('#opentaskmodal input[name="title"]').val(datasubject);
-            $('#opentaskmodal input[name="mailid"]').val(datamailid);
-        });
-        */
 
 
 
@@ -11159,23 +10909,20 @@ Bansal Immigration`;
 
         // Use on() instead of delegate() for better compatibility
         $(document).on('change', '.docupload', function () {
-            console.log('📤 File input change event triggered');
-            
+
             var fileInput = this;
 
             var file = fileInput.files[0];
 
             if (!file) {
-                console.log('⚠️ No file selected');
+
                 return;
             }
 
-            console.log('📄 File selected:', file.name, 'Size:', file.size);
 
             var fileidL = $(this).attr("data-fileid");
             var doccategoryL = $(this).attr("data-doccategory");
             
-            console.log('📋 File ID:', fileidL, 'Category:', doccategoryL);
 
             var $form = $(this).closest('form');
             if (!$form.length) {
@@ -11334,11 +11081,10 @@ Bansal Immigration`;
         // -------------------------------------------------------------------------
         
         // Debug: Check if handlers are being attached
-        console.log('🔧 Attaching personal-doc-drag-zone handlers...');
-        console.log('🔍 Current .personal-doc-drag-zone count:', $('.personal-doc-drag-zone').length);
+
         
         $(document).on('dragover', '.personal-doc-drag-zone', function(e) {
-            console.log('✅ DRAGOVER event fired on personal-doc-drag-zone');
+
             e.preventDefault();
             e.stopPropagation();
             $(this).addClass('drag_over');
@@ -11346,7 +11092,7 @@ Bansal Immigration`;
         });
         
         $(document).on('dragenter', '.personal-doc-drag-zone', function(e) {
-            console.log('✅ DRAGENTER event fired on personal-doc-drag-zone');
+
             e.preventDefault();
             e.stopPropagation();
             $(this).addClass('drag_over');
@@ -11354,7 +11100,7 @@ Bansal Immigration`;
         });
         
         $(document).on('dragleave', '.personal-doc-drag-zone', function(e) {
-            console.log('⚠️ DRAGLEAVE event fired on personal-doc-drag-zone');
+
             e.preventDefault();
             e.stopPropagation();
             // Only remove class if leaving the drop zone itself, not child elements
@@ -11369,14 +11115,14 @@ Bansal Immigration`;
         });
         
         $(document).on('drop', '.personal-doc-drag-zone', function(e) {
-            console.log('🎯 DROP event fired on personal-doc-drag-zone!', e.originalEvent.dataTransfer.files);
+
             e.preventDefault();
             e.stopPropagation();
             $(this).removeClass('drag_over');
             
             var files = e.originalEvent.dataTransfer.files;
             if (files && files.length > 0) {
-                console.log('📄 File detected, calling handlePersonalDocDragDrop');
+
                 handlePersonalDocDragDrop($(this), files[0]);
             } else {
                 console.error('❌ No files in drop event');
@@ -11385,13 +11131,13 @@ Bansal Immigration`;
         });
         
         $(document).on('click', '.personal-doc-drag-zone', function(e) {
-            console.log('👆 CLICK event fired on personal-doc-drag-zone');
+
             e.preventDefault();
             e.stopPropagation();
             var fileid = $(this).data('fileid');
-            console.log('📂 File ID:', fileid);
+
             var fileInput = $('#upload_form_' + fileid).find('.docupload');
-            console.log('📁 File input found:', fileInput.length > 0);
+
             if (fileInput.length > 0) {
                 fileInput.click();
             } else {
@@ -11399,18 +11145,6 @@ Bansal Immigration`;
             }
             return false;
         });
-        
-        // Debug: Verify handlers after a delay (for dynamically loaded content)
-        setTimeout(function() {
-            console.log('🔍 After delay - .personal-doc-drag-zone count:', $('.personal-doc-drag-zone').length);
-            $('.personal-doc-drag-zone').each(function(index) {
-                console.log('📍 Drop zone #' + index + ':', {
-                    fileid: $(this).data('fileid'),
-                    formid: $(this).data('formid'),
-                    element: this
-                });
-            });
-        }, 2000);
         
         // -------------------------------------------------------------------------
         // VISA DOCUMENTS - Drag and Drop Handlers
@@ -16020,165 +15754,6 @@ Bansal Immigration`;
 
 
 
-		// DISABLED: Direct event binding for download-file elements
-		// This was causing duplicate downloads - the jQuery delegated handler at line 625 is sufficient
-
-		/*
-		$('.download-file').off('click').on('click', function(e) {
-
-			e.preventDefault();
-
-			e.stopPropagation();
-
-			
-
-			const $this = $(this);
-
-			const filelink = $this.data('filelink');
-
-			const filename = $this.data('filename');
-
-			
-
-			if (!filelink || !filename) {
-
-				console.error('Direct handler - Missing file info');
-
-				alert('Missing file info. Please try again.');
-
-				return false;
-
-			}
-
-			
-
-			// Show loading indicator
-
-			$this.html('<i class="fas fa-spinner fa-spin"></i> Downloading...');
-
-			$this.prop('disabled', true);
-
-			
-
-			// Create and submit a hidden form
-
-			const form = $('<form>', {
-
-				method: 'POST',
-
-				action: window.ClientDetailConfig.urls.downloadDocument,
-
-				target: '_blank',
-
-				style: 'display: none;'
-
-			});
-
-			
-
-			// CSRF token
-
-			const token = $('meta[name="csrf-token"]').attr('content');
-
-			if (!token) {
-
-				console.error('Direct handler - CSRF token not found');
-
-				alert('Security token not found. Please refresh the page and try again.');
-
-				$this.html('Download').prop('disabled', false);
-
-				return false;
-
-			}
-
-			
-
-			// Add form fields
-
-			form.append($('<input>', {
-
-				type: 'hidden',
-
-				name: '_token',
-
-				value: token
-
-			}));
-
-			
-
-			form.append($('<input>', {
-
-				type: 'hidden',
-
-				name: 'filelink',
-
-				value: filelink
-
-			}));
-
-			
-
-			form.append($('<input>', {
-
-				type: 'hidden',
-
-				name: 'filename',
-
-				value: filename
-
-			}));
-
-			
-
-			// Append form to body and submit
-
-			$('body').append(form);
-
-			
-
-			try {
-
-				form[0].submit();
-
-				// Reset button after a short delay
-
-				setTimeout(function() {
-
-					$this.html('Download').prop('disabled', false);
-
-				}, 2000);
-
-				
-
-			} catch (error) {
-
-				console.error('Direct handler - Error submitting form:', error);
-
-				alert('Error initiating download. Please try again.');
-
-				$this.html('Download').prop('disabled', false);
-
-			}
-
-			
-
-			// Remove form after submission
-
-			setTimeout(function() {
-
-				form.remove();
-
-			}, 1000);
-
-			
-
-			return false;
-
-		});
-		*/
-
 		
 
 		// Function to open signature link in new tab
@@ -17182,8 +16757,7 @@ Bansal Immigration`;
                 _token: window.ClientDetailConfig.csrfToken
             },
             success: function (response) {
-                console.log('References saved:', response);
-                
+
                 // Hide saving indicator
                 $('.sidebar-references').removeClass('saving');
                 

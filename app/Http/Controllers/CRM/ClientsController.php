@@ -2460,6 +2460,7 @@ class ClientsController extends Controller
                         ->where('admins.role', 7)
                         ->whereNull('admins.is_deleted')
                         ->where('admins.is_archived', 0)
+                        ->where('client_matters.matter_status', 1)
                         ->whereRaw('LOWER(admins.client_id) LIKE ?', ["%{$clientIdPartLower}%"])
                         ->whereRaw('LOWER(client_matters.client_unique_matter_no) LIKE ?', ["%{$matterNoPartLower}%"])
                         ->select(
@@ -2494,6 +2495,7 @@ class ClientsController extends Controller
                 ->where('admins.role', 7)
                 ->whereNull('admins.is_deleted')
                 ->where('admins.is_archived', 0)
+                ->where('client_matters.matter_status', 1)
                 ->where(function($query) use ($squery) {
                     $query->where('client_matters.department_reference', 'LIKE', "%{$squery}%")
                           ->orWhere('client_matters.other_reference', 'LIKE', "%{$squery}%")
