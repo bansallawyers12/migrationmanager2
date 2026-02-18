@@ -58,6 +58,7 @@ class MatterController extends Controller
             $obj = new Matter;
             $obj->title = $requestData['title'];
             $obj->nick_name = $requestData['nick_name'];
+            $obj->workflow_id = $requestData['workflow_id'] ?? null;
             $obj->surcharge = $requestData['surcharge'];
             $obj->status = $requestData['status'] ?? 1; // Set default status to 1 (active)
             $obj->is_for_company = $requestData['is_for_company'] ?? 0; // Default to 0 (for personal clients)
@@ -135,6 +136,7 @@ class MatterController extends Controller
 
         $obj->title = $requestData['title'];
         $obj->nick_name = $requestData['nick_name'];
+        $obj->workflow_id = $requestData['workflow_id'] ?: null;
         $obj->is_for_company = $requestData['is_for_company'] ?? $obj->is_for_company ?? 0;
 
         $obj->surcharge = $requestData['surcharge']?? $obj->surcharge;

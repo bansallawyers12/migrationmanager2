@@ -15,9 +15,9 @@
 						<div class="card">
 							<div class="card-header">
 								<h4>Edit Workflow Stage</h4>
-								<div class="card-header-action">
-									<a href="{{route('adminconsole.features.workflow.index')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
-								</div>
+							<div class="card-header-action">
+									<a href="{{ isset($workflow) && $workflow ? route('adminconsole.features.workflow.stages', base64_encode(convert_uuencode($workflow->id))) : route('adminconsole.features.workflow.index') }}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
+							</div>
 							</div>
 						</div>
 					</div>

@@ -41,6 +41,7 @@ Route::post('/clients/matter/discontinue', [ClientPortalController::class, 'disc
 Route::post('/clients/matter/reopen', [ClientPortalController::class, 'reopenClientMatter'])->name('clients.matter.reopen');
 Route::post('/clients/matter/delete', [ClientPortalController::class, 'deleteClientMatter'])->name('clients.matter.delete');
 Route::post('/clients/matter/update-deadline', [ClientPortalController::class, 'updateClientMatterDeadline'])->name('clients.matter.update-deadline');
+Route::post('/clients/matter/change-workflow', [ClientPortalController::class, 'changeClientMatterWorkflow'])->name('clients.matter.change-workflow');
 Route::get('/get-applications-logs', [ClientPortalController::class, 'getapplicationslogs']);
 Route::get('/get-applications', [ClientPortalController::class, 'getapplications']);
 

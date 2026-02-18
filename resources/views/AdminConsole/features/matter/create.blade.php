@@ -60,6 +60,18 @@
                                             <div class="row">
                                                 <div class="col-12 col-md-6 col-lg-6">
                                                     <div class="form-group">
+                                                        <label for="workflow_id">Default Workflow</label>
+                                                        <select name="workflow_id" id="workflow_id" class="form-control">
+                                                            <option value="">— Use General —</option>
+                                                            @foreach(\App\Models\Workflow::orderBy('name')->get() as $w)
+                                                            <option value="{{ $w->id }}" {{ old('workflow_id') == $w->id ? 'selected' : '' }}>{{ $w->name }}{{ $w->matter ? ' (' . $w->matter->title . ')' : '' }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                        <small class="form-text text-muted">New client matters of this type will use this workflow by default.</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-12 col-md-6 col-lg-6">
+                                                    <div class="form-group">
                                                         <label for="is_for_company">Is this matter for companies? <span class="span_req">*</span></label>
                                                         <select name="is_for_company" id="is_for_company" class="form-control" data-valid="required">
                                                             <option value="0" {{ old('is_for_company', '0') == '0' ? 'selected' : '' }}>No (For Personal Clients)</option>

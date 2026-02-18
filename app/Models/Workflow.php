@@ -1,26 +1,34 @@
 <?php
 namespace App\Models;
 
-use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Model;
 use Kyslik\ColumnSortable\Sortable;
-use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class Workflow extends Authenticatable
+class Workflow extends Model
 {
-    use Notifiable;
 	use Sortable;
 	
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
-	
+	protected $table = 'workflows';
 	
 	protected $fillable = [
-        'id', 'name', 'created_at', 'updated_at'
+        'id', 'name', 'matter_id', 'created_at', 'updated_at'
     ];
   
-	public $sortable = ['id', 'created_at', 'updated_at'];
- 
+	public $sortable = ['id', 'name', 'created_at', 'updated_at'];
+
+	/**
+	 * Get the matter type this workflow is linked to (nullable for General workflow).
+	 */
+	public function matter()
+	{
+		return $this->belongsTo(Matter::class, 'matter_id');
+	}
+
+	/**
+	 * Get the stages for this workflow.
+	 */
+	public function stages()
+	{
+		return $this->hasMany(WorkflowStage::class, 'workflow_id')->orderByRaw('COALESCE(sort_order, id) ASC');
+	}
 }

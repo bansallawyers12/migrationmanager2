@@ -11,8 +11,16 @@ class Matter extends Model
 	protected $table = 'matters';
 	
 	protected $fillable = [
-		'id', 'title', 'nick_name', 'is_for_company', 'created_at', 'updated_at'
+		'id', 'title', 'nick_name', 'workflow_id', 'is_for_company', 'created_at', 'updated_at'
 	];
+
+	/**
+	 * Get the default workflow for this matter type.
+	 */
+	public function workflow()
+	{
+		return $this->belongsTo(Workflow::class, 'workflow_id');
+	}
 	
 	public $sortable = ['id', 'title', 'nick_name', 'created_at', 'updated_at'];
 	

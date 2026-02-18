@@ -281,6 +281,36 @@
 	</div>
 </div>
 
+{{-- 2c. Change Workflow Modal (for existing matters) --}}
+<div class="modal fade custom_modal" id="change-workflow-modal" tabindex="-1" role="dialog" aria-labelledby="changeWorkflowModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="changeWorkflowModalLabel">Change Workflow</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<input type="hidden" id="change-workflow-matter-id" value="">
+				<div class="form-group">
+					<label for="change-workflow-select">Select Workflow</label>
+					<select class="form-control" id="change-workflow-select">
+						@foreach(\App\Models\Workflow::orderBy('name')->get() as $wf)
+						<option value="{{ $wf->id }}">{{ $wf->name }}{{ $wf->matter ? ' (' . $wf->matter->title . ')' : '' }}</option>
+						@endforeach
+					</select>
+					<small class="form-text text-muted">Stage will be mapped by name; if no match, first stage is used.</small>
+				</div>
+				<button type="button" class="btn btn-primary" id="change-workflow-submit">
+					<i class="fas fa-exchange-alt"></i> Change Workflow
+				</button>
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 {{-- 3. Revert Discontinued Application Modal --}}
 <div class="modal fade custom_modal" id="revert_application" tabindex="-1" role="dialog" aria-labelledby="applicationModalLabel" aria-hidden="true">
 	<div class="modal-dialog">

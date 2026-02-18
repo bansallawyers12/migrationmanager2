@@ -5190,7 +5190,12 @@ class ClientsController extends Controller
                 $matterInfo = Matter::select('nick_name')->where('id', '=', $requestData['matter_id'])->first();
                 $obj5->client_unique_matter_no = $matterInfo->nick_name."_".$client_matters_current_no;
             }
-            $obj5->workflow_stage_id = \App\Models\WorkflowStage::orderByRaw('COALESCE(sort_order, id) ASC')->value('id') ?? 1;
+            $matterType = Matter::find($requestData['matter_id']);
+            $workflowId = $matterType && $matterType->workflow_id ? $matterType->workflow_id : \App\Models\Workflow::where('name', 'General')->value('id');
+            $firstStageId = \App\Models\WorkflowStage::where('workflow_id', $workflowId)->orderByRaw('COALESCE(sort_order, id) ASC')->value('id')
+                ?? \App\Models\WorkflowStage::orderByRaw('COALESCE(sort_order, id) ASC')->value('id') ?? 1;
+            $obj5->workflow_id = $workflowId;
+            $obj5->workflow_stage_id = $firstStageId;
             $obj5->matter_status = 1; // Active by default
             $saved5 = $obj5->save();
             $lastInsertedId = $obj5->id; // ← This gets the last inserted ID
@@ -5728,7 +5733,12 @@ class ClientsController extends Controller
                         $matter->client_unique_matter_no = $matterInfo->nick_name."_".$client_matters_current_no;
                     }
 
-                    $matter->workflow_stage_id = \App\Models\WorkflowStage::orderByRaw('COALESCE(sort_order, id) ASC')->value('id') ?? 1;
+                    $matterType = Matter::find($request['matter_id']);
+                    $workflowId = $matterType && $matterType->workflow_id ? $matterType->workflow_id : \App\Models\Workflow::where('name', 'General')->value('id');
+                    $firstStageId = \App\Models\WorkflowStage::where('workflow_id', $workflowId)->orderByRaw('COALESCE(sort_order, id) ASC')->value('id')
+                        ?? \App\Models\WorkflowStage::orderByRaw('COALESCE(sort_order, id) ASC')->value('id') ?? 1;
+                    $matter->workflow_id = $workflowId;
+                    $matter->workflow_stage_id = $firstStageId;
                     $matter->matter_status = 1; // Active by default
                     $matter->save();
                     

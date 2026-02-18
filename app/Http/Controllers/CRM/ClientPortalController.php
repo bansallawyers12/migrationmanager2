@@ -839,11 +839,15 @@ class ClientPortalController extends Controller
 				], 404);
 			}
 
-			// Get next stage (ordered by sort_order, then id)
+			// Get next stage (ordered by sort_order, then id) - scope to same workflow as client matter
 			$currentOrder = $currentStage->sort_order ?? $currentStage->id;
-			$nextStage = WorkflowStage::whereRaw('COALESCE(sort_order, id) > ?', [$currentOrder])
-				->orderByRaw('COALESCE(sort_order, id) ASC')
-				->first();
+			$stageQuery = WorkflowStage::whereRaw('COALESCE(sort_order, id) > ?', [$currentOrder]);
+			if ($clientMatter->workflow_id) {
+				$stageQuery->where('workflow_id', $clientMatter->workflow_id);
+			} elseif ($currentStage->workflow_id) {
+				$stageQuery->where('workflow_id', $currentStage->workflow_id);
+			}
+			$nextStage = $stageQuery->orderByRaw('COALESCE(sort_order, id) ASC')->first();
 
 			if (!$nextStage) {
 				return response()->json([
@@ -966,14 +970,22 @@ class ClientPortalController extends Controller
 					}
 				}
 
-				// Calculate progress percentage (by sort_order)
-				$totalStages = WorkflowStage::count();
+				// Calculate progress percentage (by sort_order) - scope to same workflow
+				$progressQuery = WorkflowStage::query();
+				if ($clientMatter->workflow_id) {
+					$progressQuery->where('workflow_id', $clientMatter->workflow_id);
+				}
+				$totalStages = (clone $progressQuery)->count();
 				$nextOrder = $nextStage->sort_order ?? $nextStage->id;
-				$currentStageIndex = WorkflowStage::whereRaw('COALESCE(sort_order, id) <= ?', [$nextOrder])->count();
+				$currentStageIndex = (clone $progressQuery)->whereRaw('COALESCE(sort_order, id) <= ?', [$nextOrder])->count();
 				$progressPercentage = $totalStages > 0 ? round(($currentStageIndex / $totalStages) * 100) : 0;
 
 				// Check if this is the last stage
-				$isLastStage = !WorkflowStage::whereRaw('COALESCE(sort_order, id) > ?', [$nextOrder])->exists();
+				$isLastStageQuery = WorkflowStage::whereRaw('COALESCE(sort_order, id) > ?', [$nextOrder]);
+				if ($clientMatter->workflow_id) {
+					$isLastStageQuery->where('workflow_id', $clientMatter->workflow_id);
+				}
+				$isLastStage = !$isLastStageQuery->exists();
 
 				// Log activity (Client Portal tab - website)
 				$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $matterId;
@@ -1099,9 +1111,13 @@ class ClientPortalController extends Controller
 			}
 
 			$currentOrder = $currentStage->sort_order ?? $currentStage->id;
-			$prevStage = WorkflowStage::whereRaw('COALESCE(sort_order, id) < ?', [$currentOrder])
-				->orderByRaw('COALESCE(sort_order, id) DESC')
-				->first();
+			$prevQuery = WorkflowStage::whereRaw('COALESCE(sort_order, id) < ?', [$currentOrder]);
+			if ($clientMatter->workflow_id) {
+				$prevQuery->where('workflow_id', $clientMatter->workflow_id);
+			} elseif ($currentStage->workflow_id) {
+				$prevQuery->where('workflow_id', $currentStage->workflow_id);
+			}
+			$prevStage = $prevQuery->orderByRaw('COALESCE(sort_order, id) DESC')->first();
 
 			if (!$prevStage) {
 				return response()->json([
@@ -1207,6 +1223,91 @@ class ClientPortalController extends Controller
 			return response()->json([
 				'status' => false,
 				'message' => 'An error occurred while updating the stage. Please try again.'
+			], 500);
+		}
+	}
+
+	/**
+	 * Change workflow for an existing client matter.
+	 * Maps current stage by name to new workflow; falls back to first stage if no match.
+	 *
+	 * @param Request $request
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function changeClientMatterWorkflow(Request $request)
+	{
+		try {
+			$matterId = $request->input('matter_id');
+			$workflowId = $request->input('workflow_id');
+
+			if (!$matterId || !$workflowId) {
+				return response()->json(['status' => false, 'message' => 'Matter ID and Workflow ID are required'], 422);
+			}
+
+			$clientMatter = ClientMatter::find($matterId);
+			if (!$clientMatter) {
+				return response()->json(['status' => false, 'message' => 'Client matter not found'], 404);
+			}
+
+			$workflow = \App\Models\Workflow::find($workflowId);
+			if (!$workflow) {
+				return response()->json(['status' => false, 'message' => 'Workflow not found'], 404);
+			}
+
+			$currentStageName = null;
+			if ($clientMatter->workflow_stage_id) {
+				$currentStage = WorkflowStage::find($clientMatter->workflow_stage_id);
+				$currentStageName = $currentStage ? trim($currentStage->name) : null;
+			}
+
+			$newStageId = null;
+			if ($currentStageName) {
+				$matched = WorkflowStage::where('workflow_id', $workflowId)
+					->whereRaw('LOWER(TRIM(name)) = ?', [strtolower($currentStageName)])
+					->first();
+				$newStageId = $matched ? $matched->id : null;
+			}
+			if (!$newStageId) {
+				$firstStage = WorkflowStage::where('workflow_id', $workflowId)
+					->orderByRaw('COALESCE(sort_order, id) ASC')
+					->first();
+				$newStageId = $firstStage ? $firstStage->id : null;
+			}
+
+			if (!$newStageId) {
+				return response()->json(['status' => false, 'message' => 'Selected workflow has no stages. Add stages first.'], 400);
+			}
+
+			$clientMatter->workflow_id = $workflowId;
+			$clientMatter->workflow_stage_id = $newStageId;
+			$clientMatter->save();
+
+			$matterNo = $clientMatter->client_unique_matter_no ?? 'ID:' . $matterId;
+			$activityLog = new ActivitiesLog;
+			$activityLog->client_id = $clientMatter->client_id;
+			$activityLog->created_by = Auth::user()->id;
+			$activityLog->subject = $matterNo . ' Workflow changed to ' . $workflow->name;
+			$activityLog->description = 'Workflow changed to <b>' . e($workflow->name) . '</b>. Stage mapped accordingly.';
+			$activityLog->activity_type = 'stage';
+			$activityLog->task_status = 0;
+			$activityLog->pin = 0;
+			$activityLog->source = 'client_portal_web';
+			$activityLog->save();
+
+			return response()->json([
+				'status' => true,
+				'message' => 'Workflow changed successfully.',
+				'workflow_id' => $workflowId,
+				'stage_id' => $newStageId,
+			]);
+		} catch (\Exception $e) {
+			Log::error('Error changing client matter workflow: ' . $e->getMessage(), [
+				'matter_id' => $request->input('matter_id'),
+				'trace' => $e->getTraceAsString()
+			]);
+			return response()->json([
+				'status' => false,
+				'message' => 'An error occurred while changing the workflow. Please try again.'
 			], 500);
 		}
 	}

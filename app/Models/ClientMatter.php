@@ -32,6 +32,7 @@ class ClientMatter extends Model
         'sel_person_responsible',
         'sel_person_assisting',
         'workflow_stage_id',
+        'workflow_id',
         'decision_outcome',
         'decision_note',
         'matter_status',
@@ -82,6 +83,14 @@ class ClientMatter extends Model
     public function workflowStage()
     {
         return $this->belongsTo(WorkflowStage::class, 'workflow_stage_id');
+    }
+
+    /**
+     * Get the workflow for this matter (per-matter workflow template).
+     */
+    public function workflow()
+    {
+        return $this->belongsTo(Workflow::class, 'workflow_id');
     }
 
     /**

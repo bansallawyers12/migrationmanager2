@@ -13,10 +13,10 @@
 					<div class="col-12 col-md-12 col-lg-12">
 						<div class="card">
 							<div class="card-header">
-								<h4>Add Workflow Stage</h4>
-								<div class="card-header-action">
-									<a href="{{route('adminconsole.features.workflow.index')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
-								</div>
+							<h4>Add Workflow Stage{{ isset($workflow) ? ' to ' . $workflow->name : '' }}</h4>
+							<div class="card-header-action">
+									<a href="{{ isset($workflow) ? route('adminconsole.features.workflow.stages', base64_encode(convert_uuencode($workflow->id))) : route('adminconsole.features.workflow.index') }}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
+							</div>
 							</div>
 						</div>
 					</div>
@@ -32,6 +32,9 @@
 											<h4>Add Workflow Stage</h4>
 										</div>
 										<div class="accordion-body collapse show" id="primary_info" data-parent="#accordion">
+											@if(isset($workflow))
+											<input type="hidden" name="workflow_id" value="{{ $workflow->id }}">
+											@endif
 											<div class="row">
 												<!--<div class="col-12 col-md-4 col-lg-4">
 													<div class="form-group">

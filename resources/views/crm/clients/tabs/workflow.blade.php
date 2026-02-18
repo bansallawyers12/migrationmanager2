@@ -12,13 +12,13 @@
                 ->leftJoin('matters as m', 'cm.sel_matter_id', '=', 'm.id')
                 ->where('cm.client_id', $fetchedData->id)
                 ->where('cm.client_unique_matter_no', $id1)
-                ->select('cm.id', 'cm.client_unique_matter_no', 'm.title', 'cm.sel_matter_id', 'cm.workflow_stage_id', 'cm.matter_status', 'cm.deadline', 'cm.sel_migration_agent')
+                ->select('cm.id', 'cm.client_unique_matter_no', 'm.title', 'cm.sel_matter_id', 'cm.workflow_stage_id', 'cm.workflow_id', 'cm.matter_status', 'cm.deadline', 'cm.sel_migration_agent')
                 ->first();
         } else {
             $workflowSelectedMatter = DB::table('client_matters as cm')
                 ->leftJoin('matters as m', 'cm.sel_matter_id', '=', 'm.id')
                 ->where('cm.client_id', $fetchedData->id)
-                ->select('cm.id', 'cm.client_unique_matter_no', 'm.title', 'cm.sel_matter_id', 'cm.workflow_stage_id', 'cm.matter_status', 'cm.deadline', 'cm.sel_migration_agent')
+                ->select('cm.id', 'cm.client_unique_matter_no', 'm.title', 'cm.sel_matter_id', 'cm.workflow_stage_id', 'cm.workflow_id', 'cm.matter_status', 'cm.deadline', 'cm.sel_migration_agent')
                 ->orderBy('cm.id', 'desc')
                 ->first();
         }
@@ -35,7 +35,10 @@
             $workflowCurrentStageId = null;
         }
 
-        $workflowAllStages = DB::table('workflow_stages')->orderByRaw('COALESCE(sort_order, id) ASC')->get();
+        $workflowId = $workflowSelectedMatter ? ($workflowSelectedMatter->workflow_id ?? null) : null;
+        $workflowAllStages = $workflowId
+            ? DB::table('workflow_stages')->where('workflow_id', $workflowId)->orderByRaw('COALESCE(sort_order, id) ASC')->get()
+            : DB::table('workflow_stages')->orderByRaw('COALESCE(sort_order, id) ASC')->get();
 
         $workflowCurrentStageName = null;
         $workflowIsVerificationStage = false;
@@ -151,6 +154,9 @@
                                 <button class="btn btn-outline-danger btn-sm" id="workflow-tab-discontinue" data-matter-id="{{ $workflowSelectedMatter->id }}" title="Discontinue Matter">
                                     <i class="fas fa-ban"></i> Discontinue
                                 </button>
+                                <button class="btn btn-outline-secondary btn-sm" id="workflow-tab-change-workflow" data-matter-id="{{ $workflowSelectedMatter->id }}" data-current-workflow-id="{{ $workflowSelectedMatter->workflow_id ?? '' }}" title="Change workflow for this matter">
+                                    <i class="fas fa-exchange-alt"></i> Change Workflow
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -183,7 +189,7 @@
                                 </div>
                             </div>
                         @else
-                            <p class="text-muted">No workflow stages defined. Add stages from Admin Console → Workflow Stages.</p>
+                            <p class="text-muted">No workflow stages defined. Add stages from Admin Console → Workflows.</p>
                         @endif
                     </div>
                 </div>
@@ -365,6 +371,57 @@
                     alert('An error occurred.');
                     btn.disabled = false;
                     btn.innerHTML = orig;
+                });
+            });
+        }
+
+        // Workflow tab: Change Workflow button - opens modal
+        var changeWorkflowBtn = document.getElementById('workflow-tab-change-workflow');
+        if (changeWorkflowBtn) {
+            changeWorkflowBtn.addEventListener('click', function() {
+                var matterId = this.getAttribute('data-matter-id');
+                var currentWorkflowId = this.getAttribute('data-current-workflow-id');
+                if (!matterId) { alert('Error: Matter ID not found'); return; }
+                document.getElementById('change-workflow-matter-id').value = matterId;
+                var select = document.getElementById('change-workflow-select');
+                if (select && currentWorkflowId) {
+                    select.value = currentWorkflowId;
+                }
+                $('#change-workflow-modal').modal('show');
+            });
+        }
+        var changeWorkflowSubmit = document.getElementById('change-workflow-submit');
+        if (changeWorkflowSubmit) {
+            changeWorkflowSubmit.addEventListener('click', function() {
+                var matterId = document.getElementById('change-workflow-matter-id').value;
+                var workflowId = document.getElementById('change-workflow-select').value;
+                if (!matterId || !workflowId) { alert('Please select a workflow.'); return; }
+                var btn = this;
+                var orig = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                fetch('{{ route("clients.matter.change-workflow") }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '', 'Accept': 'application/json' },
+                    body: JSON.stringify({ matter_id: matterId, workflow_id: workflowId })
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    btn.disabled = false;
+                    btn.innerHTML = orig;
+                    if (data.status) {
+                        $('#change-workflow-modal').modal('hide');
+                        alert(data.message || 'Workflow changed successfully.');
+                        window.location.reload();
+                    } else {
+                        alert(data.message || 'Failed to change workflow.');
+                    }
+                })
+                .catch(function(err) {
+                    console.error(err);
+                    btn.disabled = false;
+                    btn.innerHTML = orig;
+                    alert('An error occurred.');
                 });
             });
         }

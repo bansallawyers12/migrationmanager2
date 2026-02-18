@@ -61,14 +61,17 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin'])
         Route::get('/email-labels/edit/{id}', [EmailLabelController::class, 'edit'])->name('emaillabels.edit');
         Route::put('/email-labels/{id}', [EmailLabelController::class, 'update'])->name('emaillabels.update');
         
-        // Workflow routes
+        // Workflow routes (per-matter workflows)
         Route::get('/workflow', [WorkflowController::class, 'index'])->name('workflow.index');
         Route::get('/workflow/create', [WorkflowController::class, 'create'])->name('workflow.create');
+        Route::post('/workflow/store-workflow', [WorkflowController::class, 'storeWorkflow'])->name('workflow.storeWorkflow');
+        Route::get('/workflow/edit-workflow/{id}', [WorkflowController::class, 'editWorkflow'])->name('workflow.editWorkflow');
+        Route::put('/workflow/update-workflow/{id}', [WorkflowController::class, 'updateWorkflow'])->name('workflow.updateWorkflow');
+        Route::get('/workflow/{id}/stages', [WorkflowController::class, 'stages'])->name('workflow.stages');
+        Route::get('/workflow/{id}/stage/create', [WorkflowController::class, 'createStage'])->name('workflow.createStage');
         Route::post('/workflow/store', [WorkflowController::class, 'store'])->name('workflow.store');
         Route::get('/workflow/edit/{id}', [WorkflowController::class, 'edit'])->name('workflow.edit');
         Route::put('/workflow/{id}', [WorkflowController::class, 'update'])->name('workflow.update');
-        Route::get('/workflow/deactivate-workflow/{id}', [WorkflowController::class, 'deactivateWorkflow'])->name('workflow.deactivate');
-        Route::get('/workflow/activate-workflow/{id}', [WorkflowController::class, 'activateWorkflow'])->name('workflow.activate');
         
         // Email routes
         Route::get('/emails', [EmailController::class, 'index'])->name('emails.index');
