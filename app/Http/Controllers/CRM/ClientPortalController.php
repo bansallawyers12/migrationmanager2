@@ -1260,9 +1260,25 @@ class ClientPortalController extends Controller
 				$activityLog->source = 'client_portal_web';
 				$activityLog->save();
 
+				// Build redirect URL: go to another active matter, or revert to lead view (no matter)
+				$currentTab = $request->input('current_tab', 'personaldetails');
+				$encodeId = base64_encode(convert_uuencode($clientMatter->client_id));
+				$otherMatter = ClientMatter::where('client_id', $clientMatter->client_id)
+					->where('id', '!=', $matterId)
+					->where('matter_status', 1)
+					->orderBy('id', 'desc')
+					->first();
+				$redirectUrl = '/clients/detail/' . $encodeId;
+				if ($otherMatter) {
+					$redirectUrl .= '/' . $otherMatter->client_unique_matter_no . '/' . $currentTab;
+				} else {
+					$redirectUrl .= '/' . $currentTab;
+				}
+
 				return response()->json([
 					'status' => true,
-					'message' => 'Matter has been successfully discontinued.'
+					'message' => 'Matter has been successfully discontinued.',
+					'redirect_url' => $redirectUrl
 				]);
 			}
 

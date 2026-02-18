@@ -7,9 +7,27 @@
                     if( $matter_cnt >0 ) {
                         //if client unique reference id is present in url
                         if( isset($id1) && $id1 != "") {
-                            $matter_get_id = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
+                            // Only resolve by ref if it matches an active matter; a discontinued
+                            // matter ref here would make all active-matter documents invisible.
+                            $matter_get_id = \App\Models\ClientMatter::select('id')
+                                ->where('client_id',$fetchedData->id)
+                                ->where('client_unique_matter_no',$id1)
+                                ->where('matter_status', 1)
+                                ->first();
+                            // Fall back to latest active matter if the ref belongs to a discontinued one
+                            if (!$matter_get_id) {
+                                $matter_get_id = \App\Models\ClientMatter::select('id')
+                                    ->where('client_id', $fetchedData->id)
+                                    ->where('matter_status', 1)
+                                    ->orderBy('id', 'desc')
+                                    ->first();
+                            }
                         } else {
-                            $matter_get_id = \App\Models\ClientMatter::select('id')->where('client_id', $fetchedData->id)->orderBy('id', 'desc')->first();
+                            $matter_get_id = \App\Models\ClientMatter::select('id')
+                                ->where('client_id', $fetchedData->id)
+                                ->where('matter_status', 1)
+                                ->orderBy('id', 'desc')
+                                ->first();
                         }
                         if($matter_get_id ){
                             $client_selected_matter_id1 = $matter_get_id->id;

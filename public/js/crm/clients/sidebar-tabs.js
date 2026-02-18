@@ -286,7 +286,12 @@
     function filterVisaDocumentsByMatter(matterId) {
         if (matterId !== "") {
             $('#visadocuments-tab .migdocumnetlist1').find('.drow').each(function() {
-                if ($(this).data('matterid') == matterId) {
+                var docMatterId = $(this).data('matterid');
+                // Show if: matches the selected matter, OR has no matter ID at all
+                // (covers legacy docs uploaded before matter-scoping was introduced,
+                // and docs that were inadvertently saved without a matter reference).
+                var hasNoMatter = !docMatterId || docMatterId === '' || docMatterId === 'null' || docMatterId === null || docMatterId === 0;
+                if (docMatterId == matterId || hasNoMatter) {
                     $(this).show();
                 } else {
                     $(this).hide();
