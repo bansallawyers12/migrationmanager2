@@ -1261,9 +1261,25 @@ class ClientPortalController extends Controller
 				$activityLog->source = 'client_portal_web';
 				$activityLog->save();
 
+				// Build redirect URL: go to another active matter, or revert to lead view (no matter)
+				$currentTab = $request->input('current_tab', 'personaldetails');
+				$encodeId = base64_encode(convert_uuencode($clientMatter->client_id));
+				$otherMatter = ClientMatter::where('client_id', $clientMatter->client_id)
+					->where('id', '!=', $matterId)
+					->where('matter_status', 1)
+					->orderBy('id', 'desc')
+					->first();
+				$redirectUrl = '/clients/detail/' . $encodeId;
+				if ($otherMatter) {
+					$redirectUrl .= '/' . $otherMatter->client_unique_matter_no . '/' . $currentTab;
+				} else {
+					$redirectUrl .= '/' . $currentTab;
+				}
+
 				return response()->json([
 					'status' => true,
-					'message' => 'Matter has been successfully discontinued.'
+					'message' => 'Matter has been successfully discontinued.',
+					'redirect_url' => $redirectUrl
 				]);
 			}
 
@@ -1277,6 +1293,131 @@ class ClientPortalController extends Controller
 			return response()->json([
 				'status' => false,
 				'message' => 'An error occurred while discontinuing the matter.'
+			], 500);
+		}
+	}
+
+	/**
+	 * Reopen a discontinued client matter (set matter_status = 1).
+	 *
+	 * @param Request $request
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function reopenClientMatter(Request $request)
+	{
+		try {
+			$matterId = $request->input('matter_id');
+
+			if (!$matterId) {
+				return response()->json(['status' => false, 'message' => 'Matter ID is required'], 422);
+			}
+
+			$clientMatter = ClientMatter::find($matterId);
+
+			if (!$clientMatter) {
+				return response()->json(['status' => false, 'message' => 'Client matter not found.'], 404);
+			}
+
+			$clientMatter->matter_status = 1;
+			$saved = $clientMatter->save();
+
+			if ($saved) {
+				DB::table('applications')
+					->where('client_matter_id', $matterId)
+					->where('client_id', $clientMatter->client_id)
+					->update(['status' => 0, 'updated_at' => now()]);
+
+				$activityLog = new ActivitiesLog;
+				$activityLog->client_id = $clientMatter->client_id;
+				$activityLog->created_by = Auth::user()->id;
+				$activityLog->subject = 'Matter Reopened';
+				$activityLog->description = 'Matter was reopened and set back to active.';
+				$activityLog->activity_type = 'stage';
+				$activityLog->task_status = 0;
+				$activityLog->pin = 0;
+				$activityLog->source = 'client_portal_web';
+				$activityLog->save();
+
+				return response()->json([
+					'status' => true,
+					'message' => 'Matter has been successfully reopened.',
+					'redirect_url' => route('clients.clientsmatterslist')
+				]);
+			}
+
+			return response()->json(['status' => false, 'message' => 'Failed to reopen matter.'], 500);
+
+		} catch (\Exception $e) {
+			Log::error('Error reopening client matter: ' . $e->getMessage(), [
+				'matter_id' => $request->input('matter_id'),
+				'trace' => $e->getTraceAsString()
+			]);
+			return response()->json([
+				'status' => false,
+				'message' => 'An error occurred while reopening the matter.'
+			], 500);
+		}
+	}
+
+	/**
+	 * Permanently delete a closed client matter. Only allowed if matter was created more than 1 year ago.
+	 *
+	 * @param Request $request
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function deleteClientMatter(Request $request)
+	{
+		try {
+			$matterId = $request->input('matter_id');
+
+			if (!$matterId) {
+				return response()->json(['status' => false, 'message' => 'Matter ID is required'], 422);
+			}
+
+			$clientMatter = ClientMatter::find($matterId);
+
+			if (!$clientMatter) {
+				return response()->json(['status' => false, 'message' => 'Client matter not found.'], 404);
+			}
+
+			$oneYearAgo = now()->subYear();
+			$createdAt = $clientMatter->created_at ? \Carbon\Carbon::parse($clientMatter->created_at) : null;
+
+			if (!$createdAt || $createdAt->gt($oneYearAgo)) {
+				return response()->json([
+					'status' => false,
+					'message' => 'Matter can only be deleted one year after creation. Matter created on ' . ($createdAt ? $createdAt->format('d/m/Y') : 'N/A') . '.'
+				], 422);
+			}
+
+			$clientId = $clientMatter->client_id;
+			$clientMatter->delete();
+
+			$activityLog = new ActivitiesLog;
+			$activityLog->client_id = $clientId;
+			$activityLog->created_by = Auth::user()->id;
+			$activityLog->subject = 'Matter Deleted';
+			$activityLog->description = 'Matter #' . $matterId . ' was permanently deleted from closed matters.';
+			$activityLog->activity_type = 'stage';
+			$activityLog->task_status = 0;
+			$activityLog->pin = 0;
+			$activityLog->source = 'client_portal_web';
+			$activityLog->save();
+
+			return response()->json([
+				'status' => true,
+				'message' => 'Matter has been permanently deleted.',
+				'matter_id' => (int) $matterId
+			]);
+
+		} catch (\Exception $e) {
+			Log::error('Error deleting client matter: ' . $e->getMessage(), [
+				'matter_id' => $request->input('matter_id'),
+				'trace' => $e->getTraceAsString()
+			]);
+			return response()->json([
+				'status' => false,
+				'message' => 'An error occurred while deleting the matter.'
 			], 500);
 		}
 	}

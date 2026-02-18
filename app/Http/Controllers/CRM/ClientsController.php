@@ -1990,7 +1990,22 @@ class ClientsController extends Controller
         if (isset($id) && !empty($id)) {
             $encodeId = $id;
             $id = $this->decodeString($id);
-            
+
+            // If $id1 holds a tab name rather than a matter reference (happens when the URL
+            // only has two segments, e.g. /clients/detail/{client}/{tab}), move it to $tab
+            // so that every downstream view receives a clean null $id1.
+            $knownTabNames = [
+                'personaldetails', 'noteterm', 'personaldocuments', 'visadocuments',
+                'eoiroi', 'emails', 'formgenerations', 'formgenerationsl', 'application',
+                'workflow', 'checklists', 'account', 'notuseddocuments',
+            ];
+            if ($id1 && in_array(strtolower($id1), $knownTabNames)) {
+                if (empty($tab)) {
+                    $tab = $id1;
+                }
+                $id1 = null;
+            }
+
             // Set default tab if not provided
             $activeTab = $tab ?? 'personaldetails';
 

@@ -404,10 +404,12 @@
                 btn.disabled = true;
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
 
+                var currentTab = document.querySelector('.client-nav-button.active')?.getAttribute('data-tab') || 'personaldetails';
+
                 fetch('{{ route("clients.matter.discontinue") }}', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '', 'Accept': 'application/json' },
-                    body: JSON.stringify({ matter_id: matterId, discontinue_reason: reason, discontinue_notes: notes })
+                    body: JSON.stringify({ matter_id: matterId, discontinue_reason: reason, discontinue_notes: notes, current_tab: currentTab })
                 })
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
@@ -416,7 +418,17 @@
                     if (data.status) {
                         $('#discontinue-matter-modal').modal('hide');
                         alert(data.message || 'Matter has been discontinued.');
-                        window.location.reload();
+                        // Redirect to the base client URL (no matter ref) so the page
+                        // auto-selects the next active matter instead of keeping the
+                        // discontinued matter's ref in the URL which breaks all filtering.
+                        var clientEncodeId = window.ClientDetailConfig ? window.ClientDetailConfig.encodeId : null;
+                        if (data.redirect_url) {
+                            window.location.href = data.redirect_url;
+                        } else if (clientEncodeId) {
+                            window.location.href = '/clients/detail/' + clientEncodeId;
+                        } else {
+                            window.location.reload();
+                        }
                     } else {
                         alert(data.message || 'Failed to discontinue matter.');
                     }

@@ -115,6 +115,9 @@
     .thCls,.tdCls { white-space: initial !important; }
     .badge-closed { background: #6b7280; color: white; }
     .badge-discontinued { background: #dc2626; color: white; }
+    .listing-container .dropdown-item.closed-matter-delete.disabled {
+        opacity: 0.6; cursor: not-allowed; pointer-events: none;
+    }
 </style>
 @include('crm.clients.partials.enhanced-date-filter-styles')
 @endsection
@@ -327,6 +330,9 @@
                                         $matter_office = $list->office_id ? \App\Models\Branch::find($list->office_id) : null;
                                         $statusLabel = ($list->matter_status ?? 1) == 0 ? 'Discontinued' : ($list->workflow_stage_name ?? 'Closed');
                                         $statusClass = ($list->matter_status ?? 1) == 0 ? 'badge-discontinued' : 'badge-closed';
+                                        $isDiscontinued = ($list->matter_status ?? 1) == 0;
+                                        $createdAt = $list->created_at ? \Carbon\Carbon::parse($list->created_at) : null;
+                                        $canDelete = $createdAt && $createdAt->lt(now()->subYear());
                                         ?>
                                         <tr id="id_{{@$list->id}}">
                                             <td class="tdCls"><a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->client_id)).'/'.$list->client_unique_matter_no )}}">{{ @$list->title == "" ? config('constants.empty') : Str::limit(@$list->title, '50', '...') }} ({{ @$list->client_unique_matter_no == "" ? config('constants.empty') : Str::limit(@$list->client_unique_matter_no, '50', '...') }})</a></td>
@@ -350,7 +356,10 @@
                                                 <div class="dropdown d-inline">
                                                     <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
                                                     <div class="dropdown-menu">
-                                                        <a class="dropdown-item has-icon" href="javascript:;" onclick="deleteAction({{$list->id}}, 'client_matters')"><i class="fas fa-trash"></i> Delete Matter</a>
+                                                        @if($isDiscontinued)
+                                                        <a class="dropdown-item has-icon closed-matter-reopen" href="javascript:;" data-matter-id="{{ $list->id }}"><i class="fas fa-redo"></i> Reopen Matter</a>
+                                                        @endif
+                                                        <a class="dropdown-item has-icon closed-matter-delete {{ !$canDelete ? 'disabled' : '' }}" href="javascript:;" data-matter-id="{{ $list->id }}" data-can-delete="{{ $canDelete ? '1' : '0' }}" title="{{ !$canDelete ? 'Available 1 year after matter creation' : '' }}"><i class="fas fa-trash"></i> {{ $canDelete ? 'Delete Matter' : 'Delete (after 1 year)' }}</a>
                                                     </div>
                                                 </div>
                                             </td>
@@ -397,6 +406,66 @@ jQuery(document).ready(function($){
     });
     $('.listing-container .filter_btn').on('click', function(){
         $('.listing-container .filter_panel').toggle();
+    });
+
+    $('.closed-matter-reopen').on('click', function(e){
+        e.preventDefault();
+        var matterId = $(this).data('matter-id');
+        if (!matterId) return;
+        if (!confirm('Reopen this matter? It will be moved back to active matters.')) return;
+        var $btn = $(this);
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Reopening...');
+        $.ajax({
+            url: '{{ route("clients.matter.reopen") }}',
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'), 'Accept': 'application/json' },
+            data: JSON.stringify({ matter_id: matterId }),
+            success: function(resp){
+                if (resp.status && resp.redirect_url) {
+                    window.location.href = resp.redirect_url;
+                } else {
+                    alert(resp.message || 'Failed to reopen matter.');
+                    $btn.prop('disabled', false).html('<i class="fas fa-redo"></i> Reopen Matter');
+                }
+            },
+            error: function(){
+                alert('An error occurred. Please try again.');
+                $btn.prop('disabled', false).html('<i class="fas fa-redo"></i> Reopen Matter');
+            }
+        });
+    });
+
+    $('.closed-matter-delete').on('click', function(e){
+        e.preventDefault();
+        var $link = $(this);
+        if ($link.hasClass('disabled') || $link.data('can-delete') !== 1) {
+            return;
+        }
+        var matterId = $link.data('matter-id');
+        if (!matterId) return;
+        if (!confirm('Permanently delete this matter? This action cannot be undone.')) return;
+        $link.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Deleting...');
+        $.ajax({
+            url: '{{ route("clients.matter.delete") }}',
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'), 'Accept': 'application/json' },
+            data: JSON.stringify({ matter_id: matterId }),
+            success: function(resp){
+                if (resp.status) {
+                    $('#id_' + matterId).fadeOut(300, function(){ $(this).remove(); });
+                    if (typeof $('.custom-error-msg').html === 'function') {
+                        $('.custom-error-msg').html('<div class="alert alert-success">' + (resp.message || 'Matter deleted.') + '</div>');
+                    }
+                } else {
+                    alert(resp.message || 'Failed to delete matter.');
+                    $link.prop('disabled', false).html('<i class="fas fa-trash"></i> Delete Matter');
+                }
+            },
+            error: function(){
+                alert('An error occurred. Please try again.');
+                $link.prop('disabled', false).html('<i class="fas fa-trash"></i> Delete Matter');
+            }
+        });
     });
 });
 </script>
