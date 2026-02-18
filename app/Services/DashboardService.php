@@ -60,6 +60,9 @@ class DashboardService
         // Apply role-based filtering
         $this->applyRoleBasedFiltering($query, $user);
 
+        // Exclude discontinued matters (matter_status = 0)
+        $query->where('matter_status', 1);
+
         // Apply client name filter
         if ($request->has('client_name') && !empty($request->client_name)) {
             $clientName = trim($request->client_name);

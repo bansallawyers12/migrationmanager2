@@ -5804,7 +5804,15 @@ Bansal Immigration`;
 
             $('#form956_client_matter_id').val(hidden_client_matter_id);
 
+            // When clicked from visa document page, set folder for checklist placement
+            var folderId = $(this).data('form956-folder');
+            $('#form956_folder_name').val(folderId || '');
 
+            // Matter is required for agent details and for saving Form 956 to visa checklist
+            if (!hidden_client_matter_id || hidden_client_matter_id === '' || hidden_client_matter_id === null) {
+                alert('Please select a matter before creating Form 956.\n\nA matter is required to populate agent information and to save the form to the visa document checklist.');
+                return;
+            }
 
             getMigrationAgentDetail(hidden_client_matter_id);
 

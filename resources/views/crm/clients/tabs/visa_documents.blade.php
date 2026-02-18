@@ -123,6 +123,9 @@
                                         <div class="subtab6-header" style="margin-left: 10px;">
                                             <h3><i class="fas fa-file-alt"></i> <?= htmlspecialchars($catVal->title) ?> Documents</h3>
                                             <div style="display: flex; gap: 10px;">
+                                                <button type="button" class="btn btn-primary btn-sm form956CreateForm inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200" data-form956-folder="<?= $id ?>">
+                                                    <i class="fas fa-plus mr-2"></i> Create Form 956
+                                                </button>
                                                 <button type="button" class="btn add-checklist-btn add_migration_doc" data-type="visa" data-categoryid="<?= $id ?>">
                                                     <i class="fas fa-plus"></i> Add Checklist
                                                 </button>
@@ -169,21 +172,22 @@
                                                     <?php
                                                     $admin = \App\Models\Staff::where('id', $fetch->user_id)->first();
                                                     
-                                                    // Ensure $fileUrl is always a valid full URL
+                                                    // Ensure $fileUrl is always a valid full URL (for regular documents)
                                                     if (!empty($fetch->myfile) && strpos($fetch->myfile, 'http') === 0) {
                                                         // Already a full URL
                                                         $fileUrl = $fetch->myfile;
                                                     } else {
                                                         // Legacy format or relative path - construct full URL
-                                                        $fileUrl = 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/' . $fetchedData->id . '/visa/' . $fetch->myfile;
+                                                        $fileUrl = 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/' . $fetchedData->id . '/visa/' . ($fetch->myfile ?? '');
                                                     }
+                                                    $isForm956 = !empty($fetch->form956_id);
                                                     ?>
                                                     <tr class="drow" data-matterid="<?= $fetch->client_matter_id ?>" data-catid="<?= $fetch->folder_name ?>" id="id_<?= $fetch->id ?>">
                                                         <td style="white-space: initial;">
                                                             <div data-id="<?= $fetch->id ?>" data-visachecklistname="<?= htmlspecialchars($fetch->checklist) ?>" class="visachecklist-row" title="Uploaded by: <?= htmlspecialchars($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" style="display: flex; align-items: center; gap: 8px;">
                                                                 <span style="flex: 1;"><?= htmlspecialchars($fetch->checklist) ?></span>
                                                                 <div class="checklist-actions" style="display: flex; gap: 5px;">
-                                                                    <?php if (!$fetch->file_name): ?>
+                                                                    <?php if (!$fetch->file_name && !$isForm956): ?>
                                                                     <a href="javascript:;" class="edit-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= htmlspecialchars($fetch->checklist) ?>" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;">
                                                                         <i class="fas fa-edit"></i>
                                                                     </a>
@@ -195,7 +199,13 @@
                                                             </div>
                                                         </td>
                                                         <td style="white-space: initial;">
-                                                            <?php if ($fetch->file_name): ?>
+                                                            <?php if ($isForm956): ?>
+                                                                <div class="doc-row" title="Form 956 - View or Download PDF">
+                                                                    <a title="Preview PDF" href="{{ route('forms.preview', $fetch->form956_id) }}" target="_blank"><i class="fas fa-eye"></i></a>
+                                                                    <span class="mx-2">|</span>
+                                                                    <a title="Download PDF" href="{{ route('forms.pdf', $fetch->form956_id) }}"><i class="fas fa-download"></i></a>
+                                                                </div>
+                                                            <?php elseif ($fetch->file_name): ?>
                                                                 <div data-id="<?= $fetch->id ?>" data-name="<?= htmlspecialchars($fetch->file_name) ?>" class="doc-row" title="Uploaded by: <?= htmlspecialchars($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" oncontextmenu="showVisaFileContextMenu(event, <?= $fetch->id ?>, '<?= htmlspecialchars($fetch->filetype) ?>', '<?= $fileUrl ?>', '<?= $id ?>', '<?= $fetch->status ?? 'draft' ?>'); return false;">
                                                                     <a href="javascript:void(0);" onclick="previewFile('<?= $fetch->filetype ?>','<?= $fileUrl ?>','preview-container-migdocumnetlist')">
                                                                         <i class="fas fa-file-image"></i> <span><?= htmlspecialchars($fetch->file_name . '.' . $fetch->filetype) ?></span>

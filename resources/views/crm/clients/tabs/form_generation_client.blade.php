@@ -67,11 +67,7 @@
                         <div class="subtab3-pane active" id="form956-subtab">
                             <div class="form-header">
                                 <h3 class="text-2xl font-semibold text-gray-800">Form 956</h3>
-                                <div class="form-actions">
-                                    <button class="btn btn-primary btn-sm form956CreateForm inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200" id="new-form-btn">
-                                        <i class="fas fa-plus mr-2"></i> Create Form 956
-                                    </button>
-                                </div>
+                                <p class="text-gray-600 text-sm mt-1">Create Form 956 from the <strong>Visa Documents</strong> tab.</p>
                             </div>
 
                             <div class="form-list" id="form-list">

@@ -14,6 +14,7 @@
                     <!-- Hidden Fields for Client and Client Matter ID -->
                     <input type="hidden" name="client_id" id="form956_client_id">
                     <input type="hidden" name="client_matter_id" id="form956_client_matter_id">
+                    <input type="hidden" name="form956_folder_name" id="form956_folder_name" value="">
 
                     <!-- Error Message Container -->
                     <div class="custom-error-msg"></div>

@@ -5,8 +5,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreForm956Request;
 //use App\Models\AgentDetails;
 use App\Models\Admin;
+use App\Models\Document;
 use App\Models\Form956;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use mikehaertl\pdftk\Pdf;
@@ -66,8 +68,27 @@ class Form956Controller extends Controller
     public function store(StoreForm956Request $request): JsonResponse|RedirectResponse
     {
         try {
+            $validated = $request->validated();
+            $folderName = $validated['form956_folder_name'] ?? null;
+            unset($validated['form956_folder_name']);
+
             // Create the form
-            $form = Form956::create($request->validated());
+            $form = Form956::create($validated);
+
+            // When created from visa document page (folder_name provided), also create a visa Document checklist entry
+            if ($folderName && $form->client_matter_id) {
+                $doc = new Document;
+                $doc->user_id = Auth::user()->id;
+                $doc->client_id = $form->client_id;
+                $doc->client_matter_id = $form->client_matter_id;
+                $doc->form956_id = $form->id;
+                $doc->type = 'client';
+                $doc->doc_type = 'visa';
+                $doc->folder_name = $folderName;
+                $doc->checklist = 'Form 956';
+                $doc->signer_count = 1;
+                $doc->save();
+            }
 
             // Check if the request is AJAX (from the modal)
             if ($request->ajax()) {

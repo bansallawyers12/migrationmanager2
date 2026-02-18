@@ -24,6 +24,7 @@ class StoreForm956Request extends FormRequest
         return [
             'client_id' => 'required|exists:admins,id',
             'client_matter_id' => 'nullable|integer',
+            'form956_folder_name' => 'nullable|integer|min:1',
             'agent_id' => 'required|exists:staff,id',
             'form_type' => 'required|in:appointment,withdrawal',
 

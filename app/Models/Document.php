@@ -31,6 +31,7 @@ class Document extends Model
         'folder_name',
         'mail_type',
         'client_matter_id',
+        'form956_id',
         'office_id',
         'checklist',
         'checklist_verified_by',
