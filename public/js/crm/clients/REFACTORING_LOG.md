@@ -11,6 +11,7 @@ This document tracks refactoring changes to `detail-main.js` for maintainability
 | Feb 2025 | Phase 1: Preparation | ✅ Complete | ~17,374 |
 | Feb 2025 | Phase 2: Extract Utilities | ✅ Complete | ~17,190 |
 | Feb 2025 | Phase 3a: references + send-to-client | ✅ Complete | ~16,457 |
+| Feb 2025 | Phase 3b: notes module | ✅ Complete | ~16,200 |
 
 ---
 
@@ -207,11 +208,56 @@ resources/views/crm/companies/detail.blade.php   # Added module script tags
 
 ---
 
+## Phase 3b: Extract Notes Module (Completed)
+
+### New File Created
+
+| File | Purpose | Dependencies |
+|------|---------|--------------|
+| `modules/notes.js` | Notes CRUD, getallnotes, Select2 format helpers | jQuery, ClientDetailConfig, editor-helpers, dom-helpers |
+
+### Extracted Logic
+
+- `getallnotes()` – fetches notes, filters by matter and task group, exposes on `window.getallnotes`
+- `formatRepo`, `formatRepoSelection` – Select2 template helpers, exposed on `window` for use by `.js-data-example-ajaxccapp`, `.js-data-example-ajaxcontact` in detail-main.js
+- Create note: `.create_note_d`, `.create_note` delegates
+- Edit note: `.opennoteform` click handler
+- View note: `.viewnote`, `.viewapplicationnote` delegates
+- `.js-data-example-ajaxcc` Select2 (recipients in create note modal)
+
+### Config Keys Used
+
+- `ClientDetailConfig.urls.getNotes`
+- `ClientDetailConfig.urls.getRecipients`
+- `ClientDetailConfig.urls.getNoteDetail`
+- `ClientDetailConfig.urls.viewNoteDetail`
+- `ClientDetailConfig.urls.viewApplicationNote`
+
+### Script Load Order (updated)
+
+```html
+<script src=".../modules/references.js"></script>
+<script src=".../modules/send-to-client.js"></script>
+<script src=".../modules/notes.js"></script>
+<script src=".../detail-main.js"></script>
+```
+
+### Troubleshooting (Phase 3b)
+
+**getallnotes is not a function**  
+- Ensure `modules/notes.js` loads before `detail-main.js`  
+- Notes module exposes `window.getallnotes`
+
+**formatRepo / formatRepoSelection undefined**  
+- Notes module exposes both on `window`; `.js-data-example-ajaxccapp` and `.js-data-example-ajaxcontact` (in detail-main.js) rely on them
+
+---
+
 ## Planned Next Steps
 
 | Phase | Description |
 |-------|-------------|
-| Phase 3b | Extract notes, checklist, documents, accounts, invoices |
+| Phase 3c | Extract checklist, documents, accounts, invoices |
 | Phase 4 | Module architecture (IIFE or ES modules) |
 
 ---

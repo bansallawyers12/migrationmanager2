@@ -1460,6 +1460,7 @@ $(document).ready(function() {
             updateMailReadBit: '{{ URL::to("/clients/updatemailreadbit") }}',
             listAllMatters: '{{ URL::to("/clients/listAllMattersWRTSelClient") }}',
             getActivities: '{{ route("clients.activities") }}',
+            getNotes: '{{ URL::to("/get-notes") }}',
             updatePersonalCategory: '{{ route("clients.documents.updatePersonalDocCategory") }}',
             updateVisaCategory: '{{ route("clients.documents.updateVisaDocCategory") }}',
             deletePersonalCategory: '{{ route("clients.documents.deletePersonalDocCategory") }}',
@@ -1588,6 +1589,7 @@ $(document).ready(function() {
 {{-- Phase 3 modules --}}
 <script src="{{ URL::asset('js/crm/clients/modules/references.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/send-to-client.js') }}"></script>
+<script src="{{ URL::asset('js/crm/clients/modules/notes.js') }}"></script>
 {{-- Main detail page JavaScript --}}
 <script src="{{ URL::asset('js/crm/clients/detail-main.js') }}?v={{ time() }}"></script>
 
