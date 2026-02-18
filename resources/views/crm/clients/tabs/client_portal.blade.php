@@ -146,35 +146,49 @@
                                     </div>
                                     <div class="stage-navigation-buttons">
                                         @php
-                                            // Check if we're at the first stage (can't go back from first stage)
-                                            $isFirstStage = false;
-                                            $nextStageName = null;
-                                            if($currentWorkflowStageId && $allWorkflowStages->count() > 0) {
-                                                $firstStage = $allWorkflowStages->first();
-                                                $isFirstStage = ($currentWorkflowStageId == $firstStage->id);
-                                                $currentOrder = $allWorkflowStages->firstWhere('id', $currentWorkflowStageId);
-                                                $currentSort = $currentOrder ? ($currentOrder->sort_order ?? $currentOrder->id) : null;
-                                                $nextStage = $currentSort !== null ? $allWorkflowStages->first(fn($s) => ($s->sort_order ?? $s->id) > $currentSort) : $allWorkflowStages->where('id', '>', $currentWorkflowStageId)->first();
-                                                $nextStageName = $nextStage ? $nextStage->name : null;
-                                            }
+                                            $portalIsDiscontinued = ($selectedMatter->matter_status ?? 1) == 0;
+                                            $portalCanReopen = ((Auth::guard('admin')->user()->role ?? 0) == 1);
                                         @endphp
-                                        <button class="btn btn-outline-primary btn-sm" id="back-to-previous-stage" data-matter-id="{{ $selectedMatter->id }}" title="Back to Previous Stage" {{ $isFirstStage ? 'disabled' : '' }}>
-                                            <i class="fas fa-angle-left"></i> Back to Previous Stage
-                                        </button>
-                                        @php
-                                            $portalNextBtnDisabled = false;
-                                            $portalNextBtnTitle = 'Proceed to Next Stage';
-                                            if (isset($isVerificationStage) && $isVerificationStage && (!isset($canVerifyAndProceed) || !$canVerifyAndProceed)) {
-                                                $portalNextBtnDisabled = true;
-                                                $portalNextBtnTitle = 'Only a Migration Agent (or Admin) can verify and proceed.';
-                                            }
-                                        @endphp
-                                        <button class="btn btn-success btn-sm" id="proceed-to-next-stage" data-matter-id="{{ $selectedMatter->id }}" data-next-stage-name="{{ $nextStageName ?? '' }}" data-current-stage-name="{{ $currentStageName ?? '' }}" data-is-verification-stage="{{ isset($isVerificationStage) && $isVerificationStage ? '1' : '0' }}" data-can-verify-and-proceed="{{ isset($canVerifyAndProceed) && $canVerifyAndProceed ? '1' : '0' }}" title="{{ $portalNextBtnTitle }}" {{ $portalNextBtnDisabled ? 'disabled' : '' }}>
-                                            Proceed to Next Stage <i class="fas fa-angle-right"></i>
-                                        </button>
-                                        <button class="btn btn-outline-danger btn-sm client-portal-discontinue-btn" data-matter-id="{{ $selectedMatter->id }}" title="Discontinue Matter">
-                                            <i class="fas fa-ban"></i> Discontinue
-                                        </button>
+                                        @if($portalIsDiscontinued)
+                                            {{-- Discontinued matter: show Reopen (Admin only) --}}
+                                            @if($portalCanReopen)
+                                            <button class="btn btn-primary btn-sm matter-detail-reopen-btn" id="client-portal-reopen" data-matter-id="{{ $selectedMatter->id }}" title="Reopen Matter">
+                                                <i class="fas fa-redo"></i> Reopen
+                                            </button>
+                                            @endif
+                                        @else
+                                            {{-- Active matter: show normal workflow buttons --}}
+                                            @php
+                                                // Check if we're at the first stage (can't go back from first stage)
+                                                $isFirstStage = false;
+                                                $nextStageName = null;
+                                                if($currentWorkflowStageId && $allWorkflowStages->count() > 0) {
+                                                    $firstStage = $allWorkflowStages->first();
+                                                    $isFirstStage = ($currentWorkflowStageId == $firstStage->id);
+                                                    $currentOrder = $allWorkflowStages->firstWhere('id', $currentWorkflowStageId);
+                                                    $currentSort = $currentOrder ? ($currentOrder->sort_order ?? $currentOrder->id) : null;
+                                                    $nextStage = $currentSort !== null ? $allWorkflowStages->first(fn($s) => ($s->sort_order ?? $s->id) > $currentSort) : $allWorkflowStages->where('id', '>', $currentWorkflowStageId)->first();
+                                                    $nextStageName = $nextStage ? $nextStage->name : null;
+                                                }
+                                            @endphp
+                                            <button class="btn btn-outline-primary btn-sm" id="back-to-previous-stage" data-matter-id="{{ $selectedMatter->id }}" title="Back to Previous Stage" {{ $isFirstStage ? 'disabled' : '' }}>
+                                                <i class="fas fa-angle-left"></i> Back to Previous Stage
+                                            </button>
+                                            @php
+                                                $portalNextBtnDisabled = false;
+                                                $portalNextBtnTitle = 'Proceed to Next Stage';
+                                                if (isset($isVerificationStage) && $isVerificationStage && (!isset($canVerifyAndProceed) || !$canVerifyAndProceed)) {
+                                                    $portalNextBtnDisabled = true;
+                                                    $portalNextBtnTitle = 'Only a Migration Agent (or Admin) can verify and proceed.';
+                                                }
+                                            @endphp
+                                            <button class="btn btn-success btn-sm" id="proceed-to-next-stage" data-matter-id="{{ $selectedMatter->id }}" data-next-stage-name="{{ $nextStageName ?? '' }}" data-current-stage-name="{{ $currentStageName ?? '' }}" data-is-verification-stage="{{ isset($isVerificationStage) && $isVerificationStage ? '1' : '0' }}" data-can-verify-and-proceed="{{ isset($canVerifyAndProceed) && $canVerifyAndProceed ? '1' : '0' }}" title="{{ $portalNextBtnTitle }}" {{ $portalNextBtnDisabled ? 'disabled' : '' }}>
+                                                Proceed to Next Stage <i class="fas fa-angle-right"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm client-portal-discontinue-btn" data-matter-id="{{ $selectedMatter->id }}" title="Discontinue Matter">
+                                                <i class="fas fa-ban"></i> Discontinue
+                                            </button>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
