@@ -1374,6 +1374,8 @@
     margin-top: 4px;
     text-align: right;
     padding-top: 2px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .message-sent .message-timestamp {
@@ -1387,7 +1389,8 @@
 /* WhatsApp-style read receipt icon (sent messages only) */
 .message-timestamp-row {
     display: flex;
-    align-items: center;
+    flex-wrap: nowrap;
+    align-items: baseline;
     justify-content: flex-end;
     gap: 4px;
     margin-top: 4px;
@@ -1413,7 +1416,7 @@
 }
 
 .message-read-icon--read {
-    color: #53bdeb;
+    color: #4FB6EC; /* WhatsApp Checkmark Blue */
 }
 
 /* Message info chevron trigger */
@@ -1532,7 +1535,7 @@
 }
 .message-info-status-icon {
     flex-shrink: 0;
-    color: #53bdeb;
+    color: #4FB6EC; /* WhatsApp Checkmark Blue */
 }
 .message-info-status-icon.message-info-status-icon--grey {
     color: #8696a0;
@@ -3593,9 +3596,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const readIcon = document.createElement('span');
             readIcon.className = 'message-read-icon ' + (readByRecipient ? 'message-read-icon--read' : 'message-read-icon--unread');
             readIcon.setAttribute('data-read-status', readByRecipient ? 'read' : 'unread');
-            readIcon.innerHTML = readByRecipient
-                ? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5l2.5 2.5L7 2"/><path d="M6 5l2.5 2.5L14 1"/></svg>'
-                : '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5l2.5 2.5L7 2"/></svg>';
+            readIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5l2.5 2.5L7 2"/><path d="M6 5l2.5 2.5L14 1"/></svg>';
             timestampRow.appendChild(readIcon);
         }
         
@@ -3642,9 +3643,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (readIcon) {
             readIcon.className = 'message-read-icon ' + (isRead ? 'message-read-icon--read' : 'message-read-icon--unread');
             readIcon.setAttribute('data-read-status', isRead ? 'read' : 'unread');
-            readIcon.innerHTML = isRead
-                ? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5l2.5 2.5L7 2"/><path d="M6 5l2.5 2.5L14 1"/></svg>'
-                : '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5l2.5 2.5L7 2"/></svg>';
+            readIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5l2.5 2.5L7 2"/><path d="M6 5l2.5 2.5L14 1"/></svg>';
         }
         // Update Message info chevron data so popup shows correct read status
         const chevron = messageEl.querySelector('.message-info-chevron');
