@@ -1576,6 +1576,13 @@ $(document).ready(function() {
 <script src="{{ URL::asset('js/crm/clients/detail.js') }}" defer></script>
 <script src="{{ URL::asset('js/crm/clients/tabs/application.js') }}" defer></script>
 
+{{-- Client detail utilities (must load before detail-main.js) --}}
+<script src="{{ URL::asset('js/crm/clients/utils/flatpickr-helpers.js') }}"></script>
+<script src="{{ URL::asset('js/crm/clients/utils/editor-helpers.js') }}"></script>
+<script src="{{ URL::asset('js/crm/clients/utils/dom-helpers.js') }}"></script>
+{{-- Phase 3 modules --}}
+<script src="{{ URL::asset('js/crm/clients/modules/references.js') }}"></script>
+<script src="{{ URL::asset('js/crm/clients/modules/send-to-client.js') }}"></script>
 {{-- Main detail page JavaScript --}}
 <script src="{{ URL::asset('js/crm/clients/detail-main.js') }}?v={{ time() }}"></script>
 
