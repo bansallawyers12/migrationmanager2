@@ -513,6 +513,14 @@ class ClientPortalMessageController extends Controller
                 }
 
                 // Send notifications to recipients (excluding sender)
+                $messageNotificationUrl = '/clients';
+                if ($clientMatter) {
+                    $path = '/clients/detail/' . base64_encode(convert_uuencode($clientMatter->client_id));
+                    if (!empty($clientMatter->client_unique_matter_no)) {
+                        $path .= '/' . $clientMatter->client_unique_matter_no;
+                    }
+                    $messageNotificationUrl = url($path . '/application');
+                }
                 foreach ($targetRecipients as $recipientId) {
                     if ($recipientId != $clientId) {
                         $notificationMessage = 'New message received by Client Portal Mobile App from ' . ($sender ? $sender->first_name . ' ' . $sender->last_name : 'Client') . ' for matter ' . ($clientMatter ? $clientMatter->client_unique_matter_no : 'ID: ' . $clientMatterId);
@@ -521,7 +529,7 @@ class ClientPortalMessageController extends Controller
                             'sender_id' => $clientId,
                             'receiver_id' => $recipientId,
                             'module_id' => $clientMatterId,
-                            'url' => '/messages',
+                            'url' => $messageNotificationUrl,
                             'notification_type' => 'message',
                             'message' => $notificationMessage,
                             'created_at' => now(),

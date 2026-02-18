@@ -1053,12 +1053,12 @@
                 });
         }
 
-        function loadBroadcastDetails(batchUuid) {
+        function loadBroadcastDetails(batchUuid, onSuccess) {
             detailBody.innerHTML = `<tr>
                 <td colspan="3" class="text-center text-muted py-3">Loading recipients…</td>
             </tr>`;
 
-            fetch(`/notifications/broadcasts/${batchUuid}/details`, {
+            return fetch(`/notifications/broadcasts/${batchUuid}/details`, {
                 method: 'GET',
                 headers: { Accept: 'application/json' },
                 credentials: 'include',
@@ -1080,6 +1080,7 @@
                         detailBody.innerHTML = `<tr>
                             <td colspan="3" class="text-center text-muted py-3">No recipients found.</td>
                         </tr>`;
+                        if (typeof onSuccess === 'function') onSuccess();
                         return;
                     }
 
@@ -1096,6 +1097,7 @@
                         `;
                         detailBody.appendChild(row);
                     });
+                    if (typeof onSuccess === 'function') onSuccess();
                 })
                 .catch((error) => {
                     console.error(error);
@@ -1516,6 +1518,18 @@
 
         toggleRecipientsVisibility();
         loadHistory();
+
+        // If arrived via broadcast notification link (?batch=xxx), open that broadcast's details modal
+        const batchParam = new URLSearchParams(window.location.search).get('batch');
+        if (batchParam) {
+            loadBroadcastDetails(batchParam, () => {
+                detailModal.modal('show');
+                // Clear ?batch= from URL to avoid re-opening on refresh
+                const url = new URL(window.location);
+                url.searchParams.delete('batch');
+                window.history.replaceState({}, '', url);
+            });
+        }
         // Active users will load when tab is clicked (tab-based loading)
     })();
 </script>

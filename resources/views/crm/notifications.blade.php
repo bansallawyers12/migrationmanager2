@@ -3,6 +3,20 @@
 
 @section('content')
 
+<style>
+/* Status column: CSS-based indicators that always display (no Font Awesome dependency) */
+.notification-status-read,
+.notification-status-unread {
+	display: inline-block;
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	vertical-align: middle;
+}
+.notification-status-read { background-color: #28a745; }
+.notification-status-unread { background-color: #007bff; }
+</style>
+
 <!-- Main Content -->
 <div class="main-content">
 	<section class="section">
@@ -34,12 +48,12 @@
 									</thead>
 									<tbody class="tdata">	
 										@foreach ($lists as $list)
-										<tr id="id_{{@$list->id}}" style="{{ $list->receiver_status == 0 ? 'background-color: #f8f9fa; font-weight: 600;' : '' }}"> 
+										<tr id="id_{{@$list->id}}" style="{{ ($list->receiver_status ?? 0) == 0 ? 'background-color: #f8f9fa; font-weight: 600;' : '' }}"> 
 											<td class="text-center">
-												@if($list->receiver_status == 1)
-													<i class="fas fa-check-circle text-success" data-toggle="tooltip" title="Read"></i>
+												@if(($list->receiver_status ?? 0) == 1)
+													<span class="notification-status-read" data-toggle="tooltip" title="Read" aria-label="Read"></span>
 												@else
-													<i class="fas fa-circle text-primary" data-toggle="tooltip" title="Unread"></i>
+													<span class="notification-status-unread" data-toggle="tooltip" title="Unread" aria-label="Unread"></span>
 												@endif
 											</td>
 											<td>
