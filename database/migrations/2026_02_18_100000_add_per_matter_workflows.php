@@ -53,6 +53,7 @@ return new class extends Migration
         if (!$generalWorkflow) {
             $generalId = DB::table('workflows')->insertGetId([
                 'name' => 'General',
+                'status' => 1,
                 'matter_id' => null,
                 'created_at' => now(),
                 'updated_at' => now(),
