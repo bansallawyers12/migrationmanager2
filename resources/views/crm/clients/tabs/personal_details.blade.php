@@ -938,7 +938,8 @@
                     <div class="card">
                         <h3><i class="fas fa-address-card"></i> Tag(s):   
                             <span class="float-right text-muted" style="margin-left:180px;">
-                            <a href="javascript:;" data-id="{{$fetchedData->id}}" class="btn btn-primary opentagspopup btn-sm">  Add</a>
+                            <a href="javascript:;" data-id="{{$fetchedData->id}}" class="btn btn-primary opentagspopup btn-sm">Add</a>
+                            <a href="javascript:;" data-id="{{$fetchedData->id}}" class="btn btn-danger openredtagspopup btn-sm">Add</a>
                             </span>
                         </h3>
                        
@@ -1030,8 +1031,8 @@
                                 </div>
                                 
                                 <div style="margin-top: 10px;">
-                                    <a href="javascript:;" id="toggleRedTags" class="btn btn-sm btn-outline-danger" data-client-id="{{$fetchedData->id}}">
-                                        <i class="fas fa-eye"></i> Show Red Tags (<span id="redTagCount">{{$redTagCount}}</span>)
+                                    <a href="javascript:;" id="toggleRedTags" class="btn btn-sm btn-outline-danger" data-client-id="{{$fetchedData->id}}" title="Show Red Tags">
+                                        <i class="fas fa-eye"></i>
                                     </a>
                                 </div>
                             <?php }
@@ -1149,9 +1150,10 @@
                     // Set initial state
                     if (isVisible) {
                         redTagsSection.style.display = 'block';
-                        toggleRedTagsBtn.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Red Tags (<span id="redTagCount">' + document.getElementById('redTagCount').textContent + '</span>)';
+                        toggleRedTagsBtn.innerHTML = '<i class="fas fa-eye-slash"></i>';
                         toggleRedTagsBtn.classList.remove('btn-outline-danger');
                         toggleRedTagsBtn.classList.add('btn-danger');
+                        toggleRedTagsBtn.title = 'Hide Red Tags';
                     }
                     
                     toggleRedTagsBtn.addEventListener('click', function() {
@@ -1160,17 +1162,19 @@
                         if (isCurrentlyVisible) {
                             // Hide red tags
                             redTagsSection.style.display = 'none';
-                            this.innerHTML = '<i class="fas fa-eye"></i> Show Red Tags (<span id="redTagCount">' + document.getElementById('redTagCount').textContent + '</span>)';
+                            this.innerHTML = '<i class="fas fa-eye"></i>';
                             this.classList.remove('btn-danger');
-                            this.classList.add('btn-outline-danger');
-                            sessionStorage.setItem(storageKey, 'false');
+this.classList.add('btn-outline-danger');
+                this.title = 'Show Red Tags';
+                sessionStorage.setItem(storageKey, 'false');
                         } else {
                             // Show red tags
                             redTagsSection.style.display = 'block';
-                            this.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Red Tags (<span id="redTagCount">' + document.getElementById('redTagCount').textContent + '</span>)';
+                            this.innerHTML = '<i class="fas fa-eye-slash"></i>';
                             this.classList.remove('btn-outline-danger');
-                            this.classList.add('btn-danger');
-                            sessionStorage.setItem(storageKey, 'true');
+this.classList.add('btn-danger');
+                this.title = 'Hide Red Tags';
+                sessionStorage.setItem(storageKey, 'true');
                         }
                     });
                 }

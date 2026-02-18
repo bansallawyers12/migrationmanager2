@@ -5991,6 +5991,7 @@ class ClientsController extends Controller
 
             $clientId = $request->input('client_id');
             $tags = $request->input('tag', []);
+            $createNewAsRed = filter_var($request->input('create_new_as_red', false), FILTER_VALIDATE_BOOLEAN);
 
             // Find the client
             $client = \App\Models\Admin::where('id', $clientId)
@@ -6020,10 +6021,17 @@ class ClientsController extends Controller
                                     $tagIds[] = $tagById->id;
                                 }
                             } else {
-                                // Create new tag
+                                // Create new tag (as normal or red based on create_new_as_red flag)
                                 $newTag = new \App\Models\Tag();
                                 $newTag->name = $tagValue;
                                 $newTag->created_by = Auth::id();
+                                if ($createNewAsRed) {
+                                    $newTag->tag_type = \App\Models\Tag::TYPE_RED;
+                                    $newTag->is_hidden = true;
+                                } else {
+                                    $newTag->tag_type = \App\Models\Tag::TYPE_NORMAL;
+                                    $newTag->is_hidden = false;
+                                }
                                 $newTag->save();
                                 $tagIds[] = $newTag->id;
                             }

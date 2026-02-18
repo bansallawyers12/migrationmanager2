@@ -1,6 +1,49 @@
 @extends('layouts.crm_client_detail')
 @section('title', 'Workflows')
 
+@section('styles')
+<style>
+    /* Fix dropdown menu positioning for action buttons */
+    .table-responsive {
+        overflow: visible !important;
+    }
+    
+    .common_table .table td {
+        overflow: visible !important;
+    }
+    
+    .common_table .table td .dropdown {
+        position: relative;
+        display: inline-block;
+        overflow: visible !important;
+    }
+    
+    .common_table .dropdown-menu {
+        position: absolute !important;
+        top: 100% !important;
+        right: 0 !important;
+        left: auto !important;
+        float: none !important;
+        min-width: 180px;
+        padding: 8px 0;
+        margin: 4px 0 0;
+        font-size: 14px;
+        background: #ffffff;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        z-index: 9999 !important;
+        overflow: visible !important;
+    }
+    
+    .common_table .dropdown-menu.show {
+        display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+</style>
+@endsection
+
 @section('content')
 <div class="main-content">
 	<section class="section">

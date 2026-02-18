@@ -964,6 +964,10 @@ use App\Http\Controllers\Controller;
                 <form method="post" action="{{url('/save_tag')}}" name="stags_application" id="stags_application" autocomplete="off" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="client_id" id="client_id" value="">
+				<input type="hidden" name="create_new_as_red" id="create_new_as_red" value="0">
+					<div id="tags_red_mode_hint" class="alert alert-warning py-2 mb-2" style="display: none;">
+						<i class="fas fa-exclamation-triangle text-danger"></i> <strong>Red Tag mode:</strong> Any new tags you add will be created as Red tags (hidden by default).
+					</div>
 					<div class="row">
 						<div class="col-12 col-md-12 col-lg-12">
 							<div class="form-group">

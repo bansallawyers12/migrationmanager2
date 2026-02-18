@@ -11890,6 +11890,22 @@ Bansal Immigration`;
             $('#tags_clients').modal('show');
 
             $('#tags_clients #client_id').val(appid);
+            $('#tags_clients #create_new_as_red').val('0');
+            $('#tags_clients #tags_red_mode_hint').hide();
+
+            $(".tagsselec").select2({ tags: true, dropdownParent: $("#tags_clients .modal-content") });
+
+        });
+
+        $(document).delegate('.openredtagspopup', 'click', function(){
+
+            var appid = $(this).attr('data-id');
+
+            $('#tags_clients').modal('show');
+
+            $('#tags_clients #client_id').val(appid);
+            $('#tags_clients #create_new_as_red').val('1');
+            $('#tags_clients #tags_red_mode_hint').show();
 
             $(".tagsselec").select2({ tags: true, dropdownParent: $("#tags_clients .modal-content") });
 
