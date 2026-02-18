@@ -127,6 +127,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/messages/send-to-client', [ClientPortalMessageController::class, 'sendMessageToClient']);
     Route::get('/messages', [ClientPortalMessageController::class, 'getMessages']);
     Route::get('/messages/unread-count', [ClientPortalMessageController::class, 'getUnreadCount']);
+    Route::get('/messages/attachments/{id}/download', [ClientPortalMessageController::class, 'downloadAttachment']);
     Route::post('/messages/{id}/read', [ClientPortalMessageController::class, 'markAsRead']);
     Route::get('/messages/{id}', [ClientPortalMessageController::class, 'getMessageDetails']);
 

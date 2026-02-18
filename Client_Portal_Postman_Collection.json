@@ -2035,7 +2035,7 @@
 						"send"
 					]
 				},
-				"description": "Send a message for a specific client matter. Always broadcasts to all matter users (migration agent, person responsible, person assisting) and superadmin users (role=1). client_matter_id is required. Message will be broadcasted in real-time. Notifications will be sent to all recipients. Each recipient has individual read status tracking. Recipient information is stored in database and returned in response."
+				"description": "Send a message for a specific client matter. Always broadcasts to all matter users (migration agent, person responsible, person assisting) and superadmin users (role=1). client_matter_id is required. Supports attachments (use multipart/form-data with attachments[] for files) and emoji in message text. Either message or at least one attachment is required. Message will be broadcasted in real-time. Notifications will be sent to all recipients. Each recipient has individual read status tracking. Recipient information is stored in database and returned in response."
 			},
 			"event": [
 				{
@@ -2091,7 +2091,7 @@
 						"send"
 					]
 				},
-				"description": "Send a message from admin. Use admin_auth_token from admin login. Message will be broadcasted to all matter users and superadmins. Message will be broadcasted in real-time. Recipient information is stored in database and returned in response."
+				"description": "Send a message from admin. Use admin_auth_token from admin login. Supports attachments (use multipart/form-data with attachments[] for files) and emoji in message text. Either message or at least one attachment is required. Message will be broadcasted to all matter users and superadmins. Message will be broadcasted in real-time. Recipient information is stored in database and returned in response."
 			},
 			"event": [
 				{
@@ -2195,7 +2195,7 @@
 						"send-to-client"
 					]
 				},
-				"description": "Send a message ONLY to the client associated with the client_matter_id. This endpoint is specifically designed for web page use to send messages directly to clients. Unlike /messages/send which broadcasts to all agents, this sends only to the client (customer) who owns the matter. The client_id is automatically retrieved from the client_matters table. Message will be broadcasted in real-time to the client. Notification will be sent only to the client."
+				"description": "Send a message ONLY to the client associated with the client_matter_id. This endpoint is specifically designed for web page use to send messages directly to clients. Supports attachments (use multipart/form-data with attachments[] for files) and emoji in message text. Either message or at least one attachment is required. Unlike /messages/send which broadcasts to all agents, this sends only to the client (customer) who owns the matter. The client_id is automatically retrieved from the client_matters table. Message will be broadcasted in real-time to the client. Notification will be sent only to the client."
 			},
 			"event": [
 				{
@@ -2336,7 +2336,7 @@
 						"{{message_id}}"
 					]
 				},
-				"description": "Get detailed information about a specific message including all recipients with their read status and shortnames. Shows sender_shortname and recipient_shortname for all users. Useful for senders to see who has read their message."
+				"description": "Get detailed information about a specific message including all recipients with their read status, shortnames, and attachments. Each message includes an 'attachments' array with id, type, filename, url, and size. Attachment URLs can be used with the Download Attachment endpoint."
 			},
 			"response": [
 				{
@@ -2377,6 +2377,36 @@
 					"body": "{\n    \"success\": true,\n    \"data\": {\n        \"id\": 123,\n        \"message\": \"Hello everyone\",\n        \"sender\": \"John Doe\",\n        \"sender_id\": 5,\n        \"sender_shortname\": \"JD\",\n        \"is_sender\": true,\n        \"is_recipient\": false,\n        \"recipients\": [\n            {\n                \"recipient_id\": 36524,\n                \"recipient_name\": \"ARUN BANSAL\",\n                \"recipient_shortname\": \"AB\",\n                \"is_read\": true,\n                \"read_at\": \"2025-10-16 10:30:00\"\n            },\n            {\n                \"recipient_id\": 36484,\n                \"recipient_name\": \"KHUSHI Sangroya\",\n                \"recipient_shortname\": \"KS\",\n                \"is_read\": false,\n                \"read_at\": null\n            },\n            {\n                \"recipient_id\": 36532,\n                \"recipient_name\": \"Rajan Kumar\",\n                \"recipient_shortname\": \"RK\",\n                \"is_read\": true,\n                \"read_at\": \"2025-10-16 10:35:00\"\n            }\n        ],\n        \"recipient_count\": 3,\n        \"sent_at\": \"2025-10-16 10:30:00\",\n        \"is_read\": null,\n        \"read_at\": null,\n        \"client_matter_id\": 9,\n        \"created_at\": \"2025-10-16 10:30:00\",\n        \"updated_at\": \"2025-10-16 10:30:00\"\n    }\n}"
 				}
 			]
+		},
+		{
+			"name": "27b. Messaging - Download Message Attachment",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"description": "Use token from login response"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/messages/attachments/{{attachment_id}}/download",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"messages",
+						"attachments",
+						"{{attachment_id}}",
+						"download"
+					]
+				},
+				"description": "Download a message attachment. Use attachment_id from the message response (message.attachments[].id or data.attachments[].id). Requires user to be sender or recipient of the message. Returns the file binary. Supported types: images (JPEG, PNG, GIF, WebP), documents (PDF, DOC, DOCX, XLS, XLSX, TXT, CSV)."
+			}
 		},
 		{
 			"name": "28. Messaging - Mark Message as Read",

@@ -55,6 +55,7 @@ Route::post('/application-sendmail', [ClientPortalController::class, 'applicatio
 /*---------- Application Messages (Client Portal) ----------*/
 Route::get('/clients/matter-messages', [ClientPortalController::class, 'getMatterMessages'])->name('clients.matter-messages');
 Route::post('/clients/send-message', [ClientPortalController::class, 'sendMessageToClient'])->name('clients.send-message');
+Route::get('/clients/message-attachment/{id}/download', [ClientPortalController::class, 'downloadMessageAttachment'])->name('clients.message-attachment-download');
 
 /*---------- Broadcasting Auth ----------*/
 // Broadcasting authentication is handled by Laravel's built-in BroadcastServiceProvider

@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Broadcast;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use App\Models\Message;
 use App\Models\MessageRecipient;
 use App\Models\Staff;
@@ -17,6 +20,7 @@ use App\Events\MessageReceived;
 use App\Events\MessageDeleted;
 use App\Events\MessageUpdated;
 use App\Events\UnreadCountUpdated;
+use App\Events\NotificationCountUpdated;
 use App\Services\FCMService;
 
 class ClientPortalMessageController extends Controller
@@ -34,12 +38,13 @@ class ClientPortalMessageController extends Controller
             $admin = $request->user();
             $senderId = $admin->id;
 
-            // Validate request
+            $hasFiles = $request->hasFile('attachments') || $request->hasFile('attachments.0');
             $validator = Validator::make($request->all(), [
-                'message' => 'nullable|string|max:5000',
+                'message' => ['nullable', 'string', 'max:5000'],
                 'client_matter_id' => 'required|integer|min:1',
+                'attachments' => ['nullable', 'array'],
+                'attachments.*' => ['file', 'max:10240'],
             ]);
-
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
@@ -48,8 +53,15 @@ class ClientPortalMessageController extends Controller
                 ], 422);
             }
 
-            $message = $request->input('message');
-            $clientMatterId = $request->input('client_matter_id');
+            $message = is_string($request->input('message')) ? trim($request->input('message', '')) : '';
+            $clientMatterId = (int) $request->input('client_matter_id');
+
+            if (!$message && !$hasFiles) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Either message text or at least one attachment is required'
+                ], 422);
+            }
 
             // Get client matter info to find the client_id
             $clientMatter = DB::table('client_matters')
@@ -130,6 +142,9 @@ class ClientPortalMessageController extends Controller
                     'updated_at' => now()
                 ]);
 
+                // Process file attachments
+                $attachmentsForResponse = $this->processMessageAttachments($request, $messageId);
+
                 // Build recipient info for broadcast
                 $recipientIdsWithDetails = [
                     [
@@ -149,7 +164,8 @@ class ClientPortalMessageController extends Controller
                     'recipient_ids' => $recipientIdsWithDetails,
                     'sent_at' => now()->toISOString(),
                     'client_matter_id' => $clientMatterId,
-                    'recipient_count' => 1
+                    'recipient_count' => 1,
+                    'attachments' => $attachmentsForResponse
                 ];
 
                 // Broadcast to the client only (with error handling)
@@ -193,15 +209,23 @@ class ClientPortalMessageController extends Controller
                     'seen' => 0
                 ]);
 
+                // Broadcast notification count update for live bell badge
+                try {
+                    $count = DB::table('notifications')->where('receiver_id', $clientId)->where('receiver_status', 0)->count();
+                    broadcast(new NotificationCountUpdated($clientId, $count));
+                } catch (\Exception $e) {
+                    Log::warning('Failed to broadcast notification count to client', ['client_id' => $clientId, 'error' => $e->getMessage()]);
+                }
+
                 // Send push notification to client
                 try {
                     $fcmService = new FCMService();
                     $senderName = $sender ? $sender->first_name . ' ' . $sender->last_name : 'Agent';
                     $matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatterId) : 'ID: ' . $clientMatterId;
                     
-                    // Prepare notification title and body
+                    // Prepare notification title and body (mb_substr for emoji-safe truncation)
                     $notificationTitle = 'New Message';
-                    $notificationBody = $message ? (strlen($message) > 100 ? substr($message, 0, 100) . '...' : $message) : 'You have a new message';
+                    $notificationBody = $message ? (mb_strlen($message) > 100 ? mb_substr($message, 0, 100) . '...' : $message) : (count($attachmentsForResponse) > 0 ? 'You have a new message with attachment(s)' : 'You have a new message');
                     
                     // Prepare notification data payload
                     $notificationData = [
@@ -252,6 +276,7 @@ class ClientPortalMessageController extends Controller
                     'data' => [
                         'message_id' => $messageId,
                         'message' => $messageForBroadcast,
+                        'attachments' => $attachmentsForResponse,
                         'sent_at' => now()->toISOString(),
                         'recipient' => [
                             'id' => $clientId,
@@ -294,12 +319,13 @@ class ClientPortalMessageController extends Controller
             $admin = $request->user();
             $clientId = $admin->id;
 
-            // Validate request
+            $hasFiles = $request->hasFile('attachments') || $request->hasFile('attachments.0');
             $validator = Validator::make($request->all(), [
-                'message' => 'nullable|string|max:5000',
+                'message' => ['nullable', 'string', 'max:5000'],
                 'client_matter_id' => 'required|integer|min:1',
+                'attachments' => ['nullable', 'array'],
+                'attachments.*' => ['file', 'max:10240'],
             ]);
-
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
@@ -308,8 +334,15 @@ class ClientPortalMessageController extends Controller
                 ], 422);
             }
 
-            $message = $request->input('message');
-            $clientMatterId = $request->input('client_matter_id');
+            $message = is_string($request->input('message')) ? trim($request->input('message', '')) : '';
+            $clientMatterId = (int) $request->input('client_matter_id');
+
+            if (!$message && !$hasFiles) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Either message text or at least one attachment is required'
+                ], 422);
+            }
 
             // Get sender information
             $sender = null;
@@ -423,6 +456,9 @@ class ClientPortalMessageController extends Controller
                 }
                 MessageRecipient::insert($recipientRecords);
 
+                // Process file attachments
+                $attachmentsForResponse = $this->processMessageAttachments($request, $messageId);
+
                 // Prepare message for broadcasting
                 $messageForBroadcast = [
                     'id' => $messageId,
@@ -433,7 +469,8 @@ class ClientPortalMessageController extends Controller
                     'recipient_ids' => $recipientIdsWithDetails,
                     'sent_at' => now()->toISOString(),
                     'client_matter_id' => $clientMatterId,
-                    'recipient_count' => count($targetRecipients)
+                    'recipient_count' => count($targetRecipients),
+                    'attachments' => $attachmentsForResponse
                 ];
 
                 // Broadcast to each recipient (with error handling)
@@ -489,6 +526,14 @@ class ClientPortalMessageController extends Controller
                             'receiver_status' => 0,
                             'seen' => 0
                         ]);
+
+                        // Broadcast notification count update for live bell badge
+                        try {
+                            $count = DB::table('notifications')->where('receiver_id', $recipientId)->where('receiver_status', 0)->count();
+                            broadcast(new NotificationCountUpdated($recipientId, $count));
+                        } catch (\Exception $e) {
+                            Log::warning('Failed to broadcast notification count to recipient', ['recipient_id' => $recipientId, 'error' => $e->getMessage()]);
+                        }
                     }
                 }
 
@@ -498,9 +543,9 @@ class ClientPortalMessageController extends Controller
                     $senderName = $sender ? $sender->first_name . ' ' . $sender->last_name : 'Client';
                     $matterNo = $clientMatter ? $clientMatter->client_unique_matter_no : 'ID: ' . $clientMatterId;
                     
-                    // Prepare notification title and body
+                    // Prepare notification title and body (mb_substr for emoji-safe truncation)
                     $notificationTitle = 'New Message';
-                    $notificationBody = $message ? (strlen($message) > 100 ? substr($message, 0, 100) . '...' : $message) : 'You have a new message';
+                    $notificationBody = $message ? (mb_strlen($message) > 100 ? mb_substr($message, 0, 100) . '...' : $message) : (count($attachmentsForResponse) > 0 ? 'You have a new message with attachment(s)' : 'You have a new message');
                     
                     // Prepare notification data payload
                     $notificationData = [
@@ -555,6 +600,7 @@ class ClientPortalMessageController extends Controller
                     'data' => [
                         'message_id' => $messageId,
                         'message' => $messageForBroadcast,
+                        'attachments' => $attachmentsForResponse,
                         'sent_at' => now()->toISOString(),
                         'recipient_count' => count($targetRecipients)
                     ]
@@ -707,7 +753,8 @@ class ClientPortalMessageController extends Controller
                         'read_at' => $currentUserRecipient ? $currentUserRecipient->read_at : null,
                         'client_matter_id' => $msg->client_matter_id,
                         'created_at' => $msg->created_at,
-                        'updated_at' => $msg->updated_at
+                        'updated_at' => $msg->updated_at,
+                        'attachments' => $this->getMessageAttachmentsForResponse($msg->id)
                     ];
                 });
 
@@ -837,7 +884,8 @@ class ClientPortalMessageController extends Controller
                     'read_at' => $currentUserRecipient ? $currentUserRecipient->read_at : null,
                     'client_matter_id' => $message->client_matter_id,
                     'created_at' => $message->created_at,
-                    'updated_at' => $message->updated_at
+                    'updated_at' => $message->updated_at,
+                    'attachments' => $this->getMessageAttachmentsForResponse($message->id)
                 ]
             ], 200);
 
@@ -1060,5 +1108,149 @@ class ClientPortalMessageController extends Controller
         }
     }
 
+    /**
+     * Download message attachment
+     * GET /api/messages/attachments/{id}/download
+     * Requires user to be sender or recipient of the message.
+     */
+    public function downloadAttachment(Request $request, $id)
+    {
+        try {
+            $user = $request->user();
+            $userId = $user->id;
+
+            if (!Schema::hasTable('message_attachments')) {
+                return response()->json(['success' => false, 'message' => 'Attachment not found'], 404);
+            }
+
+            $att = DB::table('message_attachments')->where('id', $id)->first();
+            if (!$att) {
+                return response()->json(['success' => false, 'message' => 'Attachment not found'], 404);
+            }
+
+            $message = DB::table('messages')->where('id', $att->message_id)->first();
+            if (!$message) {
+                return response()->json(['success' => false, 'message' => 'Message not found'], 404);
+            }
+
+            $isSender = $message->sender_id == $userId;
+            $isRecipient = MessageRecipient::where('message_id', $att->message_id)
+                ->where('recipient_id', $userId)
+                ->exists();
+
+            if (!$isSender && !$isRecipient) {
+                return response()->json(['success' => false, 'message' => 'You do not have access to this attachment'], 403);
+            }
+
+            if (!Storage::disk('public')->exists($att->path)) {
+                Log::warning('Message attachment file not found', ['path' => $att->path, 'id' => $id]);
+                return response()->json(['success' => false, 'message' => 'File not found'], 404);
+            }
+
+            $mime = $att->mime_type ?? 'application/octet-stream';
+            $filename = $att->original_filename ?? $att->filename ?? 'download';
+
+            return response()->streamDownload(function () use ($att) {
+                echo Storage::disk('public')->get($att->path);
+            }, $filename, [
+                'Content-Type' => $mime,
+                'Content-Disposition' => 'attachment; filename="' . addslashes($filename) . '"',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Download attachment error: ' . $e->getMessage(), [
+                'attachment_id' => $id,
+                'user_id' => $request->user()?->id,
+            ]);
+            return response()->json(['success' => false, 'message' => 'Failed to download attachment'], 500);
+        }
+    }
+
+    /**
+     * Process and store message attachments from request.
+     * Returns array of attachment data for API response.
+     */
+    private function processMessageAttachments(Request $request, int $messageId): array
+    {
+        $attachmentsForResponse = [];
+        if (!Schema::hasTable('message_attachments')) {
+            return $attachmentsForResponse;
+        }
+
+        $files = $request->file('attachments');
+        if (!$files) {
+            $files = $request->file('attachments.*');
+        }
+        if (!$files || (!is_array($files) && !$files instanceof \Illuminate\Http\UploadedFile)) {
+            return $attachmentsForResponse;
+        }
+        if (!is_array($files)) {
+            $files = [$files];
+        }
+
+        $allowedImages = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        $allowedDocs = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'text/plain', 'text/csv'];
+        $allowedMimes = array_merge($allowedImages, $allowedDocs);
+
+        foreach ($files as $file) {
+            if (!$file || !$file->isValid()) {
+                continue;
+            }
+            $mime = $file->getMimeType();
+            if (!in_array($mime, $allowedMimes)) {
+                continue;
+            }
+
+            $type = in_array($mime, $allowedImages) ? 'image' : 'document';
+            $ext = $file->getClientOriginalExtension() ?: pathinfo($file->getClientOriginalName(), PATHINFO_EXTENSION);
+            $safeName = Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '_' . uniqid() . '.' . ($ext ?: 'bin');
+            $path = $file->storeAs('message-attachments/' . date('Y/m'), $safeName, 'public');
+
+            $attInsertId = DB::table('message_attachments')->insertGetId([
+                'message_id' => $messageId,
+                'filename' => $safeName,
+                'original_filename' => $file->getClientOriginalName(),
+                'path' => $path,
+                'mime_type' => $mime,
+                'type' => $type,
+                'size' => $file->getSize(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $attachmentsForResponse[] = [
+                'id' => $attInsertId,
+                'type' => $type,
+                'filename' => $file->getClientOriginalName(),
+                'url' => url('/api/messages/attachments/' . $attInsertId . '/download'),
+                'size' => $file->getSize(),
+            ];
+        }
+
+        return $attachmentsForResponse;
+    }
+
+    /**
+     * Get attachments for a message (for API response format).
+     */
+    private function getMessageAttachmentsForResponse(int $messageId): array
+    {
+        if (!Schema::hasTable('message_attachments')) {
+            return [];
+        }
+
+        $rows = DB::table('message_attachments')
+            ->where('message_id', $messageId)
+            ->get();
+
+        return $rows->map(function ($att) {
+            return [
+                'id' => $att->id,
+                'type' => $att->type ?? 'document',
+                'filename' => $att->original_filename ?? $att->filename,
+                'url' => url('/api/messages/attachments/' . $att->id . '/download'),
+                'size' => $att->size ?? null,
+            ];
+        })->toArray();
+    }
 
 }

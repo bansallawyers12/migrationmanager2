@@ -2826,9 +2826,11 @@ class ClientPortalController extends Controller
 							->get();
 						foreach ($attachmentsRows as $att) {
 							$attachments[] = [
+								'id' => $att->id,
 								'type' => $att->type ?? 'document',
 								'filename' => $att->original_filename ?? $att->filename,
-								'url' => Storage::disk('public')->url($att->path),
+								'url' => route('clients.message-attachment-download', ['id' => $att->id]),
+								'size' => $att->size ?? null,
 							];
 						}
 					}
@@ -2999,7 +3001,7 @@ class ClientPortalController extends Controller
 						$safeName = Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '_' . uniqid() . '.' . ($ext ?: 'bin');
 						$path = $file->storeAs('message-attachments/' . date('Y/m'), $safeName, 'public');
 
-						DB::table('message_attachments')->insert([
+						$attInsertId = DB::table('message_attachments')->insertGetId([
 							'message_id' => $messageId,
 							'filename' => $safeName,
 							'original_filename' => $file->getClientOriginalName(),
@@ -3012,10 +3014,12 @@ class ClientPortalController extends Controller
 						]);
 
 						$attachmentsForResponse[] = [
+							'id' => $attInsertId,
 							'type' => $type,
 							'filename' => $file->getClientOriginalName(),
-							'url' => Storage::disk('public')->url($path),
+							'url' => route('clients.message-attachment-download', ['id' => $attInsertId]),
 							'path' => $path,
+							'size' => $file->getSize(),
 						];
 					}
 				}
@@ -3060,6 +3064,14 @@ class ClientPortalController extends Controller
 					'receiver_status' => 0,
 					'seen' => 0
 				]);
+
+				// Broadcast notification count update for live bell badge
+				try {
+					$count = DB::table('notifications')->where('receiver_id', $clientId)->where('receiver_status', 0)->count();
+					broadcast(new \App\Events\NotificationCountUpdated($clientId, $count));
+				} catch (\Exception $e) {
+					Log::warning('Failed to broadcast notification count to client', ['client_id' => $clientId, 'error' => $e->getMessage()]);
+				}
 
 				// Broadcast message via Laravel Reverb (configured via BROADCAST_DRIVER in .env)
 				$messageForBroadcast = [
@@ -3107,9 +3119,9 @@ class ClientPortalController extends Controller
 					$fcmService = new FCMService();
 					$matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatterId) : 'ID: ' . $clientMatterId;
 					
-					// Prepare notification title and body
+					// Prepare notification title and body (mb_substr for emoji-safe truncation)
 					$notificationTitle = 'New Message';
-					$notificationBody = $message ? (strlen($message) > 100 ? substr($message, 0, 100) . '...' : $message) : 'You have a new message';
+					$notificationBody = $message ? (mb_strlen($message) > 100 ? mb_substr($message, 0, 100) . '...' : $message) : ($attachmentsForResponse ? 'You have a new message with attachment(s)' : 'You have a new message');
 					
 					// Prepare notification data payload
 					$notificationData = [
@@ -3176,5 +3188,43 @@ class ClientPortalController extends Controller
 				'error' => $e->getMessage()
 			], 500);
 		}
+	}
+
+	/**
+	 * Download message attachment
+	 * GET /clients/message-attachment/{id}/download
+	 * Serves the file from storage (works without storage:link symlink)
+	 */
+	public function downloadMessageAttachment(Request $request, $id)
+	{
+		$admin = Auth::guard('admin')->user();
+		if (!$admin) {
+			abort(403, 'Unauthorized');
+		}
+
+		$att = DB::table('message_attachments')->where('id', $id)->first();
+		if (!$att) {
+			abort(404, 'Attachment not found');
+		}
+
+		$message = DB::table('messages')->where('id', $att->message_id)->first();
+		if (!$message) {
+			abort(404, 'Message not found');
+		}
+
+		if (!Storage::disk('public')->exists($att->path)) {
+			Log::warning('Message attachment file not found', ['path' => $att->path, 'id' => $id]);
+			abort(404, 'File not found');
+		}
+
+		$mime = $att->mime_type ?? 'application/octet-stream';
+		$filename = $att->original_filename ?? $att->filename ?? 'download';
+
+		return response()->streamDownload(function () use ($att) {
+			echo Storage::disk('public')->get($att->path);
+		}, $filename, [
+			'Content-Type' => $mime,
+			'Content-Disposition' => 'attachment; filename="' . addslashes($filename) . '"',
+		]);
 	}
 }

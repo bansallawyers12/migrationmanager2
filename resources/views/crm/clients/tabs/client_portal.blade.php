@@ -555,8 +555,19 @@
                                                 <div class="whatsapp-chat-messages" id="whatsapp-chat-messages">
                                                     <!-- Messages will be inserted here -->
                                                 </div>
+                                                <!-- WhatsApp-style document preview (shows when file selected) -->
+                                                <div class="document-preview-panel" id="document-preview-panel" style="display:none">
+                                                    <div class="document-preview-header">
+                                                        <button type="button" id="document-preview-close" class="document-preview-close" aria-label="Close">&times;</button>
+                                                        <div class="document-preview-info">
+                                                            <span class="document-preview-filename" id="document-preview-filename"></span>
+                                                            <span class="document-preview-meta" id="document-preview-meta"></span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="document-preview-content" id="document-preview-content"></div>
+                                                </div>
                                                 <div class="whatsapp-chat-input-container" id="whatsapp-chat-input-container">
-                                                    <div class="chat-input-wrapper">
+                                                    <div class="chat-input-row">
                                                         <div class="chat-input-actions-left">
                                                             <button type="button" id="attach-file-btn" class="chat-action-btn" title="Attach file">
                                                                 <i class="fas fa-plus"></i>
@@ -571,12 +582,17 @@
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        <textarea id="message-input" class="message-input" placeholder="Type a message..." rows="1"></textarea>
+                                                        <textarea id="message-input" class="message-input" placeholder="Type a message" rows="1"></textarea>
                                                         <button id="send-message-btn" class="send-message-btn" title="Send message">
                                                             <i class="fas fa-paper-plane"></i>
                                                         </button>
                                                     </div>
-                                                    <div id="attachment-preview" class="attachment-preview" style="display:none"></div>
+                                                    <div class="attachment-thumbnails-row" id="attachment-thumbnails-row" style="display:none">
+                                                        <div class="attachment-thumbnails" id="attachment-thumbnails"></div>
+                                                        <button type="button" id="add-more-attach-btn" class="chat-action-btn add-more-attach-btn" title="Add more">
+                                                            <i class="fas fa-plus"></i>
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1616,7 +1632,7 @@
     flex-shrink: 0;
 }
 
-.chat-input-wrapper {
+.chat-input-row {
     display: flex;
     align-items: flex-end;
     gap: 8px;
@@ -1624,6 +1640,163 @@
     border-radius: 21px;
     padding: 8px 12px;
     box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+.attachment-thumbnails-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0 0;
+    margin-top: 4px;
+}
+.attachment-thumbnails {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.attachment-thumbnail-item {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f0f2f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.attachment-thumbnail-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.attachment-thumbnail-item.doc {
+    color: #667781;
+    font-size: 20px;
+}
+.attachment-thumbnails .attachment-thumbnail-item {
+    width: 48px;
+    height: 48px;
+    font-size: 18px;
+    cursor: pointer;
+}
+.attachment-thumbnails .attachment-thumbnail-item.active {
+    border: 2px solid #25d366;
+}
+.attachment-thumbnail-item .thumb-check {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: #25d366;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 10px;
+}
+.attachment-thumbnail-item .thumb-remove {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    z-index: 2;
+    width: 16px;
+    height: 16px;
+    background: rgba(0,0,0,0.5);
+    border-radius: 50%;
+    border: none;
+    color: #fff;
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+.add-more-attach-btn {
+    width: 48px;
+    height: 48px;
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    color: #667781;
+}
+
+/* WhatsApp-style document preview panel */
+.document-preview-panel {
+    flex-shrink: 0;
+    background: #fff;
+    border-top: 1px solid #e9edef;
+    height: 420px;
+    min-height: 360px;
+    max-height: 55vh;
+    display: flex;
+    flex-direction: column;
+}
+.document-preview-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid #e9edef;
+    background: #f0f2f5;
+}
+.document-preview-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    margin-right: 12px;
+    font-size: 22px;
+    color: #667781;
+    line-height: 1;
+}
+.document-preview-close:hover {
+    color: #111;
+}
+.document-preview-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+.document-preview-filename {
+    font-size: 14px;
+    font-weight: 500;
+    color: #111b21;
+}
+.document-preview-meta {
+    font-size: 12px;
+    color: #667781;
+}
+.document-preview-content {
+    flex: 1;
+    min-height: 320px;
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e5ddd5;
+}
+.document-preview-content img {
+    max-width: 100%;
+    max-height: 380px;
+    object-fit: contain;
+}
+.document-preview-content object,
+.document-preview-content embed {
+    width: 100%;
+    min-height: 350px;
+    height: 380px;
+}
+.document-preview-content .doc-placeholder {
+    padding: 40px;
+    text-align: center;
+    color: #667781;
+}
+.document-preview-content .doc-placeholder i {
+    font-size: 48px;
+    margin-bottom: 12px;
+    display: block;
 }
 
 .chat-input-actions-left {
@@ -1698,7 +1871,8 @@
     border-top: 1px solid #eee;
 }
 
-.attachment-preview-item {
+.attachment-preview-item,
+.attachment-thumbnail-item {
     position: relative;
     width: 60px;
     height: 60px;
@@ -1707,13 +1881,15 @@
     background: #f0f2f5;
 }
 
-.attachment-preview-item img {
+.attachment-preview-item img,
+.attachment-thumbnail-item img {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-.attachment-preview-item.doc {
+.attachment-preview-item.doc,
+.attachment-thumbnail-item.doc {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1750,21 +1926,69 @@
 }
 
 .message-attachment-doc {
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    background: #f0f2f5;
+    gap: 12px;
+    padding: 12px 14px;
+    background: #fff;
     border-radius: 8px;
-    margin-top: 4px;
+    margin-top: 8px;
     color: #111;
     text-decoration: none;
-    font-size: 13px;
-    max-width: 200px;
+    font-size: 14px;
+    max-width: 280px;
+    border: 1px solid #e9edef;
+    cursor: pointer;
+    transition: background 0.2s;
 }
 
 .message-attachment-doc:hover {
-    background: #e4e6eb;
+    background: #f5f6f6;
+}
+
+.message-attachment-doc .doc-icon-pdf {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    background: #e74c3c;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.message-attachment-doc .doc-icon-generic {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    background: #f0f2f5;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #667781;
+    font-size: 22px;
+}
+
+.message-attachment-doc .doc-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.message-attachment-doc .doc-filename {
+    font-weight: 600;
+    color: #111b21;
+    word-break: break-word;
+    line-height: 1.3;
+}
+
+.message-attachment-doc .doc-meta {
+    font-size: 12px;
+    color: #667781;
+    margin-top: 2px;
 }
 
 .message-input {
@@ -3755,10 +3979,33 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (att.url) {
                 const link = document.createElement('a');
                 link.href = att.url;
+                link.download = att.filename || 'document';
                 link.target = '_blank';
                 link.rel = 'noopener';
                 link.className = 'message-attachment-doc';
-                link.innerHTML = '<i class="fas fa-file-alt"></i> ' + (att.filename || 'Document');
+                const isPdf = (att.filename || '').toLowerCase().endsWith('.pdf') || att.type === 'document';
+                const iconDiv = document.createElement('div');
+                iconDiv.className = isPdf ? 'doc-icon-pdf' : 'doc-icon-generic';
+                iconDiv.textContent = isPdf ? 'PDF' : '';
+                if (!isPdf) {
+                    const icon = document.createElement('i');
+                    icon.className = 'fas fa-file-alt';
+                    iconDiv.appendChild(icon);
+                }
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'doc-info';
+                const nameEl = document.createElement('div');
+                nameEl.className = 'doc-filename';
+                nameEl.textContent = att.filename || 'Document';
+                const metaEl = document.createElement('div');
+                metaEl.className = 'doc-meta';
+                const ext = (att.filename || '').split('.').pop().toUpperCase() || 'DOC';
+                const sizeStr = att.size ? formatFileSize(att.size) : '';
+                metaEl.textContent = (isPdf ? '1 page • ' : '') + ext + (sizeStr ? ' • ' + sizeStr : '');
+                infoDiv.appendChild(nameEl);
+                infoDiv.appendChild(metaEl);
+                link.appendChild(iconDiv);
+                link.appendChild(infoDiv);
                 messageContent.appendChild(link);
             }
         });
@@ -3844,6 +4091,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 chevron.setAttribute('data-message-info', JSON.stringify(data));
             } catch (e) {}
         }
+    }
+    
+    // Format file size (bytes to kB, MB)
+    function formatFileSize(bytes) {
+        if (!bytes || bytes === 0) return '';
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' kB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
     }
     
     // Format message time
@@ -3973,7 +4228,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         document.addEventListener('click', function(e) {
-            if (!emojiPickerPopover.contains(e.target) && e.target !== emojiPickerBtn) {
+            if (!emojiPickerPopover.contains(e.target) && !emojiPickerBtn.contains(e.target)) {
                 emojiPickerPopover.style.display = 'none';
             }
         });
@@ -3982,7 +4237,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Attachment button and file handling
     const attachFileBtn = document.getElementById('attach-file-btn');
     const messageAttachmentsInput = document.getElementById('message-attachments');
-    const attachmentPreviewEl = document.getElementById('attachment-preview');
     let pendingFiles = [];
     
     if (attachFileBtn && messageAttachmentsInput) {
@@ -3996,35 +4250,95 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function renderAttachmentPreview() {
-        if (!attachmentPreviewEl) return;
-        attachmentPreviewEl.innerHTML = '';
+        const thumbnailsEl = document.getElementById('attachment-thumbnails');
+        const thumbnailsRow = document.getElementById('attachment-thumbnails-row');
+        const docPreviewPanel = document.getElementById('document-preview-panel');
+        const docPreviewFilename = document.getElementById('document-preview-filename');
+        const docPreviewMeta = document.getElementById('document-preview-meta');
+        const docPreviewContent = document.getElementById('document-preview-content');
+        
         if (pendingFiles.length === 0) {
-            attachmentPreviewEl.style.display = 'none';
+            if (thumbnailsRow) thumbnailsRow.style.display = 'none';
+            if (docPreviewPanel) docPreviewPanel.style.display = 'none';
             return;
         }
-        attachmentPreviewEl.style.display = 'flex';
-        pendingFiles.forEach(function(file, idx) {
-            const item = document.createElement('div');
-            item.className = 'attachment-preview-item' + (file.type.startsWith('image/') ? '' : ' doc');
-            const removeBtn = document.createElement('button');
-            removeBtn.type = 'button';
-            removeBtn.className = 'remove-attachment';
-            removeBtn.innerHTML = '×';
-            removeBtn.addEventListener('click', function() {
-                pendingFiles.splice(idx, 1);
-                renderAttachmentPreview();
+        
+        if (thumbnailsRow) thumbnailsRow.style.display = 'flex';
+        if (thumbnailsEl) {
+            thumbnailsEl.innerHTML = '';
+            pendingFiles.forEach(function(file, idx) {
+                const item = document.createElement('div');
+                item.className = 'attachment-thumbnail-item' + (file.type.startsWith('image/') ? '' : ' doc') + (idx === 0 ? ' active' : '');
+                item.addEventListener('click', function(e) {
+                    if (e.target.closest('.thumb-remove')) return;
+                    if (idx === 0) return;
+                    const f = pendingFiles.splice(idx, 1)[0];
+                    pendingFiles.unshift(f);
+                    renderAttachmentPreview();
+                });
+                const check = document.createElement('span');
+                check.className = 'thumb-check';
+                check.innerHTML = '&#10003;';
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'thumb-remove';
+                removeBtn.innerHTML = '×';
+                removeBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    pendingFiles.splice(idx, 1);
+                    renderAttachmentPreview();
+                });
+                if (file.type.startsWith('image/')) {
+                    const img = document.createElement('img');
+                    img.src = URL.createObjectURL(file);
+                    item.appendChild(img);
+                } else {
+                    const icon = document.createElement('i');
+                    icon.className = file.type === 'application/pdf' ? 'fas fa-file-pdf' : 'fas fa-file-alt';
+                    item.appendChild(icon);
+                }
+                item.appendChild(check);
+                item.appendChild(removeBtn);
+                thumbnailsEl.appendChild(item);
             });
+        }
+        
+        if (docPreviewPanel && docPreviewFilename && docPreviewMeta && docPreviewContent && pendingFiles.length > 0) {
+            docPreviewPanel.style.display = 'flex';
+            const file = pendingFiles[0];
+            docPreviewFilename.textContent = file.name || 'Document';
+            const isPdf = file.type === 'application/pdf';
+            docPreviewMeta.textContent = isPdf ? '1 page' : (file.type.startsWith('image/') ? 'Image' : 'Document');
+            docPreviewContent.innerHTML = '';
             if (file.type.startsWith('image/')) {
                 const img = document.createElement('img');
                 img.src = URL.createObjectURL(file);
-                item.appendChild(img);
+                docPreviewContent.appendChild(img);
+            } else if (isPdf) {
+                const obj = document.createElement('object');
+                obj.data = URL.createObjectURL(file);
+                obj.type = 'application/pdf';
+                obj.style.width = '100%';
+                obj.style.height = '380px';
+                docPreviewContent.appendChild(obj);
             } else {
-                item.innerHTML = '<i class="fas fa-file-alt"></i>';
+                const div = document.createElement('div');
+                div.className = 'doc-placeholder';
+                div.innerHTML = '<i class="fas fa-file-alt"></i><span>' + (file.name || 'Document') + '</span>';
+                docPreviewContent.appendChild(div);
             }
-            item.appendChild(removeBtn);
-            attachmentPreviewEl.appendChild(item);
-        });
+        }
     }
+    
+    document.getElementById('document-preview-close')?.addEventListener('click', function() {
+        pendingFiles = [];
+        renderAttachmentPreview();
+        messageAttachmentsInput.value = '';
+    });
+    
+    document.getElementById('add-more-attach-btn')?.addEventListener('click', function() {
+        messageAttachmentsInput?.click();
+    });
     
     // Send message functionality
     const messageInput = document.getElementById('message-input');
@@ -4093,8 +4407,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 input.value = '';
                 input.style.height = 'auto';
                 if (typeof pendingFiles !== 'undefined') pendingFiles = [];
-                const previewEl = document.getElementById('attachment-preview');
-                if (previewEl) { previewEl.innerHTML = ''; previewEl.style.display = 'none'; }
+                renderAttachmentPreview();
                 
                 // Immediately add the message to the UI (optimistic update)
                 if (data.data && data.data.message) {

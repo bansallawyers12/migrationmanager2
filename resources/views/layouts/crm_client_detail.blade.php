@@ -2651,13 +2651,26 @@
                 const userId = document.querySelector('meta[name="current-user-id"]')?.content;
                 if (userId) {
                     console.log('✅ Subscribing to office visit notifications for user:', userId);
-                    window.Echo.private(`user.${userId}`)
-                        .listen('.OfficeVisitNotificationCreated', (e) => {
-                            console.log('📬 Received office visit notification:', e);
-                            if (e.notification) {
-                                showTeamsNotification(e.notification);
+                    const userChannel = window.Echo.private(`user.${userId}`);
+                    userChannel.listen('.OfficeVisitNotificationCreated', (e) => {
+                        console.log('📬 Received office visit notification:', e);
+                        if (e.notification) {
+                            showTeamsNotification(e.notification);
+                        }
+                    });
+                    // Live update notification bell count when new notifications arrive (e.g. from messaging APIs)
+                    userChannel.listen('.notification.count.updated', (e) => {
+                        try {
+                            var count = e.unread_count !== undefined ? parseInt(e.unread_count, 10) : 0;
+                            var el = document.getElementById('countbell_notification');
+                            if (el) {
+                                el.textContent = count > 0 ? count : '';
+                                el.style.display = count > 0 ? 'inline' : 'none';
                             }
-                        });
+                        } catch (err) {
+                            console.warn('Notification count update error:', err);
+                        }
+                    });
                 } else {
                     console.warn('⚠️ User ID not found, cannot subscribe to office visit notifications');
                 }
