@@ -1489,6 +1489,28 @@ public function getpartnerbranch(Request $request){
 
 	public function allnotification(Request $request){
 		$lists = \App\Models\Notification::where('receiver_id', Auth::user()->id)->orderby('created_at','DESC')->paginate(20);
+		// Fix URLs for notifications that point to non-existent or wrong routes
+		$lists->getCollection()->transform(function ($notification) {
+			// Message notifications: /messages (404) -> client detail + application tab
+			if ($notification->notification_type === 'message' && ($notification->url === '/messages' || str_starts_with($notification->url ?? '', '/messages'))) {
+				$clientMatter = \DB::table('client_matters')->where('id', $notification->module_id)->first();
+				if ($clientMatter) {
+					$path = '/clients/detail/' . base64_encode(convert_uuencode($clientMatter->client_id));
+					if (!empty($clientMatter->client_unique_matter_no)) {
+						$path .= '/' . $clientMatter->client_unique_matter_no;
+					}
+					$notification->url = url($path . '/application');
+				}
+			}
+			// Broadcast notifications: /broadcasts/{uuid} (404) -> manage page with batch param
+			if ($notification->notification_type === 'broadcast' && str_starts_with($notification->url ?? '', '/broadcasts/')) {
+				$batchUuid = \Illuminate\Support\Str::afterLast($notification->url ?? '', '/');
+				if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $batchUuid)) {
+					$notification->url = url('/notifications/broadcasts/manage?batch=' . urlencode($batchUuid));
+				}
+			}
+			return $notification;
+		});
 		return view('crm.notifications', compact(['lists']));
 	}
 
