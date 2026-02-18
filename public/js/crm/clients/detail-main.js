@@ -5757,11 +5757,21 @@ Bansal Immigration`;
 
                     $('.custom-error-msg').html('');
 
-                    let errors = xhr.responseJSON.errors;
+                    if (xhr.responseJSON && xhr.responseJSON.errors) {
 
-                    for (let field in errors) {
+                        let errors = xhr.responseJSON.errors;
 
-                        $('.custom-error-msg').append('<p class="text-red-600">' + errors[field][0] + '</p>');
+                        for (let field in errors) {
+
+                            $('.custom-error-msg').append('<p class="text-red-600">' + errors[field][0] + '</p>');
+
+                        }
+
+                    } else {
+
+                        var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'An error occurred while creating Form 956. Please try again.';
+
+                        $('.custom-error-msg').append('<p class="text-red-600">' + msg + '</p>');
 
                     }
 

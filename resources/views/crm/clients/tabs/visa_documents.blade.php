@@ -171,16 +171,19 @@
                                                 <?php foreach ($documents as $visaKey => $fetch): ?>
                                                     <?php
                                                     $admin = \App\Models\Staff::where('id', $fetch->user_id)->first();
-                                                    
-                                                    // Ensure $fileUrl is always a valid full URL (for regular documents)
-                                                    if (!empty($fetch->myfile) && strpos($fetch->myfile, 'http') === 0) {
-                                                        // Already a full URL
-                                                        $fileUrl = $fetch->myfile;
-                                                    } else {
-                                                        // Legacy format or relative path - construct full URL
-                                                        $fileUrl = 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/' . $fetchedData->id . '/visa/' . ($fetch->myfile ?? '');
-                                                    }
                                                     $isForm956 = !empty($fetch->form956_id);
+
+                                                    // Build file URL for normal docs; Form 956 uses forms.preview/forms.pdf
+                                                    if ($isForm956) {
+                                                        $fileUrl = url()->route('forms.preview', $fetch->form956_id);
+                                                        $downloadUrl = url()->route('forms.pdf', $fetch->form956_id);
+                                                    } elseif (!empty($fetch->myfile) && strpos($fetch->myfile, 'http') === 0) {
+                                                        $fileUrl = $fetch->myfile;
+                                                        $downloadUrl = $fetch->myfile;
+                                                    } else {
+                                                        $fileUrl = 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/' . $fetchedData->id . '/visa/' . ($fetch->myfile ?? '');
+                                                        $downloadUrl = $fileUrl;
+                                                    }
                                                     ?>
                                                     <tr class="drow" data-matterid="<?= $fetch->client_matter_id ?>" data-catid="<?= $fetch->folder_name ?>" id="id_<?= $fetch->id ?>">
                                                         <td style="white-space: initial;">
@@ -199,17 +202,41 @@
                                                             </div>
                                                         </td>
                                                         <td style="white-space: initial;">
-                                                            <?php if ($isForm956): ?>
-                                                                <div class="doc-row" title="Form 956 - View or Download PDF">
-                                                                    <a title="Preview PDF" href="{{ route('forms.preview', $fetch->form956_id) }}" target="_blank"><i class="fas fa-eye"></i></a>
-                                                                    <span class="mx-2">|</span>
-                                                                    <a title="Download PDF" href="{{ route('forms.pdf', $fetch->form956_id) }}"><i class="fas fa-download"></i></a>
-                                                                </div>
-                                                            <?php elseif ($fetch->file_name): ?>
-                                                                <div data-id="<?= $fetch->id ?>" data-name="<?= htmlspecialchars($fetch->file_name) ?>" class="doc-row" title="Uploaded by: <?= htmlspecialchars($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" oncontextmenu="showVisaFileContextMenu(event, <?= $fetch->id ?>, '<?= htmlspecialchars($fetch->filetype) ?>', '<?= $fileUrl ?>', '<?= $id ?>', '<?= $fetch->status ?? 'draft' ?>'); return false;">
-                                                                    <a href="javascript:void(0);" onclick="previewFile('<?= $fetch->filetype ?>','<?= $fileUrl ?>','preview-container-migdocumnetlist')">
-                                                                        <i class="fas fa-file-image"></i> <span><?= htmlspecialchars($fetch->file_name . '.' . $fetch->filetype) ?></span>
+                                                            <?php if ($fetch->file_name): ?>
+                                                                <?php
+                                                                $displayFileName = $fetch->file_name . '.' . ($fetch->filetype ?? '');
+                                                                $fileUrlJs = addslashes($fileUrl);
+                                                                $downloadUrlJs = addslashes($downloadUrl ?? $fileUrl);
+                                                                ?>
+                                                                <div data-id="<?= $fetch->id ?>" data-name="<?= htmlspecialchars($fetch->file_name) ?>" class="doc-row" title="Uploaded by: <?= htmlspecialchars($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" oncontextmenu="showVisaFileContextMenu(event, <?= $fetch->id ?>, '<?= htmlspecialchars($fetch->filetype ?? 'pdf') ?>', '<?= $fileUrlJs ?>', '<?= $id ?>', '<?= $fetch->status ?? 'draft' ?>'); return false;">
+                                                                    <a href="javascript:void(0);" onclick="previewFile('<?= $fetch->filetype ?? 'pdf' ?>','<?= $fileUrlJs ?>','preview-container-migdocumnetlist')">
+                                                                        <i class="fas fa-file-image"></i> <span><?= htmlspecialchars($displayFileName) ?></span>
                                                                     </a>
+                                                                </div>
+                                                            <?php elseif ($isForm956): ?>
+                                                                <div class="form956-download-upload" style="display: flex; flex-direction: column; gap: 10px;">
+                                                                    <a href="<?= e($downloadUrl) ?>" class="btn btn-sm btn-outline-primary form956-download-btn" style="align-self: flex-start;" data-download-url="<?= e($downloadUrl) ?>" data-filename="Form956.pdf">
+                                                                        <i class="fas fa-download mr-1"></i> Download Form 956 PDF
+                                                                    </a>
+                                                                    <p class="text-muted mb-0" style="font-size: 12px;">Download, check, update, then upload your completed form below.</p>
+                                                                    <div class="migration_upload_document" style="display: inline-block;">
+                                                                        <form method="POST" enctype="multipart/form-data" id="mig_upload_form_<?= $fetch->id ?>">
+                                                                            @csrf
+                                                                            <input type="hidden" name="clientid" value="<?= $fetchedData->id ?>">
+                                                                            <input type="hidden" name="client_matter_id" value="<?= $fetch->client_matter_id ?? '' ?>">
+                                                                            <input type="hidden" name="fileid" value="<?= $fetch->id ?>">
+                                                                            <input type="hidden" name="type" value="client">
+                                                                            <input type="hidden" name="doctype" value="visa">
+                                                                            <input type="hidden" name="doccategory" value="<?= $catVal->title ?>">
+                                                                            <div class="document-drag-drop-zone visa-doc-drag-zone" data-fileid="<?= $fetch->id ?>" data-doccategory="<?= $id ?>" data-formid="mig_upload_form_<?= $fetch->id ?>">
+                                                                                <div class="drag-zone-inner">
+                                                                                    <i class="fas fa-cloud-upload-alt"></i>
+                                                                                    <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
+                                                                                </div>
+                                                                            </div>
+                                                                            <input class="migdocupload d-none" data-fileid="<?= $fetch->id ?>" data-doccategory="<?= $id ?>" type="file" name="document_upload" style="display: none;"/>
+                                                                        </form>
+                                                                    </div>
                                                                 </div>
                                                             <?php else: ?>
                                                                 <div class="migration_upload_document" style="display: inline-block;">
@@ -221,35 +248,22 @@
                                                                         <input type="hidden" name="type" value="client">
                                                                         <input type="hidden" name="doctype" value="visa">
                                                                         <input type="hidden" name="doccategory" value="<?= $catVal->title ?>">
-                                                                        
-                                                                        <!-- Drag and Drop Zone -->
-                                                                        <div class="document-drag-drop-zone visa-doc-drag-zone" 
-                                                                             data-fileid="<?= $fetch->id ?>" 
-                                                                             data-doccategory="<?= $id ?>"
-                                                                             data-formid="mig_upload_form_<?= $fetch->id ?>">
+                                                                        <div class="document-drag-drop-zone visa-doc-drag-zone" data-fileid="<?= $fetch->id ?>" data-doccategory="<?= $id ?>" data-formid="mig_upload_form_<?= $fetch->id ?>">
                                                                             <div class="drag-zone-inner">
                                                                                 <i class="fas fa-cloud-upload-alt"></i>
                                                                                 <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
                                                                             </div>
                                                                         </div>
-                                                                        
-                                                                        <!-- Keep existing file input (hidden) -->
-                                                                        <input class="migdocupload d-none" 
-                                                                               data-fileid="<?= $fetch->id ?>" 
-                                                                               data-doccategory="<?= $id ?>" 
-                                                                               type="file" 
-                                                                               name="document_upload" 
-                                                                               style="display: none;"/>
+                                                                        <input class="migdocupload d-none" data-fileid="<?= $fetch->id ?>" data-doccategory="<?= $id ?>" type="file" name="document_upload" style="display: none;"/>
                                                                     </form>
                                                                 </div>
                                                             <?php endif; ?>
                                                         </td>
                                                         <td>
-                                                            <!-- Hidden elements for context menu actions -->
                                                             <?php if ($fetch->myfile): ?>
                                                                 <a class="renamechecklist" data-id="<?= $fetch->id ?>" href="javascript:;" style="display: none;"></a>
                                                                 <a class="renamedoc" data-id="<?= $fetch->id ?>" href="javascript:;" style="display: none;"></a>
-                                                                <a class="download-file" data-filelink="<?= $fileUrl ?>" data-filename="<?= $fetch->myfile_key ?: basename($fetch->myfile) ?>" data-id="<?= $fetch->id ?>" href="#" style="display: none;"></a>
+                                                                <a class="download-file" data-filelink="<?= e($downloadUrl ?? $fileUrl) ?>" data-filename="<?= e($fetch->myfile_key ?: basename($fetch->myfile ?? '')) ?>" data-id="<?= $fetch->id ?>" href="#" style="display: none;"></a>
                                                                 <a class="notuseddoc" data-id="<?= $fetch->id ?>" data-doctype="visa" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
                                                             <?php endif; ?>
                                                         </td>
@@ -649,6 +663,34 @@
                     if (e.key === 'Escape') {
                         hideVisaContextMenu();
                     }
+                });
+
+                // Form 956: Force PDF download (fetch as blob to ensure download, not inline display)
+                $(document).on('click', '.form956-download-btn', function(e) {
+                    e.preventDefault();
+                    var $btn = $(this);
+                    var url = $btn.data('download-url');
+                    var filename = $btn.data('filename') || 'Form956.pdf';
+                    if (!url) return;
+                    $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Downloading...');
+                    fetch(url, { credentials: 'same-origin' })
+                        .then(function(r) { return r.blob(); })
+                        .then(function(blob) {
+                            var a = document.createElement('a');
+                            a.href = URL.createObjectURL(blob);
+                            a.download = filename;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(a.href);
+                        })
+                        .catch(function() {
+                            // Fallback: open in new tab
+                            window.open(url, '_blank');
+                        })
+                        .finally(function() {
+                            $btn.prop('disabled', false).html('<i class="fas fa-download mr-1"></i> Download Form 956 PDF');
+                        });
                 });
             </script>
 

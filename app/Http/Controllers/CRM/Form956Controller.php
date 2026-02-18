@@ -75,8 +75,13 @@ class Form956Controller extends Controller
             // Create the form
             $form = Form956::create($validated);
 
-            // When created from visa document page (folder_name provided), also create a visa Document checklist entry
+            // When created from visa document page (folder_name provided), create only the checklist name.
+            // User downloads the form, checks/updates it, then uploads to this checklist.
             if ($folderName && $form->client_matter_id) {
+                $form->load(['client', 'agent']);
+                $agentName = $form->agent ? trim(($form->agent->first_name ?? '') . ' ' . ($form->agent->last_name ?? '')) : 'Agent';
+                $agentNameDisplay = $agentName ?: 'Agent';
+
                 $doc = new Document;
                 $doc->user_id = Auth::user()->id;
                 $doc->client_id = $form->client_id;
@@ -85,7 +90,7 @@ class Form956Controller extends Controller
                 $doc->type = 'client';
                 $doc->doc_type = 'visa';
                 $doc->folder_name = $folderName;
-                $doc->checklist = 'Form 956';
+                $doc->checklist = '956 Form_ ' . $agentNameDisplay;
                 $doc->signer_count = 1;
                 $doc->save();
             }
@@ -329,7 +334,8 @@ class Form956Controller extends Controller
 
             $pdf->fillForm($formData)->needAppearances();
 
-            $filename = 'form956_' . $form->client->family_name . '_' . date('Y-m-d') . '.pdf';
+            $familyName = $form->client->family_name ?? $form->client->last_name ?? 'client';
+            $filename = 'form956_' . $familyName . '_' . date('Y-m-d') . '.pdf';
             return response()->streamDownload(
                 fn () => $pdf->saveAs('php://output'),
                 $filename
