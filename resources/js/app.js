@@ -14,25 +14,60 @@ Alpine.start();
 
 /*
 |--------------------------------------------------------------------------
-| Laravel Echo + Reverb (PRODUCTION SAFE)
+| Notification Bell Update (always available - used by Echo and client_portal)
 |--------------------------------------------------------------------------
-| - Reverb uses Pusher JS protocol
-| - Browser connects via wss (443)
-| - Nginx proxies to Reverb (8080)
+*/
+window.updateNotificationBell = function (count, options = {}) {
+    const el = document.getElementById('countbell_notification');
+    if (!el) return;
+    const prevCount = parseInt(String(el.textContent || '0'), 10) || 0;
+    const newCount = typeof count === 'number' ? count : parseInt(String(count), 10) || 0;
+    el.textContent = newCount > 0 ? String(newCount) : '';
+    el.style.display = newCount > 0 ? 'inline' : 'none';
+
+    const parent = el.closest('.notification-toggle') || el.parentElement;
+    if (parent) {
+        parent.classList.add('notification-bell-flash');
+        setTimeout(function () { parent.classList.remove('notification-bell-flash'); }, 600);
+    }
+    if (options.showToast !== false && newCount > prevCount) {
+        const izi = typeof window !== 'undefined' && window.iziToast;
+        if (izi && izi.show) {
+            izi.show({
+                title: 'Notification',
+                message: newCount === 1 ? 'You have a new notification' : 'You have ' + (newCount - prevCount) + ' new notification(s)',
+                position: 'topRight',
+                color: 'blue',
+                timeout: 3000
+            });
+        }
+    }
+};
+
+/*
+|--------------------------------------------------------------------------
+| Laravel Echo + Reverb
+|--------------------------------------------------------------------------
+| - Local: ws://localhost:8080 (REVERB_SCHEME=http, REVERB_PORT=8080)
+| - Production: wss://host:443 (REVERB_SCHEME=https, Nginx proxies to Reverb)
 */
 
 if (import.meta.env.VITE_REVERB_APP_KEY) {
     try {
+        const useTLS = import.meta.env.VITE_REVERB_SCHEME === 'https';
+        const port = parseInt(import.meta.env.VITE_REVERB_PORT, 10);
+        const wsPort = !isNaN(port) ? port : (useTLS ? 443 : 8080);
+
         window.Echo = new Echo({
             broadcaster: 'reverb',
             key: import.meta.env.VITE_REVERB_APP_KEY,
 
-            wsHost: import.meta.env.VITE_REVERB_HOST,
-            wsPort: 443,
-            wssPort: 443,
+            wsHost: import.meta.env.VITE_REVERB_HOST || 'localhost',
+            wsPort,
+            wssPort: wsPort,
 
-            forceTLS: true,
-            enabledTransports: ['wss'],
+            forceTLS: useTLS,
+            enabledTransports: useTLS ? ['wss'] : ['ws', 'wss'],
 
             authEndpoint: '/broadcasting/auth',
             auth: {
@@ -44,7 +79,21 @@ if (import.meta.env.VITE_REVERB_APP_KEY) {
             },
         });
 
-        console.log('✅ Laravel Echo initialized with Reverb');
+        console.log('✅ Laravel Echo initialized with Reverb', useTLS ? '(wss)' : '(ws)');
+
+        // Subscribe to notification count updates (works whether Messages tab is open or not)
+        const userId = document.querySelector('meta[name="current-user-id"]')?.content;
+        if (userId) {
+            const userChannel = window.Echo.private('user.' + userId);
+            userChannel.listen('.notification.count.updated', function (e) {
+                try {
+                    const count = e.unread_count !== undefined ? parseInt(e.unread_count, 10) : 0;
+                    window.updateNotificationBell(count, { showToast: true });
+                } catch (err) {
+                    console.warn('Notification count update error:', err);
+                }
+            });
+        }
     } catch (error) {
         console.warn('⚠️ Failed to initialize Laravel Echo:', error);
         window.EchoDisabled = true;

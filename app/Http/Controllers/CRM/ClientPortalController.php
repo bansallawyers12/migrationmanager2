@@ -3176,12 +3176,20 @@ class ClientPortalController extends Controller
 					'seen' => 0
 				]);
 
-				// Broadcast notification count update for live bell badge
+				// Broadcast notification count update for live bell badge (client receives new notification)
 				try {
-					$count = DB::table('notifications')->where('receiver_id', $clientId)->where('receiver_status', 0)->count();
-					broadcast(new \App\Events\NotificationCountUpdated($clientId, $count));
+					$clientCount = DB::table('notifications')->where('receiver_id', $clientId)->where('receiver_status', 0)->count();
+					broadcast(new \App\Events\NotificationCountUpdated($clientId, $clientCount));
 				} catch (\Exception $e) {
 					Log::warning('Failed to broadcast notification count to client', ['client_id' => $clientId, 'error' => $e->getMessage()]);
+				}
+
+				// Also broadcast to sender (agent) so bell flashes with current count as send feedback
+				try {
+					$senderCount = DB::table('notifications')->where('receiver_id', $senderId)->where('receiver_status', 0)->count();
+					broadcast(new \App\Events\NotificationCountUpdated($senderId, $senderCount));
+				} catch (\Exception $e) {
+					Log::warning('Failed to broadcast notification count to sender', ['sender_id' => $senderId, 'error' => $e->getMessage()]);
 				}
 
 				// Broadcast message via Laravel Reverb (sender/sender_name for frontend display)

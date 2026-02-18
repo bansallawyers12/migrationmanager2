@@ -1489,6 +1489,12 @@
         }
         .icon-btn:hover { background: rgba(0,123,255,.1) !important; color: #0d6efd !important; }
         .icon-btn .countbell { position: relative !important; top: -10px !important; left: -6px !important; background: #1f1655 !important; color:#fff !important; border-radius: 10px !important; padding: 0 5px !important; font-size: 11px !important; }
+        /* Flash animation when notification count updates */
+        .notification-bell-flash { animation: notificationBellFlash 0.6s ease-out !important; }
+        @keyframes notificationBellFlash {
+            0% { background: rgba(13, 110, 253, 0.4) !important; transform: scale(1.05); }
+            100% { background: transparent !important; transform: scale(1); }
+        }
         .topbar-center .topbar-search { 
             display: flex !important; align-items: center !important; gap: 8px !important; 
             padding: 8px 12px !important; border: 1px solid #e9ecef !important; border-radius: 10px !important; 
@@ -2658,19 +2664,7 @@
                             showTeamsNotification(e.notification);
                         }
                     });
-                    // Live update notification bell count when new notifications arrive (e.g. from messaging APIs)
-                    userChannel.listen('.notification.count.updated', (e) => {
-                        try {
-                            var count = e.unread_count !== undefined ? parseInt(e.unread_count, 10) : 0;
-                            var el = document.getElementById('countbell_notification');
-                            if (el) {
-                                el.textContent = count > 0 ? count : '';
-                                el.style.display = count > 0 ? 'inline' : 'none';
-                            }
-                        } catch (err) {
-                            console.warn('Notification count update error:', err);
-                        }
-                    });
+                    // Notification bell count is handled in app.js (immediate subscription when Echo loads)
                 } else {
                     console.warn('⚠️ User ID not found, cannot subscribe to office visit notifications');
                 }
@@ -2850,6 +2844,28 @@
 
     @stack('scripts')
     
+    {{-- Define updateNotificationBell before Vite so it's available when Echo/client_portal receive events --}}
+    <script>
+    (function() {
+        window.updateNotificationBell = function(count, options) {
+            options = options || {};
+            var el = document.getElementById('countbell_notification');
+            if (!el) return;
+            var prevCount = parseInt(String(el.textContent || '0'), 10) || 0;
+            var newCount = (typeof count === 'number') ? count : (parseInt(String(count), 10) || 0);
+            el.textContent = newCount > 0 ? String(newCount) : '';
+            el.style.display = newCount > 0 ? 'inline' : 'none';
+            var parent = el.closest('.notification-toggle') || el.parentElement;
+            if (parent) {
+                parent.classList.add('notification-bell-flash');
+                setTimeout(function() { parent.classList.remove('notification-bell-flash'); }, 600);
+            }
+            if (options.showToast !== false && newCount > prevCount && typeof iziToast !== 'undefined' && iziToast.show) {
+                iziToast.show({ title: 'Notification', message: newCount === 1 ? 'You have a new notification' : 'You have ' + (newCount - prevCount) + ' new notification(s)', position: 'topRight', color: 'blue', timeout: 3000 });
+            }
+        };
+    })();
+    </script>
     {{-- Vite: Load Laravel Echo with Reverb for real-time WebSocket notifications --}}
     {{-- Must load BEFORE broadcasts.js so window.Echo is available --}}
     @vite(['resources/js/app.js'])

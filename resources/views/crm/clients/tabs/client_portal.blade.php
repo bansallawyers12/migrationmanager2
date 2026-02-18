@@ -3904,7 +3904,25 @@ document.addEventListener('DOMContentLoaded', function() {
             subscribedChannel.bind('unread.count.updated', (data) => {
                 console.log('📊 Unread count updated:', data);
             });
-            
+
+            // Listen for notification bell count updates (uses global handler - works even when Messages tab closed)
+            subscribedChannel.bind('notification.count.updated', (data) => {
+                try {
+                    const count = data.unread_count !== undefined ? parseInt(data.unread_count, 10) : 0;
+                    if (typeof window.updateNotificationBell === 'function') {
+                        window.updateNotificationBell(count, { showToast: true });
+                    } else {
+                        const el = document.getElementById('countbell_notification');
+                        if (el) {
+                            el.textContent = count > 0 ? count : '';
+                            el.style.display = count > 0 ? 'inline' : 'none';
+                        }
+                    }
+                } catch (err) {
+                    console.warn('Notification count update error:', err);
+                }
+            });
+
         } catch (error) {
             console.error('Failed to subscribe:', error);
         }
