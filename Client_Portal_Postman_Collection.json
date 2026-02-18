@@ -2308,17 +2308,32 @@
 								"description": "Use token from login response"
 							},
 							{
-								"key": "Content-Type",
-								"value": "application/json"
-							},
-							{
 								"key": "Accept",
 								"value": "application/json"
 							}
 						],
 						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"message\": \"This is a message sent via mobile app API at {{$timestamp}}\",\n    \"client_matter_id\": 9\n}"
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "message",
+									"value": "This is a message sent via mobile app API at {{$timestamp}}",
+									"type": "text",
+									"description": "Message text (optional if attachments provided)"
+								},
+								{
+									"key": "client_matter_id",
+									"value": "9",
+									"type": "text",
+									"description": "Required: Client matter ID"
+								},
+								{
+									"key": "attachments[]",
+									"type": "file",
+									"src": [],
+									"description": "Optional: File(s) to attach (images: JPEG/PNG/GIF/WebP, docs: PDF/DOC/DOCX/XLS/XLSX/TXT/CSV, max 10MB each)"
+								}
+							]
 						},
 						"url": {
 							"raw": "{{base_url}}/messages/send",
@@ -2364,17 +2379,32 @@
 								"description": "Use admin token from admin login response"
 							},
 							{
-								"key": "Content-Type",
-								"value": "application/json"
-							},
-							{
 								"key": "Accept",
 								"value": "application/json"
 							}
 						],
 						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"message\": \"This is a direct message sent by admin at {{$timestamp}}\",\n    \"client_matter_id\": 9\n}"
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "message",
+									"value": "This is a direct message sent by admin at {{$timestamp}}",
+									"type": "text",
+									"description": "Message text (optional if attachments provided)"
+								},
+								{
+									"key": "client_matter_id",
+									"value": "9",
+									"type": "text",
+									"description": "Required: Client matter ID"
+								},
+								{
+									"key": "attachments[]",
+									"type": "file",
+									"src": [],
+									"description": "Optional: File(s) to attach (images: JPEG/PNG/GIF/WebP, docs: PDF/DOC/DOCX/XLS/XLSX/TXT/CSV, max 10MB each)"
+								}
+							]
 						},
 						"url": {
 							"raw": "{{base_url}}/messages/send",
@@ -2468,17 +2498,32 @@
 								"description": "Use admin token from admin login response"
 							},
 							{
-								"key": "Content-Type",
-								"value": "application/json"
-							},
-							{
 								"key": "Accept",
 								"value": "application/json"
 							}
 						],
 						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"message\": \"This is a message sent from web page to client at {{$timestamp}}\",\n    \"client_matter_id\": 9\n}"
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "message",
+									"value": "This is a message sent from web page to client at {{$timestamp}}",
+									"type": "text",
+									"description": "Message text (optional if attachments provided)"
+								},
+								{
+									"key": "client_matter_id",
+									"value": "9",
+									"type": "text",
+									"description": "Required: Client matter ID"
+								},
+								{
+									"key": "attachments[]",
+									"type": "file",
+									"src": [],
+									"description": "Optional: File(s) to attach (images: JPEG/PNG/GIF/WebP, docs: PDF/DOC/DOCX/XLS/XLSX/TXT/CSV, max 10MB each)"
+								}
+							]
 						},
 						"url": {
 							"raw": "{{base_url}}/messages/send-to-client",

@@ -154,13 +154,15 @@ class ClientPortalMessageController extends Controller
                     ]
                 ];
 
-                // Prepare message for broadcasting
+                // Prepare message for broadcasting (sender/sender_name as string for frontend display)
+                $senderDisplayName = $sender ? trim(($sender->first_name ?? '') . ' ' . ($sender->last_name ?? '')) : null;
                 $messageForBroadcast = [
                     'id' => $messageId,
                     'message' => $message,
-                    'sender' => $sender ? $sender->first_name . ' ' . $sender->last_name : null,
+                    'sender' => $senderDisplayName ?: 'Agent',
+                    'sender_name' => $senderDisplayName ?: 'Agent',
                     'sender_id' => $senderId,
-                    'sender_shortname' => $senderShortname,
+                    'sender_shortname' => $senderShortname ?: ($senderDisplayName ? strtoupper(substr($senderDisplayName, 0, 1)) : 'U'),
                     'recipient_ids' => $recipientIdsWithDetails,
                     'sent_at' => now()->toISOString(),
                     'client_matter_id' => $clientMatterId,
@@ -459,13 +461,15 @@ class ClientPortalMessageController extends Controller
                 // Process file attachments
                 $attachmentsForResponse = $this->processMessageAttachments($request, $messageId);
 
-                // Prepare message for broadcasting
+                // Prepare message for broadcasting (sender/sender_name as string for frontend display)
+                $senderDisplayName = $sender ? trim(($sender->first_name ?? '') . ' ' . ($sender->last_name ?? '')) : null;
                 $messageForBroadcast = [
                     'id' => $messageId,
                     'message' => $message,
-                    'sender' => $sender ? $sender->first_name . ' ' . $sender->last_name : null,
+                    'sender' => $senderDisplayName ?: 'Client',
+                    'sender_name' => $senderDisplayName ?: 'Client',
                     'sender_id' => $clientId,
-                    'sender_shortname' => $senderShortname,
+                    'sender_shortname' => $senderShortname ?: ($senderDisplayName ? strtoupper(substr($senderDisplayName, 0, 1)) : 'U'),
                     'recipient_ids' => $recipientIdsWithDetails,
                     'sent_at' => now()->toISOString(),
                     'client_matter_id' => $clientMatterId,

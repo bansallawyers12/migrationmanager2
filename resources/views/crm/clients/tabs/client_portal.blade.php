@@ -3542,6 +3542,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Store client matter ID and user info for messages (server value; fallback to dropdown)
     let clientMatterId = @json(($selectedMatter && isset($selectedMatter->id)) ? $selectedMatter->id : null);
     const currentUserId = @json(Auth::guard('admin')->id() ?? null);
+    // Web route for attachment download (session auth) - use this so click-to-download works in browser
+    const attachmentDownloadBaseUrl = '{{ url("/clients/message-attachment") }}';
     
     // Get effective client matter ID: server value or dropdown fallback (for URLs like /application/application)
     function getEffectiveClientMatterId() {
@@ -3931,22 +3933,40 @@ document.addEventListener('DOMContentLoaded', function() {
         const messageBubble = document.createElement('div');
         messageBubble.className = 'message-bubble';
         
-        // Sender info for received messages
-        if (!isSent && message.sender) {
-            const senderInfo = document.createElement('div');
-            senderInfo.className = 'message-sender-info';
-            
-            const avatar = document.createElement('div');
-            avatar.className = 'message-avatar';
-            avatar.textContent = message.sender_initials || (message.sender.first_name ? message.sender.first_name.charAt(0).toUpperCase() : 'U');
-            
-            const senderName = document.createElement('span');
-            senderName.className = 'sender-name';
-            senderName.textContent = message.sender_name || (message.sender.full_name || (message.sender.first_name + ' ' + (message.sender.last_name || ''))) || 'Unknown';
-            
-            senderInfo.appendChild(avatar);
-            senderInfo.appendChild(senderName);
-            messageBubble.appendChild(senderInfo);
+        // Sender info for received messages (handles broadcast: sender as string, getMatterMessages: sender as object)
+        var displaySenderName = null;
+        var displaySenderInitials = null;
+        if (!isSent) {
+            var raw = null;
+            if (typeof message.sender === 'string' && (raw = String(message.sender || '').trim())) {
+                displaySenderName = raw;
+                displaySenderInitials = (message.sender_shortname || message.sender_initials) || (displaySenderName.length >= 2 ? (displaySenderName.split(/\s+/).map(function(w){ return (w || '').charAt(0); }).join('').substring(0,2).toUpperCase()) : (displaySenderName.charAt(0) || 'U').toUpperCase());
+            } else if ((raw = (message.sender_name != null && message.sender_name !== '') ? String(message.sender_name).trim() : null)) {
+                displaySenderName = raw;
+                displaySenderInitials = (message.sender_initials || message.sender_shortname) || (message.sender && typeof message.sender === 'object' && message.sender.first_name ? ((message.sender.first_name || '').charAt(0) + (message.sender.last_name || '').charAt(0)).toUpperCase() : null) || (displaySenderName.length >= 2 ? displaySenderName.substring(0,2).toUpperCase() : 'U');
+            } else if (message.sender && typeof message.sender === 'object' && (message.sender.full_name || message.sender.first_name || message.sender.last_name)) {
+                raw = (message.sender.full_name || ((message.sender.first_name || '') + ' ' + (message.sender.last_name || '')).trim()).trim();
+                displaySenderName = raw || 'Unknown';
+                displaySenderInitials = (message.sender_initials || message.sender_shortname) || (message.sender.first_name ? (message.sender.first_name.charAt(0) || 'U').toUpperCase() : 'U');
+            } else {
+                displaySenderName = 'Unknown';
+                displaySenderInitials = 'U';
+            }
+            displaySenderName = (displaySenderName && displaySenderName !== 'undefined') ? displaySenderName : 'Unknown';
+            displaySenderInitials = (displaySenderInitials && displaySenderInitials !== 'undefined') ? displaySenderInitials : 'U';
+            if (displaySenderName) {
+                const senderInfo = document.createElement('div');
+                senderInfo.className = 'message-sender-info';
+                const avatar = document.createElement('div');
+                avatar.className = 'message-avatar';
+                avatar.textContent = displaySenderInitials || 'U';
+                const senderName = document.createElement('span');
+                senderName.className = 'sender-name';
+                senderName.textContent = (displaySenderName && String(displaySenderName) !== 'undefined') ? String(displaySenderName) : 'Unknown';
+                senderInfo.appendChild(avatar);
+                senderInfo.appendChild(senderName);
+                messageBubble.appendChild(senderInfo);
+            }
         }
         
         // Message content (text + attachments)
@@ -3961,14 +3981,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         const attachments = message.attachments || [];
         attachments.forEach(function(att) {
-            if (att.type === 'image' && att.url) {
+            var downloadUrl = (att.id && typeof attachmentDownloadBaseUrl !== 'undefined') ? (attachmentDownloadBaseUrl + '/' + att.id + '/download') : (att.url || '');
+            if (!downloadUrl) return;
+            if (att.type === 'image' && downloadUrl) {
                 const img = document.createElement('a');
-                img.href = att.url;
+                img.href = downloadUrl;
                 img.target = '_blank';
                 img.rel = 'noopener';
                 img.className = 'message-attachment-img';
                 const imgEl = document.createElement('img');
-                imgEl.src = att.url;
+                imgEl.src = downloadUrl;
                 imgEl.alt = att.filename || 'Image';
                 imgEl.style.maxWidth = '240px';
                 imgEl.style.maxHeight = '240px';
@@ -3976,9 +3998,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 imgEl.style.display = 'block';
                 img.appendChild(imgEl);
                 messageContent.appendChild(img);
-            } else if (att.url) {
+            } else if (downloadUrl) {
                 const link = document.createElement('a');
-                link.href = att.url;
+                link.href = downloadUrl;
                 link.download = att.filename || 'document';
                 link.target = '_blank';
                 link.rel = 'noopener';

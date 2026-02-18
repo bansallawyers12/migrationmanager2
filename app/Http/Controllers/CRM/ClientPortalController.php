@@ -349,10 +349,12 @@ class ClientPortalController extends Controller
 
                     // Broadcast message via Laravel Reverb (configured via BROADCAST_DRIVER in .env)
                     if (class_exists('\App\Events\MessageSent')) {
+                        $senderDisplayStr = $senderName ?: 'Agent';
                         $messageForBroadcast = [
                             'id' => $messageId,
                             'message' => $message,
-                            'sender' => $senderName,
+                            'sender' => $senderDisplayStr,
+                            'sender_name' => $senderDisplayStr,
                             'sender_id' => $senderId,
                             'sent_at' => now()->toISOString(),
                             'created_at' => now()->toISOString(),
@@ -538,10 +540,12 @@ class ClientPortalController extends Controller
 
                     // Broadcast message via Laravel Reverb (configured via BROADCAST_DRIVER in .env)
                     if (class_exists('\App\Events\MessageSent')) {
+                        $senderDisplayStr = $senderName ?: 'Agent';
                         $messageForBroadcast = [
                             'id' => $messageId,
                             'message' => $message,
-                            'sender' => $senderName,
+                            'sender' => $senderDisplayStr,
+                            'sender_name' => $senderDisplayStr,
                             'sender_id' => $senderId,
                             'sent_at' => now()->toISOString(),
                             'created_at' => now()->toISOString(),
@@ -2769,13 +2773,19 @@ class ClientPortalController extends Controller
 				->orderBy('id', 'asc')
 				->get()
 				->map(function ($message) use ($currentUserId) {
-					// Get sender info
+					// Get sender info (from admins or staff table)
 					$sender = null;
 					if ($message->sender_id) {
 						$sender = DB::table('admins')
 							->where('id', $message->sender_id)
 							->select('id', 'first_name', 'last_name', DB::raw("(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) as full_name"))
 							->first();
+						if (!$sender) {
+							$sender = DB::table('staff')
+								->where('id', $message->sender_id)
+								->select('id', 'first_name', 'last_name', DB::raw("(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) as full_name"))
+								->first();
+						}
 					}
 
 					// Get all recipients for this message
@@ -3073,13 +3083,16 @@ class ClientPortalController extends Controller
 					Log::warning('Failed to broadcast notification count to client', ['client_id' => $clientId, 'error' => $e->getMessage()]);
 				}
 
-				// Broadcast message via Laravel Reverb (configured via BROADCAST_DRIVER in .env)
+				// Broadcast message via Laravel Reverb (sender/sender_name for frontend display)
+				$senderDisplayStr = $senderName ?: 'Agent';
 				$messageForBroadcast = [
 					'id' => $messageId,
 					'message' => $message,
-					'sender' => $senderName,
+					'sender' => $senderDisplayStr,
+					'sender_name' => $senderDisplayStr,
 					'sender_id' => $senderId,
-					'sender_initials' => $senderInitials,
+					'sender_initials' => $senderInitials ?: strtoupper(substr($senderDisplayStr, 0, 1)),
+					'sender_shortname' => $senderInitials ?: strtoupper(substr($senderDisplayStr, 0, 1)),
 					'sent_at' => now()->toISOString(),
 					'created_at' => now()->toISOString(),
 					'client_matter_id' => $clientMatterId,
