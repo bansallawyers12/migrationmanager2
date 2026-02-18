@@ -13,6 +13,9 @@ This document tracks refactoring changes to `detail-main.js` for maintainability
 | Feb 2025 | Phase 3a: references + send-to-client | ✅ Complete | ~16,457 |
 | Feb 2025 | Phase 3b: notes module | ✅ Complete | ~16,200 |
 | Feb 2025 | Phase 3c: checklist module | ✅ Complete | ~15,700 |
+| Feb 2025 | Phase 3d: documents module | ✅ Complete | ~14,900 |
+| Feb 2025 | Phase 3e: accounts module | ✅ Complete | ~14,550 |
+| Feb 2025 | Phase 3f: invoices module | ✅ Complete | ~14,200 |
 
 ---
 
@@ -294,12 +297,147 @@ resources/views/crm/companies/detail.blade.php   # Added module script tags
 
 ---
 
+## Phase 3d: Extract Documents Module (Completed)
+
+### New File Created
+
+| File | Purpose | Dependencies |
+|------|---------|--------------|
+| `modules/documents.js` | Category updates, document rename, download | jQuery, ClientDetailConfig, previewFile (global) |
+
+### Extracted Logic
+
+- **Category updates**: `.update-personal-cat-title`, `.update-visa-cat-title` (rename category via prompt)
+- **Delete category**: `.delete-personal-cat-title` (dual confirmation)
+- **Document rename**: Personal (`.persdocumnetlist`) and Visa (`.migdocumnetlist1`) inline edit with `.renamedoc`, `.btn-primary`, `.btn-danger`
+- **Download**: `.download-file` click handler (form POST to `downloadDocument`)
+
+### Config Keys Used
+
+- `ClientDetailConfig.urls.updatePersonalCategory`
+- `ClientDetailConfig.urls.updateVisaCategory`
+- `ClientDetailConfig.urls.deletePersonalCategory`
+- `ClientDetailConfig.urls.renameDoc`
+- `ClientDetailConfig.urls.downloadDocument`
+
+### Script Load Order (updated)
+
+```html
+<script src=".../modules/checklist.js"></script>
+<script src=".../modules/documents.js"></script>
+<script src=".../detail-main.js"></script>
+```
+
+### Troubleshooting (Phase 3d)
+
+**Document rename not working**  
+- Ensure `modules/documents.js` loads before `detail-main.js`  
+- Requires global `previewFile()` for success callback
+
+**Download not working**  
+- Documents module handles `.download-file`  
+- Uses `ClientDetailConfig.urls.downloadDocument`
+
+---
+
+## Phase 3e: Extract Accounts Module (Completed)
+
+### New File Created
+
+| File | Purpose | Dependencies |
+|------|---------|--------------|
+| `modules/accounts.js` | Client Funds Ledger: balance, render, edit | jQuery, ClientDetailConfig, Flatpickr (optional) |
+
+### Extracted Logic
+
+- **clientLedgerBalanceAmount(selectedMatter)** – fetches ledger balance, exposes on `window`
+- **renderClientFundsLedger(entries)** – renders ledger entries to `.client-funds-ledger-list`, exposes on `window`
+- **handleEditLedgerEntry** – opens edit modal, populates form, initializes Flatpickr
+- **attachEditLedgerHandlers** – direct binding for dropdown `.edit-ledger-entry`
+- **edit-ledger-entry** delegated handler – for standalone (non-dropdown) entries
+- **updateLedgerEntryBtn** – submits edit form to `updateClientFundsLedger`
+
+### Config Keys Used
+
+- `ClientDetailConfig.urls.clientLedgerBalance`
+- `ClientDetailConfig.urls.updateClientFundsLedger`
+
+### Script Load Order (updated)
+
+```html
+<script src=".../modules/documents.js"></script>
+<script src=".../modules/accounts.js"></script>
+<script src=".../detail-main.js"></script>
+```
+
+### Call Sites (in detail-main.js)
+
+- Matter change: `clientLedgerBalanceAmount(selectedMatter)`
+- Account Tab Receipt Popup: `clientLedgerBalanceAmount(selectedMatter)`
+
+### Troubleshooting (Phase 3e)
+
+**clientLedgerBalanceAmount is not a function**  
+- Ensure `modules/accounts.js` loads before `detail-main.js`  
+- Accounts module exposes `window.clientLedgerBalanceAmount`
+
+**Edit ledger modal not opening**  
+- Check `#editLedgerModal` exists in DOM  
+- Accounts module uses delegated `.edit-ledger-entry` for standalone, direct binding for dropdown
+
+---
+
+## Phase 3f: Extract Invoices Module (Completed)
+
+### New File Created
+
+| File | Purpose | Dependencies |
+|------|---------|--------------|
+| `modules/invoices.js` | List invoices, Quick Receipt helpers, create invoice modal | jQuery, ClientDetailConfig |
+
+### Extracted Logic
+
+- **listOfInvoice()** – loads invoice dropdown for client/office receipt forms (Fee Transfer), exposes on `window`
+- **loadInvoicesForQuickReceipt(matterId, preSelectInvoice)** – loads invoices by matter for Quick Receipt, exposes on `window`
+- **populateQuickReceiptOfficeForm(invoiceData)** – populates office receipt form from invoice data, exposes on `window`
+- **createapplicationnewinvoice** – opens `#opencreateinvoiceform` modal, sets client_id, app_id, schedule_id
+
+### Config Keys Used
+
+- `ClientDetailConfig.urls.listOfInvoice`
+- `ClientDetailConfig.urls.getInvoicesByMatter`
+- `ClientDetailConfig.csrfToken` (fallback: meta csrf-token)
+
+### Script Load Order (updated)
+
+```html
+<script src=".../modules/accounts.js"></script>
+<script src=".../modules/invoices.js"></script>
+<script src=".../detail-main.js"></script>
+```
+
+### Call Sites (in detail-main.js, account.blade.php, etc.)
+
+- Matter change, Fee Transfer, receipt modals: `listOfInvoice()`
+- Quick Receipt flow: `loadInvoicesForQuickReceipt`, `populateQuickReceiptOfficeForm`
+
+### Troubleshooting (Phase 3f)
+
+**listOfInvoice is not a function**  
+- Ensure `modules/invoices.js` loads before `detail-main.js`  
+- Invoices module exposes `window.listOfInvoice`
+
+**Quick Receipt invoice dropdown empty**  
+- Check `loadInvoicesForQuickReceipt` and `getInvoicesByMatter` URL  
+- CSRF token from `ClientDetailConfig.csrfToken` or meta tag
+
+---
+
 ## Planned Next Steps
 
 | Phase | Description |
 |-------|-------------|
-| Phase 3d | Extract documents, accounts, invoices |
-| Phase 4 | Module architecture (IIFE or ES modules) |
+| Phase 4 | Module architecture (IIFE or ES modules), remaining integrations |
 
 ---
 
