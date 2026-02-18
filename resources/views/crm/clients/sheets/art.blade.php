@@ -195,6 +195,25 @@
     .scroll-indicator-left { left: 0; background: linear-gradient(to right, rgba(255,255,255,0.95), transparent); opacity: 0; }
     .scroll-indicator-right { right: 0; background: linear-gradient(to left, rgba(255,255,255,0.95), transparent); }
     .scroll-indicator-left.visible, .scroll-indicator-right.visible { opacity: 1; }
+    /* Pin star styles */
+    .art-sheet-page .pin-cell { width: 40px; text-align: center; }
+    .art-sheet-page .pin-star {
+        font-size: 18px;
+        cursor: pointer;
+        color: #cbd5e0;
+        transition: all 0.2s ease;
+    }
+    .art-sheet-page .pin-star:hover {
+        color: #f59e0b;
+        transform: scale(1.2);
+    }
+    .art-sheet-page .pin-star.pinned {
+        color: #f59e0b;
+        text-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
+    }
+    .art-sheet-page .pin-star.pinned:hover {
+        color: #cbd5e0;
+    }
 </style>
 @endsection
 
@@ -349,6 +368,7 @@
                             <table class="table table-bordered table-hover art-table" id="art-sheet-table">
                                 <thead style="position: static !important;">
                                     <tr>
+                                        <th class="pin-cell" title="Click star to pin row to top"><i class="fas fa-star"></i></th>
                                         <th class="sortable {{ request('sort') == 'crm_ref' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="crm_ref">CRM Ref</th>
                                         <th class="sortable {{ request('sort') == 'other_reference' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="other_reference">Other Reference</th>
                                         <th class="sortable {{ request('sort') == 'client_name' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="client_name">Name</th>
@@ -367,7 +387,7 @@
                                 <tbody>
                                     @if($rows->isEmpty())
                                         <tr>
-                                            <td colspan="14" class="text-center text-muted py-4">
+                                            <td colspan="15" class="text-center text-muted py-4">
                                                 <i class="fas fa-info-circle"></i> No ART records found. Add an ART matter type and assign matters to clients to see data here.
                                             </td>
                                         </tr>
@@ -380,17 +400,24 @@
                                                     'client_unique_matter_ref_no' => $row->matter_id ?? '',
                                                 ]);
                                                 $otherRef = $row->other_reference ?? $row->department_reference ?? '—';
+                                                $matterInternalId = $row->matter_internal_id ?? '';
                                             @endphp
-                                            <tr>
-                                                <td><a href="{{ $clientDetailUrl }}" class="art-link">{{ $row->crm_ref ?? '—' }}</a></td>
-                                                <td>{{ $otherRef }}</td>
-                                                <td><a href="{{ $clientDetailUrl }}" class="art-link">{{ trim(($row->first_name ?? '') . ' ' . ($row->last_name ?? '')) ?: '—' }}</a></td>
-                                                <td>${{ $row->total_payment ?? '0.00' }}</td>
-                                                <td>${{ $row->pending_payment ?? '0.00' }}</td>
-                                                <td>{{ $row->deadline ? \Carbon\Carbon::parse($row->deadline)->format('d/m/Y') : '—' }}</td>
-                                                <td>{{ $row->submission_last_date ? \Carbon\Carbon::parse($row->submission_last_date)->format('d/m/Y') : '—' }}</td>
-                                                <td>{{ trim($row->agent_name ?? '') ?: '—' }}</td>
-                                                <td>
+                                            <tr style="cursor: pointer;" onclick="window.location.href='{{ $clientDetailUrl }}'">
+                                                <td class="pin-cell" onclick="event.stopPropagation();">
+                                                    <i class="fas fa-star pin-star {{ ($row->is_pinned ?? false) ? 'pinned' : '' }}"
+                                                       data-client-id="{{ $row->client_id }}"
+                                                       data-matter-internal-id="{{ $matterInternalId }}"
+                                                       title="{{ ($row->is_pinned ?? false) ? 'Unpin from top' : 'Pin to top' }}"></i>
+                                                </td>
+                                                <td onclick="event.stopPropagation();"><a href="{{ $clientDetailUrl }}" class="art-link">{{ $row->crm_ref ?? '—' }}</a></td>
+                                                <td onclick="event.stopPropagation();">{{ $otherRef }}</td>
+                                                <td onclick="event.stopPropagation();"><a href="{{ $clientDetailUrl }}" class="art-link">{{ trim(($row->first_name ?? '') . ' ' . ($row->last_name ?? '')) ?: '—' }}</a></td>
+                                                <td onclick="event.stopPropagation();">${{ $row->total_payment ?? '0.00' }}</td>
+                                                <td onclick="event.stopPropagation();">${{ $row->pending_payment ?? '0.00' }}</td>
+                                                <td onclick="event.stopPropagation();">{{ $row->deadline ? \Carbon\Carbon::parse($row->deadline)->format('d/m/Y') : '—' }}</td>
+                                                <td onclick="event.stopPropagation();">{{ $row->submission_last_date ? \Carbon\Carbon::parse($row->submission_last_date)->format('d/m/Y') : '—' }}</td>
+                                                <td onclick="event.stopPropagation();">{{ trim($row->agent_name ?? '') ?: '—' }}</td>
+                                                <td onclick="event.stopPropagation();">
                                                     @if($row->status_of_file)
                                                         @php
                                                             $statusLabels = [
@@ -409,10 +436,10 @@
                                                         —
                                                     @endif
                                                 </td>
-                                                <td>{{ $row->hearing_time ?? '—' }}</td>
-                                                <td>{{ $row->member_name ?? '—' }}</td>
-                                                <td>{{ $row->outcome ?? '—' }}</td>
-                                                <td class="art-comments-cell" title="{{ $row->comments ?? '' }}">{{ Str::limit($row->comments ?? '—', 80) }}</td>
+                                                <td onclick="event.stopPropagation();">{{ $row->hearing_time ?? '—' }}</td>
+                                                <td onclick="event.stopPropagation();">{{ $row->member_name ?? '—' }}</td>
+                                                <td onclick="event.stopPropagation();">{{ $row->outcome ?? '—' }}</td>
+                                                <td class="art-comments-cell" onclick="event.stopPropagation();" title="{{ $row->comments ?? '' }}">{{ Str::limit($row->comments ?? '—', 80) }}</td>
                                             </tr>
                                         @endforeach
                                     @endif
@@ -490,6 +517,77 @@ jQuery(document).ready(function($) {
         'top': 'auto',
         'z-index': 'auto'
     });
+
+    // Handle star/pin clicks
+    var artTable = document.getElementById('art-sheet-table');
+    if (artTable) {
+        artTable.addEventListener('click', function(e) {
+            var star = e.target.closest('.pin-star');
+            if (!star) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            var $star = $(star);
+            var clientId = $star.data('client-id');
+            var matterInternalId = $star.data('matter-internal-id');
+
+            if (!clientId || !matterInternalId) {
+                if (typeof iziToast !== 'undefined') {
+                    iziToast.warning({ title: 'Error', message: 'Cannot pin: missing data', position: 'topRight' });
+                }
+                return;
+            }
+
+            $star.css('pointer-events', 'none');
+
+            $.ajax({
+                url: '{{ route("clients.sheets.art.toggle-pin") }}',
+                method: 'POST',
+                data: {
+                    client_id: clientId,
+                    matter_internal_id: matterInternalId,
+                    _token: '{{ csrf_token() }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $star.toggleClass('pinned');
+                        $star.attr('title', response.is_pinned ? 'Unpin from top' : 'Pin to top');
+                        if (typeof iziToast !== 'undefined') {
+                            iziToast.success({
+                                title: 'Success',
+                                message: response.message,
+                                position: 'topRight',
+                                timeout: 2000
+                            });
+                        }
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 500);
+                    } else {
+                        if (typeof iziToast !== 'undefined') {
+                            iziToast.error({
+                                title: 'Error',
+                                message: response.message || 'Failed to update pin status',
+                                position: 'topRight'
+                            });
+                        }
+                        $star.css('pointer-events', 'auto');
+                    }
+                },
+                error: function(xhr) {
+                    if (typeof iziToast !== 'undefined') {
+                        iziToast.error({
+                            title: 'Error',
+                            message: 'Failed to update pin status. Please try again.',
+                            position: 'topRight'
+                        });
+                    }
+                    $star.css('pointer-events', 'auto');
+                }
+            });
+        }, true);
+    }
 });
 </script>
 @endpush

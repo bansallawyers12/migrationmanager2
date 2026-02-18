@@ -19,12 +19,18 @@ return new class extends Migration
             'client_pr_references',
             'client_employer_sponsored_references',
             'client_art_references',
+            'client_eoi_references',
         ];
 
-        foreach ($tables as $table) {
-            if (Schema::hasTable($table) && !Schema::hasColumn($table, 'is_pinned')) {
-                Schema::table($table, function (Blueprint $table) {
-                    $table->boolean('is_pinned')->default(false)->after('checklist_sent_at')->index();
+        foreach ($tables as $tableName) {
+            if (Schema::hasTable($tableName) && !Schema::hasColumn($tableName, 'is_pinned')) {
+                $afterCol = $tableName === 'client_eoi_references' ? 'updated_by' : 'checklist_sent_at';
+                Schema::table($tableName, function (Blueprint $table) use ($tableName, $afterCol) {
+                    if (Schema::hasColumn($tableName, $afterCol)) {
+                        $table->boolean('is_pinned')->default(false)->after($afterCol)->index();
+                    } else {
+                        $table->boolean('is_pinned')->default(false)->index();
+                    }
                 });
             }
         }
@@ -42,11 +48,12 @@ return new class extends Migration
             'client_pr_references',
             'client_employer_sponsored_references',
             'client_art_references',
+            'client_eoi_references',
         ];
 
-        foreach ($tables as $table) {
-            if (Schema::hasTable($table) && Schema::hasColumn($table, 'is_pinned')) {
-                Schema::table($table, function (Blueprint $table) {
+        foreach ($tables as $tableName) {
+            if (Schema::hasTable($tableName) && Schema::hasColumn($tableName, 'is_pinned')) {
+                Schema::table($tableName, function (Blueprint $table) {
                     $table->dropColumn('is_pinned');
                 });
             }

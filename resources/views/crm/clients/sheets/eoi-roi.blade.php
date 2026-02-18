@@ -263,6 +263,26 @@
         opacity: 1;
     }
 
+    /* Pin star styles */
+    .listing-container .pin-cell { width: 40px; text-align: center; }
+    .listing-container .pin-star {
+        font-size: 18px;
+        cursor: pointer;
+        color: #cbd5e0;
+        transition: all 0.2s ease;
+    }
+    .listing-container .pin-star:hover {
+        color: #f59e0b;
+        transform: scale(1.2);
+    }
+    .listing-container .pin-star.pinned {
+        color: #f59e0b;
+        text-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
+    }
+    .listing-container .pin-star.pinned:hover {
+        color: #cbd5e0;
+    }
+
     /* Scroll hint */
     .scroll-hint {
         text-align: center;
@@ -477,6 +497,7 @@
                             <table class="table table-bordered table-hover eoi-roi-table" id="eoi-roi-sheet-table">
                             <thead>
                                 <tr>
+                                    <th class="pin-cell" title="Click star to pin row to top"><i class="fas fa-star"></i></th>
                                     <th class="sortable {{ request('sort') == 'eoi_number' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="eoi_number">EOI ID</th>
                                     <th class="sortable {{ request('sort') == 'client_name' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="client_name">Client Name</th>
                                     <th class="sortable {{ request('sort') == 'occupation' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="occupation">Nominated Occupation</th>
@@ -497,7 +518,7 @@
                             <tbody>
                                 @if($rows->isEmpty())
                                     <tr>
-                                        <td colspan="14" class="text-center text-muted py-4">
+                                        <td colspan="15" class="text-center text-muted py-4">
                                             <i class="fas fa-info-circle"></i> No EOI/ROI records found matching your criteria.
                                         </td>
                                     </tr>
@@ -520,6 +541,11 @@
                                             $eoiRecord = \App\Models\ClientEoiReference::find($row->eoi_id);
                                         @endphp
                                         <tr class="{{ !empty($row->warnings_text) ? 'has-warning' : '' }}">
+                                            <td class="pin-cell">
+                                                <i class="fas fa-star pin-star {{ ($row->is_pinned ?? false) ? 'pinned' : '' }}"
+                                                   data-eoi-id="{{ $row->eoi_id }}"
+                                                   title="{{ ($row->is_pinned ?? false) ? 'Unpin from top' : 'Pin to top' }}"></i>
+                                            </td>
                                             <td><a href="{{ $eoiPageUrl }}" class="eoi-link">{{ $row->EOI_number ?? '—' }}</a></td>
                                             <td><a href="{{ $eoiPageUrl }}" class="eoi-link">{{ $row->first_name }} {{ $row->last_name }}</a></td>
                                             <td>{{ $row->EOI_occupation ?? '—' }}</td>
@@ -745,6 +771,74 @@ jQuery(document).ready(function($) {
     $('.office-filter-checkbox').on('change', function() {
         $('#officeFilterForm').submit();
     });
+
+    // Handle star/pin clicks
+    var eoiTable = document.getElementById('eoi-roi-sheet-table');
+    if (eoiTable) {
+        eoiTable.addEventListener('click', function(e) {
+            var star = e.target.closest('.pin-star');
+            if (!star) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            var $star = $(star);
+            var eoiId = $star.data('eoi-id');
+
+            if (!eoiId) {
+                if (typeof iziToast !== 'undefined') {
+                    iziToast.warning({ title: 'Error', message: 'Cannot pin: missing data', position: 'topRight' });
+                }
+                return;
+            }
+
+            $star.css('pointer-events', 'none');
+
+            $.ajax({
+                url: '{{ url("/clients/sheets/eoi-roi") }}/' + eoiId + '/toggle-pin',
+                method: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $star.toggleClass('pinned');
+                        $star.attr('title', response.is_pinned ? 'Unpin from top' : 'Pin to top');
+                        if (typeof iziToast !== 'undefined') {
+                            iziToast.success({
+                                title: 'Success',
+                                message: response.message,
+                                position: 'topRight',
+                                timeout: 2000
+                            });
+                        }
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 500);
+                    } else {
+                        if (typeof iziToast !== 'undefined') {
+                            iziToast.error({
+                                title: 'Error',
+                                message: response.message || 'Failed to update pin status',
+                                position: 'topRight'
+                            });
+                        }
+                        $star.css('pointer-events', 'auto');
+                    }
+                },
+                error: function(xhr) {
+                    if (typeof iziToast !== 'undefined') {
+                        iziToast.error({
+                            title: 'Error',
+                            message: 'Failed to update pin status. Please try again.',
+                            position: 'topRight'
+                        });
+                    }
+                    $star.css('pointer-events', 'auto');
+                }
+            });
+        }, true);
+    }
 });
 </script>
 @endpush

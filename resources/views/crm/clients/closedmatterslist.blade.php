@@ -13,65 +13,26 @@
         width: 25%;
     }
     .listing-container .table th:first-child { width: 25%; }
-    .listing-container .table td .dropdown-toggle {
+    .listing-container .table td .closed-matter-reopen {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
         border: 1px solid #667eea !important;
-        min-width: 80px;
-        max-width: 90px;
         padding: 6px 12px;
         font-size: 13px;
         font-weight: 500;
         color: white !important;
         border-radius: 6px;
         box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
-        position: relative;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         gap: 4px;
     }
-    .listing-container .table td .dropdown-toggle:hover {
+    .listing-container .table td .closed-matter-reopen:hover {
         background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%) !important;
         border-color: #5a6fd8 !important;
         box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        color: white !important;
     }
-    .listing-container .dropdown-menu {
-        position: absolute !important;
-        top: 100% !important;
-        right: 0 !important;
-        left: auto !important;
-        float: none !important;
-        min-width: 180px;
-        padding: 8px 0;
-        margin: 4px 0 0;
-        font-size: 14px;
-        text-align: left;
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-        border: 1px solid rgba(102, 126, 234, 0.2);
-        border-radius: 8px;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-        z-index: 9999 !important;
-        overflow: visible !important;
-    }
-    .listing-container .dropdown-menu.show {
-        display: block !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-    }
-    .listing-container .dropdown-item {
-        display: block;
-        width: 100%;
-        padding: 10px 20px;
-        font-weight: 500;
-        color: #495057;
-        background-color: transparent;
-        border: 0;
-    }
-    .listing-container .dropdown-item:hover {
-        color: #667eea;
-        background: linear-gradient(135deg, #f8f9ff 0%, #e8ecff 100%);
-    }
-    .listing-container .table td .dropdown { position: relative; display: inline-block; overflow: visible !important; }
     .listing-container .card-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
     .listing-container .card-header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
     .listing-container .per-page-select {
@@ -115,9 +76,6 @@
     .thCls,.tdCls { white-space: initial !important; }
     .badge-closed { background: #6b7280; color: white; }
     .badge-discontinued { background: #dc2626; color: white; }
-    .listing-container .dropdown-item.closed-matter-delete.disabled {
-        opacity: 0.6; cursor: not-allowed; pointer-events: none;
-    }
 </style>
 @include('crm.clients.partials.enhanced-date-filter-styles')
 @endsection
@@ -307,7 +265,6 @@
                                     <th class="thCls sortable-header"><a href="{{ $buildSortUrl('ma.title') }}">Matter {!! $sortIcon('ma.title') !!}</a></th>
                                     <th class="thCls sortable-header"><a href="{{ $buildSortUrl('ad.client_id') }}">Client ID {!! $sortIcon('ad.client_id') !!}</a></th>
                                     <th class="thCls sortable-header"><a href="{{ $buildSortUrl('ad.first_name') }}">Client Name {!! $sortIcon('ad.first_name') !!}</a></th>
-                                    <th class="thCls sortable-header"><a href="{{ $buildSortUrl('ad.dob') }}">DOB {!! $sortIcon('ad.dob') !!}</a></th>
                                     <th class="thCls">Migration Agent</th>
                                     <th class="thCls">Person Responsible</th>
                                     <th class="thCls">Person Assisting</th>
@@ -315,7 +272,7 @@
                                     <th class="thCls sortable-header"><a href="{{ $buildSortUrl('cm.created_at') }}">Created At {!! $sortIcon('cm.created_at') !!}</a></th>
                                     <th class="thCls">Office</th>
                                     @if(Auth::user()->role == 1)
-                                    <th class="thCls">Action</th>
+                                    <th class="thCls">Reopen</th>
                                     @endif
                                 </tr>
                             </thead>
@@ -331,14 +288,11 @@
                                         $statusLabel = ($list->matter_status ?? 1) == 0 ? 'Discontinued' : ($list->workflow_stage_name ?? 'Closed');
                                         $statusClass = ($list->matter_status ?? 1) == 0 ? 'badge-discontinued' : 'badge-closed';
                                         $isDiscontinued = ($list->matter_status ?? 1) == 0;
-                                        $createdAt = $list->created_at ? \Carbon\Carbon::parse($list->created_at) : null;
-                                        $canDelete = $createdAt && $createdAt->lt(now()->subYear());
                                         ?>
                                         <tr id="id_{{@$list->id}}">
                                             <td class="tdCls"><a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->client_id)).'/'.$list->client_unique_matter_no )}}">{{ @$list->title == "" ? config('constants.empty') : Str::limit(@$list->title, '50', '...') }} ({{ @$list->client_unique_matter_no == "" ? config('constants.empty') : Str::limit(@$list->client_unique_matter_no, '50', '...') }})</a></td>
                                             <td class="tdCls">{{ @$list->client_unique_id == "" ? config('constants.empty') : Str::limit(@$list->client_unique_id, '50', '...') }}</td>
                                             <td class="tdCls"><a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->client_id)) )}}">{{ @$list->first_name == "" ? config('constants.empty') : Str::limit(@$list->first_name, '50', '...') }} {{ @$list->last_name == "" ? config('constants.empty') : Str::limit(@$list->last_name, '50', '...') }}</a></td>
-                                            <td class="tdCls">{{ @$list->dob == "" ? config('constants.empty') : (strtotime(@$list->dob) ? date('d/m/Y', strtotime(@$list->dob)) : Str::limit(@$list->dob, '50', '...')) }}</td>
                                             <td class="tdCls">{{ @$mig_agent_info->first_name ?? '' }} {{ @$mig_agent_info->last_name ?? '' }}</td>
                                             <td class="tdCls">{{ @$person_responsible->first_name ?? '' }} {{ @$person_responsible->last_name ?? '' }}</td>
                                             <td class="tdCls">{{ @$person_assisting->first_name ?? '' }} {{ @$person_assisting->last_name ?? '' }}</td>
@@ -353,15 +307,11 @@
                                             </td>
                                             @if(Auth::user()->role == 1)
                                             <td class="tdCls">
-                                                <div class="dropdown d-inline">
-                                                    <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
-                                                    <div class="dropdown-menu">
-                                                        @if($isDiscontinued)
-                                                        <a class="dropdown-item has-icon closed-matter-reopen" href="javascript:;" data-matter-id="{{ $list->id }}"><i class="fas fa-redo"></i> Reopen Matter</a>
-                                                        @endif
-                                                        <a class="dropdown-item has-icon closed-matter-delete {{ !$canDelete ? 'disabled' : '' }}" href="javascript:;" data-matter-id="{{ $list->id }}" data-can-delete="{{ $canDelete ? '1' : '0' }}" title="{{ !$canDelete ? 'Available 1 year after matter creation' : '' }}"><i class="fas fa-trash"></i> {{ $canDelete ? 'Delete Matter' : 'Delete (after 1 year)' }}</a>
-                                                    </div>
-                                                </div>
+                                                @if($isDiscontinued)
+                                                <button class="btn btn-primary btn-sm closed-matter-reopen" type="button" data-matter-id="{{ $list->id }}"><i class="fas fa-redo"></i> Reopen</button>
+                                                @else
+                                                <span class="text-muted">—</span>
+                                                @endif
                                             </td>
                                             @endif
                                         </tr>
@@ -369,7 +319,7 @@
                                     @endforeach
                                 @else
                                     <tr>
-                                        <td colspan="{{ Auth::user()->role == 1 ? '11' : '10' }}" style="text-align: center; padding: 20px;">No Record Found</td>
+                                        <td colspan="{{ Auth::user()->role == 1 ? '10' : '9' }}" style="text-align: center; padding: 20px;">No Record Found</td>
                                     </tr>
                                 @endif
                             </tbody>
@@ -408,7 +358,7 @@ jQuery(document).ready(function($){
         $('.listing-container .filter_panel').toggle();
     });
 
-    $('.closed-matter-reopen').on('click', function(e){
+    $(document).on('click', '.closed-matter-reopen', function(e){
         e.preventDefault();
         var matterId = $(this).data('matter-id');
         if (!matterId) return;
@@ -425,45 +375,12 @@ jQuery(document).ready(function($){
                     window.location.href = resp.redirect_url;
                 } else {
                     alert(resp.message || 'Failed to reopen matter.');
-                    $btn.prop('disabled', false).html('<i class="fas fa-redo"></i> Reopen Matter');
+                    $btn.prop('disabled', false).html('<i class="fas fa-redo"></i> Reopen');
                 }
             },
             error: function(){
                 alert('An error occurred. Please try again.');
-                $btn.prop('disabled', false).html('<i class="fas fa-redo"></i> Reopen Matter');
-            }
-        });
-    });
-
-    $('.closed-matter-delete').on('click', function(e){
-        e.preventDefault();
-        var $link = $(this);
-        if ($link.hasClass('disabled') || $link.data('can-delete') !== 1) {
-            return;
-        }
-        var matterId = $link.data('matter-id');
-        if (!matterId) return;
-        if (!confirm('Permanently delete this matter? This action cannot be undone.')) return;
-        $link.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Deleting...');
-        $.ajax({
-            url: '{{ route("clients.matter.delete") }}',
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'), 'Accept': 'application/json' },
-            data: JSON.stringify({ matter_id: matterId }),
-            success: function(resp){
-                if (resp.status) {
-                    $('#id_' + matterId).fadeOut(300, function(){ $(this).remove(); });
-                    if (typeof $('.custom-error-msg').html === 'function') {
-                        $('.custom-error-msg').html('<div class="alert alert-success">' + (resp.message || 'Matter deleted.') + '</div>');
-                    }
-                } else {
-                    alert(resp.message || 'Failed to delete matter.');
-                    $link.prop('disabled', false).html('<i class="fas fa-trash"></i> Delete Matter');
-                }
-            },
-            error: function(){
-                alert('An error occurred. Please try again.');
-                $link.prop('disabled', false).html('<i class="fas fa-trash"></i> Delete Matter');
+                $btn.prop('disabled', false).html('<i class="fas fa-redo"></i> Reopen');
             }
         });
     });

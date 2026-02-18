@@ -42,9 +42,11 @@ Route::get('/clients/partner-eoi-data/{partnerId}', [ClientPersonalDetailsContro
 /*---------- Sheets ----------*/
 Route::get('/clients/sheets/eoi-roi', [\App\Http\Controllers\CRM\EoiRoiSheetController::class, 'index'])->name('clients.sheets.eoi-roi');
 Route::get('/clients/sheets/eoi-roi/insights', [\App\Http\Controllers\CRM\EoiRoiSheetController::class, 'insights'])->name('clients.sheets.eoi-roi.insights');
+Route::post('/clients/sheets/eoi-roi/{eoiId}/toggle-pin', [\App\Http\Controllers\CRM\EoiRoiSheetController::class, 'togglePin'])->name('clients.sheets.eoi-roi.toggle-pin');
 
 Route::get('/clients/sheets/art', [\App\Http\Controllers\CRM\ArtSheetController::class, 'index'])->name('clients.sheets.art');
 Route::get('/clients/sheets/art/insights', [\App\Http\Controllers\CRM\ArtSheetController::class, 'insights'])->name('clients.sheets.art.insights');
+Route::post('/clients/sheets/art/toggle-pin', [\App\Http\Controllers\CRM\ArtSheetController::class, 'togglePin'])->name('clients.sheets.art.toggle-pin');
 
 Route::get('/clients/sheets/{visaType}', [\App\Http\Controllers\CRM\VisaTypeSheetController::class, 'index'])
     ->where('visaType', 'tr|visitor|student|pr|employer-sponsored')

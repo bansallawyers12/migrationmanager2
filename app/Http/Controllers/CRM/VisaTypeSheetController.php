@@ -57,8 +57,10 @@ class VisaTypeSheetController extends Controller
 
         $request->merge($this->getFiltersFromSession($request, $sessionKey));
 
+        // Default to 'all' so Ongoing and other tabs show all matters when no filter is set.
+        // Previously defaulted to 'me' which hid records not assigned to the current user.
         if (!$request->has('assignee') || $request->input('assignee') === '') {
-            $request->merge(['assignee' => 'me']);
+            $request->merge(['assignee' => 'all']);
         }
 
         $perPage = (int) $request->get('per_page', 50);
@@ -230,14 +232,15 @@ class VisaTypeSheetController extends Controller
 
     protected function buildBaseQuery(Request $request, string $tab, array $config)
     {
-        $driver = DB::connection()->getDriverName();
         $matterCondition = $this->getMatterCondition($config);
         $refTable = $config['reference_table'];
         $refAlias = $config['reference_alias'];
         $checklistCol = $config['checklist_status_column'];
 
-        $latestSql = "
-            SELECT DISTINCT ON (cm.client_id)
+        // One row per matter (per plan: "one row per TR matter — filtered by active tab").
+        // Show ALL matters matching the visa type and tab, not just latest per client.
+        $baseMattersSql = "
+            SELECT
                 cm.id AS matter_id,
                 cm.client_id,
                 cm.client_unique_matter_no,
@@ -257,30 +260,9 @@ class VisaTypeSheetController extends Controller
             FROM client_matters cm
             INNER JOIN matters m ON m.id = cm.sel_matter_id
             WHERE {$matterCondition}
-            ORDER BY cm.client_id, cm.id DESC
         ";
 
-        if ($driver === 'mysql') {
-            $latestSql = "
-                SELECT cm.id AS matter_id, cm.client_id, cm.client_unique_matter_no,
-                       cm.other_reference, cm.department_reference, cm.sel_migration_agent,
-                       cm.sel_person_responsible, cm.sel_person_assisting,
-                       cm.office_id, cm.workflow_stage_id, cm.decision_outcome, cm.decision_note,
-                       cm.matter_status, cm.deadline,
-                       cm.{$checklistCol} as checklist_status, m.title as matter_title
-                FROM client_matters cm
-                INNER JOIN matters m ON m.id = cm.sel_matter_id
-                INNER JOIN (
-                    SELECT client_id, MAX(id) AS max_id FROM client_matters cm2
-                    INNER JOIN matters m2 ON m2.id = cm2.sel_matter_id
-                    WHERE {$matterCondition}
-                    GROUP BY client_id
-                ) latest ON latest.client_id = cm.client_id AND latest.max_id = cm.id
-                WHERE {$matterCondition}
-            ";
-        }
-
-        $query = DB::table(DB::raw('(' . $latestSql . ') AS latest_matter'))
+        $query = DB::table(DB::raw('(' . $baseMattersSql . ') AS latest_matter'))
             ->leftJoin("{$refTable} as {$refAlias}", function ($join) use ($refAlias) {
                 $join->on("{$refAlias}.client_id", '=', 'latest_matter.client_id')
                     ->on("{$refAlias}.client_matter_id", '=', 'latest_matter.matter_id');

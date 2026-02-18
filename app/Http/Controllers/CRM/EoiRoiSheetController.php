@@ -158,6 +158,7 @@ class EoiRoiSheetController extends Controller
             ->join(DB::raw('(' . $latestEoiMatterSql . ') AS latest_eoi_matter'), 'latest_eoi_matter.client_id', '=', 'admins.id')
             ->select(
                 'eoi.id as eoi_id',
+                'eoi.is_pinned',
                 DB::raw('eoi."EOI_number" as "EOI_number"'),
                 DB::raw('eoi."EOI_occupation" as "EOI_occupation"'),
                 DB::raw('eoi."EOI_point" as individual_points'),
@@ -266,7 +267,9 @@ class EoiRoiSheetController extends Controller
     protected function applySorting($query, Request $request)
     {
         $driver = DB::connection()->getDriverName();
-        // Primary: nearest deadline first, nulls last
+        // First priority: pinned items (is_pinned DESC) - pinned items on top
+        $query->orderByRaw("CASE WHEN COALESCE(eoi.is_pinned, false) = true THEN 1 ELSE 0 END DESC");
+        // Secondary: nearest deadline first, nulls last
         if ($driver === 'mysql') {
             $query->orderByRaw('latest_eoi_matter.deadline IS NULL ASC, latest_eoi_matter.deadline ASC');
         } else {
@@ -856,6 +859,41 @@ class EoiRoiSheetController extends Controller
                 'client_id' => $clientId,
                 'error' => $e->getMessage(),
             ]);
+        }
+    }
+
+    /**
+     * Toggle pin status for an EOI record in the sheet.
+     */
+    public function togglePin(Request $request, $eoiId)
+    {
+        $eoiId = (int) $eoiId;
+        if (!$eoiId) {
+            return response()->json(['success' => false, 'message' => 'Missing EOI ID'], 400);
+        }
+
+        try {
+            $eoi = DB::table('client_eoi_references')->where('id', $eoiId)->first();
+            if (!$eoi) {
+                return response()->json(['success' => false, 'message' => 'EOI record not found'], 404);
+            }
+
+            $newPinStatus = !($eoi->is_pinned ?? false);
+            DB::table('client_eoi_references')
+                ->where('id', $eoiId)
+                ->update([
+                    'is_pinned' => $newPinStatus,
+                    'updated_by' => auth()->guard('admin')->id(),
+                    'updated_at' => now(),
+                ]);
+
+            return response()->json([
+                'success' => true,
+                'is_pinned' => $newPinStatus,
+                'message' => $newPinStatus ? 'Item pinned to top' : 'Item unpinned'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error updating pin status: ' . $e->getMessage()], 500);
         }
     }
 }

@@ -145,6 +145,7 @@ class ArtSheetController extends Controller
             ->leftJoin('staff as agents', 'latest_art_matter.sel_migration_agent', '=', 'agents.id')
             ->select(
                 'art.id as art_id',
+                'art.is_pinned',
                 'art.submission_last_date',
                 'art.status_of_file',
                 'art.hearing_time',
@@ -275,7 +276,9 @@ class ArtSheetController extends Controller
     protected function applySorting($query, Request $request)
     {
         $driver = DB::connection()->getDriverName();
-        // Primary: nearest deadline first, nulls last
+        // First priority: pinned items (is_pinned DESC) - pinned items on top
+        $query->orderByRaw("CASE WHEN COALESCE(art.is_pinned, false) = true THEN 1 ELSE 0 END DESC");
+        // Secondary: nearest deadline first, nulls last
         $query->orderByRaw($driver === 'mysql'
             ? 'latest_art_matter.deadline IS NULL ASC, latest_art_matter.deadline ASC'
             : 'latest_art_matter.deadline ASC NULLS LAST');
@@ -415,5 +418,57 @@ class ArtSheetController extends Controller
         }
 
         return $insights;
+    }
+
+    /**
+     * Toggle pin status for an ART matter in the sheet.
+     */
+    public function togglePin(Request $request)
+    {
+        $clientId = $request->input('client_id');
+        $matterInternalId = $request->input('matter_internal_id');
+
+        if (!$clientId || !$matterInternalId) {
+            return response()->json(['success' => false, 'message' => 'Missing required parameters'], 400);
+        }
+
+        try {
+            $reference = DB::table('client_art_references')
+                ->where('client_id', $clientId)
+                ->where('client_matter_id', $matterInternalId)
+                ->first();
+
+            if ($reference) {
+                $newPinStatus = !($reference->is_pinned ?? false);
+                DB::table('client_art_references')
+                    ->where('client_id', $clientId)
+                    ->where('client_matter_id', $matterInternalId)
+                    ->update([
+                        'is_pinned' => $newPinStatus,
+                        'updated_by' => Auth::id(),
+                        'updated_at' => now(),
+                    ]);
+            } else {
+                DB::table('client_art_references')->insert([
+                    'client_id' => $clientId,
+                    'client_matter_id' => $matterInternalId,
+                    'status_of_file' => 'submission_pending',
+                    'is_pinned' => true,
+                    'created_by' => Auth::id(),
+                    'updated_by' => Auth::id(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                $newPinStatus = true;
+            }
+
+            return response()->json([
+                'success' => true,
+                'is_pinned' => $newPinStatus,
+                'message' => $newPinStatus ? 'Item pinned to top' : 'Item unpinned'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error updating pin status: ' . $e->getMessage()], 500);
+        }
     }
 }
