@@ -1446,6 +1446,7 @@ $(document).ready(function() {
             convertApplication: '{{ URL::to("/convertapplication") }}',
             renameDoc: '{{ URL::to("/documents/rename") }}',
             renameChecklistDoc: '{{ URL::to("/documents/rename-checklist") }}',
+            deleteChecklist: '{{ route("clients.documents.deleteChecklist") }}',
             getInterestedService: '{{ URL::to("/getintrestedservice") }}',
             getInterestedServiceEdit: '{{ URL::to("/getintrestedserviceedit") }}',
             fetchClientMatterAssignee: '{{ URL::to("/clients/fetchClientMatterAssignee") }}',
@@ -1590,6 +1591,7 @@ $(document).ready(function() {
 <script src="{{ URL::asset('js/crm/clients/modules/references.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/send-to-client.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/notes.js') }}"></script>
+<script src="{{ URL::asset('js/crm/clients/modules/checklist.js') }}"></script>
 {{-- Main detail page JavaScript --}}
 <script src="{{ URL::asset('js/crm/clients/detail-main.js') }}?v={{ time() }}"></script>
 

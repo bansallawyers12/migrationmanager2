@@ -12,6 +12,7 @@ This document tracks refactoring changes to `detail-main.js` for maintainability
 | Feb 2025 | Phase 2: Extract Utilities | ✅ Complete | ~17,190 |
 | Feb 2025 | Phase 3a: references + send-to-client | ✅ Complete | ~16,457 |
 | Feb 2025 | Phase 3b: notes module | ✅ Complete | ~16,200 |
+| Feb 2025 | Phase 3c: checklist module | ✅ Complete | ~15,700 |
 
 ---
 
@@ -253,11 +254,51 @@ resources/views/crm/companies/detail.blade.php   # Added module script tags
 
 ---
 
+## Phase 3c: Extract Checklist Module (Completed)
+
+### New File Created
+
+| File | Purpose | Dependencies |
+|------|---------|--------------|
+| `modules/checklist.js` | Application checklists, rename, upload, edit, delete | jQuery, ClientDetailConfig |
+
+### Extracted Logic
+
+- **Application checklist**: `.openchecklist`, `.openfileupload`, `.opendocnote` (open modals); `.due_date_sec` toggle; `#ddArea` drag-drop + `file_explorer`, `uploadFormData`
+- **Rename checklist**: Personal (`.persdocumnetlist`) and Visa (`.migdocumnetlist1`) inline edit, save, cancel
+- **Edit/Delete**: `.edit-checklist-btn` (triggers inline rename), `.delete-checklist-btn`
+
+### Config Keys Used
+
+- `ClientDetailConfig.urls.checklistUpload`
+- `ClientDetailConfig.urls.renameChecklistDoc`
+- `ClientDetailConfig.urls.deleteChecklist` (added)
+
+### Script Load Order (updated)
+
+```html
+<script src=".../modules/notes.js"></script>
+<script src=".../modules/checklist.js"></script>
+<script src=".../detail-main.js"></script>
+```
+
+### Troubleshooting (Phase 3c)
+
+**Checklist rename/delete not working**  
+- Ensure `modules/checklist.js` loads before `detail-main.js`  
+- Verify `ClientDetailConfig.urls.deleteChecklist` exists (route: `clients.documents.deleteChecklist`)
+
+**Checklist file upload (#ddArea) not working**  
+- Checklist module handles `#ddArea` in `openfileuploadmodal`  
+- Uses `ClientDetailConfig.urls.checklistUpload`
+
+---
+
 ## Planned Next Steps
 
 | Phase | Description |
 |-------|-------------|
-| Phase 3c | Extract checklist, documents, accounts, invoices |
+| Phase 3d | Extract documents, accounts, invoices |
 | Phase 4 | Module architecture (IIFE or ES modules) |
 
 ---

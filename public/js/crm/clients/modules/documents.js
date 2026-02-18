@@ -1,0 +1,371 @@
+/**
+ * Documents module - Category updates, document rename, download
+ * Extracted from detail-main.js - Phase 3d refactoring.
+ * Requires: jQuery, ClientDetailConfig. Uses: previewFile (global)
+ */
+(function($) {
+    'use strict';
+    if (!$) return;
+
+    $(document).ready(function() {
+        // ---- Update Personal Document Category ----
+        $(document).on('click', '.update-personal-cat-title', function() {
+            var id = $(this).data('id');
+            var newTitle = prompt('Enter new title for the category:');
+            if (newTitle) {
+                $.ajax({
+                    url: window.ClientDetailConfig.urls.updatePersonalCategory,
+                    method: 'POST',
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr('content'),
+                        id: id,
+                        title: newTitle
+                    },
+                    success: function(response) {
+                        if (response.status) {
+                            alert(response.message);
+                            location.reload();
+                        } else {
+                            alert(response.message);
+                        }
+                    }
+                });
+            }
+        });
+
+        // ---- Update Visa Document Category ----
+        $(document).on('click', '.update-visa-cat-title', function() {
+            var id = $(this).data('id');
+            var newTitle = prompt('Enter new title for the category:');
+            if (newTitle) {
+                $.ajax({
+                    url: window.ClientDetailConfig.urls.updateVisaCategory,
+                    method: 'POST',
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr('content'),
+                        id: id,
+                        title: newTitle
+                    },
+                    success: function(response) {
+                        if (response.status) {
+                            alert(response.message);
+                            location.reload();
+                        } else {
+                            alert(response.message);
+                        }
+                    }
+                });
+            }
+        });
+
+        // ---- Delete Personal Document Category ----
+        $(document).on('click', '.delete-personal-cat-title', function(e) {
+            e.preventDefault();
+            var id = $(this).data('id');
+            var title = $(this).data('title') || 'this category';
+            var warningMessage = '⚠️ WARNING: You are about to delete the category "' + title + '"\n\n' +
+                'This action will permanently remove the category from the system.\n\n' +
+                'Requirements:\n' +
+                '• Category must be empty (no documents)\n' +
+                '• Only superadmin can perform this action\n\n' +
+                'This action CANNOT be undone!\n\n' +
+                'Do you want to proceed?';
+            if (confirm(warningMessage)) {
+                var confirmMessage = '⚠️ FINAL CONFIRMATION\n\n' +
+                    'Are you absolutely sure you want to delete "' + title + '"?\n\n' +
+                    'This will permanently delete the category.\n\n' +
+                    'Click OK to delete or Cancel to abort.';
+                if (confirm(confirmMessage)) {
+                    $.ajax({
+                        url: window.ClientDetailConfig.urls.deletePersonalCategory,
+                        method: 'POST',
+                        data: {
+                            _token: $('meta[name="csrf-token"]').attr('content'),
+                            id: id
+                        },
+                        success: function(response) {
+                            if (response.status) {
+                                alert('✓ Success: ' + response.message);
+                                location.reload();
+                            } else {
+                                alert('✗ Error: ' + (response.message || 'Failed to delete category.'));
+                            }
+                        },
+                        error: function(xhr) {
+                            var errorMsg = 'An error occurred while deleting the category.';
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMsg = xhr.responseJSON.message;
+                            }
+                            alert('✗ Error: ' + errorMsg);
+                        }
+                    });
+                }
+            }
+        });
+
+        // ---- Rename Personal Document ----
+        $(document).on('click', '.persdocumnetlist .renamedoc, .persdocumnetlist a.renamedoc', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var parent = $(this).closest('.drow').find('.doc-row');
+            if (parent.length === 0) {
+                console.error('Document row not found');
+                return false;
+            }
+            parent.data('current-html', parent.html());
+            var opentime = parent.data('name');
+            if (!opentime) {
+                console.error('Document name not found');
+                return false;
+            }
+            parent.empty().append(
+                $('<input style="display: inline-block;width: auto;" class="form-control opentime" type="text">').prop('value', opentime),
+                $('<button class="btn btn-primary btn-sm mb-1"><i class="fas fa-check"></i></button>'),
+                $('<button class="btn btn-danger btn-sm mb-1"><i class="far fa-trash-alt"></i></button>')
+            );
+            return false;
+        });
+
+        $(document).on('click', '.persdocumnetlist .btn-danger', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var parent = $(this).closest('.drow').find('.doc-row');
+            if (parent.length === 0) {
+                console.error('Document row not found for cancel');
+                return false;
+            }
+            var hourid = parent.data('id');
+            if (hourid) {
+                parent.html(parent.data('current-html'));
+            } else {
+                parent.remove();
+            }
+            return false;
+        });
+
+        $(document).on('click', '.persdocumnetlist .btn-primary', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var parent = $(this).closest('.drow').find('.doc-row');
+            if (parent.length === 0) {
+                console.error('Document row not found for save');
+                return false;
+            }
+            parent.find('.opentime').removeClass('is-invalid');
+            parent.find('.invalid-feedback').remove();
+            var opentime = parent.find('.opentime').val();
+            if (!opentime) {
+                parent.find('.opentime').addClass('is-invalid').css({ 'background-image': 'none', 'padding-right': '0.75em' });
+                parent.append($("<div class='invalid-feedback'>This field is required</div>"));
+                return false;
+            }
+            $.ajax({
+                type: "POST",
+                data: {"_token": $('meta[name="csrf-token"]').attr('content'),"filename": opentime, "id": parent.data('id')},
+                url: window.ClientDetailConfig.urls.renameDoc,
+                success: function(result) {
+                    var obj = JSON.parse(result);
+                    if (obj.status) {
+                        var previewUrl = obj.fileurl;
+                        var filetype = obj.filetype;
+                        var folderName = obj.folder_name;
+                        var fileName = obj.filename + '.' + obj.filetype;
+                        parent.empty()
+                            .data('id', obj.Id)
+                            .data('name', opentime)
+                            .append(
+                                $('<a>', {
+                                    href: 'javascript:void(0);',
+                                    onclick: 'previewFile(\'' + filetype + '\', \'' + previewUrl + '\', \'' + folderName + '\')'
+                                }).append(
+                                    $('<i>', { class: 'fas fa-file-image' }),
+                                    ' ',
+                                    $('<span>').text(fileName)
+                                )
+                            );
+                        if ($('#grid_'+obj.Id).length) {
+                            $('#grid_'+obj.Id).html(fileName);
+                        }
+                        var dropdownMenu = $(parent).closest('.drow').find('.dropdown-menu');
+                        dropdownMenu.find('.dropdown-item[href^="http"]').filter(function() {
+                            return $(this).text().trim() === 'Preview';
+                        }).attr('href', previewUrl);
+                        dropdownMenu.find('.dropdown-item.download-file')
+                            .attr('data-filelink', previewUrl)
+                            .attr('data-filename', fileName);
+                    } else {
+                        parent.find('.opentime').addClass('is-invalid').css({ 'background-image': 'none', 'padding-right': '0.75em' });
+                        parent.append($('<div class="invalid-feedback">' + obj.message + '</div>'));
+                        console.error('Failed to rename document:', obj.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Ajax error:', error);
+                    parent.find('.opentime').addClass('is-invalid').css({ 'background-image': 'none', 'padding-right': '0.75em' });
+                    parent.append($('<div class="invalid-feedback">An error occurred while saving</div>'));
+                }
+            });
+            return false;
+        });
+
+        // ---- Rename Visa Document ----
+        $(document).on('click', '.migdocumnetlist1 .renamedoc', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var parent = $(this).closest('.drow').find('.doc-row');
+            if (parent.length === 0) {
+                console.error('Visa document row not found');
+                return false;
+            }
+            parent.data('current-html', parent.html());
+            var opentime = parent.data('name');
+            if (!opentime) {
+                console.error('Visa document name not found');
+                return false;
+            }
+            parent.empty().append(
+                $('<input style="display: inline-block;width: auto;" class="form-control opentime" type="text">').prop('value', opentime),
+                $('<button class="btn btn-primary btn-sm mb-1"><i class="fas fa-check"></i></button>'),
+                $('<button class="btn btn-danger btn-sm mb-1"><i class="far fa-trash-alt"></i></button>')
+            );
+            return false;
+        });
+
+        $(document).on('click', '.migdocumnetlist1 .btn-danger', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var parent = $(this).closest('.drow').find('.doc-row');
+            if (parent.length === 0) {
+                console.error('Visa document row not found for cancel');
+                return false;
+            }
+            var hourid = parent.data('id');
+            if (hourid) {
+                parent.html(parent.data('current-html'));
+            } else {
+                parent.remove();
+            }
+            return false;
+        });
+
+        $(document).on('click', '.migdocumnetlist1 .btn-primary', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var parent = $(this).closest('.drow').find('.doc-row');
+            if (parent.length === 0) {
+                console.error('Visa document row not found for save');
+                return false;
+            }
+            parent.find('.opentime').removeClass('is-invalid');
+            parent.find('.invalid-feedback').remove();
+            var opentime = parent.find('.opentime').val();
+            if (!opentime) {
+                parent.find('.opentime').addClass('is-invalid').css({ 'background-image': 'none', 'padding-right': '0.75em' });
+                parent.append($("<div class='invalid-feedback'>This field is required</div>"));
+                return false;
+            }
+            $.ajax({
+                type: "POST",
+                data: {"_token": $('meta[name="csrf-token"]').attr('content'),"filename": opentime, "id": parent.data('id')},
+                url: window.ClientDetailConfig.urls.renameDoc,
+                success: function(result) {
+                    var obj = JSON.parse(result);
+                    if (obj.status) {
+                        var previewUrl = obj.fileurl;
+                        var filetype = obj.filetype;
+                        var folderName = obj.folder_name;
+                        var fileName = obj.filename + '.' + obj.filetype;
+                        parent.empty()
+                            .data('id', obj.Id)
+                            .data('name', opentime)
+                            .append(
+                                $('<a>', {
+                                    href: 'javascript:void(0);',
+                                    onclick: 'previewFile(\'' + filetype + '\', \'' + previewUrl + '\', \'' + folderName + '\')'
+                                }).append(
+                                    $('<i>', { class: 'fas fa-file-image' }),
+                                    ' ',
+                                    $('<span>').text(fileName)
+                                )
+                            );
+                        if ($('#grid_'+obj.Id).length) {
+                            $('#grid_'+obj.Id).html(fileName);
+                        }
+                        var dropdownMenu = $(parent).closest('.drow').find('.dropdown-menu');
+                        dropdownMenu.find('.dropdown-item[href^="http"]').filter(function() {
+                            return $(this).text().trim() === 'Preview';
+                        }).attr('href', previewUrl);
+                        dropdownMenu.find('.dropdown-item.download-file')
+                            .attr('data-filelink', previewUrl)
+                            .attr('data-filename', fileName);
+                    } else {
+                        parent.find('.opentime').addClass('is-invalid').css({ 'background-image': 'none', 'padding-right': '0.75em' });
+                        parent.append($('<div class="invalid-feedback">' + obj.message + '</div>'));
+                        console.error('Failed to rename visa document:', obj.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Ajax error:', error);
+                    parent.find('.opentime').addClass('is-invalid').css({ 'background-image': 'none', 'padding-right': '0.75em' });
+                    parent.append($('<div class="invalid-feedback">An error occurred while saving</div>'));
+                }
+            });
+            return false;
+        });
+
+        // ---- Download Document ----
+        $(document).on('click', '.download-file', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var $this = $(this);
+            var filelink = $this.data('filelink');
+            var filename = $this.data('filename');
+            if (!filelink || !filename) {
+                console.error('Missing file info - filelink:', filelink, 'filename:', filename);
+                alert('Missing file info. Please try again.');
+                return false;
+            }
+            $this.html('<i class="fas fa-spinner fa-spin"></i> Downloading...');
+            $this.prop('disabled', true);
+            var form = $('<form>', {
+                method: 'POST',
+                action: window.ClientDetailConfig.urls.downloadDocument,
+                target: '_blank',
+                style: 'display: none'
+            });
+            var token = $('meta[name="csrf-token"]').attr('content');
+            if (!token) {
+                console.error('CSRF token not found');
+                alert('Security token not found. Please refresh the page and try again.');
+                $this.html('Download').prop('disabled', false);
+                return false;
+            }
+            form.append($('<input>', { type: 'hidden', name: '_token', value: token }));
+            form.append($('<input>', { type: 'hidden', name: 'filelink', value: filelink }));
+            form.append($('<input>', { type: 'hidden', name: 'filename', value: filename }));
+            $('body').append(form);
+            try {
+                form[0].submit();
+                setTimeout(function() {
+                    $this.html('Download').prop('disabled', false);
+                }, 2000);
+            } catch (error) {
+                console.error('Error submitting form:', error);
+                alert('Error initiating download. Please try again.');
+                $this.html('Download').prop('disabled', false);
+            }
+            setTimeout(function() { form.remove(); }, 1000);
+            return false;
+        });
+
+        // ---- Visual: make download-file and renamedoc clickable ----
+        $('.download-file, .renamedoc').css({
+            'pointer-events': 'auto',
+            'cursor': 'pointer',
+            'z-index': '1000'
+        });
+        $(document).on('mouseenter', '.download-file, .renamedoc', function() { $(this).css('background-color', '#f8f9fa'); });
+        $(document).on('mouseleave', '.download-file, .renamedoc', function() { $(this).css('background-color', ''); });
+    });
+
+})(typeof jQuery !== 'undefined' ? jQuery : null);
