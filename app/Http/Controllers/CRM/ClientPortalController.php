@@ -22,6 +22,7 @@ use App\Events\MessageSent;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Broadcast;
+use Illuminate\Support\Facades\Storage;
 use App\Services\FCMService;
 
 /**
@@ -2676,10 +2677,19 @@ class ClientPortalController extends Controller
 						$senderInitials = $firstInitial . $lastInitial;
 					}
 
-					// Safely handle attachments property (may not exist in all database schemas)
-					$attachments = null;
-					if (property_exists($message, 'attachments') && $message->attachments) {
-						$attachments = json_decode($message->attachments, true);
+					// Load attachments from message_attachments table
+					$attachments = [];
+					if (Schema::hasTable('message_attachments')) {
+						$attachmentsRows = DB::table('message_attachments')
+							->where('message_id', $message->id)
+							->get();
+						foreach ($attachmentsRows as $att) {
+							$attachments[] = [
+								'type' => $att->type ?? 'document',
+								'filename' => $att->original_filename ?? $att->filename,
+								'url' => Storage::disk('public')->url($att->path),
+							];
+						}
 					}
 
 					return [
@@ -2738,10 +2748,20 @@ class ClientPortalController extends Controller
 	public function sendMessageToClient(Request $request)
 	{
 		try {
-			$request->validate([
-				'message' => 'required|string|max:5000',
-				'client_matter_id' => 'required|integer|min:1'
-			]);
+			$hasFiles = $request->hasFile('attachments') || $request->hasFile('attachments.*');
+			$messageText = $request->input('message', '');
+			$messageText = is_string($messageText) ? trim($messageText) : '';
+
+			$rules = [
+				'client_matter_id' => 'required|integer|min:1',
+				'message' => ['nullable', 'string', 'max:5000'],
+				'attachments' => ['nullable', 'array'],
+				'attachments.*' => ['file', 'max:10240'], // 10MB per file
+			];
+			if (!$hasFiles) {
+				$rules['message'] = ['required', 'string', 'max:5000'];
+			}
+			$request->validate($rules);
 
 			$admin = Auth::guard('admin')->user();
 			if (!$admin) {
@@ -2752,8 +2772,8 @@ class ClientPortalController extends Controller
 			}
 
 			$senderId = $admin->id;
-			$message = $request->input('message');
-			$clientMatterId = $request->input('client_matter_id');
+			$message = $messageText ?: '';
+			$clientMatterId = (int) $request->input('client_matter_id');
 
 			// Get client matter info to find the client_id
 			$clientMatter = DB::table('client_matters')
@@ -2817,6 +2837,48 @@ class ClientPortalController extends Controller
 			$messageId = DB::table('messages')->insertGetId($messageData);
 
 			if ($messageId) {
+				// Handle file attachments
+				$attachmentsForResponse = [];
+				if ($request->hasFile('attachments')) {
+					$files = $request->file('attachments');
+					if (!is_array($files)) {
+						$files = [$files];
+					}
+					$allowedImages = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+					$allowedDocs = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'text/plain', 'text/csv'];
+					$allowedMimes = array_merge($allowedImages, $allowedDocs);
+
+					foreach ($files as $file) {
+						if (!$file->isValid()) continue;
+						$mime = $file->getMimeType();
+						if (!in_array($mime, $allowedMimes)) continue;
+
+						$type = in_array($mime, $allowedImages) ? 'image' : 'document';
+						$ext = $file->getClientOriginalExtension() ?: pathinfo($file->getClientOriginalName(), PATHINFO_EXTENSION);
+						$safeName = Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '_' . uniqid() . '.' . ($ext ?: 'bin');
+						$path = $file->storeAs('message-attachments/' . date('Y/m'), $safeName, 'public');
+
+						DB::table('message_attachments')->insert([
+							'message_id' => $messageId,
+							'filename' => $safeName,
+							'original_filename' => $file->getClientOriginalName(),
+							'path' => $path,
+							'mime_type' => $mime,
+							'type' => $type,
+							'size' => $file->getSize(),
+							'created_at' => now(),
+							'updated_at' => now(),
+						]);
+
+						$attachmentsForResponse[] = [
+							'type' => $type,
+							'filename' => $file->getClientOriginalName(),
+							'url' => Storage::disk('public')->url($path),
+							'path' => $path,
+						];
+					}
+				}
+
 				// Insert recipient into pivot table
 				MessageRecipient::insert([
 					'message_id' => $messageId,
@@ -2868,6 +2930,7 @@ class ClientPortalController extends Controller
 					'sent_at' => now()->toISOString(),
 					'created_at' => now()->toISOString(),
 					'client_matter_id' => $clientMatterId,
+					'attachments' => $attachmentsForResponse,
 					'recipients' => [[
 						'recipient_id' => $clientId,
 						'recipient' => $recipientUser->full_name
@@ -2953,6 +3016,12 @@ class ClientPortalController extends Controller
 				], 500);
 			}
 
+		} catch (\Illuminate\Validation\ValidationException $e) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Validation failed',
+				'errors' => $e->errors()
+			], 422);
 		} catch (\Exception $e) {
 			Log::error('Send Message Error: ' . $e->getMessage(), [
 				'user_id' => Auth::guard('admin')->id(),
