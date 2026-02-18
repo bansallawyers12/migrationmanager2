@@ -948,6 +948,11 @@
 </div>
 
 <style>
+/* WCAG contrast: text-muted on light backgrounds - use darker gray */
+.client-portal-container .text-muted {
+    color: #4b5563 !important;
+}
+
 .client-portal-container {
     background: #fff;
     border-radius: 8px;

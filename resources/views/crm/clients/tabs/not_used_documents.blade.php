@@ -6,7 +6,7 @@
                         <div style="flex: 1; min-width: 0;">
                             <div class="subtab-header" style="margin-bottom: 15px;">
                                 <h3><i class="fas fa-folder"></i> Not Used Documents</h3>
-                                <p class="text-muted">Documents marked as "Not Used" from both Personal and Visa document tabs are shown here.</p>
+                                <p style="color: #374151;">Documents marked as "Not Used" from both Personal and Visa document tabs are shown here.</p>
                             </div>
                             <div style="overflow: auto; max-height: calc(100vh - 250px);">
                                 <table class="checklist-table" style="width: 100%;">
@@ -80,7 +80,7 @@
 
                         <!-- Preview Container -->
                         <div class="preview-pane file-preview-container preview-container-notuseddocumnetlist" style="display: inline;margin-top: 15px !important;width: 499px;">
-                            <p>Click on a file to preview it here.</p>
+                            <p style="color: #374151;">Click on a file to preview it here.</p>
                         </div>
                     </div>
                 </div>

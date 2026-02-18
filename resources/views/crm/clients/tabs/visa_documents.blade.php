@@ -119,7 +119,7 @@
                                 $folderName = $id;
                                 ?>
                                 <div class="subtab6-pane <?= $isActive ?>" id="<?= $id ?>-subtab6">
-                                    <div class="checklist-table-container" style="vertical-align: top; margin-top: 10px; width: 760px;">
+                                    <div class="checklist-table-container" style="vertical-align: top; margin-top: 10px; width: 760px; overflow: visible;">
                                         <div class="subtab6-header" style="margin-left: 10px;">
                                             <h3><i class="fas fa-file-alt"></i> <?= htmlspecialchars($catVal->title) ?> Documents</h3>
                                             <div style="display: flex; gap: 10px;">
@@ -138,11 +138,11 @@
                                         <!-- Bulk Upload Dropzone for Visa (Hidden by default) -->
                                         <div class="bulk-upload-dropzone-container-visa" id="bulk-upload-visa-<?= $id ?>" style="display: none; margin: 15px 0; padding: 20px; border: 2px dashed #4a90e2; border-radius: 8px; background-color: #f8f9fa;">
                                             <div class="bulk-upload-dropzone-visa" data-categoryid="<?= $id ?>" data-matterid="<?= $client_selected_matter_id1 ?? '' ?>" style="text-align: center; padding: 30px; cursor: pointer;">
-                                                <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: #4a90e2; margin-bottom: 15px;"></i>
-                                                <p style="font-size: 16px; color: #666; margin-bottom: 10px;">
+                                                <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: #2563eb; margin-bottom: 15px;"></i>
+                                                <p style="font-size: 16px; color: #374151; margin-bottom: 10px;">
                                                     <strong>Drag and drop files here</strong> or <strong>click to browse</strong>
                                                 </p>
-                                                <p style="font-size: 14px; color: #999;">You can select multiple files at once</p>
+                                                <p style="font-size: 14px; color: #4b5563;">You can select multiple files at once</p>
                                                 <input type="file" class="bulk-upload-file-input-visa" data-categoryid="<?= $id ?>" data-matterid="<?= $client_selected_matter_id1 ?? '' ?>" multiple style="display: none;" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
                                             </div>
                                             <div class="bulk-upload-file-list-visa" style="display: none; margin-top: 20px;">
@@ -214,11 +214,8 @@
                                                                     </a>
                                                                 </div>
                                                             <?php elseif ($isForm956): ?>
-                                                                <div class="form956-download-upload" style="display: flex; flex-direction: column; gap: 10px;">
-                                                                    <a href="<?= e($downloadUrl) ?>" class="btn btn-sm btn-outline-primary form956-download-btn" style="align-self: flex-start;" data-download-url="<?= e($downloadUrl) ?>" data-filename="Form956.pdf">
-                                                                        <i class="fas fa-download mr-1"></i> Download Form 956 PDF
-                                                                    </a>
-                                                                    <p class="text-muted mb-0" style="font-size: 12px;">Download, check, update, then upload your completed form below.</p>
+                                                                <div class="form956-download-upload" style="display: flex; flex-direction: column; gap: 10px;" data-download-url="<?= e($downloadUrl) ?>" data-doc-id="<?= $fetch->id ?>">
+                                                                    <p class="mb-0" style="font-size: 12px; color: #374151;">Form 956 PDF downloads automatically. Check, update, then upload your completed form below.</p>
                                                                     <div class="migration_upload_document" style="display: inline-block;">
                                                                         <form method="POST" enctype="multipart/form-data" id="mig_upload_form_<?= $fetch->id ?>">
                                                                             @csrf
@@ -312,7 +309,7 @@
                                     </div>
 
                                     <div class="preview-pane file-preview-container preview-container-migdocumnetlist" style="display: inline;margin-top: 15px !important; width: 499px;">
-                                        <p>Click on a file to preview it here.</p>
+                                        <p style="color: #374151;">Click on a file to preview it here.</p>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
@@ -665,33 +662,45 @@
                     }
                 });
 
-                // Form 956: Force PDF download (fetch as blob to ensure download, not inline display)
-                $(document).on('click', '.form956-download-btn', function(e) {
-                    e.preventDefault();
-                    var $btn = $(this);
-                    var url = $btn.data('download-url');
-                    var filename = $btn.data('filename') || 'Form956.pdf';
-                    if (!url) return;
-                    $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Downloading...');
-                    fetch(url, { credentials: 'same-origin' })
-                        .then(function(r) { return r.blob(); })
-                        .then(function(blob) {
-                            var a = document.createElement('a');
-                            a.href = URL.createObjectURL(blob);
-                            a.download = filename;
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                            URL.revokeObjectURL(a.href);
-                        })
-                        .catch(function() {
-                            // Fallback: open in new tab
-                            window.open(url, '_blank');
-                        })
-                        .finally(function() {
-                            $btn.prop('disabled', false).html('<i class="fas fa-download mr-1"></i> Download Form 956 PDF');
-                        });
-                });
+                // Form 956: Auto-download PDF when visa documents tab is shown (downloads once per URL per page load)
+                // Exposed as a global so sidebar-tabs.js can call it directly (stopImmediatePropagation blocks delegated click events)
+                window.autoDownloadForm956Pdfs = function() {
+                    var $containers = $('#visadocuments-tab .form956-download-upload[data-download-url]').filter(':visible');
+                    if ($containers.length === 0) return;
+                    var seenUrls = {};
+                    var downloadIdx = 0;
+                    $containers.each(function() {
+                        var url = $(this).data('download-url');
+                        var docId = $(this).data('doc-id');
+                        var lsKey = 'form956_dl_' + docId;
+                        // Skip if already downloaded in a previous session or this session
+                        if (!url || seenUrls[url]) return;
+                        if (docId && localStorage.getItem(lsKey)) return;
+                        seenUrls[url] = true;
+                        var $el = $(this);
+                        var idx = downloadIdx++;
+                        (function(u, key, $container) {
+                            setTimeout(function() {
+                                fetch(u, { credentials: 'same-origin' })
+                                    .then(function(r) { return r.blob(); })
+                                    .then(function(blob) {
+                                        var a = document.createElement('a');
+                                        a.href = URL.createObjectURL(blob);
+                                        a.download = 'Form956.pdf';
+                                        document.body.appendChild(a);
+                                        a.click();
+                                        document.body.removeChild(a);
+                                        URL.revokeObjectURL(a.href);
+                                        if (key) localStorage.setItem(key, '1');
+                                    })
+                                    .catch(function() {
+                                        window.open(u, '_blank');
+                                        if (key) localStorage.setItem(key, '1');
+                                    });
+                            }, idx * 800);
+                        })(url, lsKey, $el);
+                    });
+                };
             </script>
 
             <script>
@@ -1564,16 +1573,17 @@
                     display: flex;
                     align-items: center;
                     gap: 10px;
-                    color: #666;
+                    color: #374151;
                 }
 
                 .drag-zone-inner i {
                     font-size: 20px;
-                    color: #007bff;
+                    color: #2563eb;
                 }
 
                 .drag-zone-text {
                     font-size: 14px;
+                    color: inherit;
                 }
 
                 .document-drag-drop-zone.uploading {
@@ -1631,7 +1641,7 @@
 
                 .bulk-upload-file-item .file-size {
                     font-size: 12px;
-                    color: #999;
+                    color: #4b5563;
                 }
 
                 .bulk-upload-file-item .checklist-select {

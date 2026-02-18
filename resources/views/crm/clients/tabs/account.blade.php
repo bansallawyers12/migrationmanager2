@@ -2730,7 +2730,7 @@ tr.unallocated-receipt[draggable="true"]:hover::after {
 
 .receipt-drag-drop-zone .drag-zone-inner i {
     font-size: 48px;
-    color: #007bff;
+    color: #2563eb;
     transition: all 0.3s ease;
 }
 
@@ -2754,7 +2754,7 @@ tr.unallocated-receipt[draggable="true"]:hover::after {
 
 .receipt-drag-drop-zone .drag-zone-formats {
     font-size: 13px;
-    color: #666;
+    color: #4b5563;
 }
 
 .receipt-drag-drop-zone.uploading {

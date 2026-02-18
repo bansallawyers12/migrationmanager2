@@ -193,6 +193,7 @@ Route::middleware(['auth:admin'])->group(function() {
         // Create
         Route::get('/create', [LeadController::class, 'create'])->name('create');
         Route::post('/store', [LeadController::class, 'store'])->name('store');
+        Route::get('/check-contact-match', [LeadController::class, 'checkContactMatch'])->name('check.contact.match');
         
         // Edit & Update (RESTful pattern)
         Route::get('/{id}/edit', [LeadController::class, 'edit'])->name('edit');

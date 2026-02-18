@@ -120,13 +120,13 @@
 			<div class="modal-body p-4" style="max-height: calc(90vh - 150px); overflow-y: auto;">
 				<div id="signature-placement-loading" class="text-center py-5">
 					<div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div>
-					<p class="mt-2 text-muted">Loading document...</p>
+					<p class="mt-2" style="color: #374151;">Loading document...</p>
 				</div>
 				<div id="signature-placement-content" style="display: none;">
 					<div class="row">
 						<div class="col-lg-8">
 							<div class="mb-2">
-								<small class="text-muted">Document Preview — Click on the document to add signature fields, then drag to position them.</small>
+								<small style="color: #4b5563;">Document Preview — Click on the document to add signature fields, then drag to position them.</small>
 							</div>
 							<div id="signature-page-nav" class="mb-3" style="display: none;">
 								<div class="btn-group btn-group-sm">

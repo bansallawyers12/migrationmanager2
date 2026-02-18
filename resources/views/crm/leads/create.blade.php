@@ -396,8 +396,11 @@
                                                 @endif
                                             </select>
                                             <small class="form-text text-muted">
-                                                Search existing clients/leads by email, name, phone, or client ID. Selected person's details will auto-fill below.
+                                                Search existing clients/leads by email, name, phone, or client ID. Selected person's details will auto-fill below. Or enter phone/email below — if they match an existing person, they will be auto-associated.
                                             </small>
+                                            <div id="associatedPersonAlert" class="alert alert-info mt-2" style="display: none;">
+                                                <i class="fas fa-link"></i> <strong>Associated:</strong> This phone/email belongs to <span id="associatedPersonName"></span>. They will be set as the contact person.
+                                            </div>
                                             @error('contact_person_id')
                                                 <span class="text-danger">{{ $message }}</span>
                                             @enderror
@@ -635,7 +638,7 @@
                                     </div>
                                     <div class="form-group">
                                         <label>Phone Number <span class="text-danger">*</span></label>
-                                        <input type="text" name="phone[0]" class="form-control" placeholder="Enter phone number" value="{{ old('phone.0') }}" required>
+                                        <input type="text" id="primaryPhoneInput" name="phone[0]" class="form-control" placeholder="Enter phone number" value="{{ old('phone.0') }}" required>
                                         @error('phone.0')
                                             <span class="text-danger">{{ $message }}</span>
                                         @enderror
@@ -674,7 +677,7 @@
                                 </div>
                                 <div class="form-group">
                                         <label>Email Address <span class="text-danger">*</span></label>
-                                        <input type="email" name="email[0]" class="form-control" placeholder="Enter email address" value="{{ old('email.0') }}" required>
+                                        <input type="email" id="primaryEmailInput" name="email[0]" class="form-control" placeholder="Enter email address" value="{{ old('email.0') }}" required>
                                         @error('email.0')
                                             <span class="text-danger">{{ $message }}</span>
                                         @enderror
@@ -905,9 +908,10 @@
         // Initialize company toggle functionality
         initCompanyToggle();
         
-        // Initialize contact person search if company fields are visible
+        // Initialize contact person search and phone/email match check if company fields are visible
         @if(old('is_company') == 'yes')
             initContactPersonSearch();
+            initContactMatchCheck();
         @endif
     });
     
@@ -949,11 +953,13 @@
             // Initialize contact person search when company fields are shown
             setTimeout(function() {
                 initContactPersonSearch();
+                initContactMatchCheck();
             }, 100);
         } else {
             // Show personal fields, hide company fields
             if (personalFields) personalFields.style.display = 'block';
             if (companyFields) companyFields.style.display = 'none';
+            $('#associatedPersonAlert').hide();
             
             // Remove required from company fields
             companyRequiredFields.forEach(field => {
@@ -1111,7 +1117,64 @@
             $('#contactPersonPhone').val('');
             $('#contactPersonEmailDisplay').val('');
             $('.contact-person-field').removeClass('field-auto-filled');
+            $('#associatedPersonAlert').hide();
         });
+    }
+    
+    // Check phone/email for matching contact person (company leads only)
+    var contactMatchTimeout = null;
+    function initContactMatchCheck() {
+        const phoneInput = document.getElementById('primaryPhoneInput');
+        const emailInput = document.getElementById('primaryEmailInput');
+        if (!phoneInput || !emailInput) return;
+        
+        function checkContactMatch() {
+            const isCompany = document.querySelector('input[name="is_company"][value="yes"]')?.checked;
+            if (!isCompany) {
+                $('#associatedPersonAlert').hide();
+                return;
+            }
+            const phone = (phoneInput.value || '').trim();
+            const email = (emailInput.value || '').trim();
+            if (!phone && !email) {
+                $('#associatedPersonAlert').hide();
+                return;
+            }
+            $.ajax({
+                url: '{{ route("leads.check.contact.match") }}',
+                method: 'GET',
+                data: { phone: phone, email: email },
+                success: function(res) {
+                    if (res.found && res.person) {
+                        $('#associatedPersonName').text(res.person.first_name + ' ' + res.person.last_name + (res.person.client_id ? ' (' + res.person.client_id + ')' : ''));
+                        $('#associatedPersonAlert').show();
+                        const $select = $('#contactPersonEmail');
+                        const existingOpt = $select.find('option[value="' + res.person.id + '"]');
+                        if (existingOpt.length) {
+                            $select.val(res.person.id).trigger('change');
+                        } else {
+                            const option = new Option(res.person.text, res.person.id, true, true);
+                            $select.append(option).trigger('change');
+                        }
+                        $('#contactPersonFirstName').val(res.person.first_name || '');
+                        $('#contactPersonLastName').val(res.person.last_name || '');
+                        $('#contactPersonPhone').val(res.person.phone || '');
+                        $('#contactPersonEmailDisplay').val(res.person.email || '');
+                        $('.contact-person-field').addClass('field-auto-filled');
+                    } else {
+                        $('#associatedPersonAlert').hide();
+                    }
+                }
+            });
+        }
+        
+        function debouncedCheck() {
+            clearTimeout(contactMatchTimeout);
+            contactMatchTimeout = setTimeout(checkContactMatch, 400);
+        }
+        
+        $(phoneInput).off('blur.contactMatch input.contactMatch').on('blur.contactMatch input.contactMatch', debouncedCheck);
+        $(emailInput).off('blur.contactMatch input.contactMatch').on('blur.contactMatch input.contactMatch', debouncedCheck);
     }
     
     // Function to display validation errors for each field

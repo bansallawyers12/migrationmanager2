@@ -286,6 +286,52 @@ class LeadController extends Controller
             Log::info('Primary email: ' . $primaryEmail);
             Log::info('Is company: ' . ($isCompany ? 'yes' : 'no'));
 
+            // For company leads: find existing person by phone/email and auto-associate as contact person
+            if ($isCompany && (empty($requestData['contact_person_id']) || $requestData['contact_person_id'] === '')) {
+                $matchedPerson = null;
+                if ($primaryPhone) {
+                    $matchedPerson = Admin::where('phone', $primaryPhone)
+                        ->where('role', 7)
+                        ->where(function ($q) { $q->where('type', 'client')->orWhere('type', 'lead'); })
+                        ->where('is_company', false)
+                        ->first();
+                    if (!$matchedPerson) {
+                        $contact = ClientContact::where('phone', $primaryPhone)->first();
+                        if ($contact) {
+                            $matchedPerson = Admin::find($contact->client_id);
+                            if ($matchedPerson && (($matchedPerson->is_company ?? false) || !in_array($matchedPerson->type ?? '', ['client', 'lead']))) {
+                                $matchedPerson = null;
+                            }
+                        }
+                    }
+                }
+                if (!$matchedPerson && $primaryEmail) {
+                    $matchedPerson = Admin::where('email', $primaryEmail)
+                        ->where('role', 7)
+                        ->where(function ($q) { $q->where('type', 'client')->orWhere('type', 'lead'); })
+                        ->where('is_company', false)
+                        ->first();
+                    if (!$matchedPerson) {
+                        $clientEmail = ClientEmail::where('email', $primaryEmail)->first();
+                        if ($clientEmail) {
+                            $matchedPerson = Admin::find($clientEmail->client_id);
+                            if ($matchedPerson && (($matchedPerson->is_company ?? false) || !in_array($matchedPerson->type ?? '', ['client', 'lead']))) {
+                                $matchedPerson = null;
+                            }
+                        }
+                    }
+                }
+                if ($matchedPerson) {
+                    $request->merge([
+                        'contact_person_id' => $matchedPerson->id,
+                        'contact_person_first_name' => $matchedPerson->first_name,
+                        'contact_person_last_name' => $matchedPerson->last_name,
+                    ]);
+                    $requestData = $request->all();
+                    Log::info('Auto-associated contact person from phone/email: ' . $matchedPerson->id);
+                }
+            }
+
             // Conditional validation
             try {
                 if ($isCompany) {
@@ -378,30 +424,17 @@ class LeadController extends Controller
            
 
             // Handle special cases for duplicate email and phone (Option 2: Auto-modify with timestamp)
+            // NOTE: For company leads, skip uniqueness check - allow creation and auto-associate with existing person
             $timestamp = time();
             $phoneModified = false;
             $emailModified = false;
+            $errors = [];
 
-            // Validate uniqueness for phone number (check both admins table and client_contacts table)
-            if ($primaryPhone) {
-                // Check in admins table (primary phone) - check all records regardless of role/type
-                $existingPhone = Admin::where('phone', $primaryPhone)->first();
-                if ($existingPhone) {
-                    // Special case: allow 4444444444 to be duplicated with timestamp
-                    if ($primaryPhone === '4444444444') {
-                        $primaryPhone = $primaryPhone . '_' . $timestamp;
-                        $phoneModified = true;
-                        Log::info('Phone number modified to: ' . $primaryPhone);
-                    } else {
-                        $errors["phone.0"] = "This phone number is already registered.";
-                    }
-                }
-                
-                // Check in client_contacts table (all phone numbers) - only if not already modified
-                if (!$phoneModified) {
-                    $existingContact = ClientContact::where('phone', $primaryPhone)->first();
-                    if ($existingContact) {
-                        // Special case: allow 4444444444 to be duplicated with timestamp
+            if (!$isCompany) {
+                // Validate uniqueness for phone number (personal leads only)
+                if ($primaryPhone) {
+                    $existingPhone = Admin::where('phone', $primaryPhone)->first();
+                    if ($existingPhone) {
                         if ($primaryPhone === '4444444444') {
                             $primaryPhone = $primaryPhone . '_' . $timestamp;
                             $phoneModified = true;
@@ -410,46 +443,50 @@ class LeadController extends Controller
                             $errors["phone.0"] = "This phone number is already registered.";
                         }
                     }
-                }
-            }
-
-            // Validate uniqueness for email address (check both admins table and client_emails table)
-            if ($primaryEmail) {
-                // Check in admins table (primary email) - check all records regardless of role/type
-                $existingEmail = Admin::where('email', $primaryEmail)->first();
-                if ($existingEmail) {
-                    // Special case: allow demo@gmail.com to be duplicated with timestamp
-                    if ($primaryEmail === 'demo@gmail.com') {
-                        // Add timestamp to local part (before @ symbol)
-                        $emailParts = explode('@', $primaryEmail);
-                        $localPart = $emailParts[0];
-                        $domainPart = $emailParts[1];
-                        $primaryEmail = $localPart . '_' . $timestamp . '@' . $domainPart;
-                        $emailModified = true;
-                        Log::info('Email address modified to: ' . $primaryEmail);
-                    } else {
-                        $errors["email.0"] = "This email address is already registered.";
+                    if (!$phoneModified) {
+                        $existingContact = ClientContact::where('phone', $primaryPhone)->first();
+                        if ($existingContact) {
+                            if ($primaryPhone === '4444444444') {
+                                $primaryPhone = $primaryPhone . '_' . $timestamp;
+                                $phoneModified = true;
+                                Log::info('Phone number modified to: ' . $primaryPhone);
+                            } else {
+                                $errors["phone.0"] = "This phone number is already registered.";
+                            }
+                        }
                     }
                 }
-                
-                // Check in client_emails table (all email addresses) - only if not already modified
-                if (!$emailModified) {
-                    $existingClientEmail = ClientEmail::where('email', $primaryEmail)->first();
-                    if ($existingClientEmail) {
-                        // Special case: allow demo@gmail.com to be duplicated with timestamp
+
+                // Validate uniqueness for email address (personal leads only)
+                if ($primaryEmail) {
+                    $existingEmail = Admin::where('email', $primaryEmail)->first();
+                    if ($existingEmail) {
                         if ($primaryEmail === 'demo@gmail.com') {
-                            // Add timestamp to local part (before @ symbol)
                             $emailParts = explode('@', $primaryEmail);
-                            $localPart = $emailParts[0];
-                            $domainPart = $emailParts[1];
-                            $primaryEmail = $localPart . '_' . $timestamp . '@' . $domainPart;
+                            $primaryEmail = ($emailParts[0] ?? 'demo') . '_' . $timestamp . '@' . ($emailParts[1] ?? 'gmail.com');
                             $emailModified = true;
                             Log::info('Email address modified to: ' . $primaryEmail);
                         } else {
                             $errors["email.0"] = "This email address is already registered.";
                         }
                     }
+                    if (!$emailModified) {
+                        $existingClientEmail = ClientEmail::where('email', $primaryEmail)->first();
+                        if ($existingClientEmail) {
+                            if ($primaryEmail === 'demo@gmail.com') {
+                                $emailParts = explode('@', $primaryEmail);
+                                $primaryEmail = ($emailParts[0] ?? 'demo') . '_' . $timestamp . '@' . ($emailParts[1] ?? 'gmail.com');
+                                $emailModified = true;
+                                Log::info('Email address modified to: ' . $primaryEmail);
+                            } else {
+                                $errors["email.0"] = "This email address is already registered.";
+                            }
+                        }
+                    }
                 }
+            } else {
+                // Company leads: if email already exists, use placeholder for company's admin record (admins.email has unique constraint)
+                // The original primaryEmail is kept for ClientEmail - only admin record gets placeholder
             }
 
             // If there are any custom errors, return them
@@ -486,6 +523,18 @@ class LeadController extends Controller
                 $client_id = $reference['client_id'];
                 $client_current_counter = $reference['client_counter'];
 
+
+                // For company leads with duplicate email: use placeholder for admin record (admins.email has unique constraint)
+                $adminEmail = $primaryEmail;
+                if ($isCompany && $primaryEmail) {
+                    $emailExists = Admin::where('email', $primaryEmail)->exists()
+                        || ClientEmail::where('email', $primaryEmail)->exists();
+                    if ($emailExists) {
+                        $companySlug = preg_replace('/[^a-z0-9]/i', '_', substr($requestData['company_name'] ?? 'company', 0, 50));
+                        $adminEmail = 'company_lead_' . $companySlug . '_' . $timestamp . '@lead.internal';
+                        Log::info('Company lead: using placeholder email for admin record: ' . $adminEmail);
+                    }
+                }
 
                 // Create new lead using DB query builder - only fields from simplified form
                 $adminData = [
@@ -537,7 +586,7 @@ class LeadController extends Controller
                     'country_code' => $requestData['country_code'][0] ?? null,
                     'phone' => $primaryPhone,
                     'email_type' => $requestData['email_type_hidden'][0] ?? null,
-                    'email' => $primaryEmail,
+                    'email' => $adminEmail,
                     
                     // Timestamps
                     'created_at' => now(),
@@ -1133,6 +1182,77 @@ class LeadController extends Controller
         ];
         
         return response()->json($response);
+    }
+
+    /**
+     * Find contact person by phone or email (for company lead form).
+     * Used when creating company lead - if phone/email matches existing person,
+     * return that person so frontend can show and auto-associate.
+     */
+    public function checkContactMatch(Request $request)
+    {
+        $phone = trim($request->input('phone', ''));
+        $email = trim($request->input('email', ''));
+
+        if (empty($phone) && empty($email)) {
+            return response()->json(['found' => false, 'person' => null]);
+        }
+
+        $matchedPerson = null;
+
+        if ($phone) {
+            $matchedPerson = Admin::where('phone', $phone)
+                ->where('role', 7)
+                ->where(function ($q) { $q->where('type', 'client')->orWhere('type', 'lead'); })
+                ->where('is_company', false)
+                ->first();
+            if (!$matchedPerson) {
+                $contact = ClientContact::where('phone', $phone)->first();
+                if ($contact) {
+                    $person = Admin::find($contact->client_id);
+                    if ($person && !($person->is_company ?? false) && in_array($person->type ?? '', ['client', 'lead'])) {
+                        $matchedPerson = $person;
+                    }
+                }
+            }
+        }
+
+        if (!$matchedPerson && $email) {
+            $matchedPerson = Admin::where('email', $email)
+                ->where('role', 7)
+                ->where(function ($q) { $q->where('type', 'client')->orWhere('type', 'lead'); })
+                ->where('is_company', false)
+                ->first();
+            if (!$matchedPerson) {
+                $clientEmail = ClientEmail::where('email', $email)->first();
+                if ($clientEmail) {
+                    $person = Admin::find($clientEmail->client_id);
+                    if ($person && !($person->is_company ?? false) && in_array($person->type ?? '', ['client', 'lead'])) {
+                        $matchedPerson = $person;
+                    }
+                }
+            }
+        }
+
+        if (!$matchedPerson) {
+            return response()->json(['found' => false, 'person' => null]);
+        }
+
+        return response()->json([
+            'found' => true,
+            'person' => [
+                'id' => $matchedPerson->id,
+                'first_name' => $matchedPerson->first_name,
+                'last_name' => $matchedPerson->last_name,
+                'email' => $matchedPerson->email,
+                'phone' => $matchedPerson->phone,
+                'client_id' => $matchedPerson->client_id ?? null,
+                'text' => trim(($matchedPerson->first_name ?? '') . ' ' . ($matchedPerson->last_name ?? ''))
+                    . ($matchedPerson->email ? " ({$matchedPerson->email})" : '')
+                    . ($matchedPerson->phone ? " - {$matchedPerson->phone}" : '')
+                    . (($matchedPerson->client_id ?? null) ? " - {$matchedPerson->client_id}" : ''),
+            ],
+        ]);
     }
 
     /**

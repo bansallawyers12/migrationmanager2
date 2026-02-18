@@ -52,7 +52,7 @@
 
 .ledger-drag-drop-zone .drag-zone-inner i {
     font-size: 28px;
-    color: #007bff;
+    color: #2563eb;
     transition: all 0.3s ease;
 }
 
@@ -77,7 +77,7 @@
 
 .ledger-drag-drop-zone .drag-zone-formats {
     font-size: 11px;
-    color: #666;
+    color: #4b5563;
     line-height: 1.2;
 }
 
@@ -447,7 +447,7 @@
                                                 title="Repeat last office receipt entry">
                                             <i class="fas fa-redo"></i> Repeat Last Entry
                                         </button>
-                                        <small class="text-muted" style="margin-left: auto;">
+                                        <small style="margin-left: auto; color: #4b5563;">
                                             <i class="fas fa-info-circle"></i> Use these shortcuts to speed up data entry
                                         </small>
                                     </div>

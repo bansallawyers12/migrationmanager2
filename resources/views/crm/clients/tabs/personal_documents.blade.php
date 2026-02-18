@@ -79,11 +79,11 @@
                                         <!-- Bulk Upload Dropzone (Hidden by default) -->
                                         <div class="bulk-upload-dropzone-container" id="bulk-upload-<?= $id ?>" style="display: none; margin: 15px 0; padding: 20px; border: 2px dashed #4a90e2; border-radius: 8px; background-color: #f8f9fa;">
                                             <div class="bulk-upload-dropzone" data-categoryid="<?= $id ?>" style="text-align: center; padding: 30px; cursor: pointer;">
-                                                <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: #4a90e2; margin-bottom: 15px;"></i>
-                                                <p style="font-size: 16px; color: #666; margin-bottom: 10px;">
+                                                <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: #2563eb; margin-bottom: 15px;"></i>
+                                                <p style="font-size: 16px; color: #374151; margin-bottom: 10px;">
                                                     <strong>Drag and drop files here</strong> or <strong>click to browse</strong>
                                                 </p>
-                                                <p style="font-size: 14px; color: #999;">You can select multiple files at once</p>
+                                                <p style="font-size: 14px; color: #4b5563;">You can select multiple files at once</p>
                                                 <input type="file" class="bulk-upload-file-input" data-categoryid="<?= $id ?>" multiple style="display: none;" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
                                             </div>
                                             <div class="bulk-upload-file-list" style="display: none; margin-top: 20px;">
@@ -219,7 +219,7 @@
                                     </div>
 
                                     <div class="preview-pane file-preview-container preview-container-<?= $id ?>" style="display: inline; margin-top: 15px !important; width: 499px;">
-                                        <p>Click on a file to preview it here.</p>
+                                        <p style="color: #374151;">Click on a file to preview it here.</p>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
@@ -1142,16 +1142,17 @@
                     display: flex;
                     align-items: center;
                     gap: 10px;
-                    color: #666;
+                    color: #374151;
                 }
 
                 .drag-zone-inner i {
                     font-size: 20px;
-                    color: #007bff;
+                    color: #2563eb;
                 }
 
                 .drag-zone-text {
                     font-size: 14px;
+                    color: inherit;
                 }
 
                 .document-drag-drop-zone.uploading {
@@ -1224,7 +1225,7 @@
 
                 .bulk-upload-file-item .file-size {
                     font-size: 12px;
-                    color: #999;
+                    color: #4b5563;
                 }
 
                 .bulk-upload-file-item .checklist-select {

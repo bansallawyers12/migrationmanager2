@@ -150,7 +150,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<p class="text-muted mb-3">As a Migration Agent, please confirm that you have verified the Payment, Service Agreement, and Forms before proceeding.</p>
+				<p class="mb-3" style="color: #374151;">As a Migration Agent, please confirm that you have verified the Payment, Service Agreement, and Forms before proceeding.</p>
 				<form id="verification-payment-forms-form" name="verification-payment-forms-form" autocomplete="off">
 					@csrf
 					<input type="hidden" name="matter_id" id="verification-payment-forms-matter-id" value="">
@@ -194,7 +194,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<p class="text-muted mb-3">Please select the outcome and add a note.</p>
+				<p class="mb-3" style="color: #374151;">Please select the outcome and add a note.</p>
 				<form id="decision-received-form" name="decision-received-form" autocomplete="off">
 					@csrf
 					<input type="hidden" name="matter_id" id="decision-received-matter-id" value="">
