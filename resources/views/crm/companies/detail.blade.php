@@ -1460,6 +1460,12 @@ $(document).ready(function() {
             updateMailReadBit: '{{ URL::to("/clients/updatemailreadbit") }}',
             listAllMatters: '{{ URL::to("/clients/listAllMattersWRTSelClient") }}',
             getActivities: '{{ route("clients.activities") }}',
+            updatePersonalCategory: '{{ route("clients.documents.updatePersonalDocCategory") }}',
+            updateVisaCategory: '{{ route("clients.documents.updateVisaDocCategory") }}',
+            deletePersonalCategory: '{{ route("clients.documents.deletePersonalDocCategory") }}',
+            sendInvoiceToClient: '{{ url("/clients/send-invoice-to-client") }}',
+            sendClientFundReceiptToClient: '{{ url("/clients/send-client-fund-receipt-to-client") }}',
+            sendOfficeReceiptToClient: '{{ url("/clients/send-office-receipt-to-client") }}',
         }
     };
     

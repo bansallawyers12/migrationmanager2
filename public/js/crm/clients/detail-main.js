@@ -271,7 +271,7 @@
 
                 $.ajax({
 
-                    url: '/documents/update-personal-category',
+                    url: window.ClientDetailConfig.urls.updatePersonalCategory,
 
                     method: 'POST',
 
@@ -311,48 +311,6 @@
 
 
 
-        /*$('.delete-personal-cat-title').on('click', function() {
-
-            var id = $(this).data('id');
-
-            if (confirm('Are you sure you want to delete this category?')) {
-
-                $.ajax({
-
-                    url: '/delete-personal-doc-category',
-
-                    method: 'POST',
-
-                    data: {
-
-                        _token: $('meta[name="csrf-token"]').attr('content'),
-
-                        id: id
-
-                    },
-
-                    success: function(response) {
-
-                        if (response.success) {
-
-                            location.reload();
-
-                        } else {
-
-                            alert('Failed to delete category.');
-
-                        }
-
-                    }
-
-                });
-
-            }
-
-        });*/
-
-
-
         //Update Visa Doucment Category
 
         $('.update-visa-cat-title').on('click', function() {
@@ -365,7 +323,7 @@
 
                 $.ajax({
 
-                    url: '/documents/update-visa-category',
+                    url: window.ClientDetailConfig.urls.updateVisaCategory,
 
                     method: 'POST',
 
@@ -8796,21 +8754,6 @@ Bansal Immigration`;
 
 
 
-        // Old task modal removed - Task table/model no longer exists
-        /*
-        $(document).delegate('.opentaskview', 'click', function(){
-            $('#opentaskview').modal('show');
-            var v = $(this).attr('id');
-            $.ajax({
-                url: site_url+'/get-task-detail',
-                type:'GET',
-                data:{task_id:v},
-                success: function(responses){
-                    $('.taskview').html(responses);
-                }
-            });
-        });
-        */
         function getallnotes(){
 
             $.ajax({
@@ -11720,7 +11663,7 @@ Bansal Immigration`;
                 
                 if (confirm(confirmMessage)) {
                     $.ajax({
-                        url: '/documents/delete-personal-category',
+                        url: window.ClientDetailConfig.urls.deletePersonalCategory,
                         method: 'POST',
                         data: {
                             _token: $('meta[name="csrf-token"]').attr('content'),
@@ -17559,7 +17502,7 @@ Bansal Immigration`;
         $btn.prop('disabled', true);
 
         $.ajax({
-            url: '/clients/send-invoice-to-client/' + invoiceId,
+            url: window.ClientDetailConfig.urls.sendInvoiceToClient + '/' + invoiceId,
             type: 'POST',
             dataType: 'json',
             headers: {
@@ -17652,7 +17595,7 @@ Bansal Immigration`;
         $btn.prop('disabled', true);
 
         $.ajax({
-            url: '/clients/send-client-fund-receipt-to-client/' + receiptId,
+            url: window.ClientDetailConfig.urls.sendClientFundReceiptToClient + '/' + receiptId,
             type: 'POST',
             dataType: 'json',
             headers: {
@@ -17745,7 +17688,7 @@ Bansal Immigration`;
         $btn.prop('disabled', true);
 
         $.ajax({
-            url: '/clients/send-office-receipt-to-client/' + receiptId,
+            url: window.ClientDetailConfig.urls.sendOfficeReceiptToClient + '/' + receiptId,
             type: 'POST',
             dataType: 'json',
             headers: {
