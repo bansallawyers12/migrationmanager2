@@ -123,40 +123,57 @@
                             </div>
                             <div class="stage-navigation-buttons">
                                 @php
-                                    $workflowIsFirstStage = false;
-                                    $workflowNextStageName = null;
-                                    $workflowNextStage = null;
-                                    if ($workflowCurrentStageId && $workflowAllStages->count() > 0) {
-                                        $workflowFirstStage = $workflowAllStages->first();
-                                        $workflowIsFirstStage = ($workflowCurrentStageId == $workflowFirstStage->id);
-                                        $workflowCurrentOrder = $workflowAllStages->firstWhere('id', $workflowCurrentStageId);
-                                        $workflowCurrentSort = $workflowCurrentOrder ? ($workflowCurrentOrder->sort_order ?? $workflowCurrentOrder->id) : null;
-                                        $workflowNextStage = $workflowCurrentSort !== null ? $workflowAllStages->first(fn($s) => ($s->sort_order ?? $s->id) > $workflowCurrentSort) : $workflowAllStages->where('id', '>', $workflowCurrentStageId)->first();
-                                        $workflowNextStageName = $workflowNextStage ? $workflowNextStage->name : null;
-                                    }
-                                    $workflowLastStage = $workflowAllStages->last();
-                                    $workflowIsLastStage = $workflowNextStage === null;
+                                    $workflowIsDiscontinued = ($workflowSelectedMatter->matter_status ?? 1) == 0;
+                                    $workflowCanReopen = ((Auth::guard('admin')->user()->role ?? 0) == 1);
                                 @endphp
-                                <button class="btn btn-outline-primary btn-sm" id="workflow-tab-back-to-previous-stage" data-matter-id="{{ $workflowSelectedMatter->id }}" title="Back to Previous Stage" {{ $workflowIsFirstStage ? 'disabled' : '' }}>
-                                    <i class="fas fa-angle-left"></i> Back to Previous Stage
-                                </button>
-                                @php
-                                    $workflowNextBtnDisabled = $workflowIsLastStage;
-                                    $workflowNextBtnTitle = 'Proceed to Next Stage';
-                                    if ($workflowIsVerificationStage && !$workflowCanVerifyAndProceed) {
-                                        $workflowNextBtnDisabled = true;
-                                        $workflowNextBtnTitle = 'Only a Migration Agent (or Admin) can verify and proceed.';
-                                    }
-                                @endphp
-                                <button class="btn btn-success btn-sm" id="workflow-tab-proceed-to-next-stage" data-matter-id="{{ $workflowSelectedMatter->id }}" data-next-stage-name="{{ $workflowNextStageName ?? '' }}" data-current-stage-name="{{ $workflowCurrentStageName ?? '' }}" data-is-verification-stage="{{ $workflowIsVerificationStage ? '1' : '0' }}" data-can-verify-and-proceed="{{ $workflowCanVerifyAndProceed ? '1' : '0' }}" title="{{ $workflowNextBtnTitle }}" {{ $workflowNextBtnDisabled ? 'disabled' : '' }}>
-                                    Proceed to Next Stage <i class="fas fa-angle-right"></i>
-                                </button>
-                                <button class="btn btn-outline-danger btn-sm" id="workflow-tab-discontinue" data-matter-id="{{ $workflowSelectedMatter->id }}" title="Discontinue Matter">
-                                    <i class="fas fa-ban"></i> Discontinue
-                                </button>
-                                <button class="btn btn-outline-secondary btn-sm" id="workflow-tab-change-workflow" data-matter-id="{{ $workflowSelectedMatter->id }}" data-current-workflow-id="{{ $workflowSelectedMatter->workflow_id ?? '' }}" title="Change workflow for this matter">
-                                    <i class="fas fa-exchange-alt"></i> Change Workflow
-                                </button>
+                                @if($workflowIsDiscontinued)
+                                    {{-- Discontinued matter: show Reopen (Admin only), Change Workflow --}}
+                                    @if($workflowCanReopen)
+                                    <button class="btn btn-primary btn-sm matter-detail-reopen-btn" id="workflow-tab-reopen" data-matter-id="{{ $workflowSelectedMatter->id }}" title="Reopen Matter">
+                                        <i class="fas fa-redo"></i> Reopen
+                                    </button>
+                                    @endif
+                                    <button class="btn btn-outline-secondary btn-sm" id="workflow-tab-change-workflow" data-matter-id="{{ $workflowSelectedMatter->id }}" data-current-workflow-id="{{ $workflowSelectedMatter->workflow_id ?? '' }}" title="Change workflow for this matter">
+                                        <i class="fas fa-exchange-alt"></i> Change Workflow
+                                    </button>
+                                @else
+                                    {{-- Active matter: show normal workflow buttons --}}
+                                    @php
+                                        $workflowIsFirstStage = false;
+                                        $workflowNextStageName = null;
+                                        $workflowNextStage = null;
+                                        if ($workflowCurrentStageId && $workflowAllStages->count() > 0) {
+                                            $workflowFirstStage = $workflowAllStages->first();
+                                            $workflowIsFirstStage = ($workflowCurrentStageId == $workflowFirstStage->id);
+                                            $workflowCurrentOrder = $workflowAllStages->firstWhere('id', $workflowCurrentStageId);
+                                            $workflowCurrentSort = $workflowCurrentOrder ? ($workflowCurrentOrder->sort_order ?? $workflowCurrentOrder->id) : null;
+                                            $workflowNextStage = $workflowCurrentSort !== null ? $workflowAllStages->first(fn($s) => ($s->sort_order ?? $s->id) > $workflowCurrentSort) : $workflowAllStages->where('id', '>', $workflowCurrentStageId)->first();
+                                            $workflowNextStageName = $workflowNextStage ? $workflowNextStage->name : null;
+                                        }
+                                        $workflowLastStage = $workflowAllStages->last();
+                                        $workflowIsLastStage = $workflowNextStage === null;
+                                    @endphp
+                                    <button class="btn btn-outline-primary btn-sm" id="workflow-tab-back-to-previous-stage" data-matter-id="{{ $workflowSelectedMatter->id }}" title="Back to Previous Stage" {{ $workflowIsFirstStage ? 'disabled' : '' }}>
+                                        <i class="fas fa-angle-left"></i> Back to Previous Stage
+                                    </button>
+                                    @php
+                                        $workflowNextBtnDisabled = $workflowIsLastStage;
+                                        $workflowNextBtnTitle = 'Proceed to Next Stage';
+                                        if ($workflowIsVerificationStage && !$workflowCanVerifyAndProceed) {
+                                            $workflowNextBtnDisabled = true;
+                                            $workflowNextBtnTitle = 'Only a Migration Agent (or Admin) can verify and proceed.';
+                                        }
+                                    @endphp
+                                    <button class="btn btn-success btn-sm" id="workflow-tab-proceed-to-next-stage" data-matter-id="{{ $workflowSelectedMatter->id }}" data-next-stage-name="{{ $workflowNextStageName ?? '' }}" data-current-stage-name="{{ $workflowCurrentStageName ?? '' }}" data-is-verification-stage="{{ $workflowIsVerificationStage ? '1' : '0' }}" data-can-verify-and-proceed="{{ $workflowCanVerifyAndProceed ? '1' : '0' }}" title="{{ $workflowNextBtnTitle }}" {{ $workflowNextBtnDisabled ? 'disabled' : '' }}>
+                                        Proceed to Next Stage <i class="fas fa-angle-right"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm" id="workflow-tab-discontinue" data-matter-id="{{ $workflowSelectedMatter->id }}" title="Discontinue Matter">
+                                        <i class="fas fa-ban"></i> Discontinue
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm" id="workflow-tab-change-workflow" data-matter-id="{{ $workflowSelectedMatter->id }}" data-current-workflow-id="{{ $workflowSelectedMatter->workflow_id ?? '' }}" title="Change workflow for this matter">
+                                        <i class="fas fa-exchange-alt"></i> Change Workflow
+                                    </button>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -498,6 +515,39 @@
                 });
             });
         }
+
+        // Reopen button (for discontinued matters - workflow tab and client portal tab)
+        document.addEventListener('click', function(e) {
+            var btn = e.target.closest('.matter-detail-reopen-btn');
+            if (!btn) return;
+            e.preventDefault();
+            var matterId = btn.getAttribute('data-matter-id');
+            if (!matterId) return;
+            if (!confirm('Reopen this matter? It will be moved back to active matters.')) return;
+            btn.disabled = true;
+            var origHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Reopening...';
+            fetch('{{ route("clients.matter.reopen") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '', 'Accept': 'application/json' },
+                body: JSON.stringify({ matter_id: matterId })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.status) {
+                    window.location.reload();
+                } else {
+                    alert(data.message || 'Failed to reopen matter.');
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                }
+            })
+            .catch(function() {
+                alert('An error occurred. Please try again.');
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+            });
+        });
     });
 })();
 </script>
