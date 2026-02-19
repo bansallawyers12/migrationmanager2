@@ -2360,6 +2360,18 @@ function customValidate(formName, savetype = '')
 								if(obj.status){
 									$('#applicationemailmodal').modal('hide');
 									$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
+									// Show prominent success alert so user sees confirmation
+									var successMsg = obj.message || 'Email successfully sent.';
+									if (typeof iziToast !== 'undefined' && iziToast.success) {
+										iziToast.success({
+											title: 'Success',
+											message: successMsg,
+											position: 'topRight',
+											timeout: 4000
+										});
+									} else {
+										alert(successMsg);
+									}
 									$.ajax({
 										url: site_url+'/get-appointments',
 										type:'GET',
@@ -2849,6 +2861,18 @@ function customValidate(formName, savetype = '')
 								if(obj.status || (response.success !== undefined && response.success)){
 									$('#emailmodal').modal('hide');
 									$('.custom-error-msg').html('<span class="alert alert-success">'+(obj.message || response.message || 'Email sent successfully!')+'</span>');
+									// Show prominent success alert so user sees confirmation
+									var successMsg = obj.message || response.message || 'Email successfully sent.';
+									if (typeof iziToast !== 'undefined' && iziToast.success) {
+										iziToast.success({
+											title: 'Success',
+											message: successMsg,
+											position: 'topRight',
+											timeout: 4000
+										});
+									} else {
+										alert(successMsg);
+									}
 									// Reload page or refresh email list if needed
 									setTimeout(function(){
 										location.reload();
