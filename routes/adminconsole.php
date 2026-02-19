@@ -94,9 +94,9 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin'])
         Route::get('/matter-email-template/edit/{id}', [MatterEmailTemplateController::class, 'edit'])->name('matteremailtemplate.edit');
         Route::put('/matter-email-template/{id}', [MatterEmailTemplateController::class, 'update'])->name('matteremailtemplate.update');
         
-        // Matter Other Email Template routes
-        Route::get('/matter-other-email-template', [MatterOtherEmailTemplateController::class, 'index'])->name('matterotheremailtemplate.index');
-        Route::get('/matter-other-email-template/create', [MatterOtherEmailTemplateController::class, 'create'])->name('matterotheremailtemplate.create');
+        // Matter Other Email Template routes (create before {matterId} to avoid "create" being matched as matterId)
+        Route::get('/matter-other-email-template/create/{matterId}', [MatterOtherEmailTemplateController::class, 'create'])->name('matterotheremailtemplate.create');
+        Route::get('/matter-other-email-template/{matterId}', [MatterOtherEmailTemplateController::class, 'index'])->name('matterotheremailtemplate.index');
         Route::post('/matter-other-email-template/store', [MatterOtherEmailTemplateController::class, 'store'])->name('matterotheremailtemplate.store');
         Route::get('/matter-other-email-template/edit/{id}', [MatterOtherEmailTemplateController::class, 'edit'])->name('matterotheremailtemplate.edit');
         Route::put('/matter-other-email-template/{id}', [MatterOtherEmailTemplateController::class, 'update'])->name('matterotheremailtemplate.update');

@@ -41,13 +41,23 @@ class MatterOtherEmailTemplateController extends Controller
 			} */	
 		//check authorization end 
 	
+		// Support matterId from route param or query string (backward compatibility)
+		$matterId = $matterId ?? $request->query('matterId') ?? $request->query('id');
+	
+		if (empty($matterId)) {
+			return redirect()->route('adminconsole.features.matter.index')->with('error', 'Matter ID is required');
+		}
+	
+		$matter = Matter::find($matterId);
+		if (!$matter) {
+			return redirect()->route('adminconsole.features.matter.index')->with('error', 'Matter not found');
+		}
+	
 		$query = MatterOtherEmailTemplate::where('matter_id', $matterId); 
 		 
 		$totalData 	= $query->count();	//for all data
 		
 		$lists		= $query->sortable(['id' => 'desc'])->paginate(config('constants.limit'));
-		
-		$matter = Matter::find($matterId);
 		
 		return view('AdminConsole.features.matterotheremailtemplate.index',compact(['lists', 'totalData', 'matter', 'matterId'])); 	
 		
@@ -55,7 +65,18 @@ class MatterOtherEmailTemplateController extends Controller
 	
 	public function create(Request $request, $matterId = NULL)
 	{	
+		// Support matterId from route param or query string (backward compatibility)
+		$matterId = $matterId ?? $request->query('matterId') ?? $request->query('id');
+	
+		if (empty($matterId)) {
+			return redirect()->route('adminconsole.features.matter.index')->with('error', 'Matter ID is required');
+		}
+	
 		$matter = Matter::find($matterId);
+		if (!$matter) {
+			return redirect()->route('adminconsole.features.matter.index')->with('error', 'Matter not found');
+		}
+	
 		return view('AdminConsole.features.matterotheremailtemplate.create', compact(['matterId', 'matter']));	
 	}
 	
@@ -86,7 +107,7 @@ class MatterOtherEmailTemplateController extends Controller
 			}
 			else
 			{
-				return redirect()->route('adminconsole.features.matter.index')->with('success', 'Matter Email Template Added Successfully');
+				return redirect()->route('adminconsole.features.matterotheremailtemplate.index', $obj->matter_id)->with('success', 'Matter Email Template Added Successfully');
 			}				
 		}	
 		return view('AdminConsole.features.matterotheremailtemplate.create');	
@@ -161,7 +182,7 @@ class MatterOtherEmailTemplateController extends Controller
 		}
 		else
 		{
-			return redirect()->route('adminconsole.features.matter.index')->with('success', 'Matter Other Email Template Updated Successfully');
+			return redirect()->route('adminconsole.features.matterotheremailtemplate.index', $obj->matter_id)->with('success', 'Matter Other Email Template Updated Successfully');
 		}				
 	}
 	
@@ -171,7 +192,7 @@ class MatterOtherEmailTemplateController extends Controller
 		if($template) {
 			$matterId = $template->matter_id;
 			$template->delete();
-			return redirect()->route('adminconsole.features.matter.index')->with('success', 'Matter Email Template Deleted Successfully');
+			return redirect()->route('adminconsole.features.matterotheremailtemplate.index', $matterId)->with('success', 'Matter Email Template Deleted Successfully');
 		}
 		return redirect()->route('adminconsole.features.matter.index')->with('error', 'Template not found');
 	}

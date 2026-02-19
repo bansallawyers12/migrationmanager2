@@ -1119,6 +1119,25 @@ public function getpartnerbranch(Request $request){
 		return $values;
 	}
 
+	/**
+	 * Convert plain URLs in HTML content to clickable links (open in new tab, copyable).
+	 * URL as link text makes it copyable. Skips URLs inside href="..." (preceded by space/> not ").
+	 */
+	protected function linkifyUrlsInHtml(string $html): string
+	{
+		if (empty(trim($html))) {
+			return $html;
+		}
+		// Match URLs preceded by start, whitespace, or > (excludes href="url" where " is before url)
+		$pattern = '#(^|[\s>])(https?://[^\s<>"\']+)#i';
+		return preg_replace_callback($pattern, function ($m) {
+			$prefix = $m[1];
+			$url = $m[2];
+			$link = '<a href="' . htmlspecialchars($url) . '" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline;word-break:break-all;">' . htmlspecialchars($url) . '</a>';
+			return $prefix . $link;
+		}, $html);
+	}
+
     public function sendmail(Request $request){
 		$requestData = $request->all();
 		//echo '<pre>'; print_r($requestData); die;
@@ -1237,6 +1256,8 @@ public function getpartnerbranch(Request $request){
 			}
 		}
 		}
+		// Convert plain URLs to clickable links (open in new tab, copyable)
+		$message = $this->linkifyUrlsInHtml($message);
 
 		foreach($requestData['email_to'] as $l){
 			if(@$requestData['type'] == 'agent'){
