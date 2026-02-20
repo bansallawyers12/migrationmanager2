@@ -5,6 +5,7 @@ use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\Admin;
+use App\Models\AnzscoOccupation;
 use App\Models\Staff;
 
 class ClientEoiReference extends Model
@@ -17,6 +18,7 @@ class ClientEoiReference extends Model
         'EOI_number',
         'EOI_subclass',
         'EOI_occupation',
+        'anzsco_occupation_id',
         'EOI_point',
         'EOI_state',
         'EOI_submission_date',
@@ -150,6 +152,14 @@ class ClientEoiReference extends Model
     public function verifier(): BelongsTo
     {
         return $this->belongsTo(Staff::class, 'checked_by');
+    }
+
+    /**
+     * Relationship to ANZSCO occupation (for occupation autocomplete)
+     */
+    public function anzscoOccupation(): BelongsTo
+    {
+        return $this->belongsTo(AnzscoOccupation::class, 'anzsco_occupation_id');
     }
 
     /**

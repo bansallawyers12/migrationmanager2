@@ -47,7 +47,7 @@ class ClientEoiRoiController extends Controller
             // $this->authorize('view', $client);
 
             $eoiRecords = ClientEoiReference::where('client_id', $client->id)
-                ->with(['creator', 'updater'])
+                ->with(['creator', 'updater', 'anzscoOccupation'])
                 ->orderBy('created_at', 'desc')
                 ->get()
                 ->map(function ($eoi) {
@@ -90,8 +90,8 @@ class ClientEoiRoiController extends Controller
             //     ], 404);
             // }
 
-            // Load relationships for workflow display
-            $eoiReference->load(['creator', 'updater', 'verifier', 'client']);
+            // Load relationships for workflow display and occupation data
+            $eoiReference->load(['creator', 'updater', 'verifier', 'client', 'anzscoOccupation']);
 
             return response()->json([
                 'success' => true,
@@ -160,6 +160,7 @@ class ClientEoiRoiController extends Controller
             $eoi->eoi_subclasses = $validated['eoi_subclasses'];
             $eoi->eoi_states = $validated['eoi_states'];
             $eoi->EOI_occupation = $validated['eoi_occupation'] ?? null;
+            $eoi->anzsco_occupation_id = $validated['anzsco_occupation_id'] ?? null;
             $eoi->EOI_point = $validated['eoi_points'] ?? null;
             $eoi->EOI_submission_date = $this->normalizeDate($validated['eoi_submission_date'] ?? null);
             $eoi->eoi_invitation_date = $this->normalizeDate($validated['eoi_invitation_date'] ?? null);
@@ -1009,6 +1010,7 @@ class ClientEoiRoiController extends Controller
             'eoi_states' => 'required|array|min:1',
             'eoi_states.*' => ['required', 'string', Rule::in(['ACT', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA', 'FED'])],
             'eoi_occupation' => 'nullable|string|max:100',
+            'anzsco_occupation_id' => 'nullable|integer|exists:anzsco_occupations,id',
             'eoi_points' => 'nullable|integer|min:0|max:200',
             'eoi_submission_date' => 'nullable|string', // Will be normalized
             'eoi_invitation_date' => 'nullable|string',
@@ -1035,6 +1037,8 @@ class ClientEoiRoiController extends Controller
             'formatted_subclasses' => $eoi->formatted_subclasses,
             'formatted_states' => $eoi->formatted_states,
             'occupation' => $eoi->EOI_occupation,
+            'anzsco_occupation_id' => $eoi->anzsco_occupation_id,
+            'anzsco_code' => $eoi->anzscoOccupation?->anzsco_code,
             'points' => $eoi->EOI_point,
             'submission_date' => $eoi->EOI_submission_date?->format('d/m/Y'),
             'invitation_date' => $eoi->eoi_invitation_date?->format('d/m/Y'),
