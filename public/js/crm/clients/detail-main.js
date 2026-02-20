@@ -6294,8 +6294,11 @@ Bansal Immigration`;
 
 
          //Get Cost assignment Migration Agent Detail
+        // modalContainer: optional selector (e.g. '#costAssignmentCreateFormModel') to scope field updates to a specific container (for modal edit)
+        // onLoadedCallback: optional function called after data is loaded (e.g. to show modal)
+        function getCostAssignmentMigrationAgentDetail(client_id,client_matter_id, modalContainer, onLoadedCallback) {
 
-        function getCostAssignmentMigrationAgentDetail(client_id,client_matter_id) {
+            var $scope = (modalContainer && $(modalContainer).length) ? $(modalContainer) : $(document);
 
             $.ajax({
 
@@ -6313,7 +6316,7 @@ Bansal Immigration`;
 
                     if(obj.agentInfo){
 
-                        $('#costassign_agent_id').val(obj.agentInfo.agentId);
+                        $scope.find('#costassign_agent_id').val(obj.agentInfo.agentId);
 
                         if(obj.agentInfo.last_name != ''){
 
@@ -6327,15 +6330,15 @@ Bansal Immigration`;
 
                         //$('#costassign_agent_name').val(agentFullName);
 
-                        $('#costassign_agent_name_label').html(agentFullName);
+                        $scope.find('#costassign_agent_name_label').html(agentFullName);
 
 
 
                         //$('#costassign_business_name').val(obj.agentInfo.company_name);
 
-                        $('#costassign_business_name_label').html(obj.agentInfo.company_name);
+                        $scope.find('#costassign_business_name_label').html(obj.agentInfo.company_name);
 
-                        $('#costassign_client_matter_name_label').html(obj.matterInfo.title);
+                        $scope.find('#costassign_client_matter_name_label').html(obj.matterInfo.title);
 
 
 
@@ -6343,132 +6346,139 @@ Bansal Immigration`;
 
                         if(obj.cost_assignment_matterInfo){
 
-                            $('#surcharge').val(obj.cost_assignment_matterInfo.surcharge).trigger('change');
+                            $scope.find('#surcharge').val(obj.cost_assignment_matterInfo.surcharge).trigger('change');
 
-                            $('#Dept_Base_Application_Charge').val(obj.cost_assignment_matterInfo.Dept_Base_Application_Charge);
+                            $scope.find('#Dept_Base_Application_Charge').val(obj.cost_assignment_matterInfo.Dept_Base_Application_Charge);
 
-                            $('#Dept_Base_Application_Charge_no_of_person').val(obj.cost_assignment_matterInfo.Dept_Base_Application_Charge_no_of_person);
-
-
-
-                            $('#Dept_Non_Internet_Application_Charge').val(obj.cost_assignment_matterInfo.Dept_Non_Internet_Application_Charge);
-
-                            $('#Dept_Non_Internet_Application_Charge_no_of_person').val(obj.cost_assignment_matterInfo.Dept_Non_Internet_Application_Charge_no_of_person);
+                            $scope.find('#Dept_Base_Application_Charge_no_of_person').val(obj.cost_assignment_matterInfo.Dept_Base_Application_Charge_no_of_person);
 
 
 
-                            $('#Dept_Additional_Applicant_Charge_18_Plus').val(obj.cost_assignment_matterInfo.Dept_Additional_Applicant_Charge_18_Plus);
+                            $scope.find('#Dept_Non_Internet_Application_Charge').val(obj.cost_assignment_matterInfo.Dept_Non_Internet_Application_Charge);
 
-                            $('#Dept_Additional_Applicant_Charge_18_Plus_no_of_person').val(obj.cost_assignment_matterInfo.Dept_Additional_Applicant_Charge_18_Plus_no_of_person);
-
-
-
-                            $('#Dept_Additional_Applicant_Charge_Under_18').val(obj.cost_assignment_matterInfo.Dept_Additional_Applicant_Charge_Under_18);
-
-                            $('#Dept_Additional_Applicant_Charge_Under_18_no_of_person').val(obj.cost_assignment_matterInfo.Dept_Additional_Applicant_Charge_Under_18_no_of_person);
+                            $scope.find('#Dept_Non_Internet_Application_Charge_no_of_person').val(obj.cost_assignment_matterInfo.Dept_Non_Internet_Application_Charge_no_of_person);
 
 
 
-                            $('#Dept_Subsequent_Temp_Application_Charge').val(obj.cost_assignment_matterInfo.Dept_Subsequent_Temp_Application_Charge);
+                            $scope.find('#Dept_Additional_Applicant_Charge_18_Plus').val(obj.cost_assignment_matterInfo.Dept_Additional_Applicant_Charge_18_Plus);
 
-                            $('#Dept_Subsequent_Temp_Application_Charge_no_of_person').val(obj.cost_assignment_matterInfo.Dept_Subsequent_Temp_Application_Charge_no_of_person);
-
-
-
-                            $('#Dept_Second_VAC_Instalment_Charge_18_Plus').val(obj.cost_assignment_matterInfo.Dept_Second_VAC_Instalment_Charge_18_Plus);
-
-                            $('#Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person').val(obj.cost_assignment_matterInfo.Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person);
+                            $scope.find('#Dept_Additional_Applicant_Charge_18_Plus_no_of_person').val(obj.cost_assignment_matterInfo.Dept_Additional_Applicant_Charge_18_Plus_no_of_person);
 
 
 
-                            $('#Dept_Second_VAC_Instalment_Under_18').val(obj.cost_assignment_matterInfo.Dept_Second_VAC_Instalment_Under_18);
+                            $scope.find('#Dept_Additional_Applicant_Charge_Under_18').val(obj.cost_assignment_matterInfo.Dept_Additional_Applicant_Charge_Under_18);
 
-                            $('#Dept_Second_VAC_Instalment_Under_18_no_of_person').val(obj.cost_assignment_matterInfo.Dept_Second_VAC_Instalment_Under_18_no_of_person);
-
-
-
-                            $('#Dept_Nomination_Application_Charge').val(obj.cost_assignment_matterInfo.Dept_Nomination_Application_Charge);
-
-                            $('#Dept_Sponsorship_Application_Charge').val(obj.cost_assignment_matterInfo.Dept_Sponsorship_Application_Charge);
+                            $scope.find('#Dept_Additional_Applicant_Charge_Under_18_no_of_person').val(obj.cost_assignment_matterInfo.Dept_Additional_Applicant_Charge_Under_18_no_of_person);
 
 
 
-                            $('#TotalDoHACharges').val(obj.cost_assignment_matterInfo.TotalDoHACharges);
+                            $scope.find('#Dept_Subsequent_Temp_Application_Charge').val(obj.cost_assignment_matterInfo.Dept_Subsequent_Temp_Application_Charge);
 
-                            $('#TotalDoHASurcharges').val(obj.cost_assignment_matterInfo.TotalDoHASurcharges);
-
-
-
-                            $('#Block_1_Ex_Tax').val(obj.cost_assignment_matterInfo.Block_1_Ex_Tax);
-
-                            $('#Block_2_Ex_Tax').val(obj.cost_assignment_matterInfo.Block_2_Ex_Tax);
-
-                            $('#Block_3_Ex_Tax').val(obj.cost_assignment_matterInfo.Block_3_Ex_Tax);
+                            $scope.find('#Dept_Subsequent_Temp_Application_Charge_no_of_person').val(obj.cost_assignment_matterInfo.Dept_Subsequent_Temp_Application_Charge_no_of_person);
 
 
 
-                            $('#additional_fee_1').val(obj.cost_assignment_matterInfo.additional_fee_1);
+                            $scope.find('#Dept_Second_VAC_Instalment_Charge_18_Plus').val(obj.cost_assignment_matterInfo.Dept_Second_VAC_Instalment_Charge_18_Plus);
 
-                            $('#TotalBLOCKFEE').val(obj.cost_assignment_matterInfo.TotalBLOCKFEE);
+                            $scope.find('#Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person').val(obj.cost_assignment_matterInfo.Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person);
+
+
+
+                            $scope.find('#Dept_Second_VAC_Instalment_Under_18').val(obj.cost_assignment_matterInfo.Dept_Second_VAC_Instalment_Under_18);
+
+                            $scope.find('#Dept_Second_VAC_Instalment_Under_18_no_of_person').val(obj.cost_assignment_matterInfo.Dept_Second_VAC_Instalment_Under_18_no_of_person);
+
+
+
+                            $scope.find('#Dept_Nomination_Application_Charge').val(obj.cost_assignment_matterInfo.Dept_Nomination_Application_Charge);
+
+                            $scope.find('#Dept_Sponsorship_Application_Charge').val(obj.cost_assignment_matterInfo.Dept_Sponsorship_Application_Charge);
+
+
+
+                            $scope.find('#TotalDoHACharges').val(obj.cost_assignment_matterInfo.TotalDoHACharges);
+
+                            $scope.find('#TotalDoHASurcharges').val(obj.cost_assignment_matterInfo.TotalDoHASurcharges);
+
+
+
+                            $scope.find('#Block_1_Ex_Tax').val(obj.cost_assignment_matterInfo.Block_1_Ex_Tax);
+
+                            $scope.find('#Block_2_Ex_Tax').val(obj.cost_assignment_matterInfo.Block_2_Ex_Tax);
+
+                            $scope.find('#Block_3_Ex_Tax').val(obj.cost_assignment_matterInfo.Block_3_Ex_Tax);
+
+
+
+                            $scope.find('#additional_fee_1').val(obj.cost_assignment_matterInfo.additional_fee_1);
+
+                            $scope.find('#TotalBLOCKFEE').val(obj.cost_assignment_matterInfo.TotalBLOCKFEE);
 
                         } else {
 
-                            $('#surcharge').val(obj.matterInfo.surcharge).trigger('change');
+                            $scope.find('#surcharge').val(obj.matterInfo.surcharge).trigger('change');
 
-                            $('#Dept_Base_Application_Charge').val(obj.matterInfo.Dept_Base_Application_Charge);
+                            $scope.find('#Dept_Base_Application_Charge').val(obj.matterInfo.Dept_Base_Application_Charge);
 
-                            $('#Dept_Non_Internet_Application_Charge').val(obj.matterInfo.Dept_Non_Internet_Application_Charge);
+                            $scope.find('#Dept_Non_Internet_Application_Charge').val(obj.matterInfo.Dept_Non_Internet_Application_Charge);
 
-                            $('#Dept_Additional_Applicant_Charge_18_Plus').val(obj.matterInfo.Dept_Additional_Applicant_Charge_18_Plus);
+                            $scope.find('#Dept_Additional_Applicant_Charge_18_Plus').val(obj.matterInfo.Dept_Additional_Applicant_Charge_18_Plus);
 
-                            $('#Dept_Additional_Applicant_Charge_Under_18').val(obj.matterInfo.Dept_Additional_Applicant_Charge_Under_18);
+                            $scope.find('#Dept_Additional_Applicant_Charge_Under_18').val(obj.matterInfo.Dept_Additional_Applicant_Charge_Under_18);
 
-                            $('#Dept_Subsequent_Temp_Application_Charge').val(obj.matterInfo.Dept_Subsequent_Temp_Application_Charge);
+                            $scope.find('#Dept_Subsequent_Temp_Application_Charge').val(obj.matterInfo.Dept_Subsequent_Temp_Application_Charge);
 
-                            $('#Dept_Second_VAC_Instalment_Charge_18_Plus').val(obj.matterInfo.Dept_Second_VAC_Instalment_Charge_18_Plus);
+                            $scope.find('#Dept_Second_VAC_Instalment_Charge_18_Plus').val(obj.matterInfo.Dept_Second_VAC_Instalment_Charge_18_Plus);
 
-                            $('#Dept_Second_VAC_Instalment_Under_18').val(obj.matterInfo.Dept_Second_VAC_Instalment_Under_18);
+                            $scope.find('#Dept_Second_VAC_Instalment_Under_18').val(obj.matterInfo.Dept_Second_VAC_Instalment_Under_18);
 
-                            $('#Dept_Nomination_Application_Charge').val(obj.matterInfo.Dept_Nomination_Application_Charge);
+                            $scope.find('#Dept_Nomination_Application_Charge').val(obj.matterInfo.Dept_Nomination_Application_Charge);
 
-                            $('#Dept_Sponsorship_Application_Charge').val(obj.matterInfo.Dept_Sponsorship_Application_Charge);
-
-
-
-                            $('#Block_1_Ex_Tax').val(obj.matterInfo.Block_1_Ex_Tax);
-
-                            $('#Block_2_Ex_Tax').val(obj.matterInfo.Block_2_Ex_Tax);
-
-                            $('#Block_3_Ex_Tax').val(obj.matterInfo.Block_3_Ex_Tax);
+                            $scope.find('#Dept_Sponsorship_Application_Charge').val(obj.matterInfo.Dept_Sponsorship_Application_Charge);
 
 
 
-                            $('#additional_fee_1').val(obj.matterInfo.additional_fee_1);
+                            $scope.find('#Block_1_Ex_Tax').val(obj.matterInfo.Block_1_Ex_Tax);
 
-                            $('#TotalBLOCKFEE').val(obj.matterInfo.TotalBLOCKFEE);
+                            $scope.find('#Block_2_Ex_Tax').val(obj.matterInfo.Block_2_Ex_Tax);
 
-                            $('#TotalDoHACharges').val(obj.matterInfo.TotalDoHACharges);
+                            $scope.find('#Block_3_Ex_Tax').val(obj.matterInfo.Block_3_Ex_Tax);
 
-                            $('#TotalDoHASurcharges').val(obj.matterInfo.TotalDoHASurcharges);
+
+
+                            $scope.find('#additional_fee_1').val(obj.matterInfo.additional_fee_1);
+
+                            $scope.find('#TotalBLOCKFEE').val(obj.matterInfo.TotalBLOCKFEE);
+
+                            $scope.find('#TotalDoHACharges').val(obj.matterInfo.TotalDoHACharges);
+
+                            $scope.find('#TotalDoHASurcharges').val(obj.matterInfo.TotalDoHASurcharges);
 
                         }
 
                         // Initialize calculation handlers and trigger calculations after data is loaded
+                        // When modalContainer provided, pass it so handlers bind to modal fields
                         setTimeout(function() {
                             if (typeof window.initializeCostAssignmentCalculations === 'function') {
-                                window.initializeCostAssignmentCalculations();
+                                window.initializeCostAssignmentCalculations(modalContainer);
                             }
                             if (typeof window.calculateTotalBlockFee === 'function') {
-                                window.calculateTotalBlockFee();
+                                window.calculateTotalBlockFee(modalContainer);
                             }
                             if (typeof window.calculateTotalDoHACharges === 'function') {
-                                window.calculateTotalDoHACharges();
+                                window.calculateTotalDoHACharges(modalContainer);
                             }
                             if (typeof window.calculateTotalDoHASurcharges === 'function') {
-                                window.calculateTotalDoHASurcharges();
+                                window.calculateTotalDoHASurcharges(modalContainer);
+                            }
+                            if (typeof onLoadedCallback === 'function') {
+                                onLoadedCallback();
                             }
                         }, 100);
 
+                    } else if (typeof onLoadedCallback === 'function') {
+                        // No agentInfo - still show modal (e.g. for error display)
+                        onLoadedCallback();
                     }
 
                 }
@@ -6483,117 +6493,125 @@ Bansal Immigration`;
 
 
         // Initialize calculation handlers for Cost Assignment form
-        function initializeCostAssignmentCalculations() {
+        // containerScope: optional selector to scope to modal (e.g. '#costAssignmentCreateFormModel')
+        function initializeCostAssignmentCalculations(containerScope) {
+            var $scope = (containerScope && $(containerScope).length) ? $(containerScope) : $(document);
             // Remove any existing handlers to prevent duplicates
-            $('#Block_1_Ex_Tax, #Block_2_Ex_Tax, #Block_3_Ex_Tax').off('input change keyup');
-            $('#Dept_Base_Application_Charge, #Dept_Non_Internet_Application_Charge, #Dept_Additional_Applicant_Charge_18_Plus, #Dept_Additional_Applicant_Charge_Under_18, #Dept_Subsequent_Temp_Application_Charge, #Dept_Second_VAC_Instalment_Charge_18_Plus, #Dept_Second_VAC_Instalment_Under_18, #Dept_Nomination_Application_Charge, #Dept_Sponsorship_Application_Charge').off('input change keyup');
-            $('#Dept_Base_Application_Charge_no_of_person, #Dept_Non_Internet_Application_Charge_no_of_person, #Dept_Additional_Applicant_Charge_18_Plus_no_of_person, #Dept_Additional_Applicant_Charge_Under_18_no_of_person, #Dept_Subsequent_Temp_Application_Charge_no_of_person, #Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person, #Dept_Second_VAC_Instalment_Under_18_no_of_person').off('input change keyup');
-            $('#surcharge').off('change');
+            $scope.find('#Block_1_Ex_Tax, #Block_2_Ex_Tax, #Block_3_Ex_Tax').off('input change keyup');
+            $scope.find('#Dept_Base_Application_Charge, #Dept_Non_Internet_Application_Charge, #Dept_Additional_Applicant_Charge_18_Plus, #Dept_Additional_Applicant_Charge_Under_18, #Dept_Subsequent_Temp_Application_Charge, #Dept_Second_VAC_Instalment_Charge_18_Plus, #Dept_Second_VAC_Instalment_Under_18, #Dept_Nomination_Application_Charge, #Dept_Sponsorship_Application_Charge').off('input change keyup');
+            $scope.find('#Dept_Base_Application_Charge_no_of_person, #Dept_Non_Internet_Application_Charge_no_of_person, #Dept_Additional_Applicant_Charge_18_Plus_no_of_person, #Dept_Additional_Applicant_Charge_Under_18_no_of_person, #Dept_Subsequent_Temp_Application_Charge_no_of_person, #Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person, #Dept_Second_VAC_Instalment_Under_18_no_of_person').off('input change keyup');
+            $scope.find('#surcharge').off('change');
 
             // Calculate Total Block Fee when Block fields change
-            $('#Block_1_Ex_Tax, #Block_2_Ex_Tax, #Block_3_Ex_Tax').on('input change keyup', function() {
-                calculateTotalBlockFee();
+            $scope.find('#Block_1_Ex_Tax, #Block_2_Ex_Tax, #Block_3_Ex_Tax').on('input change keyup', function() {
+                calculateTotalBlockFee(containerScope);
             });
 
             // Calculate Total DoHA Charges when Department fields change
-            $('#Dept_Base_Application_Charge, #Dept_Non_Internet_Application_Charge, #Dept_Additional_Applicant_Charge_18_Plus, #Dept_Additional_Applicant_Charge_Under_18, #Dept_Subsequent_Temp_Application_Charge, #Dept_Second_VAC_Instalment_Charge_18_Plus, #Dept_Second_VAC_Instalment_Under_18, #Dept_Nomination_Application_Charge, #Dept_Sponsorship_Application_Charge').on('input change keyup', function() {
-                calculateTotalDoHACharges();
+            $scope.find('#Dept_Base_Application_Charge, #Dept_Non_Internet_Application_Charge, #Dept_Additional_Applicant_Charge_18_Plus, #Dept_Additional_Applicant_Charge_Under_18, #Dept_Subsequent_Temp_Application_Charge, #Dept_Second_VAC_Instalment_Charge_18_Plus, #Dept_Second_VAC_Instalment_Under_18, #Dept_Nomination_Application_Charge, #Dept_Sponsorship_Application_Charge').on('input change keyup', function() {
+                calculateTotalDoHACharges(containerScope);
             });
 
             // Recalculate when person counts change
-            $('#Dept_Base_Application_Charge_no_of_person, #Dept_Non_Internet_Application_Charge_no_of_person, #Dept_Additional_Applicant_Charge_18_Plus_no_of_person, #Dept_Additional_Applicant_Charge_Under_18_no_of_person, #Dept_Subsequent_Temp_Application_Charge_no_of_person, #Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person, #Dept_Second_VAC_Instalment_Under_18_no_of_person').on('input change keyup', function() {
-                calculateTotalDoHACharges();
+            $scope.find('#Dept_Base_Application_Charge_no_of_person, #Dept_Non_Internet_Application_Charge_no_of_person, #Dept_Additional_Applicant_Charge_18_Plus_no_of_person, #Dept_Additional_Applicant_Charge_Under_18_no_of_person, #Dept_Subsequent_Temp_Application_Charge_no_of_person, #Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person, #Dept_Second_VAC_Instalment_Under_18_no_of_person').on('input change keyup', function() {
+                calculateTotalDoHACharges(containerScope);
             });
 
             // Calculate Total DoHA Surcharges when surcharge selection changes
-            $('#surcharge').on('change', function() {
-                calculateTotalDoHASurcharges();
+            $scope.find('#surcharge').on('change', function() {
+                calculateTotalDoHASurcharges(containerScope);
             });
 
             // Initial calculations
-            calculateTotalBlockFee();
-            calculateTotalDoHACharges();
-            calculateTotalDoHASurcharges();
+            calculateTotalBlockFee(containerScope);
+            calculateTotalDoHACharges(containerScope);
+            calculateTotalDoHASurcharges(containerScope);
         }
 
         // Calculate Total Block Fee
-        function calculateTotalBlockFee() {
-            var block1 = parseFloat($('#Block_1_Ex_Tax').val()) || 0;
-            var block2 = parseFloat($('#Block_2_Ex_Tax').val()) || 0;
-            var block3 = parseFloat($('#Block_3_Ex_Tax').val()) || 0;
+        // containerScope: optional selector for modal scoping
+        function calculateTotalBlockFee(containerScope) {
+            var $scope = (containerScope && $(containerScope).length) ? $(containerScope) : $(document);
+            var block1 = parseFloat($scope.find('#Block_1_Ex_Tax').val()) || 0;
+            var block2 = parseFloat($scope.find('#Block_2_Ex_Tax').val()) || 0;
+            var block3 = parseFloat($scope.find('#Block_3_Ex_Tax').val()) || 0;
             var total = block1 + block2 + block3;
-            $('#TotalBLOCKFEE').val(total.toFixed(2));
+            $scope.find('#TotalBLOCKFEE').val(total.toFixed(2));
         }
 
         // Calculate Total DoHA Charges
-        function calculateTotalDoHACharges() {
+        // containerScope: optional selector for modal scoping
+        function calculateTotalDoHACharges(containerScope) {
+            var $scope = (containerScope && $(containerScope).length) ? $(containerScope) : $(document);
             var total = 0;
 
             // Dept Base Application Charge (with person multiplier)
-            var baseCharge = parseFloat($('#Dept_Base_Application_Charge').val()) || 0;
-            var basePersons = parseFloat($('#Dept_Base_Application_Charge_no_of_person').val()) || 1;
+            var baseCharge = parseFloat($scope.find('#Dept_Base_Application_Charge').val()) || 0;
+            var basePersons = parseFloat($scope.find('#Dept_Base_Application_Charge_no_of_person').val()) || 1;
             total += baseCharge * basePersons;
 
             // Dept Non Internet Application Charge (with person multiplier)
-            var nonInternetCharge = parseFloat($('#Dept_Non_Internet_Application_Charge').val()) || 0;
-            var nonInternetPersons = parseFloat($('#Dept_Non_Internet_Application_Charge_no_of_person').val()) || 1;
+            var nonInternetCharge = parseFloat($scope.find('#Dept_Non_Internet_Application_Charge').val()) || 0;
+            var nonInternetPersons = parseFloat($scope.find('#Dept_Non_Internet_Application_Charge_no_of_person').val()) || 1;
             total += nonInternetCharge * nonInternetPersons;
 
             // Dept Additional Applicant Charge 18+ (with person multiplier)
-            var add18PlusCharge = parseFloat($('#Dept_Additional_Applicant_Charge_18_Plus').val()) || 0;
-            var add18PlusPersons = parseFloat($('#Dept_Additional_Applicant_Charge_18_Plus_no_of_person').val()) || 1;
+            var add18PlusCharge = parseFloat($scope.find('#Dept_Additional_Applicant_Charge_18_Plus').val()) || 0;
+            var add18PlusPersons = parseFloat($scope.find('#Dept_Additional_Applicant_Charge_18_Plus_no_of_person').val()) || 1;
             total += add18PlusCharge * add18PlusPersons;
 
             // Dept Additional Applicant Charge Under 18 (with person multiplier)
-            var addUnder18Charge = parseFloat($('#Dept_Additional_Applicant_Charge_Under_18').val()) || 0;
-            var addUnder18Persons = parseFloat($('#Dept_Additional_Applicant_Charge_Under_18_no_of_person').val()) || 1;
+            var addUnder18Charge = parseFloat($scope.find('#Dept_Additional_Applicant_Charge_Under_18').val()) || 0;
+            var addUnder18Persons = parseFloat($scope.find('#Dept_Additional_Applicant_Charge_Under_18_no_of_person').val()) || 1;
             total += addUnder18Charge * addUnder18Persons;
 
             // Dept Subsequent Temp Application Charge (with person multiplier)
-            var subsequentCharge = parseFloat($('#Dept_Subsequent_Temp_Application_Charge').val()) || 0;
-            var subsequentPersons = parseFloat($('#Dept_Subsequent_Temp_Application_Charge_no_of_person').val()) || 1;
+            var subsequentCharge = parseFloat($scope.find('#Dept_Subsequent_Temp_Application_Charge').val()) || 0;
+            var subsequentPersons = parseFloat($scope.find('#Dept_Subsequent_Temp_Application_Charge_no_of_person').val()) || 1;
             total += subsequentCharge * subsequentPersons;
 
             // Dept Second VAC Instalment 18+ (with person multiplier)
-            var vac18PlusCharge = parseFloat($('#Dept_Second_VAC_Instalment_Charge_18_Plus').val()) || 0;
-            var vac18PlusPersons = parseFloat($('#Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person').val()) || 1;
+            var vac18PlusCharge = parseFloat($scope.find('#Dept_Second_VAC_Instalment_Charge_18_Plus').val()) || 0;
+            var vac18PlusPersons = parseFloat($scope.find('#Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person').val()) || 1;
             total += vac18PlusCharge * vac18PlusPersons;
 
             // Dept Second VAC Instalment Under 18 (with person multiplier)
-            var vacUnder18Charge = parseFloat($('#Dept_Second_VAC_Instalment_Under_18').val()) || 0;
-            var vacUnder18Persons = parseFloat($('#Dept_Second_VAC_Instalment_Under_18_no_of_person').val()) || 1;
+            var vacUnder18Charge = parseFloat($scope.find('#Dept_Second_VAC_Instalment_Under_18').val()) || 0;
+            var vacUnder18Persons = parseFloat($scope.find('#Dept_Second_VAC_Instalment_Under_18_no_of_person').val()) || 1;
             total += vacUnder18Charge * vacUnder18Persons;
 
             // Dept Nomination Application Charge (no person multiplier)
-            var nominationCharge = parseFloat($('#Dept_Nomination_Application_Charge').val()) || 0;
+            var nominationCharge = parseFloat($scope.find('#Dept_Nomination_Application_Charge').val()) || 0;
             total += nominationCharge;
 
             // Dept Sponsorship Application Charge (no person multiplier)
-            var sponsorshipCharge = parseFloat($('#Dept_Sponsorship_Application_Charge').val()) || 0;
+            var sponsorshipCharge = parseFloat($scope.find('#Dept_Sponsorship_Application_Charge').val()) || 0;
             total += sponsorshipCharge;
 
-            $('#TotalDoHACharges').val(total.toFixed(2));
+            $scope.find('#TotalDoHACharges').val(total.toFixed(2));
             
             // Recalculate surcharges when charges change
-            calculateTotalDoHASurcharges();
+            calculateTotalDoHASurcharges(containerScope);
         }
 
         // Calculate Total DoHA Surcharges
-        function calculateTotalDoHASurcharges() {
-            var surcharge = $('#surcharge').val();
+        // containerScope: optional selector for modal scoping
+        function calculateTotalDoHASurcharges(containerScope) {
+            var $scope = (containerScope && $(containerScope).length) ? $(containerScope) : $(document);
+            var surcharge = $scope.find('#surcharge').val();
             var totalSurcharges = 0;
 
             if (surcharge === 'Yes') {
                 // Calculate surcharge based on applicable charges
                 // Surcharge is 1.4% of the total DoHA charges
-                var totalCharges = parseFloat($('#TotalDoHACharges').val()) || 0;
+                var totalCharges = parseFloat($scope.find('#TotalDoHACharges').val()) || 0;
                 
                 // Surcharge rate: 1.4%
                 var surchargeRate = 0.014; // 1.4%
                 totalSurcharges = totalCharges * surchargeRate;
             }
 
-            $('#TotalDoHASurcharges').val(totalSurcharges.toFixed(2));
+            $scope.find('#TotalDoHASurcharges').val(totalSurcharges.toFixed(2));
         }
 
         // Make calculation functions globally available
@@ -6628,16 +6646,21 @@ Bansal Immigration`;
 
                     if (obj.status) {
 
-                        // Switch back to Cost Assignment list subtab
-                        $('.subtab3-button').removeClass('active');
-                        $('.subtab3-pane').removeClass('active');
-                        $('.subtab3-button[data-subtab="costform"]').addClass('active');
-                        $('#costform-subtab').addClass('active');
-
-                        localStorage.setItem('activeTab', 'formgenerations');
+                        // If form was in the cost assignment modal (amend from checklist), close modal and stay on checklists tab
+                        var $modal = $('#costAssignmentCreateFormModel');
+                        if ($modal.length && $modal.hasClass('show')) {
+                            $modal.modal('hide');
+                            localStorage.setItem('activeTab', 'checklists');
+                        } else {
+                            // Switch back to Cost Assignment list subtab (create from Form Generation)
+                            $('.subtab3-button').removeClass('active');
+                            $('.subtab3-pane').removeClass('active');
+                            $('.subtab3-button[data-subtab="costform"]').addClass('active');
+                            $('#costform-subtab').addClass('active');
+                            localStorage.setItem('activeTab', 'formgenerations');
+                        }
 
                         // Reload the page to reflect the new data
-
                         location.reload();
 
                     }

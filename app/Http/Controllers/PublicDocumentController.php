@@ -579,6 +579,48 @@ class PublicDocumentController extends Controller
                     'signed_at' => now()->toISOString()
                 ]);
 
+                if ($document->client_id) {
+                    $docName = $document->checklist ?? $document->file_name ?? $document->title ?? 'Document';
+                    \App\Models\ActivitiesLog::create([
+                        'client_id' => $document->client_id,
+                        'created_by' => $document->user_id,
+                        'subject' => 'client signed document',
+                        'description' => '<ul><li><strong>Document:</strong> ' . htmlspecialchars($docName) . '</li><li><strong>Signed by:</strong> ' . htmlspecialchars($signer->name . ' (' . $signer->email . ')') . '</li></ul>',
+                        'activity_type' => 'signature',
+                        'task_status' => 0,
+                        'pin' => 0,
+                    ]);
+                }
+
+                // For visa documents: create {checklist}_signed row in same category (if not already exists)
+                if ($document->doc_type === 'visa' && $document->client_id && $document->folder_name && !str_ends_with($document->checklist ?? '', '_signed')) {
+                    $signedChecklist = ($document->checklist ?? 'Document') . '_signed';
+                    $exists = Document::where('client_id', $document->client_id)->where('folder_name', $document->folder_name)
+                        ->where('client_matter_id', $document->client_matter_id)->where('checklist', $signedChecklist)->exists();
+                    if (!$exists) try {
+                        $signedKey = $document->id . '_signed.pdf';
+                        $signedDoc = new Document();
+                        $signedDoc->checklist = $signedChecklist;
+                        $signedDoc->file_name = preg_replace('/\.(pdf|PDF)$/', '', $document->file_name ?? 'document') . '_signed';
+                        $signedDoc->filetype = 'pdf';
+                        $signedDoc->myfile = $signedPdfUrl;
+                        $signedDoc->myfile_key = $signedKey;
+                        $signedDoc->client_id = $document->client_id;
+                        $signedDoc->client_matter_id = $document->client_matter_id;
+                        $signedDoc->folder_name = $document->folder_name;
+                        $signedDoc->doc_type = 'visa';
+                        $signedDoc->type = 'client';
+                        $signedDoc->user_id = $document->user_id;
+                        $signedDoc->signer_count = 1;
+                        $signedDoc->status = 'signed';
+                        $signedDoc->signed_doc_link = $signedPdfUrl;
+                        $signedDoc->save();
+                        Log::info('Created visa _signed row', ['original_id' => $document->id, 'signed_id' => $signedDoc->id]);
+                    } catch (\Exception $e) {
+                        Log::warning('Failed to create visa _signed row', ['document_id' => $document->id, 'error' => $e->getMessage()]);
+                    }
+                }
+
                 // Create notifications and activity logs
                 $this->createSignatureNotifications($document, $signer);
 

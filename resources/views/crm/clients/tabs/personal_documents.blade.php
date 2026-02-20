@@ -229,7 +229,7 @@
             </div>
 
             <!-- Custom Context Menu -->
-            <div id="fileContextMenu" class="context-menu" style="display: none; position: absolute; background: white; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 1000; min-width: 180px;">
+            <div id="fileContextMenu" class="context-menu" style="display: none; position: fixed; background: white; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 10000; min-width: 180px;">
                 <div class="context-menu-item" onclick="handleContextAction('rename-checklist')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">
                     <i class="fa fa-edit" style="margin-right: 8px;"></i> Rename Checklist
                 </div>
@@ -759,7 +759,6 @@
                     }
 
                     // Measure actual menu dimensions dynamically
-                    // Temporarily show menu to measure it (off-screen)
                     menu.style.visibility = 'hidden';
                     menu.style.display = 'block';
                     const menuWidth = menu.offsetWidth;
@@ -767,72 +766,29 @@
                     menu.style.display = 'none';
                     menu.style.visibility = 'visible';
 
-                    // Configuration
-                    const MIN_PADDING = 5; // Minimum distance from viewport edges (reduced for closer positioning)
-                    const CURSOR_OFFSET = 2; // Small offset from cursor position (reduced for closer feel)
-                    
-                    // Get scroll position
-                    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                    
-                    // Get viewport dimensions
+                    // Position menu at cursor (position: fixed uses viewport coordinates)
+                    const MIN_PADDING = 5;
+                    const CURSOR_OFFSET = 2;
                     const viewportWidth = window.innerWidth;
                     const viewportHeight = window.innerHeight;
-                    
-                    // Get cursor position relative to viewport
                     const cursorX = event.clientX;
                     const cursorY = event.clientY;
-                    
-                    // Start with cursor position (preferred: right and below)
-                    let menuLeft = cursorX + scrollLeft + CURSOR_OFFSET;
-                    let menuTop = cursorY + scrollTop + CURSOR_OFFSET;
-                    
-                    // Check if menu would overflow right edge - adjust to left of cursor if needed
-                    if (menuLeft + menuWidth > scrollLeft + viewportWidth - MIN_PADDING) {
-                        // Try positioning to the left of cursor
-                        const leftPosition = cursorX + scrollLeft - menuWidth - CURSOR_OFFSET;
-                        // Only use left position if it keeps menu visible
-                        if (leftPosition >= scrollLeft + MIN_PADDING) {
-                            menuLeft = leftPosition;
-                        } else {
-                            // Not enough space on left either - push to right edge with padding
-                            menuLeft = scrollLeft + viewportWidth - menuWidth - MIN_PADDING;
-                        }
+
+                    let menuLeft = cursorX + CURSOR_OFFSET;
+                    let menuTop = cursorY + CURSOR_OFFSET;
+
+                    // Check right edge - show to the left of cursor if needed
+                    if (menuLeft + menuWidth > viewportWidth - MIN_PADDING) {
+                        menuLeft = cursorX - menuWidth - CURSOR_OFFSET;
                     }
-                    
-                    // Ensure menu doesn't go off left edge (minimal adjustment)
-                    if (menuLeft < scrollLeft + MIN_PADDING) {
-                        menuLeft = scrollLeft + MIN_PADDING;
+                    // Check bottom edge - show above cursor if needed
+                    if (menuTop + menuHeight > viewportHeight - MIN_PADDING) {
+                        menuTop = cursorY - menuHeight - CURSOR_OFFSET;
                     }
-                    
-                    // Check if menu would overflow bottom edge - adjust above cursor if needed
-                    if (menuTop + menuHeight > scrollTop + viewportHeight - MIN_PADDING) {
-                        // Try positioning above cursor
-                        const topPosition = cursorY + scrollTop - menuHeight - CURSOR_OFFSET;
-                        // Only use top position if it keeps menu visible
-                        if (topPosition >= scrollTop + MIN_PADDING) {
-                            menuTop = topPosition;
-                        } else {
-                            // Not enough space above either - push to bottom edge with padding
-                            menuTop = scrollTop + viewportHeight - menuHeight - MIN_PADDING;
-                        }
-                    }
-                    
-                    // Ensure menu doesn't go off top edge (minimal adjustment)
-                    if (menuTop < scrollTop + MIN_PADDING) {
-                        menuTop = scrollTop + MIN_PADDING;
-                    }
-                    
-                    // Final safety check: ensure menu stays fully within viewport bounds
-                    // These checks ensure the menu is always fully visible
-                    if (menuLeft + menuWidth > scrollLeft + viewportWidth - MIN_PADDING) {
-                        menuLeft = scrollLeft + viewportWidth - menuWidth - MIN_PADDING;
-                    }
-                    if (menuTop + menuHeight > scrollTop + viewportHeight - MIN_PADDING) {
-                        menuTop = scrollTop + viewportHeight - menuHeight - MIN_PADDING;
-                    }
-                    
-                    // Apply position
+                    // Keep inside viewport (left/top edges)
+                    menuLeft = Math.max(MIN_PADDING, Math.min(menuLeft, viewportWidth - menuWidth - MIN_PADDING));
+                    menuTop = Math.max(MIN_PADDING, Math.min(menuTop, viewportHeight - menuHeight - MIN_PADDING));
+
                     menu.style.left = menuLeft + 'px';
                     menu.style.top = menuTop + 'px';
                     menu.style.display = 'block';

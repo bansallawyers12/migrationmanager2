@@ -1483,6 +1483,7 @@ class ClientAccountsController extends Controller
            $obj->type = $request->type;
            $obj->file_size = $size;
            $obj->doc_type = $doctype;
+           $obj->signer_count = 1; // PostgreSQL NOT NULL constraint - required for office receipt documents
            $doc_saved = $obj->save();
            $insertedDocId = $obj->id;
           }

@@ -318,6 +318,9 @@ Route::post('/clients/{admin}/upload-agreement', 'CRM\ClientsController@uploadAg
 // Form 956
 Route::post('/forms', 'CRM\Form956Controller@store')->name('forms.store');
 Route::get('/forms/{form}', 'CRM\Form956Controller@show')->name('forms.show');
+Route::get('/forms/{form}/edit', 'CRM\Form956Controller@edit')->name('forms.edit');
+Route::put('/forms/{form}', 'CRM\Form956Controller@update')->name('forms.update');
+Route::delete('/forms/{form}', 'CRM\Form956Controller@destroy')->name('forms.destroy');
 Route::get('/forms/{form}/preview', 'CRM\Form956Controller@previewPdf')->name('forms.preview');
 Route::get('/forms/{form}/pdf', 'CRM\Form956Controller@generatePdf')->name('forms.pdf');
 

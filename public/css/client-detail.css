@@ -894,6 +894,26 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
     border-radius: 4px;
 }
 
+/* Signature Activity Styling */
+.activity-type-signature {
+    border-left: 3px solid #4a90e2 !important;
+}
+
+.feed-icon-signature {
+    background: linear-gradient(135deg, #4a90e2, #357abd) !important;
+    color: #fff !important;
+}
+
+.feed-icon-signature i {
+    color: #fff !important;
+}
+
+.activity-type-signature .feed-content {
+    background: #f0f7ff;
+    padding: 10px;
+    border-radius: 4px;
+}
+
 /* Accounting/Financial Activity Styling */
 .activity-type-financial {
     border-left: 3px solid #28a745 !important;

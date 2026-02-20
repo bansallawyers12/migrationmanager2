@@ -1126,6 +1126,11 @@ class DocumentController extends Controller
                                    $document->doc_type === 'agreement' && 
                                    !empty($document->client_id);
             
+            // Visa document workflow: create signer and link, but do NOT send email (user clicks Send from action bar)
+            $isVisaDocument = !empty($document->client_matter_id) && 
+                              $document->doc_type === 'visa' && 
+                              !empty($document->client_id);
+            
             // Force refresh by reloading document from database
             $document->refresh();
             
@@ -1200,6 +1205,16 @@ class DocumentController extends Controller
                     $encodedClientId = base64_encode(convert_uuencode($clientDatabaseId));
                     $redirectUrl = url("/clients/detail/{$encodedClientId}/checklists");
                     
+                    ActivitiesLog::create([
+                        'client_id' => $clientDatabaseId,
+                        'created_by' => auth('admin')->id(),
+                        'subject' => 'placed signature fields and sent cost agreement for signature',
+                        'description' => '<ul><li><strong>Document:</strong> ' . htmlspecialchars($document->file_name ?? $document->title ?? 'Agreement') . '</li><li><strong>Sent to:</strong> ' . htmlspecialchars($signer->email) . '</li></ul>',
+                        'activity_type' => 'signature',
+                        'task_status' => 0,
+                        'pin' => 0,
+                    ]);
+                    
                     Log::info('Redirecting to client detail page', [
                         'document_id' => $document->id,
                         'client_database_id' => $clientDatabaseId,
@@ -1240,6 +1255,57 @@ class DocumentController extends Controller
                         return redirect($redirectUrl)
                             ->with('warning', 'Signature fields saved, but failed to generate link automatically. Please try again from the checklist.');
                     }
+                }
+            }
+            
+            if ($isVisaDocument) {
+                // Visa document workflow: Create signer + link, status = placed (user sends from action bar)
+                try {
+                    $client = $document->client;
+                    if (!$client || empty($client->email)) {
+                        throw new \Exception($client ? 'Client email not available' : 'Client not found');
+                    }
+                    $signer = $document->signers()->create([
+                        'email' => $client->email,
+                        'name' => trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? '')),
+                        'token' => \Illuminate\Support\Str::random(64),
+                        'status' => 'pending',
+                        'reminder_count' => 0,
+                    ]);
+                    $signingUrl = url("/sign/{$document->id}/{$signer->token}");
+                    $signatureLinks = [['email' => $signer->email, 'name' => $signer->name, 'url' => $signingUrl]];
+                    $document->update([
+                        'status' => 'placed',
+                        'signature_doc_link' => json_encode($signatureLinks),
+                        'primary_signer_email' => $signer->email,
+                        'signer_count' => 1,
+                    ]);
+                    $encodedClientId = base64_encode(convert_uuencode($client->id));
+                    $redirectUrl = url("/clients/detail/{$encodedClientId}/visadocuments");
+                    ActivitiesLog::create([
+                        'client_id' => $client->id,
+                        'created_by' => auth('admin')->id(),
+                        'subject' => 'placed signature fields on visa document',
+                        'description' => '<ul><li><strong>Document:</strong> ' . htmlspecialchars($document->checklist ?? $document->file_name ?? 'Visa document') . '</li><li><strong>Signer:</strong> ' . htmlspecialchars($signer->email) . '</li><li><strong>Next:</strong> Click Send in the action bar to send the signing link</li></ul>',
+                        'activity_type' => 'signature',
+                        'task_status' => 0,
+                        'pin' => 0,
+                    ]);
+                    if ($request->expectsJson()) {
+                        return response()->json([
+                            'success' => true,
+                            'message' => 'Signature fields saved. Use Send to send the signing link to the client.',
+                            'source' => 'visa_documents',
+                            'redirect_url' => $redirectUrl,
+                        ]);
+                    }
+                    return redirect($redirectUrl)->with('success', 'Signature fields saved. Use the action bar to send.');
+                } catch (\Exception $e) {
+                    Log::error('Visa document signature setup failed', ['document_id' => $document->id, 'error' => $e->getMessage()]);
+                    if ($request->expectsJson()) {
+                        return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+                    }
+                    throw $e;
                 }
             }
             

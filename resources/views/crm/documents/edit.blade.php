@@ -6,6 +6,13 @@
     <title>Designate Signatures - E-Signature App</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
+        body.user-select-none {
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            cursor: grabbing !important;
+        }
+        
         .preview-container {
             position: relative;
             display: inline-block;
@@ -27,9 +34,15 @@
             position: absolute;
             border: 2px dashed #3b82f6;
             background-color: rgba(59, 130, 246, 0.1) !important;
-            cursor: pointer;
-            transition: all 0.2s ease;
+            cursor: grab;
+            transition: border-color 0.2s ease, background-color 0.2s ease;
             z-index: 10;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        .signature-field-preview.dragging {
+            cursor: grabbing;
         }
         
         .signature-field-preview:hover {
@@ -640,15 +653,28 @@
                         height: ${height}px;
                     `;
                     fieldElement.innerHTML = `
-                        <div class="field-label">Signature ${index + 1}</div>
+                        <div class="field-label" style="pointer-events: none;">Signature ${index + 1}</div>
                     `;
-                    // Add drag functionality
+                    // Add drag functionality - use currentTarget so rect is always the field (not child)
                     fieldElement.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
                         startDrag(e, index);
                     });
+                    fieldElement.addEventListener('touchstart', function(e) {
+                        if (e.touches.length === 1) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const touch = e.touches[0];
+                            const synth = { clientX: touch.clientX, clientY: touch.clientY, currentTarget: fieldElement, target: fieldElement, preventDefault: function(){} };
+                            startDrag(synth, index);
+                        }
+                    }, { passive: false });
                     fieldElement.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        selectField(index);
+                        if (!isDragging) {
+                            e.stopPropagation();
+                            selectField(index);
+                        }
                     });
                     container.appendChild(fieldElement);
                 }
@@ -659,23 +685,31 @@
             e.preventDefault();
             isDragging = true;
             selectedFieldIndex = fieldIndex;
+            document.body.classList.add('user-select-none');
+            document.querySelectorAll('.signature-field-preview').forEach(el => el.classList.add('dragging'));
             
-            const field = signatureFields[fieldIndex];
-            const rect = e.target.getBoundingClientRect();
+            const dragEl = e.currentTarget || e.target;
+            const rect = dragEl.getBoundingClientRect ? dragEl.getBoundingClientRect() : e.target.getBoundingClientRect();
             dragStartX = e.clientX - rect.left;
             dragStartY = e.clientY - rect.top;
             
             document.addEventListener('mousemove', onDrag);
             document.addEventListener('mouseup', stopDrag);
+            document.addEventListener('touchmove', onDrag, { passive: false });
+            document.addEventListener('touchend', stopDrag);
+            document.addEventListener('touchcancel', stopDrag);
         }
 
         function onDrag(e) {
             if (!isDragging) return;
+            e.preventDefault();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             const container = document.getElementById('preview-container');
             const dims = getDisplayedDimensions();
             const rect = container.getBoundingClientRect();
-            const x = (e.clientX - rect.left - dragStartX) / dims.width;
-            const y = (e.clientY - rect.top - dragStartY) / dims.height;
+            const x = (clientX - rect.left - dragStartX) / dims.width;
+            const y = (clientY - rect.top - dragStartY) / dims.height;
             // Clamp to 0-1
             signatureFields[selectedFieldIndex].x_percent = Math.max(0, Math.min(1, x));
             signatureFields[selectedFieldIndex].y_percent = Math.max(0, Math.min(1, y));
@@ -685,8 +719,13 @@
 
         function stopDrag() {
             isDragging = false;
+            document.body.classList.remove('user-select-none');
+            document.querySelectorAll('.signature-field-preview').forEach(el => el.classList.remove('dragging'));
             document.removeEventListener('mousemove', onDrag);
             document.removeEventListener('mouseup', stopDrag);
+            document.removeEventListener('touchmove', onDrag);
+            document.removeEventListener('touchend', stopDrag);
+            document.removeEventListener('touchcancel', stopDrag);
         }
 
         function loadSignatureFields() {

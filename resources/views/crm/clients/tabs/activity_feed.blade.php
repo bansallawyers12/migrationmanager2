@@ -57,6 +57,9 @@
         <button class="activity-filter-btn" data-filter="document">
             <i class="fas fa-file-alt"></i> Documents
         </button>
+        <button class="activity-filter-btn" data-filter="signature">
+            <i class="fas fa-file-signature"></i> Signatures
+        </button>
         <button class="activity-filter-btn" data-filter="accounting">
             <i class="fas fa-dollar-sign"></i> Accounting
         </button>
