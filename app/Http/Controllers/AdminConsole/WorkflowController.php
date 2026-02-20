@@ -48,7 +48,18 @@ class WorkflowController extends Controller
         $wf->name = $request->name;
         $wf->matter_id = $request->matter_id ?: null;
         $wf->save();
-        return redirect()->route('adminconsole.features.workflow.index')->with('success', 'Workflow Created Successfully');
+
+        // Every workflow must have at least 3 default stages: first, checklist, and last two
+        $defaultStages = ['Application Received', 'Checklist', 'Ready to Close', 'File Closed'];
+        foreach ($defaultStages as $i => $stageName) {
+            $stage = new WorkflowStage();
+            $stage->name = $stageName;
+            $stage->workflow_id = $wf->id;
+            $stage->sort_order = $i + 1;
+            $stage->save();
+        }
+
+        return redirect()->route('adminconsole.features.workflow.index')->with('success', 'Workflow Created Successfully with default stages.');
     }
 
     /**
