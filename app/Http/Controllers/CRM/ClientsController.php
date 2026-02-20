@@ -162,7 +162,7 @@ class ClientsController extends Controller
             ->select('cm.*', 'ad.client_id as client_unique_id','ad.first_name','ad.last_name','ad.email','ma.title','ma.nick_name','ad.dob')
             ->where('cm.matter_status', '=', '1')
             ->where('ad.is_archived', '=', '0')
-            ->where('ad.role', '=', '7')
+            ->whereIn('ad.type', ['client', 'lead'])
             ->whereNull('ad.is_deleted')
             ->where(function ($q) {
                 $closedStages = ['file closed', 'withdrawn', 'refund', 'discontinued'];
@@ -252,7 +252,7 @@ class ClientsController extends Controller
             ->select('cm.*', 'ad.client_id as client_unique_id','ad.first_name','ad.last_name','ad.email','ma.title','ma.nick_name','ad.dob')
             ->where('cm.matter_status', '=', '1')
             ->where('ad.is_archived', '=', '0')
-            ->where('ad.role', '=', '7')
+            ->whereIn('ad.type', ['client', 'lead'])
             ->whereNull('ad.is_deleted')
             ->where(function ($q) {
                 $closedStages = ['file closed', 'withdrawn', 'refund', 'discontinued'];
@@ -291,7 +291,7 @@ class ClientsController extends Controller
                 ->leftJoin('workflow_stages as ws', 'cm.workflow_stage_id', '=', 'ws.id')
                 ->select('cm.*', 'ad.client_id as client_unique_id', 'ad.first_name', 'ad.last_name', 'ad.email', 'ma.title', 'ma.nick_name', 'ad.dob', 'ws.name as workflow_stage_name')
                 ->where('ad.is_archived', '=', '0')
-                ->where('ad.role', '=', '7')
+                ->whereIn('ad.type', ['client', 'lead'])
                 ->whereNull('ad.is_deleted')
                 ->where(function ($q) use ($closedStages) {
                     $q->where('cm.matter_status', '=', '0')
@@ -376,7 +376,7 @@ class ClientsController extends Controller
                 ->leftJoin('workflow_stages as ws', 'cm.workflow_stage_id', '=', 'ws.id')
                 ->select('cm.*', 'ad.client_id as client_unique_id', 'ad.first_name', 'ad.last_name', 'ad.email', 'ma.title', 'ma.nick_name', 'ad.dob', 'ws.name as workflow_stage_name')
                 ->where('ad.is_archived', '=', '0')
-                ->where('ad.role', '=', '7')
+                ->whereIn('ad.type', ['client', 'lead'])
                 ->whereNull('ad.is_deleted')
                 ->where(function ($q) use ($closedStages) {
                     $q->where('cm.matter_status', '=', '0')
@@ -407,7 +407,6 @@ class ClientsController extends Controller
             'new30' => (clone $clientBaseQuery)->where('created_at', '>=', $now->copy()->subDays(30))->count(),
             'inactive' => (clone $clientBaseQuery)->where('status', 0)->count(),
             'archived' => Admin::where('is_archived', 1)
-                ->where('role', 7)
                 ->where('type', 'client')
                 ->whereNull('is_deleted')
                 ->count(),
@@ -526,7 +525,6 @@ class ClientsController extends Controller
             $sortDirection = $request->get('direction', 'desc');
 
             $query = Admin::where('is_archived', '=', '0')
-                ->where('role', '=', 7)
                 ->where('type', '=', 'client')
                 ->whereNotNull('email')
                 ->where('email', '!=', '')
@@ -563,7 +561,7 @@ class ClientsController extends Controller
 
             $lists = $query->paginate(20);
         } else {
-            $query = Admin::where('id', '=', '')->where('role', '=', 7)->whereNull('is_deleted');
+            $query = Admin::where('id', '=', '')->whereIn('type', ['client', 'lead'])->whereNull('is_deleted');
             $lists = $query->sortable(['id' => 'desc'])->paginate(20);
             $totalData = 0;
         }
@@ -573,7 +571,7 @@ class ClientsController extends Controller
 
     public function archived(Request $request)
 	{
-		$query 		= Admin::where('is_archived', '=', '1')->where('role', '=', 7);
+		$query 		= Admin::where('is_archived', '=', '1')->whereIn('type', ['client', 'lead']);
         $totalData 	= $query->count();	//for all data
         $lists		= $query->sortable(['id' => 'desc'])->paginate(20);
         return view('crm.archived.index', compact(['lists', 'totalData']));
@@ -600,7 +598,7 @@ class ClientsController extends Controller
             
             // Find the client
             $client = Admin::where('id', $decodedId)
-                ->where('role', 7)
+                ->whereIn('type', ['client', 'lead'])
                 ->first();
             
             if (!$client) {
@@ -643,7 +641,7 @@ class ClientsController extends Controller
         try {
             // Find the client (including archived ones)
             $client = Admin::where('id', $id)
-                ->where('role', 7)
+                ->whereIn('type', ['client', 'lead'])
                 ->first();
             
             if (!$client) {
@@ -1138,7 +1136,6 @@ class ClientsController extends Controller
             $client->country_passport = $validated['visa_country'][0] ?? null;
             $client->client_counter = $client_current_counter;
             $client->client_id = $client_id;
-            $client->role = 7;
             $client->email = $modifiedEmail;
             $client->email_type = $lastEmailType ?? null;
 
@@ -1818,7 +1815,7 @@ class ClientsController extends Controller
         // Check authorization (assumed to be handled elsewhere)
         if (isset($id) && !empty($id)) {
             $id = $this->decodeString($id);
-            if (Admin::where('id', '=', $id)->where('role', '=', 7)->exists()) {
+            if (Admin::where('id', '=', $id)->whereIn('type', ['client', 'lead'])->exists()) {
                 $fetchedData = Admin::with('company.contactPerson')->find($id);
                 
                 // Route to appropriate edit page
@@ -1858,7 +1855,7 @@ class ClientsController extends Controller
 
             // Verify client exists
             $client = Admin::find($clientId);
-            $isClient = in_array($client->type ?? '', ['client']) || ($client->role ?? 0) == 7;
+            $isClient = in_array($client->type ?? '', ['client', 'lead']);
             if (!$client || !$isClient) {
                 return redirect()->back()->withErrors(['error' => 'Client not found'])->withInput();
             }
@@ -2009,7 +2006,7 @@ class ClientsController extends Controller
             // Set default tab if not provided
             $activeTab = $tab ?? 'personaldetails';
 
-            if (Admin::where('id', '=', $id)->where('role', '=', 7)->exists()) {
+            if (Admin::where('id', '=', $id)->whereIn('type', ['client', 'lead'])->exists()) {
                 $fetchedData = Admin::with('company.contactPerson')->find($id); //dd($fetchedData);
                 
                 // Route to company detail page if this is a company
@@ -2207,7 +2204,7 @@ class ClientsController extends Controller
 				$d = '';
 			 $squeryLower = strtolower($squery);
 			 $clients = \App\Models\Admin::where('is_archived', '=', 0)
-       ->where('role', '=', 7)
+       ->whereIn('type', ['client', 'lead'])
        ->where(
            function($query) use ($squeryLower) {
              return $query
@@ -2248,7 +2245,7 @@ class ClientsController extends Controller
 		if($squery != ''){
 				$d = '';
 			$clients = \App\Models\Admin::where('is_archived', '=', 0)
-			->where('role', '=', 7)
+			->whereIn('type', ['client', 'lead'])
 			->where(
            function($query) use ($squery) {
              	$squeryLower = strtolower($squery);
@@ -2308,7 +2305,7 @@ class ClientsController extends Controller
             }
 
             $squeryLower = strtolower($squery);
-            $clients = \App\Models\Admin::where('role', '=', 7)
+            $clients = \App\Models\Admin::whereIn('type', ['client', 'lead'])
                 ->whereNull('is_deleted')
                 ->where(function ($query) use ($squery, $squeryLower, $d) {
                     $query->orWhereRaw('LOWER(email) LIKE ?', ["%$squeryLower%"])
@@ -2380,7 +2377,7 @@ class ClientsController extends Controller
                 }
             }
 
-            $clients = \App\Models\Admin::where('role', '=', 7)
+            $clients = \App\Models\Admin::whereIn('type', ['client', 'lead'])
                 ->whereNull('is_deleted')
                 ->leftJoin('client_contacts', 'admins.id', '=', 'client_contacts.client_id')
                 ->leftJoin('client_emails', 'admins.id', '=', 'client_emails.client_id')
@@ -2457,7 +2454,7 @@ class ClientsController extends Controller
                     $matterNoPartLower = strtolower($matterNoPart);
                     $matterResults = DB::table('admins')
                         ->join('client_matters', 'admins.id', '=', 'client_matters.client_id')
-                        ->where('admins.role', 7)
+                        ->whereIn('admins.type', ['client', 'lead'])
                         ->whereNull('admins.is_deleted')
                         ->where('admins.is_archived', 0)
                         ->where('client_matters.matter_status', 1)
@@ -2492,7 +2489,7 @@ class ClientsController extends Controller
              */
             $matterMatches = DB::table('client_matters')
                 ->join('admins', 'client_matters.client_id', '=', 'admins.id')
-                ->where('admins.role', 7)
+                ->whereIn('admins.type', ['client', 'lead'])
                 ->whereNull('admins.is_deleted')
                 ->where('admins.is_archived', 0)
                 ->where('client_matters.matter_status', 1)
@@ -2545,7 +2542,7 @@ class ClientsController extends Controller
             $isUniversalPhone = ($squery === '4444444444');
             
             $clientsQuery = \App\Models\Admin::query()
-                ->where('admins.role', 7)
+                ->whereIn('admins.type', ['client', 'lead'])
                 ->whereNull('admins.is_deleted')
                 ->where('admins.is_archived', 0)
                 ->leftJoin('client_contacts', function($join) use ($squery, $squeryLower, $isUniversalPhone) {
@@ -2752,7 +2749,7 @@ class ClientsController extends Controller
 			}
 
 			// Check if client exists - role must be integer for PostgreSQL compatibility
-			$clientExists = Admin::where('role', '=', 7)->where('id', $request->id)->exists();
+			$clientExists = Admin::whereIn('type', ['client', 'lead'])->where('id', $request->id)->exists();
 			
 			if($clientExists){
 				$activities = ActivitiesLog::where('client_id', $request->id)
@@ -2817,7 +2814,7 @@ class ClientsController extends Controller
 	}
 
 	public function updateclientstatus(Request $request){
-		if(Admin::where('role', '=', 7)->where('id', $request->id)->exists()){
+		if(Admin::whereIn('type', ['client', 'lead'])->where('id', $request->id)->exists()){
 			// rating column dropped Phase 4 - no-op
 			$response['status'] 	= 	true;
 			$response['message']	=	'You\'ve successfully updated your client\'s information.';
@@ -2829,7 +2826,7 @@ class ClientsController extends Controller
 	}
 
 	public function saveapplication(Request $request){
-		if(Admin::where('role', '=', 7)->where('id', $request->client_id)->exists()){
+		if(Admin::whereIn('type', ['client', 'lead'])->where('id', $request->client_id)->exists()){
 			$workflow = $request->workflow;
 			$explode = explode('_', $request->partner_branch);
 			$partner = $explode[1];
@@ -2884,7 +2881,7 @@ class ClientsController extends Controller
 	}
 
 	public function getapplicationlists(Request $request){
-		if(Admin::where('role', '=', 7)->where('id', $request->id)->exists()){
+		if(Admin::whereIn('type', ['client', 'lead'])->where('id', $request->id)->exists()){
 			$applications = \App\Models\Application::where('client_id', $request->id)->orderby('created_at', 'DESC')->get();
             //dd($applications);
 			$data = array();
@@ -5530,8 +5527,6 @@ class ClientsController extends Controller
         $doc->file_size = $size;
         $doc->doc_type = 'agreement';
         $doc->client_matter_id = $requestData['clientmatterid'];
-        // PostgreSQL NOT NULL constraint - signer_count is required (default: 1 for regular documents)
-        $doc->signer_count = 1;
         $saved = $doc->save();
 
         //6. Log activity if saved
@@ -5710,7 +5705,7 @@ class ClientsController extends Controller
     public function changetype(Request $request,$id = Null, $slug = Null){ 
         if(isset($id) && !empty($id)) {
             $id = $this->decodeString($id);
-            if(Admin::where('id', '=', $id)->where('role', '=', 7)->exists()) {
+            if(Admin::where('id', '=', $id)->whereIn('type', ['client', 'lead'])->exists()) {
                 $obj = Admin::find($id);
                 $client_type = $obj->type;
                 if($slug == 'client') {
@@ -5793,7 +5788,7 @@ class ClientsController extends Controller
         if (empty($clientId)) {
             return redirect()->back()->with('error', 'Client ID is required.');
         }
-        $obj = Admin::where('id', $clientId)->where('role', 7)->first();
+        $obj = Admin::where('id', $clientId)->whereIn('type', ['client', 'lead'])->first();
         if (!$obj || $obj->type !== 'lead') {
             return redirect()->back()->with('error', 'Only leads can be converted.');
         }
@@ -5998,7 +5993,7 @@ class ClientsController extends Controller
 
             // Find the client
             $client = \App\Models\Admin::where('id', $clientId)
-                ->where('role', '7') // Client role
+                ->whereIn('type', ['client', 'lead'])
                 ->first();
 
             if (!$client) {
@@ -7127,7 +7122,7 @@ class ClientsController extends Controller
         if ($appointment->client_id) {
             // Try to get client name from Admin model (first_name + last_name)
             $client = Admin::where('id', $appointment->client_id)
-                ->where('role', 7) // Ensure it's a client
+                ->whereIn('type', ['client', 'lead'])
                 ->select('first_name', 'last_name')
                 ->first();
             
@@ -7172,7 +7167,7 @@ class ClientsController extends Controller
 
             // Check if client exists
             $client = Admin::where('id', $clientId)
-                ->where('role', 7)
+                ->whereIn('type', ['client', 'lead'])
                 ->first();
 
             if (!$client) {
@@ -7324,7 +7319,7 @@ class ClientsController extends Controller
                     $q->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$query}%"]);
                 }
             })
-            ->where('role', 7) // Clients/Leads only
+            ->whereIn('type', ['client', 'lead'])
             ->where(function($q) {
                 $q->where('type', 'client')
                   ->orWhere('type', 'lead');

@@ -54,7 +54,7 @@ class ClientImportService
                 $email = isset($clientData['email']) ? trim((string) $clientData['email']) : '';
                 $phone = isset($clientData['phone']) ? trim((string) $clientData['phone']) : '';
 
-                $query = Admin::where('role', 7);
+                $query = Admin::whereIn('type', ['client', 'lead']);
                 if ($email !== '') {
                     $query->where('email', $email);
                 }
@@ -159,7 +159,6 @@ class ClientImportService
             // System fields
             $client->client_counter = $client_current_counter;
             $client->client_id = $client_id;
-            $client->role = 7; // Client role
             $client->password = Hash::make('CLIENT_IMPORT_' . time()); // Temporary password
             $client->verified = 0;
             $client->cp_status = 0;

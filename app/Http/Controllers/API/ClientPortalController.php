@@ -42,7 +42,7 @@ class ClientPortalController extends Controller
 
         $email = strtolower(trim($request->email));
         $admin = Admin::whereRaw('LOWER(email) = ?', [$email])
-                     ->where('role', 7)
+                     ->whereIn('type', ['client', 'lead'])
                      ->where('cp_status', 1)
                      ->first();
 
@@ -338,8 +338,8 @@ class ClientPortalController extends Controller
             ], 200);
         }
 
-        // Verify this is a client (type=client or role=7 for legacy; role will be removed eventually)
-        if (($admin->type ?? '') !== 'client' && ($admin->role ?? 0) != 7) {
+        // Verify this is a client (type=client or lead)
+        if (!in_array($admin->type ?? '', ['client', 'lead'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'Your record exists in DB but your role is not Client. So you cannot access this mobile app.'
@@ -412,7 +412,7 @@ class ClientPortalController extends Controller
         $email = strtolower(trim($request->email));
         $admin = Admin::whereRaw('LOWER(email) = ?', [$email])
                      ->where('cp_random_code', $request->code)
-                     ->where('role', 7)
+                     ->whereIn('type', ['client', 'lead'])
                      ->where('cp_status', 1)
                      ->first();
 
@@ -562,8 +562,8 @@ class ClientPortalController extends Controller
         // Get client (Admin model; refresh tokens for clients only)
         $admin = Admin::find($refreshTokenData->user_id);
 
-        // Check if client is still active (type=client or role=7 for legacy)
-        $isClient = $admin && (in_array($admin->type ?? '', ['client']) || ($admin->role ?? 0) == 7);
+        // Check if client is still active (type=client or lead)
+        $isClient = $admin && in_array($admin->type ?? '', ['client', 'lead']);
         if (!$isClient || ($admin?->cp_status ?? 0) != 1) {
             // Revoke the token
             DB::table('refresh_tokens')

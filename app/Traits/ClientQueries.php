@@ -16,7 +16,6 @@ trait ClientQueries
     protected function getBaseClientQuery()
     {
         return Admin::where('is_archived', '=', '0')
-            ->where('role', '=', '7')
             ->where('type', '=', 'client')
             ->whereNull('is_deleted');
     }

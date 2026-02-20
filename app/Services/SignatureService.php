@@ -55,9 +55,6 @@ class SignatureService
             // Update document status and tracking
             $document->update([
                 'status' => 'sent',
-                'primary_signer_email' => $signers[0]['email'] ?? null,
-                'signer_count' => count($signers),
-                'last_activity_at' => now(),
             ]);
 
             // Send emails to all signers
@@ -88,7 +85,7 @@ class SignatureService
             
             // Determine template based on document type or options
             $template = $options['template'] ?? 'emails.signature.send';
-            if ($document->document_type === 'agreement') {
+            if (($options['document_type'] ?? null) === 'agreement') {
                 $template = 'emails.signature.send_agreement';
             }
             
@@ -98,11 +95,11 @@ class SignatureService
             // Prepare template data
             $templateData = [
                 'signerName' => $signer->name,
-                'documentTitle' => $document->display_title ?? $document->title,
+                'documentTitle' => $document->display_title,
                 'signingUrl' => $signingUrl,
                 'emailMessage' => $message,
-                'documentType' => $document->document_type ?? 'document',
-                'dueDate' => $document->due_at ? $document->due_at->format('F j, Y') : null,
+                'documentType' => $options['document_type'] ?? 'document',
+                'dueDate' => ($options['due_at'] ?? null)?->format('F j, Y'),
                 'emailSignature' => $zeptoApiConfig['email_signature'] ?? '',
             ];
 
@@ -209,10 +206,10 @@ class SignatureService
 
             $templateData = [
                 'signerName' => $signer->name,
-                'documentTitle' => $document->display_title ?? $document->title,
+                'documentTitle' => $document->display_title,
                 'signingUrl' => $signingUrl,
                 'reminderNumber' => $signer->reminder_count + 1,
-                'dueDate' => $document->due_at ? $document->due_at->format('F j, Y') : null,
+                'dueDate' => null,
                 'emailSignature' => $zeptoApiConfig['email_signature'] ?? '',
             ];
 
@@ -294,7 +291,6 @@ class SignatureService
         try {
             $document->update([
                 'status' => 'voided',
-                'last_activity_at' => now(),
             ]);
 
             // Optionally log the reason
@@ -321,17 +317,13 @@ class SignatureService
     public function associate(Document $document, string $entityType, int $entityId, string $note = null): bool
     {
         try {
-            $documentableType = match($entityType) {
-                'client' => Admin::class,
-                'lead' => Lead::class,
+            $updates = match($entityType) {
+                'client' => ['client_id' => $entityId, 'lead_id' => null],
+                'lead' => ['lead_id' => $entityId, 'client_id' => null],
                 default => throw new \InvalidArgumentException("Invalid entity type: {$entityType}")
             };
 
-            $document->update([
-                'documentable_type' => $documentableType,
-                'documentable_id' => $entityId,
-                'origin' => $entityType,
-            ]);
+            $document->update($updates);
 
             // Create audit trail entry in document_notes
             DocumentNote::create([
@@ -342,7 +334,6 @@ class SignatureService
                 'metadata' => [
                     'entity_type' => $entityType,
                     'entity_id' => $entityId,
-                    'documentable_type' => $documentableType
                 ]
             ]);
 
@@ -396,13 +387,18 @@ class SignatureService
                 default => 'general'
             };
 
-            $document->update([
-                'documentable_type' => $documentableType,
-                'documentable_id' => $entityId,
+            $updates = [
                 'client_matter_id' => $matterId,
                 'doc_type' => $docType,
-                'origin' => $entityType,
-            ]);
+            ];
+            if ($entityType === 'client') {
+                $updates['client_id'] = $entityId;
+                $updates['lead_id'] = null;
+            } else {
+                $updates['lead_id'] = $entityId;
+                $updates['client_id'] = null;
+            }
+            $document->update($updates);
 
             // Create audit trail entry in document_notes
             DocumentNote::create([
@@ -416,7 +412,6 @@ class SignatureService
                     'matter_id' => $matterId,
                     'doc_category' => $docCategory,
                     'doc_type' => $docType,
-                    'documentable_type' => $documentableType
                 ]
             ]);
 
@@ -461,14 +456,14 @@ class SignatureService
     public function detach(Document $document, string $reason = null): bool
     {
         try {
-            $oldEntityType = $document->documentable_type;
-            $oldEntityId = $document->documentable_id;
-            $entityType = $document->documentable_type === Admin::class ? 'client' : 'lead';
+            $oldClientId = $document->client_id;
+            $oldLeadId = $document->lead_id;
+            $entityType = $oldClientId ? 'client' : 'lead';
+            $oldEntityId = $oldClientId ?? $oldLeadId;
 
             $document->update([
-                'documentable_type' => null,
-                'documentable_id' => null,
-                'origin' => 'ad_hoc',
+                'client_id' => null,
+                'lead_id' => null,
             ]);
 
             // Create audit trail entry
@@ -480,14 +475,13 @@ class SignatureService
                 'metadata' => [
                     'old_entity_type' => $entityType,
                     'old_entity_id' => $oldEntityId,
-                    'old_documentable_type' => $oldEntityType
                 ]
             ]);
 
             // Create activity log on Client/Lead timeline
-            if ($oldEntityType === Admin::class && $oldEntityId) {
+            if ($oldClientId) {
                 ActivitiesLog::create([
-                    'client_id' => $oldEntityId,
+                    'client_id' => $oldClientId,
                     'created_by' => auth('admin')->id() ?? 1,
                     'activity_type' => 'document',
                     'subject' => "Document #{$document->id} detached",
@@ -522,7 +516,7 @@ class SignatureService
     {
         // Try to find matching client or lead (both are in admins table with role = 7)
         $entity = Admin::where('email', $email)
-            ->where('role', '=', 7)
+            ->whereIn('type', ['client', 'lead'])
             ->whereNull('is_deleted')
             ->first();
 
@@ -576,8 +570,8 @@ class SignatureService
     {
         $count = Document::where('status', 'draft')
             ->where('created_at', '<', now()->subDays($daysOld))
-            ->whereNull('archived_at')
-            ->update(['archived_at' => now()]);
+            ->notArchived()
+            ->update(['status' => 'archived']);
 
         Log::info("Archived {$count} old draft documents");
 

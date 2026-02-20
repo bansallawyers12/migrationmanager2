@@ -162,7 +162,7 @@
                                 <div class="flex justify-between items-start">
                                     <div class="flex-1">
                                         <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                                            {{ $document->title ?? $document->file_name }}
+                                            {{ $document->file_name ?? 'Document' }}
                                         </h3>
                                         <div class="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400 mb-3">
                                             <span>Status:

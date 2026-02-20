@@ -60,7 +60,7 @@ class ClientMatchingService
             return null;
         }
 
-        return Admin::where('role', 7)
+        return Admin::whereIn('type', ['client', 'lead'])
             ->where('email', $email)
             ->first();
     }
@@ -75,7 +75,7 @@ class ClientMatchingService
         }
 
         // Try exact match first
-        $client = Admin::where('role', 7)
+        $client = Admin::whereIn('type', ['client', 'lead'])
             ->where('phone', $phone)
             ->first();
 
@@ -86,7 +86,7 @@ class ClientMatchingService
         // Try phone in client_contacts table
         $contact = ClientContact::where('phone', $phone)->first();
         if ($contact) {
-            return Admin::where('role', 7)->find($contact->client_id);
+            return Admin::whereIn('type', ['client', 'lead'])->find($contact->client_id);
         }
 
         return null;
@@ -121,7 +121,6 @@ class ClientMatchingService
             $client->country_code = $this->extractCountryCode($appointmentData['phone']);
             $client->client_counter = $client_current_counter;
             $client->client_id = $client_id;
-            $client->role = 7; // Client role
             $client->type = 'lead'; // Start as lead
             $client->source = 'Bansal Website';
             

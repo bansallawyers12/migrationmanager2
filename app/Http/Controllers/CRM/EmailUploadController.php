@@ -396,9 +396,6 @@ class EmailUploadController extends Controller
             $document->client_matter_id = $mailType === 'sent' 
                 ? $request->upload_sent_mail_client_matter_id 
                 : $request->upload_inbox_mail_client_matter_id;
-            // Email documents don't have signers, so set signer_count to 0
-            $document->signer_count = 0;
-            
             try {
                 $document->save();
             } catch (QueryException $e) {

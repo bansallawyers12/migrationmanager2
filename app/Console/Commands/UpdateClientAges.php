@@ -49,7 +49,7 @@ class UpdateClientAges extends Command
         $smartUpdate = $this->option('smart');
 
         // Get all clients with valid DOB
-        $query = Admin::where('role', 7) // Clients only
+        $query = Admin::whereIn('type', ['client', 'lead'])
             ->whereNotNull('dob')
             ->where('dob', '<=', Carbon::now()->format('Y-m-d')) // Not future dates
             ->whereNull('is_deleted')

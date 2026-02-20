@@ -25,7 +25,7 @@ class Admin extends Authenticatable
         'id',
         // Core Identity
         'first_name', 'last_name', 'email', 'password',
-        // Role (clients have role=7)
+        // Role (staff only; clients/leads identified by type)
         'role',
         // Contact Information
         'phone', 'country_code',

@@ -96,7 +96,7 @@ class OfficeVisitController extends Controller
 			if ($contactType == 'Lead') {
 				$clientExists = \App\Models\Lead::where('id', $contactId)->exists();
 			} else {
-				$clientExists = Admin::where('role', '7')->where('id', $contactId)->exists();
+				$clientExists = Admin::whereIn('type', ['client', 'lead'])->where('id', $contactId)->exists();
 			}
 
 			if (!$clientExists) {
@@ -152,7 +152,7 @@ class OfficeVisitController extends Controller
 				// Get client information for the notification
 				$client = $contactType == 'Lead' 
 					? \App\Models\Lead::find($contactId)
-					: Admin::where('role', '7')->find($contactId);
+					: Admin::whereIn('type', ['client', 'lead'])->find($contactId);
 
 				// Broadcast real-time notification via Reverb (wrap in try-catch to prevent failures)
 				try {
@@ -248,7 +248,7 @@ class OfficeVisitController extends Controller
 				if($CheckinLog->contact_type == 'Lead'){
 				    	$client = \App\Models\Lead::where('id', '=', $CheckinLog->client_id)->first();
 				}else{
-				    	$client = \App\Models\Admin::where('role', '=', 7)->where('id', '=', $CheckinLog->client_id)->first();
+				    	$client = \App\Models\Admin::whereIn('type', ['client', 'lead'])->where('id', '=', $CheckinLog->client_id)->first();
 				}
 
 			?>
@@ -527,7 +527,7 @@ class OfficeVisitController extends Controller
 	    	// Get client information for the notification
 	    	$client = $objs->contact_type == 'Lead' 
 	    	    ? \App\Models\Lead::find($objs->client_id)
-	    	    : Admin::where('role', '7')->find($objs->client_id);
+	    	    : Admin::whereIn('type', ['client', 'lead'])->find($objs->client_id);
 	    	
 	    	// Broadcast real-time notification via Reverb (wrap in try-catch)
 	    	try {
@@ -597,7 +597,7 @@ class OfficeVisitController extends Controller
 		        // Get client information for the notification
 		        $client = $obj->contact_type == 'Lead' 
 		            ? \App\Models\Lead::find($obj->client_id)
-		            : Admin::where('role', '7')->find($obj->client_id);
+		            : Admin::whereIn('type', ['client', 'lead'])->find($obj->client_id);
 		        
 		        // Broadcast real-time notification via Reverb (wrap in try-catch)
 		        try {

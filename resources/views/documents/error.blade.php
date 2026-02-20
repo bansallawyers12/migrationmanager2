@@ -134,8 +134,8 @@
         @if(isset($document) && $document)
         <div class="info-box">
             <p><strong>Document ID:</strong> #{{ $document->id }}</p>
-            @if($document->display_title ?? $document->title)
-            <p><strong>Document:</strong> {{ $document->display_title ?? $document->title }}</p>
+            @if($document->display_title)
+            <p><strong>Document:</strong> {{ $document->display_title }}</p>
             @endif
         </div>
         @endif

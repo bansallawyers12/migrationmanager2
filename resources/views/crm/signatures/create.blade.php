@@ -1066,7 +1066,7 @@ function previewEmail() {
         body: JSON.stringify({
             template: emailTemplate,
             signer_name: signerName,
-            document_title: '{{ isset($document) ? $document->title : "Your Document" }}',
+            document_title: '{{ isset($document) ? ($document->file_name ?? "Your Document") : "Your Document" }}',
             message: emailMessage
         })
     })

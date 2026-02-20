@@ -67,7 +67,7 @@ class SignatureDashboardController extends Controller
                   return $q->where(function($subQ) use ($search) {
                       $subQ->where('title', 'like', "%{$search}%")
                            ->orWhere('file_name', 'like', "%{$search}%")
-                           ->orWhere('primary_signer_email', 'like', "%{$search}%");
+                           ->orWhereHas('signers', fn($sq) => $sq->where('email', 'like', "%{$search}%"));
                   });
               });
 
@@ -79,12 +79,7 @@ class SignatureDashboardController extends Controller
             'visible_to_me' => Document::forSignatureWorkflow()->visible($user)->notArchived()->count(), // All documents (global)
             'pending' => Document::forSignatureWorkflow()->visible($user)->byStatus('sent')->notArchived()->count(), // All pending (global)
             'signed' => Document::forSignatureWorkflow()->visible($user)->byStatus('signed')->notArchived()->count(), // All signed (global)
-            'overdue' => Document::forSignatureWorkflow()->visible($user)
-                ->whereNotNull('due_at')
-                ->where('due_at', '<', now())
-                ->where('status', '!=', 'signed')
-                ->notArchived()
-                ->count(), // All overdue (global)
+            'overdue' => 0, // due_at column removed
         ];
 
         // All users see global counts now
@@ -112,7 +107,7 @@ class SignatureDashboardController extends Controller
         $this->authorize('create', Document::class);
         
         // Get clients and leads for association dropdown
-        $clients = Admin::where('role', '=', 7)->whereNull('is_deleted')->get(['id', 'first_name', 'last_name', 'email']);
+        $clients = Admin::whereIn('type', ['client', 'lead'])->whereNull('is_deleted')->get(['id', 'first_name', 'last_name', 'email']);
         $leads = Lead::get(['id', 'first_name', 'last_name', 'email']);
 
         // Get active email accounts for template picker
@@ -187,9 +182,8 @@ class SignatureDashboardController extends Controller
                     $client = Admin::find($matter->client_id);
                     if ($client) {
                         $document->update([
-                            'documentable_type' => Admin::class,
-                            'documentable_id' => $client->id,
-                            'origin' => 'client',
+                            'client_id' => $client->id,
+                            'lead_id' => null,
                         ]);
                         
                         // Create a note about the matter association
@@ -212,11 +206,11 @@ class SignatureDashboardController extends Controller
                 if ($entity) {
                     $entityType = ($entity->type === 'lead') ? 'lead' : 'client';
                     
-                    $document->update([
-                        'documentable_type' => Admin::class,
-                        'documentable_id' => $entity->id,
-                        'origin' => $entityType,
-                    ]);
+                    $document->update(
+                        $entityType === 'client'
+                            ? ['client_id' => $entity->id, 'lead_id' => null]
+                            : ['lead_id' => $entity->id, 'client_id' => null]
+                    );
                     
                     // Create a note about the association
                     $folderName = ($entityType === 'lead') ? 'personal documents' : 'general documents';
@@ -258,12 +252,8 @@ class SignatureDashboardController extends Controller
         } else {
             $request->validate([
                 'file' => 'required|file|mimes:pdf,doc,docx|max:10240',
-                'title' => 'nullable|string|max:255',
                 'signer_email' => 'required|email',
                 'signer_name' => 'required|string|min:2|max:100',
-                'document_type' => 'nullable|string|in:agreement,nda,general,contract',
-                'priority' => 'nullable|string|in:low,normal,high',
-                'due_at' => 'nullable|date|after:now',
                 'association_type' => 'nullable|string|in:client,lead',
                 'association_id' => 'nullable|integer',
                 'client_matter_id' => 'nullable|integer',
@@ -279,10 +269,8 @@ class SignatureDashboardController extends Controller
                 'file_name' => $fileName,
                 'filetype' => $file->getClientMimeType(),
                 'myfile' => $filePath,
-                'title' => $request->title ?: pathinfo($fileName, PATHINFO_FILENAME),
                 'status' => 'draft',
                 'client_id' => Auth::guard('admin')->id(),
-                'signer_count' => 0, // No signers added yet for a new document
             ]);
         }
 
@@ -316,7 +304,7 @@ class SignatureDashboardController extends Controller
 
     public function show($id)
     {
-        $document = Document::with(['creator', 'signers', 'documentable', 'signatureFields', 'notes.creator'])
+        $document = Document::with(['creator', 'signers', 'lead', 'signatureFields', 'notes.creator'])
             ->findOrFail($id);
 
         // Check authorization using policy
@@ -361,7 +349,7 @@ class SignatureDashboardController extends Controller
                 'client_id' => $document->client_id,
                 'created_by' => Auth::guard('admin')->id(),
                 'subject' => 'sent reminder for document signature',
-                'description' => '<ul><li><strong>Document:</strong> ' . htmlspecialchars($document->checklist ?? $document->file_name ?? $document->title ?? 'Document') . '</li><li><strong>Reminded:</strong> ' . htmlspecialchars($signer->name . ' (' . $signer->email . ')') . '</li></ul>',
+                'description' => '<ul><li><strong>Document:</strong> ' . htmlspecialchars($document->checklist ?? $document->file_name ?? 'Document') . '</li><li><strong>Reminded:</strong> ' . htmlspecialchars($signer->name . ' (' . $signer->email . ')') . '</li></ul>',
                 'activity_type' => 'signature',
                 'task_status' => 0,
                 'pin' => 0,
@@ -423,7 +411,6 @@ class SignatureDashboardController extends Controller
                 $document->update([
                     'status' => null,
                     'signature_doc_link' => null,
-                    'primary_signer_email' => null,
                 ]);
             }
             
@@ -432,7 +419,7 @@ class SignatureDashboardController extends Controller
                     'client_id' => $document->client_id,
                     'created_by' => Auth::guard('admin')->id(),
                     'subject' => 'cancelled signature request',
-                    'description' => '<ul><li><strong>Document:</strong> ' . htmlspecialchars($document->checklist ?? $document->file_name ?? $document->title ?? 'Document') . '</li><li><strong>Cancelled for:</strong> ' . htmlspecialchars($signer->name . ' (' . $signer->email . ')') . '</li></ul>',
+                    'description' => '<ul><li><strong>Document:</strong> ' . htmlspecialchars($document->checklist ?? $document->file_name ?? 'Document') . '</li><li><strong>Cancelled for:</strong> ' . htmlspecialchars($signer->name . ' (' . $signer->email . ')') . '</li></ul>',
                     'activity_type' => 'signature',
                     'task_status' => 0,
                     'pin' => 0,
@@ -492,11 +479,8 @@ class SignatureDashboardController extends Controller
                 // Generate signing URL
                 $signingUrl = url("/sign/{$document->id}/{$signer->token}");
                 
-                // Use the signer's stored email template, or fallback to document type
+                // Use the signer's stored email template
                 $template = $signer->email_template ?? 'emails.signature.send';
-                if ($document->document_type === 'agreement' && !$signer->email_template) {
-                    $template = 'emails.signature.send_agreement';
-                }
                 
                 // Use the signer's stored email settings, or fallback to defaults
                 $subject = $signer->email_subject ?? 'Document Signature Request from Bansal Migration';
@@ -505,11 +489,11 @@ class SignatureDashboardController extends Controller
                 // Prepare template data
                 $templateData = [
                     'signerName' => $signer->name,
-                    'documentTitle' => $document->display_title ?? $document->title,
+                    'documentTitle' => $document->display_title,
                     'signingUrl' => $signingUrl,
                     'emailMessage' => $message,
-                    'documentType' => $document->document_type ?? 'document',
-                    'dueDate' => $document->due_at ? $document->due_at->format('F j, Y') : null,
+                    'documentType' => 'document',
+                    'dueDate' => null,
                 ];
 
                 // Use ZeptoMail API for signature emails
@@ -577,7 +561,7 @@ class SignatureDashboardController extends Controller
                 'client_id' => $document->client_id,
                 'created_by' => Auth::guard('admin')->id(),
                 'subject' => 'sent document for signature',
-                'description' => '<ul><li><strong>Document:</strong> ' . htmlspecialchars($document->checklist ?? $document->file_name ?? $document->title ?? 'Document') . '</li><li><strong>Sent to:</strong> ' . htmlspecialchars($recipients) . '</li></ul>',
+                'description' => '<ul><li><strong>Document:</strong> ' . htmlspecialchars($document->checklist ?? $document->file_name ?? 'Document') . '</li><li><strong>Sent to:</strong> ' . htmlspecialchars($recipients) . '</li></ul>',
                 'activity_type' => 'signature',
                 'task_status' => 0,
                 'pin' => 0,
@@ -623,7 +607,7 @@ class SignatureDashboardController extends Controller
         
         // Find all clients and leads with this email (both are in admins table with role = 7)
         $entities = Admin::where('email', $request->email)
-            ->where('role', '=', 7)
+            ->whereIn('type', ['client', 'lead'])
             ->whereNull('is_deleted')
             ->get();
             
@@ -794,8 +778,8 @@ class SignatureDashboardController extends Controller
         
         try {
             $count = Document::whereIn('id', $ids)
-                ->whereNull('archived_at')
-                ->update(['archived_at' => now()]);
+                ->notArchived()
+                ->update(['status' => 'archived']);
             
             return back()->with('success', "Successfully archived {$count} document(s)");
         } catch (\Exception $e) {

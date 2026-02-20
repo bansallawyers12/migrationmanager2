@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Kyslik\ColumnSortable\Sortable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\Admin;
@@ -34,41 +33,16 @@ class Document extends Model
         'form956_id',
         'office_id',
         'checklist',
-        'checklist_verified_by',
-        'checklist_verified_at',
         'not_used_doc',
         'status',
         'signature_doc_link',
         'signed_doc_link',
-        'signed_hash',
-        'hash_generated_at',
-        'certificate_path',
         'is_client_portal_verify',
-        'client_portal_verified_by',
-        'client_portal_verified_at',
         'created_by',
-        'origin',
-        'documentable_type',
-        'documentable_id',
-        'title',
-        'document_type',
-        'labels',
-        'due_at',
-        'priority',
-        'primary_signer_email',
-        'signer_count',
-        'last_activity_at',
-        'archived_at'
+        'lead_id',
     ];
 
     protected $casts = [
-        'labels' => 'array',
-        'checklist_verified_at' => 'datetime',
-        'client_portal_verified_at' => 'datetime',
-        'due_at' => 'datetime',
-        'last_activity_at' => 'datetime',
-        'archived_at' => 'datetime',
-        'hash_generated_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -79,9 +53,6 @@ class Document extends Model
         'status',
         'created_at',
         'updated_at',
-        'title',
-        'document_type',
-        'priority'
     ];
 
     // Relationships
@@ -105,14 +76,9 @@ class Document extends Model
         return $this->belongsTo(Staff::class, 'user_id');
     }
 
-    public function verifiedBy(): BelongsTo
+    public function lead(): BelongsTo
     {
-        return $this->belongsTo(Staff::class, 'checklist_verified_by');
-    }
-
-    public function documentable(): MorphTo
-    {
-        return $this->morphTo();
+        return $this->belongsTo(Lead::class);
     }
 
     public function notes(): HasMany
@@ -148,19 +114,21 @@ class Document extends Model
 
     public function scopeAssociated($query)
     {
-        return $query->whereNotNull('documentable_type')
-                    ->whereNotNull('documentable_id');
+        return $query->where(function ($q) {
+            $q->whereNotNull('client_id')->orWhereNotNull('lead_id');
+        });
     }
 
     public function scopeAdhoc($query)
     {
-        return $query->whereNull('documentable_type')
-                    ->whereNull('documentable_id');
+        return $query->whereNull('client_id')->whereNull('lead_id');
     }
 
     public function scopeNotArchived($query)
     {
-        return $query->whereNull('archived_at');
+        return $query->where(function ($q) {
+            $q->whereNull('status')->orWhere('status', '!=', 'archived');
+        });
     }
 
     /**
@@ -236,7 +204,7 @@ class Document extends Model
     // Existing Accessors
     public function getDisplayTitleAttribute()
     {
-        return $this->title ?: $this->file_name;
+        return $this->file_name ?? 'Document';
     }
 
     public function getStatusBadgeAttribute()
@@ -252,7 +220,29 @@ class Document extends Model
 
     public function getIsOverdueAttribute()
     {
-        return $this->due_at && $this->due_at->isPast() && $this->status !== 'signed';
+        return false; // due_at column removed
+    }
+
+    /**
+     * Get primary signer email (computed from signers – column removed)
+     */
+    public function getPrimarySignerEmailAttribute(): ?string
+    {
+        $signer = $this->relationLoaded('signers')
+            ? $this->signers->first()
+            : $this->signers()->first();
+
+        return $signer?->email;
+    }
+
+    /**
+     * Get signer count (computed from signers – column removed)
+     */
+    public function getSignerCountAttribute(): int
+    {
+        return $this->relationLoaded('signers')
+            ? $this->signers->count()
+            : $this->signers()->count();
     }
 
     /**
@@ -286,21 +276,13 @@ class Document extends Model
         }
 
         // Check if document is associated with user's entity
-        if ($this->documentable_type && $this->documentable_id) {
-            if ($this->documentable_type === Admin::class && $this->documentable_id === $user->id) {
+        if ($this->client_id === $user->id) {
+            return 'associated';
+        }
+        if ($this->lead_id) {
+            $lead = $this->relationLoaded('lead') ? $this->lead : $this->lead()->first();
+            if ($lead && isset($lead->user_id) && $lead->user_id === $user->id) {
                 return 'associated';
-            }
-            if ($this->documentable_type === Lead::class) {
-                // Use loaded relationship if available
-                if ($this->relationLoaded('documentable')) {
-                    $lead = $this->documentable;
-                } else {
-                    // Query using the polymorphic relationship
-                    $lead = $this->documentable;
-                }
-                if ($lead && isset($lead->user_id) && $lead->user_id === $user->id) {
-                    return 'associated';
-                }
             }
         }
 
@@ -324,134 +306,6 @@ class Document extends Model
             'admin' => ['icon' => '🌐', 'label' => 'Organization', 'class' => 'badge-admin'],
             default => ['icon' => '👁️', 'label' => 'Visible', 'class' => 'badge-visible']
         };
-    }
-
-    // ==================== Hash Verification Methods (Phase 7) ====================
-
-    /**
-     * Generate SHA-256 hash for the signed document
-     * 
-     * @param string $filePath Path to the signed PDF file
-     * @return string SHA-256 hash
-     */
-    public function generateSignedHash(string $filePath): string
-    {
-        if (!file_exists($filePath)) {
-            throw new \Exception("File not found for hashing: {$filePath}");
-        }
-
-        $hash = hash_file('sha256', $filePath);
-        
-        // Update the document with the hash
-        $this->signed_hash = $hash;
-        $this->hash_generated_at = now();
-        $this->save();
-
-        \Log::info('Document hash generated', [
-            'document_id' => $this->id,
-            'hash' => $hash,
-            'file_path' => $filePath
-        ]);
-
-        return $hash;
-    }
-
-    /**
-     * Verify the integrity of the signed document
-     * 
-     * @param string|null $filePath Optional path to file (if not provided, downloads from S3)
-     * @return bool True if hash matches, false if tampered
-     */
-    public function verifySignedHash(?string $filePath = null): bool
-    {
-        if (!$this->signed_hash) {
-            \Log::warning('No hash stored for document verification', ['document_id' => $this->id]);
-            return false;
-        }
-
-        if (!$this->signed_doc_link) {
-            \Log::warning('No signed document link for verification', ['document_id' => $this->id]);
-            return false;
-        }
-
-        try {
-            // If no file path provided, download from S3
-            if (!$filePath) {
-                $parsed = parse_url($this->signed_doc_link);
-                if (!isset($parsed['path'])) {
-                    return false;
-                }
-
-                $s3Key = ltrim($parsed['path'], '/');
-                $disk = \Storage::disk('s3');
-
-                if (!$disk->exists($s3Key)) {
-                    \Log::error('Signed document not found in S3', ['s3_key' => $s3Key]);
-                    return false;
-                }
-
-                // Download to temp file
-                $filePath = storage_path('app/tmp_verify_' . uniqid() . '.pdf');
-                $content = $disk->get($s3Key);
-                file_put_contents($filePath, $content);
-                $shouldDeleteTempFile = true;
-            } else {
-                $shouldDeleteTempFile = false;
-            }
-
-            // Calculate current hash
-            $currentHash = hash_file('sha256', $filePath);
-
-            // Clean up temp file if we created one
-            if ($shouldDeleteTempFile) {
-                @unlink($filePath);
-            }
-
-            $isValid = $currentHash === $this->signed_hash;
-
-            \Log::info('Document hash verification', [
-                'document_id' => $this->id,
-                'is_valid' => $isValid,
-                'stored_hash' => $this->signed_hash,
-                'current_hash' => $currentHash
-            ]);
-
-            return $isValid;
-        } catch (\Exception $e) {
-            \Log::error('Error verifying document hash', [
-                'document_id' => $this->id,
-                'error' => $e->getMessage()
-            ]);
-            return false;
-        }
-    }
-
-    /**
-     * Check if document has been tampered with
-     * 
-     * @return bool True if document has been tampered with
-     */
-    public function getIsTamperedAttribute(): bool
-    {
-        if (!$this->signed_hash || $this->status !== 'signed') {
-            return false;
-        }
-
-        return !$this->verifySignedHash();
-    }
-
-    /**
-     * Get hash display for UI (shortened)
-     * 
-     * @return string|null
-     */
-    public function getHashDisplayAttribute(): ?string
-    {
-        if (!$this->signed_hash) {
-            return null;
-        }
-
-        return substr($this->signed_hash, 0, 8) . '...' . substr($this->signed_hash, -8);
     }
 
     /**

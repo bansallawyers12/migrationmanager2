@@ -214,7 +214,7 @@ class EoiRoiSheetController extends Controller
             ->join(DB::raw('(' . $latestEoiMatterSql . ') AS latest_eoi_matter'), 'latest_eoi_matter.client_id', '=', 'admins.id')
             ->select($selects)
             ->where('admins.is_archived', 0)
-            ->where('admins.role', 7)
+            ->whereIn('admins.type', ['client', 'lead'])
             ->whereNull('admins.is_deleted')
             ->whereNotNull('latest_eoi_matter.matter_id');
 

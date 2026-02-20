@@ -291,7 +291,7 @@ class LeadController extends Controller
                 $matchedPerson = null;
                 if ($primaryPhone) {
                     $matchedPerson = Admin::where('phone', $primaryPhone)
-                        ->where('role', 7)
+                        ->whereIn('type', ['client', 'lead'])
                         ->where(function ($q) { $q->where('type', 'client')->orWhere('type', 'lead'); })
                         ->where('is_company', false)
                         ->first();
@@ -307,7 +307,7 @@ class LeadController extends Controller
                 }
                 if (!$matchedPerson && $primaryEmail) {
                     $matchedPerson = Admin::where('email', $primaryEmail)
-                        ->where('role', 7)
+                        ->whereIn('type', ['client', 'lead'])
                         ->where(function ($q) { $q->where('type', 'client')->orWhere('type', 'lead'); })
                         ->where('is_company', false)
                         ->first();
@@ -346,7 +346,7 @@ class LeadController extends Controller
                             'exists:admins,id',
                             function ($attribute, $value, $fail) {
                                 $contactPerson = Admin::find($value);
-                                $isClientOrLead = in_array($contactPerson->type ?? '', ['client', 'lead']) || ($contactPerson->role ?? 0) == 7;
+                                $isClientOrLead = in_array($contactPerson->type ?? '', ['client', 'lead']);
                                 if (!$contactPerson || !$isClientOrLead) {
                                     $fail('The selected contact person must be a client or lead.');
                                 }
@@ -544,7 +544,6 @@ class LeadController extends Controller
                     'client_counter' => $client_current_counter,
                     'client_id' => $client_id,
                     'status' => '1', // Default status: 1 (Active)
-                    'role' => 7, // Lead role
                     'type' => 'lead', // Lead type
                     'is_archived' => 0, // Not archived
                     'is_deleted' => null, // Not deleted
@@ -1131,7 +1130,7 @@ class LeadController extends Controller
         $lead_count = $leadQuery->count();
         
         // Check in clients (admins table where role=7, type='client')
-        $client_count = Admin::where('role', 7)
+        $client_count = Admin::whereIn('type', ['client', 'lead'])
             ->where('type', 'client')
             ->where('email', $email)
             ->when($excludeId, function($q) use ($excludeId) {
@@ -1166,7 +1165,7 @@ class LeadController extends Controller
         $lead_count = $leadQuery->count();
         
         // Check in clients (admins table where role=7, type='client')
-        $client_count = Admin::where('role', 7)
+        $client_count = Admin::whereIn('type', ['client', 'lead'])
             ->where('type', 'client')
             ->where('phone', 'LIKE', '%' . $contact . '%')
             ->when($excludeId, function($q) use ($excludeId) {
@@ -1202,7 +1201,7 @@ class LeadController extends Controller
 
         if ($phone) {
             $matchedPerson = Admin::where('phone', $phone)
-                ->where('role', 7)
+                ->whereIn('type', ['client', 'lead'])
                 ->where(function ($q) { $q->where('type', 'client')->orWhere('type', 'lead'); })
                 ->where('is_company', false)
                 ->first();
@@ -1219,7 +1218,7 @@ class LeadController extends Controller
 
         if (!$matchedPerson && $email) {
             $matchedPerson = Admin::where('email', $email)
-                ->where('role', 7)
+                ->whereIn('type', ['client', 'lead'])
                 ->where(function ($q) { $q->where('type', 'client')->orWhere('type', 'lead'); })
                 ->where('is_company', false)
                 ->first();

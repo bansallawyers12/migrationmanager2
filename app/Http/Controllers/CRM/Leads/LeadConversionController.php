@@ -179,8 +179,8 @@ class LeadConversionController extends Controller
         }
         
         $totalLeads = Lead::count();
-        $totalClients = Admin::where('role', 7)->where('type', 'client')->count();
-        $convertedThisMonth = Admin::where('role', 7)
+        $totalClients = Admin::where('type', 'client')->count();
+        $convertedThisMonth = Admin::where('type', 'client')
             ->where('type', 'client')
             ->whereMonth('updated_at', now()->month)
             ->whereYear('updated_at', now()->year)

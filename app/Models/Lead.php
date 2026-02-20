@@ -32,15 +32,13 @@ class Lead extends Admin
     {
         // Automatically filter all queries to leads only
         static::addGlobalScope('lead', function (Builder $builder) {
-            $builder->where('role', 7)
-                    ->where('type', 'lead')
+            $builder->where('type', 'lead')
                     ->whereNull('is_deleted');
         });
         
-        // Automatically set type and role when creating a new lead
+        // Automatically set type when creating a new lead
         static::creating(function ($lead) {
             $lead->type = 'lead';
-            $lead->role = 7;
             if (!isset($lead->is_archived)) {
                 $lead->is_archived = 0;
             }
@@ -54,7 +52,6 @@ class Lead extends Admin
     public function scopeWithArchived(Builder $query)
     {
         return $query->withoutGlobalScope('lead')
-                    ->where('role', 7)
                     ->where('type', 'lead')
                     ->whereNull('is_deleted');
     }
@@ -66,7 +63,6 @@ class Lead extends Admin
     public function scopeOnlyArchived(Builder $query)
     {
         return $query->withoutGlobalScope('lead')
-                    ->where('role', 7)
                     ->where('type', 'lead')
                     ->where('is_archived', 1)
                     ->whereNull('is_deleted');

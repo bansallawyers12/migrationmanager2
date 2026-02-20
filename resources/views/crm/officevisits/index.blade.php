@@ -120,7 +120,7 @@ body, html { overflow-x: hidden !important; max-width: 100% !important; }
 													<td style="white-space: initial;"><a href="javascript:;">{{date('l',strtotime($list->created_at))}}</a><br>{{date('d/m/Y',strtotime($list->created_at))}}</td>
 													<td style="white-space: initial;"><?php if($list->sesion_start != ''){ echo date('h:i A',strtotime($list->sesion_start)); }else{ echo '-'; } ?></td>
 													<td style="white-space: initial;">
-														<?php $client = \App\Models\Admin::where('role', '=', '7')->where('id', '=', $list->client_id)->first(); ?>
+														<?php $client = \App\Models\Admin::whereIn('type', ['client', 'lead'])->where('id', '=', $list->client_id)->first(); ?>
 														<a target="_blank" href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$client->id)))}}">{{@$client->first_name}} {{@$client->last_name}}</a><br>{{@$client->email}}
 													</td>
 													<td style="white-space: initial;">{{$list->contact_type}}</td>

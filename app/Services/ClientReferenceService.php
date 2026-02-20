@@ -65,7 +65,7 @@ class ClientReferenceService
         
         $latestClient = DB::table('admins')
             ->select('client_counter')
-            ->where('role', 7)
+            ->whereIn('type', ['client', 'lead'])
             ->whereNotNull('client_counter')
             ->orderBy('client_counter', 'desc') // Order by counter, not timestamp
             ->lockForUpdate() // CRITICAL: Locks the row until transaction commits
@@ -160,7 +160,7 @@ class ClientReferenceService
     {
         $latestClient = DB::table('admins')
             ->select('client_counter')
-            ->where('role', 7)
+            ->whereIn('type', ['client', 'lead'])
             ->whereNotNull('client_counter')
             ->orderBy('client_counter', 'desc')
             ->first();

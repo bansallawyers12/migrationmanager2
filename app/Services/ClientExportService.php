@@ -28,7 +28,7 @@ class ClientExportService
     {
         try {
             $client = Admin::where('id', $clientId)
-                ->where('role', 7) // Only clients
+                ->whereIn('type', ['client', 'lead'])
                 ->first();
 
             if (!$client) {

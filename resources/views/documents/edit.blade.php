@@ -130,7 +130,7 @@
             <!-- Header -->
             <div class="mb-6 text-center">
                 <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                    Designate Signatures for {{ $document->title }}
+                    Designate Signatures for {{ $document->file_name ?? 'Document' }}
                 </h1>
                 <p class="text-gray-600 dark:text-gray-400">
                     Click and drag on the document preview to position signature fields

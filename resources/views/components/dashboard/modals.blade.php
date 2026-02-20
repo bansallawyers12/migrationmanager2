@@ -21,7 +21,7 @@
                         </label>
                         <select class="simple-form-control" id="dashboard_client_select" name="client_id" required>
                             <option value="">Search client...</option>
-                            @foreach(\App\Models\Admin::select('id','first_name','last_name','client_id')->where('role',7)->orderBy('first_name')->get() as $client)
+                            @foreach(\App\Models\Admin::select('id','first_name','last_name','client_id')->whereIn('type', ['client', 'lead'])->orderBy('first_name')->get() as $client)
                                 <option value="{{ base64_encode(convert_uuencode($client->id)) }}">{{ $client->first_name }} {{ $client->last_name }} ({{ $client->client_id }})</option>
                             @endforeach
                         </select>

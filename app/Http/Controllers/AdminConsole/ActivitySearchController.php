@@ -315,7 +315,7 @@ class ActivitySearchController extends Controller
             return response()->json([]);
         }
 
-        $clients = Admin::where('role', '=', 7)
+        $clients = Admin::whereIn('type', ['client', 'lead'])
             ->where(function($q) use ($query) {
                 $searchLower = strtolower($query);
                 $q->whereRaw('LOWER(first_name) LIKE ?', ['%' . $searchLower . '%'])

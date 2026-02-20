@@ -521,3 +521,30 @@ This document describes every column in the `documents` table, how it is used in
 - **application_document_lists** – checklist definitions (different table; documents link via checklist/folder_name)
 - **personal_document_types** – personal doc categories (documents.folder_name)
 - **visa_document_types** – visa doc categories (documents.folder_name)
+
+---
+
+## Remove Table
+
+Columns recommended for removal (redundant or unused):
+
+| Column | Type | Reason |
+|--------|------|--------|
+| `origin` | varchar, nullable | Redundant with `documentable_type`/`documentable_id` – no filtering uses it; source can be derived from polymorphic relation |
+| `documentable_type` | varchar, nullable | Polymorphic type (Admin, Lead, ClientMatter); ⚠️ **Do NOT remove** – core to `Document::documentable()`, scopes, visibility, UI; removal requires full polymorphic refactor |
+| `documentable_id` | integer, nullable | Polymorphic ID; ⚠️ **Do NOT remove** – used with `documentable_type`; required for document–client/lead linking |
+| `title` | varchar, nullable | Display title for signature docs; falls back to `file_name` when null; used in dashboard, listing, sortable |
+| `document_type` | varchar, default: 'general' | Values: agreement, nda, general, contract; used for email templates, validation, analytics grouping; signature workflow only |
+| `labels` | text/json, nullable | ⚠️ **UNUSED** – in `$fillable`/`$casts` only; never written or read; safe to remove |
+| `due_at` | timestamp, nullable | Due date for signature completion; used in overdue filter, analytics, `getIsOverdueAttribute()`; signature workflow only |
+| `priority` | varchar, default: 'normal' | Values: low, normal, high; used in validation, audit report, sortable; signature workflow only |
+| `signer_count` | integer, NOT NULL, default 1 | Redundant – can use `$document->signers()->count()`; most docs always 1; dashboard shows (+N more) when >1; removal requires accessor + migration |
+| `primary_signer_email` | varchar, nullable | Redundant – signers table has authoritative email; used only for dashboard display and search filter; can derive from `$document->signers->first()->email ?? null` |
+| `last_activity_at` | timestamp, nullable | Inconsistently populated – set on send/void only, never on sign; not set for visa docs; SignatureAnalyticsService uses it for avg time; replace with `MAX(signers.signed_at)` or `signers.signed_at` for analytics |
+| `archived_at` | timestamp, nullable | Soft archive timestamp; used in scopeNotArchived, SignatureAnalyticsService, getStatusInfo; removal requires alternative (e.g. status enum, separate archive table) |
+| `checklist_verified_by` | integer, nullable | FK to staff.id; used in verifiedBy() relationship, ClientDocumentsController "Verified by" display |
+| `checklist_verified_at` | timestamp, nullable | When checklist item was verified; used in ClientDocumentsController for verification date display |
+| `signed_hash` | varchar, nullable | SHA-256 hash for tamper detection; stored on sign but verification UI never exposed in CRM; not required |
+| `hash_generated_at` | timestamp, nullable | When signed hash was generated; used with signed_hash; not required |
+| `client_portal_verified_by` | integer, nullable | ⚠️ **UNUSED** – intended for verification audit; never implemented |
+| `client_portal_verified_at` | timestamp, nullable | ⚠️ **UNUSED** – intended for verification timestamp; never implemented |

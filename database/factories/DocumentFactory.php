@@ -19,17 +19,6 @@ class DocumentFactory extends Factory
             'file_size' => $this->faker->numberBetween(1000, 5000000),
             'status' => $this->faker->randomElement(['draft', 'sent', 'signed']),
             'created_by' => Admin::factory(),
-            'origin' => 'ad_hoc',
-            'title' => $this->faker->sentence(3),
-            'document_type' => $this->faker->randomElement(['agreement', 'nda', 'general', 'contract']),
-            'priority' => $this->faker->randomElement(['low', 'normal', 'high']),
-            'primary_signer_email' => $this->faker->safeEmail(),
-            'signer_count' => 1,
-            'last_activity_at' => now(),
-            'documentable_type' => null,
-            'documentable_id' => null,
-            'due_at' => null,
-            'archived_at' => null,
         ];
     }
 
@@ -54,18 +43,10 @@ class DocumentFactory extends Factory
         ]);
     }
 
-    public function overdue(): self
-    {
-        return $this->state(fn (array $attributes) => [
-            'status' => 'sent',
-            'due_at' => now()->subDays(5),
-        ]);
-    }
-
     public function archived(): self
     {
         return $this->state(fn (array $attributes) => [
-            'archived_at' => now(),
+            'status' => 'archived',
         ]);
     }
 }

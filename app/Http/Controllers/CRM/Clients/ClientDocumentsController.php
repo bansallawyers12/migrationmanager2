@@ -82,8 +82,6 @@ class ClientDocumentsController extends Controller
                             // PostgreSQL will handle the conversion if needed
                             $obj->folder_name = (string)$request->folder_name;
                             $obj->checklist = trim($item);
-                            // PostgreSQL NOT NULL constraint - signer_count is required (default: 1 for regular documents)
-                            $obj->signer_count = 1;
                             
                             // Validate required fields before saving
                             if(empty($obj->user_id) || empty($obj->client_id) || empty($obj->folder_name) || empty($obj->checklist)) {
@@ -532,8 +530,6 @@ class ClientDocumentsController extends Controller
                     $obj->client_matter_id = $request->client_matter_id;
                     $obj->checklist = $item;
                     $obj->folder_name = $request->folder_name;
-                    // PostgreSQL NOT NULL constraint - signer_count is required (default: 1 for regular documents)
-                    $obj->signer_count = 1;
                     $saved = $obj->save();
                 }  //end foreach
 
@@ -1583,7 +1579,7 @@ class ClientDocumentsController extends Controller
             if(\App\Models\Document::where('id',$doc_id)->exists()){
             $upd = DB::table('documents')->where('id', $doc_id)->update(array('not_used_doc' => 1));
             if($upd){
-                $docInfo = \App\Models\Document::with(['user', 'verifiedBy'])->where('id',$doc_id)->first();
+                $docInfo = \App\Models\Document::with(['user'])->where('id',$doc_id)->first();
                 $matterRef = $this->getMatterReference($docInfo->client_id);
                 $subject = !empty($matterRef) 
                     ? "moved {$doc_type} Document to Not Used - {$matterRef}"
@@ -1606,13 +1602,8 @@ class ClientDocumentsController extends Controller
                         $response['Added_date'] = "N/A";
                     }
 
-                    if( isset($docInfo->checklist_verified_by) && $docInfo->checklist_verified_by!= "" && $docInfo->verifiedBy ){
-                        $response['Verified_By'] = $docInfo->verifiedBy->first_name;
-                        $response['Verified_At'] = date('d/m/Y',strtotime($docInfo->checklist_verified_at));
-                    } else {
-                        $response['Verified_By'] = "N/A";
-                        $response['Verified_At'] = "N/A";
-                    }
+                    $response['Verified_By'] = "N/A";
+                    $response['Verified_At'] = "N/A";
                 }
 
                 $response['docInfo'] = $docInfo;
@@ -1723,7 +1714,7 @@ class ClientDocumentsController extends Controller
             if(\App\Models\Document::where('id',$doc_id)->exists()){
             $upd = DB::table('documents')->where('id', $doc_id)->update(array('not_used_doc' => null));
             if($upd){
-                $docInfo = \App\Models\Document::with(['user', 'verifiedBy'])->where('id',$doc_id)->first();
+                $docInfo = \App\Models\Document::with(['user'])->where('id',$doc_id)->first();
                 $matterRef = $this->getMatterReference($docInfo->client_id);
                 $subject = !empty($matterRef) 
                     ? "restored {$doc_type} Document - {$matterRef}"
@@ -1746,13 +1737,8 @@ class ClientDocumentsController extends Controller
                         $response['Added_date'] = "N/A";
                     }
 
-                    if( isset($docInfo->checklist_verified_by) && $docInfo->checklist_verified_by!= "" && $docInfo->verifiedBy ){
-                        $response['Verified_By'] = $docInfo->verifiedBy->first_name;
-                        $response['Verified_At'] = date('d/m/Y',strtotime($docInfo->checklist_verified_at));
-                    } else {
-                        $response['Verified_By'] = "N/A";
-                        $response['Verified_At'] = "N/A";
-                    }
+                    $response['Verified_By'] = "N/A";
+                    $response['Verified_At'] = "N/A";
                 }
 
                 $response['docInfo'] = $docInfo;
@@ -2556,8 +2542,6 @@ class ClientDocumentsController extends Controller
                         $document->doc_type = $doctype;
                         $document->folder_name = $categoryid;
                         $document->checklist = $checklistName;
-                        // PostgreSQL NOT NULL constraint - signer_count is required (default: 1 for regular documents)
-                        $document->signer_count = 1;
                         $document->save();
                     } elseif (!$document && $mapping['type'] === 'existing') {
                         // If trying to use existing checklist but all instances have files, create new one
@@ -2578,8 +2562,6 @@ class ClientDocumentsController extends Controller
                             $document->doc_type = $doctype;
                             $document->folder_name = $categoryid;
                             $document->checklist = $checklistName;
-                            // PostgreSQL NOT NULL constraint - signer_count is required (default: 1 for regular documents)
-                            $document->signer_count = 1;
                             $document->save();
                         }
                     }
@@ -2742,8 +2724,6 @@ class ClientDocumentsController extends Controller
                         $document->folder_name = $categoryid;
                         $document->checklist = $checklistName;
                         $document->client_matter_id = $matterid;
-                        // PostgreSQL NOT NULL constraint - signer_count is required (default: 1 for regular documents)
-                        $document->signer_count = 1;
                         $document->save();
                     } elseif (!$document && $mapping['type'] === 'existing') {
                         // If trying to use existing checklist but all instances have files, create new one
@@ -2768,8 +2748,6 @@ class ClientDocumentsController extends Controller
                             $document->folder_name = $categoryid;
                             $document->checklist = $checklistName;
                             $document->client_matter_id = $matterid;
-                            // PostgreSQL NOT NULL constraint - signer_count is required (default: 1 for regular documents)
-                            $document->signer_count = 1;
                             $document->save();
                         }
                     }

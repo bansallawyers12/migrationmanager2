@@ -32,7 +32,7 @@ class ReportController extends Controller
         $visaExpiries = ClientVisaCountry::with(['client', 'matter'])
             ->whereNotNull('visa_expiry_date')
             ->whereHas('client', function($q) {
-                $q->where('role', 7) // Clients only
+                $q->whereIn('type', ['client', 'lead'])
                   ->where('is_archived', 0)
                   ->whereNull('is_deleted');
             })

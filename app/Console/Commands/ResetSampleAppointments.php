@@ -38,7 +38,7 @@ class ResetSampleAppointments extends Command
 
         if (!$this->option('keep-clients')) {
             $this->info('Deleting test clients...');
-            $testClients = Admin::where('role', 7)
+            $testClients = Admin::whereIn('type', ['client', 'lead'])
                 ->where('source', 'Bansal Website (Test Data)')
                 ->get();
             

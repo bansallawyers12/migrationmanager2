@@ -139,13 +139,12 @@ class SignatureServiceTest extends TestCase
 
         $this->assertTrue($result);
         $this->assertEquals('voided', $document->fresh()->status);
-        $this->assertNotNull($document->fresh()->last_activity_at);
     }
 
     /** @test */
     public function it_can_associate_document_with_client()
     {
-        $document = Document::factory()->create(['origin' => 'ad_hoc']);
+        $document = Document::factory()->create();
         $client = Admin::factory()->create(['role' => 2]);
         
         $this->actingAs($client, 'admin');
@@ -155,15 +154,14 @@ class SignatureServiceTest extends TestCase
         $this->assertTrue($result);
         
         $document->refresh();
-        $this->assertEquals(Admin::class, $document->documentable_type);
-        $this->assertEquals($client->id, $document->documentable_id);
-        $this->assertEquals('client', $document->origin);
+        $this->assertEquals($client->id, $document->client_id);
+        $this->assertNull($document->lead_id);
     }
 
     /** @test */
     public function it_can_associate_document_with_lead()
     {
-        $document = Document::factory()->create(['origin' => 'ad_hoc']);
+        $document = Document::factory()->create();
         $lead = Lead::factory()->create();
         
         $admin = Admin::factory()->create(['role' => 1]);
@@ -174,9 +172,8 @@ class SignatureServiceTest extends TestCase
         $this->assertTrue($result);
         
         $document->refresh();
-        $this->assertEquals(Lead::class, $document->documentable_type);
-        $this->assertEquals($lead->id, $document->documentable_id);
-        $this->assertEquals('lead', $document->origin);
+        $this->assertEquals($lead->id, $document->lead_id);
+        $this->assertNull($document->client_id);
     }
 
     /** @test */
@@ -184,7 +181,6 @@ class SignatureServiceTest extends TestCase
     {
         $client = Admin::factory()->create(['role' => 2]);
         $document = Document::factory()->create([
-            'origin' => 'client',
             'documentable_type' => Admin::class,
             'documentable_id' => $client->id
         ]);

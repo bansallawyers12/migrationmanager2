@@ -19,19 +19,18 @@ class SignatureAnalyticsService
     public function getMedianTimeToSign($documentType = null, $ownerId = null): float
     {
         $query = Document::where('status', 'signed')
-            ->whereNotNull('last_activity_at');
+            ->whereHas('signers', fn($q) => $q->whereNotNull('signed_at'));
         
-        if ($documentType) {
-            $query->where('document_type', $documentType);
-        }
+        // document_type column removed - filter removed
         
         if ($ownerId) {
             $query->where('created_by', $ownerId);
         }
         
-        $documents = $query->get()->map(function($doc) {
-            return $doc->created_at->diffInHours($doc->last_activity_at);
-        })->sort()->values();
+        $documents = $query->with('signers')->get()->map(function($doc) {
+            $lastSigned = $doc->signers->whereNotNull('signed_at')->max('signed_at');
+            return $lastSigned ? $doc->created_at->diffInHours($lastSigned) : null;
+        })->filter()->sort()->values();
         
         $count = $documents->count();
         if ($count === 0) return 0;
@@ -74,14 +73,13 @@ class SignatureAnalyticsService
      */
     public function getDocumentTypeStats()
     {
-        return Document::select('document_type')
+        return Document::selectRaw('"general" as document_type')
             ->selectRaw('COUNT(*) as total')
             ->selectRaw('SUM(CASE WHEN status = \'signed\' THEN 1 ELSE 0 END) as signed')
             ->selectRaw('SUM(CASE WHEN status = \'sent\' THEN 1 ELSE 0 END) as pending')
             ->selectRaw('SUM(CASE WHEN status = \'draft\' THEN 1 ELSE 0 END) as draft')
-            ->selectRaw('AVG(CASE WHEN status = \'signed\' AND last_activity_at IS NOT NULL THEN EXTRACT(EPOCH FROM (last_activity_at - created_at))/3600 END) as avg_time_hours')
-            ->whereNull('archived_at')
-            ->groupBy('document_type')
+            ->selectRaw('AVG(CASE WHEN status = \'signed\' AND (SELECT MAX(s.signed_at) FROM signers s WHERE s.document_id = documents.id AND s.signed_at IS NOT NULL) IS NOT NULL THEN EXTRACT(EPOCH FROM ((SELECT MAX(s.signed_at) FROM signers s WHERE s.document_id = documents.id) - documents.created_at))/3600 END) as avg_time_hours')
+            ->notArchived()
             ->get()
             ->map(function($stat) {
                 $stat->avg_time_hours = $stat->avg_time_hours ? round($stat->avg_time_hours, 1) : null;
@@ -97,26 +95,7 @@ class SignatureAnalyticsService
      */
     public function getOverdueAnalytics()
     {
-        return Document::where('status', 'sent')
-            ->whereNotNull('due_at')
-            ->where('due_at', '<', now())
-            ->notArchived()
-            ->with(['creator', 'signers'])
-            ->get()
-            ->map(function($doc) {
-                $signer = $doc->signers->first();
-                return [
-                    'id' => $doc->id,
-                    'title' => $doc->display_title,
-                    'owner' => $doc->creator ? $doc->creator->first_name . ' ' . $doc->creator->last_name : 'Unknown',
-                    'signer_email' => $doc->primary_signer_email,
-                    'signer_name' => $signer ? $signer->name : 'N/A',
-                    'days_overdue' => now()->diffInDays($doc->due_at),
-                    'reminder_count' => $signer ? $signer->reminder_count : 0,
-                    'due_at' => $doc->due_at,
-                    'created_at' => $doc->created_at,
-                ];
-            });
+        return collect(); // due_at column removed - no overdue analytics
     }
 
     /**
@@ -167,11 +146,7 @@ class SignatureAnalyticsService
      */
     public function getOverdueCount(): int
     {
-        return Document::where('status', 'sent')
-            ->whereNotNull('due_at')
-            ->where('due_at', '<', now())
-            ->notArchived()
-            ->count();
+        return 0; // due_at column removed
     }
 
     /**
@@ -232,10 +207,7 @@ class SignatureAnalyticsService
         $totalSent = (clone $query)->whereIn('status', ['sent', 'signed'])->count();
         $signed = (clone $query)->where('status', 'signed')->count();
         $pending = (clone $query)->where('status', 'sent')->count();
-        $overdue = (clone $query)->where('status', 'sent')
-            ->whereNotNull('due_at')
-            ->where('due_at', '<', now())
-            ->count();
+        $overdue = 0; // due_at column removed
         
         return [
             'total_sent' => $totalSent,

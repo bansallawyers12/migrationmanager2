@@ -115,7 +115,7 @@ class FixDuplicateClientReferences extends Command
     {
         return DB::table('admins')
             ->select('client_id', DB::raw('COUNT(*) as count'), DB::raw('STRING_AGG(id::text, \', \' ORDER BY id) as ids'))
-            ->where('role', 7)
+            ->whereIn('type', ['client', 'lead'])
             ->whereNotNull('client_id')
             ->whereNull('is_deleted')
             ->groupBy('client_id')

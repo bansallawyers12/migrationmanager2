@@ -28,7 +28,7 @@ class RandomClientSelectionReward extends Command
      */
     public function handle()
     {
-        $query = DB::table('admins')->select('id', 'role', 'first_name','last_name','email','phone')->where('role', 7)->inRandomOrder()->limit(1)->get();
+        $query = DB::table('admins')->select('id', 'first_name','last_name','email','phone')->whereIn('type', ['client', 'lead'])->inRandomOrder()->limit(1)->get();
         //dd($query);
         if(count($query) >0){
             $current_date = date('Y-m-d');

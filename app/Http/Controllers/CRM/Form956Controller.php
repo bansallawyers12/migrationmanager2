@@ -46,7 +46,7 @@ class Form956Controller extends Controller
         $client = null;
         if ($request->has('client_id')) {
             $client = DB::table('admins')
-                ->where('role', 7)
+                ->whereIn('type', ['client', 'lead'])
                 ->where('id', $request->query('client_id'))
                 ->first();
 
@@ -58,7 +58,7 @@ class Form956Controller extends Controller
 
         // Get all clients (admins with role = 7) for dropdown
         $clients = DB::table('admins')
-            ->where('role', 7)
+            ->whereIn('type', ['client', 'lead'])
             ->orderBy('last_name')
             ->get();
 
@@ -91,7 +91,6 @@ class Form956Controller extends Controller
                 $doc->doc_type = 'visa';
                 $doc->folder_name = $folderName;
                 $doc->checklist = '956 Form_ ' . $agentNameDisplay;
-                $doc->signer_count = 1;
                 $doc->save();
             }
 
@@ -701,7 +700,7 @@ class Form956Controller extends Controller
     public function edit(Form956 $form): View
     {
         $form->load(['client', 'agent']);
-        $clients = Admin::where('role', 7)->orderBy('last_name')->get();
+        $clients = Admin::whereIn('type', ['client', 'lead'])->orderBy('last_name')->get();
 
         return view('crm.forms.edit', compact('form', 'clients'));
     }

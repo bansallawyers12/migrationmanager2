@@ -88,7 +88,7 @@ class ESignatureController extends Controller
             'end_date' => 'nullable|date',
         ]);
         
-        $query = \App\Models\Document::with(['creator', 'signers', 'documentable', 'notes'])
+        $query = \App\Models\Document::with(['creator', 'signers', 'client', 'lead', 'notes'])
             ->notArchived();
         
         if ($request->filled('start_date')) {
@@ -146,11 +146,10 @@ class ESignatureController extends Controller
             foreach ($documents as $doc) {
                 foreach ($doc->signers as $signer) {
                     $association = 'Ad-hoc';
-                    if ($doc->documentable) {
-                        $type = class_basename($doc->documentable_type);
-                        $name = isset($doc->documentable->first_name) 
-                            ? $doc->documentable->first_name . ' ' . $doc->documentable->last_name 
-                            : 'Unknown';
+                    $entity = $doc->client_id ? $doc->client : ($doc->lead_id ? $doc->lead : null);
+                    if ($entity) {
+                        $type = $doc->lead_id ? 'Lead' : 'Admin';
+                        $name = trim(($entity->first_name ?? '') . ' ' . ($entity->last_name ?? ''));
                         $association = "{$type}: {$name}";
                     }
                     
@@ -166,10 +165,10 @@ class ESignatureController extends Controller
                         $doc->created_at->format('Y-m-d H:i:s'),
                         $signer->signed_at ? $signer->signed_at->format('Y-m-d H:i:s') : 'N/A',
                         $signer->reminder_count,
-                        $doc->document_type ?? 'general',
-                        $doc->priority ?? 'normal',
+                        'general',
+                        'normal',
                         $association,
-                        $doc->due_at ? $doc->due_at->format('Y-m-d') : 'N/A'
+                        'N/A'
                     ]);
                 }
             }

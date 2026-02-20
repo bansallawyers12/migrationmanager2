@@ -379,7 +379,7 @@ class DashboardService
             // Get client information
             $client = $checkinLog->contact_type == 'Lead' 
                 ? \App\Models\Lead::find($checkinLog->client_id)
-                : Admin::where('role', '7')->find($checkinLog->client_id);
+                : Admin::whereIn('type', ['client', 'lead'])->find($checkinLog->client_id);
 
             $data[] = [
                 'id' => $notification->id,

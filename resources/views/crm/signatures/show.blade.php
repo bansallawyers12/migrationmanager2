@@ -709,30 +709,19 @@
     </div>
     @endif
 
-    <!-- Overdue Warning -->
-    @if($document->is_overdue)
-    <div class="overdue-warning">
-        <i class="fas fa-exclamation-triangle"></i>
-        <div>
-            <strong>This document is overdue!</strong><br>
-            <small>Due date was {{ $document->due_at ? $document->due_at->format('M d, Y g:i A') : 'N/A' }}</small>
-        </div>
-    </div>
-    @endif
-
     <!-- Association Info -->
-    @if($document->documentable)
+    @if(($document->client_id && $document->client) || ($document->lead_id && $document->lead))
     <div class="association-info">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
                 <strong><i class="fas fa-link"></i> Associated with:</strong>
-                @if($document->documentable_type === 'App\Models\Admin')
-                <a href="{{ route('clients.detail', $document->documentable_id) }}">
-                    Client: {{ $document->documentable->first_name }} {{ $document->documentable->last_name }}
+                @if($document->client_id && $document->client)
+                <a href="{{ route('clients.detail', $document->client_id) }}">
+                    Client: {{ $document->client->first_name }} {{ $document->client->last_name }}
                 </a>
-                @elseif($document->documentable_type === 'App\Models\Lead')
-                <a href="{{ route('detail', $document->documentable_id) }}">
-                    Lead: {{ $document->documentable->first_name }} {{ $document->documentable->last_name }}
+                @elseif($document->lead_id && $document->lead)
+                <a href="{{ route('leads.detail', $document->lead_id) }}">
+                    Lead: {{ $document->lead->first_name }} {{ $document->lead->last_name }}
                 </a>
                 @endif
             </div>
@@ -868,20 +857,6 @@
                 </div>
 
                 <div class="info-row">
-                    <span class="info-label">Document Type</span>
-                    <span class="info-value">{{ ucfirst($document->document_type) }}</span>
-                </div>
-
-                <div class="info-row">
-                    <span class="info-label">Priority</span>
-                    <span class="info-value">
-                        <span class="priority-badge {{ $document->priority }}">
-                            {{ ucfirst($document->priority) }}
-                        </span>
-                    </span>
-                </div>
-
-                <div class="info-row">
                     <span class="info-label">File Name</span>
                     <span class="info-value">{{ $document->file_name }}</span>
                 </div>
@@ -900,19 +875,6 @@
                         <small style="color: #6c757d;">{{ $document->created_at->diffForHumans() }}</small>
                     </span>
                 </div>
-
-                @if($document->due_at)
-                <div class="info-row">
-                    <span class="info-label">Due Date</span>
-                    <span class="info-value">
-                        {{ $document->due_at ? $document->due_at->format('M d, Y g:i A') : 'N/A' }}<br>
-                        @if($document->due_at)
-                        <small style="color: #6c757d;">{{ $document->due_at->diffForHumans() }}</small>
-                        @endif
-                    </span>
-                </div>
-                @endif
-
 
                 @if($document->status === 'signed' && $document->signed_doc_link)
                 <div style="margin-top: 20px; text-align: center;">

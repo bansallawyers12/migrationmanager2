@@ -516,13 +516,13 @@
                         </td>
                         <td>
                             @if($doc->documentable)
-                                @if($doc->documentable_type === 'App\Models\Admin')
-                                <a href="{{ route('clients.detail', $doc->documentable_id) }}" class="association-chip">
+                                @if($doc->client_id)
+                                <a href="{{ route('clients.detail', $doc->client_id) }}" class="association-chip">
                                     <i class="fas fa-user"></i>
                                     Client: {{ $doc->documentable->first_name }} {{ $doc->documentable->last_name }}
                                 </a>
-                                @elseif($doc->documentable_type === 'App\Models\Lead')
-                                <a href="{{ route('leads.detail', $doc->documentable_id) }}" class="association-chip">
+                                @elseif($doc->lead_id)
+                                <a href="{{ route('leads.detail', $doc->lead_id) }}" class="association-chip">
                                     <i class="fas fa-user-tag"></i>
                                     Lead: {{ $doc->documentable->first_name }} {{ $doc->documentable->last_name }}
                                 </a>

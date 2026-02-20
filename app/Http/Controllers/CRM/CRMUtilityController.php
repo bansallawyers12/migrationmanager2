@@ -1491,21 +1491,21 @@ public function getpartnerbranch(Request $request){
 
     public function checkclientexist(Request $request){
         if($request->type == 'email'){
-         $clientexists = \App\Models\Admin::where('email', $request->vl)->where('role',7)->exists();
+         $clientexists = \App\Models\Admin::where('email', $request->vl)->whereIn('type', ['client', 'lead'])->exists();
             if($clientexists){
                 echo 1;
             }else{
                 echo 0;
             }
         }else if($request->type == 'clientid'){
-         $clientexists = \App\Models\Admin::where('client_id', $request->vl)->where('role',7)->exists();
+         $clientexists = \App\Models\Admin::where('client_id', $request->vl)->whereIn('type', ['client', 'lead'])->exists();
             if($clientexists){
                 echo 1;
             }else{
                 echo 0;
             }
         }else{
-            $clientexists = \App\Models\Admin::where('phone', $request->vl)->where('role',7)->exists();
+            $clientexists = \App\Models\Admin::where('phone', $request->vl)->whereIn('type', ['client', 'lead'])->exists();
             if($clientexists){
                 echo 1;
             }else{
@@ -1602,7 +1602,7 @@ public function getpartnerbranch(Request $request){
             : collect();
         
         $admins = !empty($adminIds)
-            ? \App\Models\Admin::where('role', '7')->whereIn('id', $adminIds)->get()->keyBy('id')
+            ? \App\Models\Admin::whereIn('type', ['client', 'lead'])->whereIn('id', $adminIds)->get()->keyBy('id')
             : collect();
 
         // Build response data

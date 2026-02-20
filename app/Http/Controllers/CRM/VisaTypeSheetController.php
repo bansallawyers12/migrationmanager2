@@ -260,7 +260,7 @@ class VisaTypeSheetController extends Controller
                     ->orWhereIn("cm.{$checklistCol}", ['active', 'hold']);
             })
             ->where('admins.is_archived', 0)
-            ->where('admins.role', 7)
+            ->whereIn('admins.type', ['client', 'lead'])
             ->whereNull('admins.is_deleted')
             ->where(function ($q) {
                 $q->whereNull('admins.type')->orWhere('admins.type', '!=', 'lead');
@@ -303,7 +303,6 @@ class VisaTypeSheetController extends Controller
                     ->join('matters as m', 'lr.matter_id', '=', 'm.id')
                     ->whereIn('lr.matter_id', $matterIds)
                     ->where('a.is_archived', 0)
-                    ->where('a.role', 7)
                     ->where('a.type', 'lead')
                     ->whereNull('a.is_deleted')
                     ->select(
@@ -467,7 +466,7 @@ class VisaTypeSheetController extends Controller
                 'latest_matter.decision_note'
             )
             ->where('admins.is_archived', 0)
-            ->where('admins.role', 7)
+            ->whereIn('admins.type', ['client', 'lead'])
             ->whereNull('admins.is_deleted');
 
         $this->applyTabFilter($query, $tab, $config);

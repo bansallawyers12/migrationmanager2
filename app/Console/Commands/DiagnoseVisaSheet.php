@@ -112,13 +112,13 @@ class DiagnoseVisaSheet extends Command
         }
         $this->newLine();
 
-        // 4. Client filters (role=7, is_archived=0, is_deleted null)
+        // 4. Client filters (type=client/lead, is_archived=0, is_deleted null)
         $clientsCount = DB::table('admins')
-            ->where('role', 7)
+            ->whereIn('type', ['client', 'lead'])
             ->where('is_archived', 0)
             ->whereNull('is_deleted')
             ->count();
-        $this->line('4. Active clients (role=7, not archived, not deleted): ' . $clientsCount);
+        $this->line('4. Active clients (type=client/lead, not archived, not deleted): ' . $clientsCount);
         $this->newLine();
 
         // 5. Ongoing tab: matter_status=1, workflow stage not in lodged/checklist/discontinue
@@ -135,7 +135,7 @@ class DiagnoseVisaSheet extends Command
                 ->leftJoin('workflow_stages as ws', 'ws.id', '=', 'cm.workflow_stage_id')
                 ->whereIn('cm.sel_matter_id', $matterIds)
                 ->where('cm.matter_status', 1)
-                ->where('a.role', 7)
+                ->whereIn('a.type', ['client', 'lead'])
                 ->where('a.is_archived', 0)
                 ->whereNull('a.is_deleted');
 
@@ -153,7 +153,7 @@ class DiagnoseVisaSheet extends Command
                     ->join('admins as a', 'a.id', '=', 'cm.client_id')
                     ->leftJoin('workflow_stages as ws', 'ws.id', '=', 'cm.workflow_stage_id')
                     ->whereIn('cm.sel_matter_id', $matterIds)
-                    ->where('a.role', 7)
+                    ->whereIn('a.type', ['client', 'lead'])
                     ->where('a.is_archived', 0)
                     ->whereNull('a.is_deleted')
                     ->selectRaw('cm.matter_status, ws.name as stage_name, COUNT(*) as cnt')

@@ -233,11 +233,11 @@
                     <span class="badge badge-{{ $doc->status }}">{{ ucfirst($doc->status) }}</span>
                 </td>
                 <td style="border: none;"><strong>Type:</strong></td>
-                <td style="border: none;">{{ ucfirst($doc->document_type ?? 'general') }}</td>
+                <td style="border: none;">General</td>
             </tr>
             <tr>
                 <td style="border: none;"><strong>Priority:</strong></td>
-                <td style="border: none;">{{ ucfirst($doc->priority ?? 'normal') }}</td>
+                <td style="border: none;">Normal</td>
                 <td style="border: none;"><strong>Created:</strong></td>
                 <td style="border: none;">{{ $doc->created_at->format('M d, Y g:i A') }}</td>
             </tr>
@@ -251,18 +251,12 @@
                     @endif
                 </td>
             </tr>
-            @if($doc->due_at)
-            <tr>
-                <td style="border: none;"><strong>Due Date:</strong></td>
-                <td style="border: none;" colspan="3">{{ $doc->due_at->format('M d, Y') }}</td>
-            </tr>
-            @endif
-            @if($doc->documentable)
+            @if(($doc->client_id && $doc->client) || ($doc->lead_id && $doc->lead))
             <tr>
                 <td style="border: none;"><strong>Associated:</strong></td>
                 <td style="border: none;" colspan="3">
-                    {{ class_basename($doc->documentable_type) }}: 
-                    {{ $doc->documentable->first_name ?? '' }} {{ $doc->documentable->last_name ?? '' }}
+                    {{ $doc->lead_id ? 'Lead' : 'Client' }}: 
+                    {{ ($doc->client ?? $doc->lead)->first_name ?? '' }} {{ ($doc->client ?? $doc->lead)->last_name ?? '' }}
                 </td>
             </tr>
             @endif

@@ -605,7 +605,7 @@ class AppointmentSyncService
         if ($appointment->client_id) {
             // Try to get client name from Admin model (first_name + last_name)
             $client = Admin::where('id', $appointment->client_id)
-                ->where('role', 7) // Ensure it's a client
+                ->whereIn('type', ['client', 'lead'])
                 ->select('first_name', 'last_name')
                 ->first();
             

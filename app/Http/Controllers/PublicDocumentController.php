@@ -525,13 +525,6 @@ class PublicDocumentController extends Controller
                         ->withInput();
                 }
 
-                // Generate SHA-256 hash for tamper detection (Phase 7)
-                $signedHash = hash_file('sha256', $outputTmpPath);
-                Log::info('Generated document hash', [
-                    'document_id' => $document->id,
-                    'hash' => $signedHash
-                ]);
-
                 // Upload signed PDF (try S3 first, fallback to local)
                 $signedPdfUrl = null;
                 $signedPdfPath = null;
@@ -564,13 +557,11 @@ class PublicDocumentController extends Controller
                 }
                 @unlink($outputTmpPath);
 
-                // Update statuses and save hash
+                // Update statuses
                 $signer->update(['status' => 'signed', 'signed_at' => now()]);
                 $document->status = 'signed';
                 $document->signature_doc_link = json_encode($signatureLinks);
                 $document->signed_doc_link = $signedPdfUrl;
-                $document->signed_hash = $signedHash;
-                $document->hash_generated_at = now();
                 $document->save();
 
                 Log::info("Public document signed successfully", [
@@ -580,7 +571,7 @@ class PublicDocumentController extends Controller
                 ]);
 
                 if ($document->client_id) {
-                    $docName = $document->checklist ?? $document->file_name ?? $document->title ?? 'Document';
+                    $docName = $document->checklist ?? $document->file_name ?? 'Document';
                     \App\Models\ActivitiesLog::create([
                         'client_id' => $document->client_id,
                         'created_by' => $document->user_id,
@@ -611,7 +602,6 @@ class PublicDocumentController extends Controller
                         $signedDoc->doc_type = 'visa';
                         $signedDoc->type = 'client';
                         $signedDoc->user_id = $document->user_id;
-                        $signedDoc->signer_count = 1;
                         $signedDoc->status = 'signed';
                         $signedDoc->signed_doc_link = $signedPdfUrl;
                         $signedDoc->save();
@@ -1257,14 +1247,41 @@ class PublicDocumentController extends Controller
                     );
                 }
             }
-            // Check if document has polymorphic relationship (documentable)
-            elseif ($document->documentable_id && $document->documentable_type) {
-                if ($document->documentable_type === 'App\\Models\\Admin') {
-                    $associatedEntity = \App\Models\Admin::find($document->documentable_id);
+            // Check if document has client_id or lead_id
+            elseif ($document->client_id || $document->lead_id) {
+                if ($document->client_id) {
+                    $associatedEntity = \App\Models\Admin::find($document->client_id);
                     
                     if ($associatedEntity) {
                         $entityType = ($associatedEntity->type === 'lead') ? 'lead' : 'client';
                         $notificationUrl = url("/clients/detail/{$associatedEntity->id}");
+                        $responsiblePersonId = $document->created_by ?? null;
+                        $matterRef = null;
+                        
+                        if ($document->client_matter_id) {
+                            $clientMatter = \App\Models\ClientMatter::select('client_unique_matter_no', 'sel_person_responsible')
+                                ->find($document->client_matter_id);
+                            $matterRef = $clientMatter?->client_unique_matter_no;
+                            $responsiblePersonId = $clientMatter?->sel_person_responsible ?? $responsiblePersonId;
+                        }
+                        
+                        $this->createActivityAndNotification(
+                            $document,
+                            $associatedEntity,
+                            $responsiblePersonId,
+                            $signerName,
+                            $signedAt,
+                            $entityType,
+                            $notificationUrl,
+                            $matterRef
+                        );
+                    }
+                } elseif ($document->lead_id) {
+                    $associatedEntity = \App\Models\Admin::find($document->lead_id);
+                    
+                    if ($associatedEntity) {
+                        $entityType = 'lead';
+                        $notificationUrl = url("/leads/detail/{$associatedEntity->id}");
                         $responsiblePersonId = $document->created_by ?? null;
                         
                         $this->createActivityAndNotification(
@@ -1276,30 +1293,6 @@ class PublicDocumentController extends Controller
                             $entityType,
                             $notificationUrl
                         );
-                    }
-                } elseif ($document->documentable_type === 'App\\Models\\ClientMatter') {
-                    $clientMatter = \App\Models\ClientMatter::select('client_unique_matter_no', 'sel_person_responsible', 'client_id')
-                        ->where('id', $document->documentable_id)
-                        ->first();
-                    
-                    if ($clientMatter) {
-                        $associatedEntity = \App\Models\Admin::find($clientMatter->client_id);
-                        $responsiblePersonId = $clientMatter->sel_person_responsible;
-                        $entityType = 'client';
-                        $notificationUrl = url("/clients/detail/{$clientMatter->client_id}");
-                        
-                        if ($associatedEntity) {
-                            $this->createActivityAndNotification(
-                                $document,
-                                $associatedEntity,
-                                $responsiblePersonId,
-                                $signerName,
-                                $signedAt,
-                                $entityType,
-                                $notificationUrl,
-                                $clientMatter->client_unique_matter_no
-                            );
-                        }
                     }
                 }
             }
@@ -1335,7 +1328,7 @@ class PublicDocumentController extends Controller
         $matterReference = null
     ) {
         $entityName = $entity->first_name . ' ' . $entity->last_name;
-        $documentTitle = $document->title ?? $document->file_name ?? 'Document #' . $document->id;
+        $documentTitle = $document->file_name ?? 'Document #' . $document->id;
         
         // Create subject line
         if ($matterReference) {

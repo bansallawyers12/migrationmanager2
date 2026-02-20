@@ -16,7 +16,7 @@ use Auth;
 use App\Services\ClientReferenceService;
 
 /**
- * ClientController - Manages clients (role=7 in admins table).
+ * ClientController - Manages clients (type=client/lead in admins table).
  *
  * DEPRECATED SPLIT: Former UserController was split into:
  * - StaffController + staff table: Staff management (active, inactive, invited, create, edit, view).
@@ -44,7 +44,7 @@ class ClientController extends Controller
 				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
 			}
 		//check authorization end
-		$query 		= Admin::with('company')->where('role', '=', 7);
+		$query 		= Admin::with('company')->whereIn('type', ['client', 'lead']);
 
 		$totalData 	= $query->count();	//for all data
 
@@ -98,7 +98,7 @@ class ClientController extends Controller
 			$obj->country	=	@$requestData['country'];
 			$obj->city	=	@$requestData['city'];
 			$obj->verified	=	1;
-			$obj->role	=	7;
+			$obj->type	=	'client';
 			
 			// Set required NOT NULL fields with default values (PostgreSQL doesn't apply DB defaults on explicit INSERT)
 			$obj->australian_study = isset($requestData['australian_study']) ? (int)$requestData['australian_study'] : 0;
@@ -208,7 +208,7 @@ class ClientController extends Controller
 		$obj->phone = @$requestData['phone'];
 		$obj->country = @$requestData['country'];
 		$obj->city = @$requestData['city'];
-		$obj->role = 7;
+		$obj->type = 'client';
 
 		$saved = $obj->save();
 

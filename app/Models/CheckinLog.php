@@ -20,7 +20,7 @@ class CheckinLog extends Model
         if ($this->contact_type == 'Lead') {
             return $this->belongsTo(Lead::class, 'client_id');
         } else {
-            return $this->belongsTo(Admin::class, 'client_id')->where('role', '7');
+            return $this->belongsTo(Admin::class, 'client_id')->whereIn('type', ['client', 'lead']);
         }
     }
     

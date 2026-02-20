@@ -390,7 +390,7 @@
         <div class="signing-info">
             <div class="signing-title">
                 <span class="title-icon">📝</span>
-                <span class="title-text">{{ $document->title ?? 'Document' }}</span>
+                <span class="title-text">{{ $document->file_name ?? 'Document' }}</span>
             </div>
             <div class="signing-progress">
                 <span class="progress-badge">
@@ -415,7 +415,7 @@
         <div class="max-w-4xl w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 sm:p-8">
             <!-- Header -->
             <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 text-center">
-                Sign Document: {{ $document->title }}
+                Sign Document: {{ $document->file_name ?? 'Document' }}
             </h1>
 
             <!-- Error Message -->

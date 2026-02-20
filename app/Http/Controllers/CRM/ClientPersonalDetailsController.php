@@ -654,7 +654,7 @@ class ClientPersonalDetailsController extends Controller
             $excludeClient = $request->input('exclude_client');
 
             // Simplified search - just get all clients first, then filter
-            $allClients = Admin::where('role', '7')
+            $allClients = Admin::whereIn('type', ['client', 'lead'])
                 ->select('id', 'email', 'first_name', 'last_name', 'phone', 'client_id')
                 ->get();
 
@@ -712,16 +712,16 @@ class ClientPersonalDetailsController extends Controller
         $query = $request->input('query', 'vip');
         
         // Get total clients count
-        $totalClients = Admin::where('role', '7')->count();
+        $totalClients = Admin::whereIn('type', ['client', 'lead'])->count();
         
         // Get sample clients
-        $sampleClients = Admin::where('role', '7')
+        $sampleClients = Admin::whereIn('type', ['client', 'lead'])
             ->select('id', 'first_name', 'last_name', 'email', 'phone', 'client_id')
             ->limit(5)
             ->get();
         
         // Test search
-        $searchResults = Admin::where('role', '7')
+        $searchResults = Admin::whereIn('type', ['client', 'lead'])
             ->where(function ($q) use ($query) {
                 $queryLower = strtolower($query);
                 $q->whereRaw('LOWER(first_name) LIKE ?', ['%' . $queryLower . '%'])
@@ -1703,7 +1703,7 @@ class ClientPersonalDetailsController extends Controller
         if(isset($id) && !empty($id))
         {
             $id = $this->decodeString($id); //dd($id);
-            if(Admin::where('id', '=', $id)->where('role', '=', 7)->exists())
+            if(Admin::where('id', '=', $id)->whereIn('type', ['client', 'lead'])->exists())
             {
                 // Use service to get all data with optimized queries (prevents N+1)
                 // Now returns complete data set including passports, travels, etc.
@@ -1729,7 +1729,7 @@ class ClientPersonalDetailsController extends Controller
             $clientId = $request->input('id'); // Use 'id' instead of 'client_id' - 'id' is the database ID
             
             // Validate client exists
-            $client = Admin::where('id', $clientId)->where('role', '7')->first();
+            $client = Admin::where('id', $clientId)->whereIn('type', ['client', 'lead'])->first();
             if (!$client) {
                 return response()->json([
                     'success' => false,
@@ -4047,7 +4047,7 @@ class ClientPersonalDetailsController extends Controller
                     // Create reciprocal relationship entry if partner_id exists (existing client)
                     if (!empty($partnerData['partner_id'])) {
                         // Get the related client's details for the reciprocal entry
-                        $relatedClient = Admin::where('id', $partnerData['partner_id'])->where('role', '7')->first();
+                        $relatedClient = Admin::where('id', $partnerData['partner_id'])->whereIn('type', ['client', 'lead'])->first();
                         
                         if ($relatedClient) {
                             // Determine reciprocal relationship type
@@ -5000,7 +5000,7 @@ class ClientPersonalDetailsController extends Controller
     {
         try {
             $clientId = $request->input('id'); // Use 'id' instead of 'client_id' - 'id' is the database ID
-            $client = Admin::where('id', $clientId)->where('role', '7')->first();
+            $client = Admin::where('id', $clientId)->whereIn('type', ['client', 'lead'])->first();
             
             if (!$client) {
                 return response()->json([
@@ -5135,7 +5135,7 @@ class ClientPersonalDetailsController extends Controller
     {
         try {
             $clientId = $request->input('id'); // Use 'id' instead of 'client_id' - 'id' is the database ID
-            $client = Admin::where('id', $clientId)->where('role', '7')->first();
+            $client = Admin::where('id', $clientId)->whereIn('type', ['client', 'lead'])->first();
             
             if (!$client) {
                 return response()->json([
@@ -5270,7 +5270,7 @@ class ClientPersonalDetailsController extends Controller
     {
         try {
             $clientId = $request->input('id'); // Use 'id' instead of 'client_id' - 'id' is the database ID
-            $client = Admin::where('id', $clientId)->where('role', '7')->first();
+            $client = Admin::where('id', $clientId)->whereIn('type', ['client', 'lead'])->first();
             
             if (!$client) {
                 return response()->json([
@@ -5434,14 +5434,14 @@ class ClientPersonalDetailsController extends Controller
             // For universal email (demo@gmail.com), also search for timestamped versions
             if ($email === 'demo@gmail.com') {
                 $emailLower = strtolower($email);
-                $client = Admin::where('role', '7')
+                $client = Admin::whereIn('type', ['client', 'lead'])
                     ->where(function($q) use ($email, $emailLower) {
                         $q->whereRaw('LOWER(email) = ?', [$emailLower])
                           ->orWhereRaw('LOWER(email) LIKE ?', ['demo_%@gmail.com']);
                     })
                     ->first();
             } else {
-                $client = Admin::where('role', '7')
+                $client = Admin::whereIn('type', ['client', 'lead'])
                     ->where('email', $email)
                     ->first();
             }
@@ -5452,7 +5452,7 @@ class ClientPersonalDetailsController extends Controller
 
         // Search by client_id if email not found
         if ($clientId) {
-            $client = Admin::where('role', '7')
+            $client = Admin::whereIn('type', ['client', 'lead'])
                 ->where('client_id', $clientId)
                 ->first();
             if ($client) {
@@ -5464,14 +5464,14 @@ class ClientPersonalDetailsController extends Controller
         if ($phone) {
             // For universal phone (4444444444), also search for timestamped versions
             if ($phone === '4444444444') {
-                $client = Admin::where('role', '7')
+                $client = Admin::whereIn('type', ['client', 'lead'])
                     ->where(function($q) use ($phone) {
                         $q->where('phone', $phone)
                           ->orWhere('phone', 'LIKE', $phone . '_%');
                     })
                     ->first();
             } else {
-                $client = Admin::where('role', '7')
+                $client = Admin::whereIn('type', ['client', 'lead'])
                     ->where('phone', $phone)
                     ->first();
             }
@@ -5488,7 +5488,7 @@ class ClientPersonalDetailsController extends Controller
             $firstName = trim($nameParts[0]);
             $lastName = trim($nameParts[1]);
             
-            $client = Admin::where('role', '7')
+            $client = Admin::whereIn('type', ['client', 'lead'])
                 ->where('first_name', $firstName)
                 ->where('last_name', $lastName)
                 ->first();

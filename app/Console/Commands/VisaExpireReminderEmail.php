@@ -60,7 +60,7 @@ class VisaExpireReminderEmail extends Command
     public function handle()
     {
         $query 	= \App\Models\Admin::select('id','visaExpiry','email','first_name','last_name')
-        ->where('role', 7)
+        ->whereIn('type', ['client', 'lead'])
         ->where('visaExpiry','!=','')
         ->where('visaExpiry', '=', Carbon::now()->addDays(15)->toDateString() ) ;
         $totalLogs = $query->count();//dd($totalLogs);

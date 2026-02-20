@@ -329,16 +329,14 @@ class DocumentController extends Controller
         ]);
 
         try {
-            // Sanitize title to prevent XSS
+            // Sanitize title to prevent XSS - used as file_name for display
             $sanitizedTitle = strip_tags(trim($request->title));
             $sanitizedTitle = htmlspecialchars($sanitizedTitle, ENT_QUOTES, 'UTF-8');
 
             $document = auth('admin')->user()->documents()->create([
-                'title' => $sanitizedTitle,
+                'file_name' => $sanitizedTitle,
                 'status' => 'draft',
                 'created_by' => auth('admin')->id(),
-                'origin' => 'ad_hoc',
-                'signer_count' => 0, // No signers added yet for a new document
             ]);
 
             // Verify the uploaded file is a valid PDF
@@ -1188,9 +1186,6 @@ class DocumentController extends Controller
                     $document->update([
                         'status' => 'sent',
                         'signature_doc_link' => json_encode($signatureLinks),
-                        'primary_signer_email' => $signer->email,
-                        'signer_count' => 1,
-                        'last_activity_at' => now(),
                     ]);
                     
                     Log::info('Signature link generated successfully for checklist agreement', [
@@ -1209,7 +1204,7 @@ class DocumentController extends Controller
                         'client_id' => $clientDatabaseId,
                         'created_by' => auth('admin')->id(),
                         'subject' => 'placed signature fields and sent cost agreement for signature',
-                        'description' => '<ul><li><strong>Document:</strong> ' . htmlspecialchars($document->file_name ?? $document->title ?? 'Agreement') . '</li><li><strong>Sent to:</strong> ' . htmlspecialchars($signer->email) . '</li></ul>',
+                        'description' => '<ul><li><strong>Document:</strong> ' . htmlspecialchars($document->file_name ?? 'Agreement') . '</li><li><strong>Sent to:</strong> ' . htmlspecialchars($signer->email) . '</li></ul>',
                         'activity_type' => 'signature',
                         'task_status' => 0,
                         'pin' => 0,
@@ -1277,8 +1272,6 @@ class DocumentController extends Controller
                     $document->update([
                         'status' => 'placed',
                         'signature_doc_link' => json_encode($signatureLinks),
-                        'primary_signer_email' => $signer->email,
-                        'signer_count' => 1,
                     ]);
                     $encodedClientId = base64_encode(convert_uuencode($client->id));
                     $redirectUrl = url("/clients/detail/{$encodedClientId}/visadocuments");
@@ -2214,13 +2207,6 @@ class DocumentController extends Controller
                     return redirect('/')->with('error', 'Error saving signed PDF: ' . $e->getMessage());
                 }
 
-                // Generate SHA-256 hash for tamper detection (Phase 7)
-                $signedHash = hash_file('sha256', $outputTmpPath);
-                Log::info('Generated document hash', [
-                    'document_id' => $document->id,
-                    'hash' => $signedHash
-                ]);
-
                 // Upload signed PDF to S3
                 $s3SignedPath = $clientId . '/' . $docType . '/signed/' . $document->id . '_signed.pdf';
                 Storage::disk('s3')->put($s3SignedPath, fopen($outputTmpPath, 'r'));
@@ -2230,14 +2216,12 @@ class DocumentController extends Controller
                 @unlink($tmpPdfPath);
                 @unlink($outputTmpPath);
 
-                // Update statuses and document links with hash
+                // Update statuses and document links
                 $signer->update(['status' => 'signed', 'signed_at' => now()]);
 
                 $document->status = 'signed';
                 $document->signature_doc_link = json_encode($signatureLinks);
                 $document->signed_doc_link = $s3SignedUrl ?? null;
-                $document->signed_hash = $signedHash;
-                $document->hash_generated_at = now();
                 $docSigned = $document->save();
 
                 if( $docSigned && $document->doc_type == 'agreement'){

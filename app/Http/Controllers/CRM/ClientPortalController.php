@@ -63,7 +63,7 @@ class ClientPortalController extends Controller
             $status = ($request->status === true || $request->status === 'true' || $request->status === '1' || $request->status === 1) ? 1 : 0;
 
             // Update the client's cp_status
-            $client = \App\Models\Admin::where('id', $clientId)->where('role', '7')->first();
+            $client = \App\Models\Admin::where('id', $clientId)->whereIn('type', ['client', 'lead'])->first();
 
             if (!$client) {
                 return response()->json([
@@ -2061,7 +2061,7 @@ class ClientPortalController extends Controller
 	// REMOVED - Application PDF export functionality (view file deleted, was broken and unused)
 	// public function exportapplicationpdf(Request $request, $id){
 	// 	$applications = \App\Models\Application::where('id', $id)->first();
-	// 	$cleintname = \App\Models\Admin::where('role',7)->where('id',@$applications->client_id)->first();
+	// 	$cleintname = \App\Models\Admin::whereIn('type', ['client', 'lead'])->where('id',@$applications->client_id)->first();
 	// 	$pdf = PDF::setOptions([
 	// 		'isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true,
 	// 		'logOutputFile' => storage_path('logs/log.htm'),
