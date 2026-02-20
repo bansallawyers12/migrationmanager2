@@ -165,7 +165,7 @@ class ArtSheetController extends Controller
                 DB::raw("CONCAT(COALESCE(agents.first_name, ''), ' ', COALESCE(agents.last_name, '')) as agent_name")
             )
             ->where('admins.is_archived', 0)
-            ->where('admins.role', 7)
+            ->whereIn('admins.type', ['client', 'lead'])
             ->whereNull('admins.is_deleted');
 
         return $query;

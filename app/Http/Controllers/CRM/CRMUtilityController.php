@@ -290,7 +290,8 @@ class CRMUtilityController extends Controller
 			$requestData['col'] = trim($requestData['colname']);
 
 			$role = Auth::user()->role;
-			if($role == 1 || $role == 7)
+			$userType = Auth::user()->type ?? '';
+			if($role == 1 || in_array($userType, ['client', 'lead']))
 			{
 				if(isset($requestData['id']) && !empty($requestData['id']) && isset($requestData['current_status']) && isset($requestData['table']) && !empty($requestData['table']))
 				{
@@ -423,7 +424,8 @@ class CRMUtilityController extends Controller
 			$requestData['table'] = trim($requestData['table']);
 
 			$role = Auth::user()->role;
-			if($role == 1 || $role == 7)
+			$userType = Auth::user()->type ?? '';
+			if($role == 1 || in_array($userType, ['client', 'lead']))
 			{
 				if(isset($requestData['id']) && !empty($requestData['id'])  && isset($requestData['table']) && !empty($requestData['table']))
 				{
@@ -490,7 +492,8 @@ class CRMUtilityController extends Controller
 			$requestData['table'] = trim($requestData['table']);
 
 			$role = Auth::user()->role;
-			if($role == 1 || $role == 7)
+			$userType = Auth::user()->type ?? '';
+			if($role == 1 || in_array($userType, ['client', 'lead']))
 			{
 				if(isset($requestData['id']) && !empty($requestData['id'])  && isset($requestData['table']) && !empty($requestData['table']))
 				{
@@ -557,7 +560,8 @@ class CRMUtilityController extends Controller
 			$requestData['table'] = trim($requestData['table']);
 
 			$role = Auth::user()->role;
-			if($role == 1 || $role == 7)
+			$userType = Auth::user()->type ?? '';
+			if($role == 1 || in_array($userType, ['client', 'lead']))
 			{
 				if(isset($requestData['id']) && !empty($requestData['id'])  && isset($requestData['table']) && !empty($requestData['table']))
 				{
@@ -625,7 +629,8 @@ class CRMUtilityController extends Controller
 
 			$astatus = '';
 			$role = Auth::user()->role;
-			if($role == 1 || $role == 7)
+			$userType = Auth::user()->type ?? '';
+			if($role == 1 || in_array($userType, ['client', 'lead']))
 			{
 				if(isset($requestData['id']) && !empty($requestData['id'])  && isset($requestData['table']) && !empty($requestData['table']))
 				{

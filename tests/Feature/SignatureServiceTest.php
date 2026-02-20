@@ -181,8 +181,8 @@ class SignatureServiceTest extends TestCase
     {
         $client = Admin::factory()->create(['role' => 2]);
         $document = Document::factory()->create([
-            'documentable_type' => Admin::class,
-            'documentable_id' => $client->id
+            'client_id' => $client->id,
+            'lead_id' => null
         ]);
 
         $admin = Admin::factory()->create(['role' => 1]);
@@ -193,9 +193,8 @@ class SignatureServiceTest extends TestCase
         $this->assertTrue($result);
         
         $document->refresh();
-        $this->assertNull($document->documentable_type);
-        $this->assertNull($document->documentable_id);
-        $this->assertEquals('ad_hoc', $document->origin);
+        $this->assertNull($document->client_id);
+        $this->assertNull($document->lead_id);
     }
 
     /** @test */

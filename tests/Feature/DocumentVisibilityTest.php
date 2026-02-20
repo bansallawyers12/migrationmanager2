@@ -55,16 +55,16 @@ class DocumentVisibilityTest extends TestCase
         $myLead = Lead::factory()->create(['user_id' => $user->id]);
         $myLeadDoc = Document::factory()->create([
             'created_by' => $otherUser->id,
-            'documentable_type' => Lead::class,
-            'documentable_id' => $myLead->id
+            'lead_id' => $myLead->id,
+            'client_id' => null
         ]);
 
         // Document associated with other user's lead
         $otherLead = Lead::factory()->create(['user_id' => $otherUser->id]);
         $otherLeadDoc = Document::factory()->create([
             'created_by' => $otherUser->id,
-            'documentable_type' => Lead::class,
-            'documentable_id' => $otherLead->id
+            'lead_id' => $otherLead->id,
+            'client_id' => null
         ]);
 
         $visibleDocs = Document::visible($user)->get();
@@ -105,8 +105,8 @@ class DocumentVisibilityTest extends TestCase
             ->get(route('signatures.index'));
 
         $response->assertStatus(200);
-        $response->assertSee($myDocument->title ?? $myDocument->file_name);
-        $response->assertDontSee($otherDocument->title ?? $otherDocument->file_name);
+        $response->assertSee($myDocument->file_name ?? 'Document');
+        $response->assertDontSee($otherDocument->file_name ?? 'Document');
     }
 
     /** @test */
@@ -117,8 +117,8 @@ class DocumentVisibilityTest extends TestCase
 
         $document = Document::factory()->create([
             'created_by' => $otherUser->id,
-            'documentable_type' => null,
-            'documentable_id' => null
+            'client_id' => null,
+            'lead_id' => null
         ]);
 
         $response = $this->actingAs($user, 'admin')
@@ -136,8 +136,8 @@ class DocumentVisibilityTest extends TestCase
 
         $document = Document::factory()->create([
             'created_by' => $otherUser->id,
-            'documentable_type' => Lead::class,
-            'documentable_id' => $lead->id
+            'lead_id' => $lead->id,
+            'client_id' => null
         ]);
 
         $response = $this->actingAs($user, 'admin')
@@ -195,8 +195,8 @@ class DocumentVisibilityTest extends TestCase
 
         // Associate after creation (like in real workflow)
         $document->update([
-            'documentable_type' => Lead::class,
-            'documentable_id' => $lead->id
+            'lead_id' => $lead->id,
+            'client_id' => null
         ]);
 
         $visibleDocs = Document::visible($user)->get();
@@ -278,8 +278,8 @@ class DocumentVisibilityTest extends TestCase
 
         $document = Document::factory()->create([
             'created_by' => $otherUser->id,
-            'documentable_type' => Lead::class,
-            'documentable_id' => $lead->id
+            'lead_id' => $lead->id,
+            'client_id' => null
         ]);
 
         $this->actingAs($user, 'admin');

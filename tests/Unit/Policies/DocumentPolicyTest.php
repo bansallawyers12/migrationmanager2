@@ -59,8 +59,8 @@ class DocumentPolicyTest extends TestCase
     {
         $user = Admin::factory()->create(['role' => 2]);
         $document = Document::factory()->create([
-            'documentable_type' => Admin::class,
-            'documentable_id' => $user->id
+            'client_id' => $user->id,
+            'lead_id' => null
         ]);
 
         $this->assertTrue($this->policy->view($user, $document));
@@ -72,8 +72,8 @@ class DocumentPolicyTest extends TestCase
         $user = Admin::factory()->create(['role' => 2]);
         $lead = Lead::factory()->create(['user_id' => $user->id]);
         $document = Document::factory()->create([
-            'documentable_type' => Lead::class,
-            'documentable_id' => $lead->id
+            'lead_id' => $lead->id,
+            'client_id' => null
         ]);
 
         $this->assertTrue($this->policy->view($user, $document));
@@ -86,8 +86,8 @@ class DocumentPolicyTest extends TestCase
         $otherUser = Admin::factory()->create(['role' => 2]);
         $document = Document::factory()->create([
             'created_by' => $otherUser->id,
-            'documentable_type' => null,
-            'documentable_id' => null
+            'client_id' => null,
+            'lead_id' => null
         ]);
 
         $this->assertFalse($this->policy->view($user, $document));
