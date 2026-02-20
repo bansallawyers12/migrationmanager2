@@ -65,8 +65,7 @@ class SignatureDashboardController extends Controller
               ->when($request->filled('search'), function ($q) use ($request) {
                   $search = $request->search;
                   return $q->where(function($subQ) use ($search) {
-                      $subQ->where('title', 'like', "%{$search}%")
-                           ->orWhere('file_name', 'like', "%{$search}%")
+                      $subQ->where('file_name', 'like', "%{$search}%")
                            ->orWhereHas('signers', fn($sq) => $sq->where('email', 'like', "%{$search}%"));
                   });
               });

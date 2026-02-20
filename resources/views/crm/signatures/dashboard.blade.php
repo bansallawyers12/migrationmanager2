@@ -515,16 +515,16 @@
                             </span>
                         </td>
                         <td>
-                            @if($doc->documentable)
-                                @if($doc->client_id)
+                            @if(($doc->client_id && $doc->client) || ($doc->lead_id && $doc->lead))
+                                @if($doc->client_id && $doc->client)
                                 <a href="{{ route('clients.detail', $doc->client_id) }}" class="association-chip">
                                     <i class="fas fa-user"></i>
-                                    Client: {{ $doc->documentable->first_name }} {{ $doc->documentable->last_name }}
+                                    Client: {{ $doc->client->first_name }} {{ $doc->client->last_name }}
                                 </a>
-                                @elseif($doc->lead_id)
+                                @elseif($doc->lead_id && $doc->lead)
                                 <a href="{{ route('leads.detail', $doc->lead_id) }}" class="association-chip">
                                     <i class="fas fa-user-tag"></i>
-                                    Lead: {{ $doc->documentable->first_name }} {{ $doc->documentable->last_name }}
+                                    Lead: {{ $doc->lead->first_name }} {{ $doc->lead->last_name }}
                                 </a>
                                 @endif
                             @else
