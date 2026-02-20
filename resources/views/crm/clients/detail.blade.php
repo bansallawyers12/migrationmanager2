@@ -1322,14 +1322,14 @@ $(document).ready(function() {
                 } else {
                     $('#emailmodal').removeData('composeMacroValues');
                 }
-                if (res.matter_templates && res.matter_templates.length && $templateSelect.length) {
-                    $templateSelect.find('option.matter-template-option').remove();
-                    res.matter_templates.slice().reverse().forEach(function(t) {
-                        var $opt = $('<option></option>').attr('value', t.id).text(t.name || 'Template').addClass('matter-template-option');
-                        $templateSelect.prepend($opt);
+                if (res.matter_templates !== undefined && $templateSelect.length) {
+                    // Replace dropdown with matter-specific options only: First Email first, then Matter Other Email Templates
+                    $templateSelect.empty().append($('<option value="">Select</option>'));
+                    (res.matter_templates || []).forEach(function(t) {
+                        $templateSelect.append($('<option></option>').attr('value', t.id).text(t.name || 'Template'));
                     });
                     var fromSignature = $('#emailmodal').data('fromSignatureSend');
-                    var toSelect = res.template ? res.template.id : (res.matter_templates[0] ? res.matter_templates[0].id : null);
+                    var toSelect = res.template ? res.template.id : (res.matter_templates && res.matter_templates[0] ? res.matter_templates[0].id : null);
                     if (toSelect) {
                         $templateSelect.val(toSelect).trigger('change');
                         if (fromSignature) $('#emailmodal').removeData('fromSignatureSend');

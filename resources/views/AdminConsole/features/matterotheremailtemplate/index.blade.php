@@ -19,7 +19,7 @@
 				<div class="col-9 col-md-9 col-lg-9">
 					<div class="card">
 						<div class="card-header">
-							<h4>Matter Email Templates - {{ @$matter->title ?? 'Unknown Matter' }}</h4>
+							<h4>Matter Email Templates - {{ $matter->title ?? $matter->nick_name ?? 'Unknown Matter' }}</h4>
 							<div class="card-header-action">
 								<a href="{{route('adminconsole.features.matterotheremailtemplate.create', $matterId)}}" class="btn btn-primary">Create Email Template</a>
 							</div>
