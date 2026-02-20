@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\CRM;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivitiesLog;
 use App\Models\Document;
 use App\Models\Admin;
 use App\Models\Lead;
@@ -355,6 +356,18 @@ class SignatureDashboardController extends Controller
         // Use service to send reminder
         $success = $this->signatureService->remind($signer);
 
+        if ($success && $document->client_id) {
+            ActivitiesLog::create([
+                'client_id' => $document->client_id,
+                'created_by' => Auth::guard('admin')->id(),
+                'subject' => 'sent reminder for document signature',
+                'description' => '<ul><li><strong>Document:</strong> ' . htmlspecialchars($document->checklist ?? $document->file_name ?? $document->title ?? 'Document') . '</li><li><strong>Reminded:</strong> ' . htmlspecialchars($signer->name . ' (' . $signer->email . ')') . '</li></ul>',
+                'activity_type' => 'signature',
+                'task_status' => 0,
+                'pin' => 0,
+            ]);
+        }
+
         if ($success) {
             return back()->with('success', 'Reminder sent successfully!');
         } else {
@@ -411,6 +424,18 @@ class SignatureDashboardController extends Controller
                     'status' => null,
                     'signature_doc_link' => null,
                     'primary_signer_email' => null,
+                ]);
+            }
+            
+            if ($document->client_id) {
+                ActivitiesLog::create([
+                    'client_id' => $document->client_id,
+                    'created_by' => Auth::guard('admin')->id(),
+                    'subject' => 'cancelled signature request',
+                    'description' => '<ul><li><strong>Document:</strong> ' . htmlspecialchars($document->checklist ?? $document->file_name ?? $document->title ?? 'Document') . '</li><li><strong>Cancelled for:</strong> ' . htmlspecialchars($signer->name . ' (' . $signer->email . ')') . '</li></ul>',
+                    'activity_type' => 'signature',
+                    'task_status' => 0,
+                    'pin' => 0,
                 ]);
             }
             
@@ -545,6 +570,19 @@ class SignatureDashboardController extends Controller
         
         // Update document status
         $document->update(['status' => 'sent']);
+        
+        if ($emailsSent > 0 && $document->client_id) {
+            $recipients = $pendingSigners->map(fn($s) => $s->name . ' (' . $s->email . ')')->implode(', ');
+            ActivitiesLog::create([
+                'client_id' => $document->client_id,
+                'created_by' => Auth::guard('admin')->id(),
+                'subject' => 'sent document for signature',
+                'description' => '<ul><li><strong>Document:</strong> ' . htmlspecialchars($document->checklist ?? $document->file_name ?? $document->title ?? 'Document') . '</li><li><strong>Sent to:</strong> ' . htmlspecialchars($recipients) . '</li></ul>',
+                'activity_type' => 'signature',
+                'task_status' => 0,
+                'pin' => 0,
+            ]);
+        }
         
         if ($emailsSent > 0) {
             $message = "Document sent for signature! {$emailsSent} signing link(s) sent successfully.";

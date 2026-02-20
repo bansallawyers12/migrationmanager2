@@ -5536,14 +5536,17 @@ class ClientsController extends Controller
 
         //6. Log activity if saved
         if ($saved) {
-            $log = new \App\Models\ActivitiesLog;
-            $log->client_id = $admin->id;
-            $log->created_by = Auth::user()->id;
-            $log->description = '';
-            $log->subject = 'Finalized visa agreement uploaded as PDF';
-            $log->task_status = 0;
-            $log->pin = 0;
-            $log->save();
+            $docName = htmlspecialchars($originalInfo['filename'] ?? pathinfo($originalName, PATHINFO_FILENAME));
+            $desc = '<ul><li><strong>Document:</strong> ' . $docName . '.pdf</li><li><strong>Next:</strong> Place signature fields in the modal</li></ul>';
+            \App\Models\ActivitiesLog::create([
+                'client_id' => $admin->id,
+                'created_by' => Auth::user()->id,
+                'subject' => 'uploaded visa agreement PDF for signature',
+                'description' => $desc,
+                'activity_type' => 'signature',
+                'task_status' => 0,
+                'pin' => 0,
+            ]);
         }
 
         //7. Return success response with document ID for signature placement

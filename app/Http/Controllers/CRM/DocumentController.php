@@ -1205,6 +1205,16 @@ class DocumentController extends Controller
                     $encodedClientId = base64_encode(convert_uuencode($clientDatabaseId));
                     $redirectUrl = url("/clients/detail/{$encodedClientId}/checklists");
                     
+                    ActivitiesLog::create([
+                        'client_id' => $clientDatabaseId,
+                        'created_by' => auth('admin')->id(),
+                        'subject' => 'placed signature fields and sent cost agreement for signature',
+                        'description' => '<ul><li><strong>Document:</strong> ' . htmlspecialchars($document->file_name ?? $document->title ?? 'Agreement') . '</li><li><strong>Sent to:</strong> ' . htmlspecialchars($signer->email) . '</li></ul>',
+                        'activity_type' => 'signature',
+                        'task_status' => 0,
+                        'pin' => 0,
+                    ]);
+                    
                     Log::info('Redirecting to client detail page', [
                         'document_id' => $document->id,
                         'client_database_id' => $clientDatabaseId,
@@ -1272,6 +1282,15 @@ class DocumentController extends Controller
                     ]);
                     $encodedClientId = base64_encode(convert_uuencode($client->id));
                     $redirectUrl = url("/clients/detail/{$encodedClientId}/visadocuments");
+                    ActivitiesLog::create([
+                        'client_id' => $client->id,
+                        'created_by' => auth('admin')->id(),
+                        'subject' => 'placed signature fields on visa document',
+                        'description' => '<ul><li><strong>Document:</strong> ' . htmlspecialchars($document->checklist ?? $document->file_name ?? 'Visa document') . '</li><li><strong>Signer:</strong> ' . htmlspecialchars($signer->email) . '</li><li><strong>Next:</strong> Click Send in the action bar to send the signing link</li></ul>',
+                        'activity_type' => 'signature',
+                        'task_status' => 0,
+                        'pin' => 0,
+                    ]);
                     if ($request->expectsJson()) {
                         return response()->json([
                             'success' => true,

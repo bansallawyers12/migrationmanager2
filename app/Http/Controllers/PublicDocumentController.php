@@ -579,6 +579,19 @@ class PublicDocumentController extends Controller
                     'signed_at' => now()->toISOString()
                 ]);
 
+                if ($document->client_id) {
+                    $docName = $document->checklist ?? $document->file_name ?? $document->title ?? 'Document';
+                    \App\Models\ActivitiesLog::create([
+                        'client_id' => $document->client_id,
+                        'created_by' => $document->user_id,
+                        'subject' => 'client signed document',
+                        'description' => '<ul><li><strong>Document:</strong> ' . htmlspecialchars($docName) . '</li><li><strong>Signed by:</strong> ' . htmlspecialchars($signer->name . ' (' . $signer->email . ')') . '</li></ul>',
+                        'activity_type' => 'signature',
+                        'task_status' => 0,
+                        'pin' => 0,
+                    ]);
+                }
+
                 // For visa documents: create {checklist}_signed row in same category (if not already exists)
                 if ($document->doc_type === 'visa' && $document->client_id && $document->folder_name && !str_ends_with($document->checklist ?? '', '_signed')) {
                     $signedChecklist = ($document->checklist ?? 'Document') . '_signed';

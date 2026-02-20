@@ -70,6 +70,7 @@
                     !$item.hasClass('activity-type-activity') &&
                     !$item.hasClass('activity-type-stage') &&
                     !$item.hasClass('activity-type-document') && 
+                    !$item.hasClass('activity-type-signature') &&
                     !$item.hasClass('activity-type-financial')) {
                     $item.show();
                 } else {
@@ -127,6 +128,9 @@
                     $item.show();
                 }
             });
+        } else if (filterType === 'signature') {
+            $('.feed-item.activity').hide();
+            $('.feed-item.activity-type-signature').show();
         } else if (filterType === 'accounting') {
             $('.feed-item.activity').hide();
             // Show accounting activities - check both class and subject text

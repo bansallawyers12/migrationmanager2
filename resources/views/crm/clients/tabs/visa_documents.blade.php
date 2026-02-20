@@ -323,14 +323,20 @@
                                                             </div>
                                                         </td>
                                                         <td style="white-space: initial;">
-                                                            <div data-id="<?= $signedDoc->id ?>" class="doc-row">
-                                                                <a href="javascript:void(0);" onclick="previewFile('<?= $signedDoc->filetype ?? 'pdf' ?>','<?= addslashes($signedFileUrl) ?>','preview-container-migdocumnetlist')">
+                                                            <?php
+                                                            $signedFileUrlJs = addslashes($signedFileUrl);
+                                                            ?>
+                                                            <div data-id="<?= $signedDoc->id ?>" data-name="<?= htmlspecialchars($signedDoc->file_name ?? '') ?>" class="doc-row" title="Signed document" oncontextmenu="showVisaFileContextMenu(event, <?= $signedDoc->id ?>, '<?= htmlspecialchars($signedDoc->filetype ?? 'pdf') ?>', '<?= $signedFileUrlJs ?>', '<?= $id ?>', '<?= $signedDoc->status ?? 'signed' ?>'); return false;">
+                                                                <a href="javascript:void(0);" onclick="previewFile('<?= $signedDoc->filetype ?? 'pdf' ?>','<?= $signedFileUrlJs ?>','preview-container-migdocumnetlist')">
                                                                     <i class="fas fa-file-image"></i> <span><?= htmlspecialchars($signedDisplayName) ?></span>
                                                                 </a>
                                                             </div>
                                                         </td>
                                                         <td>
+                                                            <a class="renamechecklist" data-id="<?= $signedDoc->id ?>" href="javascript:;" style="display: none;"></a>
+                                                            <a class="renamedoc" data-id="<?= $signedDoc->id ?>" href="javascript:;" style="display: none;"></a>
                                                             <a class="download-file" data-filelink="<?= e($signedDownloadUrl) ?>" data-filename="<?= e($signedDoc->myfile_key ?? basename($signedDoc->signed_doc_link ?? '')) ?>" data-id="<?= $signedDoc->id ?>" href="#" style="display: none;"></a>
+                                                            <a class="notuseddoc" data-id="<?= $signedDoc->id ?>" data-doctype="visa" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
                                                         </td>
                                                     </tr>
                                                     <?php endforeach; ?>
