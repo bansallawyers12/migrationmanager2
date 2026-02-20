@@ -632,7 +632,7 @@ class ClientEoiRoiController extends Controller
                 // Check if document references the EOI number
                 $referencesEoi = false;
                 if ($eoiNumber) {
-                    $searchIn = strtolower($doc->file_name . ' ' . $categoryTitle . ' ' . ($doc->title ?? ''));
+                    $searchIn = strtolower($doc->file_name . ' ' . $categoryTitle);
                     $referencesEoi = str_contains($searchIn, strtolower($eoiNumber));
                 }
                 
