@@ -122,10 +122,6 @@
                 </a>
                 @endif
                 <div class="dropdown-divider"></div>
-                <a href="{{ route('crm.login') }}?tab_logout=1" class="text-danger dropdown-item" data-logout="tab">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Log out (this tab)</span>
-                </a>
                 <a href="javascript:void(0)" class="text-danger dropdown-item" data-logout="all">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Log out everywhere</span>

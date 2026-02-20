@@ -53,9 +53,6 @@
                                 </a>
 
                                 <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
-                                    <a class="dropdown-item" href="{{ route('crm.login') }}?tab_logout=1" data-logout="tab">
-                                        {{ __('Log out (this tab)') }}
-                                    </a>
                                     <a class="dropdown-item" href="javascript:void(0)" data-logout="all">
                                         {{ __('Log out everywhere') }}
                                     </a>
