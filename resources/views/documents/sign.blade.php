@@ -480,7 +480,6 @@
             <!-- Tabs -->
             <div class="signature-tabs">
                 <button class="signature-tab active" onclick="switchSignatureTab('draw', this)">Draw</button>
-                <button class="signature-tab" onclick="switchSignatureTab('type', this)">Type</button>
                 <button class="signature-tab" onclick="switchSignatureTab('upload', this)">Upload</button>
             </div>
             
@@ -498,21 +497,6 @@
                         height="250"
                         style="max-width: 100%; width: 100%;"
                     ></canvas>
-                </div>
-            </div>
-            
-            <!-- Type Tab Content -->
-            <div id="type-tab" class="signature-tab-content">
-                <div class="signature-instructions">
-                    Type your signature in the box below
-                </div>
-                
-                <div class="signature-canvas-container">
-                    <textarea
-                        id="fallback-signature"
-                        class="fallback-signature"
-                        placeholder="Type your signature here..."
-                    ></textarea>
                 </div>
             </div>
             
@@ -749,7 +733,7 @@
         let savedSignatures = {};
         let useFallback = false;
         let userSavedSignatureData = null; // Store user's signature for reuse
-        let currentSignatureMode = 'draw'; // 'draw', 'type', or 'upload'
+        let currentSignatureMode = 'draw'; // 'draw' or 'upload'
         let uploadedSignatureData = null; // Store uploaded signature image data
         let signingFieldOrder = [];
         let totalRequiredFields = 0;
@@ -884,14 +868,6 @@
                         }
                     });
                 }
-            } else if (mode === 'type') {
-                document.getElementById('type-tab').classList.add('active');
-                // Ensure textarea is visible - remove any inline display styles
-                const fallbackTextarea = document.getElementById('fallback-signature');
-                if (fallbackTextarea) {
-                    fallbackTextarea.style.display = '';
-                    fallbackTextarea.style.visibility = 'visible';
-                }
             } else if (mode === 'upload') {
                 document.getElementById('upload-tab').classList.add('active');
             }
@@ -1024,11 +1000,6 @@
             // Clear based on current mode
             if (currentSignatureMode === 'draw' && signaturePad) {
                 signaturePad.clear();
-            } else if (currentSignatureMode === 'type') {
-                const fallbackTextarea = document.getElementById('fallback-signature');
-                if (fallbackTextarea) {
-                    fallbackTextarea.value = '';
-                }
             } else if (currentSignatureMode === 'upload') {
                 uploadedSignatureData = null;
                 const uploadInput = document.getElementById('upload-signature-input');
@@ -1046,11 +1017,6 @@
         function clearSignature() {
             if (currentSignatureMode === 'draw' && signaturePad) {
                 signaturePad.clear();
-            } else if (currentSignatureMode === 'type') {
-                const fallbackTextarea = document.getElementById('fallback-signature');
-                if (fallbackTextarea) {
-                    fallbackTextarea.value = '';
-                }
             } else if (currentSignatureMode === 'upload') {
                 uploadedSignatureData = null;
                 const uploadInput = document.getElementById('upload-signature-input');
@@ -1073,64 +1039,6 @@
                     signatureData = signaturePad.toDataURL('image/png');
                 } else {
                     alert('Please draw a signature first.');
-                    return;
-                }
-            } else if (currentSignatureMode === 'type') {
-                const fallbackText = document.getElementById('fallback-signature').value.trim();
-                if (fallbackText) {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    
-                    // Set font properties first to measure text
-                    const baseFontSize = 110;
-                    const fontFamily = '"Brush Script MT", "Lucida Handwriting", cursive, sans-serif';
-                    ctx.font = `${baseFontSize}px ${fontFamily}`;
-                    ctx.textBaseline = 'middle';
-                    ctx.textAlign = 'center';
-                    ctx.fillStyle = 'black';
-                    
-                    // Measure text width to determine appropriate canvas size
-                    const textMetrics = ctx.measureText(fallbackText);
-                    const textWidth = textMetrics.width;
-                    const textHeight = baseFontSize;
-                    
-                    // Calculate canvas dimensions with padding
-                    // Add 40px padding on each side (80px total) to prevent clipping
-                    const padding = 80;
-                    const minWidth = 400;
-                    const minHeight = 200;
-                    
-                    // Calculate canvas width - ensure it fits the text with padding
-                    let canvasWidth = Math.max(minWidth, textWidth + padding);
-                    let canvasHeight = Math.max(minHeight, textHeight + 100); // Extra vertical padding
-                    
-                    // For very long signatures, scale down font if needed
-                    let fontSize = baseFontSize;
-                    if (textWidth > 800) {
-                        // Scale font size proportionally for very long text
-                        const maxWidth = 1000; // Maximum reasonable canvas width
-                        fontSize = Math.floor((baseFontSize * (maxWidth - padding)) / textWidth);
-                        // Re-measure with new font size
-                        ctx.font = `${fontSize}px ${fontFamily}`;
-                        const newTextMetrics = ctx.measureText(fallbackText);
-                        canvasWidth = Math.max(minWidth, Math.min(maxWidth, newTextMetrics.width + padding));
-                    }
-                    
-                    // Set final canvas dimensions
-                    canvas.width = canvasWidth;
-                    canvas.height = canvasHeight;
-                    
-                    // Clear and redraw with correct font
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    ctx.font = `${fontSize}px ${fontFamily}`;
-                    ctx.textBaseline = 'middle';
-                    ctx.textAlign = 'center';
-                    ctx.fillStyle = 'black';
-                    ctx.fillText(fallbackText, canvas.width / 2, canvas.height / 2);
-                    
-                    signatureData = canvas.toDataURL('image/png');
-                } else {
-                    alert('Please type your signature first.');
                     return;
                 }
             } else if (currentSignatureMode === 'upload') {
