@@ -388,7 +388,7 @@
             </div>
 
             <!-- Custom Context Menu for Visa Documents -->
-            <div id="visaFileContextMenu" class="context-menu" style="display: none; position: absolute; background: white; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 1000; min-width: 180px;">
+            <div id="visaFileContextMenu" class="context-menu" style="display: none; position: fixed; background: white; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 10000; min-width: 180px;">
                 <div id="visa-context-send-signature" class="context-menu-item" onclick="handleVisaContextAction('send-for-signature')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee; display: none;">
                     <i class="fa fa-pen-fancy" style="margin-right: 8px;"></i> Send for Signature
                 </div>
@@ -497,33 +497,30 @@
                     }
 
 
-                    // Position menu at cursor with edge detection
+                    // Position menu at cursor (position: fixed uses viewport coordinates)
                     const MENU_WIDTH = 180;
                     const MENU_HEIGHT = 350;
-                    
-                    // Get scroll position
-                    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                    
-                    // Get viewport dimensions
                     const viewportWidth = window.innerWidth;
                     const viewportHeight = window.innerHeight;
+                    const offset = 5;
                     
-                    // Use clientX/Y for viewport-relative position, then add scroll for document position
-                    let menuLeft = event.clientX + scrollLeft + 5;
-                    let menuTop = event.clientY + scrollTop + 5;
+                    let menuLeft = event.clientX + offset;
+                    let menuTop = event.clientY + offset;
                     
-                    // Check right edge - if menu would go beyond viewport, show on left
-                    if (event.clientX + MENU_WIDTH + 5 > viewportWidth) {
-                        menuLeft = event.clientX + scrollLeft - MENU_WIDTH - 5;
+                    // Check right edge - if menu would go beyond viewport, show to the left of cursor
+                    if (menuLeft + MENU_WIDTH > viewportWidth) {
+                        menuLeft = event.clientX - MENU_WIDTH - offset;
                     }
                     
-                    // Check bottom edge - if menu would go beyond viewport, show above
-                    if (event.clientY + MENU_HEIGHT + 5 > viewportHeight) {
-                        menuTop = event.clientY + scrollTop - MENU_HEIGHT - 5;
+                    // Check bottom edge - if menu would go beyond viewport, show above cursor
+                    if (menuTop + MENU_HEIGHT > viewportHeight) {
+                        menuTop = event.clientY - MENU_HEIGHT - offset;
                     }
                     
-                    // Apply position
+                    // Keep menu inside viewport (left/top edges)
+                    menuLeft = Math.max(offset, menuLeft);
+                    menuTop = Math.max(offset, menuTop);
+                    
                     menu.style.left = menuLeft + 'px';
                     menu.style.top = menuTop + 'px';
 
