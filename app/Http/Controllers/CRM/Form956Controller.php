@@ -701,9 +701,9 @@ class Form956Controller extends Controller
     public function edit(Form956 $form): View
     {
         $form->load(['client', 'agent']);
-        $clients = Client::orderBy('family_name')->get();
+        $clients = Admin::where('role', 7)->orderBy('last_name')->get();
 
-        return view('forms.edit', compact('form', 'clients'));
+        return view('crm.forms.edit', compact('form', 'clients'));
     }
 
     /**

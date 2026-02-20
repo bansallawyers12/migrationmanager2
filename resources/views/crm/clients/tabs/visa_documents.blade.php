@@ -160,15 +160,18 @@
                                             </thead>
                                             <tbody class="tdata migdocumnetlist1 migdocumnetlist_<?= $id ?>">
                                                 <?php
-                                                 $documents = \App\Models\Document::where('client_id', $fetchedData->id)
+                                                 $documents = \App\Models\Document::with('signers')->where('client_id', $fetchedData->id)
                                                     ->whereNull('not_used_doc')
                                                     ->where('doc_type', 'visa')
                                                     ->where('folder_name', $folderName)
                                                     ->where('type', 'client')
                                                     ->orderBy('created_at', 'DESC')
                                                     ->get();
+                                                 $parentDocs = $documents->filter(fn($d) => !str_ends_with($d->checklist ?? '', '_signed'));
+                                                 $signedByParent = $documents->filter(fn($d) => str_ends_with($d->checklist ?? '', '_signed'))
+                                                    ->groupBy(fn($d) => ($d->folder_name ?? '') . '|' . ($d->client_matter_id ?? '') . '|' . substr($d->checklist ?? '', 0, -7));
                                                 ?>
-                                                <?php foreach ($documents as $visaKey => $fetch): ?>
+                                                <?php foreach ($parentDocs as $visaKey => $fetch): ?>
                                                     <?php
                                                     $admin = \App\Models\Staff::where('id', $fetch->user_id)->first();
                                                     $isForm956 = !empty($fetch->form956_id);
@@ -265,6 +268,72 @@
                                                             <?php endif; ?>
                                                         </td>
                                                     </tr>
+                                                    <?php
+                                                    $docStatus = $fetch->status ?? '';
+                                                    $showSigActionBar = in_array($docStatus, ['placed', 'sent']) && $fetch->doc_type === 'visa' && $fetch->file_name && ($fetch->filetype ?? '') === 'pdf';
+                                                    if ($showSigActionBar):
+                                                        $signingUrl = null;
+                                                        if ($fetch->signature_doc_link) {
+                                                            $links = json_decode($fetch->signature_doc_link, true);
+                                                            $signingUrl = is_array($links) && isset($links[0]['url']) ? $links[0]['url'] : null;
+                                                        }
+                                                        $pendingSigner = $fetch->signers()->whereIn('status', ['pending'])->first();
+                                                        $signerId = $pendingSigner ? $pendingSigner->id : null;
+                                                    ?>
+                                                    <tr class="visa-sig-action-bar" data-doc-id="<?= $fetch->id ?>" data-signer-id="<?= $signerId ?>" style="background: #f8f9fa; border-left: 4px solid #4a90e2;">
+                                                        <td colspan="3" style="padding: 10px 16px;">
+                                                            <div class="d-flex flex-wrap align-items-center gap-2" style="flex-wrap: wrap;">
+                                                                <button type="button" class="btn btn-sm btn-primary visa-sig-send-btn" data-doc-id="<?= $fetch->id ?>" <?= $docStatus === 'sent' ? 'disabled' : '' ?>>
+                                                                    <i class="fas fa-paper-plane mr-1"></i> Send
+                                                                </button>
+                                                                <button type="button" class="btn btn-sm btn-outline-secondary visa-sig-revise-btn" data-doc-id="<?= $fetch->id ?>">
+                                                                    <i class="fas fa-edit mr-1"></i> Revise
+                                                                </button>
+                                                                <button type="button" class="btn btn-sm btn-outline-danger visa-sig-remove-btn" data-doc-id="<?= $fetch->id ?>">
+                                                                    <i class="fas fa-times mr-1"></i> Remove
+                                                                </button>
+                                                                <?php if ($docStatus === 'sent' && $signingUrl && $signerId): ?>
+                                                                <button type="button" class="btn btn-sm btn-outline-info visa-sig-reminder-btn" data-doc-id="<?= $fetch->id ?>" data-signer-id="<?= $signerId ?>">
+                                                                    <i class="fas fa-bell mr-1"></i> Reminder
+                                                                </button>
+                                                                <?php endif; ?>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    <?php endif; ?>
+                                                    <?php
+                                                    $signedKey = ($fetch->folder_name ?? '') . '|' . ($fetch->client_matter_id ?? '') . '|' . ($fetch->checklist ?? '');
+                                                    $signedDocs = $signedByParent->get($signedKey, collect());
+                                                    foreach ($signedDocs as $signedDoc):
+                                                        $signedAdmin = \App\Models\Staff::where('id', $signedDoc->user_id)->first();
+                                                        $signedIsForm956 = !empty($signedDoc->form956_id);
+                                                        if ($signedIsForm956) {
+                                                            $signedFileUrl = url()->route('forms.preview', $signedDoc->form956_id);
+                                                            $signedDownloadUrl = url()->route('forms.pdf', $signedDoc->form956_id);
+                                                        } else {
+                                                            $signedFileUrl = $signedDoc->signed_doc_link ?? $signedDoc->myfile;
+                                                            $signedDownloadUrl = $signedFileUrl;
+                                                        }
+                                                        $signedDisplayName = ($signedDoc->file_name ?? 'signed') . '.' . ($signedDoc->filetype ?? 'pdf');
+                                                    ?>
+                                                    <tr class="drow visa-signed-row" data-matterid="<?= $signedDoc->client_matter_id ?>" data-catid="<?= $signedDoc->folder_name ?>" id="id_<?= $signedDoc->id ?>">
+                                                        <td style="white-space: initial;">
+                                                            <div data-id="<?= $signedDoc->id ?>" class="visachecklist-row" style="display: flex; align-items: center; gap: 8px;">
+                                                                <span style="flex: 1;"><?= htmlspecialchars($signedDoc->checklist) ?></span>
+                                                            </div>
+                                                        </td>
+                                                        <td style="white-space: initial;">
+                                                            <div data-id="<?= $signedDoc->id ?>" class="doc-row">
+                                                                <a href="javascript:void(0);" onclick="previewFile('<?= $signedDoc->filetype ?? 'pdf' ?>','<?= addslashes($signedFileUrl) ?>','preview-container-migdocumnetlist')">
+                                                                    <i class="fas fa-file-image"></i> <span><?= htmlspecialchars($signedDisplayName) ?></span>
+                                                                </a>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <a class="download-file" data-filelink="<?= e($signedDownloadUrl) ?>" data-filename="<?= e($signedDoc->myfile_key ?? basename($signedDoc->signed_doc_link ?? '')) ?>" data-id="<?= $signedDoc->id ?>" href="#" style="display: none;"></a>
+                                                        </td>
+                                                    </tr>
+                                                    <?php endforeach; ?>
                                                 <?php endforeach; ?>
                                             </tbody>
                                         </table>
@@ -320,6 +389,9 @@
 
             <!-- Custom Context Menu for Visa Documents -->
             <div id="visaFileContextMenu" class="context-menu" style="display: none; position: absolute; background: white; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 1000; min-width: 180px;">
+                <div id="visa-context-send-signature" class="context-menu-item" onclick="handleVisaContextAction('send-for-signature')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee; display: none;">
+                    <i class="fa fa-pen-fancy" style="margin-right: 8px;"></i> Send for Signature
+                </div>
                 <div class="context-menu-item" onclick="handleVisaContextAction('rename-checklist')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">
                     <i class="fa fa-edit" style="margin-right: 8px;"></i> Rename Checklist
                 </div>
@@ -410,11 +482,18 @@
                     
                     // Show/hide PDF option based on file type
                     const pdfOption = document.getElementById('visa-context-pdf-option');
+                    const sendSigOption = document.getElementById('visa-context-send-signature');
                     const fileExt = fileType.toLowerCase();
                     if (['jpg', 'png', 'jpeg'].includes(fileExt)) {
                         pdfOption.style.display = 'block';
                     } else {
                         pdfOption.style.display = 'none';
+                    }
+                    // Show "Send for Signature" only for PDF and when not already signed
+                    if (fileExt === 'pdf' && fileStatus !== 'signed') {
+                        sendSigOption.style.display = 'block';
+                    } else {
+                        sendSigOption.style.display = 'none';
                     }
 
 
@@ -468,6 +547,11 @@
                     hideVisaContextMenu();
 
                     switch(action) {
+                        case 'send-for-signature':
+                            if (typeof $ !== 'undefined') {
+                                $(document).trigger('openSignaturePlacementModal', { documentId: currentVisaContextFile });
+                            }
+                            break;
                         case 'rename-checklist':
                             $('.renamechecklist[data-id="' + currentVisaContextFile + '"]').click();
                             break;
@@ -581,6 +665,39 @@
                         }
                         $('#moveVisaVisaCategoryContainer').show();
                     }
+                });
+
+                // --- Visa Signature Action Bar: Send, Revise, Remove, Reminder ---
+                $(document).on('click', '.visa-sig-send-btn', function() {
+                    var docId = $(this).data('doc-id');
+                    if (!docId) return;
+                    var $btn = $(this);
+                    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm mr-1"></span>Sending...');
+                    $.post('{{ url("/signatures") }}/' + docId + '/send', { _token: '{{ csrf_token() }}' })
+                        .done(function() { location.reload(); })
+                        .fail(function(xhr) { alert(xhr.responseJSON?.message || 'Failed to send'); $btn.prop('disabled', false).html('<i class="fas fa-paper-plane mr-1"></i> Send'); });
+                });
+                $(document).on('click', '.visa-sig-revise-btn', function() {
+                    var docId = $(this).data('doc-id');
+                    if (docId) $(document).trigger('openSignaturePlacementModal', { documentId: docId });
+                });
+                $(document).on('click', '.visa-sig-remove-btn', function() {
+                    if (!confirm('Remove signature request? The client will no longer be able to sign this document.')) return;
+                    var $bar = $(this).closest('.visa-sig-action-bar');
+                    var docId = $bar.data('doc-id');
+                    var signerId = $bar.data('signer-id');
+                    if (!docId || !signerId) { alert('Unable to remove.'); return; }
+                    $.post('{{ url("/signatures") }}/' + docId + '/cancel', { _token: '{{ csrf_token() }}', signer_id: signerId })
+                        .done(function() { location.reload(); })
+                        .fail(function(xhr) { alert(xhr.responseJSON?.message || 'Failed to remove'); });
+                });
+                $(document).on('click', '.visa-sig-reminder-btn', function() {
+                    var docId = $(this).data('doc-id');
+                    var signerId = $(this).data('signer-id');
+                    if (!docId || !signerId) return;
+                    $.post('{{ url("/signatures") }}/' + docId + '/reminder', { _token: '{{ csrf_token() }}', signer_id: signerId })
+                        .done(function() { alert('Reminder sent.'); location.reload(); })
+                        .fail(function(xhr) { alert(xhr.responseJSON?.message || 'Failed to send reminder'); });
                 });
 
                 // Handle move visa document confirmation

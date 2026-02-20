@@ -244,7 +244,7 @@
                                                                     </div>
                                                                 </div>
                                                                 <div class="cost-breakdown-edit mt-2">
-                                                                    <button type="button" class="btn btn-outline-secondary btn-sm btn-amend-checklist" data-id="{{ $form->id }}" data-client-matter-id="{{ $form->client_matter_id }}" title="Amend Cost Assignment">
+                                                                    <button type="button" class="btn btn-outline-secondary btn-sm btn-amend-checklist" data-id="{{ $form->id }}" data-client-id="{{ $fetchedData->id ?? '' }}" data-client-matter-id="{{ $form->client_matter_id }}" title="Amend Cost Assignment">
                                                                         <i class="fas fa-edit mr-1"></i>Edit
                                                                     </button>
                                                                 </div>
@@ -1022,21 +1022,41 @@
             $('#emailmodal').modal('show');
         });
 
-        // Amend checklist - opens the cost assignment modal for editing
+        // Amend checklist - opens the cost assignment modal to make changes
         $(document).on('click', '.btn-amend-checklist', function() {
-            var formId = $(this).data('id');
+            var clientId = $(this).data('client-id');
             var clientMatterId = $(this).data('client-matter-id');
             
+            if (!clientId || !clientMatterId) {
+                alert('Unable to open cost assignment: missing client or matter information.');
+                return;
+            }
+            
             // Set the matter in sidebar first
-            if (clientMatterId && $('#sel_matter_id_client_detail').length) {
+            if ($('#sel_matter_id_client_detail').length) {
                 $('#sel_matter_id_client_detail').val(clientMatterId).trigger('change');
             }
             
-            // Open the cost assignment modal to view/edit
-            alert('Opening cost assignment for editing. This will open the cost assignment form in a modal.');
-            // You can implement the actual edit modal here
-            // For now, we'll just redirect to the preview page
-            window.open('/forms/' + formId + '/preview', '_blank');
+            // Set client/matter IDs in the modal form (scope to modal to avoid subtab form)
+            var $modal = $('#costAssignmentCreateFormModel');
+            $modal.find('#cost_assignment_client_id').val(clientId);
+            $modal.find('#cost_assignment_client_matter_id').val(clientMatterId);
+            
+            // Update modal title for edit mode
+            $modal.find('#costAssignmentModalLabel').text('Amend Cost Assignment');
+            
+            // Load existing cost assignment data into the modal, then show it when loaded
+            if (typeof window.getCostAssignmentMigrationAgentDetail === 'function') {
+                window.getCostAssignmentMigrationAgentDetail(clientId, clientMatterId, '#costAssignmentCreateFormModel', function() {
+                    $modal.modal('show');
+                });
+            } else if (typeof getCostAssignmentMigrationAgentDetail === 'function') {
+                getCostAssignmentMigrationAgentDetail(clientId, clientMatterId, '#costAssignmentCreateFormModel', function() {
+                    $modal.modal('show');
+                });
+            } else {
+                alert('Cost assignment function not available. Please refresh the page.');
+            }
         });
 
         // When clicking Visa Agreement or Finalize from checklist list, set sidebar matter first
@@ -1249,6 +1269,8 @@
                     data: JSON.stringify(postData),
                     headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
                 }).done(function(resp) {
+                    if (resp && resp.source) $('#signaturePlacementModal').data('lastSaveSource', resp.source);
+                    else $('#signaturePlacementModal').removeData('lastSaveSource');
                     $('#signaturePlacementModal').modal('hide');
                     if (resp && resp.success) {
                         alert(resp.message || 'Signature fields saved. The signing link is now available.');
@@ -1272,7 +1294,12 @@
 
         $('#signaturePlacementModal').on('hidden.bs.modal', function() {
             $('#sig-preview-image').attr('src', '');
-            localStorage.setItem('activeTab', 'checklists');
+            var source = $('#signaturePlacementModal').data('lastSaveSource');
+            if (source === 'visa_documents') {
+                localStorage.setItem('activeTab', 'visadocuments');
+            } else {
+                localStorage.setItem('activeTab', 'checklists');
+            }
             location.reload();
         });
     });

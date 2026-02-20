@@ -404,6 +404,16 @@ class SignatureDashboardController extends Controller
                 'cancelled_at' => now()
             ]);
             
+            // If no more pending signers, reset document status (so action bar hides for visa docs)
+            $pendingCount = $document->signers()->where('status', 'pending')->count();
+            if ($pendingCount === 0) {
+                $document->update([
+                    'status' => null,
+                    'signature_doc_link' => null,
+                    'primary_signer_email' => null,
+                ]);
+            }
+            
             // Create activity log entry
             \App\Models\DocumentNote::create([
                 'document_id' => $document->id,
