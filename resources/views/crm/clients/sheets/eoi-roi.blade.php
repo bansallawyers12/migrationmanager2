@@ -555,15 +555,19 @@
                                             <td>{{ $row->partner_points ?? '—' }}</td>
                                             <td>{{ !empty($states) ? implode(', ', $states) : '—' }}</td>
                                             <td>
-                                                @if($row->EOI_ROI)
-                                                    {{ $row->EOI_ROI }}
+                                                @php
+                                                    $roi = data_get($row, 'EOI_ROI') ?? data_get($row, 'eoi_roi');
+                                                    $status = data_get($row, 'eoi_status');
+                                                @endphp
+                                                @if($roi)
+                                                    {{ $roi }}
                                                 @endif
-                                                @if($row->eoi_status)
-                                                    <span class="badge badge-{{ $row->eoi_status == 'invited' ? 'success' : ($row->eoi_status == 'submitted' ? 'primary' : 'secondary') }}">
-                                                        {{ ucfirst($row->eoi_status) }}
+                                                @if($status)
+                                                    <span class="badge badge-{{ $status == 'invited' ? 'success' : ($status == 'submitted' ? 'primary' : 'secondary') }}">
+                                                        {{ ucfirst($status) }}
                                                     </span>
                                                 @endif
-                                                @if(!$row->EOI_ROI && !$row->eoi_status)
+                                                @if(!$roi && !$status)
                                                     —
                                                 @endif
                                             </td>

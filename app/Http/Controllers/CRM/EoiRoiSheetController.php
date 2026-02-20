@@ -15,6 +15,7 @@ use App\Mail\EoiConfirmationMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -133,50 +134,85 @@ class EoiRoiSheetController extends Controller
      */
     protected function buildBaseQuery(Request $request)
     {
-        // Standalone subquery: one row per client_id = latest EOI matter (DISTINCT ON in PostgreSQL)
-        $latestEoiMatterSql = "
-            SELECT DISTINCT ON (cm.client_id)
-                cm.client_id,
-                cm.client_unique_matter_no,
-                cm.id AS matter_id,
-                cm.office_id,
-                cm.deadline
-            FROM client_matters cm
-            INNER JOIN matters m ON m.id = cm.sel_matter_id
-            WHERE cm.matter_status = 1
-              AND (
-                  LOWER(m.nick_name) = 'eoi'
-                  OR LOWER(m.title) LIKE '%eoi%'
-                  OR LOWER(m.title) LIKE '%expression of interest%'
-                  OR LOWER(m.title) LIKE '%expression%'
-              )
-            ORDER BY cm.client_id, cm.id DESC
-        ";
+        $driver = DB::connection()->getDriverName();
+        $quote = $driver === 'mysql' ? '`' : '"';
+
+        // Standalone subquery: one row per client_id = latest EOI matter
+        if ($driver === 'mysql') {
+            // MySQL: use subquery with MAX(id) + GROUP BY (DISTINCT ON is PostgreSQL-only)
+            $latestEoiMatterSql = "
+                SELECT cm.client_id, cm.client_unique_matter_no, cm.id AS matter_id,
+                       cm.office_id, cm.deadline
+                FROM client_matters cm
+                INNER JOIN matters m ON m.id = cm.sel_matter_id
+                INNER JOIN (
+                    SELECT client_id, MAX(id) AS max_id FROM client_matters cm2
+                    INNER JOIN matters m2 ON m2.id = cm2.sel_matter_id
+                    WHERE cm2.matter_status = 1
+                      AND (LOWER(COALESCE(m2.nick_name, '')) = 'eoi'
+                           OR LOWER(COALESCE(m2.title, '')) LIKE '%eoi%'
+                           OR LOWER(COALESCE(m2.title, '')) LIKE '%expression of interest%'
+                           OR LOWER(COALESCE(m2.title, '')) LIKE '%expression%')
+                    GROUP BY client_id
+                ) latest ON latest.client_id = cm.client_id AND latest.max_id = cm.id
+                WHERE cm.matter_status = 1
+                  AND (LOWER(COALESCE(m.nick_name, '')) = 'eoi'
+                       OR LOWER(COALESCE(m.title, '')) LIKE '%eoi%'
+                       OR LOWER(COALESCE(m.title, '')) LIKE '%expression of interest%'
+                       OR LOWER(COALESCE(m.title, '')) LIKE '%expression%')
+            ";
+        } else {
+            // PostgreSQL: DISTINCT ON
+            $latestEoiMatterSql = "
+                SELECT DISTINCT ON (cm.client_id)
+                    cm.client_id,
+                    cm.client_unique_matter_no,
+                    cm.id AS matter_id,
+                    cm.office_id,
+                    cm.deadline
+                FROM client_matters cm
+                INNER JOIN matters m ON m.id = cm.sel_matter_id
+                WHERE cm.matter_status = 1
+                  AND (
+                      LOWER(COALESCE(m.nick_name, '')) = 'eoi'
+                      OR LOWER(COALESCE(m.title, '')) LIKE '%eoi%'
+                      OR LOWER(COALESCE(m.title, '')) LIKE '%expression of interest%'
+                      OR LOWER(COALESCE(m.title, '')) LIKE '%expression%'
+                  )
+                ORDER BY cm.client_id, cm.id DESC
+            ";
+        }
+
+        $hasIsPinned = Schema::hasColumn('client_eoi_references', 'is_pinned');
+        $aliasQuote = ($driver === 'pgsql') ? '"' : (($driver === 'mysql') ? '`' : '');
+        $selects = [
+            'eoi.id as eoi_id',
+            DB::raw("eoi.{$quote}EOI_number{$quote} as {$aliasQuote}EOI_number{$aliasQuote}"),
+            DB::raw("eoi.{$quote}EOI_occupation{$quote} as {$aliasQuote}EOI_occupation{$aliasQuote}"),
+            DB::raw("eoi.{$quote}EOI_point{$quote} as individual_points"),
+            DB::raw("eoi.{$quote}EOI_submission_date{$quote} as {$aliasQuote}EOI_submission_date{$aliasQuote}"),
+            DB::raw("eoi.{$quote}EOI_ROI{$quote} as {$aliasQuote}EOI_ROI{$aliasQuote}"),
+            'eoi.eoi_status',
+            'eoi.eoi_subclasses',
+            'eoi.eoi_states',
+            DB::raw("eoi.{$quote}EOI_state{$quote} as {$aliasQuote}EOI_state{$aliasQuote}"),
+            'eoi.client_id',
+            'admins.first_name',
+            'admins.last_name',
+            'admins.marital_status',
+            'latest_eoi_matter.client_unique_matter_no as matter_id',
+            'latest_eoi_matter.matter_id as matter_internal_id',
+            'latest_eoi_matter.office_id',
+            'latest_eoi_matter.deadline',
+        ];
+        if ($hasIsPinned) {
+            array_unshift($selects, 'eoi.is_pinned');
+        }
 
         $query = DB::table('client_eoi_references as eoi')
             ->join('admins', 'eoi.client_id', '=', 'admins.id')
             ->join(DB::raw('(' . $latestEoiMatterSql . ') AS latest_eoi_matter'), 'latest_eoi_matter.client_id', '=', 'admins.id')
-            ->select(
-                'eoi.id as eoi_id',
-                'eoi.is_pinned',
-                DB::raw('eoi."EOI_number" as "EOI_number"'),
-                DB::raw('eoi."EOI_occupation" as "EOI_occupation"'),
-                DB::raw('eoi."EOI_point" as individual_points'),
-                DB::raw('eoi."EOI_submission_date" as "EOI_submission_date"'),
-                DB::raw('eoi."EOI_ROI" as "EOI_ROI"'),
-                'eoi.eoi_status',
-                'eoi.eoi_subclasses',
-                'eoi.eoi_states',
-                DB::raw('eoi."EOI_state" as "EOI_state"'),
-                'eoi.client_id',
-                'admins.first_name',
-                'admins.last_name',
-                'admins.marital_status',
-                'latest_eoi_matter.client_unique_matter_no as matter_id',
-                'latest_eoi_matter.matter_id as matter_internal_id',
-                'latest_eoi_matter.office_id',
-                'latest_eoi_matter.deadline'
-            )
+            ->select($selects)
             ->where('admins.is_archived', 0)
             ->where('admins.role', 7)
             ->whereNull('admins.is_deleted')
@@ -194,6 +230,9 @@ class EoiRoiSheetController extends Controller
      */
     protected function applyFilters($query, Request $request)
     {
+        $driver = DB::connection()->getDriverName();
+        $eoiQuote = $driver === 'mysql' ? '`' : '"';
+
         // EOI Status filter
         if ($request->filled('eoi_status')) {
             $query->where('eoi.eoi_status', $request->input('eoi_status'));
@@ -202,21 +241,24 @@ class EoiRoiSheetController extends Controller
         // Date range filter
         if ($request->filled('from_date')) {
             $fromDate = Carbon::createFromFormat('d/m/Y', $request->input('from_date'))->startOfDay();
-            $query->whereRaw('eoi."EOI_submission_date" >= ?', [$fromDate]);
+            $query->whereRaw("eoi.{$eoiQuote}EOI_submission_date{$eoiQuote} >= ?", [$fromDate]);
         }
 
         if ($request->filled('to_date')) {
             $toDate = Carbon::createFromFormat('d/m/Y', $request->input('to_date'))->endOfDay();
-            $query->whereRaw('eoi."EOI_submission_date" <= ?', [$toDate]);
+            $query->whereRaw("eoi.{$eoiQuote}EOI_submission_date{$eoiQuote} <= ?", [$toDate]);
         }
 
         // Subclass filter (JSON array contains)
         if ($request->filled('subclass')) {
             $subclasses = is_array($request->input('subclass')) ? $request->input('subclass') : [$request->input('subclass')];
-            $query->where(function ($q) use ($subclasses) {
+            $query->where(function ($q) use ($subclasses, $driver) {
                 foreach ($subclasses as $subclass) {
-                    // PostgreSQL JSON contains
-                    $q->orWhereRaw("eoi.eoi_subclasses::jsonb @> ?", [json_encode([$subclass])]);
+                    if ($driver === 'mysql') {
+                        $q->orWhereRaw('JSON_CONTAINS(eoi.eoi_subclasses, ?, "$")', [json_encode($subclass)]);
+                    } else {
+                        $q->orWhereRaw('eoi.eoi_subclasses::jsonb @> ?', [json_encode([$subclass])]);
+                    }
                 }
             });
         }
@@ -224,10 +266,13 @@ class EoiRoiSheetController extends Controller
         // State filter (JSON array contains)
         if ($request->filled('state')) {
             $states = is_array($request->input('state')) ? $request->input('state') : [$request->input('state')];
-            $query->where(function ($q) use ($states) {
+            $query->where(function ($q) use ($states, $driver) {
                 foreach ($states as $state) {
-                    // PostgreSQL JSON contains
-                    $q->orWhereRaw("eoi.eoi_states::jsonb @> ?", [json_encode([$state])]);
+                    if ($driver === 'mysql') {
+                        $q->orWhereRaw('JSON_CONTAINS(eoi.eoi_states, ?, "$")', [json_encode($state)]);
+                    } else {
+                        $q->orWhereRaw('eoi.eoi_states::jsonb @> ?', [json_encode([$state])]);
+                    }
                 }
             });
         }
@@ -235,17 +280,18 @@ class EoiRoiSheetController extends Controller
         // Search filter (client name or EOI number)
         if ($request->filled('search')) {
             $search = $request->input('search');
-            $query->where(function ($q) use ($search) {
-                $q->whereRaw('LOWER(admins.first_name) LIKE ?', ['%' . strtolower($search) . '%'])
-                  ->orWhereRaw('LOWER(admins.last_name) LIKE ?', ['%' . strtolower($search) . '%'])
-                  ->orWhereRaw('LOWER(eoi."EOI_number") LIKE ?', ['%' . strtolower($search) . '%']);
+            $searchLower = '%' . strtolower($search) . '%';
+            $query->where(function ($q) use ($searchLower, $eoiQuote) {
+                $q->whereRaw('LOWER(admins.first_name) LIKE ?', [$searchLower])
+                  ->orWhereRaw('LOWER(admins.last_name) LIKE ?', [$searchLower])
+                  ->orWhereRaw("LOWER(eoi.{$eoiQuote}EOI_number{$eoiQuote}) LIKE ?", [$searchLower]);
             });
         }
 
         // Occupation filter (nominated occupation – partial match on EOI_occupation)
         if ($request->filled('occupation')) {
             $occupation = $request->input('occupation');
-            $query->whereRaw('LOWER(eoi."EOI_occupation") LIKE ?', ['%' . strtolower($occupation) . '%']);
+            $query->whereRaw("LOWER(eoi.{$eoiQuote}EOI_occupation{$eoiQuote}) LIKE ?", ['%' . strtolower($occupation) . '%']);
         }
 
         // Office filter
@@ -267,8 +313,16 @@ class EoiRoiSheetController extends Controller
     protected function applySorting($query, Request $request)
     {
         $driver = DB::connection()->getDriverName();
-        // First priority: pinned items (is_pinned DESC) - pinned items on top
-        $query->orderByRaw("CASE WHEN COALESCE(eoi.is_pinned, false) = true THEN 1 ELSE 0 END DESC");
+        $eoiQuote = $driver === 'mysql' ? '`' : '"';
+
+        // First priority: pinned items (is_pinned DESC) - only when column exists
+        if (Schema::hasColumn('client_eoi_references', 'is_pinned')) {
+            $pinnedExpr = $driver === 'mysql'
+                ? "CASE WHEN COALESCE(eoi.is_pinned, 0) = 1 THEN 1 ELSE 0 END"
+                : "CASE WHEN COALESCE(eoi.is_pinned, false) = true THEN 1 ELSE 0 END";
+            $query->orderByRaw("{$pinnedExpr} DESC");
+        }
+
         // Secondary: nearest deadline first, nulls last
         if ($driver === 'mysql') {
             $query->orderByRaw('latest_eoi_matter.deadline IS NULL ASC, latest_eoi_matter.deadline ASC');
@@ -285,19 +339,19 @@ class EoiRoiSheetController extends Controller
         }
         $dir = strtolower($sortDirection) === 'asc' ? 'asc' : 'desc';
 
-        // Map sort fields to actual columns (use raw SQL for eoi mixed-case columns so PostgreSQL preserves case)
+        // Map sort fields to actual columns (use raw SQL for eoi mixed-case columns)
         $sortableFieldsRaw = [
-            'eoi_number' => 'eoi."EOI_number"',
+            'eoi_number' => "eoi.{$eoiQuote}EOI_number{$eoiQuote}",
             'client_name' => 'admins.first_name',
-            'occupation' => 'eoi."EOI_occupation"',
-            'individual_points' => 'eoi."EOI_point"',
+            'occupation' => "eoi.{$eoiQuote}EOI_occupation{$eoiQuote}",
+            'individual_points' => "eoi.{$eoiQuote}EOI_point{$eoiQuote}",
             'marital_status' => 'admins.marital_status',
             'eoi_status' => 'eoi.eoi_status',
-            'submission_date' => 'eoi."EOI_submission_date"',
+            'submission_date' => "eoi.{$eoiQuote}EOI_submission_date{$eoiQuote}",
             'deadline' => 'latest_eoi_matter.deadline',
         ];
 
-        $actualSortField = $sortableFieldsRaw[$sortField] ?? 'eoi."EOI_submission_date"';
+        $actualSortField = $sortableFieldsRaw[$sortField] ?? "eoi.{$eoiQuote}EOI_submission_date{$eoiQuote}";
         $query->orderByRaw($actualSortField . ' ' . $dir);
 
         return $query;
