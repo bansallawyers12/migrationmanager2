@@ -270,8 +270,8 @@
                                                                         <button type="button" class="btn btn-primary btn-sm visaAgreementCreateForm" data-id="{{ $form->id }}" data-client-matter-id="{{ $form->client_matter_id }}" title="Create Visa Agreement">
                                                                             <i class="fas fa-file-contract mr-1"></i>Create Visa Agreement
                                                                         </button>
-                                                                        <button type="button" class="btn btn-success btn-sm finalizeAgreementConvertToPdf" data-id="{{ $form->id }}" data-client-matter-id="{{ $form->client_matter_id }}" title="Finalize & Upload for Signature">
-                                                                            <i class="fas fa-lock mr-1"></i>Finalize
+                                                                        <button type="button" class="btn btn-success btn-sm finalizeAgreementConvertToPdf" data-id="{{ $form->id }}" data-client-matter-id="{{ $form->client_matter_id }}" title="Upload PDF and place signature fields">
+                                                                            <i class="fas fa-lock mr-1"></i>Upload and Place Signatures
                                                                         </button>
                                                                     </div>
                                                                 </div>
