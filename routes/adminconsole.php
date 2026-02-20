@@ -35,7 +35,7 @@ use App\Http\Controllers\AdminConsole\ActivitySearchController;
 |
 */
 
-Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin'])->group(function() {
+Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin', 'adminconsole'])->group(function() {
     
     // Features routes - Feature management
     Route::prefix('features')->name('features.')->group(function() {

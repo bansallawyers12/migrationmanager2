@@ -115,7 +115,7 @@
                     <i class="far fa-user"></i> 
                     <span>Profile</span>
                 </a>
-                @if(Auth::user() && Auth::user()->role == 1)
+                @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
                 <a href="{{route('adminconsole.features.matter.index')}}">
                     <i class="fas fa-cogs"></i> 
                     <span>Admin Console</span>
