@@ -329,15 +329,40 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form action="#" method="POST" name="add-compose" autocomplete="off" enctype="multipart/form-data" id="addnoteform">
+				<form action="{{ route('clients.sendmail') }}" method="POST" name="add-compose" autocomplete="off" enctype="multipart/form-data" id="addnoteform">
 					@csrf
-				<input name="lead_id" type="hidden" value="{{base64_encode(convert_uuencode(@$fetchedData->id))}}">
+				<input name="type" type="hidden" value="lead">
+				<input name="mail_type" type="hidden" value="1">
+				<input name="client_id" type="hidden" value="{{ @$fetchedData->id }}">
+				<input name="lead_id" type="hidden" value="{{ @$fetchedData->id }}">
+				<input name="email_to[]" type="hidden" value="{{ @$fetchedData->id }}">
 					<div class="row">
-						
+						<div class="col-12 col-md-6 col-lg-6">
+							<div class="form-group">
+								<label for="email_from_lead">From <span class="span_req">*</span></label>
+								<select name="email_from" id="email_from_lead" class="form-control" data-valid="required">
+									<option value="">Select From</option>
+									@foreach(\App\Models\Email::where('status',1)->get() as $em)
+									<option value="{{ $em->email }}">{{ $em->email }}</option>
+									@endforeach
+								</select>
+							</div>
+						</div>
+						<div class="col-12 col-md-6 col-lg-6">
+							<div class="form-group">
+								<label for="compose_matter_id_lead">Matter type (for checklist sheet)</label>
+								<select name="compose_matter_id" id="compose_matter_id_lead" class="form-control">
+									<option value="">Select matter type</option>
+									@foreach(\App\Models\Matter::where('status',1)->orderBy('title')->get() as $m)
+									<option value="{{ $m->id }}">{{ $m->title }} ({{ $m->nick_name ?? '' }})</option>
+									@endforeach
+								</select>
+							</div>
+						</div>
 						<div class="col-12 col-md-6 col-lg-6">
 							<div class="form-group">
 								<label for="email_to">To <span class="span_req">*</span></label>
-								<input type="email" name="email_to" value="{{ @$fetchedData->email }}" class="form-control" data-valid="required" autocomplete="off" placeholder="" id="email_to">
+								<input type="email" id="email_to" value="{{ @$fetchedData->email }}" class="form-control" readonly placeholder="">
 								
 								@if ($errors->has('email_to'))
 									<span class="custom-error" role="alert">
@@ -379,6 +404,19 @@
 										<strong>{{ @$errors->first('message') }}</strong>
 									</span>  
 								@endif
+							</div>
+						</div>
+						<div class="col-12 col-md-12 col-lg-12">
+							<div class="form-group">
+								<label>Checklist attachments</label>
+								<div class="table-responsive"><table class="table table-sm table-bordered">
+									<thead><tr><th></th><th>File name</th></tr></thead>
+									<tbody>
+									@foreach(\App\Models\UploadChecklist::all() as $uclist)
+									<tr><td><input type="checkbox" name="checklistfile[]" value="{{ $uclist->id }}"></td><td><a href="{{ url('checklists/'.$uclist->file) }}" target="_blank">{{ $uclist->name }}</a></td></tr>
+									@endforeach
+									</tbody>
+								</table></div>
 							</div>
 						</div>
 						<div class="col-12 col-md-12 col-lg-12">

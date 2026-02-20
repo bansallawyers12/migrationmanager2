@@ -78,16 +78,28 @@ class VisaTypeSheetController extends Controller
             ]);
             $rows->appends(array_merge($request->except('page'), ['tab' => $tab]));
         } else {
-            $query = $this->buildBaseQuery($request, $tab, $config);
-            $query = $this->applyFilters($query, $request, $config);
-            $query = $this->applySorting($query, $request, $tab, $config);
+            if ($tab === 'checklist') {
+                $rows = $this->buildChecklistTabWithLeads($request, $config, $perPage);
+            } else {
+                $query = $this->buildBaseQuery($request, $tab, $config);
+                $query = $this->applyFilters($query, $request, $config);
+                $query = $this->applySorting($query, $request, $tab, $config);
 
-            $rows = $query->paginate($perPage)->appends(array_merge($request->except('page'), ['tab' => $tab]));
+                $rows = $query->paginate($perPage)->appends(array_merge($request->except('page'), ['tab' => $tab]));
+            }
+
+            $rows->appends(array_merge($request->except('page'), ['tab' => $tab]));
 
             $rows->getCollection()->transform(function ($row) {
-                $payments = $this->calculatePaymentsForMatter($row->client_id, $row->matter_internal_id);
-                $row->total_payment = $payments['total'];
-                $row->pending_payment = $payments['pending'];
+                $row->is_lead = $row->is_lead ?? false;
+                if (!$row->is_lead && isset($row->matter_internal_id)) {
+                    $payments = $this->calculatePaymentsForMatter($row->client_id, $row->matter_internal_id);
+                    $row->total_payment = $payments['total'];
+                    $row->pending_payment = $payments['pending'];
+                } else {
+                    $row->total_payment = 0;
+                    $row->pending_payment = 0;
+                }
                 return $row;
             });
         }
@@ -214,6 +226,161 @@ class VisaTypeSheetController extends Controller
         }
         return collect($stages)->filter(fn ($s) => $s !== null && trim((string) $s) !== '')
             ->values()->mapWithKeys(fn ($s) => [trim((string) $s) => trim((string) $s)]);
+    }
+
+    /**
+     * Build Checklist tab results including both client matters and leads.
+     */
+    protected function buildChecklistTabWithLeads(Request $request, array $config, int $perPage): \Illuminate\Pagination\LengthAwarePaginator
+    {
+        $refTable = $config['reference_table'];
+        $refAlias = $config['reference_alias'];
+        $checklistCol = $config['checklist_status_column'];
+        $leadRefTable = $config['lead_reference_table'] ?? null;
+        $remindersTable = $config['reminders_table'] ?? null;
+        $leadRemindersTable = $config['lead_reminders_table'] ?? null;
+        $matterCondition = $this->getMatterCondition($config);
+
+        // Client matters with workflow=Checklist
+        $clientQuery = DB::table('client_matters as cm')
+            ->join('matters as m', 'm.id', '=', 'cm.sel_matter_id')
+            ->leftJoin("{$refTable} as {$refAlias}", function ($j) use ($refAlias) {
+                $j->on("{$refAlias}.client_id", '=', 'cm.client_id')
+                    ->on("{$refAlias}.client_matter_id", '=', 'cm.id');
+            })
+            ->leftJoin('workflow_stages as ws', 'cm.workflow_stage_id', '=', 'ws.id')
+            ->join('admins', 'cm.client_id', '=', 'admins.id')
+            ->leftJoin('staff as agent', 'cm.sel_migration_agent', '=', 'agent.id')
+            ->leftJoin('branches', 'cm.office_id', '=', 'branches.id')
+            ->whereRaw($matterCondition)
+            ->whereRaw('cm.matter_status = 1')
+            ->whereRaw("LOWER(TRIM(COALESCE(ws.name, ''))) = 'checklist'")
+            ->where(function ($q) use ($checklistCol) {
+                $q->whereNull("cm.{$checklistCol}")
+                    ->orWhereIn("cm.{$checklistCol}", ['active', 'hold']);
+            })
+            ->where('admins.is_archived', 0)
+            ->where('admins.role', 7)
+            ->whereNull('admins.is_deleted')
+            ->where(function ($q) {
+                $q->whereNull('admins.type')->orWhere('admins.type', '!=', 'lead');
+            })
+            ->select(
+                'cm.id as matter_internal_id',
+                'cm.client_id',
+                'admins.client_id as crm_ref',
+                'admins.first_name',
+                'admins.last_name',
+                'admins.dob',
+                DB::raw('admins."visaExpiry" as visa_expiry'),
+                'cm.client_unique_matter_no',
+                'm.title as matter_title',
+                'cm.deadline',
+                'cm.other_reference',
+                'cm.department_reference',
+                'cm.office_id',
+                'cm.sel_migration_agent as assignee_id',
+                DB::raw("CONCAT(COALESCE(agent.first_name, ''), ' ', COALESCE(agent.last_name, '')) as assignee_name"),
+                'branches.office_name as branch_name',
+                'ws.name as application_stage',
+                "{$refAlias}.current_status",
+                "{$refAlias}.payment_display_note",
+                "{$refAlias}.comments as sheet_comment_text",
+                "{$refAlias}.checklist_sent_at",
+                "{$refAlias}.is_pinned",
+                DB::raw("COALESCE(cm.{$checklistCol}, 'active') as tr_checklist_status"),
+                DB::raw('0 as is_lead')
+            );
+        $this->applyFilters($clientQuery, $request, $config);
+        $clientRows = $clientQuery->get();
+
+        $leadRows = collect();
+        if ($leadRefTable && Schema::hasTable($leadRefTable)) {
+            $matterIds = DB::table('matters')->whereRaw($matterCondition)->pluck('id');
+            if ($matterIds->isNotEmpty()) {
+                $leadQuery = DB::table($leadRefTable . ' as lr')
+                    ->join('admins as a', 'lr.lead_id', '=', 'a.id')
+                    ->join('matters as m', 'lr.matter_id', '=', 'm.id')
+                    ->whereIn('lr.matter_id', $matterIds)
+                    ->where('a.is_archived', 0)
+                    ->where('a.role', 7)
+                    ->where('a.type', 'lead')
+                    ->whereNull('a.is_deleted')
+                    ->select(
+                        DB::raw('NULL as matter_internal_id'),
+                        'lr.lead_id as client_id',
+                        'a.client_id as crm_ref',
+                        'a.first_name',
+                        'a.last_name',
+                        'a.dob',
+                        DB::raw('a."visaExpiry" as visa_expiry'),
+                        DB::raw("CONCAT('Lead - ', COALESCE(m.title, '')) as client_unique_matter_no"),
+                        'm.title as matter_title',
+                        DB::raw('NULL as deadline'),
+                        DB::raw('NULL as other_reference'),
+                        DB::raw('NULL as department_reference'),
+                        DB::raw('NULL as office_id'),
+                        DB::raw('NULL as assignee_id'),
+                        DB::raw("'' as assignee_name"),
+                        DB::raw('NULL as branch_name'),
+                        DB::raw("'Lead' as application_stage"),
+                        DB::raw('NULL as current_status'),
+                        DB::raw('NULL as payment_display_note'),
+                        DB::raw('NULL as sheet_comment_text'),
+                        'lr.checklist_sent_at',
+                        DB::raw('false as is_pinned'),
+                        DB::raw("'active' as tr_checklist_status"),
+                        DB::raw('1 as is_lead')
+                    );
+                if ($request->filled('search')) {
+                    $search = '%' . strtolower($request->input('search')) . '%';
+                    $leadQuery->where(function ($q) use ($search) {
+                        $q->whereRaw('LOWER(a.first_name) LIKE ?', [$search])
+                            ->orWhereRaw('LOWER(a.last_name) LIKE ?', [$search])
+                            ->orWhereRaw('LOWER(a.client_id) LIKE ?', [$search]);
+                    });
+                }
+                $leadRows = $leadQuery->get();
+            }
+        }
+
+        foreach ($clientRows as $r) {
+            $r->is_lead = 0;
+        }
+        foreach ($leadRows as $r) {
+            $r->is_lead = 1;
+        }
+
+        $all = $clientRows->concat($leadRows);
+        if ($remindersTable && Schema::hasTable($remindersTable)) {
+            foreach ($all as $row) {
+                if ($row->is_lead) {
+                    if ($leadRemindersTable && Schema::hasTable($leadRemindersTable)) {
+                        $row->email_reminder_latest = DB::table($leadRemindersTable)->where('lead_id', $row->client_id)->where('type', 'email')->max('reminded_at');
+                        $row->email_reminder_count = DB::table($leadRemindersTable)->where('lead_id', $row->client_id)->where('type', 'email')->count();
+                        $row->sms_reminder_latest = DB::table($leadRemindersTable)->where('lead_id', $row->client_id)->where('type', 'sms')->max('reminded_at');
+                        $row->sms_reminder_count = DB::table($leadRemindersTable)->where('lead_id', $row->client_id)->where('type', 'sms')->count();
+                        $row->phone_reminder_latest = DB::table($leadRemindersTable)->where('lead_id', $row->client_id)->where('type', 'phone')->max('reminded_at');
+                        $row->phone_reminder_count = DB::table($leadRemindersTable)->where('lead_id', $row->client_id)->where('type', 'phone')->count();
+                    } else {
+                        $row->email_reminder_latest = $row->email_reminder_count = $row->sms_reminder_latest = $row->sms_reminder_count = $row->phone_reminder_latest = $row->phone_reminder_count = null;
+                    }
+                } else {
+                    $row->email_reminder_latest = DB::table($remindersTable)->where('client_matter_id', $row->matter_internal_id)->where('type', 'email')->max('reminded_at');
+                    $row->email_reminder_count = DB::table($remindersTable)->where('client_matter_id', $row->matter_internal_id)->where('type', 'email')->count();
+                    $row->sms_reminder_latest = DB::table($remindersTable)->where('client_matter_id', $row->matter_internal_id)->where('type', 'sms')->max('reminded_at');
+                    $row->sms_reminder_count = DB::table($remindersTable)->where('client_matter_id', $row->matter_internal_id)->where('type', 'sms')->count();
+                    $row->phone_reminder_latest = DB::table($remindersTable)->where('client_matter_id', $row->matter_internal_id)->where('type', 'phone')->max('reminded_at');
+                    $row->phone_reminder_count = DB::table($remindersTable)->where('client_matter_id', $row->matter_internal_id)->where('type', 'phone')->count();
+                }
+            }
+        }
+        $total = $all->count();
+        $page = (int) $request->get('page', 1);
+        $slice = $all->slice(($page - 1) * $perPage, $perPage)->values();
+        $visaTypeParam = $request->route('visaType');
+        $path = route($config['route'], ['visaType' => $visaTypeParam]);
+        return new \Illuminate\Pagination\LengthAwarePaginator($slice, $total, $perPage, $page, ['path' => $path, 'pageName' => 'page']);
     }
 
     protected function getMatterCondition(array $config): string

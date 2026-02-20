@@ -1152,16 +1152,16 @@ public function getpartnerbranch(Request $request){
 		if(isset($requestData['email_cc'])){
 		    $obj->cc 			=  implode(',',@$requestData['email_cc']);
 		}
-		$obj->template_id 	=  $requestData['template'];
+        $obj->template_id 	=  $requestData['template'] ?? null;
 		$obj->reciept_id 	=  $reciept_id;
 		$obj->subject		=  $requestData['subject'];
 		if(isset($requestData['type'])){
 		    $obj->type 			=  @$requestData['type'];
 		}
 		$obj->message		 =  $requestData['message'];
-        $obj->mail_type		 =  $requestData['mail_type'];
-        $obj->client_id		 =  $requestData['client_id'];
-        $obj->client_matter_id	=  $requestData['compose_client_matter_id'];
+        $obj->mail_type		 =  $requestData['mail_type'] ?? 1;
+        $obj->client_id		 =  $requestData['client_id'] ?? $requestData['lead_id'] ?? null;
+        $obj->client_matter_id	=  $requestData['compose_client_matter_id'] ?? null;
 
 		$attachments = array();
 		if(isset($requestData['checklistfile'])){
@@ -1231,11 +1231,17 @@ public function getpartnerbranch(Request $request){
         // Visa sheet integration: when checklist sent, update the correct reference table per subclass (TR, Visitor, Student, PR, Employer Sponsored)
         $checklistWasSent = (!empty($requestData['checklistfile']) || !empty($requestData['checklistfile_document']));
         $clientMatterId = $requestData['compose_client_matter_id'] ?? null;
+        $isLead = (($requestData['type'] ?? '') === 'lead');
+        $leadId = $requestData['lead_id'] ?? ($requestData['client_id'] ?? null);
+        $composeMatterId = $requestData['compose_matter_id'] ?? null;
+
         if ($checklistWasSent && $clientMatterId) {
             $clientMatter = ClientMatter::with('matter')->find($clientMatterId);
             if ($clientMatter) {
                 $clientMatter->recordChecklistSent(Auth::user()->id);
             }
+        } elseif ($checklistWasSent && $isLead && $leadId && $composeMatterId) {
+            \App\Services\VisaSheetService::recordLeadChecklistSent((int) $leadId, (int) $composeMatterId, Auth::user()->id);
         }
 
 		$subject = $requestData['subject'];

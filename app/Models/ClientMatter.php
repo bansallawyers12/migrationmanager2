@@ -291,6 +291,13 @@ class ClientMatter extends Model
             ]);
         }
 
+        // Move matter to Checklist workflow stage so it appears in the Checklist tab
+        $checklistStageId = \App\Services\VisaSheetService::getChecklistStageId();
+        if ($checklistStageId) {
+            $this->workflow_stage_id = $checklistStageId;
+            $this->save();
+        }
+
         return true;
     }
 

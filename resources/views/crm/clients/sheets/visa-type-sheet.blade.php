@@ -353,19 +353,31 @@
                                     @else
                                         @foreach($rows as $row)
                                             @php
-                                                $encodedId = base64_encode(convert_uuencode($row->client_id));
-                                                $detailUrl = route('clients.detail', ['client_id' => $encodedId, 'client_unique_matter_ref_no' => $row->client_unique_matter_no ?? '']);
-                                                $matterId = $row->matter_internal_id ?? '';
-                                                $emailReminderUrl = $detailUrl . ($matterId ? '?matterId=' . $matterId . '&open_email_reminder=1' : '');
-                                                $smsReminderUrl = $detailUrl . ($matterId ? '?matterId=' . $matterId . '&open_sms_reminder=1' : '');
+                                                $isLead = !empty($row->is_lead);
+                                                if ($isLead) {
+                                                    $detailUrl = route('leads.detail', ['id' => $row->client_id]);
+                                                    $matterId = '';
+                                                    $emailReminderUrl = $detailUrl . '?open_email_reminder=1';
+                                                    $smsReminderUrl = $detailUrl . '?open_sms_reminder=1';
+                                                } else {
+                                                    $encodedId = base64_encode(convert_uuencode($row->client_id));
+                                                    $detailUrl = route('clients.detail', ['client_id' => $encodedId, 'client_unique_matter_ref_no' => $row->client_unique_matter_no ?? '']);
+                                                    $matterId = $row->matter_internal_id ?? '';
+                                                    $emailReminderUrl = $detailUrl . ($matterId ? '?matterId=' . $matterId . '&open_email_reminder=1' : '');
+                                                    $smsReminderUrl = $detailUrl . ($matterId ? '?matterId=' . $matterId . '&open_sms_reminder=1' : '');
+                                                }
                                             @endphp
                                             <tr style="cursor: pointer;" onclick="window.location.href='{{ $detailUrl }}'">
                                                 <td class="pin-cell" onclick="event.stopPropagation();">
+                                                    @if(!$isLead)
                                                     <i class="fas fa-star pin-star {{ ($row->is_pinned ?? false) ? 'pinned' : '' }}" 
                                                        data-client-id="{{ $row->client_id }}" 
                                                        data-matter-id="{{ $matterId }}"
                                                        data-visa-type="{{ $visaType }}"
                                                        title="{{ ($row->is_pinned ?? false) ? 'Unpin from top' : 'Pin to top' }}"></i>
+                                                    @else
+                                                    <span class="text-muted" title="Lead">{{ __('Lead') }}</span>
+                                                    @endif
                                                 </td>
                                                 <td onclick="event.stopPropagation();"><a href="{{ $detailUrl }}" class="art-link">{{ $row->matter_title ?? $row->client_unique_matter_no ?? $row->other_reference ?? '—' }}</a></td>
                                                 @if($tab !== 'checklist')
@@ -400,6 +412,9 @@
                                                 </td>
                                                 @if($tab === 'checklist')
                                                 <td onclick="event.stopPropagation();" class="checklist-status-cell">
+                                                    @if($isLead)
+                                                    <span class="badge badge-info">Lead</span>
+                                                    @else
                                                     @php
                                                         $currentStatus = $row->tr_checklist_status ?? 'active';
                                                         $statusLabels = ['active' => 'Active', 'convert_to_client' => 'Convert to client', 'discontinue' => 'Discontinue', 'hold' => 'Hold'];
@@ -409,6 +424,7 @@
                                                         <option value="{{ $val }}" {{ $currentStatus === $val ? 'selected' : '' }}>{{ $label }}</option>
                                                         @endforeach
                                                     </select>
+                                                    @endif
                                                 </td>
                                                 <td onclick="event.stopPropagation();" class="checklist-sent-cell">
                                                     @if(!empty($row->checklist_sent_at))
