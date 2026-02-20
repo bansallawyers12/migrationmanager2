@@ -249,27 +249,24 @@ class SignatureServiceTest extends TestCase
         Document::factory()->count(3)->create([
             'status' => 'draft',
             'created_at' => now()->subDays(35),
-            'archived_at' => null
         ]);
 
         // Create recent draft (10 days old)
         Document::factory()->create([
             'status' => 'draft',
             'created_at' => now()->subDays(10),
-            'archived_at' => null
         ]);
 
         // Create sent document (should not be archived)
         Document::factory()->create([
             'status' => 'sent',
             'created_at' => now()->subDays(35),
-            'archived_at' => null
         ]);
 
         $count = $this->signatureService->archiveOldDrafts(30);
 
         $this->assertEquals(3, $count);
-        $this->assertEquals(3, Document::whereNotNull('archived_at')->count());
+        $this->assertEquals(3, Document::where('status', 'archived')->count());
     }
 
     /** @test */
@@ -281,21 +278,18 @@ class SignatureServiceTest extends TestCase
         Document::factory()->count(2)->create([
             'created_by' => $user->id,
             'status' => 'sent',
-            'archived_at' => null
         ]);
 
         // Create document for another user
         Document::factory()->create([
             'created_by' => 999,
             'status' => 'sent',
-            'archived_at' => null
         ]);
 
         // Create signed document
         Document::factory()->create([
             'created_by' => $user->id,
             'status' => 'signed',
-            'archived_at' => null
         ]);
 
         $count = $this->signatureService->getPendingCount($user->id);

@@ -445,7 +445,7 @@ class BroadcastNotificationService
 
     /**
      * Fetch every available recipient excluding the sender.
-     * Only includes Admin users (staff), NOT clients (role=7 are clients).
+     * Only includes Admin users (staff), NOT clients (type='client'/'lead').
      */
     protected function allRecipients(int $senderId): Collection
     {
@@ -502,7 +502,7 @@ class BroadcastNotificationService
     protected function portalUsers(): Collection
     {
         // This method is deprecated - clients (User model) should not receive broadcasts
-        // Only Admin users with role != 7 (staff) should receive broadcasts
+        // Only staff (type != 'client'/'lead') should receive broadcasts
         return collect();
     }
 }

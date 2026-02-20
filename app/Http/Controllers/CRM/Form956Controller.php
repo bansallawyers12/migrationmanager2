@@ -56,7 +56,7 @@ class Form956Controller extends Controller
             }
         }
 
-        // Get all clients (admins with role = 7) for dropdown
+        // Get all clients (admins with type = 'client') for dropdown
         $clients = DB::table('admins')
             ->whereIn('type', ['client', 'lead'])
             ->orderBy('last_name')

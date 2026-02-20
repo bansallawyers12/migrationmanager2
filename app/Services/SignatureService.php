@@ -514,7 +514,7 @@ class SignatureService
      */
     public function suggestAssociation(string $email): ?array
     {
-        // Try to find matching client or lead (both are in admins table with role = 7)
+        // Try to find matching client or lead (both are in admins table with type = 'client' or 'lead')
         $entity = Admin::where('email', $email)
             ->whereIn('type', ['client', 'lead'])
             ->whereNull('is_deleted')

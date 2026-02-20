@@ -30,7 +30,7 @@ class SignatureDashboardController extends Controller
         $user = Auth::guard('admin')->user();
         
         // Get all documents (global access - everyone can see everything)
-        $query = Document::with(['creator', 'signers', 'documentable'])
+        $query = Document::with(['creator', 'signers', 'client', 'lead'])
             ->forSignatureWorkflow()
             ->visible($user)
             ->notArchived()
@@ -605,7 +605,7 @@ class SignatureDashboardController extends Controller
 
         $matches = [];
         
-        // Find all clients and leads with this email (both are in admins table with role = 7)
+        // Find all clients and leads with this email (both are in admins table with type = 'client' or 'lead')
         $entities = Admin::where('email', $request->email)
             ->whereIn('type', ['client', 'lead'])
             ->whereNull('is_deleted')

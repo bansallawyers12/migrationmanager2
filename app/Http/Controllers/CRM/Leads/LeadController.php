@@ -47,7 +47,7 @@ class LeadController extends Controller
         $qualityOptions = collect();
         $perPage = 20;
         if (array_key_exists('20', $module_access)) {
-            // Using Lead model - automatically filters by role=7, type='lead', and is_deleted=null
+            // Using Lead model - automatically filters by type='lead' and is_deleted=null
             $query = Lead::where('is_archived', 0);
 
             $totalData = $query->count();
@@ -1122,14 +1122,14 @@ class LeadController extends Controller
         $email = $request->input('email');
         $excludeId = $request->input('id'); // Optional - for edit operations
         
-        // Check in leads (admins table where role=7, type='lead')
+        // Check in leads (admins table where type='lead')
         $leadQuery = Lead::where('email', $email);
         if ($excludeId) {
             $leadQuery->where('id', '!=', $excludeId);
         }
         $lead_count = $leadQuery->count();
         
-        // Check in clients (admins table where role=7, type='client')
+        // Check in clients (admins table where type='client')
         $client_count = Admin::whereIn('type', ['client', 'lead'])
             ->where('type', 'client')
             ->where('email', $email)
@@ -1157,14 +1157,14 @@ class LeadController extends Controller
         $contact = $request->input('contact');
         $excludeId = $request->input('id'); // Optional - for edit operations
         
-        // Check in leads (admins table where role=7, type='lead')
+        // Check in leads (admins table where type='lead')
         $leadQuery = Lead::where('phone', 'LIKE', '%' . $contact . '%');
         if ($excludeId) {
             $leadQuery->where('id', '!=', $excludeId);
         }
         $lead_count = $leadQuery->count();
         
-        // Check in clients (admins table where role=7, type='client')
+        // Check in clients (admins table where type='client')
         $client_count = Admin::whereIn('type', ['client', 'lead'])
             ->where('type', 'client')
             ->where('phone', 'LIKE', '%' . $contact . '%')

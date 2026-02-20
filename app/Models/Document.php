@@ -224,6 +224,14 @@ class Document extends Model
     }
 
     /**
+     * Get documentable entity (client or lead – replaces polymorphic documentable_type/id)
+     */
+    public function getDocumentableAttribute()
+    {
+        return $this->client_id ? $this->client : $this->lead;
+    }
+
+    /**
      * Get primary signer email (computed from signers – column removed)
      */
     public function getPrimarySignerEmailAttribute(): ?string
