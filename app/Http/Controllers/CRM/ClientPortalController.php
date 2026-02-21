@@ -1915,12 +1915,13 @@ class ClientPortalController extends Controller
 				$agent = \App\Models\AgentDetails::where('id',$request->super_agent)->first();
 				$response['status'] 	= 	true;
 				$response['message']	=	'Application successfully updated.';
+				$agentName = $agent->agent_name ?? $agent->business_name ?? 'Agent';
 				$response['data']	=	'<div class="client_info">
-							<div class="cl_logo" style="display: inline-block;width: 30px;height: 30px; border-radius: 50%;background: #6777ef;text-align: center;color: #fff;font-size: 14px; line-height: 30px; vertical-align: top;">'.substr($agent->full_name, 0, 1).'</div>
+							<div class="cl_logo" style="display: inline-block;width: 30px;height: 30px; border-radius: 50%;background: #6777ef;text-align: center;color: #fff;font-size: 14px; line-height: 30px; vertical-align: top;">'.substr($agentName, 0, 1).'</div>
 							<div class="cl_name" style="display: inline-block;margin-left: 5px;width: calc(100% - 60px);">
-								<span class="name">'.$agent->full_name.'</span>
+								<span class="name">'.$agentName.'</span>
 								<span class="ui label zippyLabel alignMiddle yellow">
-							  '.$agent->struture.'
+							  '.($agent->business_name ?? '').'
 							</span>
 							</div>
 							<div class="cl_del" style="display: inline-block;">
@@ -1958,12 +1959,13 @@ class ClientPortalController extends Controller
 				$agent = \App\Models\AgentDetails::where('id',$request->sub_agent)->first();
 				$response['status'] 	= 	true;
 				$response['message']	=	'Application successfully updated.';
+				$agentName = $agent->agent_name ?? $agent->business_name ?? 'Agent';
 				$response['data']	=	'<div class="client_info">
-							<div class="cl_logo" style="display: inline-block;width: 30px;height: 30px; border-radius: 50%;background: #6777ef;text-align: center;color: #fff;font-size: 14px; line-height: 30px; vertical-align: top;">'.substr($agent->full_name, 0, 1).'</div>
+							<div class="cl_logo" style="display: inline-block;width: 30px;height: 30px; border-radius: 50%;background: #6777ef;text-align: center;color: #fff;font-size: 14px; line-height: 30px; vertical-align: top;">'.substr($agentName, 0, 1).'</div>
 							<div class="cl_name" style="display: inline-block;margin-left: 5px;width: calc(100% - 60px);">
-								<span class="name">'.$agent->full_name.'</span>
+								<span class="name">'.$agentName.'</span>
 								<span class="ui label zippyLabel alignMiddle yellow">
-							  '.$agent->struture.'
+							  '.($agent->business_name ?? '').'
 							</span>
 							</div>
 							<div class="cl_del" style="display: inline-block;">

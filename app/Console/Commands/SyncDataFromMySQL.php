@@ -37,7 +37,6 @@ class SyncDataFromMySQL extends Command
     protected $priorityTables = [
         'countries',
         'branches',
-        'agents',
         'admins',
         'clients',
         'matters',

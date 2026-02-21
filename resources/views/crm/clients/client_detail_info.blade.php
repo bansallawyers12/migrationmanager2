@@ -4016,8 +4016,8 @@
                                     <label for="subagent">Sub Agent <span class="span_req">*</span></label>
                                     <select class="form-control select2" name="subagent">
                                         <option>-- Choose a sub agent --</option>
-                                        @foreach(\App\Models\AgentDetails::all() as $agentlist)
-                                            <option <?php if(@$fetchedData->agent_id == $agentlist->id){ echo 'selected'; } ?> value="{{$agentlist->id}}">{{$agentlist->full_name}}</option>
+                                        @foreach(\App\Models\AgentDetails::where('status', 1)->orderBy('agent_name')->get() as $agentlist)
+                                            <option <?php if(@$fetchedData->agent_id == $agentlist->id){ echo 'selected'; } ?> value="{{$agentlist->id}}">{{$agentlist->agent_name ?? $agentlist->business_name ?? 'Agent'}}</option>
                                         @endforeach
                                     </select>
                                     @if ($errors->has('subagent'))

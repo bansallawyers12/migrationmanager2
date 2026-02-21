@@ -4574,7 +4574,9 @@ class ClientAccountsController extends Controller
       $record_get = DB::table('account_client_receipts')->where('receipt_type',1)->where('id',$id)->get();
       if($record_get){
           $clientname = DB::table('admins')->select('first_name','last_name','address','state','city','zip','country')->where('id',$record_get[0]->client_id)->first();
-          $agentname = DB::table('agents')->where('id',$record_get[0]->agent_id)->first();
+          $agentname = $record_get[0]->agent_id
+              ? DB::table('agent_details')->where('id', $record_get[0]->agent_id)->first()
+              : null;
           $admin = DB::table('staff')->select('company_name','business_address as address','state','city','zip','email','business_phone as phone')->where('id',$record_get[0]->user_id)->first();
       }
       $pdf = PDF::setOptions([

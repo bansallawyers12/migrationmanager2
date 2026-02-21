@@ -118,25 +118,6 @@
 									</div>
 
 									<div class="accordion">
-										<div class="accordion-header" role="button" data-toggle="collapse" data-target="#panel-body-5">
-											<h4>AGENTS</h4>
-										</div>
-										<div class="accordion-body collapse" id="panel-body-5" data-parent="#accordion">
-											<div class="select_toggle">
-												<a href="javascript:;" data-class="agents" class="btn btn-primary select_all">Select All</a>
-												<a href="javascript:;" data-class="agents" class="btn btn-secondary deselect_all">Deselect All</a>
-											</div>
-											<ul>
-												<li><label><input type="checkbox" name="module_access[15]" <?php if(array_key_exists('15',  $module_access)) { echo "checked"; } ?> class="agents"> Can only view agents list and details of associated offices.</label></li>
-												<li><label><input type="checkbox" name="module_access[16]" <?php if(array_key_exists('16',  $module_access)) { echo "checked"; } ?> class="agents"> Can add agents for their associated offices.</label></li>
-												<li><label><input type="checkbox" name="module_access[17]" <?php if(array_key_exists('17',  $module_access)) { echo "checked"; } ?> class="agents"> Can edit agents of their associated offices.</label></li>
-												<li><label><input type="checkbox" name="module_access[18]" <?php if(array_key_exists('18',  $module_access)) { echo "checked"; } ?> class="agents"> Can archive agents of their associated offices.</label></li>
-												<li><label><input type="checkbox" name="module_access[19]" <?php if(array_key_exists('19',  $module_access)) { echo "checked"; } ?> class="agents"> Can restore agents of their associated offices.</label></li>
-											</ul>
-										</div>
-									</div>
-
-									<div class="accordion">
 										<div class="accordion-header" role="button" data-toggle="collapse" data-target="#panel-body-6">
 											<h4>CLIENTS</h4>
 										</div>
@@ -214,8 +195,8 @@
 												<li><label><input type="checkbox" name="module_access[49]" <?php if(array_key_exists('49',  $module_access)) { echo "checked"; } ?> class="accounts"> Can view invoices of only assigned clients. schedule.</label></li>
 												<li><label><input type="checkbox" name="module_access[50]" <?php if(array_key_exists('50',  $module_access)) { echo "checked"; } ?> class="accounts"> Can view invoices of all the clients of associated offices and shared applications.</label></li>
 												<li><label><input type="checkbox" name="module_access[51]" <?php if(array_key_exists('51',  $module_access)) { echo "checked"; } ?> class="accounts">  Can view income shared receivables of associated offices.</label></li>
-												<li><label><input type="checkbox" name="module_access[52]" <?php if(array_key_exists('52',  $module_access)) { echo "checked"; } ?> class="accounts"> Can make payments, revert and delete payables of income shared offices and agents.</label></li>
-												<li><label><input type="checkbox" name="module_access[53]" <?php if(array_key_exists('53',  $module_access)) { echo "checked"; } ?> class="accounts"> Can view agent payables.</label></li>
+												<li><label><input type="checkbox" name="module_access[52]" <?php if(array_key_exists('52',  $module_access)) { echo "checked"; } ?> class="accounts"> Can make payments, revert and delete payables of income shared offices.</label></li>
+												<li><label><input type="checkbox" name="module_access[53]" <?php if(array_key_exists('53',  $module_access)) { echo "checked"; } ?> class="accounts"> Can view income shared payables.</label></li>
 											</ul>
 										</div>
 									</div>

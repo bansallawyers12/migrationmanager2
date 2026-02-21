@@ -1635,14 +1635,6 @@ class ClientPersonalDetailsController extends Controller
         \Log::info('No partner data provided to process.');
     }
 
-        /*$obj->total_points	=	@$requestData['total_points'];
-        $obj->type	=	@$requestData['type'];
-        $obj->source	=	@$requestData['source'];
-        if(@$requestData['source'] == 'Sub Agent' ){
-            $obj->agent_id	=	@$requestData['subagent'];
-        } else {
-            $obj->agent_id	=	'';
-        }*/
         $saved	=	$obj->save();
         if( $requestData['client_id'] != '') {
             $objs			   = 	Admin::find($obj->id);

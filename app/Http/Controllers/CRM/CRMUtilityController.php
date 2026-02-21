@@ -763,16 +763,6 @@ class CRMUtilityController extends Controller
                                 $message = 'ID does not exist, please check it once again.';
                             }
 						}
-                        else if($requestData['table'] == 'agents'){
-                            $response	=	DB::table($requestData['table'])->where('id', @$requestData['id'])->update(['is_acrchived' => 1]);
-
-                            if($response) {
-                                $status = 1;
-                                $message = 'Record has been Archived successfully.';
-                            } else {
-                                $message = config('constants.server_error');
-                            }
-						}
                         else if($requestData['table'] == 'products'){
                             $applicationisexist	= DB::table('applications')->where('product_id', $requestData['id'])->exists();
 
