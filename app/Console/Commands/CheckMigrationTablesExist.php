@@ -33,7 +33,7 @@ class CheckMigrationTablesExist extends Command
         'anzsco_occupations',
         'sms_logs',
         'sms_templates',
-        'document_notes',
+        'signature_activities',
         'email_labels',
         'email_label_mail_report',
         'mail_report_attachments',

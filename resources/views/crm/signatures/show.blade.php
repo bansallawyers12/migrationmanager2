@@ -1130,8 +1130,8 @@
                             }
                         }
                         
-                        // Email delivery activities from DocumentNote
-                        foreach ($document->notes()->whereIn('action_type', ['email_sent', 'email_failed', 'email_delivered', 'signature_cancelled'])->get() as $note) {
+                        // Email delivery activities from SignatureActivity
+                        foreach ($document->signatureActivities()->whereIn('action_type', ['email_sent', 'email_failed', 'email_delivered', 'signature_cancelled'])->get() as $note) {
                             $metadata = $note->metadata ?? [];
                             $signerName = $metadata['signer_name'] ?? 'Unknown';
                             $signerEmail = $metadata['signer_email'] ?? '';

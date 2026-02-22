@@ -6,7 +6,7 @@ use App\Models\Document;
 use App\Models\Signer;
 use App\Models\Admin;
 use App\Models\Lead;
-use App\Models\DocumentNote;
+use App\Models\SignatureActivity;
 use App\Models\ActivitiesLog;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
@@ -121,7 +121,7 @@ class SignatureService
             );
 
             // Create activity note for successful email delivery
-            DocumentNote::create([
+            SignatureActivity::create([
                 'document_id' => $document->id,
                 'created_by' => Auth::guard('admin')->id() ?? 1,
                 'action_type' => 'email_sent',
@@ -147,7 +147,7 @@ class SignatureService
         } catch (\Exception $e) {
             // Create activity note for failed email delivery
             try {
-                DocumentNote::create([
+                SignatureActivity::create([
                     'document_id' => $document->id,
                     'created_by' => Auth::guard('admin')->id() ?? 1,
                     'action_type' => 'email_failed',
@@ -230,7 +230,7 @@ class SignatureService
             ]);
 
             // Create activity note for reminder email
-            DocumentNote::create([
+            SignatureActivity::create([
                 'document_id' => $document->id,
                 'created_by' => Auth::guard('admin')->id() ?? 1,
                 'action_type' => 'email_sent',
@@ -255,7 +255,7 @@ class SignatureService
         } catch (\Exception $e) {
             // Create activity note for failed reminder
             try {
-                DocumentNote::create([
+                SignatureActivity::create([
                     'document_id' => $document->id,
                     'created_by' => Auth::guard('admin')->id() ?? 1,
                     'action_type' => 'email_failed',
@@ -325,8 +325,8 @@ class SignatureService
 
             $document->update($updates);
 
-            // Create audit trail entry in document_notes
-            DocumentNote::create([
+            // Create audit trail entry in signature_activities
+            SignatureActivity::create([
                 'document_id' => $document->id,
                 'created_by' => auth('admin')->id() ?? 1,
                 'action_type' => 'associated',
@@ -400,8 +400,8 @@ class SignatureService
             }
             $document->update($updates);
 
-            // Create audit trail entry in document_notes
-            DocumentNote::create([
+            // Create audit trail entry in signature_activities
+            SignatureActivity::create([
                 'document_id' => $document->id,
                 'created_by' => auth('admin')->id() ?? 1,
                 'action_type' => 'associated',
@@ -467,7 +467,7 @@ class SignatureService
             ]);
 
             // Create audit trail entry
-            DocumentNote::create([
+            SignatureActivity::create([
                 'document_id' => $document->id,
                 'created_by' => auth('admin')->id() ?? 1,
                 'action_type' => 'detached',

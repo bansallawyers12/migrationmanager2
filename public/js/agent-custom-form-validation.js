@@ -1563,62 +1563,7 @@ $('#add_application').modal('hide');
 							}
 						});
 					}
-					else if(formName == 'applicationform')
-					{   
-						var client_id = $('input[name="client_id"]').val(); 
-						var myform = document.getElementById('addapplicationformform');
-						var fd = new FormData(myform);
-						$.ajax({
-							type:'post',
-							url:$("form[name="+formName+"]").attr('action'),
-							processData: false,
-							contentType: false,
-							data: fd,
-							success: function(response){
-								$('.popuploader').hide(); 
-								var obj = $.parseJSON(response);
-								$(".add_appliation #workflow").val('').trigger('change');
-			$(".add_appliation #branch").val('').trigger('change');
-			$(".add_appliation #product").val('').trigger('change');
-								if(obj.status){
-									$('.add_appliation').modal('hide');
-								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
-								$.ajax({
-					url: site_url+'/agent/get-application-lists',
-					type:'GET',
-					datatype:'json',
-					data:{id:client_id},
-					success: function(responses){
-						$('.applicationtdata').html(responses);
-					}
-				});
-									$.ajax({
-					url: site_url+'/agent/get-activities',
-					type:'GET',
-					datatype:'json',
-					data:{id:client_id},
-					success: function(responses){
-						var ress = JSON.parse(responses);
-						var html = '';
-						$.each(ress.data, function(k, v) {
-							html += '<div class="activity"><div class="activity-icon bg-primary text-white"><span>'+v.createdname+'</span></div><div class="activity-detail"><div class="mb-2"><span class="text-job">'+v.date+'</span></div><p><b>'+v.name+'</b> '+v.subject+'</p>';
-							if(v.message != null){
-								html += '<p>'+v.message+'</p>';
-							}
-							html += '</div></div>';
-						});
-						$('.activities').html(html);
-					}
-				});
-								}else{
-									$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
-									
-								}
-							}
-						});
-						
-						
-					}
+
 				else if(formName == 'submit-review')
 					{
 						$("form[name=submit-review] :input[data-max]").each(function(){

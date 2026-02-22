@@ -81,9 +81,9 @@ class Document extends Model
         return $this->belongsTo(Lead::class);
     }
 
-    public function notes(): HasMany
+    public function signatureActivities(): HasMany
     {
-        return $this->hasMany(DocumentNote::class)->orderBy('created_at', 'desc');
+        return $this->hasMany(SignatureActivity::class)->orderBy('created_at', 'desc');
     }
 
     public function client(): BelongsTo

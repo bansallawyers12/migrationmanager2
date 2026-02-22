@@ -28,7 +28,7 @@ This document describes every column in the `documents` table, how it is used in
 ### `id` (integer, NOT NULL, PK)
 - **Type:** Integer, auto-increment via `documents_id_seq`
 - **Usage:** Primary key for all document records
-- **Used in:** Every document query, relationships, foreign keys (e.g. `document_notes.document_id`, `signers.document_id`)
+- **Used in:** Every document query, relationships, foreign keys (e.g. `signature_activities.document_id`, `signers.document_id`)
 - **Status:** ✅ **Actively used**
 
 ---
@@ -517,7 +517,7 @@ This document describes every column in the `documents` table, how it is used in
 
 - **signers** – document signers (FK: `document_id`)
 - **signature_fields** – signature field placements (FK: `document_id`)
-- **document_notes** – notes on documents (FK: `document_id`)
+- **signature_activities** – signature workflow audit trail (FK: `document_id`)
 - **application_document_lists** – checklist definitions (different table; documents link via checklist/folder_name)
 - **personal_document_types** – personal doc categories (documents.folder_name)
 - **visa_document_types** – visa doc categories (documents.folder_name)

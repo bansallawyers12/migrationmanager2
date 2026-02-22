@@ -186,7 +186,7 @@ class SignatureDashboardController extends Controller
                         ]);
                         
                         // Create a note about the matter association
-                        \App\Models\DocumentNote::create([
+                        \App\Models\SignatureActivity::create([
                             'document_id' => $document->id,
                             'created_by' => auth('admin')->id(),
                             'action_type' => 'associated',
@@ -213,7 +213,7 @@ class SignatureDashboardController extends Controller
                     
                     // Create a note about the association
                     $folderName = ($entityType === 'lead') ? 'personal documents' : 'general documents';
-                    \App\Models\DocumentNote::create([
+                    \App\Models\SignatureActivity::create([
                         'document_id' => $document->id,
                         'created_by' => auth('admin')->id(),
                         'action_type' => 'associated',
@@ -303,7 +303,7 @@ class SignatureDashboardController extends Controller
 
     public function show($id)
     {
-        $document = Document::with(['creator', 'signers', 'lead', 'signatureFields', 'notes.creator'])
+        $document = Document::with(['creator', 'signers', 'lead', 'signatureFields', 'signatureActivities.creator'])
             ->findOrFail($id);
 
         // Check authorization using policy
@@ -426,7 +426,7 @@ class SignatureDashboardController extends Controller
             }
             
             // Create activity log entry
-            \App\Models\DocumentNote::create([
+            \App\Models\SignatureActivity::create([
                 'document_id' => $document->id,
                 'created_by' => auth('admin')->id(),
                 'note' => "Signature cancelled for {$signer->name} ({$signer->email})",
@@ -515,7 +515,7 @@ class SignatureDashboardController extends Controller
                     );
                     
                     // Create activity note for successful email
-                    \App\Models\DocumentNote::create([
+                    \App\Models\SignatureActivity::create([
                         'document_id' => $document->id,
                         'created_by' => \Illuminate\Support\Facades\Auth::guard('admin')->id() ?? 1,
                         'action_type' => 'email_sent',
@@ -530,7 +530,7 @@ class SignatureDashboardController extends Controller
                     ]);
                 } catch (\Exception $emailException) {
                     // Create activity note for failed email
-                    \App\Models\DocumentNote::create([
+                    \App\Models\SignatureActivity::create([
                         'document_id' => $document->id,
                         'created_by' => \Illuminate\Support\Facades\Auth::guard('admin')->id() ?? 1,
                         'action_type' => 'email_failed',

@@ -159,9 +159,7 @@ Route::get('/pinactivitylog', 'CRM\ClientsController@pinactivitylog');
 // Routes removed: interested-service, edit-interested-service, get-services, getintrestedservice, getintrestedserviceedit
 Route::post('/servicesavefee', 'CRM\ClientsController@servicesavefee');
 
-Route::get('/get-application-lists', 'CRM\ClientsController@getapplicationlists')->name('clients.getapplicationlists');
-Route::post('/saveapplication', 'CRM\ClientsController@saveapplication')->name('clients.saveapplication');
-Route::get('/convertapplication', 'CRM\ClientsController@convertapplication')->name('clients.convertapplication');
+// get-application-lists, convertapplication REMOVED - orphaned (no UI trigger, convertapplication method never existed)
 Route::get('/deleteservices', 'CRM\ClientsController@deleteservices')->name('clients.deleteservices');
 Route::post('/savetoapplication', 'CRM\ClientsController@savetoapplication');
 

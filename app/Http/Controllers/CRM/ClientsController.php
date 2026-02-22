@@ -2822,109 +2822,7 @@ class ClientsController extends Controller
 		echo json_encode($response);
 	}
 
-	public function saveapplication(Request $request){
-		if(Admin::whereIn('type', ['client', 'lead'])->where('id', $request->client_id)->exists()){
-			$workflow = $request->workflow;
-			$branch = $request->branch;
-			$product = $request->product;
-			$client_id = $request->client_id;
-			$status = 0;
-			$workflowstage = \App\Models\WorkflowStage::where('w_id', $workflow)->orderby('id','asc')->first();
-			$stage = $workflowstage->name;
-			$sale_forcast = 0.00;
-			$obj = new \App\Models\Application;
-			$obj->user_id = Auth::user()->id;
-			$obj->workflow = $workflow;
-			$obj->branch = $branch;
-			$obj->product_id = $product;
-			$obj->status = $status;
-			$obj->stage = $stage;
-			$obj->sale_forcast = $sale_forcast;
-			$obj->client_id = $client_id;
-            $obj->client_matter_id = $request->client_matter_id;
-			$saved = $obj->save();
-			if($saved){
-				// Fetch related data for activity log
-				$productdetail = DB::table('services')->where('id', $product)->first();
-				$branchModel = \App\Models\Branch::find($branch);
-
-				$subject = 'has started an application';
-				$objs = new ActivitiesLog;
-				$objs->client_id = $request->client_id;
-				$objs->created_by = Auth::user()->id;
-				$productName = $productdetail ? ($productdetail->name ?? '') : '';
-				$branchName = $branchModel ? ($branchModel->office_name ?? '') : '';
-				$objs->description = '<span class="text-semi-bold">'.$productName.'</span><p>'.$branchName.'</p>';
-				$objs->subject = $subject;
-				$objs->task_status = 0;
-				$objs->pin = 0;
-				$objs->save();
-				$response['status'] 	= 	true;
-				$response['message']	=	'You’ve successfully updated your client’s information.';
-			}else{
-				$response['status'] 	= 	false;
-				$response['message']	=	'Please try again';
-			}
-		}else{
-			$response['status'] 	= 	false;
-			$response['message']	=	'Please try again';
-		}
-		echo json_encode($response);
-	}
-
-	public function getapplicationlists(Request $request){
-		if(Admin::whereIn('type', ['client', 'lead'])->where('id', $request->id)->exists()){
-			$applications = \App\Models\Application::where('client_id', $request->id)->orderby('created_at', 'DESC')->get();
-            //dd($applications);
-			$data = array();
-			ob_start();
-			foreach($applications as $alist){
-				// Fetch related data for each application
-				$productdetail = DB::table('services')->where('id', $alist->product_id)->first();
-				$branchModel = \App\Models\Branch::find($alist->branch);
-
-				$workflow = \App\Models\Workflow::where('id', $alist->workflow)->first();
-				$productName = $productdetail ? ($productdetail->name ?? '') : '';
-				$branchName = $branchModel ? ($branchModel->office_name ?? '') : '';
-				?>
-				<tr id="id_<?php echo $alist->id; ?>">
-				<td><a class="openapplicationdetail" data-id="<?php echo $alist->id; ?>" href="javascript:;" style="display:block;"><?php echo $productName; ?></a> <small>(<?php echo $branchName; ?>)</small></td>
-				<td><?php echo @$workflow->name; ?></td>
-				<td><?php echo @$alist->stage; ?></td>
-				<td>
-				<?php if($alist->status == 0){ ?>
-				<span class="ag-label--circular" style="color: #6777ef" >In Progress</span>
-				<?php }else if($alist->status == 1){ ?>
-					<span class="ag-label--circular" style="color: #6777ef" >Completed</span>
-				<?php } else if($alist->status == 2){
-				?>
-				<span class="ag-label--circular" style="color: red;" >Discontinued</span>
-				<?php
-				} ?>
-			</td>
-
-				<td><?php if(@$alist->start_date != ''){ echo date('d/m/Y', strtotime($alist->start_date)); } ?></td>
-				<td><?php if(@$alist->end_date != ''){ echo date('d/m/Y', strtotime($alist->end_date)); } ?></td>
-				<td>
-					<div class="dropdown d-inline">
-						<button class="btn btn-primary dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
-						<div class="dropdown-menu">
-							<a class="dropdown-item has-icon" href="javascript:;" onClick="deleteAction(<?php echo @$alist->id; ?>, 'applications')"><i class="fas fa-trash"></i> Delete</a>
-						</div>
-					</div>
-				</td>
-			</tr>
-				<?php
-			}
-
-			return ob_get_clean();
-		}else {
-			return '';
-		}
-	}
-
-
-    public function uploadmail(Request $request){
+	public function uploadmail(Request $request){
 		$requestData 		= 	$request->all();
         $obj				= 	new \App\Models\MailReport;
 		$obj->user_id		=	Auth::user()->id;
@@ -3114,31 +3012,6 @@ class ClientsController extends Controller
                             'partner_revenue' => $appval->partner_revenue,
                             'discounts' => $appval->discounts,
                             'progresswidth' => $appval->progresswidth
-                        ]
-                    );
-                }
-            }
-
-            //interested_services
-            $interested_services = DB::table('interested_services')->where('client_id', $request->merge_from)->get(); //dd($interested_services);
-            if(!empty($interested_services)){
-                foreach($interested_services as $intkey=>$intval){
-                    DB::table('interested_services')->insert(
-                        [
-                            'user_id'=> $intval->user_id,
-                            'client_id' => $request->merge_into,
-                            'workflow' => $intval->workflow,
-                            'partner' => $intval->partner,
-                            'product' => $intval->product,
-                            'branch' => $intval->branch,
-                            'start_date' => $intval->start_date,
-                            'exp_date' => $intval->exp_date,
-                            'status' => $intval->status,
-                            'created_at' => $intval->created_at,
-                            'updated_at' => $intval->updated_at,
-                            'client_revenue' => $intval->client_revenue,
-                            'partner_revenue' => $intval->partner_revenue,
-                            'discounts' => $intval->discounts
                         ]
                     );
                 }

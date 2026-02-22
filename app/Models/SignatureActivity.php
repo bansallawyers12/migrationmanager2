@@ -5,8 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class DocumentNote extends Model
+class SignatureActivity extends Model
 {
+    protected $table = 'signature_activities';
+
     protected $fillable = [
         'document_id',
         'created_by',
@@ -22,7 +24,7 @@ class DocumentNote extends Model
     ];
 
     /**
-     * Get the document this note belongs to
+     * Get the document this activity belongs to
      */
     public function document(): BelongsTo
     {
@@ -30,7 +32,7 @@ class DocumentNote extends Model
     }
 
     /**
-     * Get the staff member who created this note
+     * Get the staff member who created this activity
      */
     public function creator(): BelongsTo
     {

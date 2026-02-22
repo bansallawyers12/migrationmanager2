@@ -517,7 +517,7 @@ echo "✓ Verification passed: {$staffCount} staff copied, mapping table complet
 | `client_emails` | `verified_by` | admins | staff | Staff verification |
 | `client_contacts` | `verified_by` | admins | staff | Staff verification |
 | `documents` | `created_by`, `user_id`, `checklist_verified_by` | admins | staff | Staff actions |
-| `document_notes` | `created_by` | admins | staff | Staff note |
+| `signature_activities` | `created_by` | admins | staff | Staff note |
 | `email_labels` | `user_id` | admins | staff | Staff label owner |
 | `notes` | `user_id`, `assigned_to` | admins | staff | Staff notes |
 | `activities_log` | `created_by` | admins | staff | Staff action |
@@ -693,7 +693,7 @@ DB::transaction(function () {
 - `clientportal_details_audit`: updated_by
 - `client_emails`, `client_contacts`: verified_by
 - `documents`: created_by, user_id, checklist_verified_by
-- `document_notes`: created_by
+- `signature_activities`: created_by
 - `email_labels`: user_id
 - `notes`: user_id, assigned_to
 - `activities_log`: created_by
@@ -781,7 +781,7 @@ public function createdBy(): BelongsTo
 - `Tag`, `SmsTemplate`, `AnzscoOccupation`
 - `RefreshToken`, `DeviceToken`
 - `Message`, `MessageRecipient`, `Notification`
-- `EmailLabel`, `DocumentNote`
+- `EmailLabel`, `SignatureActivity`
 - `CostAssignmentForm`, `Form956`
 - `MailReport`, `Application`
 - `CheckinLog`, `CheckinHistory`

@@ -1441,7 +1441,6 @@ $(document).ready(function() {
             getTemplates: '{{ URL::to("/get-templates") }}',
             getComposeDefaults: '{{ URL::to("/get-compose-defaults") }}',
             getPartner: '{{ URL::to("/getpartner") }}',
-            convertApplication: '{{ URL::to("/convertapplication") }}',
             renameDoc: '{{ URL::to("/documents/rename") }}',
             renameChecklistDoc: '{{ URL::to("/documents/rename-checklist") }}',
             deleteChecklist: '{{ route("clients.documents.deleteChecklist") }}',

@@ -1504,7 +1504,7 @@ class DocumentController extends Controller
                         );
                         
                         // Create activity note for successful email
-                        \App\Models\DocumentNote::create([
+                        \App\Models\SignatureActivity::create([
                             'document_id' => $document->id,
                             'created_by' => Auth::guard('admin')->id() ?? 1,
                             'action_type' => 'email_sent',
@@ -1519,7 +1519,7 @@ class DocumentController extends Controller
                         ]);
                     } catch (\Exception $emailException) {
                         // Create activity note for failed email
-                        \App\Models\DocumentNote::create([
+                        \App\Models\SignatureActivity::create([
                             'document_id' => $document->id,
                             'created_by' => Auth::guard('admin')->id() ?? 1,
                             'action_type' => 'email_failed',
@@ -1624,7 +1624,7 @@ class DocumentController extends Controller
                         );
                         
                         // Create activity note for successful email
-                        \App\Models\DocumentNote::create([
+                        \App\Models\SignatureActivity::create([
                             'document_id' => $document->id,
                             'created_by' => Auth::guard('admin')->id() ?? 1,
                             'action_type' => 'email_sent',
@@ -1638,7 +1638,7 @@ class DocumentController extends Controller
                         ]);
                     } catch (\Exception $emailException) {
                         // Create activity note for failed email
-                        \App\Models\DocumentNote::create([
+                        \App\Models\SignatureActivity::create([
                             'document_id' => $document->id,
                             'created_by' => Auth::guard('admin')->id() ?? 1,
                             'action_type' => 'email_failed',
