@@ -1269,28 +1269,6 @@ class BookingAppointmentsController extends Controller
     }
 
     /**
-     * Update follow-up settings
-     */
-    public function updateFollowUp(Request $request, $id)
-    {
-        $appointment = BookingAppointment::findOrFail($id);
-        
-        $request->validate([
-            'follow_up_required' => 'required|boolean',
-            'follow_up_date' => 'nullable|date'
-        ]);
-
-        $appointment->follow_up_required = $request->follow_up_required;
-        $appointment->follow_up_date = $request->follow_up_date;
-        $appointment->save();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Follow-up settings updated'
-        ]);
-    }
-
-    /**
      * Send reminder manually
      */
     public function sendReminder(Request $request, $id)

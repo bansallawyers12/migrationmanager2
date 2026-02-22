@@ -318,7 +318,6 @@ class SampleBookingAppointmentsSeeder extends Seeder
                 'paid_at' => $appointmentData['paid_at'] ?? null,
                 
                 'admin_notes' => $appointmentData['admin_notes'] ?? null,
-                'follow_up_required' => false,
                 
                 'confirmation_email_sent' => $appointmentData['status'] === 'confirmed',
                 'confirmation_email_sent_at' => $appointmentData['confirmed_at'] ?? null,

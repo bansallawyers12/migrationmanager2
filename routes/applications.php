@@ -222,10 +222,6 @@ Route::controller(BookingAppointmentsController::class)
             ->name('appointments.add-note')
             ->whereNumber('id');
         
-        Route::post('/appointments/{id}/update-followup', 'updateFollowUp')
-            ->name('appointments.update-followup')
-            ->whereNumber('id');
-        
         Route::post('/appointments/{id}/send-reminder', 'sendReminder')
             ->name('appointments.send-reminder')
             ->whereNumber('id');

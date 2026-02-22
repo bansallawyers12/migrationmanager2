@@ -737,7 +737,6 @@ class ClientPortalAppointmentController extends BaseController
                 'payment_status' => ($serviceId == 2) ? null : ($requestData['payment_status'] ?? 'pending'),
                 
                 // Boolean fields with default values
-                'follow_up_required' => false,
                 'confirmation_email_sent' => false,
                 'reminder_sms_sent' => false,
                 
