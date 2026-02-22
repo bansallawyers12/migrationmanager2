@@ -11,9 +11,9 @@ use Illuminate\Database\Eloquent\Model;
  * Represents both regular notes and actions (formerly called tasks/followups) in the system.
  * 
  * Database field clarifications for the Action feature:
- * - folloup (field name preserved): When set to 1, this note is an Action item. 0 = regular note
+ * - is_action: When set to 1, this note is an Action item. 0 = regular note
  * - task_group (field name preserved): The action category (Call, Checklist, Review, Query, Urgent, Personal Action)
- * - followup_date (field name preserved): The scheduled date for the action
+ * - action_date: The scheduled date for the action
  * - task_status (in ActivitiesLog): Action completion status (0 = incomplete, 1 = completed)
  * - assigned_to: The user assigned to complete this action
  * - status: '0' = active/incomplete, '1' = completed
@@ -25,10 +25,10 @@ class Note extends Model
     use Notifiable;
 
     protected $fillable = [
-        'id','user_id','client_id','lead_id','unique_group_id','title','description','note_deadline','mail_id','type','pin','followup_date','folloup','assigned_to','status','task_group','matter_id','mobile_number','created_at', 'updated_at'
+        'id','user_id','client_id','lead_id','unique_group_id','title','description','note_deadline','mail_id','type','pin','action_date','is_action','assigned_to','status','task_group','matter_id','mobile_number','created_at', 'updated_at'
     ];
 
-	public $sortable = ['id', 'created_at', 'updated_at','task_group','followup_date'];
+	public $sortable = ['id', 'created_at', 'updated_at','task_group','action_date'];
 
 
     /**

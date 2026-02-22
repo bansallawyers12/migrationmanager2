@@ -40,10 +40,10 @@ class AssigneeController extends Controller
     public function index(Request $request)
     {
         $query = QueryBuilder::for(Note::class)
-            ->allowedSorts(['first_name', 'followup_date', 'task_group', 'created_at'])
+            ->allowedSorts(['first_name', 'action_date', 'task_group', 'created_at'])
             ->with(['noteUser','noteClient','lead.service','assigned_user'])
             ->where('type','client')
-            ->where('folloup',1)
+            ->where('is_action', 1)
             ->where('status','<>','1');
 
         if(Auth::user()->role == 1){
@@ -60,9 +60,9 @@ class AssigneeController extends Controller
     public function completed(Request $request)
     {
         if(Auth::user()->role == 1){
-            $assignees = \App\Models\Note::with(['noteUser','noteClient','lead.service','assigned_user'])->where('type','client')->whereNotNull('client_id')->where('folloup',1)->where('status','1')->orderBy('created_at', 'desc')->latest()->paginate(20); //where('status','like','Closed')
+            $assignees = \App\Models\Note::with(['noteUser','noteClient','lead.service','assigned_user'])->where('type','client')->whereNotNull('client_id')->where('is_action', 1)->where('status','1')->orderBy('created_at', 'desc')->latest()->paginate(20); //where('status','like','Closed')
         }else{
-            $assignees = \App\Models\Note::with(['noteUser','noteClient','lead.service','assigned_user'])->where('assigned_to',Auth::user()->id)->where('type','client')->where('folloup',1)->where('status','1')->orderBy('created_at', 'desc')->latest()->paginate(20);
+            $assignees = \App\Models\Note::with(['noteUser','noteClient','lead.service','assigned_user'])->where('assigned_to',Auth::user()->id)->where('type','client')->where('is_action', 1)->where('status','1')->orderBy('created_at', 'desc')->latest()->paginate(20);
         }  //dd( $assignees);
         return view('crm.assignee.completed',compact('assignees'))
          ->with('i', (request()->input('page', 1) - 1) * 20);
@@ -114,7 +114,7 @@ class AssigneeController extends Controller
                 } else {
                     $objs->use_for = null;
                 }
-                $objs->followup_date = @$note_data['updated_at'];
+                $objs->followup_date = @$note_data['updated_at']; // ActivitiesLog uses followup_date
                 $objs->task_group = @$note_data['task_group'];
                 $objs->task_status = 1; //marked completed
                 $objs->pin = 0;
@@ -151,9 +151,9 @@ class AssigneeController extends Controller
      public function assigned_by_me(Request $request)
      {
         if(Auth::user()->role == 1){
-             $assignees_notCompleted = \App\Models\Note::with(['noteUser','noteClient','assigned_user'])->where('status','<>',1)->where('type','client')->whereNotNull('client_id')->where('folloup',1)->orderBy('created_at', 'desc')->latest()->paginate(20);
+             $assignees_notCompleted = \App\Models\Note::with(['noteUser','noteClient','assigned_user'])->where('status','<>',1)->where('type','client')->whereNotNull('client_id')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
         } else {
-             $assignees_notCompleted = \App\Models\Note::with(['noteUser','noteClient','assigned_user'])->where('status','<>',1)->where('user_id',Auth::user()->id)->where('type','client')->where('folloup',1)->orderBy('created_at', 'desc')->latest()->paginate(20);
+             $assignees_notCompleted = \App\Models\Note::with(['noteUser','noteClient','assigned_user'])->where('status','<>',1)->where('user_id',Auth::user()->id)->where('type','client')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
         }
          #dd($assignees_notCompleted);
          return view('crm.assignee.assign_by_me',compact('assignees_notCompleted'))
@@ -164,13 +164,13 @@ class AssigneeController extends Controller
     public function assigned_to_me(Request $request)
     {
         if(Auth::user()->role == 1){
-            $assignees_notCompleted = \App\Models\Note::with(['noteUser','noteClient','lead.service','assigned_user'])->where('status','<>','1')->where('assigned_to',Auth::user()->id)->where('type','client')->whereNotNull('client_id')->where('folloup',1)->orderBy('created_at', 'desc')->latest()->paginate(20);//where('status','not like','Closed')
+            $assignees_notCompleted = \App\Models\Note::with(['noteUser','noteClient','lead.service','assigned_user'])->where('status','<>','1')->where('assigned_to',Auth::user()->id)->where('type','client')->whereNotNull('client_id')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);//where('status','not like','Closed')
 
-            $assignees_completed = \App\Models\Note::with(['noteUser','noteClient','lead.service','assigned_user'])->where('status','1')->where('assigned_to',Auth::user()->id)->where('type','client')->whereNotNull('client_id')->where('folloup',1)->orderBy('created_at', 'desc')->latest()->paginate(20);
+            $assignees_completed = \App\Models\Note::with(['noteUser','noteClient','lead.service','assigned_user'])->where('status','1')->where('assigned_to',Auth::user()->id)->where('type','client')->whereNotNull('client_id')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
         }else{
-            $assignees_notCompleted = \App\Models\Note::with(['noteUser','noteClient','lead.service','assigned_user'])->where('status','<>','1')->where('assigned_to',Auth::user()->id)->where('type','client')->where('folloup',1)->orderBy('created_at', 'desc')->latest()->paginate(20);
+            $assignees_notCompleted = \App\Models\Note::with(['noteUser','noteClient','lead.service','assigned_user'])->where('status','<>','1')->where('assigned_to',Auth::user()->id)->where('type','client')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
 
-            $assignees_completed = \App\Models\Note::with(['noteUser','noteClient','lead.service','assigned_user'])->where('status','1')->where('assigned_to',Auth::user()->id)->where('type','client')->where('folloup',1)->orderBy('created_at', 'desc')->latest()->paginate(20);
+            $assignees_completed = \App\Models\Note::with(['noteUser','noteClient','lead.service','assigned_user'])->where('status','1')->where('assigned_to',Auth::user()->id)->where('type','client')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
         }
         return view('crm.assignee.assign_to_me',compact('assignees_notCompleted','assignees_completed'))
          ->with('i', (request()->input('page', 1) - 1) * 20);
@@ -194,7 +194,7 @@ class AssigneeController extends Controller
             ->where('status', 1)
             ->where('type', 'client')
             ->whereNotNull('client_id')
-            ->where('folloup', 1)
+            ->where('is_action', 1)
             ->when($user->role != 1, function ($query) use ($user) {
                 return $query->where('assigned_to', $user->id);
             })
@@ -222,7 +222,7 @@ class AssigneeController extends Controller
     {
         $query = \App\Models\Note::where('status', 1)
             ->where('type', 'client')
-            ->where('folloup', 1)
+            ->where('is_action', 1)
             ->when($user->role != 1, function ($query) use ($user) {
                 return $query->where('assigned_to', $user->id);
             });
@@ -268,8 +268,8 @@ class AssigneeController extends Controller
                         'notes.assigned_to',
                         'notes.status',
                         'notes.type',
-                        'notes.folloup',
-                        'notes.followup_date',
+                        'notes.is_action',
+                        'notes.action_date',
                         'notes.task_group',
                         'notes.description',
                         'notes.unique_group_id',
@@ -278,7 +278,7 @@ class AssigneeController extends Controller
                     ->with(['noteUser', 'noteClient', 'assigned_user'])
                     ->where('notes.status', '<>', '1')
                     ->where('notes.type', 'client')
-                    ->where('notes.folloup', 1);
+                    ->where('notes.is_action', 1);
 
                 // Check if user is authenticated and has proper role
                 if (Auth::check() && Auth::user()->role != 1) {
@@ -328,7 +328,7 @@ class AssigneeController extends Controller
                                 ->orderByRaw("COALESCE(client_admins.first_name, 'zzz') " . $orderDirection . ", COALESCE(client_admins.last_name, '') " . $orderDirection);
                             break;
                         case 'assign_date':
-                            $query->orderBy('notes.followup_date', $orderDirection);
+                            $query->orderBy('notes.action_date', $orderDirection);
                             break;
                         case 'task_group':
                             $query->orderBy('notes.task_group', $orderDirection);
@@ -384,7 +384,7 @@ class AssigneeController extends Controller
                     })
                     ->addColumn('assign_date', function($data) {
                         try {
-                            return $data->followup_date ? date('d/m/Y', strtotime($data->followup_date)) : 'N/P';
+                            return $data->action_date ? date('d/m/Y', strtotime($data->action_date)) : 'N/P';
                         } catch (\Exception $e) {
                             return 'N/P';
                         }
@@ -422,7 +422,7 @@ class AssigneeController extends Controller
                     ->addColumn('action', function($list) {
                         try {
                             $actionBtn = '';
-                            $current_date1 = $list->followup_date ?: date('Y-m-d');
+                            $current_date1 = $list->action_date ?: date('Y-m-d');
 
                             // Update Action button - available for all actions including Personal Actions
                             // Use direct htmlspecialchars instead of Utf8Helper wrapper to avoid redundant sanitization
@@ -432,7 +432,7 @@ class AssigneeController extends Controller
                             // For personal actions, client_id will be null, so use empty string for encoded value
                             $encoded_client_id = $list->client_id ? base64_encode(convert_uuencode($list->client_id)) : '';
                             
-                            $actionBtn .= '<button type="button" data-assignedto="'.$list->assigned_to.'" data-noteid="'.$safe_description.'" data-taskid="'.$list->id.'" data-taskgroupid="'.$safe_task_group.'" data-followupdate="'.$current_date1.'" data-clientid="'.$encoded_client_id.'" class="btn btn-primary btn-block update_task" data-role="popover" style="width: 40px;display: inline;margin-top:0px;"><i class="fa fa-edit" aria-hidden="true"></i></button>';
+                            $actionBtn .= '<button type="button" data-assignedto="'.$list->assigned_to.'" data-noteid="'.$safe_description.'" data-taskid="'.$list->id.'" data-taskgroupid="'.$safe_task_group.'" data-actiondate="'.$current_date1.'" data-clientid="'.$encoded_client_id.'" class="btn btn-primary btn-block update_task" data-role="popover" style="width: 40px;display: inline;margin-top:0px;"><i class="fa fa-edit" aria-hidden="true"></i></button>';
 
                             // Delete button removed from action tab
 
@@ -501,7 +501,7 @@ class AssigneeController extends Controller
 
         $query = Note::where('status', '<>', '1')
             ->where('type', 'client')
-            ->where('folloup', 1);
+            ->where('is_action', 1);
 
         if (Auth::user()->role != 1) {
             $query->where('assigned_to', Auth::user()->id);
@@ -529,7 +529,7 @@ class AssigneeController extends Controller
     public function destroy( $id,Note $Note)
     {   // dd($id);
         $appointment =Note::find($id);
-        $appointment->folloup = 0;
+        $appointment->is_action = 0;
         $appointment->save();
 
         return redirect()->route('assignee.index')
@@ -539,7 +539,7 @@ class AssigneeController extends Controller
     public function destroy_by_me( $id,Note $Note)
     {
         $appointment =Note::find($id);
-        $appointment->folloup = 0;
+        $appointment->is_action = 0;
         if( $appointment->save() ){
             $objs = new ActivitiesLog;
             $objs->client_id = $appointment->client_id;
@@ -559,7 +559,7 @@ class AssigneeController extends Controller
             } else {
                 $objs->use_for = null;
             }
-            $objs->followup_date = @$appointment->followup_datetime;
+            $objs->followup_date = @$appointment->action_date;
             $objs->task_group = @$appointment->task_group;
             $objs->task_status = 0;
             $objs->pin = 0;
@@ -571,7 +571,7 @@ class AssigneeController extends Controller
     public function destroy_to_me( $id,Note $Note)
     {
         $appointment =Note::find($id);
-        $appointment->folloup = 0;
+        $appointment->is_action = 0;
         $appointment->save();
         return redirect()->route('assignee.assigned_to_me')->with('success','Assingee deleted successfully');
     }
@@ -580,7 +580,7 @@ class AssigneeController extends Controller
     public function destroy_activity($id,Note $Note)
     {
         $appointment = Note::find($id);//dd($appointment);
-        $appointment->folloup = 0;
+        $appointment->is_action = 0;
         if( $appointment->save() ){
             $objs = new ActivitiesLog;
             $objs->client_id = $appointment->client_id;
@@ -600,7 +600,7 @@ class AssigneeController extends Controller
             } else {
                 $objs->use_for = null;
             }
-            $objs->followup_date = @$appointment->followup_datetime;
+            $objs->followup_date = @$appointment->action_date;
             $objs->task_group = @$appointment->task_group;
             $objs->task_status = 0;
             $objs->pin = 0;
@@ -614,7 +614,7 @@ class AssigneeController extends Controller
     public function destroy_complete_activity( $id,Note $Note)
     {
         $appointment = Note::find($id);
-        $appointment->folloup = 0;
+        $appointment->is_action = 0;
         if( $appointment->save() ){
             $objs = new ActivitiesLog;
             $objs->client_id = $appointment->client_id;
@@ -634,7 +634,7 @@ class AssigneeController extends Controller
             } else {
                 $objs->use_for = null;
             }
-            $objs->followup_date = @$appointment->followup_datetime;
+            $objs->followup_date = @$appointment->action_date;
             $objs->task_group = @$appointment->task_group;
             $objs->task_status = 0;
             $objs->pin = 0;
@@ -732,8 +732,8 @@ class AssigneeController extends Controller
             $admin_data = Staff::where('id', $validated['assigned_to'])->first();
             $assignee_name = $admin_data ? $admin_data->first_name . " " . $admin_data->last_name : 'N/A';
 
-            // Use the original action's followup_date or today's date if not available
-            $followupDate = $currentAction->followup_date ?: date('Y-m-d');
+            // Use the original action's action_date or today's date if not available
+            $followupDate = $currentAction->action_date ?: date('Y-m-d');
 
             // Step 3: Create a new action with the provided information
             $newAction = new Note;
@@ -741,10 +741,10 @@ class AssigneeController extends Controller
             $newAction->client_id = $clientId;
             $newAction->assigned_to = $validated['assigned_to'];
             $newAction->description = $validated['description'];
-            $newAction->followup_date = $followupDate;
+            $newAction->action_date = $followupDate;
             $newAction->task_group = $validated['task_group'];
             $newAction->type = 'client';
-            $newAction->folloup = 1;
+            $newAction->is_action = 1;
             $newAction->status = '0'; // New action is incomplete
             $newAction->pin = 0; // Set pin to 0 (required field)
             $actionUniqueId = 'group_' . uniqid('', true);

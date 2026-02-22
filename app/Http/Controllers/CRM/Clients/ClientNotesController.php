@@ -105,7 +105,7 @@ class ClientNotesController extends Controller
         // PostgreSQL NOT NULL constraints - must set these fields
         if(!$isUpdate) {
             $obj->pin = 0; // Default to not pinned
-            $obj->folloup = 0; // Default to not a follow-up
+            $obj->is_action = 0; // Default to not an action
             $obj->status = '0'; // Default status
         }
         

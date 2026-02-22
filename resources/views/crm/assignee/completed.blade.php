@@ -79,7 +79,7 @@
 											<th class="sort_col">@sortablelink('first_name','Assignee name')</th>
                                             <th>Assigner name</th>
 											<th>Client Reference</th>
-											<th class="sort_col">@sortablelink('followup_date','Follow-up DateTime')</th>
+											<th class="sort_col">@sortablelink('action_date','Action Date')</th>
                                             <th class="sort_col">@sortablelink('task_group','Group')</th>
                                             <th>Note</th>
                                             <th width="280px">Action</th>
@@ -105,7 +105,7 @@
 											<td>{{ $list->assigned_user->first_name ?? ''}}  {{$list->assigned_user->last_name ?? ''}}</td>
 											<td>{{ $client_name??'N/P' }}</td>
                                             <td><a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->client_id)))}}" target="_blank" >{{ $list->noteClient->client_id ?? 'N/P' }}</a></td>
-											<td>{{ date('d/m/Y h:i:s',strtotime($list->followup_date)) ?? 'N/P'}} </td>
+											<td>{{ date('d/m/Y h:i:s',strtotime($list->action_date)) ?? 'N/P'}} </td>
                                             <td>{{ $list->task_group??'N/P' }}</td>
                                             <td>{{ $list->description??'N/P' }}</td>
 

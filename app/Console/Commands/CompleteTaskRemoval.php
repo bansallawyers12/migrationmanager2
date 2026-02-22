@@ -30,13 +30,13 @@ class CompleteTaskRemoval extends Command
     {
         /*
         status =  1 =>completed task, 0=>Incompleted task
-        folloup = 1 =>followup is done,0=> folloup is not done(deleted)
-        followup_date => of 1 month agao
+        is_action = 1 => action is done, 0 => action is not done (deleted)
+        action_date => of 1 month ago
         */
         $query 	= Note::select('id')
             ->where('status', '1')
-            ->where('folloup', '1')
-            ->where('followup_date', '<=', Carbon::now()->subDays(30)->toDateTimeString() ) ;
+            ->where('is_action', '1')
+            ->where('action_date', '<=', Carbon::now()->subDays(30)->toDateTimeString() );
         $totalNotes = $query->count();//dd($totalNotes);
 		$lists = $query->get(); //dd($lists);
         if($totalNotes >0){

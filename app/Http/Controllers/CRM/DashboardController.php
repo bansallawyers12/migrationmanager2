@@ -255,13 +255,13 @@ class DashboardController extends Controller
         if (Auth::user()->role == 1) {
             $assigneesCount = \App\Models\Note::where('type', 'client')
                 ->whereNotNull('client_id')
-                ->where('folloup', 1)
+                ->where('is_action', 1)
                 ->where('status', 0)
                 ->count();
         } else {
             $assigneesCount = \App\Models\Note::where('assigned_to', Auth::user()->id)
                 ->where('type', 'client')
-                ->where('folloup', 1)
+                ->where('is_action', 1)
                 ->where('status', 0)
                 ->count();
         }

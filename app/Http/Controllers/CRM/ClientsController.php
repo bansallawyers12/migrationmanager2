@@ -2999,8 +2999,8 @@ class ClientsController extends Controller
                         $obj1->mail_id = $list2->mail_id;
                         $obj1->type = $list2->type;
                         $obj1->pin = $list2->pin;
-                        $obj1->followup_date = $list2->followup_date;
-                        $obj1->folloup = $list2->folloup;
+                        $obj1->action_date = $list2->action_date;
+                        $obj1->is_action = $list2->is_action;
                         $obj1->assigned_to = $list2->assigned_to;
                         $obj1->status = $list2->status;
                         $obj1->task_group = $list2->task_group;
@@ -3019,8 +3019,8 @@ class ClientsController extends Controller
                         $obj2->mail_id = $list1->mail_id;
                         $obj2->type = $list1->type;
                         $obj2->pin = $list1->pin;
-                        $obj2->followup_date = $list1->followup_date;
-                        $obj2->folloup = $list1->folloup;
+                        $obj2->action_date = $list1->action_date;
+                        $obj2->is_action = $list1->is_action;
                         $obj2->assigned_to = $list1->assigned_to;
                         $obj2->status = $list1->status;
                         $obj2->task_group = $list1->task_group;
@@ -3087,8 +3087,8 @@ class ClientsController extends Controller
                             'mail_id' => $noteval->mail_id,
                             'type' => $noteval->type,
                             'pin' => $noteval->pin,
-                            'followup_date' => $noteval->followup_date,
-                            'folloup' => $noteval->folloup,
+                            'action_date' => $noteval->action_date,
+                            'is_action' => $noteval->is_action,
                             'assigned_to' => $noteval->assigned_to,
                             'status' => $noteval->status,
                             'task_group' => $noteval->task_group,
@@ -5871,7 +5871,7 @@ class ClientsController extends Controller
                 $action->title = $requestData['remindersubject'] ?? 'Lead assigned to ' . $assigneeName;
 
                 // PostgreSQL NOT NULL constraints - must set these fields (Notes Table pattern)
-                $action->folloup = 1; // This is an action (folloup field name kept for database compatibility)
+                $action->is_action = 1; // This is an action
                 $action->pin = 0; // Default to not pinned
                 $action->status = '0'; // Default status (string '0' = active, '1' = completed)
                 $action->type = 'client';
@@ -5879,7 +5879,7 @@ class ClientsController extends Controller
                 $action->assigned_to = $assigneeId;
 
                 if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
-                    $action->followup_date = $requestData['followup_datetime'];
+                    $action->action_date = $requestData['followup_datetime'];
                 }
 
                 //add note deadline
@@ -6084,7 +6084,7 @@ class ClientsController extends Controller
                 $action->user_id = Auth::user()->id;
                 $action->description = @$requestData['description'];
                 $action->unique_group_id = $actionUniqueId;
-                $action->folloup = 1;
+                $action->is_action = 1;
                 $action->type = 'client';
                 $action->task_group = @$requestData['task_group'];
                 $action->assigned_to = $assigneeId;
@@ -6092,7 +6092,7 @@ class ClientsController extends Controller
                 $action->pin = 0; // Required field - default to not pinned
                 
                 if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
-                    $action->followup_date = @$requestData['followup_datetime'];
+                    $action->action_date = @$requestData['followup_datetime'];
                 }
 
                 $saved = $action->save();
@@ -6155,7 +6155,7 @@ class ClientsController extends Controller
             $action->assigned_to = @$requestData['rem_cat'];
             
             if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
-                $action->followup_date = @$requestData['followup_datetime'];
+                $action->action_date = @$requestData['followup_datetime'];
             }
             
             $action->save();
@@ -6212,7 +6212,7 @@ class ClientsController extends Controller
             $action->user_id = Auth::user()->id;
             $action->description = @$requestData['description'];
             $action->unique_group_id = $actionUniqueId;
-            $action->folloup = 1;
+            $action->is_action = 1;
             $action->type = 'client';
             $action->task_group = @$requestData['task_group'];
             $action->assigned_to = @$requestData['rem_cat'];
@@ -6220,7 +6220,7 @@ class ClientsController extends Controller
             $action->pin = 0; // Required field - default to not pinned
             
             if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
-                $action->followup_date = @$requestData['followup_datetime'];
+                $action->action_date = @$requestData['followup_datetime'];
             }
 
             $saved = $action->save();
@@ -6413,9 +6413,9 @@ class ClientsController extends Controller
             $appointment->user_id = Auth::id();
             $appointment->title = $requestData['title'];
             $appointment->description = $requestData['description'] ?? '';
-            $appointment->followup_date = $followupDateTime->toDateTimeString();
+            $appointment->action_date = $followupDateTime->toDateTimeString();
             $appointment->type = 'application'; // Legacy appointment type
-            $appointment->folloup = 1; // Active followup
+            $appointment->is_action = 1; // Active action
             $appointment->status = 0; // Incomplete
             $appointment->pin = 0;
             

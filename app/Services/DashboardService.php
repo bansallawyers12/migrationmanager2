@@ -86,14 +86,14 @@ class DashboardService
     }
 
     /**
-     * Get all actions (notes with folloup = 1) for the user
+     * Get all actions (notes with is_action = 1) for the user
      * Shows actions with deadlines first (ordered by urgency), then actions without deadlines
      */
     private function getNotesData($user)
     {
         $query = Note::with(['client:id,first_name,last_name,client_id', 'assignedUser:id,first_name,last_name'])
             ->where('type', 'client')
-            ->where('folloup', 1)
+            ->where('is_action', 1)
             ->whereNotNull('client_id')
             ->whereNotNull('unique_group_id')
             ->where('status', '!=', 1)
@@ -247,7 +247,7 @@ class DashboardService
     private function getNoteDeadlineCount($user): int
     {
         $query = Note::where('type', 'client')
-            ->where('folloup', 1)
+            ->where('is_action', 1)
             ->whereNotNull('client_id')
             ->whereNotNull('unique_group_id')
             ->where('status', '!=', 1);
@@ -524,7 +524,7 @@ class DashboardService
                 'subject' => 'Extended Note Deadline',
                 'description' => '<span class="text-semi-bold">' . ($note->title ?? 'Note') . '</span><p>' . ($note->description ?? '') . '</p>',
                 'use_for' => Auth::id() != $note->user_id ? $note->user_id : '',
-                'followup_date' => $note->followup_date ?? null,
+                'followup_date' => $note->action_date ?? null,
                 'task_group' => $note->task_group ?? null,
                 'task_status' => 0,
                 'pin' => 0,

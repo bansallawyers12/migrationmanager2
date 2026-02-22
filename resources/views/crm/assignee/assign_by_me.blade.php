@@ -141,7 +141,7 @@
                                             <th width="5%" style="text-align: center;">Done</th>
                                             <th width="15%">Assignee Name</th>
                                             <th width="15%">Client Reference</th>
-                                            <th width="15%" class="sort_col">@sortablelink('followup_date', 'Assign Date')</th>
+                                            <th width="15%" class="sort_col">@sortablelink('action_date', 'Assign Date')</th>
                                             <th width="10%" class="sort_col">@sortablelink('task_group', 'Type')</th>
                                             <th>Note</th>
                                             <th width="15%">Action</th>
@@ -168,7 +168,7 @@
                                                             <a href="{{ URL::to('/clients/detail/' . base64_encode(convert_uuencode($list->client_id))) }}" target="_blank">{{ $list->noteClient->client_id }}</a>
                                                         @endif
                                                     </td>
-                                                    <td>{{ $list->followup_date ? date('d/m/Y', strtotime($list->followup_date)) : 'N/P' }}</td>
+                                                    <td>{{ $list->action_date ? date('d/m/Y', strtotime($list->action_date)) : 'N/P' }}</td>
                                                     <td>{{ $list->task_group ?? 'N/P' }}</td>
                                                     <td>
                                                         @if (isset($list->description) && $list->description != "")
@@ -184,7 +184,7 @@
                                                     </td>
                                                     <td>
                                                         @if ($list->task_group != 'Personal Action')
-                                                            <button type="button" data-noteid="{{ $list->description }}" data-taskid="{{ $list->id }}" data-taskgroupid="{{ $list->task_group }}" data-followupdate="{{ $list->followup_date }}" class="btn btn-primary btn-sm update_task" data-toggle="tooltip" title="Update Task" data-container="body" data-role="popover" data-placement="bottom" data-html="true" data-content='
+                                                            <button type="button" data-noteid="{{ $list->description }}" data-taskid="{{ $list->id }}" data-taskgroupid="{{ $list->task_group }}" data-actiondate="{{ $list->action_date }}" class="btn btn-primary btn-sm update_task" data-toggle="tooltip" title="Update Task" data-container="body" data-role="popover" data-placement="bottom" data-html="true" data-content='
                                                                 <div id="popover-content">
                                                                     <h4 class="text-center">Update Task</h4>
                                                                     <div class="form-group row" style="margin-bottom:12px">
@@ -350,7 +350,7 @@
             $('#assign_note_id').val(task_id);
             var taskgroup_id = $(this).attr('data-taskgroupid');
             $('#task_group').val(taskgroup_id);
-            var followupdate_id = $(this).attr('data-followupdate');
+            var followupdate_id = $(this).attr('data-actiondate');
             $('#popoverdatetime').val(followupdate_id);
         });
 
