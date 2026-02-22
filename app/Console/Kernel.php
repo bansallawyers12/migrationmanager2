@@ -41,9 +41,6 @@ class Kernel extends ConsoleKernel
         // Login Data Import
         '\App\Console\Commands\ImportLoginDataFromMySQL',
         
-        // MySQL to PostgreSQL Data Sync
-        '\App\Console\Commands\SyncDataFromMySQL',
-        
         // Client Reference Management Commands
         '\App\Console\Commands\FixDuplicateClientReferences',
         
