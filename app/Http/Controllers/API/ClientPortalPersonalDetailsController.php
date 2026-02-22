@@ -2981,9 +2981,6 @@ class ClientPortalPersonalDetailsController extends Controller
                     'start_date' => null,
                     'finish_date' => null,
                     'relevant_qualification' => false,
-                    'specialist_education' => false,
-                    'stem_qualification' => false,
-                    'regional_study' => false,
                     'action' => $action,
                 ];
             }
@@ -3025,15 +3022,6 @@ class ClientPortalPersonalDetailsController extends Controller
                     break;
                 case 'qualification_relevant':
                     $qualificationData[$order]['relevant_qualification'] = ($entry->new_value == '1' || $entry->new_value == 1) ? true : false;
-                    break;
-                case 'qualification_specialist_education':
-                    $qualificationData[$order]['specialist_education'] = ($entry->new_value == '1' || $entry->new_value == 1) ? true : false;
-                    break;
-                case 'qualification_stem':
-                    $qualificationData[$order]['stem_qualification'] = ($entry->new_value == '1' || $entry->new_value == 1) ? true : false;
-                    break;
-                case 'qualification_regional_study':
-                    $qualificationData[$order]['regional_study'] = ($entry->new_value == '1' || $entry->new_value == 1) ? true : false;
                     break;
             }
         }
@@ -3080,9 +3068,6 @@ class ClientPortalPersonalDetailsController extends Controller
                 'start_date' => $qualification->start_date ? $this->formatDate($qualification->start_date) : null,
                 'finish_date' => $qualification->finish_date ? $this->formatDate($qualification->finish_date) : null,
                 'relevant_qualification' => ($qualification->relevant_qualification == 1) ? true : false,
-                'specialist_education' => ($qualification->specialist_education == 1) ? true : false,
-                'stem_qualification' => ($qualification->stem_qualification == 1) ? true : false,
-                'regional_study' => ($qualification->regional_study == 1) ? true : false,
                 'action' => null, // Records from source table have action: null
             ];
         }
@@ -5861,42 +5846,6 @@ class ClientPortalPersonalDetailsController extends Controller
                 'updated_at' => now(),
             ]);
 
-            ClientPortalDetailAudit::create([
-                'client_id' => $clientId,
-                'meta_key' => 'qualification_specialist_education',
-                'old_value' => null,
-                'new_value' => ($sourceQualification->specialist_education == 1) ? '1' : '0',
-                'meta_order' => $metaOrder,
-                'meta_type' => (string) $qualificationId,
-                'action' => 'delete',
-                'updated_by' => $userId,
-                'updated_at' => now(),
-            ]);
-
-            ClientPortalDetailAudit::create([
-                'client_id' => $clientId,
-                'meta_key' => 'qualification_stem',
-                'old_value' => null,
-                'new_value' => ($sourceQualification->stem_qualification == 1) ? '1' : '0',
-                'meta_order' => $metaOrder,
-                'meta_type' => (string) $qualificationId,
-                'action' => 'delete',
-                'updated_by' => $userId,
-                'updated_at' => now(),
-            ]);
-
-            ClientPortalDetailAudit::create([
-                'client_id' => $clientId,
-                'meta_key' => 'qualification_regional_study',
-                'old_value' => null,
-                'new_value' => ($sourceQualification->regional_study == 1) ? '1' : '0',
-                'meta_order' => $metaOrder,
-                'meta_type' => (string) $qualificationId,
-                'action' => 'delete',
-                'updated_by' => $userId,
-                'updated_at' => now(),
-            ]);
-
             DB::commit();
 
             return response()->json([
@@ -5914,9 +5863,6 @@ class ClientPortalPersonalDetailsController extends Controller
                     'start_date' => $startDate,
                     'finish_date' => $finishDate,
                     'relevant_qualification' => ($sourceQualification->relevant_qualification == 1) ? true : false,
-                    'specialist_education' => ($sourceQualification->specialist_education == 1) ? true : false,
-                    'stem_qualification' => ($sourceQualification->stem_qualification == 1) ? true : false,
-                    'regional_study' => ($sourceQualification->regional_study == 1) ? true : false,
                     'action' => 'delete'
                 ]
             ]);
@@ -8400,9 +8346,6 @@ class ClientPortalPersonalDetailsController extends Controller
                 'qualifications.*.start_date' => 'nullable|date_format:d/m/Y',
                 'qualifications.*.finish_date' => 'nullable|date_format:d/m/Y',
                 'qualifications.*.relevant_qualification' => 'nullable|boolean',
-                'qualifications.*.specialist_education' => 'nullable|boolean',
-                'qualifications.*.stem_qualification' => 'nullable|boolean',
-                'qualifications.*.regional_study' => 'nullable|boolean',
             ], [
                 'qualifications.required' => 'At least one qualification entry is required.',
                 'qualifications.*.id.present' => 'Qualification ID field is required for each qualification. Use null for new qualifications or provide the existing qualification ID for updates.',
@@ -8522,9 +8465,6 @@ class ClientPortalPersonalDetailsController extends Controller
                     $startDate = $qualificationData['start_date'] ?? null;
                     $finishDate = $qualificationData['finish_date'] ?? null;
                     $relevantQualification = isset($qualificationData['relevant_qualification']) ? (bool) $qualificationData['relevant_qualification'] : false;
-                    $specialistEducation = isset($qualificationData['specialist_education']) ? (bool) $qualificationData['specialist_education'] : false;
-                    $stemQualification = isset($qualificationData['stem_qualification']) ? (bool) $qualificationData['stem_qualification'] : false;
-                    $regionalStudy = isset($qualificationData['regional_study']) ? (bool) $qualificationData['regional_study'] : false;
 
                     // Skip if both level and name are empty
                     if (empty($level) && empty($name)) {
@@ -8723,45 +8663,6 @@ class ClientPortalPersonalDetailsController extends Controller
                         'updated_at' => now(),
                     ]);
 
-                    // Save specialist_education
-                    ClientPortalDetailAudit::create([
-                        'client_id' => $clientId,
-                        'meta_key' => 'qualification_specialist_education',
-                        'old_value' => null,
-                        'new_value' => $specialistEducation ? '1' : '0',
-                        'meta_order' => $metaOrder,
-                        'meta_type' => null,
-                        'action' => 'update',
-                        'updated_by' => $userId,
-                        'updated_at' => now(),
-                    ]);
-
-                    // Save stem_qualification
-                    ClientPortalDetailAudit::create([
-                        'client_id' => $clientId,
-                        'meta_key' => 'qualification_stem',
-                        'old_value' => null,
-                        'new_value' => $stemQualification ? '1' : '0',
-                        'meta_order' => $metaOrder,
-                        'meta_type' => null,
-                        'action' => 'update',
-                        'updated_by' => $userId,
-                        'updated_at' => now(),
-                    ]);
-
-                    // Save regional_study
-                    ClientPortalDetailAudit::create([
-                        'client_id' => $clientId,
-                        'meta_key' => 'qualification_regional_study',
-                        'old_value' => null,
-                        'new_value' => $regionalStudy ? '1' : '0',
-                        'meta_order' => $metaOrder,
-                        'meta_type' => (string) $qualificationId, // Store record ID for consistency
-                        'action' => $action,
-                        'updated_by' => $userId,
-                        'updated_at' => now(),
-                    ]);
-
                     $updatedQualifications[] = [
                         'id' => $qualificationId,
                         'level' => $level,
@@ -8773,9 +8674,6 @@ class ClientPortalPersonalDetailsController extends Controller
                         'start_date' => $startDate,
                         'finish_date' => $finishDate,
                         'relevant_qualification' => $relevantQualification,
-                        'specialist_education' => $specialistEducation,
-                        'stem_qualification' => $stemQualification,
-                        'regional_study' => $regionalStudy,
                     ];
                 }
 

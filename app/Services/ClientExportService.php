@@ -195,7 +195,7 @@ class ClientExportService
                     'address_line_1' => $address->address_line_1,
                     'address_line_2' => $address->address_line_2,
                     'suburb' => $address->suburb,
-                    'city' => $address->city,
+                    'city' => $address->suburb,
                     'state' => $address->state,
                     'country' => $address->country,
                     'zip' => $address->zip,

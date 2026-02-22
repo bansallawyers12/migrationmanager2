@@ -1410,9 +1410,6 @@ class ClientsController extends Controller
                                 ? date('Y-m-d', strtotime(str_replace('/', '-', $validated['finish_date'][$index])))
                                 : null,
                             'relevant_qualification' => isset($validated['relevant_qualification_hidden'][$index]) ? 1 : 0,
-                            'specialist_education' => 0,
-                            'stem_qualification' => 0,
-                            'regional_study' => 0,
                             'created_at' => now(),
                             'updated_at' => now(),
                         ]);

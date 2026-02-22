@@ -19,10 +19,6 @@ class ClientQualification extends Model
         'start_date',
         'finish_date',
         'relevant_qualification',
-        // Points calculation fields
-        'specialist_education',
-        'stem_qualification',
-        'regional_study'
     ];
 }
 

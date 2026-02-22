@@ -1466,7 +1466,7 @@ $(function () {
         var noteId = $button.data('noteid') || '';
         var taskId = $button.data('taskid') || '';
         var taskGroup = $button.data('taskgroupid') || '';
-        var followupDate = $button.data('followupdate') || '';
+        var followupDate = $button.data('actiondate') || '';
         var clientId = $button.data('clientid') || '';
 
         // Set popover content

@@ -13,9 +13,8 @@ class ClientAddress extends Model
         'address',           // Keep for backward compatibility
         'address_line_1',    // NEW
         'address_line_2',    // NEW
-        'suburb',            // NEW
-        'city',              // Existing (alias for suburb)
-        'state',             // Existing
+        'suburb',
+        'state',
         'country',           // NEW
         'zip',               // Existing
         'regional_code',     // Existing

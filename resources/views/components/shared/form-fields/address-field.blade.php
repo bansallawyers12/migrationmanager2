@@ -52,7 +52,7 @@
             <input type="text" 
                    id="suburb_{{ $index }}" 
                    name="suburb[]" 
-                   value="{{ $address ? ($address->suburb ?? $address->city ?? old("suburb.$index")) : old("suburb.$index") }}"
+                   value="{{ $address ? ($address->suburb ?? old("suburb.$index")) : old("suburb.$index") }}"
                    placeholder="Suburb"
                    class="address-required">
         </div>

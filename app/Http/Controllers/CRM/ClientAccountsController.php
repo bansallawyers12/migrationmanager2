@@ -2896,7 +2896,7 @@ class ClientAccountsController extends Controller
           if (!empty($clientAddress->address_line_2)) {
            $clientname->address .= (!empty($clientname->address) ? ', ' : '') . $clientAddress->address_line_2;
           }
-          $clientname->city = $clientAddress->suburb ?? $clientAddress->city ?? '';
+          $clientname->city = $clientAddress->suburb ?? '';
           $clientname->state = $clientAddress->state ?? '';
           $clientname->zip = $clientAddress->zip ?? '';
           $clientname->country = $clientAddress->country ?? '';
@@ -4621,7 +4621,7 @@ class ClientAccountsController extends Controller
         if (!empty($clientAddress->address_line_2)) {
          $clientname->address .= (!empty($clientname->address) ? ', ' : '') . $clientAddress->address_line_2;
         }
-        $clientname->city = $clientAddress->suburb ?? $clientAddress->city ?? '';
+        $clientname->city = $clientAddress->suburb ?? '';
         $clientname->state = $clientAddress->state ?? '';
         $clientname->zip = $clientAddress->zip ?? '';
         $clientname->country = $clientAddress->country ?? '';
@@ -4815,7 +4815,7 @@ public function genofficereceiptInvoice(Request $request, $id){
         if (!empty($clientAddress->address_line_2)) {
          $clientname->address .= (!empty($clientname->address) ? ', ' : '') . $clientAddress->address_line_2;
         }
-        $clientname->city = $clientAddress->suburb ?? $clientAddress->city ?? '';
+        $clientname->city = $clientAddress->suburb ?? '';
         $clientname->state = $clientAddress->state ?? '';
         $clientname->zip = $clientAddress->zip ?? '';
         $clientname->country = $clientAddress->country ?? '';
