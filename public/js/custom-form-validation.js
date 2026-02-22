@@ -2687,7 +2687,7 @@ function customValidate(formName, savetype = '')
 								$('.popuploader').hide();
 								var obj = $.parseJSON(response);
 								$(".add_appliation #workflow").val('').trigger('change');
-			                    $(".add_appliation #partner").val('').trigger('change');
+			                    $(".add_appliation #branch").val('').trigger('change');
 			                    $(".add_appliation #product").val('').trigger('change');
 								if(obj.status){
 									$('.add_appliation').modal('hide');

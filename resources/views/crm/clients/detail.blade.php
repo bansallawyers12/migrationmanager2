@@ -1437,7 +1437,6 @@ $(document).ready(function() {
             updateSessionCompleted: '{{ URL::to("/clients/update-session-completed") }}',
             viewNoteDetail: '{{ URL::to("/viewnotedetail") }}',
             viewApplicationNote: '{{ URL::to("/viewapplicationnote") }}',
-            getPartnerBranch: '{{ URL::to("/getpartnerbranch") }}',
             changeClientStatus: '{{ URL::to("/change-client-status") }}',
             getTemplates: '{{ URL::to("/get-templates") }}',
             getComposeDefaults: '{{ URL::to("/get-compose-defaults") }}',

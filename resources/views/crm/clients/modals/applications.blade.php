@@ -36,11 +36,14 @@
 						</div>
 						<div class="col-12 col-md-12 col-lg-12">
 							<div class="form-group">
-								<label for="partner_branch">Select Partner & Branch <span class="span_req">*</span></label>
-								<select data-valid="required" class="form-control partner_branch partner_branchselect2" id="partner" name="partner_branch">
-									<option value="">Please Select a Partner & Branch</option>
+								<label for="branch">Select Branch <span class="span_req">*</span></label>
+								<select data-valid="required" class="form-control" id="branch" name="branch">
+									<option value="">Please Select a Branch</option>
+									@foreach(\App\Models\Branch::orderBy('office_name')->get() as $office)
+										<option value="{{$office->id}}" {{ Auth::user()->office_id == $office->id ? 'selected' : '' }}>{{$office->office_name}}</option>
+									@endforeach
 								</select>
-								<span class="custom-error partner_branch_error" role="alert">
+								<span class="custom-error branch_error" role="alert">
 									<strong></strong>
 								</span>
 							</div>

@@ -8753,33 +8753,7 @@ Bansal Immigration`;
 
 			if(v != ''){
 
-				$('.popuploader').show();
-
-                $.ajax({
-
-                    url: window.ClientDetailConfig.urls.getPartnerBranch,
-
-                    type:'GET',
-
-                    data:{cat_id:v},
-
-                    success:function(response){
-
-                        $('.popuploader').hide();
-
-                        $('.add_appliation #partner').html(response);
-
-
-
-                        $(".add_appliation #partner").val('').trigger('change');
-
-                        $(".add_appliation #product").val('').trigger('change');
-
-                        $(".add_appliation #branch").val('').trigger('change');
-
-                    }
-
-                });
+				$(".add_appliation #product").val('').trigger('change');
 
 			}
 
@@ -10374,11 +10348,6 @@ Bansal Immigration`;
 
         });
 
-        $(".partner_branchselect2").select2({
-
-            dropdownParent: $(".add_appliation")
-
-        });
 
         $(".approductselect2").select2({
 

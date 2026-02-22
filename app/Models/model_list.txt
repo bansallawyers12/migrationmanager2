@@ -62,7 +62,6 @@ Profile.php
 RefreshToken.php
 Relationship.php
 Report.php
-RepresentingPartner.php
 Service.php
 Setting.php
 SignatureField.php

@@ -52,7 +52,7 @@
 
 				$workflow = \App\Models\Workflow::where('id', $aplist->workflow)->first();
 									?>
-										<option value="{{$aplist->id}}">Application #{{$aplist->id}} (Partner #{{$aplist->partner_id}})</option>
+										<option value="{{$aplist->id}}">Application #{{$aplist->id}}</option>
 									@endforeach
 								</select>
 

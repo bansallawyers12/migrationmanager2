@@ -2825,9 +2825,7 @@ class ClientsController extends Controller
 	public function saveapplication(Request $request){
 		if(Admin::whereIn('type', ['client', 'lead'])->where('id', $request->client_id)->exists()){
 			$workflow = $request->workflow;
-			$explode = explode('_', $request->partner_branch);
-			$partner = $explode[1];
-			$branch = $explode[0];
+			$branch = $request->branch;
 			$product = $request->product;
 			$client_id = $request->client_id;
 			$status = 0;
@@ -2837,7 +2835,6 @@ class ClientsController extends Controller
 			$obj = new \App\Models\Application;
 			$obj->user_id = Auth::user()->id;
 			$obj->workflow = $workflow;
-			$obj->partner_id = $partner;
 			$obj->branch = $branch;
 			$obj->product_id = $product;
 			$obj->status = $status;
@@ -2849,17 +2846,15 @@ class ClientsController extends Controller
 			if($saved){
 				// Fetch related data for activity log
 				$productdetail = DB::table('services')->where('id', $product)->first();
-				$partnerdetail = DB::table('representing_partners')->where('id', $partner)->first();
-				$PartnerBranch = \App\Models\Branch::find($branch);
+				$branchModel = \App\Models\Branch::find($branch);
 
 				$subject = 'has started an application';
 				$objs = new ActivitiesLog;
 				$objs->client_id = $request->client_id;
 				$objs->created_by = Auth::user()->id;
 				$productName = $productdetail ? ($productdetail->name ?? '') : '';
-				$partnerName = $partnerdetail ? ($partnerdetail->partner_name ?? '') : '';
-				$branchName = $PartnerBranch ? ($PartnerBranch->name ?? '') : '';
-				$objs->description = '<span class="text-semi-bold">'.$productName.'</span><p>'.$partnerName.' ('.$branchName.')</p>';
+				$branchName = $branchModel ? ($branchModel->office_name ?? '') : '';
+				$objs->description = '<span class="text-semi-bold">'.$productName.'</span><p>'.$branchName.'</p>';
 				$objs->subject = $subject;
 				$objs->task_status = 0;
 				$objs->pin = 0;
@@ -2886,16 +2881,14 @@ class ClientsController extends Controller
 			foreach($applications as $alist){
 				// Fetch related data for each application
 				$productdetail = DB::table('services')->where('id', $alist->product_id)->first();
-				$partnerdetail = DB::table('representing_partners')->where('id', $alist->partner_id)->first();
-				$PartnerBranch = \App\Models\Branch::find($alist->branch);
+				$branchModel = \App\Models\Branch::find($alist->branch);
 
 				$workflow = \App\Models\Workflow::where('id', $alist->workflow)->first();
 				$productName = $productdetail ? ($productdetail->name ?? '') : '';
-				$partnerName = $partnerdetail ? ($partnerdetail->partner_name ?? '') : '';
-				$branchName = $PartnerBranch ? ($PartnerBranch->name ?? '') : '';
+				$branchName = $branchModel ? ($branchModel->office_name ?? '') : '';
 				?>
 				<tr id="id_<?php echo $alist->id; ?>">
-				<td><a class="openapplicationdetail" data-id="<?php echo $alist->id; ?>" href="javascript:;" style="display:block;"><?php echo $productName; ?></a> <small><?php echo $partnerName; ?>(<?php echo $branchName; ?>)</small></td>
+				<td><a class="openapplicationdetail" data-id="<?php echo $alist->id; ?>" href="javascript:;" style="display:block;"><?php echo $productName; ?></a> <small>(<?php echo $branchName; ?>)</small></td>
 				<td><?php echo @$workflow->name; ?></td>
 				<td><?php echo @$alist->stage; ?></td>
 				<td>
@@ -3102,7 +3095,6 @@ class ClientsController extends Controller
                         [
                             'user_id'=> $appval->user_id,
                             'workflow' => $appval->workflow,
-                            'partner_id' => $appval->partner_id,
                             'product_id' => $appval->product_id,
                             'status' => $appval->status,
                             'stage' => $appval->stage,

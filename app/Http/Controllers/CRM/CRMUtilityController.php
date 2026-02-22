@@ -969,22 +969,6 @@ public function getChapters(Request $request)
 	die;
 }
 
-public function getpartnerbranch(Request $request){
-		$catid = $request->cat_id;
-		// Partner functionality removed - no partners available
-		ob_start();
-		?>
-		<option value="">No partners available</option>
-		<?php
-		// Partner functionality removed
-		// foreach($listsbranchs as $listsbranch){
-		// ?>
-		// <option value="<?php echo $listsbranch->id; ?>_<?php echo $list->id; ?>"><?php echo $list->partner_name.' ('.$listsbranch->name.')'; ?></option>
-		// <?php
-		// }
-		echo ob_get_clean();
-	}
-
 	public function gettemplates(Request $request){
 		$id = $request->id;
 		$CrmEmailTemplate = \App\Models\CrmEmailTemplate::where('id',$id)->first();
