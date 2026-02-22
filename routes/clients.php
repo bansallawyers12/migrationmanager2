@@ -157,11 +157,7 @@ Route::get('/pinactivitylog', 'CRM\ClientsController@pinactivitylog');
 /*---------- Client Services ----------*/
 // Interested Services routes REMOVED - feature deprecated (no UI access, modals deleted, controllers don't exist)
 // Routes removed: interested-service, edit-interested-service, get-services, getintrestedservice, getintrestedserviceedit
-Route::post('/servicesavefee', 'CRM\ClientsController@servicesavefee');
-
-// get-application-lists, convertapplication REMOVED - orphaned (no UI trigger, convertapplication method never existed)
-Route::get('/deleteservices', 'CRM\ClientsController@deleteservices')->name('clients.deleteservices');
-Route::post('/savetoapplication', 'CRM\ClientsController@savetoapplication');
+// servicesavefee, deleteservices, savetoapplication REMOVED - controller methods never existed in ClientsController; servicefeeform modal no longer in any view
 
 // Service Taken routes REMOVED - client_service_takens table does not exist
 // Model clientServiceTaken.php deleted, controller methods removed

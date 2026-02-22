@@ -8376,25 +8376,9 @@ Bansal Immigration`;
 
                         }
 
-                        if(delhref == 'deleteservices'){
+                        // deleteservices block REMOVED - route and controller method no longer exist; /get-services route also removed
 
-                            $.ajax({
-
-                                url: site_url+'/get-services',
-
-                                type:'GET',
-
-                                data:{clientid:window.ClientDetailConfig.clientId},
-
-                                success: function(responses){
-
-                                    $('.interest_serv_list').html(responses);
-
-                                }
-
-                            });
-
-                        }else if(delhref == 'superagent'){
+                        if(delhref == 'superagent'){
 
                             $('.supagent_data').html('');
 

@@ -1388,50 +1388,8 @@ function customValidate(formName, savetype = '')
 					// Application fee form has been removed
 					}else if(formName == 'applicationfeeform'){
 						$('.custom-error-msg').html('<span class="alert alert-danger">Application fee options feature has been removed.</span>');
-					}else if(formName == 'servicefeeform'){
-
-						var myform = document.getElementById('servicefeeform');
-						var fd = new FormData(myform);
-						$.ajax({
-							type:'post',
-							url:$("form[name="+formName+"]").attr('action'),
-							processData: false,
-							contentType: false,
-							data: fd,
-							success: function(response){
-								$('.popuploader').hide();
-									$('#new_fee_option_serv').modal('hide');
-
-								var obj = $.parseJSON(response);
-
-								if(obj.status){
-									$('#interest_service_view').modal('show');
-									$(document).on("hidden.bs.modal", "#new_fee_option_serv", function (e) {
-										$('body').addClass('modal-open');
-									});
-								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
-									$('.productfeedata .installtype').html(obj.installment_type);
-									$('.productfeedata .feedata').html(obj.feedata);
-
-									$('.productfeedata .client_dicounts').html(obj.discount);
-									var t = parseFloat(obj.totalfee) - parseFloat(obj.discount);
-									$('.productfeedata .client_totl').html(t);
-									$.ajax({
-										url: site_url+'/get-services',
-										type:'GET',
-										data:{clientid:obj.client_id},
-										success: function(responses){
-											$('.popuploader').hide();
-											$('.interest_serv_list').html(responses);
-										}
-									});
-								}else{
-									$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
-
-								}
-							}
-						});
-					}else if(formName == 'setuppaymentschedule'){
+				// servicefeeform handler REMOVED - form/modals no longer exist; /get-services route removed
+				}else if(formName == 'setuppaymentschedule'){
 
 						var myform = document.getElementById('setuppaymentschedule');
 						var fd = new FormData(myform);
@@ -2054,136 +2012,9 @@ function customValidate(formName, savetype = '')
 							}
 						});
 
-					}else if(formName == 'saleforcastservice'){
-						var myform = document.getElementById('saleforcastservice');
-						var fd = new FormData(myform);
-						$.ajax({
-							type:'post',
-							url:$("form[name="+formName+"]").attr('action'),
-							processData: false,
-							contentType: false,
-							data: fd,
-							success: function(response){
-
-								var obj = $.parseJSON(response);
-								$('#application_opensaleforcastservice').modal('hide');
-								if(obj.status){
-									$('#interest_service_view').modal('show');
-								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
-									 $('.opensaleforcastservice').attr('data-client_revenue',obj.client_revenue);
-									 $('.opensaleforcastservice').attr('data-partner_revenue',obj.partner_revenue);
-									 $('.opensaleforcastservice').attr('data-discounts',obj.discounts);
-
-									$('.appsaleforcastserv .client_revenue').html(obj.client_revenue);
-									$('.appsaleforcastserv .partner_revenue').html(obj.partner_revenue);
-									$('.appsaleforcastserv .discounts').html(obj.discounts);
-									var t = parseFloat(obj.client_revenue) + parseFloat(obj.partner_revenue) - parseFloat(obj.discounts);
-									$('.appsaleforcastserv .netrevenue').html(t);
-									$.ajax({
-										url: site_url+'/get-services',
-										type:'GET',
-										data:{clientid:obj.client_id},
-										success: function(responses){
-											$('.popuploader').hide();
-											$('.interest_serv_list').html(responses);
-										}
-									});
-								}else{
-									alert(obj.message);
-
-								}
-							}
-						});
-
-					}else if(formName == 'inter_servform'){
-						var client_id = $('#inter_servform input[name="client_id"]').val();
-						var myform = document.getElementById('inter_servform');
-						var fd = new FormData(myform);
-						$.ajax({
-							type:'post',
-							url:$("form[name="+formName+"]").attr('action'),
-							processData: false,
-							contentType: false,
-							data: fd,
-							success: function(response){
-								$('.popuploader').hide();
-								var obj = $.parseJSON(response);
-
-								if(obj.status){
-									$('.add_interested_service').modal('hide');
-								    $('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
-									$.ajax({
-										url: site_url+'/get-services',
-										type:'GET',
-										data:{clientid:client_id},
-										success: function(responses){
-                                            $('.interest_serv_list').html(responses);
-										}
-									});
-									//Fetch All Activities
-                                    getallactivities(client_id);
-								}else{
-									$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
-                                }
-							}
-						});
-					}else if(formName == 'inter_servform_serv'){
-						var myform = document.getElementById('inter_servform_serv');
-						var fd = new FormData(myform);
-						$.ajax({
-							type:'post',
-							url:$("form[name="+formName+"]").attr('action'),
-							processData: false,
-							contentType: false,
-							data: fd,
-							success: function(response){
-								$('.popuploader').hide();
-								var obj = $.parseJSON(response);
-								$('#add_interested_service').modal('hide');
-								if(obj.status){
-
-								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
-
-								}else{
-									$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
-
-								}
-								$('html, body').animate({scrollTop:0}, 'slow');
-							}
-						});
-					}else if(formName == 'editinter_servform'){
-						var client_id = $('#editinter_servform input[name="client_id"]').val();
-						var myform = document.getElementById('editinter_servform');
-						var fd = new FormData(myform);
-						$.ajax({
-							type:'post',
-							url:$("form[name="+formName+"]").attr('action'),
-							processData: false,
-							contentType: false,
-							data: fd,
-							success: function(response){
-								$('.popuploader').hide();
-								var obj = $.parseJSON(response);
-								$('#eidt_interested_service').modal('hide');
-								if(obj.status){
-
-								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
-									$.ajax({
-										url: site_url+'/get-services',
-										type:'GET',
-										data:{clientid:client_id},
-										success: function(responses){
-                                            $('.interest_serv_list').html(responses);
-										}
-									});
-									//Fetch All Activities
-                                    getallactivities(client_id);
-								}else{
-									$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
-                                }
-							}
-						});
-					}
+				// saleforcastservice, inter_servform, inter_servform_serv, editinter_servform handlers REMOVED
+				// Modals/forms removed; /get-services route removed; Interested Services feature deprecated
+				}
 
                     else if(formName == 'appointform'){
 						var client_id = $('#appointform input[name="client_id"]').val();
@@ -2650,30 +2481,9 @@ function customValidate(formName, savetype = '')
 							}
 						});
 					}
-					else if(formName == 'addtoapplicationform'){
-						var myform = document.getElementById('addtoapplicationform');
-						var fd = new FormData(myform);
-						$.ajax({
-							type:'post',
-							url:$("form[name="+formName+"]").attr('action'),
-							processData: false,
-							contentType: false,
-							data: fd,
-							success: function(response){
-								$('.popuploader').hide();
-								var obj = $.parseJSON(response);
+				// addtoapplicationform handler REMOVED - #add_application modal removed; savetoapplication route removed
 
-								if(obj.status){
-                                    $('#add_application').modal('hide');
-									$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
-								}else{
-									$('.custom-error-popupmsg').html('<span  class="alert alert-danger">'+obj.message+'</span>');
-								}
-							}
-						});
-					}
-
-				    else if(formName == 'submit-review')
+			    else if(formName == 'submit-review')
 					{
 						$("form[name=submit-review] :input[data-max]").each(function(){
 							var data_max  = $(this).attr('data-max');
