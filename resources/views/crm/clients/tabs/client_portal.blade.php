@@ -317,26 +317,12 @@
                                                                                                         @endif
                                                                                                     </td>
                                                                                                     <td class="checklist-name">{{ $checklist->document_type ?? 'N/A' }}</td>
-                                                                                                    <td class="checklist-count">
-                                                                                                        <div class="circular-box cursor-pointer">
-                                                                                                            <button class="transparent-button paddingNone">{{ $uploadCount }}</button>
-                                                                                                        </div>
-                                                                                                    </td>
-                                                                                                    <td class="checklist-action">
-                                                                                                        @if($uploadCount > 1)
-                                                                                                            <a href="javascript:void(0);" 
-                                                                                                               class="openfileupload" 
-                                                                                                               data-aid="{{ $applicationId }}" 
-                                                                                                               data-type="{{ $stageNameSlug }}" 
-                                                                                                               data-typename="{{ $stage->name }}" 
-                                                                                                               data-id="{{ $checklist->id }}">
-                                                                                                                <i class="fa fa-plus"></i>
-                                                                                                            </a>
-                                                                                                        @else
-                                                                                                            {{-- Plus option hidden when checklist has 0 or 1 document --}}
-                                                                                                        @endif
-                                                                                                    </td>
-                                                                                                </tr>
+                                                                    <td class="checklist-count">
+                                                                        <div class="circular-box cursor-pointer">
+                                                                            <button class="transparent-button paddingNone">{{ $uploadCount }}</button>
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
                                                                                             @endforeach
                                                                                         </tbody>
                                                                                     </table>

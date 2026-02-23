@@ -2170,7 +2170,6 @@ class ClientPortalController extends Controller
 
 					$checklistdata .= '<td>'.@$applicationdocument->document_type.'</td>';
 					$checklistdata .= '<td><div class="circular-box cursor-pointer"><button class="transparent-button paddingNone">'.$appcount.'</button></div></td>';
-					$checklistdata .= '<td><a data-aid="'.$app_id.'" data-type="'.$type.'" data-typename="'.$typename.'" data-id="'.$applicationdocument->id.'" class="openfileupload" href="javascript:;"><i class="fa fa-plus"></i></a></td>';
 				$checklistdata .= '</tr>';
 			}
 			$checklistdata .= '</tbody></table>';
@@ -2277,7 +2276,6 @@ class ClientPortalController extends Controller
 
 					$checklistdata .= '<td>'.@$applicationdocument->document_type.'</td>';
 					$checklistdata .= '<td><div class="circular-box cursor-pointer"><button class="transparent-button paddingNone">'.$appcount.'</button></div></td>';
-					$checklistdata .= '<td><a data-aid="'.$application_id.'" data-type="'.$request->type.'" data-id="'.$applicationdocument->id.'" class="openfileupload" href="javascript:;"><i class="fa fa-plus"></i></a></td>';
 				$checklistdata .= '</tr>';
 			}
 			$checklistdata .= '</tbody></table>';
@@ -2380,7 +2378,6 @@ class ClientPortalController extends Controller
 
 					$checklistdata .= '<td>'.@$applicationdocument->document_type.'</td>';
 					$checklistdata .= '<td><div class="circular-box cursor-pointer"><button class="transparent-button paddingNone">'.$appcount.'</button></div></td>';
-					$checklistdata .= '<td><a data-aid="'.$application_id.'" data-type="'.$appdoc->type.'"data-typename="'.$appdoc->typename.'" data-id="'.$applicationdocument->id.'" class="openfileupload" href="javascript:;"><i class="fa fa-plus"></i></a></td>';
 				$checklistdata .= '</tr>';
 			}
 			$checklistdata .= '</tbody></table>';
