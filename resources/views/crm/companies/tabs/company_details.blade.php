@@ -203,8 +203,7 @@
         <div class="card">
             <h3><i class="fas fa-address-card"></i> Tag(s):   
                 <span class="float-right text-muted" style="margin-left:180px;">
-                <a href="javascript:;" data-id="{{$fetchedData->id}}" class="btn btn-primary opentagspopup btn-sm">Add</a>
-                <a href="javascript:;" data-id="{{$fetchedData->id}}" class="btn btn-danger openredtagspopup btn-sm">Add</a>
+                <a href="javascript:;" data-id="{{$fetchedData->id}}" class="btn btn-primary opentagspopup btn-sm">Add Tag</a>
                 </span>
             </h3>
            

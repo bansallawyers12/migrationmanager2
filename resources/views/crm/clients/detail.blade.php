@@ -971,38 +971,30 @@ use App\Http\Controllers\Controller;
 					<div class="row">
 						<div class="col-12 col-md-12 col-lg-12">
 							<div class="form-group">
-								<label for="super_agent">Tags <span class="span_req">*</span></label>
-								<select data-valid="required" multiple class="tagsselec form-control super_tag" id="tag" name="tag[]" data-tags="true">
+								<label for="tags_modal_container">Tags <span class="span_req">*</span></label>
 								<?php 
-								$r = [];
-								if($fetchedData->tagname != ''){
-									$r = explode(',', $fetchedData->tagname);
+								$tagIdsForModal = [];
+								$tagNamesForModal = [];
+								if(!empty($fetchedData->tagname)){
+									$tagIdsForModal = array_filter(array_map('intval', explode(',', $fetchedData->tagname)));
+									if(!empty($tagIdsForModal)){
+										$tagNamesForModal = \App\Models\Tag::whereIn('id', $tagIdsForModal)->pluck('name')->toArray();
+									}
 								}
-								
-								// Separate normal and red tags
-								$normalTags = \App\Models\Tag::normal()->orderBy('name')->get();
-								$redTags = \App\Models\Tag::red()->orderBy('name')->get();
 								?>
-									<option value="">Please Select</option>
-									@if($normalTags->count() > 0)
-										<optgroup label="Normal Tags">
-											@foreach($normalTags as $sa)
-												<option <?php if(in_array($sa->id, $r)){ echo 'selected'; } ?> value="{{$sa->name}}" data-tag-type="normal">{{$sa->name}}</option>
-											@endforeach
-										</optgroup>
-									@endif
-									@if($redTags->count() > 0)
-										<optgroup label="Red Tags (Hidden)">
-											@foreach($redTags as $sa)
-												<option <?php if(in_array($sa->id, $r)){ echo 'selected'; } ?> value="{{$sa->name}}" data-tag-type="red" style="color: #dc3545;">{{$sa->name}} <i class="fas fa-exclamation-triangle"></i></option>
-											@endforeach
-										</optgroup>
-									@endif
-								</select>
-								<small class="form-text text-muted">
-									<i class="fas fa-info-circle"></i> Red tags are hidden by default on client detail pages.
-								</small>
-
+								<div id="tags_modal_container" class="tags-modal-container form-control">
+									<div class="tags-pills-inner">
+										@foreach($tagNamesForModal as $tagName)
+										<span class="tag-pill" data-tag-name="{{ htmlspecialchars($tagName) }}">
+											<span class="tag-pill-text">{{ $tagName }}</span>
+											<button type="button" class="tag-pill-remove" aria-label="Remove tag">&times;</button>
+										</span>
+										@endforeach
+										<input type="text" id="tag_input" class="tag-input-inline" placeholder="Type and press comma or Enter to add" autocomplete="off">
+									</div>
+								</div>
+								<input type="hidden" id="tags_validation" data-valid="required" value="{{ count($tagNamesForModal) > 0 ? '1' : '' }}">
+								<small class="form-text text-muted">Separate tags with commas or press Enter to add.</small>
 							</div>
 						</div>
 
@@ -1016,6 +1008,16 @@ use App\Http\Controllers\Controller;
 		</div>
 	</div>
 </div>
+
+<style>
+.tags-modal-container { min-height: 42px; padding: 6px 10px; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.tags-pills-inner { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; flex: 1; }
+.tag-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background-color: #6A60E3; color: #fff; border-radius: 6px; font-size: 13px; }
+.tag-pill-text { white-space: nowrap; }
+.tag-pill-remove { background: none; border: none; color: #fff; cursor: pointer; font-size: 16px; line-height: 1; padding: 0 2px; opacity: 0.8; }
+.tag-pill-remove:hover { opacity: 1; }
+.tag-input-inline { flex: 1; min-width: 120px; border: none; outline: none; font-size: 14px; background: transparent; }
+</style>
 
 {{-- Service Taken Modal - REMOVED --}}
 {{-- Feature deprecated - client_service_takens table does not exist --}}

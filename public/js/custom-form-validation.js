@@ -26,7 +26,7 @@ function customValidate(formName, savetype = '')
 			var j = 0; //for serial wise errors shown
 			if($.inArray("required", splitDataValidation) !== -1) //for required
 				{
-					var for_class = $(this).attr('class');
+					var for_class = $(this).attr('class') || '';
 					var $element = $(this);
 					var isSelect2 = $element.hasClass('select2-hidden-accessible') || $element.data('select2');
 					var isMultiple = $element.prop('multiple');
@@ -2737,6 +2737,45 @@ function customValidate(formName, savetype = '')
 							return false;
 						}
 						$("form[name="+formName+"]").submit();
+						return true;
+					}
+					else if(formName == 'stags_application')
+					{
+						var $form = $("form[name="+formName+"]");
+						var $container = $form.find('#tags_modal_container');
+						var tags = [];
+						if ($container.length) {
+							$container.find('.tag-pill').each(function(){
+								var n = $(this).attr('data-tag-name');
+								if (n) tags.push(n);
+							});
+						}
+						var fd = new FormData($form[0]);
+						fd.delete('tag[]');
+						tags.forEach(function(tag){ fd.append('tag[]', tag); });
+						$.ajax({
+							type: 'post',
+							url: $form.attr('action'),
+							processData: false,
+							contentType: false,
+							data: fd,
+							headers: { 'X-Requested-With': 'XMLHttpRequest' },
+							success: function(){
+								$('.popuploader').hide();
+								$('#tags_clients').modal('hide');
+								location.reload();
+							},
+							error: function(xhr){
+								$('.popuploader').hide();
+								var msg = 'Failed to save tags. Please try again.';
+								if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+								else if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+									var errs = xhr.responseJSON.errors;
+									msg = (errs.client_id && errs.client_id[0]) || (errs.tag && errs.tag[0]) || msg;
+								}
+								$('.custom-error-msg').html('<span class="alert alert-danger">'+msg+'</span>');
+							}
+						});
 						return true;
 					}
                     else

@@ -1329,6 +1329,202 @@ $(document).ready(function() {
 
 
 
+    // Tags modal: open for normal tags
+
+    $(document).delegate('.opentagspopup', 'click', function(e){
+
+        e.preventDefault();
+
+        var entityId = $(this).attr('data-id');
+
+        if (entityId) {
+
+            $('#tags_clients #client_id').val(entityId);
+
+            $('#tags_clients #create_new_as_red').val('0');
+
+            $('#tags_clients #tags_red_mode_hint').hide();
+
+            $('#tags_clients').modal('show');
+
+        }
+
+    });
+
+
+
+    // Tags modal: open for red tags
+
+    $(document).delegate('.openredtagspopup', 'click', function(e){
+
+        e.preventDefault();
+
+        var entityId = $(this).attr('data-id');
+
+        if (entityId) {
+
+            $('#tags_clients #client_id').val(entityId);
+
+            $('#tags_clients #create_new_as_red').val('1');
+
+            $('#tags_clients #tags_red_mode_hint').show();
+
+            $('#tags_clients').modal('show');
+
+        }
+
+    });
+
+
+
+    // Tags modal: add tag pill(s) from input on comma or Enter
+
+    $(document).on('keydown', '#tags_modal_container #tag_input', function(e){
+
+        var $input = $(this);
+
+        var val = ($input.val() || '').trim();
+
+        if (e.which === 188 || e.which === 13) {
+
+            e.preventDefault();
+
+            if (val) {
+
+                var parts = val.split(',').map(function(t){ return t.trim(); }).filter(function(t){ return t.length > 0; });
+
+                var $container = $('#tags_modal_container .tags-pills-inner');
+
+                var existing = [];
+
+                $container.find('.tag-pill').each(function(){ existing.push($(this).attr('data-tag-name')); });
+
+                parts.forEach(function(tagName){
+
+                    if (existing.indexOf(tagName) === -1) {
+
+                        existing.push(tagName);
+
+                        var esc = $('<div>').text(tagName).html();
+
+                        var $pill = $('<span class="tag-pill" data-tag-name="' + esc + '"><span class="tag-pill-text">' + esc + '</span><button type="button" class="tag-pill-remove" aria-label="Remove tag">&times;</button></span>');
+
+                        $pill.insertBefore($input);
+
+                    }
+
+                });
+
+                $input.val('');
+
+                $('#tags_validation').val('1');
+
+            }
+
+            if (e.which === 188) return false;
+
+        }
+
+    });
+
+
+
+    // Tags modal: add tag(s) from input on blur (comma-separated)
+
+    $(document).on('blur', '#tags_modal_container #tag_input', function(){
+
+        var $input = $(this);
+
+        var val = ($input.val() || '').trim();
+
+        if (!val) return;
+
+        var parts = val.split(',').map(function(t){ return t.trim(); }).filter(function(t){ return t.length > 0; });
+
+        if (parts.length === 0) return;
+
+        var $container = $('#tags_modal_container .tags-pills-inner');
+
+        var existing = [];
+
+        $container.find('.tag-pill').each(function(){ existing.push($(this).attr('data-tag-name')); });
+
+        parts.forEach(function(tagName){
+
+            if (existing.indexOf(tagName) === -1) {
+
+                existing.push(tagName);
+
+                var $pill = $('<span class="tag-pill" data-tag-name="' + $('<div>').text(tagName).html() + '"><span class="tag-pill-text">' + $('<div>').text(tagName).html() + '</span><button type="button" class="tag-pill-remove" aria-label="Remove tag">&times;</button></span>');
+
+                $pill.insertBefore($input);
+
+            }
+
+        });
+
+        $input.val('');
+
+        $('#tags_validation').val('1');
+
+    });
+
+
+
+    // Tags modal: remove tag pill on X click
+
+    $(document).delegate('#tags_modal_container .tag-pill-remove', 'click', function(e){
+
+        e.preventDefault();
+
+        $(this).closest('.tag-pill').remove();
+
+        var count = $('#tags_modal_container .tag-pill').length;
+
+        $('#tags_validation').val(count > 0 ? '1' : '');
+
+    });
+
+
+
+    // Tags form: collect tags from pills and submit
+
+    $(document).on('submit', '#stags_application', function(e){
+
+        var $form = $(this);
+
+        var $container = $form.find('#tags_modal_container');
+
+        if ($container.length) {
+
+            e.preventDefault();
+
+            var tags = [];
+
+            $container.find('.tag-pill').each(function(){
+
+                var n = $(this).attr('data-tag-name');
+
+                if (n) tags.push(n);
+
+            });
+
+            $form.find('input[name="tag[]"]').remove();
+
+            tags.forEach(function(tag){
+
+                $('<input type="hidden" name="tag[]">').val(tag).appendTo($form);
+
+            });
+
+            $form[0].submit();
+
+        }
+
+    });
+
+
+
     // Initialize Sidebar Tabs Management
 
         if (typeof SidebarTabs !== 'undefined' && window.ClientDetailConfig) {
