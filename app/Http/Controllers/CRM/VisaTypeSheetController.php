@@ -79,7 +79,7 @@ class VisaTypeSheetController extends Controller
             $rows->appends(array_merge($request->except('page'), ['tab' => $tab]));
         } else {
             if ($tab === 'checklist') {
-                $rows = $this->buildChecklistTabWithLeads($request, $config, $perPage);
+                $rows = $this->buildChecklistTabWithLeads($request, $config, $perPage, $visaType);
             } else {
                 $query = $this->buildBaseQuery($request, $tab, $config);
                 $query = $this->applyFilters($query, $request, $config);
@@ -231,11 +231,11 @@ class VisaTypeSheetController extends Controller
     /**
      * Build Checklist tab results including both client matters and leads.
      */
-    protected function buildChecklistTabWithLeads(Request $request, array $config, int $perPage): \Illuminate\Pagination\LengthAwarePaginator
+    protected function buildChecklistTabWithLeads(Request $request, array $config, int $perPage, string $visaType = ''): \Illuminate\Pagination\LengthAwarePaginator
     {
         $refTable = $config['reference_table'];
         $refAlias = $config['reference_alias'];
-        $refType = $config['reference_type'] ?? null;
+        $refType = $config['reference_type'] ?? $visaType;
         $checklistCol = $config['checklist_status_column'];
         $leadRefTable = $config['lead_reference_table'] ?? null;
         $remindersTable = $config['reminders_table'] ?? null;
@@ -245,10 +245,10 @@ class VisaTypeSheetController extends Controller
         // Client matters with workflow=Checklist
         $clientQuery = DB::table('client_matters as cm')
             ->join('matters as m', 'm.id', '=', 'cm.sel_matter_id')
-            ->leftJoin("{$refTable} as {$refAlias}", function ($j) use ($refAlias, $refType) {
+            ->leftJoin("{$refTable} as {$refAlias}", function ($j) use ($refAlias, $refType, $refTable) {
                 $j->on("{$refAlias}.client_id", '=', 'cm.client_id')
                     ->on("{$refAlias}.client_matter_id", '=', 'cm.id');
-                if ($refType !== null) {
+                if (!empty($refType) && $refTable === 'client_matter_references') {
                     $j->where("{$refAlias}.type", '=', $refType);
                 }
             })
@@ -405,7 +405,8 @@ class VisaTypeSheetController extends Controller
         $matterCondition = $this->getMatterCondition($config);
         $refTable = $config['reference_table'];
         $refAlias = $config['reference_alias'];
-        $refType = $config['reference_type'] ?? null;
+        $visaType = $request->route('visaType', '');
+        $refType = $config['reference_type'] ?? $visaType;
         $checklistCol = $config['checklist_status_column'];
 
         // One row per matter (per plan: "one row per TR matter — filtered by active tab").
@@ -434,10 +435,10 @@ class VisaTypeSheetController extends Controller
         ";
 
         $query = DB::table(DB::raw('(' . $baseMattersSql . ') AS latest_matter'))
-            ->leftJoin("{$refTable} as {$refAlias}", function ($join) use ($refAlias, $refType) {
+            ->leftJoin("{$refTable} as {$refAlias}", function ($join) use ($refAlias, $refType, $refTable) {
                 $join->on("{$refAlias}.client_id", '=', 'latest_matter.client_id')
                     ->on("{$refAlias}.client_matter_id", '=', 'latest_matter.matter_id');
-                if ($refType !== null) {
+                if (!empty($refType) && $refTable === 'client_matter_references') {
                     $join->where("{$refAlias}.type", '=', $refType);
                 }
             })
@@ -701,17 +702,21 @@ class VisaTypeSheetController extends Controller
         }
 
         $refTable = $config['reference_table'];
-        $refType = $config['reference_type'] ?? null;
+        $refType = $config['reference_type'] ?? $visaType;
 
         if (!Schema::hasTable($refTable)) {
             return response()->json(['success' => false, 'message' => 'Reference table not found'], 404);
+        }
+
+        if ($refTable === 'client_matter_references' && (empty($refType) || $refType === '')) {
+            return response()->json(['success' => false, 'message' => 'Visa type config missing reference_type'], 500);
         }
 
         try {
             $query = DB::table($refTable)
                 ->where('client_id', $clientId)
                 ->where('client_matter_id', $matterInternalId);
-            if ($refType !== null) {
+            if (!empty($refType) && $refTable === 'client_matter_references') {
                 $query->where('type', $refType);
             }
             $reference = $query->first();
@@ -722,7 +727,7 @@ class VisaTypeSheetController extends Controller
                 $updateQuery = DB::table($refTable)
                     ->where('client_id', $clientId)
                     ->where('client_matter_id', $matterInternalId);
-                if ($refType !== null) {
+                if (!empty($refType) && $refTable === 'client_matter_references') {
                     $updateQuery->where('type', $refType);
                 }
                 $updateQuery->update([
@@ -741,7 +746,7 @@ class VisaTypeSheetController extends Controller
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
-                if ($refType !== null) {
+                if ($refTable === 'client_matter_references') {
                     $insertData['type'] = $refType;
                 }
                 DB::table($refTable)->insert($insertData);
