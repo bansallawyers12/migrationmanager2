@@ -111,7 +111,7 @@ Route::post('/updatemailreadbit', 'CRM\ClientsController@updatemailreadbit')->na
 
 Route::post('/clients/filter-emails', 'CRM\ClientsController@filterEmails')->name('clients.filter.emails');
 Route::post('/clients/filter-sentemails', 'CRM\ClientsController@filterSentEmails')->name('clients.filter.sentmails');
-Route::delete('/mail-reports/{id}', 'CRM\ClientsController@deleteMailReport')->name('mail-reports.delete');
+Route::delete('/email-logs/{id}', 'CRM\ClientsController@deleteEmailLog')->name('email-logs.delete');
 Route::post('/mail/enhance', 'CRM\ClientsController@enhanceMessage')->name('mail.enhance');
 
 /*---------- Email Labels Management ----------*/
@@ -122,11 +122,11 @@ Route::prefix('email-labels')->name('email-labels.')->group(function() {
     Route::delete('/remove', 'CRM\EmailLabelController@remove')->name('remove');
 });
 
-/*---------- Email Attachments ----------*/
+/*---------- Email Log Attachments ----------*/
 Route::prefix('mail-attachments')->name('mail-attachments.')->group(function() {
-    Route::get('/{id}/download', 'CRM\MailReportAttachmentController@download')->name('download');
-    Route::get('/{id}/preview', 'CRM\MailReportAttachmentController@preview')->name('preview');
-    Route::get('/email/{mailReportId}/download-all', 'CRM\MailReportAttachmentController@downloadAll')->name('download-all');
+    Route::get('/{id}/download', 'CRM\EmailLogAttachmentController@download')->name('download');
+    Route::get('/{id}/preview', 'CRM\EmailLogAttachmentController@preview')->name('preview');
+    Route::get('/email/{emailLogId}/download-all', 'CRM\EmailLogAttachmentController@downloadAll')->name('download-all');
 });
 
 /*---------- Client Notes ----------*/

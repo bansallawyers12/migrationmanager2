@@ -130,7 +130,7 @@ class ClientMatter extends Model
      */
     public function mailReports()
     {
-        return $this->hasMany(MailReport::class, 'client_matter_id');
+        return $this->hasMany(EmailLog::class, 'client_matter_id');
     }
 
     /**

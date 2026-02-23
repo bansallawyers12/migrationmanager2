@@ -1626,7 +1626,7 @@
         }
 
         try {
-            const response = await fetch(`/mail-reports/${email.id}`, {
+            const response = await fetch(`/email-logs/${email.id}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',

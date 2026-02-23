@@ -4,7 +4,7 @@ namespace App\Http\Controllers\CRM;
 
 use App\Http\Controllers\Controller;
 use App\Models\EmailLabel;
-use App\Models\MailReport;
+use App\Models\EmailLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -122,7 +122,7 @@ class EmailLabelController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'mail_report_id' => 'required|exists:mail_reports,id',
+                'mail_report_id' => 'required|exists:email_logs,id',
                 'label_id' => 'required|exists:email_labels,id',
             ]);
 
@@ -133,11 +133,11 @@ class EmailLabelController extends Controller
                 ], 422);
             }
 
-            $mailReport = MailReport::findOrFail($request->mail_report_id);
+            $emailLog = EmailLog::findOrFail($request->mail_report_id);
             
             // Check if already attached
-            if (!$mailReport->labels()->where('email_label_id', $request->label_id)->exists()) {
-                $mailReport->labels()->attach($request->label_id);
+            if (!$emailLog->labels()->where('email_label_id', $request->label_id)->exists()) {
+                $emailLog->labels()->attach($request->label_id);
             }
 
             return response()->json([
@@ -160,7 +160,7 @@ class EmailLabelController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'mail_report_id' => 'required|exists:mail_reports,id',
+                'mail_report_id' => 'required|exists:email_logs,id',
                 'label_id' => 'required|exists:email_labels,id',
             ]);
 
@@ -171,8 +171,8 @@ class EmailLabelController extends Controller
                 ], 422);
             }
 
-            $mailReport = MailReport::findOrFail($request->mail_report_id);
-            $mailReport->labels()->detach($request->label_id);
+            $emailLog = EmailLog::findOrFail($request->mail_report_id);
+            $emailLog->labels()->detach($request->label_id);
 
             return response()->json([
                 'success' => true,

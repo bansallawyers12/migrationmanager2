@@ -17,7 +17,7 @@ use App\Models\Admin;
 use Illuminate\Support\Facades\Auth;
 use App\Models\UploadChecklist;
 use App\Models\Email;
-use App\Models\MailReport;
+use App\Models\EmailLog;
 use App\Services\PythonService;
 
 class DocumentController extends Controller
@@ -1535,7 +1535,7 @@ class DocumentController extends Controller
 
                     if($sendMail){
                         //Save to mail reports table
-                        $obj5 = new \App\Models\MailReport;
+                        $obj5 = new \App\Models\EmailLog;
                         $obj5->user_id 		=  @Auth::guard('admin')->user()->id;
                         $obj5->from_mail 	=  $zeptoApiConfig['from_address'];
                         $obj5->to_mail 		=  $document->client_id;
@@ -1563,7 +1563,7 @@ class DocumentController extends Controller
                         }
                         // Validate required fields before saving
                         if (empty($obj5->from_mail) || empty($obj5->to_mail)) {
-                            Log::error('MailReport validation failed - missing required fields', [
+                            Log::error('EmailLog validation failed - missing required fields', [
                                 'from_mail' => $obj5->from_mail,
                                 'to_mail' => $obj5->to_mail
                             ]);
@@ -1572,7 +1572,7 @@ class DocumentController extends Controller
                                 $saved = $obj5->save();
 
                                 // Log the save result for debugging
-                                Log::info('MailReport save attempt', [
+                                Log::info('EmailLog save attempt', [
                                     'saved' => $saved,
                                     'from_mail' => $obj5->from_mail,
                                     'to_mail' => $obj5->to_mail,
@@ -1581,7 +1581,7 @@ class DocumentController extends Controller
                                 ]);
 
                                 if (!$saved) {
-                                    Log::error('Failed to save MailReport', [
+                                    Log::error('Failed to save EmailLog', [
                                         'data' => $obj5->toArray()
                                     ]);
                                 } elseif (!empty($request->checklistfile)) {
@@ -1592,7 +1592,7 @@ class DocumentController extends Controller
                                     }
                                 }
                             } catch (\Exception $e) {
-                                Log::error('Exception while saving MailReport', [
+                                Log::error('Exception while saving EmailLog', [
                                     'error' => $e->getMessage(),
                                     'trace' => $e->getTraceAsString(),
                                     'data' => $obj5->toArray()

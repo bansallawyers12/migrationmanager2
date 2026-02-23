@@ -2824,7 +2824,7 @@ class ClientsController extends Controller
 
 	public function uploadmail(Request $request){
 		$requestData 		= 	$request->all();
-        $obj				= 	new \App\Models\MailReport;
+        $obj				= 	new \App\Models\EmailLog;
 		$obj->user_id		=	Auth::user()->id;
 		$obj->from_mail 	=  $requestData['from'];
 		$obj->to_mail 		=  $requestData['to'];
@@ -3093,11 +3093,11 @@ class ClientsController extends Controller
                 }
             }
 
-            // Email history (mail_reports)
-            $conversations = DB::table('mail_reports')->where('client_id', $request->merge_from)->get(); //dd($conversations);
+            // Email history (email_logs)
+            $conversations = DB::table('email_logs')->where('client_id', $request->merge_from)->get(); //dd($conversations);
             if(!empty($conversations)){
                 foreach($conversations as $mailkey=>$mailval){
-                    DB::table('mail_reports')->insert(
+                    DB::table('email_logs')->insert(
                         [
                             'user_id' => $mailval->user_id,
                             'from_mail' => $mailval->from_mail,
@@ -3307,13 +3307,13 @@ class ClientsController extends Controller
             $upd_doc_info->client_matter_id = $requestData['reassign_client_matter_id'];
             $saved_doc_info = $upd_doc_info->save();
             if($saved_doc_info){
-                //Update mail_reports table with client id and matter id
+                //Update email_logs table with client id and matter id
                 $id = $requestData['memail_id'];
-                $mail_report_info = \App\Models\MailReport::find($id);
-                $mail_report_info->client_id = $requestData['reassign_client_id'];
-                $mail_report_info->user_id = Auth::user()->id;
-                $mail_report_info->client_matter_id = $requestData['reassign_client_matter_id'];
-                $saved_mail_report_info = $mail_report_info->save();
+                $email_log_info = \App\Models\EmailLog::find($id);
+                $email_log_info->client_id = $requestData['reassign_client_id'];
+                $email_log_info->user_id = Auth::user()->id;
+                $email_log_info->client_matter_id = $requestData['reassign_client_matter_id'];
+                $saved_mail_report_info = $email_log_info->save();
                 if($saved_mail_report_info){
                     $client_matter_info = \App\Models\ClientMatter::select('client_unique_matter_no')->where('id', '=', $requestData['reassign_client_matter_id'])->first();
                     $subject = 'Inbox Email Re-assign';
@@ -3388,13 +3388,13 @@ class ClientsController extends Controller
             $upd_doc_info->client_matter_id = $requestData['reassign_sent_client_matter_id'];
             $saved_doc_info = $upd_doc_info->save();
             if($saved_doc_info){
-                //Update mail_reports table with client id and matter id
+                //Update email_logs table with client id and matter id
                 $id = $requestData['memail_id'];
-                $mail_report_info = \App\Models\MailReport::find($id);
-                $mail_report_info->client_id = $requestData['reassign_sent_client_id'];
-                $mail_report_info->user_id = Auth::user()->id;
-                $mail_report_info->client_matter_id = $requestData['reassign_sent_client_matter_id'];
-                $saved_mail_report_info = $mail_report_info->save();
+                $email_log_info = \App\Models\EmailLog::find($id);
+                $email_log_info->client_id = $requestData['reassign_sent_client_id'];
+                $email_log_info->user_id = Auth::user()->id;
+                $email_log_info->client_matter_id = $requestData['reassign_sent_client_matter_id'];
+                $saved_mail_report_info = $email_log_info->save();
                 if($saved_mail_report_info){
                     $client_matter_info = \App\Models\ClientMatter::select('client_unique_matter_no')->where('id', '=', $requestData['reassign_sent_client_matter_id'])->first();
                     $subject = 'Sent Email Re-assign';
@@ -3484,13 +3484,13 @@ class ClientsController extends Controller
 
     //mail preview click update mail_is_read bit
     public function updatemailreadbit(Request $request){ //dd($request->all());
-        if( \App\Models\MailReport::where('id', $request->mail_report_id)->exists()){
-            $mailReportInfo = \App\Models\MailReport::select('mail_is_read')->where('id', $request->mail_report_id)->first();
-            //dd($mailReportInfo);
-            if( $mailReportInfo ){
-                $mail_report_info = \App\Models\MailReport::find($request->mail_report_id);
-                $mail_report_info->mail_is_read = 1;
-                $mail_report_info->save();
+        if( \App\Models\EmailLog::where('id', $request->mail_report_id)->exists()){
+            $emailLogInfo = \App\Models\EmailLog::select('mail_is_read')->where('id', $request->mail_report_id)->first();
+            //dd($emailLogInfo);
+            if( $emailLogInfo ){
+                $email_log_info = \App\Models\EmailLog::find($request->mail_report_id);
+                $email_log_info->mail_is_read = 1;
+                $email_log_info->save();
 
                 $response['status'] 	= 	true;
                 $response['message']	=	'Mail is successfully updated';
@@ -3557,7 +3557,7 @@ class ClientsController extends Controller
                 ], 400);
             }
 
-            $query = \App\Models\MailReport::where('client_matter_id', $client_matter_id)
+            $query = \App\Models\EmailLog::where('client_matter_id', $client_matter_id)
                 ->where('type', 'client')
                 ->where('mail_type', 1)
                 ->where('conversion_type', 'conversion_email_fetch')
@@ -3626,7 +3626,7 @@ class ClientsController extends Controller
                 
                 // If relationship is empty, try direct query (fallback for relationship issues)
                 if (!$attachments || (method_exists($attachments, 'count') && $attachments->count() === 0)) {
-                    $attachments = \App\Models\MailReportAttachment::where('mail_report_id', $email->id)->get();
+                    $attachments = \App\Models\EmailLogAttachment::where('email_log_id', $email->id)->get();
                 }
                 
                 // Format attachments as array with all required fields
@@ -3634,7 +3634,7 @@ class ClientsController extends Controller
                     $emailArray['attachments'] = $attachments->map(function ($attachment) {
                         return [
                             'id' => $attachment->id,
-                            'mail_report_id' => $attachment->mail_report_id,
+                            'mail_report_id' => $attachment->email_log_id,
                             'filename' => $attachment->filename,
                             'display_name' => $attachment->display_name ?? $attachment->filename,
                             'content_type' => $attachment->content_type,
@@ -3670,9 +3670,9 @@ class ClientsController extends Controller
     }
 
     /**
-     * Delete a mail report (email). Admin only (role === 1).
+     * Delete an email log (email). Admin only (role === 1).
      */
-    public function deleteMailReport(Request $request, $id)
+    public function deleteEmailLog(Request $request, $id)
     {
         // Restrict to Super Admin only (role 1)
         if (Auth::user()->role != 1) {
@@ -3683,8 +3683,8 @@ class ClientsController extends Controller
         }
 
         try {
-            $mailReport = \App\Models\MailReport::find($id);
-            if (!$mailReport) {
+            $emailLog = \App\Models\EmailLog::find($id);
+            if (!$emailLog) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Email not found.',
@@ -3692,20 +3692,20 @@ class ClientsController extends Controller
             }
 
             // Delete pivot records (email labels)
-            DB::table('email_label_mail_report')->where('mail_report_id', $id)->delete();
+            DB::table('email_label_email_log')->where('email_log_id', $id)->delete();
 
             // Delete attachments
-            \App\Models\MailReportAttachment::where('mail_report_id', $id)->delete();
+            \App\Models\EmailLogAttachment::where('email_log_id', $id)->delete();
 
-            // Delete the mail report
-            $mailReport->delete();
+            // Delete the email log
+            $emailLog->delete();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Email deleted successfully.',
             ]);
         } catch (\Exception $e) {
-            Log::error('Error deleting mail report: ' . $e->getMessage());
+            Log::error('Error deleting email log: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete email: ' . $e->getMessage(),
@@ -3733,7 +3733,7 @@ class ClientsController extends Controller
             }
 
             // Base query for sent mail - FILTER BY MATTER ID instead of client_id
-            $query = \App\Models\MailReport::where('client_matter_id', $client_matter_id)
+            $query = \App\Models\EmailLog::where('client_matter_id', $client_matter_id)
                 ->where('type', 'client')
                 ->where('mail_type', 1)
                 ->where(function ($query) {
@@ -3818,7 +3818,7 @@ class ClientsController extends Controller
 				
 				// If relationship is empty, try direct query (fallback for relationship issues)
 				if (!$attachments || (method_exists($attachments, 'count') && $attachments->count() === 0)) {
-					$attachments = \App\Models\MailReportAttachment::where('mail_report_id', $email->id)->get();
+					$attachments = \App\Models\EmailLogAttachment::where('email_log_id', $email->id)->get();
 				}
 				
 				// Format attachments as array with all required fields
@@ -3826,7 +3826,7 @@ class ClientsController extends Controller
 					$emailArray['attachments'] = $attachments->map(function ($attachment) {
 						return [
 							'id' => $attachment->id,
-							'mail_report_id' => $attachment->mail_report_id,
+							'mail_report_id' => $attachment->email_log_id,
 							'filename' => $attachment->filename,
 							'display_name' => $attachment->display_name ?? $attachment->filename,
 							'content_type' => $attachment->content_type,

@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Database\QueryException;
 use App\Models\Document;
-use App\Models\MailReport;
+use App\Models\EmailLog;
 use App\Models\ActivitiesLog;
 use App\Models\ClientMatter;
 use App\Models\Admin;
@@ -408,8 +408,8 @@ class EmailUploadController extends Controller
                 throw new \Exception('Failed to save document record: ' . ($e->errorInfo[2] ?? $e->getMessage()));
             }
 
-            // 4. Save to MailReport
-            $mailReport = new MailReport();
+            // 4. Save to EmailLog
+            $mailReport = new EmailLog();
             $mailReport->user_id = Auth::user()->id;
             $mailReport->from_mail = $parsedData['sender_email'] ?? '';
             $mailReport->to_mail = isset($parsedData['recipients']) && is_array($parsedData['recipients']) 
@@ -456,8 +456,6 @@ class EmailUploadController extends Controller
             if ($analysisData && isset($analysisData['success']) && $analysisData['success']) {
                 // Ensure JSON fields are properly formatted arrays (not objects or strings)
                 $mailReport->python_analysis = is_array($analysisData) ? $analysisData : null;
-                $mailReport->category = $analysisData['category'] ?? 'Uncategorized';
-                $mailReport->priority = $analysisData['priority'] ?? 'low';
                 $mailReport->sentiment = $analysisData['sentiment'] ?? 'neutral';
                 $mailReport->language = $analysisData['language'] ?? null;
                 // Ensure these are arrays or null for JSON columns
@@ -498,10 +496,10 @@ class EmailUploadController extends Controller
             try {
                 $mailReport->save();
             } catch (QueryException $e) {
-                Log::error('Failed to save MailReport record', [
+                Log::error('Failed to save EmailLog record', [
                     'file' => $fileName,
                     'document_id' => $document->id,
-                    'mail_report_data' => $mailReport->toArray(),
+                    'email_log_data' => $mailReport->toArray(),
                     'error' => $e->getMessage(),
                     'error_info' => $e->errorInfo ?? [],
                     'sql' => $e->getSql() ?? 'N/A'
@@ -513,7 +511,7 @@ class EmailUploadController extends Controller
             if (isset($parsedData['attachments']) && is_array($parsedData['attachments'])) {
                 Log::info('Processing attachments', [
                     'count' => count($parsedData['attachments']),
-                    'mail_report_id' => $mailReport->id
+                    'email_log_id' => $mailReport->id
                 ]);
                 
                 foreach ($parsedData['attachments'] as $attachmentData) {
@@ -530,7 +528,7 @@ class EmailUploadController extends Controller
             } else {
                 Log::info('No attachments found in parsed data', [
                     'has_attachments_key' => isset($parsedData['attachments']),
-                    'mail_report_id' => $mailReport->id
+                    'email_log_id' => $mailReport->id
                 ]);
             }
 
@@ -594,7 +592,7 @@ class EmailUploadController extends Controller
             return [
                 'success' => true,
                 'document_id' => $document->id,
-                'mail_report_id' => $mailReport->id
+                'email_log_id' => $mailReport->id
             ];
 
         } catch (\Illuminate\Database\QueryException $e) {
@@ -899,8 +897,8 @@ class EmailUploadController extends Controller
             }
 
             // Always create attachment record (even if file upload failed)
-            \App\Models\MailReportAttachment::create([
-                'mail_report_id' => $mailReportId,
+            \App\Models\EmailLogAttachment::create([
+                'email_log_id' => $mailReportId,
                 'filename' => $attachmentData['filename'] ?? 'unknown',
                 'display_name' => $attachmentData['display_name'] ?? ($attachmentData['filename'] ?? 'unknown'),
                 'content_type' => $attachmentData['content_type'] ?? 'application/octet-stream',
@@ -926,7 +924,7 @@ class EmailUploadController extends Controller
     /**
      * Auto-assign labels based on sender domain
      * 
-     * @param \App\Models\MailReport $mailReport
+     * @param \App\Models\EmailLog $mailReport
      * @param string $mailType
      */
     protected function autoAssignLabels($mailReport, $mailType)

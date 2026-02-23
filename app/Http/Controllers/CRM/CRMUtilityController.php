@@ -1111,7 +1111,7 @@ public function getChapters(Request $request)
 		$reciept_id = null;
 		$array = array();
 
-		$obj = new \App\Models\MailReport;
+		$obj = new \App\Models\EmailLog;
 		$obj->user_id 		=  $user_id;
 		$obj->from_mail 	=  $requestData['email_from'];
 		$obj->to_mail 		=  implode(',',$requestData['email_to']);

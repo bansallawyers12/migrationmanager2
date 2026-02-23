@@ -6,12 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class MailReportAttachment extends Model
+class EmailLogAttachment extends Model
 {
     use HasFactory;
 
+    protected $table = 'email_log_attachments';
+
     protected $fillable = [
-        'mail_report_id',
+        'email_log_id',
         'filename',
         'display_name',
         'content_type',
@@ -31,11 +33,11 @@ class MailReportAttachment extends Model
     ];
 
     /**
-     * Get the mail report that owns the attachment.
+     * Get the email log that owns the attachment.
      */
-    public function mailReport(): BelongsTo
+    public function emailLog(): BelongsTo
     {
-        return $this->belongsTo(MailReport::class);
+        return $this->belongsTo(EmailLog::class);
     }
 
     /**

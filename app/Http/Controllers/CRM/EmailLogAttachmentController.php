@@ -3,15 +3,15 @@
 namespace App\Http\Controllers\CRM;
 
 use App\Http\Controllers\Controller;
-use App\Models\MailReportAttachment;
-use App\Models\MailReport;
+use App\Models\EmailLogAttachment;
+use App\Models\EmailLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Log;
 use ZipArchive;
 
-class MailReportAttachmentController extends Controller
+class EmailLogAttachmentController extends Controller
 {
     public function __construct()
     {
@@ -24,18 +24,18 @@ class MailReportAttachmentController extends Controller
     public function download($id)
     {
         try {
-            $attachment = MailReportAttachment::findOrFail($id);
-            
+            $attachment = EmailLogAttachment::findOrFail($id);
+
             // Security: Check user has access to this client's emails (optional - add authorization check)
-            $mailReport = $attachment->mailReport;
-            
+            $emailLog = $attachment->emailLog;
+
             // Check if s3_key exists
             if (!$attachment->s3_key) {
                 Log::error('Attachment download failed: No S3 key', [
                     'id' => $id,
                     'filename' => $attachment->filename,
                     'file_path' => $attachment->file_path,
-                    'mail_report_id' => $attachment->mail_report_id
+                    'email_log_id' => $attachment->email_log_id
                 ]);
                 abort(404, 'Attachment file not found (no S3 key)');
             }
@@ -51,7 +51,7 @@ class MailReportAttachmentController extends Controller
             }
 
             $content = Storage::disk('s3')->get($attachment->s3_key);
-            
+
             if (empty($content)) {
                 Log::error('Attachment download failed: Empty content', [
                     'id' => $id,
@@ -60,7 +60,7 @@ class MailReportAttachmentController extends Controller
                 ]);
                 abort(404, 'Attachment file is empty');
             }
-            
+
             return Response::make($content, 200, [
                 'Content-Type' => $attachment->content_type ?: 'application/octet-stream',
                 'Content-Disposition' => 'attachment; filename="' . $attachment->filename . '"',
@@ -79,20 +79,20 @@ class MailReportAttachmentController extends Controller
     /**
      * Download all attachments for an email as ZIP
      */
-    public function downloadAll($mailReportId)
+    public function downloadAll($emailLogId)
     {
         try {
-            $mailReport = MailReport::findOrFail($mailReportId);
-            $attachments = $mailReport->attachments()->regular()->get();
+            $emailLog = EmailLog::findOrFail($emailLogId);
+            $attachments = $emailLog->attachments()->regular()->get();
 
             if ($attachments->isEmpty()) {
                 abort(404, 'No attachments found');
             }
 
             // Create temporary ZIP file
-            $zipFileName = 'attachments_' . $mailReportId . '_' . time() . '.zip';
+            $zipFileName = 'attachments_' . $emailLogId . '_' . time() . '.zip';
             $zipPath = storage_path('app/temp/' . $zipFileName);
-            
+
             // Ensure temp directory exists
             if (!file_exists(storage_path('app/temp'))) {
                 mkdir(storage_path('app/temp'), 0755, true);
@@ -125,7 +125,7 @@ class MailReportAttachmentController extends Controller
             return response()->download($zipPath, $zipFileName)->deleteFileAfterSend(true);
         } catch (\Exception $e) {
             Log::error('Download all attachments failed', [
-                'mail_report_id' => $mailReportId,
+                'email_log_id' => $emailLogId,
                 'error' => $e->getMessage()
             ]);
             abort(500, 'Failed to create ZIP file');
@@ -138,8 +138,8 @@ class MailReportAttachmentController extends Controller
     public function preview($id)
     {
         try {
-            $attachment = MailReportAttachment::findOrFail($id);
-            
+            $attachment = EmailLogAttachment::findOrFail($id);
+
             if (!$attachment->canPreview()) {
                 abort(400, 'This file type cannot be previewed');
             }
@@ -149,7 +149,7 @@ class MailReportAttachmentController extends Controller
             }
 
             $content = Storage::disk('s3')->get($attachment->s3_key);
-            
+
             return Response::make($content, 200, [
                 'Content-Type' => $attachment->content_type,
                 'Content-Disposition' => 'inline; filename="' . $attachment->filename . '"',

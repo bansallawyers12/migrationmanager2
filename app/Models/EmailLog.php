@@ -8,10 +8,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class MailReport extends Authenticatable
+class EmailLog extends Authenticatable
 {
     use Notifiable;
 	use Sortable;
+
+	protected $table = 'email_logs';
 
 	protected $fillable = [
         'id',
@@ -72,7 +74,7 @@ class MailReport extends Authenticatable
      */
     public function attachments(): HasMany
     {
-        return $this->hasMany(MailReportAttachment::class, 'mail_report_id');
+        return $this->hasMany(EmailLogAttachment::class, 'email_log_id');
     }
 
     /**
@@ -80,7 +82,7 @@ class MailReport extends Authenticatable
      */
     public function labels(): BelongsToMany
     {
-        return $this->belongsToMany(EmailLabel::class, 'email_label_mail_report', 'mail_report_id', 'email_label_id')
+        return $this->belongsToMany(EmailLabel::class, 'email_label_email_log', 'email_log_id', 'email_label_id')
                     ->withTimestamps();
     }
 
