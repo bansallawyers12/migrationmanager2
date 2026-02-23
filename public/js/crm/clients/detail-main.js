@@ -1377,6 +1377,90 @@ $(document).ready(function() {
 
 
 
+    // Change Matter Assignee: open modal and pre-populate with current assignee
+
+    $(document).delegate('.changeMatterAssignee', 'click', function(e){
+
+        e.preventDefault();
+
+        var matterId = $('.general_matter_checkbox_client_detail').is(':checked') ? $('.general_matter_checkbox_client_detail').val() : $('#sel_matter_id_client_detail').val();
+
+        if (!matterId) {
+
+            if (typeof iziToast !== 'undefined' && iziToast.warning) {
+
+                iziToast.warning({ title: 'Select Matter', message: 'Please select a matter first.', position: 'topRight' });
+
+            } else { alert('Please select a matter first.'); }
+
+            return;
+
+        }
+
+        $('#selectedMatterLM').val(matterId);
+
+        var fetchUrl = (window.ClientDetailConfig && window.ClientDetailConfig.urls && window.ClientDetailConfig.urls.fetchClientMatterAssignee) || '/clients/fetchClientMatterAssignee';
+
+        $.ajax({
+
+            type: 'post',
+
+            url: fetchUrl,
+
+            data: { _token: $('meta[name="csrf-token"]').attr('content'), client_matter_id: matterId },
+
+            success: function(res){
+
+                var info = (typeof res === 'string' ? (function(){ try { return JSON.parse(res); } catch(e){ return {}; } })() : res) || {};
+
+                var m = info.matter_info || {};
+
+                if (m.sel_migration_agent) $('#change_sel_migration_agent_id').val(m.sel_migration_agent).trigger('change');
+
+                else $('#change_sel_migration_agent_id').val('').trigger('change');
+
+                if (m.sel_person_responsible) $('#change_sel_person_responsible_id').val(m.sel_person_responsible).trigger('change');
+
+                else $('#change_sel_person_responsible_id').val('').trigger('change');
+
+                if (m.sel_person_assisting) $('#change_sel_person_assisting_id').val(m.sel_person_assisting).trigger('change');
+
+                else $('#change_sel_person_assisting_id').val('').trigger('change');
+
+                if (m.office_id) $('#change_office_id').val(m.office_id).trigger('change');
+
+                else $('#change_office_id').val('').trigger('change');
+
+            }
+
+        });
+
+        $('#changeMatterAssigneeModal').modal('show');
+
+    });
+
+
+
+    // Change Matter Assignee modal: re-init Select2 with dropdownParent for search to work
+
+    $(document).on('shown.bs.modal', '#changeMatterAssigneeModal', function(){
+
+        var $modal = $(this);
+
+        $('#change_sel_migration_agent_id, #change_sel_person_responsible_id, #change_sel_person_assisting_id, #change_office_id').each(function(){
+
+            var $el = $(this);
+
+            if ($el.data('select2')) $el.select2('destroy');
+
+            $el.select2({ dropdownParent: $modal, minimumResultsForSearch: 0, width: '100%' });
+
+        });
+
+    });
+
+
+
     // Tags modal: add tag pill(s) from input on comma or Enter
 
     $(document).on('keydown', '#tags_modal_container #tag_input', function(e){
