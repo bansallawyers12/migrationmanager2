@@ -15,7 +15,6 @@ use App\Models\Country;
 // use App\Models\WebsiteSetting; // removed website settings dependency
 // use App\Models\State; // REMOVED: State model has been deleted
 use PDF;
-use App\Models\Setting;
 use Auth;
 use App\Models\ActivitiesLog;
 use App\Models\Note;

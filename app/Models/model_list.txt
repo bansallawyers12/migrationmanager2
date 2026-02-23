@@ -63,7 +63,6 @@ RefreshToken.php
 Relationship.php
 Report.php
 Service.php
-Setting.php
 SignatureField.php
 Signer.php
 Slider.php
