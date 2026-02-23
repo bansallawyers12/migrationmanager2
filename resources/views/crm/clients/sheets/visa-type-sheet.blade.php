@@ -295,7 +295,7 @@
                     @if($setupRequired ?? false)
                         <div class="alert alert-warning mb-3" role="alert">
                             <i class="fas fa-tools mr-1"></i>
-                            <strong>Setup required:</strong> Run <code>php artisan migrate</code> to create <code>{{ $config['reference_table'] ?? 'client_matter_references' }}</code>, <code>{{ $config['checklist_status_column'] ?? 'tr_checklist_status' }}</code> (on client_matters), and <code>{{ $config['reminders_table'] ?? 'tr_matter_reminders' }}</code>. Until then, the 4 tabs and filters are visible for structure review but no data will load.
+                            <strong>Setup required:</strong> Run <code>php artisan migrate</code> to create <code>{{ $config['reference_table'] ?? 'client_matter_references' }}</code>, <code>{{ $config['checklist_status_column'] ?? 'tr_checklist_status' }}</code> (on client_matters), and <code>{{ $config['reminders_table'] ?? 'matter_reminders' }}</code>. Until then, the 4 tabs and filters are visible for structure review but no data will load.
                         </div>
                     @endif
                     <div class="visa-sheet-scroll-hint px-3 pt-2 mb-2" style="font-size: 13px; color: #64748b;">

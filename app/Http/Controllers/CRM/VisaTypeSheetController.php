@@ -369,12 +369,12 @@ class VisaTypeSheetController extends Controller
                         $row->email_reminder_latest = $row->email_reminder_count = $row->sms_reminder_latest = $row->sms_reminder_count = $row->phone_reminder_latest = $row->phone_reminder_count = null;
                     }
                 } else {
-                    $row->email_reminder_latest = DB::table($remindersTable)->where('client_matter_id', $row->matter_internal_id)->where('type', 'email')->max('reminded_at');
-                    $row->email_reminder_count = DB::table($remindersTable)->where('client_matter_id', $row->matter_internal_id)->where('type', 'email')->count();
-                    $row->sms_reminder_latest = DB::table($remindersTable)->where('client_matter_id', $row->matter_internal_id)->where('type', 'sms')->max('reminded_at');
-                    $row->sms_reminder_count = DB::table($remindersTable)->where('client_matter_id', $row->matter_internal_id)->where('type', 'sms')->count();
-                    $row->phone_reminder_latest = DB::table($remindersTable)->where('client_matter_id', $row->matter_internal_id)->where('type', 'phone')->max('reminded_at');
-                    $row->phone_reminder_count = DB::table($remindersTable)->where('client_matter_id', $row->matter_internal_id)->where('type', 'phone')->count();
+                    $row->email_reminder_latest = DB::table($remindersTable)->where('visa_type', $refType)->where('client_matter_id', $row->matter_internal_id)->where('type', 'email')->max('reminded_at');
+                    $row->email_reminder_count = DB::table($remindersTable)->where('visa_type', $refType)->where('client_matter_id', $row->matter_internal_id)->where('type', 'email')->count();
+                    $row->sms_reminder_latest = DB::table($remindersTable)->where('visa_type', $refType)->where('client_matter_id', $row->matter_internal_id)->where('type', 'sms')->max('reminded_at');
+                    $row->sms_reminder_count = DB::table($remindersTable)->where('visa_type', $refType)->where('client_matter_id', $row->matter_internal_id)->where('type', 'sms')->count();
+                    $row->phone_reminder_latest = DB::table($remindersTable)->where('visa_type', $refType)->where('client_matter_id', $row->matter_internal_id)->where('type', 'phone')->max('reminded_at');
+                    $row->phone_reminder_count = DB::table($remindersTable)->where('visa_type', $refType)->where('client_matter_id', $row->matter_internal_id)->where('type', 'phone')->count();
                 }
             }
         }
@@ -479,18 +479,6 @@ class VisaTypeSheetController extends Controller
             ->whereNull('admins.is_deleted');
 
         $this->applyTabFilter($query, $tab, $config);
-
-        $remindersTable = $config['reminders_table'] ?? '';
-        if ($tab === 'checklist' && $remindersTable && Schema::hasTable($remindersTable)) {
-            $query->addSelect(
-                DB::raw("(SELECT MAX(ar.reminded_at) FROM {$remindersTable} ar WHERE ar.client_matter_id = latest_matter.matter_id AND ar.type = 'email') as email_reminder_latest"),
-                DB::raw("(SELECT COUNT(*) FROM {$remindersTable} ar WHERE ar.client_matter_id = latest_matter.matter_id AND ar.type = 'email') as email_reminder_count"),
-                DB::raw("(SELECT MAX(ar.reminded_at) FROM {$remindersTable} ar WHERE ar.client_matter_id = latest_matter.matter_id AND ar.type = 'sms') as sms_reminder_latest"),
-                DB::raw("(SELECT COUNT(*) FROM {$remindersTable} ar WHERE ar.client_matter_id = latest_matter.matter_id AND ar.type = 'sms') as sms_reminder_count"),
-                DB::raw("(SELECT MAX(ar.reminded_at) FROM {$remindersTable} ar WHERE ar.client_matter_id = latest_matter.matter_id AND ar.type = 'phone') as phone_reminder_latest"),
-                DB::raw("(SELECT COUNT(*) FROM {$remindersTable} ar WHERE ar.client_matter_id = latest_matter.matter_id AND ar.type = 'phone') as phone_reminder_count")
-            );
-        }
 
         return $query;
     }

@@ -288,6 +288,7 @@ class ClientMatter extends Model
 
         if ($remindersTable && \Illuminate\Support\Facades\Schema::hasTable($remindersTable)) {
             \Illuminate\Support\Facades\DB::table($remindersTable)->insert([
+                'visa_type' => $refType,
                 'client_matter_id' => $this->id,
                 'type' => 'email',
                 'reminded_at' => $now,

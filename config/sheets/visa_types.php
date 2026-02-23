@@ -7,7 +7,7 @@
  * Each visa type requires:
  * - reference_table: client_matter_references (unified table)
  * - reference_type: type value for filtering (tr, visitor, student, pr, employer-sponsored)
- * - reminders_table: e.g. tr_matter_reminders
+ * - reminders_table: matter_reminders (unified table)
  * - checklist_status_column: column on client_matters for checklist tab status (e.g. tr_checklist_status)
  * - matter identification + stage mappings
  */
@@ -21,7 +21,7 @@ return [
         'lead_reminders_table' => 'lead_tr_reminders',
         'reference_model' => \App\Models\ClientMatterReference::class,
         'reference_alias' => 'tr_ref',
-        'reminders_table' => 'tr_matter_reminders',
+        'reminders_table' => 'matter_reminders',
         'checklist_status_column' => 'tr_checklist_status',
         'session_prefix' => 'tr_sheet_',
 
@@ -52,7 +52,7 @@ return [
         'lead_reminders_table' => 'lead_visitor_reminders',
         'reference_model' => \App\Models\ClientMatterReference::class,
         'reference_alias' => 'visitor_ref',
-        'reminders_table' => 'visitor_matter_reminders',
+        'reminders_table' => 'matter_reminders',
         'checklist_status_column' => 'visitor_checklist_status',
         'session_prefix' => 'visitor_sheet_',
 
@@ -83,7 +83,7 @@ return [
         'lead_reminders_table' => 'lead_student_reminders',
         'reference_model' => \App\Models\ClientMatterReference::class,
         'reference_alias' => 'student_ref',
-        'reminders_table' => 'student_matter_reminders',
+        'reminders_table' => 'matter_reminders',
         'checklist_status_column' => 'student_checklist_status',
         'session_prefix' => 'student_sheet_',
 
@@ -114,7 +114,7 @@ return [
         'lead_reminders_table' => 'lead_pr_reminders',
         'reference_model' => \App\Models\ClientMatterReference::class,
         'reference_alias' => 'pr_ref',
-        'reminders_table' => 'pr_matter_reminders',
+        'reminders_table' => 'matter_reminders',
         'checklist_status_column' => 'pr_checklist_status',
         'session_prefix' => 'pr_sheet_',
 
@@ -145,7 +145,7 @@ return [
         'lead_reminders_table' => 'lead_employer_sponsored_reminders',
         'reference_model' => \App\Models\ClientMatterReference::class,
         'reference_alias' => 'emp_ref',
-        'reminders_table' => 'employer_sponsored_matter_reminders',
+        'reminders_table' => 'matter_reminders',
         'checklist_status_column' => 'employer_sponsored_checklist_status',
         'session_prefix' => 'employer_sponsored_sheet_',
 
