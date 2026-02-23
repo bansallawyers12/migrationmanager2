@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use App\Services\FCMService;
 
 /**
@@ -2072,62 +2073,110 @@ class ClientPortalController extends Controller
 	// 	return $pdf->stream('application.pdf');
 	// }
 
+	/**
+	 * Get checklist options from portal_document_checklists (Personal + Visa)
+	 * For use in Add New Checklist type-ahead input
+	 */
+	public function getDocumentChecklistsOptions(Request $request)
+	{
+		$search = $request->get('q', '');
+		$checklists = DB::table('portal_document_checklists')
+			->where('status', 1)
+			->whereIn('doc_type', [1, 2]) // 1=Personal, 2=Visa
+			->when($search, function ($q) use ($search) {
+				$q->where('name', 'like', '%' . $search . '%');
+			})
+			->orderBy('doc_type')
+			->orderBy('name')
+			->limit(50)
+			->get(['id', 'name', 'doc_type']);
+
+		$results = $checklists->map(function ($item) {
+			$typeLabel = $item->doc_type == 1 ? 'Personal' : 'Visa';
+			return [
+				'id' => $item->name,
+				'text' => $item->name . ' (' . $typeLabel . ')',
+				'name' => $item->name,
+			];
+		});
+
+		return response()->json(['results' => $results]);
+	}
+
 	public function addchecklists(Request $request){
-		// Validate required fields
+		// Accept document_type as string or array (multiple checklists)
+		$documentTypes = $request->document_type;
+		if (!is_array($documentTypes)) {
+			$documentTypes = $request->filled('document_type') ? [$documentTypes] : [];
+		}
+		$documentTypes = array_filter(array_map('trim', $documentTypes));
+
 		$request->validate([
-			'document_type' => 'required|string|max:255',
 			'client_id' => 'required|integer',
 			'app_id' => 'required|integer',
 			'type' => 'required|string',
 			'typename' => 'required|string'
 		], [
-			'document_type.required' => 'Checklist Name is required.',
-			'document_type.string' => 'Checklist Name must be a valid text.',
-			'document_type.max' => 'Checklist Name cannot exceed 255 characters.',
 			'client_id.required' => 'Client ID is required.',
 			'app_id.required' => 'Application ID is required.',
 			'type.required' => 'Type is required.',
 			'typename.required' => 'Type name is required.'
 		]);
-		
+
+		if (empty($documentTypes)) {
+			$response['status'] = false;
+			$response['message'] = 'At least one Checklist Name is required.';
+			echo json_encode($response);
+			return;
+		}
+
+		foreach ($documentTypes as $dt) {
+			if (strlen($dt) > 255) {
+				$response['status'] = false;
+				$response['message'] = 'Checklist name "' . substr($dt, 0, 30) . '..." exceeds 255 characters.';
+				echo json_encode($response);
+				return;
+			}
+		}
+
 		$requestData = $request->all();
 		$client_id = $requestData['client_id'];
 		$app_id = $requestData['app_id'];
 		$type = $requestData['type'];
 		$typename = $requestData['typename'];
-		$document_type = trim($request->document_type);
-		
-		// Double check document_type is not empty after trimming
-		if (empty($document_type)) {
-			$response['status'] = false;
-			$response['message'] = 'Checklist Name is required.';
-			echo json_encode($response);
-			return;
-		}
-		
-		$obj = new \App\Models\ApplicationDocumentList;
-		$obj->type = $type;
-		$obj->typename = $typename;
-		$obj->client_id = $client_id;
-		$obj->application_id = $app_id;
-		$obj->document_type = $document_type;
-		$obj->description = $request->description ?? null;
-		$obj->allow_client = $request->allow_upload_docu ?? 0;
-		$obj->make_mandatory = $request->proceed_next_stage ?? null;
-		if(isset($requestData['due_date']) && $requestData['due_date'] == 1){
-			$obj->date = $request->appoint_date ?? null;
-			$obj->time = $request->appoint_time ?? null;
-		}
-		$obj->user_id = Auth::user()->id;
 
-		$saved = $obj->save();
-		if($saved){
+		$savedCount = 0;
+		foreach ($documentTypes as $document_type) {
+			$obj = new \App\Models\ApplicationDocumentList;
+			$obj->type = $type;
+			$obj->typename = $typename;
+			$obj->client_id = $client_id;
+			$obj->application_id = $app_id;
+			$obj->document_type = $document_type;
+			$obj->description = $request->description ?? null;
+			$obj->allow_client = $request->allow_upload_docu ?? 0;
+			$obj->make_mandatory = $request->proceed_next_stage ?? null;
+			if(isset($requestData['due_date']) && $requestData['due_date'] == 1){
+				$obj->date = $request->appoint_date ?? null;
+				$obj->time = $request->appoint_time ?? null;
+			}
+			$obj->user_id = Auth::user()->id;
+			if ($obj->save()) {
+				$savedCount++;
+			}
+		}
+
+		if ($savedCount > 0) {
 			// Log activity (Client Portal Documents tab - website)
+			$checklistNames = implode(', ', array_slice($documentTypes, 0, 5));
+			if (count($documentTypes) > 5) {
+				$checklistNames .= ' (+' . (count($documentTypes) - 5) . ' more)';
+			}
 			DB::table('activities_logs')->insert([
 				'client_id' => $client_id,
 				'created_by' => Auth::user()->id,
 				'subject' => 'Added checklist in Client Portal (Documents tab)',
-				'description' => 'Checklist "' . $document_type . '" added via Client Portal tab (website) for application ID: ' . $app_id,
+				'description' => 'Checklist(s) "' . $checklistNames . '" added via Client Portal tab (website) for application ID: ' . $app_id,
 				'task_status' => 0,
 				'pin' => 0,
 				'source' => 'client_portal_web',
@@ -2140,8 +2189,9 @@ class ClientPortalController extends Controller
 			if ($application && !empty($application->client_matter_id)) {
 				$clientMatter = DB::table('client_matters')->where('id', $application->client_matter_id)->first();
 				$matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID: ' . $application->client_matter_id) : 'ID: ' . $application->client_matter_id;
-				$senderName = Auth::user()->first_name . ' ' . Auth::user()->last_name;
-				$notificationMessage = 'New checklist "' . $document_type . '" added for matter ' . $matterNo;
+				$notificationMessage = count($documentTypes) == 1
+					? 'New checklist "' . $documentTypes[0] . '" added for matter ' . $matterNo
+					: count($documentTypes) . ' new checklists added for matter ' . $matterNo;
 				DB::table('notifications')->insert([
 					'sender_id' => Auth::user()->id,
 					'receiver_id' => $client_id,
@@ -2174,13 +2224,13 @@ class ClientPortalController extends Controller
 			}
 			$checklistdata .= '</tbody></table>';
 			$response['status'] 	= 	true;
-			$response['message']	=	'CHecklist added successfully';
+			$response['message']	=	$savedCount == 1 ? 'Checklist added successfully' : $savedCount . ' checklists added successfully';
 			$response['data']	=	$checklistdata;
 			$countchecklist = \App\Models\ApplicationDocumentList::where('application_id', $app_id)->count();
 			$response['countchecklist']	=	$countchecklist;
-		}else{
-			$response['status'] 	= 	false;
-				$response['message']	=	'Record not found';
+		} else {
+			$response['status'] = false;
+			$response['message'] = 'Failed to add checklist(s).';
 		}
 		echo json_encode($response);
 	}
@@ -2242,9 +2292,9 @@ class ClientPortalController extends Controller
 				$doclistdata .= '<div class="dropdown d-inline">
 					<button class="btn btn-primary dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
 					<div class="dropdown-menu">
-						<a target="_blank" class="dropdown-item" href="'.\URL::to('/public/img/documents').'/'.$doclist->file_name.'">Preview</a>
+						<a target="_blank" class="dropdown-item" href="'.URL::to('/public/img/documents').'/'.$doclist->file_name.'">Preview</a>
 						<a data-id="'.$doclist->id.'" class="dropdown-item deletenote" data-href="deleteapplicationdocs" href="javascript:;">Delete</a>
-						<a download class="dropdown-item" href="'.\URL::to('/public/img/documents').'/'.$doclist->file_name.'">Download</a>';
+						<a download class="dropdown-item" href="'.URL::to('/public/img/documents').'/'.$doclist->file_name.'">Download</a>';
 						if($doclist->status == 0){
 							$doclistdata .= '<a data-id="'.$doclist->id.'" class="dropdown-item publishdoc" href="javascript:;">Publish Document</a>';
 						}else{
@@ -2344,9 +2394,9 @@ class ClientPortalController extends Controller
 				$doclistdata .= '<div class="dropdown d-inline">
 					<button class="btn btn-primary dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
 					<div class="dropdown-menu">
-						<a target="_blank" class="dropdown-item" href="'.\URL::to('/public/img/documents').'/'.$doclist->file_name.'">Preview</a>
+						<a target="_blank" class="dropdown-item" href="'.URL::to('/public/img/documents').'/'.$doclist->file_name.'">Preview</a>
 						<a data-id="'.$doclist->id.'" class="dropdown-item deletenote" data-href="deleteapplicationdocs" href="javascript:;">Delete</a>
-						<a download class="dropdown-item" href="'.\URL::to('/public/img/documents').'/'.$doclist->file_name.'">Download</a>';
+						<a download class="dropdown-item" href="'.URL::to('/public/img/documents').'/'.$doclist->file_name.'">Download</a>';
 						if($doclist->status == 0){
 							$doclistdata .= '<a data-id="'.$doclist->id.'" class="dropdown-item publishdoc" href="javascript:;">Publish Document</a>';
 						}else{
@@ -2446,9 +2496,9 @@ class ClientPortalController extends Controller
 				$doclistdata .= '<div class="dropdown d-inline">
 					<button class="btn btn-primary dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
 					<div class="dropdown-menu">
-						<a target="_blank" class="dropdown-item" href="'.\URL::to('/public/img/documents').'/'.$doclist->file_name.'">Preview</a>
+						<a target="_blank" class="dropdown-item" href="'.URL::to('/public/img/documents').'/'.$doclist->file_name.'">Preview</a>
 						<a data-id="'.$doclist->id.'" class="dropdown-item deletenote" data-href="deleteapplicationdocs" href="javascript:;">Delete</a>
-						<a download class="dropdown-item" href="'.\URL::to('/public/img/documents').'/'.$doclist->file_name.'">Download</a>';
+						<a download class="dropdown-item" href="'.URL::to('/public/img/documents').'/'.$doclist->file_name.'">Download</a>';
 						if($doclist->status == 0){
 							$doclistdata .= '<a data-id="'.$doclist->id.'" class="dropdown-item publishdoc" href="javascript:;">Publish Document</a>';
 						}else{
@@ -2505,9 +2555,9 @@ class ClientPortalController extends Controller
 				$doclistdata .= '<div class="dropdown d-inline">
 					<button class="btn btn-primary dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
 					<div class="dropdown-menu">
-						<a target="_blank" class="dropdown-item" href="'.\URL::to('/public/img/documents').'/'.$doclist->file_name.'">Preview</a>
+						<a target="_blank" class="dropdown-item" href="'.URL::to('/public/img/documents').'/'.$doclist->file_name.'">Preview</a>
 						<a data-id="'.$doclist->id.'" class="dropdown-item deletenote" data-href="deleteapplicationdocs" href="javascript:;">Delete</a>
-						<a download class="dropdown-item" href="'.\URL::to('/public/img/documents').'/'.$doclist->file_name.'">Download</a>';
+						<a download class="dropdown-item" href="'.URL::to('/public/img/documents').'/'.$doclist->file_name.'">Download</a>';
 						if($doclist->status == 0){
 							$doclistdata .= '<a data-id="'.$doclist->id.'" class="dropdown-item publishdoc" href="javascript:;">Publish Document</a>';
 						}else{
@@ -2757,7 +2807,7 @@ class ClientPortalController extends Controller
 				curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 				$fileContent = curl_exec($ch);
 				$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-				curl_close($ch);
+				// cURL handle freed when $ch goes out of scope (curl_close deprecated in PHP 8+)
 				
 				if ($httpCode !== 200 || $fileContent === false) {
 					$response['message'] = 'Failed to fetch file from URL.';

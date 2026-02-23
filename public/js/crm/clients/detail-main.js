@@ -10203,6 +10203,76 @@ Bansal Immigration`;
         });
 
 
+        /**
+         * Add New Checklist (Client Portal → Documents tab)
+         * Opens the create_checklist modal when user clicks "Add New Checklist" on a workflow stage.
+         * Uses same pattern as Add Personal/Visa Checklist: modal show + immediate Select2 init.
+         * Handler centralized here (not inline in client_portal) to match working checklist modals.
+         */
+        $(document).delegate('.openchecklist', 'click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            var id = $(this).attr('data-id');
+            var type = $(this).attr('data-type');
+            var typename = $(this).attr('data-typename');
+
+            // Validate required data attributes (app id, stage slug, stage name)
+            if (!id || !type || !typename) {
+                console.error('Missing required data attributes for checklist modal:', { id: id, type: type, typename: typename });
+                alert('Error: Missing required information. Please try again.');
+                return false;
+            }
+
+            // Populate hidden form fields for submission
+            $('#create_checklist #checklistapp_id').val(id);
+            $('#create_checklist #checklist_type').val(type);
+            $('#create_checklist #checklist_typename').val(typename);
+
+            // Ensure submit button is enabled and clear previous validation errors
+            $('#create_checklist_submit_btn').prop('disabled', false);
+            $('#create_checklist_form').find('.custom-error').remove();
+
+            // Destroy existing Select2 before re-showing (prevents stale/broken state from previous open)
+            var $checklistEl = $('#checklist_name_input');
+            if ($checklistEl.length && $checklistEl.data('select2')) {
+                $checklistEl.select2('destroy');
+            }
+
+            // Init Select2 in shown.bs.modal - modal must be fully visible so Select2 container renders correctly
+            // (init during fade transition can leave select2-hidden-accessible with no visible .select2-container)
+            $('#create_checklist').one('shown.bs.modal', function () {
+                if ($checklistEl.length && typeof $checklistEl.select2 === 'function') {
+                    $checklistEl.select2({
+                        dropdownParent: $('#create_checklist'),
+                        width: '100%',
+                        placeholder: 'Select or type to add custom checklist...',
+                        allowClear: true,
+                        tags: true,
+                        tokenSeparators: [','],
+                        createTag: function (params) {
+                            var term = $.trim(params.term);
+                            if (term === '') return null;
+                            // Don't create duplicate if option already exists
+                            var exists = $checklistEl.find('option').filter(function () {
+                                return $(this).val().toLowerCase() === term.toLowerCase();
+                            }).length;
+                            if (exists) return null;
+                            return { id: term, text: term, newTag: true };
+                        },
+                        insertTag: function (data, tag) {
+                            data.unshift(tag); // Show "Add custom" option at top of dropdown
+                        }
+                    });
+                }
+            });
+
+            // Show modal
+            $('#create_checklist').modal('show');
+
+            return false;
+        });
+
 
         $(document).delegate('.migdocupload', 'click', function() {
 

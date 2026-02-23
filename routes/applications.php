@@ -80,6 +80,7 @@ Route::get('/subagent', [ClientPortalController::class, 'subagent']);
 /*---------- Application Documents ----------*/
 // REMOVED - Application PDF export route (functionality was broken and unused)
 // Route::get('/application/export/pdf/{id}', [ClientPortalController::class, 'exportapplicationpdf']);
+Route::get('/crm/document-checklists-options', [ClientPortalController::class, 'getDocumentChecklistsOptions']);
 Route::post('/add-checklists', [ClientPortalController::class, 'addchecklists']);
 Route::post('/application/checklistupload', [ClientPortalController::class, 'checklistupload']);
 Route::get('/deleteapplicationdocs', [ClientPortalController::class, 'deleteapplicationdocs']);

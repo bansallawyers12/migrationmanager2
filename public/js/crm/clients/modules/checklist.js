@@ -50,15 +50,7 @@
 
     $(document).ready(function() {
         // ---- Application checklist: open modal ----
-        $(document).delegate('.openchecklist', 'click', function(){
-            var id = $(this).attr('data-id');
-            var type = $(this).attr('data-type');
-            var typename = $(this).attr('data-typename');
-            $('#create_checklist #checklistapp_id').val(id);
-            $('#create_checklist #checklist_type').val(type);
-            $('#create_checklist #checklist_typename').val(typename);
-            $('#create_checklist').modal('show');
-        });
+        // NOTE: .openchecklist handler moved to detail-main.js (same pattern as Add Personal/Visa Checklist)
 
         // ---- File upload modal: set context ----
         $(document).delegate('.openfileupload', 'click', function(){

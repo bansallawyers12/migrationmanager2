@@ -105,6 +105,84 @@
 	</div>
 </div>
 
+<!-- Add New Checklist Modal (Client Portal → Documents tab) - same DOM level as Add Personal/Visa for Select2 -->
+<div class="modal fade custom_modal" id="create_checklist" tabindex="-1" role="dialog" aria-labelledby="createChecklistModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="createChecklistModalLabel">Add New Checklist</h5>
+				<button type="button" class="close" id="create_checklist_close_btn" data-dismiss="modal" aria-label="Close" onclick="closeCreateChecklistModal(); return false;">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<form method="post" action="{{URL::to('/add-checklists')}}" name="create_checklist_form" id="create_checklist_form" autocomplete="off" enctype="multipart/form-data">
+					@csrf
+					<input type="hidden" name="app_id" id="checklistapp_id" value="">
+					<input type="hidden" name="client_id" value="{{ $fetchedData->id }}">
+					<input type="hidden" name="type" id="checklist_type" value="">
+					<input type="hidden" name="typename" id="checklist_typename" value="">
+
+					<div class="row">
+						<div class="col-12 col-md-12 col-lg-12">
+							<div class="form-group">
+								<label for="checklist_name_input">Checklist Name <span class="span_req">*</span></label>
+								<select data-valid="required" id="checklist_name_input" name="document_type[]" class="form-control select2" multiple style="width: 100%;">
+									<option value="">Select</option>
+									@php
+									$portalChecklists = \App\Models\DocumentChecklist::where('status', 1)->whereIn('doc_type', [1, 2])->orderBy('doc_type')->orderBy('name')->get();
+									@endphp
+									@foreach($portalChecklists as $chk)
+										<option value="{{ $chk->name }}">{{ $chk->name }}</option>
+									@endforeach
+								</select>
+								<small class="form-text text-muted">Select from the list or type a custom checklist name and press Enter to add. Multiple selections allowed.</small>
+								<span class="custom-error document_type_error" role="alert">
+									<strong></strong>
+								</span>
+							</div>
+						</div>
+
+						<div class="col-12 col-md-12 col-lg-12">
+							<div class="form-group">
+								<label for="description">Description</label>
+								<textarea name="description" id="description" class="form-control" rows="3" placeholder="Enter description (optional)"></textarea>
+							</div>
+						</div>
+
+						<div class="col-12 col-md-6 col-lg-6">
+							<div class="form-group">
+								<label>
+									<input type="checkbox" name="allow_upload_docu" value="1" checked> Allow clients to upload documents from client portal
+								</label>
+							</div>
+						</div>
+
+						<div class="col-12 col-md-6 col-lg-6" id="appoint_date_container" style="display: none;">
+							<div class="form-group">
+								<label for="appoint_date">Due Date</label>
+								<input type="date" name="appoint_date" id="appoint_date" class="form-control">
+							</div>
+						</div>
+
+						<div class="col-12 col-md-6 col-lg-6" id="appoint_time_container" style="display: none;">
+							<div class="form-group">
+								<label for="appoint_time">Due Time</label>
+								<input type="time" name="appoint_time" id="appoint_time" class="form-control">
+							</div>
+						</div>
+
+						<div class="col-12 col-md-12 col-lg-12">
+							<button type="button" id="create_checklist_submit_btn" class="btn btn-primary">Add Checklist</button>
+							<button type="button" class="btn btn-secondary" id="create_checklist_close_btn_footer" data-dismiss="modal" onclick="closeCreateChecklistModal(); return false;">Close</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+
 <!-- Inline Signature Placement Modal (Checklist Agreements) -->
 <div class="modal fade" id="signaturePlacementModal" tabindex="-1" role="dialog" aria-labelledby="signaturePlacementModalLabel" aria-hidden="true" data-backdrop="static">
 	<div class="modal-dialog modal-xl modal-dialog-scrollable" role="document" style="max-width: 95%; max-height: 90vh;">

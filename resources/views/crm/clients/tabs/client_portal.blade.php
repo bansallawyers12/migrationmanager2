@@ -2940,9 +2940,20 @@
 #create_checklist .modal-body input,
 #create_checklist .modal-body textarea,
 #create_checklist .modal-body select,
-#create_checklist .modal-body button {
+#create_checklist .modal-body button,
+#create_checklist .modal-body .select2-container {
     pointer-events: auto !important;
     opacity: 1 !important;
+}
+
+#create_checklist .modal-body .select2-container {
+    width: 100% !important;
+    display: block !important;
+    min-height: 38px !important;
+}
+/* Ensure Select2 dropdown is visible above modal content */
+#create_checklist .select2-dropdown {
+    z-index: 1062 !important;
 }
 
 #create_checklist_submit_btn {
@@ -4487,90 +4498,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<!-- Create Checklist Modal -->
-<div class="modal fade custom_modal" id="create_checklist" tabindex="-1" role="dialog" aria-labelledby="createChecklistModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="createChecklistModalLabel">Add New Checklist</h5>
-                <button type="button" class="close" id="create_checklist_close_btn" data-dismiss="modal" aria-label="Close" onclick="closeCreateChecklistModal(); return false;">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form method="post" action="{{URL::to('/add-checklists')}}" name="create_checklist_form" id="create_checklist_form" autocomplete="off" enctype="multipart/form-data">
-                    @csrf
-                    <input type="hidden" name="app_id" id="checklistapp_id" value="">
-                    <input type="hidden" name="client_id" value="{{ $fetchedData->id }}">
-                    <input type="hidden" name="type" id="checklist_type" value="">
-                    <input type="hidden" name="typename" id="checklist_typename" value="">
-                    
-                    <div class="row">
-                        <div class="col-12 col-md-12 col-lg-12">
-                            <div class="form-group">
-                                <label for="document_type">Checklist Name <span class="span_req">*</span></label>
-                                <input type="text" name="document_type" id="document_type" class="form-control" data-valid="required" placeholder="Enter checklist name">
-                                <span class="custom-error document_type_error" role="alert">
-                                    <strong></strong>
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <div class="col-12 col-md-12 col-lg-12">
-                            <div class="form-group">
-                                <label for="description">Description</label>
-                                <textarea name="description" id="description" class="form-control" rows="3" placeholder="Enter description (optional)"></textarea>
-                            </div>
-                        </div>
-                        
-                        <div class="col-12 col-md-6 col-lg-6">
-                            <div class="form-group">
-                                <label>
-                                    <input type="checkbox" name="allow_upload_docu" value="1" checked> Allow clients to upload documents from client portal
-                                </label>
-                            </div>
-                        </div>
-                        
-                        {{-- <div class="col-12 col-md-6 col-lg-6">
-                            <div class="form-group">
-                                <label>
-                                    <input type="checkbox" name="proceed_next_stage" value="1"> Make Mandatory (Proceed to Next Stage)
-                                </label>
-                            </div>
-                        </div> --}}
-                        
-                        {{-- <div class="col-12 col-md-12 col-lg-12">
-                            <div class="form-group">
-                                <label>
-                                    <input type="checkbox" name="due_date" id="due_date_check" value="1"> Set Due Date
-                                </label>
-                            </div>
-                        </div> --}}
-                        
-                        <div class="col-12 col-md-6 col-lg-6" id="appoint_date_container" style="display: none;">
-                            <div class="form-group">
-                                <label for="appoint_date">Due Date</label>
-                                <input type="date" name="appoint_date" id="appoint_date" class="form-control">
-                            </div>
-                        </div>
-                        
-                        <div class="col-12 col-md-6 col-lg-6" id="appoint_time_container" style="display: none;">
-                            <div class="form-group">
-                                <label for="appoint_time">Due Time</label>
-                                <input type="time" name="appoint_time" id="appoint_time" class="form-control">
-                            </div>
-                        </div>
-                        
-                        <div class="col-12 col-md-12 col-lg-12">
-                            <button type="button" id="create_checklist_submit_btn" class="btn btn-primary">Add Checklist</button>
-                            <button type="button" class="btn btn-secondary" id="create_checklist_close_btn_footer" data-dismiss="modal" onclick="closeCreateChecklistModal(); return false;">Close</button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
+{{-- Create Checklist Modal moved to modals/checklists.blade.php (same DOM level as Add Personal/Visa for Select2) --}}
 
 <script>
 // Function to close the modal (global scope)
@@ -4606,44 +4534,8 @@ function closeCreateChecklistModal() {
 }
 
 // Toggle due date fields
+// NOTE: .openchecklist click handler + Select2 init moved to detail-main.js (same pattern as Add Personal/Visa Checklist)
 $(document).ready(function() {
-    // Handle opening checklist modal - ensure hidden fields are populated
-    $(document).on('click', '.openchecklist', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        var id = $(this).attr('data-id');
-        var type = $(this).attr('data-type');
-        var typename = $(this).attr('data-typename');
-        
-        // Validate that required data attributes are present
-        if (!id || !type || !typename) {
-            console.error('Missing required data attributes for checklist modal:', {
-                id: id,
-                type: type,
-                typename: typename
-            });
-            alert('Error: Missing required information. Please try again.');
-            return false;
-        }
-        
-        // Populate hidden fields
-        $('#create_checklist #checklistapp_id').val(id);
-        $('#create_checklist #checklist_type').val(type);
-        $('#create_checklist #checklist_typename').val(typename);
-        
-        // Ensure button is enabled
-        $('#create_checklist_submit_btn').prop('disabled', false);
-        
-        // Clear any previous errors
-        $('#create_checklist_form').find('.custom-error').remove();
-        
-        // Show modal
-        $('#create_checklist').modal('show');
-        
-        return false;
-    });
-    
     // Set backdrop opacity to 0.1 when create_checklist modal is shown
     $('#create_checklist').on('show.bs.modal', function() {
         setTimeout(function() {
@@ -4660,17 +4552,20 @@ $(document).ready(function() {
         // Clear any previous errors
         $('.custom-error').remove();
     });
-    
+
     // Remove the class and reset form when modal is hidden
     $('#create_checklist').on('hidden.bs.modal', function() {
         $('.modal-backdrop').removeClass('create-checklist-backdrop');
         $('#create_checklist_form')[0].reset();
         $('#appoint_date_container, #appoint_time_container').hide();
+        if ($('#checklist_name_input').data('select2')) {
+            $('#checklist_name_input').val(null).trigger('change');
+        }
         $('.custom-error').remove();
         // Re-enable button in case it was disabled
         $('#create_checklist_submit_btn').prop('disabled', false);
     });
-    
+
     $('#due_date_check').on('change', function() {
         if ($(this).is(':checked')) {
             $('#appoint_date_container, #appoint_time_container').show();
@@ -4767,11 +4662,13 @@ $(document).ready(function() {
             return false;
         }
         
-        // Validate Checklist Name field specifically (document_type)
-        var checklistName = $.trim($('#document_type').val());
-        if (!checklistName) {
+        // Validate Checklist Name (at least one selection required)
+        var checklistValues = $('#checklist_name_input').val();
+        var hasChecklist = Array.isArray(checklistValues) ? checklistValues.length > 0 : (checklistValues && $.trim(checklistValues) !== '');
+        if (!hasChecklist) {
             isValid = false;
-            $('#document_type').after('<span class="custom-error" role="alert" style="color: red; display: block; margin-top: 5px;"><strong>Checklist Name is required.</strong></span>');
+            $('#checklist_name_input').closest('.form-group').find('.custom-error').remove();
+            $('#checklist_name_input').closest('.form-group').append('<span class="custom-error" role="alert" style="color: red; display: block; margin-top: 5px;"><strong>At least one Checklist Name is required. Type to search or add checklists.</strong></span>');
         }
         
         // Validate required fields
@@ -4790,13 +4687,13 @@ $(document).ready(function() {
         
         if (!isValid) {
             // Scroll to the first error field
-            var firstError = form.find('.custom-error').first();
+                var firstError = form.find('.custom-error').first();
             if (firstError.length) {
                 $('html, body').animate({
-                    scrollTop: firstError.parent().offset().top - 100
+                    scrollTop: firstError.closest('.form-group').offset().top - 100
                 }, 'slow');
-                // Focus on the first error field
-                firstError.parent().find('input, textarea, select').first().focus();
+                // Focus on the checklist input
+                $('#checklist_name_input').focus();
             } else {
                 $('html, body').animate({scrollTop: $('#create_checklist').offset().top - 100}, 'slow');
             }
@@ -4813,7 +4710,7 @@ $(document).ready(function() {
         
         // Variables checklistType, checklistTypename, and applicationId are already defined above in validation section
         
-        // Submit via AJAX
+        // Submit via AJAX (document_type[] is submitted from the select)
         var formData = new FormData(form[0]);
         
         // Ensure checkboxes are properly included (even if unchecked)
@@ -4831,7 +4728,7 @@ $(document).ready(function() {
             client_id: form.find('input[name="client_id"]').val(),
             type: checklistType,
             typename: checklistTypename,
-            document_type: form.find('#document_type').val(),
+            document_types: $('#checklist_name_input').val(),
             allow_upload_docu: allowUpload,
             proceed_next_stage: proceedNext,
             due_date: dueDate
