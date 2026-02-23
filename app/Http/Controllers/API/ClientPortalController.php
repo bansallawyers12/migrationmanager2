@@ -828,7 +828,7 @@ class ClientPortalController extends Controller
             $admin = $request->user();
             $clientId = $admin->id;
 
-            // Validate the request
+            // Validate the request (post_code/zip both map to DB column 'zip')
             $validator = Validator::make($request->all(), [
                 'first_name' => 'sometimes|string|max:255',
                 'last_name' => 'sometimes|string|max:255',
@@ -837,6 +837,7 @@ class ClientPortalController extends Controller
                 'city' => 'sometimes|string|max:255',
                 'state' => 'sometimes|string|max:255',
                 'post_code' => 'sometimes|string|max:20',
+                'zip' => 'sometimes|string|max:20',
                 'country' => 'sometimes|string|max:255',
                 'dob' => 'sometimes|date|before:today',
                 'gender' => 'sometimes|string|in:Male,Female,Other',
@@ -861,11 +862,11 @@ class ClientPortalController extends Controller
                 ], 404);
             }
 
-            // Prepare update data
+            // Prepare update data (post_code maps to DB column 'zip')
             $updateData = [];
             $allowedFields = [
-                'first_name', 'last_name', 'phone', 'address', 'city', 
-                'state', 'post_code', 'country', 'dob', 'gender', 'marital_status'
+                'first_name', 'last_name', 'phone', 'address', 'city',
+                'state', 'country', 'dob', 'gender', 'marital_status'
             ];
 
             foreach ($allowedFields as $field) {
@@ -879,6 +880,13 @@ class ClientPortalController extends Controller
                     }
                     $updateData[$field] = $value;
                 }
+            }
+
+            // Map post_code or zip to DB column 'zip'
+            if ($request->has('zip')) {
+                $updateData['zip'] = $request->input('zip');
+            } elseif ($request->has('post_code')) {
+                $updateData['zip'] = $request->input('post_code');
             }
 
             // Add updated_at timestamp
