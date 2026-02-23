@@ -28,11 +28,28 @@ return new class extends Migration
 
         // 3. Rename email_label_mail_report pivot -> email_label_email_log, update column
         if (Schema::hasTable('email_label_mail_report')) {
+            // Drop unique constraint - use IF EXISTS to handle missing/renamed constraints (e.g. PostgreSQL auto-naming)
+            DB::statement('ALTER TABLE email_label_mail_report DROP CONSTRAINT IF EXISTS mail_report_label_unique');
+            // Drop any other unique constraint on this table (PostgreSQL may use auto-generated names)
+            $constraints = DB::select("
+                SELECT conname FROM pg_constraint
+                WHERE conrelid = 'email_label_mail_report'::regclass AND contype = 'u'
+            ");
+            foreach ($constraints as $constraint) {
+                DB::statement("ALTER TABLE email_label_mail_report DROP CONSTRAINT IF EXISTS \"{$constraint->conname}\"");
+            }
             Schema::table('email_label_mail_report', function (Blueprint $table) {
-                $table->dropUnique('mail_report_label_unique');
                 $table->renameColumn('mail_report_id', 'email_log_id');
             });
             Schema::rename('email_label_mail_report', 'email_label_email_log');
+            // Remove duplicate (email_log_id, email_label_id) pairs before adding unique constraint
+            DB::statement("
+                DELETE FROM email_label_email_log a
+                USING email_label_email_log b
+                WHERE a.id > b.id
+                  AND a.email_log_id = b.email_log_id
+                  AND a.email_label_id = b.email_label_id
+            ");
             Schema::table('email_label_email_log', function (Blueprint $table) {
                 $table->unique(['email_log_id', 'email_label_id'], 'email_log_label_unique');
             });
@@ -46,8 +63,17 @@ return new class extends Migration
     {
         // 3. Revert email_label_email_log -> email_label_mail_report
         if (Schema::hasTable('email_label_email_log')) {
+            // Drop unique constraint - use IF EXISTS to handle missing/renamed constraints
+            DB::statement('ALTER TABLE email_label_email_log DROP CONSTRAINT IF EXISTS email_log_label_unique');
+            // Drop any other unique constraint on this table (PostgreSQL may use auto-generated names)
+            $constraints = DB::select("
+                SELECT conname FROM pg_constraint
+                WHERE conrelid = 'email_label_email_log'::regclass AND contype = 'u'
+            ");
+            foreach ($constraints as $constraint) {
+                DB::statement("ALTER TABLE email_label_email_log DROP CONSTRAINT IF EXISTS \"{$constraint->conname}\"");
+            }
             Schema::table('email_label_email_log', function (Blueprint $table) {
-                $table->dropUnique('email_log_label_unique');
                 $table->renameColumn('email_log_id', 'mail_report_id');
             });
             Schema::rename('email_label_email_log', 'email_label_mail_report');
