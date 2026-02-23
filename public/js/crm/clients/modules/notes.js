@@ -9,6 +9,12 @@
 
     var baseUrl = (typeof site_url !== 'undefined' ? site_url : (window.ClientDetailConfig && window.ClientDetailConfig.urls && window.ClientDetailConfig.urls.base ? window.ClientDetailConfig.urls.base : ''));
 
+    function safeParse(r) {
+        if (typeof r === 'object' && r !== null) return r;
+        if (typeof r === 'string' && r.trim()) { try { return JSON.parse(r); } catch(e) { return null; } }
+        return null;
+    }
+
     function formatRepo(repo) {
         if (repo.loading) {
             return repo.text;
@@ -145,19 +151,16 @@
             $.ajax({
                 url: window.ClientDetailConfig.urls.getNoteDetail,
                 type: 'GET',
-                datatype: 'json',
+                dataType: 'json',
                 data: { note_id: v },
                 success: function(response) {
                     $('.popuploader').hide();
-                    var res = JSON.parse(response);
-                    if (res.status) {
-                        $('#create_note select[name="task_group"]').val(res.data.task_group);
-                        $("#create_note .summernote-simple").val(res.data.description);
-                        if (typeof setEditorContent === 'function') {
-                            setEditorContent("#create_note .summernote-simple", res.data.description);
-                        }
-                    } else {
-                        console.error('Note details not found or error in response');
+                    var res = safeParse(response);
+                    if (!res || !res.status) return;
+                    $('#create_note select[name="task_group"]').val(res.data.task_group);
+                    $("#create_note .summernote-simple").val(res.data.description);
+                    if (typeof setEditorContent === 'function') {
+                        setEditorContent("#create_note .summernote-simple", res.data.description);
                     }
                 },
                 error: function(xhr, status, error) {
@@ -175,15 +178,14 @@
             $.ajax({
                 url: window.ClientDetailConfig.urls.viewNoteDetail,
                 type: 'GET',
-                datatype: 'json',
+                dataType: 'json',
                 data: { note_id: v },
                 success: function(response) {
                     $('.popuploader').hide();
-                    var res = JSON.parse(response);
-                    if (res.status) {
-                        $('#view_note .modal-body .note_content h5').html(res.data.title);
-                        $("#view_note .modal-body .note_content p").html(res.data.description);
-                    }
+                    var res = safeParse(response);
+                    if (!res || !res.status) return;
+                    $('#view_note .modal-body .note_content h5').html(res.data.title);
+                    $("#view_note .modal-body .note_content p").html(res.data.description);
                 }
             });
         });
@@ -196,15 +198,14 @@
             $.ajax({
                 url: window.ClientDetailConfig.urls.viewApplicationNote,
                 type: 'GET',
-                datatype: 'json',
+                dataType: 'json',
                 data: { note_id: v },
                 success: function(response) {
                     $('.popuploader').hide();
-                    var res = JSON.parse(response);
-                    if (res.status) {
-                        $('#view_application_note .modal-body .note_content h5').html(res.data.title);
-                        $("#view_application_note .modal-body .note_content p").html(res.data.description);
-                    }
+                    var res = safeParse(response);
+                    if (!res || !res.status) return;
+                    $('#view_application_note .modal-body .note_content h5').html(res.data.title);
+                    $("#view_application_note .modal-body .note_content p").html(res.data.description);
                 }
             });
         });

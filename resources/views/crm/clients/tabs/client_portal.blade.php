@@ -4863,7 +4863,12 @@ $(document).ready(function() {
             success: function(response) {
                 submitBtn.prop('disabled', false).html(originalText);
                 
-                var responseData = typeof response === 'string' ? JSON.parse(response) : response;
+                var responseData;
+                try {
+                    responseData = (typeof response === 'string' && response.trim()) ? JSON.parse(response) : (response || {});
+                } catch (e) {
+                    responseData = {};
+                }
                 if (responseData.status || responseData.success) {
                     // Close modal
                     $('#create_checklist').modal('hide');
@@ -4985,7 +4990,7 @@ $(document).ready(function() {
                             errorMsg = validationErrors.document_type[0] || 'Checklist Name is required.';
                         }
                     }
-                } else if (xhr.responseText) {
+                } else if (xhr.responseText && xhr.responseText.trim()) {
                     try {
                         var errorResponse = JSON.parse(xhr.responseText);
                         errorMsg = errorResponse.message || errorResponse.error || errorMsg;
@@ -5288,12 +5293,13 @@ $(document).ready(function() {
                     list_id: listId
                 },
                 success: function(response) {
-                    // Parse response if it's a string
-                    if (typeof response === 'string') {
+                    // Parse response if it's a string (guard empty string to prevent "Unexpected end of input")
+                    if (typeof response === 'string' && response.trim()) {
                         try {
                             response = JSON.parse(response);
                         } catch (e) {
                             console.error('Error parsing response:', e);
+                            response = null;
                         }
                     }
                     
@@ -5325,7 +5331,7 @@ $(document).ready(function() {
                     var errorMsg = 'Error deleting document. Please try again.';
                     if (xhr.responseJSON && xhr.responseJSON.message) {
                         errorMsg = xhr.responseJSON.message;
-                    } else if (xhr.responseText) {
+                    } else if (xhr.responseText && xhr.responseText.trim()) {
                         try {
                             var errorResponse = JSON.parse(xhr.responseText);
                             if (errorResponse.message) {

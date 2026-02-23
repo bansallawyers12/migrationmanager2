@@ -1658,8 +1658,13 @@ $('.send-sms-btn').on('click', function() {
             phoneSelect.empty();
             phoneSelect.append('<option value="">Select phone number...</option>');
             
-            // Parse response if it's a string (fallback for older jQuery versions)
-            const data = (typeof response === 'string') ? $.parseJSON(response) : response;
+            // Parse response if it's a string (fallback; guard empty to prevent "Unexpected end of input")
+            var data;
+            try {
+                data = (typeof response === 'string' && response.trim()) ? (typeof $.parseJSON === 'function' ? $.parseJSON(response) : JSON.parse(response)) : (response || {});
+            } catch (e) {
+                data = {};
+            }
             
             if (data && data.clientContacts && data.clientContacts.length > 0) {
                 data.clientContacts.forEach(function(contact) {

@@ -13,12 +13,13 @@
             url: window.ClientDetailConfig.urls.checklistUpload,
             method: "POST",
             data: form_data,
-            datatype: 'json',
+            dataType: 'json',
             contentType: false,
             cache: false,
             processData: false,
             success: function(response) {
-                var obj = $.parseJSON(response);
+                var obj = (typeof response === 'object' && response !== null) ? response : (typeof response === 'string' && response.trim() ? (function(){ try { return JSON.parse(response); } catch(e) { return null; } })() : null);
+                if (!obj) return;
                 $('.popuploader').hide();
                 $('#openfileuploadmodal').modal('hide');
                 $('.mychecklistdocdata').html(obj.doclistdata);
@@ -179,10 +180,12 @@
             }
             $.ajax({
                 type: "POST",
+                dataType: 'json',
                 data: {"_token": $('meta[name="csrf-token"]').attr('content'),"checklist": opentime, "id": parent.data('id')},
                 url: window.ClientDetailConfig.urls.renameChecklistDoc,
                 success: function(result){
-                    var obj = JSON.parse(result);
+                    var obj = (typeof result === 'object' && result !== null) ? result : (typeof result === 'string' && result.trim() ? (function(){ try { return JSON.parse(result); } catch(e) { return null; } })() : null);
+                    if (!obj) return;
                     if (obj.status) {
                         parent.empty()
                             .data('id', obj.Id)
@@ -254,10 +257,12 @@
             }
             $.ajax({
                 type: "POST",
+                dataType: 'json',
                 data: {"_token": $('meta[name="csrf-token"]').attr('content'),"checklist": opentime, "id": parent.data('id')},
                 url: window.ClientDetailConfig.urls.renameChecklistDoc,
                 success: function(result){
-                    var obj = JSON.parse(result);
+                    var obj = (typeof result === 'object' && result !== null) ? result : (typeof result === 'string' && result.trim() ? (function(){ try { return JSON.parse(result); } catch(e) { return null; } })() : null);
+                    if (!obj) return;
                     if (obj.status) {
                         parent.empty()
                             .data('id', obj.Id)

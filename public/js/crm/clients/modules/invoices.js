@@ -15,6 +15,7 @@
             type: 'post',
             url: window.ClientDetailConfig.urls.listOfInvoice,
             sync: true,
+            dataType: 'json',
             data: { client_id: client_id, selectedMatter: selectedMatter },
             success: function(response) {
                 try {

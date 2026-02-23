@@ -13,9 +13,11 @@
             type: 'post',
             url: window.ClientDetailConfig.urls.clientLedgerBalance,
             sync: true,
+            dataType: 'json',
             data: { client_id: client_id, selectedMatter: selectedMatter },
             success: function(response) {
-                var obj = $.parseJSON(response);
+                var obj = (typeof response === 'object' && response !== null) ? response : (typeof response === 'string' && response.trim() ? (function(){ try { return JSON.parse(response); } catch(e) { return null; } })() : null);
+                if (!obj) return;
                 $('#client_ledger_balance_amount').val(obj.record_get);
             }
         });

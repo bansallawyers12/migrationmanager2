@@ -161,10 +161,12 @@
             }
             $.ajax({
                 type: "POST",
+                dataType: 'json',
                 data: {"_token": $('meta[name="csrf-token"]').attr('content'),"filename": opentime, "id": parent.data('id')},
                 url: window.ClientDetailConfig.urls.renameDoc,
                 success: function(result) {
-                    var obj = JSON.parse(result);
+                    var obj = (typeof result === 'object' && result !== null) ? result : (typeof result === 'string' && result.trim() ? (function(){ try { return JSON.parse(result); } catch(e) { return null; } })() : null);
+                    if (!obj) return;
                     if (obj.status) {
                         var previewUrl = obj.fileurl;
                         var filetype = obj.filetype;
@@ -266,10 +268,12 @@
             }
             $.ajax({
                 type: "POST",
+                dataType: 'json',
                 data: {"_token": $('meta[name="csrf-token"]').attr('content'),"filename": opentime, "id": parent.data('id')},
                 url: window.ClientDetailConfig.urls.renameDoc,
                 success: function(result) {
-                    var obj = JSON.parse(result);
+                    var obj = (typeof result === 'object' && result !== null) ? result : (typeof result === 'string' && result.trim() ? (function(){ try { return JSON.parse(result); } catch(e) { return null; } })() : null);
+                    if (!obj) return;
                     if (obj.status) {
                         var previewUrl = obj.fileurl;
                         var filetype = obj.filetype;

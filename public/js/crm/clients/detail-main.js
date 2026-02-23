@@ -1,6 +1,19 @@
     // Global flag to prevent redirects during page initialization
     var isInitializing = true;
 
+    /**
+     * Safely parse AJAX response - handles both pre-parsed objects (dataType:'json')
+     * and raw strings, and guards against empty/invalid JSON to prevent "Unexpected end of input".
+     */
+    function safeParseJsonResponse(response) {
+        if (typeof response === 'object' && response !== null) return response;
+        if (typeof response === 'string' && response.trim()) {
+            try { return JSON.parse(response); } catch(e) { console.error('Invalid JSON response:', e); return null; }
+        }
+        return null;
+    }
+    window.safeParseJsonResponse = safeParseJsonResponse;
+
     // Flatpickr + Editor helpers - see utils/flatpickr-helpers.js, utils/editor-helpers.js
 
 
@@ -1150,10 +1163,10 @@
 
             data: {type:type},
 
-            success: function(response){
+success: function(response){
 
-                var obj = $.parseJSON(response); 
-
+                var obj = safeParseJsonResponse(response);
+                if (!obj) return;
                 $('.invoice_no').val(obj.max_receipt_id);
 
                 $('.unique_invoice_no').text(obj.max_receipt_id);
@@ -1180,8 +1193,8 @@
 
             success: function(response){
 
-                var obj = $.parseJSON(response);
-
+                var obj = safeParseJsonResponse(response);
+                if (!obj) return;
                 if(obj.receipt_type == 1){ //client receipt
 
                     if(obj.record_count >0){
@@ -2388,7 +2401,7 @@ $(document).ready(function() {
 
                 data: {mail_report_id:mail_report_id},
 
-                datatype: 'json',
+                dataType: 'json',
 
                 success: function(response) {
 
@@ -2460,14 +2473,14 @@ $(document).ready(function() {
 
                     data: {client_id:selected_client_id},
 
-                    datatype: 'json',
+                    dataType: 'json',
 
-                    success: function(response) {
+success: function(response) {
 
                         $('.popuploader').hide();
 
-                        var obj = $.parseJSON(response); 
-
+                        var obj = safeParseJsonResponse(response);
+                        if (!obj) return;
                         var matterlist = '<option value="">Select Client Matter</option>';
 
                         $.each(obj.clientMatetrs, function(index, subArray) {
@@ -2572,14 +2585,14 @@ $(document).ready(function() {
 
                     data: {client_id:selected_client_id},
 
-                    datatype: 'json',
+                    dataType: 'json',
 
-                    success: function(response) {
+success: function(response) {
 
                         $('.popuploader').hide();
 
-                        var obj = $.parseJSON(response); 
-
+                        var obj = safeParseJsonResponse(response);
+                        if (!obj) return;
                         var matterlist = '<option value="">Select Client Matter</option>';
 
                         $.each(obj.clientMatetrs, function(index, subArray) {
@@ -3414,8 +3427,8 @@ $(document).ready(function() {
 
                 success: function(response){
 
-                    var obj = $.parseJSON(response);
-
+                    var obj = safeParseJsonResponse(response);
+                    if (!obj) return;
                     if(obj.status){
 
                         $('#function_type').val("edit");
@@ -3608,8 +3621,8 @@ $(document).ready(function() {
 
                 success: function (response) {
 
-                    var obj = $.parseJSON(response);
-
+                    var obj = safeParseJsonResponse(response);
+                    if (!obj) return;
                     if (obj.status) {
 
                         $('#function_type').val("edit");
@@ -4423,7 +4436,7 @@ Bansal Immigration`;
 
                     type: 'POST',
 
-                    datatype: 'json',
+                    dataType: 'json',
 
                     data: {
 
@@ -4437,7 +4450,8 @@ Bansal Immigration`;
 
                     success: function (response) {
 
-                        var obj = $.parseJSON(response);
+                        var obj = safeParseJsonResponse(response);
+                        if (!obj) return;
 
                         if (obj.not_picked_call == 1) {
 
@@ -4636,13 +4650,13 @@ Bansal Immigration`;
 
                     data:{id:service_id, enquiry_item:enquiry_item, inperson_address:inperson_address, slot_overwrite:slot_overwrite },
 
-                    datatype:'json',
+                    dataType:'json',
 
                     success:function(res){
 
                         try {
-                            var obj = JSON.parse(res);
-
+                            var obj = safeParseJsonResponse(res);
+                            if (!obj) return;
                             if(obj.success){
 
                                 duration = obj.duration;
@@ -4725,13 +4739,13 @@ Bansal Immigration`;
                                         headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
                                         type:'POST',
                                         data:{service_id:service_id,sel_date:date, enquiry_item:enquiry_item,inperson_address:inperson_address,slot_overwrite:slot_overwrite},
-                                        datatype:'json',
+                                        dataType:'json',
                                         success:function(res){
 
                                             $('.timeslots').html('');
 
-                                            var obj = JSON.parse(res);
-
+                                            var obj = safeParseJsonResponse(res);
+                                            if (!obj) return;
                                             if(obj.success){
 
                                                 
@@ -4907,11 +4921,12 @@ Bansal Immigration`;
                         
                         var errorMessage = 'There is a problem in our system. please try again';
                         
-                        // Try to parse error response if available
+                        // Try to parse error response if available (guard against empty/invalid to prevent "Unexpected end of input")
                         try {
-                            if (xhr.responseText) {
-                                var errorObj = JSON.parse(xhr.responseText);
-                                if (errorObj.message) {
+                            var rt = xhr.responseText;
+                            if (rt && typeof rt === 'string' && rt.trim()) {
+                                var errorObj = JSON.parse(rt);
+                                if (errorObj && errorObj.message) {
                                     errorMessage = errorObj.message;
                                 }
                             }
@@ -5845,8 +5860,8 @@ Bansal Immigration`;
 
                 success: function(response){
 
-                    var obj = $.parseJSON(response);
-
+                    var obj = safeParseJsonResponse(response);
+                    if (!obj) return;
                     if(obj.agentInfo){
 
                         $('#agent_id').val(obj.agentInfo.agentId);
@@ -5936,8 +5951,8 @@ Bansal Immigration`;
 
                             success: function(agentResponse) {
 
-                                var obj = $.parseJSON(agentResponse);
-
+                                var obj = safeParseJsonResponse(agentResponse);
+                                if (!obj) return;
                                 if(obj.agentInfo) {
 
                                     // Prepare form data for AJAX submission
@@ -6148,8 +6163,8 @@ Bansal Immigration`;
 
                 success: function(response){
 
-                    var obj = $.parseJSON(response);
-
+                    var obj = safeParseJsonResponse(response);
+                    if (!obj) return;
                     if(obj.agentInfo){
 
                         $('#visaagree_agent_id').val(obj.agentInfo.agentId);
@@ -6312,8 +6327,8 @@ Bansal Immigration`;
 
                 success: function(response){
 
-                    var obj = $.parseJSON(response);
-
+                    var obj = safeParseJsonResponse(response);
+                    if (!obj) return;
                     if(obj.agentInfo){
 
                         $scope.find('#costassign_agent_id').val(obj.agentInfo.agentId);
@@ -6642,9 +6657,9 @@ Bansal Immigration`;
 
                     // Check if response is already an object or needs parsing
 
-                    var obj = typeof response === 'string' ? $.parseJSON(response) : response;
+                    var obj = safeParseJsonResponse(response);
 
-                    if (obj.status) {
+                    if (obj && obj.status) {
 
                         // If form was in the cost assignment modal (amend from checklist), close modal and stay on checklists tab
                         var $modal = $('#costAssignmentCreateFormModel');
@@ -6721,9 +6736,9 @@ Bansal Immigration`;
 
                     // Check if response is already an object or needs parsing
 
-                    var obj = typeof response === 'string' ? $.parseJSON(response) : response;
+                    var obj = safeParseJsonResponse(response);
 
-                    if (obj.status) {
+                    if (obj && obj.status) {
 
                         // Switch back to Cost Assignment list subtab
                         $('.subtab3-button').removeClass('active');
@@ -6820,8 +6835,8 @@ Bansal Immigration`;
 
                     success: function(response){
 
-                        var obj = $.parseJSON(response);
-
+                        var obj = safeParseJsonResponse(response);
+                        if (!obj) return;
                         //Fetch matter related cost assignments
 
                         if(obj.cost_assignment_matterInfo){
@@ -7274,14 +7289,14 @@ Bansal Immigration`;
 
                     data: {client_id:client_id},
 
-                    datatype: 'json',
+                    dataType: 'json',
 
                     success: function(response) {
 
                         $('.popuploader').hide();
 
-                        var obj = $.parseJSON(response);
-
+                        var obj = safeParseJsonResponse(response);
+                        if (!obj) return;
                         var contactlist = '<option value="">Select Contact</option>';
 
                         $.each(obj.clientContacts, function(index, subArray) {
@@ -7518,8 +7533,8 @@ Bansal Immigration`;
 
                         $('#create_action_popup').modal('hide');
 
-                        var obj = $.parseJSON(response);
-
+                        var obj = safeParseJsonResponse(response);
+                        if (!obj) return;
                         if (obj.success) {
 
                             $("[data-role=popover]").each(function() {
@@ -7641,31 +7656,14 @@ Bansal Immigration`;
 
                 type:'GET',
 
-                dataType:'json', // Fixed: changed from datatype to dataType (case-sensitive)
+                dataType:'json', // Fixed: changed from dataType to dataType (case-sensitive)
 
                 data:{id:window.ClientDetailConfig.clientId},
 
                 success: function(responses){
                     try {
-                        // Handle response - it might already be an object if dataType is 'json'
-                        var ress;
-                        
-                        if (typeof responses === 'string') {
-                            // Check if response is HTML (redirect page)
-                            var trimmedResponse = responses.trim();
-                            if (trimmedResponse.startsWith('<!DOCTYPE') || trimmedResponse.startsWith('<html')) {
-                                console.error('Received HTML instead of JSON. User might be logged out.');
-                                return;
-                            }
-                            // Parse string response
-                            ress = JSON.parse(responses);
-                        } else if (typeof responses === 'object' && responses !== null) {
-                            // Response is already parsed (dataType: 'json' was used)
-                            ress = responses;
-                        } else {
-                            console.error('Unexpected response type:', typeof responses);
-                            return;
-                        }
+                        var ress = safeParseJsonResponse(responses);
+                        if (!ress) return;
 
                     var html = '';
 
@@ -7804,8 +7802,8 @@ Bansal Immigration`;
 
                 success: function(response){
 
-                    var obj = $.parseJSON(response);
-
+                    var obj = safeParseJsonResponse(response);
+                    if (!obj) return;
                     if(obj.status){
 
                         alert(obj.message);
@@ -7836,7 +7834,7 @@ Bansal Immigration`;
 
                 type:'GET',
 
-                datatype:'json',
+                dataType:'json',
 
                 data:{appid:appcid,status:'1'},
 
@@ -7844,8 +7842,8 @@ Bansal Immigration`;
 
                     $('.popuploader').hide();
 
-                    var res = JSON.parse(response);
-
+                    var res = safeParseJsonResponse(response);
+                    if (!res) return;
                     $('#confirmpublishdocModal').modal('hide');
 
                     if(res.status){
@@ -7988,7 +7986,7 @@ Bansal Immigration`;
 
                 type:'POST',
 
-                datatype:'json',
+                dataType:'json',
 
                 data:{doc_id:notuse_doc_id, doc_type:notuse_doc_type },
 
@@ -7996,8 +7994,8 @@ Bansal Immigration`;
 
                     $('.popuploader').hide();
 
-                    var res = JSON.parse(response);
-
+                    var res = safeParseJsonResponse(response);
+                    if (!res) return;
                     $('#confirmNotUseDocModal').modal('hide');
 
                     if(res.status){
@@ -8137,7 +8135,7 @@ Bansal Immigration`;
 
                 type:'POST',
 
-                datatype:'json',
+                dataType:'json',
 
                 data:{doc_id:backto_doc_id, doc_type:backto_doc_type },
 
@@ -8145,8 +8143,8 @@ Bansal Immigration`;
 
                     $('.popuploader').hide();
 
-                    var res = JSON.parse(response);
-
+                    var res = safeParseJsonResponse(response);
+                    if (!res) return;
                     $('#confirmBackToDocModal').modal('hide');
 
                     if(res.status){
@@ -8273,7 +8271,7 @@ Bansal Immigration`;
 
                 type:'GET',
 
-                datatype:'json',
+                dataType:'json',
 
                 data:{cost_agreement_id:costAgreementId},
 
@@ -8281,8 +8279,8 @@ Bansal Immigration`;
 
                     $('.popuploader').hide();
 
-                    var res = JSON.parse(response);
-
+                    var res = safeParseJsonResponse(response);
+                    if (!res) return;
                     $('#confirmCostAgreementModal').modal('hide');
 
                     if(res.status){
@@ -8346,7 +8344,7 @@ Bansal Immigration`;
 
                 type:'GET',
 
-                datatype:'json',
+                dataType:'json',
 
                 data:{note_id:notid},
 
@@ -8354,8 +8352,8 @@ Bansal Immigration`;
 
                     $('.popuploader').hide();
 
-                    var res = JSON.parse(response);
-
+                    var res = safeParseJsonResponse(response);
+                    if (!res) return;
                     $('#confirmModal').modal('hide');
 
                     if(res.status){
@@ -8491,7 +8489,7 @@ Bansal Immigration`;
 
                 type:'GET',
 
-                datatype:'json',
+                dataType:'json',
 
                 data:{activitylogid:activitylogid},
 
@@ -8499,8 +8497,8 @@ Bansal Immigration`;
 
                     //$('.popuploader').hide();
 
-                    var res = JSON.parse(response);
-
+                    var res = safeParseJsonResponse(response);
+                    if (!res) return;
                     $('#confirmLogModal').modal('hide');
 
                     //location.reload();
@@ -8539,7 +8537,7 @@ Bansal Immigration`;
 
                 type:'GET',
 
-                datatype:'json',
+                dataType:'json',
 
                 data:{note_id:$(this).attr('data-id')},
 
@@ -8565,7 +8563,7 @@ Bansal Immigration`;
 
                 type:'GET',
 
-                datatype:'json',
+                dataType:'json',
 
                 data:{note_id:$(this).attr('data-id')},
 
@@ -8593,7 +8591,7 @@ Bansal Immigration`;
 
                 type:'GET',
 
-                datatype:'json',
+                dataType:'json',
 
                 data:{activity_id:$(this).attr('data-id')},
 
@@ -8717,8 +8715,7 @@ Bansal Immigration`;
 
                     success: function(response){
 
-                        var obj = $.parseJSON(response);
-
+                        var obj = safeParseJsonResponse(response);
                         location.reload();
 
                     }
@@ -8859,14 +8856,14 @@ Bansal Immigration`;
 
                 type:'GET',
 
-                datatype:'json',
+                dataType:'json',
 
                 data:{id:window.ClientDetailConfig.clientId,rating:v},
 
                 success: function(response){
 
-                    var res = JSON.parse(response);
-
+                    var res = safeParseJsonResponse(response);
+                    if (!res) return;
                     if(res.status){
 
 
@@ -8901,14 +8898,14 @@ Bansal Immigration`;
 
                 type:'GET',
 
-                datatype:'json',
+                dataType:'json',
 
                 data:{id:v},
 
                 success: function(response){
 
-                    var res = JSON.parse(response);
-
+                    var res = safeParseJsonResponse(response);
+                    if (!res) return;
                     $('.selectedsubject').val(res.subject);
 
                     clearEditor("#emailmodal .summernote-simple");
@@ -8977,13 +8974,14 @@ Bansal Immigration`;
 
                 type:'GET',
 
-                datatype:'json',
+                dataType:'json',
 
                 data:{id:v},
 
                 success: function(response){
 
-                    var res = JSON.parse(response);
+                    var res = safeParseJsonResponse(response);
+                    if (!res) return;
 
 
 
@@ -9068,14 +9066,14 @@ Bansal Immigration`;
 
                 type:'GET',
 
-                datatype:'json',
+                dataType:'json',
 
                 data:{id:v},
 
                 success: function(response){
 
-                    var res = JSON.parse(response);
-
+                    var res = safeParseJsonResponse(response);
+                    if (!res) return;
                     $('.selectedappsubject').val(res.subject);
 
                     // Set content in TinyMCE editor
@@ -10099,8 +10097,4 @@ Bansal Immigration`;
 
         });
 
-
-
-
-
-        
+    }); // End jQuery(document).ready from line ~2366
