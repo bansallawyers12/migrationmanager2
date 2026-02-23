@@ -63,16 +63,19 @@ class VisaSheetService
         $config = config("sheets.visa_types.{$sheetType}", []);
         $refTable = $config['lead_reference_table'] ?? null;
         $remindersTable = $config['lead_reminders_table'] ?? null;
+        $refType = $config['reference_type'] ?? $sheetType;
         if (!$refTable || !Schema::hasTable($refTable)) {
             return false;
         }
         $now = now();
         $exists = DB::table($refTable)
+            ->where('type', $refType)
             ->where('lead_id', $leadId)
             ->where('matter_id', $matterId)
             ->exists();
         if ($exists) {
             DB::table($refTable)
+                ->where('type', $refType)
                 ->where('lead_id', $leadId)
                 ->where('matter_id', $matterId)
                 ->update([
@@ -82,6 +85,7 @@ class VisaSheetService
                 ]);
         } else {
             DB::table($refTable)->insert([
+                'type' => $refType,
                 'lead_id' => $leadId,
                 'matter_id' => $matterId,
                 'checklist_sent_at' => $now,
@@ -93,6 +97,7 @@ class VisaSheetService
         }
         if ($remindersTable && Schema::hasTable($remindersTable)) {
             DB::table($remindersTable)->insert([
+                'visa_type' => $refType,
                 'lead_id' => $leadId,
                 'type' => 'email',
                 'reminded_at' => $now,

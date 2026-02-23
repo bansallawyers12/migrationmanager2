@@ -539,7 +539,7 @@ use App\Http\Controllers\Controller;
                                 ?>
 								<select data-valid="" class="form-control select2 selecttemplate" name="template" data-clientid="{{@$fetchedData->id}}" data-clientfirstname="{{@$fetchedData->first_name}}" data-clientvisaExpiry="{{@$fetchedData->visaExpiry}}" data-clientreference_number="{{@$fetchedData->client_id}}" data-clientassignee_name="{{@$clientAssigneeName}}">
 									<option value="">Select</option>
-									@foreach( \App\Models\CrmEmailTemplate::orderBy('id', 'desc')->get() as $list)
+									@foreach( \App\Models\EmailTemplate::crm()->orderBy('id', 'desc')->get() as $list)
 										<option value="{{$list->id}}">{{$list->name}}</option>
 									@endforeach
 								</select>

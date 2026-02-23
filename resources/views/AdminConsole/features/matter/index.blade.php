@@ -225,11 +225,11 @@
 													<a class="dropdown-item has-icon" href="{{route('adminconsole.features.matter.edit', base64_encode(convert_uuencode(@$list->id)))}}"><i class="far fa-edit"></i> Edit</a>
 													<a class="dropdown-item has-icon" href="javascript:;" onClick="deleteAction({{@$list->id}}, 'matters')"><i class="fas fa-trash"></i> Delete</a>
 													<?php
-													$hasTemplate = \App\Models\MatterEmailTemplate::where('matter_id', $list->id)->exists();
+													$hasTemplate = \App\Models\EmailTemplate::forMatter($list->id)->ofType(\App\Models\EmailTemplate::TYPE_MATTER_FIRST)->exists();
 													?>
 													@if($hasTemplate)
 													<?php
-													$Template_info = \App\Models\MatterEmailTemplate::where('matter_id', $list->id)->first();
+													$Template_info = \App\Models\EmailTemplate::forMatter($list->id)->ofType(\App\Models\EmailTemplate::TYPE_MATTER_FIRST)->first();
 													?>
 													<a class="dropdown-item has-icon" href="{{route('adminconsole.features.matteremailtemplate.edit', [$Template_info->id, $list->id])}}"><i class="far fa-edit"></i> Edit First Email</a>
 													@else

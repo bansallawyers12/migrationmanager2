@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 
 use App\Models\Admin;
-use App\Models\MatterEmailTemplate; 
-  
+use App\Models\EmailTemplate;
+
 use Auth;
 
 class MatterEmailTemplateController extends Controller
@@ -38,7 +38,7 @@ class MatterEmailTemplateController extends Controller
 			} */	
 		//check authorization end 
 	
-		$query 		= MatterEmailTemplate::query(); 
+		$query 		= EmailTemplate::ofType(EmailTemplate::TYPE_MATTER_FIRST); 
 		 
 		$totalData 	= $query->count();	//for all data
 		
@@ -59,7 +59,8 @@ class MatterEmailTemplateController extends Controller
 		if ($request->isMethod('post')) 
 		{
 			$requestData 		= 	$request->all();
-			$obj				= 	new MatterEmailTemplate; 
+			$obj				= 	new EmailTemplate; 
+			$obj->type			=	EmailTemplate::TYPE_MATTER_FIRST;
 			$obj->matter_id		=	@$requestData['matter_id'];
 			$obj->name			=	@$requestData['name'];
 			$obj->subject		=	@$requestData['subject'];
@@ -85,9 +86,9 @@ class MatterEmailTemplateController extends Controller
 		if(isset($templateId) && !empty($templateId))
 		{
 			//$id = $this->decodeString($id);	
-			if(MatterEmailTemplate::where('id', '=', $templateId)->exists()) 
+			if(EmailTemplate::ofType(EmailTemplate::TYPE_MATTER_FIRST)->where('id', '=', $templateId)->exists()) 
 			{
-				$fetchedData = MatterEmailTemplate::find($templateId);
+				$fetchedData = EmailTemplate::ofType(EmailTemplate::TYPE_MATTER_FIRST)->find($templateId);
 				return view('AdminConsole.features.matteremailtemplate.edit', compact(['fetchedData','matterId']));
 			}
 			else 
@@ -108,7 +109,7 @@ class MatterEmailTemplateController extends Controller
 	{
 		$requestData = $request->all();
 		
-		$obj = MatterEmailTemplate::find($templateId);
+		$obj = EmailTemplate::ofType(EmailTemplate::TYPE_MATTER_FIRST)->find($templateId);
 		if (!$obj) {
 			return redirect()->route('adminconsole.features.matteremailtemplate.index')->with('error', 'Matter Email Template Not Found');
 		}

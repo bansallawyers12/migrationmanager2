@@ -24,10 +24,16 @@ class Matter extends Model
 	
 	public $sortable = ['id', 'title', 'nick_name', 'created_at', 'updated_at'];
 	
-	// Relationship with MatterOtherEmailTemplate
+	// Relationship with EmailTemplate (matter_other type)
 	public function otherEmailTemplates()
 	{
-		return $this->hasMany('App\\Models\\MatterOtherEmailTemplate', 'matter_id');
+		return $this->hasMany(EmailTemplate::class, 'matter_id')->where('type', EmailTemplate::TYPE_MATTER_OTHER);
+	}
+
+	// Relationship with EmailTemplate (matter_first type)
+	public function firstEmailTemplate()
+	{
+		return $this->hasOne(EmailTemplate::class, 'matter_id')->where('type', EmailTemplate::TYPE_MATTER_FIRST);
 	}
 
 	/**

@@ -248,7 +248,7 @@
                                     <select class="form-control select2 selecttemplate" name="template" data-clientid="{{@$fetchedData->id}}" data-clientfirstname="{{@$fetchedData->first_name}}" data-clientvisaExpiry="{{@$fetchedData->visaExpiry}}" data-clientreference_number="{{@$fetchedData->client_id}}" data-clientassignee_name="{{@$fetchedData->first_name}}" data-mattertotalprofessionalfee="{{@$matter_info->TotalBLOCKFEE}}" data-mattertotaldepartmentfee="{{@$matter_info->additional_fee_1}}" data-mattertotalsurchargefee="{{@$matter_info->TotalDoHASurcharges}}" data-mattertotalpayablefee="{{@$mattertotalpayablefee}}" data-pdfurlforsign="{{@$pdfurlforsign}}" data-mattertitle="{{@$matter_info->title}}" required>
                                         <option value="">Select</option>
                                         @if($client_matter_info_arr && isset($client_matter_info_arr->sel_matter_id))
-                                            @foreach( \App\Models\MatterEmailTemplate::where('matter_id',$client_matter_info_arr->sel_matter_id)->orderBy('id', 'asc')->get() as $list)
+                                            @foreach( \App\Models\EmailTemplate::forMatter($client_matter_info_arr->sel_matter_id)->ofType(\App\Models\EmailTemplate::TYPE_MATTER_FIRST)->orderBy('id', 'asc')->get() as $list)
                                                 <option value="{{$list->id}}">{{$list->name}}</option>
                                             @endforeach
                                         @endif

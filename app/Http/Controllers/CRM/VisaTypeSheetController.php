@@ -295,7 +295,7 @@ class VisaTypeSheetController extends Controller
                 DB::raw("COALESCE(cm.{$checklistCol}, 'active') as tr_checklist_status"),
                 DB::raw('0 as is_lead')
             );
-        $this->applyFilters($clientQuery, $request, $config);
+        $this->applyFilters($clientQuery, $request, $config, 'cm');
         $clientRows = $clientQuery->get();
 
         $leadRows = collect();
@@ -303,6 +303,7 @@ class VisaTypeSheetController extends Controller
             $matterIds = DB::table('matters')->whereRaw($matterCondition)->pluck('id');
             if ($matterIds->isNotEmpty()) {
                 $leadQuery = DB::table($leadRefTable . ' as lr')
+                    ->where('lr.type', $refType)
                     ->join('admins as a', 'lr.lead_id', '=', 'a.id')
                     ->join('matters as m', 'lr.matter_id', '=', 'm.id')
                     ->whereIn('lr.matter_id', $matterIds)
@@ -359,12 +360,12 @@ class VisaTypeSheetController extends Controller
             foreach ($all as $row) {
                 if ($row->is_lead) {
                     if ($leadRemindersTable && Schema::hasTable($leadRemindersTable)) {
-                        $row->email_reminder_latest = DB::table($leadRemindersTable)->where('lead_id', $row->client_id)->where('type', 'email')->max('reminded_at');
-                        $row->email_reminder_count = DB::table($leadRemindersTable)->where('lead_id', $row->client_id)->where('type', 'email')->count();
-                        $row->sms_reminder_latest = DB::table($leadRemindersTable)->where('lead_id', $row->client_id)->where('type', 'sms')->max('reminded_at');
-                        $row->sms_reminder_count = DB::table($leadRemindersTable)->where('lead_id', $row->client_id)->where('type', 'sms')->count();
-                        $row->phone_reminder_latest = DB::table($leadRemindersTable)->where('lead_id', $row->client_id)->where('type', 'phone')->max('reminded_at');
-                        $row->phone_reminder_count = DB::table($leadRemindersTable)->where('lead_id', $row->client_id)->where('type', 'phone')->count();
+                        $row->email_reminder_latest = DB::table($leadRemindersTable)->where('visa_type', $refType)->where('lead_id', $row->client_id)->where('type', 'email')->max('reminded_at');
+                        $row->email_reminder_count = DB::table($leadRemindersTable)->where('visa_type', $refType)->where('lead_id', $row->client_id)->where('type', 'email')->count();
+                        $row->sms_reminder_latest = DB::table($leadRemindersTable)->where('visa_type', $refType)->where('lead_id', $row->client_id)->where('type', 'sms')->max('reminded_at');
+                        $row->sms_reminder_count = DB::table($leadRemindersTable)->where('visa_type', $refType)->where('lead_id', $row->client_id)->where('type', 'sms')->count();
+                        $row->phone_reminder_latest = DB::table($leadRemindersTable)->where('visa_type', $refType)->where('lead_id', $row->client_id)->where('type', 'phone')->max('reminded_at');
+                        $row->phone_reminder_count = DB::table($leadRemindersTable)->where('visa_type', $refType)->where('lead_id', $row->client_id)->where('type', 'phone')->count();
                     } else {
                         $row->email_reminder_latest = $row->email_reminder_count = $row->sms_reminder_latest = $row->sms_reminder_count = $row->phone_reminder_latest = $row->phone_reminder_count = null;
                     }
@@ -528,21 +529,26 @@ class VisaTypeSheetController extends Controller
         }
     }
 
-    protected function applyFilters($query, Request $request, array $config)
+    /**
+     * Apply filters to a visa sheet query.
+     *
+     * @param string $matterAlias Table alias for the matter columns (e.g. 'latest_matter' for buildBaseQuery subquery, 'cm' for buildChecklistTabWithLeads client query)
+     */
+    protected function applyFilters($query, Request $request, array $config, string $matterAlias = 'latest_matter')
     {
         $refAlias = $config['reference_alias'] ?? 'ref';
 
         if ($request->filled('branch')) {
             $branchIds = is_array($request->input('branch')) ? $request->input('branch') : [$request->input('branch')];
-            $query->whereIn('latest_matter.office_id', $branchIds);
+            $query->whereIn("{$matterAlias}.office_id", $branchIds);
         }
         if ($request->filled('assignee') && $request->input('assignee') !== 'all') {
             $assigneeId = $request->input('assignee') === 'me' ? Auth::id() : $request->input('assignee');
             if ($assigneeId) {
-                $query->where(function ($q) use ($assigneeId) {
-                    $q->where('latest_matter.sel_migration_agent', $assigneeId)
-                        ->orWhere('latest_matter.sel_person_responsible', $assigneeId)
-                        ->orWhere('latest_matter.sel_person_assisting', $assigneeId);
+                $query->where(function ($q) use ($assigneeId, $matterAlias) {
+                    $q->where("{$matterAlias}.sel_migration_agent", $assigneeId)
+                        ->orWhere("{$matterAlias}.sel_person_responsible", $assigneeId)
+                        ->orWhere("{$matterAlias}.sel_person_assisting", $assigneeId);
                 });
             }
         }

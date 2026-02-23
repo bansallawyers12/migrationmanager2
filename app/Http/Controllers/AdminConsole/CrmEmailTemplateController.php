@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 
 use App\Models\Admin;
-use App\Models\CrmEmailTemplate; 
-  
+use App\Models\EmailTemplate;
+
 use Auth;
 
 class CrmEmailTemplateController extends Controller
@@ -38,7 +38,7 @@ class CrmEmailTemplateController extends Controller
 			} */	
 		//check authorization end 
 	
-		$query 		= CrmEmailTemplate::query(); 
+		$query 		= EmailTemplate::crm(); 
 		 
 		$totalData 	= $query->count();	//for all data
 		
@@ -64,7 +64,8 @@ class CrmEmailTemplateController extends Controller
 			
 			$requestData 		= 	$request->all();
 			
-			$obj				= 	new CrmEmailTemplate; 
+			$obj				= 	new EmailTemplate; 
+			$obj->type	=	EmailTemplate::TYPE_CRM;
 			$obj->name	=	@$requestData['name'];
 			$obj->subject	=	@$requestData['subject'];
 			$obj->description	=	@$requestData['description'];
@@ -94,9 +95,9 @@ class CrmEmailTemplateController extends Controller
 		if(isset($id) && !empty($id))
 		{
 			$id = $this->decodeString($id);	
-			if(CrmEmailTemplate::where('id', '=', $id)->exists()) 
+			if(EmailTemplate::crm()->where('id', '=', $id)->exists()) 
 			{
-				$fetchedData = CrmEmailTemplate::find($id);
+				$fetchedData = EmailTemplate::crm()->find($id);
 				return view('AdminConsole.features.crmemailtemplate.edit', compact(['fetchedData']));
 			}
 			else 
@@ -119,7 +120,7 @@ class CrmEmailTemplateController extends Controller
 		
 		$requestData = $request->all();
 						  					  
-		$obj = CrmEmailTemplate::find($id);
+		$obj = EmailTemplate::crm()->find($id);
 		if (!$obj) {
 			return redirect()->route('adminconsole.features.crmemailtemplate.index')->with('error', 'Crm Email Template Not Found');
 		}

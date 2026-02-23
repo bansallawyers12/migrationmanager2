@@ -5,9 +5,11 @@
  * Add new visa types here to enable additional sheets (Visitor, Student, PR, etc.).
  *
  * Each visa type requires:
- * - reference_table: client_matter_references (unified table)
+ * - reference_table: client_matter_references (unified table for client matters)
  * - reference_type: type value for filtering (tr, visitor, student, pr, employer-sponsored)
+ * - lead_reference_table: lead_matter_references (unified table for leads in Checklist tab)
  * - reminders_table: matter_reminders (unified table)
+ * - lead_reminders_table: lead_reminders (unified table)
  * - checklist_status_column: column on client_matters for checklist tab status (e.g. tr_checklist_status)
  * - matter identification + stage mappings
  */
@@ -17,8 +19,8 @@ return [
         'route' => 'clients.sheets.visa-type',
         'reference_table' => 'client_matter_references',
         'reference_type' => 'tr',
-        'lead_reference_table' => 'lead_tr_references',
-        'lead_reminders_table' => 'lead_tr_reminders',
+        'lead_reference_table' => 'lead_matter_references',
+        'lead_reminders_table' => 'lead_reminders',
         'reference_model' => \App\Models\ClientMatterReference::class,
         'reference_alias' => 'tr_ref',
         'reminders_table' => 'matter_reminders',
@@ -48,8 +50,8 @@ return [
         'route' => 'clients.sheets.visa-type',
         'reference_table' => 'client_matter_references',
         'reference_type' => 'visitor',
-        'lead_reference_table' => 'lead_visitor_references',
-        'lead_reminders_table' => 'lead_visitor_reminders',
+        'lead_reference_table' => 'lead_matter_references',
+        'lead_reminders_table' => 'lead_reminders',
         'reference_model' => \App\Models\ClientMatterReference::class,
         'reference_alias' => 'visitor_ref',
         'reminders_table' => 'matter_reminders',
@@ -79,8 +81,8 @@ return [
         'route' => 'clients.sheets.visa-type',
         'reference_table' => 'client_matter_references',
         'reference_type' => 'student',
-        'lead_reference_table' => 'lead_student_references',
-        'lead_reminders_table' => 'lead_student_reminders',
+        'lead_reference_table' => 'lead_matter_references',
+        'lead_reminders_table' => 'lead_reminders',
         'reference_model' => \App\Models\ClientMatterReference::class,
         'reference_alias' => 'student_ref',
         'reminders_table' => 'matter_reminders',
@@ -110,8 +112,8 @@ return [
         'route' => 'clients.sheets.visa-type',
         'reference_table' => 'client_matter_references',
         'reference_type' => 'pr',
-        'lead_reference_table' => 'lead_pr_references',
-        'lead_reminders_table' => 'lead_pr_reminders',
+        'lead_reference_table' => 'lead_matter_references',
+        'lead_reminders_table' => 'lead_reminders',
         'reference_model' => \App\Models\ClientMatterReference::class,
         'reference_alias' => 'pr_ref',
         'reminders_table' => 'matter_reminders',
@@ -141,8 +143,8 @@ return [
         'route' => 'clients.sheets.visa-type',
         'reference_table' => 'client_matter_references',
         'reference_type' => 'employer-sponsored',
-        'lead_reference_table' => 'lead_employer_sponsored_references',
-        'lead_reminders_table' => 'lead_employer_sponsored_reminders',
+        'lead_reference_table' => 'lead_matter_references',
+        'lead_reminders_table' => 'lead_reminders',
         'reference_model' => \App\Models\ClientMatterReference::class,
         'reference_alias' => 'emp_ref',
         'reminders_table' => 'matter_reminders',

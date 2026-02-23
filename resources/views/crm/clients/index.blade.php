@@ -720,7 +720,7 @@
 								<label for="template">Templates </label>
 								<select data-valid="" class="form-control select2 selecttemplate" name="template">
 									<option value="">Select</option>
-									@foreach(\App\Models\CrmEmailTemplate::all() as $list)
+									@foreach(\App\Models\EmailTemplate::crm()->orderBy('id', 'desc')->get() as $list)
 										<option value="{{$list->id}}">{{$list->name}}</option>
 									@endforeach
 								</select>

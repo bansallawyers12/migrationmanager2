@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use DB;
 use App\Models\Admin;
-use App\Models\CrmEmailTemplate;
+use App\Models\EmailTemplate;
 use Carbon\Carbon;
 //use Mail;
 use Auth;
@@ -83,9 +83,11 @@ class VisaExpireReminderEmail extends Command
                 $mail_sent = \Mail::to($to_email)->send(new \App\Mail\VisaExpireReminderMail($details));*/
 
                 //visa expiry email reminder
-                $crm_template_data 	= \App\Models\CrmEmailTemplate::select('*')->where('id', 35)->first();
-                //dd($crm_template_data);
-                if(!empty( $crm_template_data))
+                $templateId = config('email_templates.visa_expiry_template_id');
+                $crm_template_data = $templateId
+                    ? EmailTemplate::crm()->find($templateId)
+                    : EmailTemplate::crm()->whereRaw("name ILIKE '%visa%' AND name ILIKE '%expir%'")->first();
+                if (!empty($crm_template_data))
                 {
                     $subject = $crm_template_data['subject'];
                     $subject = str_replace('{Client First Name}', $first_name, $subject);

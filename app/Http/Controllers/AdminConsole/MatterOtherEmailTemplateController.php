@@ -8,9 +8,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 
 use App\Models\Admin;
-use App\Models\MatterOtherEmailTemplate; 
+use App\Models\EmailTemplate;
 use App\Models\Matter;
-  
+
 use Auth;
 use Illuminate\Support\Facades\Log;
 use Exception;
@@ -53,7 +53,7 @@ class MatterOtherEmailTemplateController extends Controller
 			return redirect()->route('adminconsole.features.matter.index')->with('error', 'Matter not found');
 		}
 	
-		$query = MatterOtherEmailTemplate::where('matter_id', $matterId); 
+		$query = EmailTemplate::forMatter($matterId)->ofType(EmailTemplate::TYPE_MATTER_OTHER); 
 		 
 		$totalData 	= $query->count();	//for all data
 		
@@ -95,7 +95,8 @@ class MatterOtherEmailTemplateController extends Controller
 				'description' => 'required|string',
 			]);
 			
-			$obj				= 	new MatterOtherEmailTemplate; 
+			$obj				= 	new EmailTemplate; 
+			$obj->type			=	EmailTemplate::TYPE_MATTER_OTHER;
 			$obj->matter_id		=	@$requestData['matter_id'];
 			$obj->name			=	@$requestData['name'];
 			$obj->subject		=	@$requestData['subject'];
@@ -122,7 +123,7 @@ class MatterOtherEmailTemplateController extends Controller
 			{
 				try {
 					// Use templateId directly without decoding
-					$template = MatterOtherEmailTemplate::find($templateId);
+					$template = EmailTemplate::ofType(EmailTemplate::TYPE_MATTER_OTHER)->find($templateId);
 					if(!$template) {
 						return redirect()->route('adminconsole.features.matter.index')->with('error', 'Template not found with ID: ' . $templateId);
 					}
@@ -165,7 +166,7 @@ class MatterOtherEmailTemplateController extends Controller
 			'description' => 'required|string',
 		]);
 		
-		$obj = MatterOtherEmailTemplate::find($templateId);
+		$obj = EmailTemplate::ofType(EmailTemplate::TYPE_MATTER_OTHER)->find($templateId);
 		if (!$obj) {
 			return redirect()->route('adminconsole.features.matterotheremailtemplate.index')->with('error', 'Matter Other Email Template Not Found');
 		}
@@ -188,7 +189,7 @@ class MatterOtherEmailTemplateController extends Controller
 	
 	public function destroy($id)
 	{
-		$template = MatterOtherEmailTemplate::find($id);
+		$template = EmailTemplate::ofType(EmailTemplate::TYPE_MATTER_OTHER)->find($id);
 		if($template) {
 			$matterId = $template->matter_id;
 			$template->delete();

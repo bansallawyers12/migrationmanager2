@@ -970,23 +970,11 @@ public function getChapters(Request $request)
 
 	public function gettemplates(Request $request){
 		$id = $request->id;
-		$CrmEmailTemplate = \App\Models\CrmEmailTemplate::where('id',$id)->first();
-		if($CrmEmailTemplate){
-			echo json_encode(array('subject'=>$CrmEmailTemplate->subject, 'description'=>$CrmEmailTemplate->description));
-		}else{
-			// Fallback: check MatterEmailTemplate (matter first email)
-			$MatterEmailTemplate = \App\Models\MatterEmailTemplate::where('id',$id)->first();
-			if($MatterEmailTemplate){
-				echo json_encode(array('subject'=>$MatterEmailTemplate->subject, 'description'=>$MatterEmailTemplate->description));
-			}else{
-				// Fallback: check MatterOtherEmailTemplate (matter additional templates)
-				$MatterOtherTemplate = \App\Models\MatterOtherEmailTemplate::where('id',$id)->first();
-				if($MatterOtherTemplate){
-					echo json_encode(array('subject'=>$MatterOtherTemplate->subject, 'description'=>$MatterOtherTemplate->description));
-				}else{
-					echo json_encode(array('subject'=>'','description'=>''));
-				}
-			}
+		$template = \App\Models\EmailTemplate::find($id);
+		if ($template) {
+			echo json_encode(array('subject' => $template->subject, 'description' => $template->description));
+		} else {
+			echo json_encode(array('subject' => '', 'description' => ''));
 		}
 	}
 
@@ -1007,11 +995,11 @@ public function getChapters(Request $request)
 		$matterId = $clientMatter->sel_matter_id;
 		$clientId = $clientMatter->client_id;
 
-		// First Email template (MatterEmailTemplate) - one per matter
-		$firstTemplate = \App\Models\MatterEmailTemplate::where('matter_id', $matterId)->orderBy('id', 'asc')->first();
+		// First Email template - one per matter
+		$firstTemplate = \App\Models\EmailTemplate::forMatter($matterId)->ofType(\App\Models\EmailTemplate::TYPE_MATTER_FIRST)->orderBy('id', 'asc')->first();
 
-		// Additional matter templates (MatterOtherEmailTemplate) - multiple per matter
-		$otherTemplates = \App\Models\MatterOtherEmailTemplate::where('matter_id', $matterId)->orderBy('id', 'asc')->get();
+		// Additional matter templates - multiple per matter
+		$otherTemplates = \App\Models\EmailTemplate::forMatter($matterId)->ofType(\App\Models\EmailTemplate::TYPE_MATTER_OTHER)->orderBy('id', 'asc')->get();
 
 		// Build full list: first email first, then other templates
 		$allTemplates = [];
@@ -1524,11 +1512,11 @@ public function getChapters(Request $request)
 	//Get matter templates
 	public function getmattertemplates(Request $request){
 		$id = $request->id;
-		$CrmEmailTemplate = \App\Models\MatterEmailTemplate::where('id',$id)->first();
-		if($CrmEmailTemplate){
-			echo json_encode(array('subject'=>$CrmEmailTemplate->subject, 'description'=>$CrmEmailTemplate->description));
-		}else{
-			echo json_encode(array('subject'=>'','description'=>''));
+		$template = \App\Models\EmailTemplate::find($id);
+		if ($template) {
+			echo json_encode(array('subject' => $template->subject, 'description' => $template->description));
+		} else {
+			echo json_encode(array('subject' => '', 'description' => ''));
 		}
 	}
 
