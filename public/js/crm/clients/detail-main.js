@@ -2367,9 +2367,10 @@ $(document).ready(function() {
 
 
 
-        // Initialize Select2 for the matter dropdown
-
-        $('#sel_matter_id_client_detail').select2();
+        // Initialize Select2 for the matter dropdown (dropdownCssClass for wrapping long names)
+        $('#sel_matter_id_client_detail').select2({
+            dropdownCssClass: 'matter-dropdown-wrap'
+        });
 
 
 

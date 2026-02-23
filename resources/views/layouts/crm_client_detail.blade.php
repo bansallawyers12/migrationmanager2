@@ -466,9 +466,10 @@
             box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
         }
         
-        /* Fix Select2 text truncation in sidebar matter dropdown */
+        /* Sidebar matter dropdown - allow long names to wrap to prevent sidebar width expansion */
         .sidebar-matter-selection .select2-container {
             width: 100% !important;
+            max-width: 100% !important;
         }
         
         .sidebar-matter-selection .select2-container--default .select2-selection--single {
@@ -479,10 +480,11 @@
         }
         
         .sidebar-matter-selection .select2-container--default .select2-selection--single .select2-selection__rendered {
-            white-space: nowrap !important;
-            overflow: visible !important;
-            text-overflow: clip !important;
-            max-width: none !important;
+            white-space: normal !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+            word-break: break-word !important;
+            max-width: 100% !important;
             padding-right: 30px !important;
             line-height: 1.4 !important;
             padding-top: 6px !important;
@@ -491,19 +493,29 @@
         }
         
         .sidebar-matter-selection .select2-container--default .select2-selection--single .select2-selection__arrow {
-            height: 36px;
+            height: 100%;
+            min-height: 36px;
             right: 8px;
+            top: 0;
+            bottom: 0;
         }
         
-        /* Ensure the dropdown container doesn't constrain width */
         .sidebar-matter-selection {
             min-width: 0;
-            overflow: visible;
+            overflow: hidden;
+            width: 100%;
         }
         
-        /* Allow the Select2 container to expand if needed */
         .sidebar-matter-selection .select2-container--default {
-            max-width: 100%;
+            max-width: 100% !important;
+        }
+        
+        /* Matter dropdown - wrap long option names when opened */
+        .matter-dropdown-wrap .select2-results__option {
+            white-space: normal !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+            line-height: 1.4 !important;
         }
         
         /* Application Status Badge */
