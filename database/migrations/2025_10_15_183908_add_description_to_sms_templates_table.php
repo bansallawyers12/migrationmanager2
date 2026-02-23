@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasColumn('sms_templates', 'description')) {
+            return;
+        }
+
         Schema::table('sms_templates', function (Blueprint $table) {
             $table->text('description')->nullable()->after('message')->comment('Template description for internal reference');
         });
