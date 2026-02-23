@@ -266,14 +266,20 @@ class ClientMatter extends Model
         $config = config("sheets.visa_types.{$sheetType}", []);
         $modelClass = $config['reference_model'] ?? null;
         $remindersTable = $config['reminders_table'] ?? null;
+        $refType = $config['reference_type'] ?? $sheetType;
 
         if (!$modelClass || !class_exists($modelClass)) {
             return false;
         }
 
         $now = now();
+        $lookup = [
+            'client_id' => $this->client_id,
+            'client_matter_id' => $this->id,
+            'type' => $refType,
+        ];
         $ref = $modelClass::firstOrCreate(
-            ['client_id' => $this->client_id, 'client_matter_id' => $this->id],
+            $lookup,
             ['checklist_sent_at' => $now, 'created_by' => $staffId, 'updated_by' => $staffId]
         );
         if (!$ref->wasRecentlyCreated) {

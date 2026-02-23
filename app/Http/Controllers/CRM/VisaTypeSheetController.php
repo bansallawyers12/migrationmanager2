@@ -235,6 +235,7 @@ class VisaTypeSheetController extends Controller
     {
         $refTable = $config['reference_table'];
         $refAlias = $config['reference_alias'];
+        $refType = $config['reference_type'] ?? null;
         $checklistCol = $config['checklist_status_column'];
         $leadRefTable = $config['lead_reference_table'] ?? null;
         $remindersTable = $config['reminders_table'] ?? null;
@@ -244,9 +245,12 @@ class VisaTypeSheetController extends Controller
         // Client matters with workflow=Checklist
         $clientQuery = DB::table('client_matters as cm')
             ->join('matters as m', 'm.id', '=', 'cm.sel_matter_id')
-            ->leftJoin("{$refTable} as {$refAlias}", function ($j) use ($refAlias) {
+            ->leftJoin("{$refTable} as {$refAlias}", function ($j) use ($refAlias, $refType) {
                 $j->on("{$refAlias}.client_id", '=', 'cm.client_id')
                     ->on("{$refAlias}.client_matter_id", '=', 'cm.id');
+                if ($refType !== null) {
+                    $j->where("{$refAlias}.type", '=', $refType);
+                }
             })
             ->leftJoin('workflow_stages as ws', 'cm.workflow_stage_id', '=', 'ws.id')
             ->join('admins', 'cm.client_id', '=', 'admins.id')
@@ -401,6 +405,7 @@ class VisaTypeSheetController extends Controller
         $matterCondition = $this->getMatterCondition($config);
         $refTable = $config['reference_table'];
         $refAlias = $config['reference_alias'];
+        $refType = $config['reference_type'] ?? null;
         $checklistCol = $config['checklist_status_column'];
 
         // One row per matter (per plan: "one row per TR matter — filtered by active tab").
@@ -429,9 +434,12 @@ class VisaTypeSheetController extends Controller
         ";
 
         $query = DB::table(DB::raw('(' . $baseMattersSql . ') AS latest_matter'))
-            ->leftJoin("{$refTable} as {$refAlias}", function ($join) use ($refAlias) {
+            ->leftJoin("{$refTable} as {$refAlias}", function ($join) use ($refAlias, $refType) {
                 $join->on("{$refAlias}.client_id", '=', 'latest_matter.client_id')
                     ->on("{$refAlias}.client_matter_id", '=', 'latest_matter.matter_id');
+                if ($refType !== null) {
+                    $join->where("{$refAlias}.type", '=', $refType);
+                }
             })
             ->leftJoin('workflow_stages as ws', 'latest_matter.workflow_stage_id', '=', 'ws.id')
             ->join('admins', 'latest_matter.client_id', '=', 'admins.id')
@@ -693,31 +701,38 @@ class VisaTypeSheetController extends Controller
         }
 
         $refTable = $config['reference_table'];
-        
+        $refType = $config['reference_type'] ?? null;
+
         if (!Schema::hasTable($refTable)) {
             return response()->json(['success' => false, 'message' => 'Reference table not found'], 404);
         }
 
         try {
-            $reference = DB::table($refTable)
+            $query = DB::table($refTable)
                 ->where('client_id', $clientId)
-                ->where('client_matter_id', $matterInternalId)
-                ->first();
+                ->where('client_matter_id', $matterInternalId);
+            if ($refType !== null) {
+                $query->where('type', $refType);
+            }
+            $reference = $query->first();
 
             if ($reference) {
                 // Toggle existing pin
                 $newPinStatus = !($reference->is_pinned ?? false);
-                DB::table($refTable)
+                $updateQuery = DB::table($refTable)
                     ->where('client_id', $clientId)
-                    ->where('client_matter_id', $matterInternalId)
-                    ->update([
+                    ->where('client_matter_id', $matterInternalId);
+                if ($refType !== null) {
+                    $updateQuery->where('type', $refType);
+                }
+                $updateQuery->update([
                         'is_pinned' => $newPinStatus,
                         'updated_by' => Auth::id(),
                         'updated_at' => now(),
                     ]);
             } else {
                 // Create new reference record with pin
-                DB::table($refTable)->insert([
+                $insertData = [
                     'client_id' => $clientId,
                     'client_matter_id' => $matterInternalId,
                     'is_pinned' => true,
@@ -725,7 +740,11 @@ class VisaTypeSheetController extends Controller
                     'updated_by' => Auth::id(),
                     'created_at' => now(),
                     'updated_at' => now(),
-                ]);
+                ];
+                if ($refType !== null) {
+                    $insertData['type'] = $refType;
+                }
+                DB::table($refTable)->insert($insertData);
                 $newPinStatus = true;
             }
 

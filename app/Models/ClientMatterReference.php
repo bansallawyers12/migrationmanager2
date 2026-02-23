@@ -4,14 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Models\Admin;
-use App\Models\Staff;
 
-class ClientTrReference extends Model
+class ClientMatterReference extends Model
 {
-    protected $table = 'client_tr_references';
+    protected $table = 'client_matter_references';
 
     protected $fillable = [
+        'type',
         'client_id',
         'client_matter_id',
         'current_status',
@@ -20,12 +19,14 @@ class ClientTrReference extends Model
         'visa_category_override',
         'comments',
         'checklist_sent_at',
+        'is_pinned',
         'created_by',
         'updated_by',
     ];
 
     protected $casts = [
         'checklist_sent_at' => 'date',
+        'is_pinned' => 'boolean',
     ];
 
     public function client(): BelongsTo
@@ -46,5 +47,10 @@ class ClientTrReference extends Model
     public function updater(): BelongsTo
     {
         return $this->belongsTo(Staff::class, 'updated_by');
+    }
+
+    public function scopeOfType($query, string $type)
+    {
+        return $query->where('type', $type);
     }
 }
