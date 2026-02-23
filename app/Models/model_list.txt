@@ -33,7 +33,7 @@ ClientVisaCountry.php
 Contact.php
 CostAssignmentForm.php
 Country.php
-CrmEmailTemplate.php
+ClientMatterReference.php
 DeviceToken.php
 Document.php
 DocumentChecklist.php
@@ -51,8 +51,10 @@ Label.php
 Lead.php
 MailReport.php
 Matter.php
-MatterEmailTemplate.php
-MatterOtherEmailTemplate.php
+EmailTemplate.php
+LeadMatterReference.php
+LeadReminder.php
+MatterReminder.php
 Note.php
 Notification.php
 OurService.php
