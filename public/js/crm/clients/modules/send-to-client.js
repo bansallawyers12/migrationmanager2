@@ -183,6 +183,112 @@
     }
 
     /**
+     * Send Invoice to Client Application (Client Portal / Mobile App)
+     */
+    function handleSendInvoiceToClientApplication($btn) {
+        var invoiceId = $btn.data('invoice-id');
+        var invoiceNo = $btn.data('invoice-no');
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Send to Client Application?',
+                text: 'This will send invoice #' + invoiceNo + ' to the client\'s mobile app / portal.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, send it!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    sendInvoiceToClientApplicationAjax(invoiceId, invoiceNo, $btn);
+                }
+            });
+        } else {
+            if (confirm('Are you sure you want to send invoice #' + invoiceNo + ' to the Client Application?')) {
+                sendInvoiceToClientApplicationAjax(invoiceId, invoiceNo, $btn);
+            }
+        }
+    }
+
+    function sendInvoiceToClientApplicationAjax(invoiceId, invoiceNo, $btn) {
+        var originalHtml = $btn.html();
+        $btn.html('<i class="fas fa-spinner fa-spin"></i> Sending...');
+        $btn.prop('disabled', true);
+
+        var baseUrl = (window.ClientDetailConfig && window.ClientDetailConfig.urls && window.ClientDetailConfig.urls.sendToClientApplication)
+            ? window.ClientDetailConfig.urls.sendToClientApplication
+            : null;
+
+        if (!baseUrl) {
+            $btn.html(originalHtml);
+            $btn.prop('disabled', false);
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Configuration not available.' });
+            } else {
+                alert('Configuration not available.');
+            }
+            return;
+        }
+
+        $.ajax({
+            url: baseUrl + '/' + invoiceId,
+            type: 'POST',
+            dataType: 'json',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                if (response.status) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: response.message,
+                            timer: 2000
+                        }).then(function() {
+                            location.reload();
+                        });
+                    } else {
+                        alert(response.message);
+                        location.reload();
+                    }
+                } else {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: response.message
+                        });
+                    } else {
+                        alert('Error: ' + response.message);
+                    }
+                    $btn.html(originalHtml);
+                    $btn.prop('disabled', false);
+                }
+            },
+            error: function(xhr) {
+                console.error('Error sending invoice to client application:', xhr);
+                var errorMsg = 'Failed to send. Please try again.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                }
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: errorMsg
+                    });
+                } else {
+                    alert('Error: ' + errorMsg);
+                }
+                $btn.html(originalHtml);
+                $btn.prop('disabled', false);
+            }
+        });
+    }
+
+    /**
      * Send Office Receipt to Client
      */
     function handleSendOfficeReceiptToClient($btn) {
@@ -288,6 +394,12 @@
             e.stopPropagation();
             handleSendOfficeReceiptToClient($(this));
         });
+
+        $('.dropdown-menu .send-to-client-application-btn').off('click').on('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            handleSendInvoiceToClientApplication($(this));
+        });
     }
 
     setTimeout(function() {
@@ -317,6 +429,13 @@
             return;
         }
         handleSendOfficeReceiptToClient($(this));
+    });
+
+    $(document).on('click', '.send-to-client-application-btn', function() {
+        if ($(this).closest('.dropdown-menu').length > 0) {
+            return;
+        }
+        handleSendInvoiceToClientApplication($(this));
     });
 
 })();
