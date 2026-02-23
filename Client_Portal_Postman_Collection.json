@@ -1638,7 +1638,7 @@
 								"checklist"
 							]
 						},
-						"description": "Get detailed checklist of personal documents from document_checklists table where doc_type=1. Personal documents are matter independent."
+						"description": "Get detailed checklist of personal documents from portal_document_checklists table where doc_type=1. Personal documents are matter independent."
 					}
 				},
 				{
@@ -1759,7 +1759,7 @@
 								"checklist"
 							]
 						},
-						"description": "Get detailed checklist of visa documents from document_checklists table where doc_type=2. No matter dependency required."
+						"description": "Get detailed checklist of visa documents from portal_document_checklists table where doc_type=2. No matter dependency required."
 					},
 					"response": [
 						{
@@ -1834,7 +1834,7 @@
 								"checklist"
 							]
 						},
-						"description": "Add a new document checklist entry to the documents table. Uses checklist_id to fetch checklist name from document_checklists table based on doc_type. Uses doc_category_id to validate category exists for the specified doc_type. For personal documents, do NOT include client_matter_id (it will be set to null). For visa documents, client_matter_id is MANDATORY."
+						"description": "Add a new document checklist entry to the documents table. Uses checklist_id to fetch checklist name from portal_document_checklists table based on doc_type. Uses doc_category_id to validate category exists for the specified doc_type. For personal documents, do NOT include client_matter_id (it will be set to null). For visa documents, client_matter_id is MANDATORY."
 					},
 					"response": [
 						{

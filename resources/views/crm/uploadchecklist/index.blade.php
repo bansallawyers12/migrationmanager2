@@ -131,7 +131,7 @@
 																<a href="{{URL::to('/public/checklists/'.$list->file)}}">File</a>							  
 															</td>
 															<td>
-															<a style="background-color: #FFF;" class="dropdown-item has-icon" href="javascript:;" onClick="deleteAction({{@$list->id}}, 'upload_checklists')"><i class="fas fa-trash"></i> Delete</a>							  
+															<a style="background-color: #FFF;" class="dropdown-item has-icon" href="javascript:;" onClick="deleteAction({{@$list->id}}, 'matter_checklists')"><i class="fas fa-trash"></i> Delete</a>							  
 															</td>
 														</tr>	
 														@endforeach	 

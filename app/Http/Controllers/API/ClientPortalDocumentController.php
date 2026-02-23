@@ -93,8 +93,8 @@ class ClientPortalDocumentController extends Controller
             $clientId = $admin->id;
             
             // Get personal document checklist (matter independent)
-            // From document_checklists table where doc_type=1 (Personal) and status=1
-            $checklist = DB::table('document_checklists')
+            // From portal_document_checklists table where doc_type=1 (Personal) and status=1
+            $checklist = DB::table('portal_document_checklists')
                 ->where('doc_type', 1) // 1 = Personal documents
                 ->where('status', 1) // Active items only
                 ->orderBy('id', 'asc')
@@ -251,8 +251,8 @@ class ClientPortalDocumentController extends Controller
             $clientId = $admin->id;
 
             // Get visa document checklist for the specific matter
-            // From document_checklists table where doc_type=2 (Visa) and status=1
-            $checklist = DB::table('document_checklists')
+            // From portal_document_checklists table where doc_type=2 (Visa) and status=1
+            $checklist = DB::table('portal_document_checklists')
                 ->where('doc_type', 2) // 2 = Visa documents
                 ->where('status', 1) // Active items only
                 ->orderBy('id', 'asc')
@@ -374,9 +374,9 @@ class ClientPortalDocumentController extends Controller
                 $clientMatterId = null;
             }
 
-            // Get checklist name from document_checklists table based on doc_type
+            // Get checklist name from portal_document_checklists table based on doc_type
             $docTypeId = ($docType === 'personal') ? 1 : 2;
-            $checklistRecord = DB::table('document_checklists')
+            $checklistRecord = DB::table('portal_document_checklists')
                 ->where('id', $checklistId)
                 ->where('doc_type', $docTypeId)
                 ->where('status', 1)
