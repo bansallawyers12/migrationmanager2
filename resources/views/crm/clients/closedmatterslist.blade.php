@@ -369,7 +369,7 @@ jQuery(document).ready(function($){
             url: '{{ route("clients.matter.reopen") }}',
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'), 'Accept': 'application/json' },
-            data: JSON.stringify({ matter_id: matterId }),
+            data: JSON.stringify({ matter_id: matterId, source: 'matter_list' }),
             success: function(resp){
                 if (resp.status && resp.redirect_url) {
                     window.location.href = resp.redirect_url;

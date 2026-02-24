@@ -527,10 +527,11 @@
             btn.disabled = true;
             var origHtml = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Reopening...';
+            var currentTab = document.querySelector('.client-nav-button.active')?.getAttribute('data-tab') || '';
             fetch('{{ route("clients.matter.reopen") }}', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '', 'Accept': 'application/json' },
-                body: JSON.stringify({ matter_id: matterId })
+                body: JSON.stringify({ matter_id: matterId, current_tab: currentTab })
             })
             .then(function(r) { return r.json(); })
             .then(function(data) {

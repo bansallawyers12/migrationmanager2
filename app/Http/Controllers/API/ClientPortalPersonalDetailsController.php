@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Admin;
 use App\Models\ClientPortalDetailAudit;
+use App\Models\Notification;
+use App\Models\Staff;
+use App\Events\NotificationCountUpdated;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -406,6 +409,67 @@ class ClientPortalPersonalDetailsController extends Controller
                                 
                             $updatedFields['age'] = $calculatedAge;
                             }
+                        }
+                    }
+                }
+
+                // Create notification for staff when client updates basic detail via mobile API
+                // Recipients: super admin(s) + all migration agent, person responsible, person assisting for client's matters
+                if (count($updatedFields) > 0) {
+                    $clientName = trim(($admin->first_name ?? '') . ' ' . ($admin->last_name ?? ''));
+                    $encodedClientId = base64_encode(convert_uuencode($clientId));
+                    $notificationUrl = url('/clients/detail/' . $encodedClientId);
+                    $notificationMessage = ($clientName ? $clientName . ' has ' : 'Client has ') . 'updated basic detail. Please check Client Portal >> Details Tab.';
+
+                    // Collect all recipient staff IDs: super admins + matter-related staff (migration agent, person responsible, person assisting)
+                    $recipientIds = collect();
+
+                    // Super admins (role = 1)
+                    $superAdminIds = Staff::where('role', 1)->where('status', 1)->pluck('id');
+                    $recipientIds = $recipientIds->merge($superAdminIds);
+
+                    // All staff from client's matters
+                    $matterStaffIds = DB::table('client_matters')
+                        ->where('client_id', $clientId)
+                        ->select('sel_migration_agent', 'sel_person_responsible', 'sel_person_assisting')
+                        ->get()
+                        ->flatMap(function ($row) {
+                            return array_filter([
+                                $row->sel_migration_agent ?? null,
+                                $row->sel_person_responsible ?? null,
+                                $row->sel_person_assisting ?? null,
+                            ]);
+                        });
+                    $recipientIds = $recipientIds->merge($matterStaffIds)->unique()->filter();
+
+                    foreach ($recipientIds as $receiverStaffId) {
+                        if (!$receiverStaffId || !Staff::where('id', $receiverStaffId)->exists()) {
+                            continue;
+                        }
+
+                        Notification::create([
+                            'sender_id' => $clientId,
+                            'receiver_id' => $receiverStaffId,
+                            'module_id' => $clientId,
+                            'url' => $notificationUrl,
+                            'notification_type' => 'client_detail_update',
+                            'message' => $notificationMessage,
+                            'receiver_status' => 0,
+                            'seen' => 0,
+                        ]);
+
+                        // Broadcast real-time notification count update for staff bell badge
+                        try {
+                            $unreadCount = DB::table('notifications')
+                                ->where('receiver_id', $receiverStaffId)
+                                ->where('receiver_status', 0)
+                                ->count();
+                            broadcast(new NotificationCountUpdated($receiverStaffId, $unreadCount, $notificationMessage, $notificationUrl));
+                        } catch (\Exception $e) {
+                            \Illuminate\Support\Facades\Log::warning('Failed to broadcast notification count for client detail update', [
+                                'receiver_id' => $receiverStaffId,
+                                'error' => $e->getMessage(),
+                            ]);
                         }
                     }
                 }

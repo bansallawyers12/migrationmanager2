@@ -33,13 +33,21 @@ window.updateNotificationBell = function (count, options = {}) {
     if (options.showToast !== false && newCount > prevCount) {
         const izi = typeof window !== 'undefined' && window.iziToast;
         if (izi && izi.show) {
-            izi.show({
+            const toastMessage = options.message || (newCount === 1 ? 'You have a new notification' : 'You have ' + (newCount - prevCount) + ' new notification(s)');
+            const toastConfig = {
                 title: 'Notification',
-                message: newCount === 1 ? 'You have a new notification' : 'You have ' + (newCount - prevCount) + ' new notification(s)',
+                message: toastMessage,
                 position: 'topRight',
                 color: 'blue',
-                timeout: 3000
-            });
+                timeout: 5000,
+                closeOnClick: true
+            };
+            if (options.url) {
+                toastConfig.onClick = function () {
+                    window.location.href = options.url;
+                };
+            }
+            izi.show(toastConfig);
         }
     }
 };
@@ -88,7 +96,10 @@ if (import.meta.env.VITE_REVERB_APP_KEY) {
             userChannel.listen('.notification.count.updated', function (e) {
                 try {
                     const count = e.unread_count !== undefined ? parseInt(e.unread_count, 10) : 0;
-                    window.updateNotificationBell(count, { showToast: true });
+                    const opts = { showToast: true };
+                    if (e.message) opts.message = e.message;
+                    if (e.url) opts.url = e.url;
+                    window.updateNotificationBell(count, opts);
                 } catch (err) {
                     console.warn('Notification count update error:', err);
                 }

@@ -15,17 +15,23 @@ class NotificationCountUpdated implements ShouldBroadcastNow
 
     public $receiverId;
     public $unreadCount;
+    public $message;
+    public $url;
 
     /**
      * Create a new event instance.
      *
      * @param int $receiverId
      * @param int $unreadCount
+     * @param string|null $message Optional notification message for rich toast
+     * @param string|null $url Optional URL for clickable toast navigation
      */
-    public function __construct($receiverId, $unreadCount)
+    public function __construct($receiverId, $unreadCount, $message = null, $url = null)
     {
         $this->receiverId = $receiverId;
         $this->unreadCount = (int) $unreadCount;
+        $this->message = $message;
+        $this->url = $url;
     }
 
     /**
@@ -45,12 +51,19 @@ class NotificationCountUpdated implements ShouldBroadcastNow
      */
     public function broadcastWith()
     {
-        return [
+        $data = [
             'receiver_id' => $this->receiverId,
             'unread_count' => $this->unreadCount,
             'timestamp' => now()->toISOString(),
             'type' => 'notification_count_updated'
         ];
+        if ($this->message !== null) {
+            $data['message'] = $this->message;
+        }
+        if ($this->url !== null) {
+            $data['url'] = $this->url;
+        }
+        return $data;
     }
 
     /**

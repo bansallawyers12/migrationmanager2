@@ -2873,7 +2873,10 @@
                 setTimeout(function() { parent.classList.remove('notification-bell-flash'); }, 600);
             }
             if (options.showToast !== false && newCount > prevCount && typeof iziToast !== 'undefined' && iziToast.show) {
-                iziToast.show({ title: 'Notification', message: newCount === 1 ? 'You have a new notification' : 'You have ' + (newCount - prevCount) + ' new notification(s)', position: 'topRight', color: 'blue', timeout: 3000 });
+                var toastMsg = options.message || (newCount === 1 ? 'You have a new notification' : 'You have ' + (newCount - prevCount) + ' new notification(s)');
+                var toastOpts = { title: 'Notification', message: toastMsg, position: 'topRight', color: 'blue', timeout: 5000, closeOnClick: true };
+                if (options.url) toastOpts.onClick = function() { window.location.href = options.url; };
+                iziToast.show(toastOpts);
             }
         };
     })();

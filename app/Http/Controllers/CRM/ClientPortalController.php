@@ -1035,6 +1035,28 @@ class ClientPortalController extends Controller
 					'seen' => 0
 				]);
 
+				// Send push notification to client mobile app when action is from Client Portal tab only
+				$source = $request->input('source', '');
+				if ($source === 'client_portal') {
+					try {
+						$fcmService = new FCMService();
+						$notificationTitle = 'Stage Updated';
+						$notificationBody = $notificationMessage;
+						$notificationData = [
+							'type' => 'stage_change',
+							'client_matter_id' => (string) $matterId,
+							'message' => $notificationMessage,
+						];
+						$fcmService->sendToUser($clientMatter->client_id, $notificationTitle, $notificationBody, $notificationData);
+					} catch (\Exception $e) {
+						Log::warning('Failed to send push notification for stage change', [
+							'client_id' => $clientMatter->client_id,
+							'matter_id' => $matterId,
+							'error' => $e->getMessage()
+						]);
+					}
+				}
+
 				return response()->json([
 					'status' => true,
 					'message' => 'Matter has been successfully moved to the next stage.',
@@ -1367,8 +1389,45 @@ class ClientPortalController extends Controller
 				$activityLog->source = 'client_portal_web';
 				$activityLog->save();
 
-				// Build redirect URL: go to another active matter, or revert to lead view (no matter)
+				// Notify client and send push when Discontinue is from Client Portal tab only
 				$currentTab = $request->input('current_tab', 'personaldetails');
+				if ($currentTab === 'application') {
+					$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $matterId;
+					$notificationMessage = 'Your matter ' . $matterNo . ' has been discontinued. Reason: ' . e($reason);
+					DB::table('notifications')->insert([
+						'sender_id' => Auth::user()->id,
+						'receiver_id' => $clientMatter->client_id,
+						'module_id' => $matterId,
+						'url' => '/documents',
+						'notification_type' => 'matter_discontinued',
+						'message' => $notificationMessage,
+						'created_at' => now(),
+						'updated_at' => now(),
+						'sender_status' => 1,
+						'receiver_status' => 0,
+						'seen' => 0
+					]);
+
+					try {
+						$fcmService = new FCMService();
+						$notificationTitle = 'Matter Discontinued';
+						$notificationBody = 'Your matter ' . $matterNo . ' has been discontinued. Reason: ' . $reason;
+						$notificationData = [
+							'type' => 'matter_discontinued',
+							'client_matter_id' => (string) $matterId,
+							'message' => $notificationMessage,
+						];
+						$fcmService->sendToUser($clientMatter->client_id, $notificationTitle, $notificationBody, $notificationData);
+					} catch (\Exception $e) {
+						Log::warning('Failed to send push notification for matter discontinued', [
+							'client_id' => $clientMatter->client_id,
+							'matter_id' => $matterId,
+							'error' => $e->getMessage()
+						]);
+					}
+				}
+
+				// Build redirect URL: go to another active matter, or revert to lead view (no matter)
 				$encodeId = base64_encode(convert_uuencode($clientMatter->client_id));
 				$otherMatter = ClientMatter::where('client_id', $clientMatter->client_id)
 					->where('id', '!=', $matterId)
@@ -1443,6 +1502,56 @@ class ClientPortalController extends Controller
 				$activityLog->pin = 0;
 				$activityLog->source = 'client_portal_web';
 				$activityLog->save();
+
+				// Notify client and send push when Reopen is from Client Portal tab OR from Matter List (only if Client Portal is active)
+				$currentTab = $request->input('current_tab', '');
+				$source = $request->input('source', '');
+				$shouldNotify = false;
+
+				if ($currentTab === 'application') {
+					// Reopen from Client Portal tab on client detail page - always notify
+					$shouldNotify = true;
+				} elseif ($source === 'matter_list') {
+					// Reopen from Matter List - only notify if Client Portal is active for the client
+					$client = Admin::find($clientMatter->client_id);
+					$shouldNotify = $client && ((int) ($client->cp_status ?? 0) === 1);
+				}
+
+				if ($shouldNotify) {
+					$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $matterId;
+					$notificationMessage = 'Your matter ' . $matterNo . ' has been reopened and is now active again.';
+					DB::table('notifications')->insert([
+						'sender_id' => Auth::user()->id,
+						'receiver_id' => $clientMatter->client_id,
+						'module_id' => $matterId,
+						'url' => '/documents',
+						'notification_type' => 'matter_reopened',
+						'message' => $notificationMessage,
+						'created_at' => now(),
+						'updated_at' => now(),
+						'sender_status' => 1,
+						'receiver_status' => 0,
+						'seen' => 0
+					]);
+
+					try {
+						$fcmService = new FCMService();
+						$notificationTitle = 'Matter Reopened';
+						$notificationBody = $notificationMessage;
+						$notificationData = [
+							'type' => 'matter_reopened',
+							'client_matter_id' => (string) $matterId,
+							'message' => $notificationMessage,
+						];
+						$fcmService->sendToUser($clientMatter->client_id, $notificationTitle, $notificationBody, $notificationData);
+					} catch (\Exception $e) {
+						Log::warning('Failed to send push notification for matter reopened', [
+							'client_id' => $clientMatter->client_id,
+							'matter_id' => $matterId,
+							'error' => $e->getMessage()
+						]);
+					}
+				}
 
 				return response()->json([
 					'status' => true,

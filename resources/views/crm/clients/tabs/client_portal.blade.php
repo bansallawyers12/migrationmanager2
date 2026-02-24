@@ -150,9 +150,9 @@
                                             $portalCanReopen = ((Auth::guard('admin')->user()->role ?? 0) == 1);
                                         @endphp
                                         @if($portalIsDiscontinued)
-                                            {{-- Discontinued matter: show Reopen (Admin only) --}}
+                                            {{-- Discontinued matter: show Reopen (Admin only) - styled like matter list page --}}
                                             @if($portalCanReopen)
-                                            <button class="btn btn-primary btn-sm matter-detail-reopen-btn" id="client-portal-reopen" data-matter-id="{{ $selectedMatter->id }}" title="Reopen Matter">
+                                            <button class="btn btn-primary btn-sm matter-detail-reopen-btn client-portal-reopen-btn" id="client-portal-reopen" data-matter-id="{{ $selectedMatter->id }}" title="Reopen Matter">
                                                 <i class="fas fa-redo"></i> Reopen
                                             </button>
                                             @endif
@@ -3066,6 +3066,26 @@
     opacity: 1 !important;
 }
 
+/* Reopen button - styled like matter list page (purple) */
+.client-portal-reopen-btn,
+.stage-navigation-buttons .matter-detail-reopen-btn.client-portal-reopen-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border: 1px solid #667eea !important;
+    color: white !important;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+}
+.client-portal-reopen-btn:hover,
+.stage-navigation-buttons .matter-detail-reopen-btn.client-portal-reopen-btn:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%) !important;
+    border-color: #5a6fd8 !important;
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+    color: white !important;
+}
+
 .stage-navigation-buttons {
     display: flex !important;
     flex-direction: column;
@@ -3404,7 +3424,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const originalText = btn ? btn.innerHTML : '';
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...'; }
 
-        const payload = { matter_id: matterId };
+        const payload = { matter_id: matterId, source: 'client_portal' };
         if (decisionOutcome) payload.decision_outcome = decisionOutcome;
         if (decisionNote) payload.decision_note = decisionNote;
 
@@ -3459,6 +3479,9 @@ document.addEventListener('DOMContentLoaded', function() {
         $('#verification-payment-forms-modal').modal('hide');
 
         const payload = { matter_id: matterId, verification_confirm: true, verification_note: note };
+        if (document.querySelector('.client-nav-button.active')?.getAttribute('data-tab') === 'application') {
+            payload.source = 'client_portal';
+        }
         fetch('{{ route("clients.matter.update-next-stage") }}', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '' },
@@ -3511,10 +3534,14 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
         $('#decision-received-modal').modal('hide');
 
+        const decisionPayload = { matter_id: matterId, decision_outcome: outcome, decision_note: note };
+        if (document.querySelector('.client-nav-button.active')?.getAttribute('data-tab') === 'application') {
+            decisionPayload.source = 'client_portal';
+        }
         fetch('{{ route("clients.matter.update-next-stage") }}', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '' },
-            body: JSON.stringify({ matter_id: matterId, decision_outcome: outcome, decision_note: note })
+            body: JSON.stringify(decisionPayload)
         })
         .then(r => r.json())
         .then(data => {
@@ -3906,8 +3933,11 @@ document.addEventListener('DOMContentLoaded', function() {
             subscribedChannel.bind('notification.count.updated', (data) => {
                 try {
                     const count = data.unread_count !== undefined ? parseInt(data.unread_count, 10) : 0;
+                    const opts = { showToast: true };
+                    if (data.message) opts.message = data.message;
+                    if (data.url) opts.url = data.url;
                     if (typeof window.updateNotificationBell === 'function') {
-                        window.updateNotificationBell(count, { showToast: true });
+                        window.updateNotificationBell(count, opts);
                     } else {
                         const el = document.getElementById('countbell_notification');
                         if (el) {
