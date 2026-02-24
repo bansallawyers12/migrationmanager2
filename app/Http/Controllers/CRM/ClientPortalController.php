@@ -19,6 +19,9 @@ use App\Models\WorkflowStage;
 use App\Models\Message;
 use App\Models\MessageRecipient;
 use App\Events\MessageSent;
+use App\Events\MessageUpdated;
+use App\Events\MessageReceived;
+use App\Events\UnreadCountUpdated;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Broadcast;
@@ -3145,6 +3148,108 @@ class ClientPortalController extends Controller
 			return response()->json([
 				'success' => false,
 				'message' => 'Failed to fetch messages',
+				'error' => $e->getMessage()
+			], 500);
+		}
+	}
+
+	/**
+	 * Mark Message as Read (Web Route)
+	 * POST /clients/messages/{id}/mark-read
+	 *
+	 * Marks a message as read for the current user (staff) when they view it in the Client Portal Messages tab.
+	 * Uses session-based auth. Broadcasts MessageUpdated/MessageReceived so the sender (client on mobile) sees "Read".
+	 */
+	public function markMessageAsRead(Request $request, $id)
+	{
+		try {
+			$currentUserId = Auth::guard('admin')->id();
+			if (!$currentUserId) {
+				return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+			}
+
+			$message = DB::table('messages')->where('id', $id)->first();
+			if (!$message) {
+				return response()->json(['success' => false, 'message' => 'Message not found'], 404);
+			}
+
+			$recipientRecord = MessageRecipient::where('message_id', $id)
+				->where('recipient_id', $currentUserId)
+				->first();
+
+			if (!$recipientRecord) {
+				return response()->json(['success' => false, 'message' => 'You are not authorized to mark this message as read'], 403);
+			}
+
+			if (!$recipientRecord->is_read) {
+				MessageRecipient::where('message_id', $id)
+					->where('recipient_id', $currentUserId)
+					->update([
+						'is_read' => true,
+						'read_at' => now(),
+						'updated_at' => now()
+					]);
+
+				$updatedRecipient = MessageRecipient::where('message_id', $id)
+					->where('recipient_id', $currentUserId)
+					->first();
+
+				$messageForBroadcast = [
+					'id' => $message->id,
+					'message' => $message->message,
+					'sender' => $message->sender,
+					'sender_id' => $message->sender_id,
+					'recipient_id' => (int) $currentUserId,
+					'is_read' => true,
+					'read_at' => $updatedRecipient->read_at,
+					'sent_at' => $message->sent_at,
+					'client_matter_id' => $message->client_matter_id
+				];
+
+				try {
+					broadcast(new MessageUpdated($messageForBroadcast, $message->sender_id));
+				} catch (\Exception $e) {
+					Log::warning('Failed to broadcast message update to sender', [
+						'sender_id' => $message->sender_id,
+						'message_id' => $id,
+						'error' => $e->getMessage()
+					]);
+				}
+
+				try {
+					broadcast(new MessageReceived($id, $message->sender_id));
+				} catch (\Exception $e) {
+					Log::warning('Failed to broadcast read status to sender', [
+						'sender_id' => $message->sender_id,
+						'message_id' => $id,
+						'error' => $e->getMessage()
+					]);
+				}
+
+				try {
+					$unreadCount = MessageRecipient::where('recipient_id', $currentUserId)
+						->where('is_read', false)
+						->count();
+					broadcast(new UnreadCountUpdated($currentUserId, $unreadCount));
+				} catch (\Exception $e) {
+					Log::warning('Failed to broadcast unread count update', [
+						'user_id' => $currentUserId,
+						'error' => $e->getMessage()
+					]);
+				}
+			}
+
+			return response()->json(['success' => true, 'message' => 'Message marked as read'], 200);
+
+		} catch (\Exception $e) {
+			Log::error('Mark Message as Read Error: ' . $e->getMessage(), [
+				'user_id' => Auth::guard('admin')->id(),
+				'message_id' => $id,
+				'trace' => $e->getTraceAsString()
+			]);
+			return response()->json([
+				'success' => false,
+				'message' => 'Failed to mark message as read',
 				'error' => $e->getMessage()
 			], 500);
 		}

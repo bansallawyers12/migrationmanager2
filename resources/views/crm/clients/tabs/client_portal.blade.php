@@ -3587,6 +3587,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const currentUserId = @json(Auth::guard('admin')->id() ?? null);
     // Web route for attachment download (session auth) - use this so click-to-download works in browser
     const attachmentDownloadBaseUrl = '{{ url("/clients/message-attachment") }}';
+    const markMessageAsReadBaseUrl = '{{ url("/clients/messages") }}';
     
     // Get effective client matter ID: server value or dropdown fallback (for URLs like /application/application)
     function getEffectiveClientMatterId() {
@@ -3791,6 +3792,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log(`Displaying ${data.data.messages.length} messages`);
                     if (emptyDiv) emptyDiv.style.display = 'none';
                     displayMessages(data.data.messages);
+                    markReceivedMessagesAsRead(data.data.messages);
                 } else {
                     console.log('No messages found for this matter');
                     if (emptyDiv) {
@@ -3819,6 +3821,38 @@ document.addEventListener('DOMContentLoaded', function() {
                 emptyDiv.innerHTML = '<p class="text-danger">Error loading messages. Please try again.</p>';
             }
         }
+    }
+    
+    // Mark received (unread) messages as read when staff views them - so client sees "Read" on mobile
+    function markMessageAsRead(messageId) {
+        if (!messageId || !markMessageAsReadBaseUrl || !currentUserId) return;
+        const url = markMessageAsReadBaseUrl + '/' + messageId + '/mark-read';
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            credentials: 'same-origin'
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            if (data.success && typeof updateMessageReadIcon === 'function') {
+                updateMessageReadIcon(messageId, true, new Date().toISOString());
+            }
+        }).catch(function(err) { console.warn('Mark as read failed:', err); });
+    }
+    
+    function markReceivedMessagesAsRead(messages) {
+        if (!messages || !Array.isArray(messages) || !currentUserId) return;
+        messages.forEach(function(msg) {
+            if (msg.is_sent) return;
+            const recipients = msg.recipients || [];
+            const myRecipient = recipients.find(function(r) { return r.recipient_id == currentUserId; });
+            if (myRecipient && !myRecipient.is_read && msg.id) {
+                markMessageAsRead(msg.id);
+            }
+        });
     }
     
     // Connect to Pusher for real-time messaging
@@ -4112,23 +4146,35 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         timestampRow.appendChild(timestamp);
         
-        // Read receipt icon: only for sent messages - grey (unread) or blue (read)
+        // Read receipt icon: sent messages - grey (unread) or blue (read); received messages - blue when staff has read
+        const readIcon = document.createElement('span');
+        readIcon.className = 'message-read-icon';
         if (isSent) {
             const readByRecipient = message.read_by_recipient === true;
-            const readIcon = document.createElement('span');
-            readIcon.className = 'message-read-icon ' + (readByRecipient ? 'message-read-icon--read' : 'message-read-icon--unread');
+            readIcon.classList.add(readByRecipient ? 'message-read-icon--read' : 'message-read-icon--unread');
             readIcon.setAttribute('data-read-status', readByRecipient ? 'read' : 'unread');
-            readIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5l2.5 2.5L7 2"/><path d="M6 5l2.5 2.5L14 1"/></svg>';
-            timestampRow.appendChild(readIcon);
+        } else {
+            const myRecipient = (message.recipients || []).find(function(r) { return r.recipient_id == currentUserId; });
+            const readByMe = myRecipient ? !!myRecipient.is_read : true;
+            readIcon.classList.add(readByMe ? 'message-read-icon--read' : 'message-read-icon--unread');
+            readIcon.setAttribute('data-read-status', readByMe ? 'read' : 'unread');
         }
+        readIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5l2.5 2.5L7 2"/><path d="M6 5l2.5 2.5L14 1"/></svg>';
+        timestampRow.appendChild(readIcon);
         
         // Message info chevron - opens Message info popup
+        var readByMe = false;
+        if (!isSent) {
+            const myRec = (message.recipients || []).find(function(r) { return r.recipient_id == currentUserId; });
+            readByMe = myRec ? !!myRec.is_read : true;
+        }
         const messageInfoData = {
             id: message.id,
             message: message.message || '',
             sent_at: message.sent_at || message.created_at,
             read_at: message.read_at || null,
             read_by_recipient: message.read_by_recipient === true,
+            read_by_me: readByMe,
             is_sent: isSent
         };
         const chevronBtn = document.createElement('span');
@@ -4152,6 +4198,11 @@ document.addEventListener('DOMContentLoaded', function() {
         messageDiv.appendChild(messageBubble);
         messagesContainer.appendChild(messageDiv);
         
+        if (!isSent && messageId && currentUserId) {
+            const recipients = message.recipients || message.recipient_ids || [];
+            const myRecipient = recipients.find(function(r) { return (r.recipient_id || r.id) == currentUserId; });
+            if (myRecipient && myRecipient.is_read !== true) markMessageAsRead(messageId);
+        }
         scrollToBottom();
     }
     
@@ -4172,7 +4223,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (chevron) {
             try {
                 const data = JSON.parse(chevron.getAttribute('data-message-info') || '{}');
-                data.read_by_recipient = isRead;
+                if (data.is_sent) data.read_by_recipient = isRead; else data.read_by_me = isRead;
                 if (readAt) data.read_at = readAt;
                 chevron.setAttribute('data-message-info', JSON.stringify(data));
             } catch (e) {}
@@ -4250,8 +4301,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         let html = '';
         
-        // Read (only for sent messages, when read) - blue icon
+        // Read - blue icon: sent messages when recipient read; received messages when I (staff) read
         if (msg.is_sent && msg.read_by_recipient) {
+            const readTime = formatMessageInfoTime(msg.read_at) || formatMessageInfoTime(msg.sent_at);
+            html += '<div class="message-info-status-section"><div class="message-info-status-row"><span class="message-info-status-icon">' + doubleCheckSvg + '</span><div><div class="message-info-status-label">Read</div><div class="message-info-status-time">' + readTime + '</div></div></div></div>';
+        } else if (!msg.is_sent && msg.read_by_me) {
             const readTime = formatMessageInfoTime(msg.read_at) || formatMessageInfoTime(msg.sent_at);
             html += '<div class="message-info-status-section"><div class="message-info-status-row"><span class="message-info-status-icon">' + doubleCheckSvg + '</span><div><div class="message-info-status-label">Read</div><div class="message-info-status-time">' + readTime + '</div></div></div></div>';
         }
