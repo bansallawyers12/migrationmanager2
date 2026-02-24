@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
+use App\Models\ClientEmail;
 use App\Models\Staff;
 use App\Models\DeviceToken;
 use Illuminate\Http\Request;
@@ -902,6 +903,29 @@ class ClientPortalController extends Controller
                 ->update($updateData);
 
             if ($updated) {
+                // Sync email to client_emails table when email was updated
+                if (isset($updateData['email'])) {
+                    $newEmail = $updateData['email'];
+                    $emailType = $client->email_type ?? 'Personal';
+
+                    $clientEmail = ClientEmail::where('client_id', $clientId)
+                        ->where('email_type', $emailType)
+                        ->first();
+
+                    if ($clientEmail) {
+                        $clientEmail->update(['email' => $newEmail]);
+                    } else {
+                        // Create record if none exists for this type (keep client_emails in sync)
+                        ClientEmail::create([
+                            'client_id' => $clientId,
+                            'admin_id' => $clientId,
+                            'email_type' => $emailType,
+                            'email' => $newEmail,
+                            'is_verified' => false,
+                        ]);
+                    }
+                }
+
                 // Get updated client data
                 $updatedClient = DB::table('admins')->where('id', $clientId)->first();
 
