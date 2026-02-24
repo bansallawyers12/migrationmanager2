@@ -515,6 +515,9 @@ class ClientPortalController extends Controller
                 'state' => $admin->state,
                 'zip' => $admin->zip,
                 'country' => $admin->country,
+                'marital_status' => $admin->marital_status ?? null,
+                'gender' => $admin->gender ?? null,
+                'dob' => $admin->dob ?? null,
                 'profile_img' => $admin->profile_img,
                 'status' => $admin->status,
                 'role' => $admin->role,
@@ -832,6 +835,7 @@ class ClientPortalController extends Controller
             $validator = Validator::make($request->all(), [
                 'first_name' => 'sometimes|string|max:255',
                 'last_name' => 'sometimes|string|max:255',
+                'email' => ['sometimes', 'email', 'max:255', 'unique:admins,email,' . $clientId],
                 'phone' => 'sometimes|string|max:255',
                 'address' => 'sometimes|string|max:500',
                 'city' => 'sometimes|string|max:255',
@@ -865,7 +869,7 @@ class ClientPortalController extends Controller
             // Prepare update data (post_code maps to DB column 'zip')
             $updateData = [];
             $allowedFields = [
-                'first_name', 'last_name', 'phone', 'address', 'city',
+                'first_name', 'last_name', 'email', 'phone', 'address', 'city',
                 'state', 'country', 'dob', 'gender', 'marital_status'
             ];
 
@@ -916,6 +920,9 @@ class ClientPortalController extends Controller
                         'state' => $updatedClient->state,
                         'zip' => $updatedClient->zip,
                         'country' => $updatedClient->country,
+                        'marital_status' => $updatedClient->marital_status ?? null,
+                        'gender' => $updatedClient->gender ?? null,
+                        'dob' => $updatedClient->dob ?? null,
                         'profile_img' => asset('img/avatar.png'),
                         'status' => $updatedClient->status,
                         'role' => $updatedClient->role,

@@ -964,7 +964,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"first_name\": \"John\",\n    \"last_name\": \"Doe\",\n    \"phone\": \"+1234567890\",\n    \"address\": \"123 Main St\",\n    \"city\": \"Los Angeles\",\n    \"state\": \"CA\",\n    \"post_code\": \"90210\",\n    \"country\": \"USA\",\n    \"dob\": \"1990-01-01\",\n    \"gender\": \"Male\",\n    \"marital_status\": \"Single\"\n}"
+									"raw": "{\n    \"first_name\": \"John\",\n    \"last_name\": \"Doe\",\n    \"email\": \"client@example.com\",\n    \"phone\": \"+1234567890\",\n    \"address\": \"123 Main St\",\n    \"city\": \"Los Angeles\",\n    \"state\": \"CA\",\n    \"post_code\": \"90210\",\n    \"country\": \"USA\",\n    \"dob\": \"1990-01-01\",\n    \"gender\": \"Male\",\n    \"marital_status\": \"Single\"\n}"
 								},
 								"url": {
 									"raw": "{{base_url}}/profile",
@@ -1568,15 +1568,49 @@
 						},
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"phone\": \"+1234567890\",\n  \"address\": \"123 Main St\",\n  \"city\": \"Los Angeles\",\n  \"state\": \"CA\",\n  \"post_code\": \"90210\",\n  \"country\": \"USA\",\n  \"dob\": \"1990-01-01\",\n  \"gender\": \"Male\",\n  \"marital_status\": \"Single\"\n}",
+							"raw": "{\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"email\": \"client@example.com\",\n  \"phone\": \"+1234567890\",\n  \"address\": \"123 Main St\",\n  \"city\": \"Los Angeles\",\n  \"state\": \"CA\",\n  \"post_code\": \"90210\",\n  \"country\": \"USA\",\n  \"dob\": \"1990-01-01\",\n  \"gender\": \"Male\",\n  \"marital_status\": \"Single\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
 								}
 							}
 						},
-						"description": "Update client profile information including personal details, contact information, and preferences"
-					}
+						"description": "Update client profile information including personal details, contact information, and preferences. All fields are optional (send only what you want to update).\n\n**Request fields:** first_name, last_name, email, phone, address, city, state, post_code (or zip), country, dob (Y-m-d), gender (Male/Female/Other), marital_status.\n\n**Email:** Must be unique in admins table. If the email is already taken by another user, a 422 validation error is returned."
+					},
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [{"key": "Authorization", "value": "Bearer {{auth_token}}"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"email\": \"client@example.com\",\n  \"phone\": \"+1234567890\",\n  \"address\": \"123 Main St\",\n  \"city\": \"Los Angeles\",\n  \"state\": \"CA\",\n  \"post_code\": \"90210\",\n  \"country\": \"USA\",\n  \"dob\": \"1990-01-01\",\n  \"gender\": \"Male\",\n  \"marital_status\": \"Single\"\n}"
+								},
+								"url": {"raw": "{{base_url}}/profile"}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"body": "{\n    \"success\": true,\n    \"message\": \"Profile updated successfully\",\n    \"data\": {\n        \"id\": 1,\n        \"client_id\": \"CLI-001\",\n        \"first_name\": \"John\",\n        \"last_name\": \"Doe\",\n        \"email\": \"client@example.com\",\n        \"phone\": \"+1234567890\",\n        \"address\": \"123 Main St\",\n        \"city\": \"Los Angeles\",\n        \"state\": \"CA\",\n        \"zip\": \"90210\",\n        \"country\": \"USA\",\n        \"marital_status\": \"Single\",\n        \"gender\": \"Male\",\n        \"dob\": \"1990-01-01\",\n        \"profile_img\": \"http://127.0.0.1:8000/img/avatar.png\",\n        \"status\": 1,\n        \"role\": 7,\n        \"cp_status\": 1,\n        \"cp_code_verify\": 1,\n        \"email_verified_at\": \"2024-01-01T00:00:00.000000Z\",\n        \"created_at\": \"2024-01-01T00:00:00.000000Z\",\n        \"updated_at\": \"2024-01-01T00:00:00.000000Z\"\n    }\n}"
+						},
+						{
+							"name": "Validation Error - Email Already Exists",
+							"originalRequest": {
+								"method": "POST",
+								"header": [{"key": "Authorization", "value": "Bearer {{auth_token}}"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"email\": \"existing@example.com\"\n}"
+								},
+								"url": {"raw": "{{base_url}}/profile"}
+							},
+							"status": "Unprocessable Entity",
+							"code": 422,
+							"_postman_previewlanguage": "json",
+							"body": "{\n    \"success\": false,\n    \"message\": \"Validation failed\",\n    \"errors\": {\n        \"email\": [\n            \"The email has already been taken.\"\n        ]\n    }\n}"
+						}
+					]
 				}
 			]
 		},
