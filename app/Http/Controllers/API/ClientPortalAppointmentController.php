@@ -1175,7 +1175,6 @@ class ClientPortalAppointmentController extends BaseController
             $admin->client_counter = $clientCounter;
             $admin->client_id = $clientId;
             $admin->type = 'lead';
-            $admin->role = 7; // Client/lead role (required for admins table; staff use role != 7)
             $admin->source = 'Public Appointment';
             $admin->password = Hash::make('LEAD_PLACEHOLDER');
             $admin->status = '1';
