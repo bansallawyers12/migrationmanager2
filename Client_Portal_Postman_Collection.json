@@ -9137,12 +9137,6 @@
 						"method": "POST",
 						"header": [
 							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}",
-								"type": "text",
-								"description": "Use token from login response"
-							},
-							{
 								"key": "Accept",
 								"value": "application/json"
 							},
@@ -9170,7 +9164,7 @@
 								"get-disabled-dates"
 							]
 						},
-						"description": "Get disabled dates from calendar along with duration, start_time, end_time, and weeks. The slot_overwrite parameter is automatically set to 0 (not passed in input).\n\n**Input Parameters:**\n\n```json\n{\n    \"id\": 1,  // 1=>consultation, 2=>paid-consultation, 3=>overseas-enquiry\n    \"enquiry_item\": 1,  // 1=>permanent-residency, 2=>temporary-residency, 3=>jrp-skill-assessment, 4=>tourist-visa, 5=>education-visa, 6=>complex-matters, 7=>visa-cancellation, 8=>international-migration\n    \"inperson_address\": 1  // 1=>Adelaide, 2=>melbourne\n}\n```\n\n**Parameter Details:**\n- `id` (required, integer): Service type - 1=consultation, 2=paid-consultation, 3=overseas-enquiry\n- `enquiry_item` (required, integer): Enquiry type - 1=permanent-residency, 2=temporary-residency, 3=jrp-skill-assessment, 4=tourist-visa, 5=education-visa, 6=complex-matters, 7=visa-cancellation, 8=international-migration\n- `inperson_address` (required, integer): Office location - 1=Adelaide, 2=melbourne\n\n**Note:** slot_overwrite is automatically set to 0 internally and not required in the request."
+						"description": "**Public API - No authentication required.**\n\nGet disabled dates from calendar along with duration, start_time, end_time, and weeks. The slot_overwrite parameter is automatically set to 0 (not passed in input). Works for both guest and logged-in users.\n\n**Input Parameters:**\n\n```json\n{\n    \"id\": 1,  // 1=>consultation, 2=>paid-consultation, 3=>overseas-enquiry\n    \"enquiry_item\": 1,  // 1=>permanent-residency, 2=>temporary-residency, 3=>jrp-skill-assessment, 4=>tourist-visa, 5=>education-visa, 6=>complex-matters, 7=>visa-cancellation, 8=>international-migration\n    \"inperson_address\": 1  // 1=>Adelaide, 2=>melbourne\n}\n```\n\n**Parameter Details:**\n- `id` (required, integer): Service type - 1=consultation, 2=paid-consultation, 3=overseas-enquiry\n- `enquiry_item` (required, integer): Enquiry type - 1=permanent-residency, 2=temporary-residency, 3=jrp-skill-assessment, 4=tourist-visa, 5=education-visa, 6=complex-matters, 7=visa-cancellation, 8=international-migration\n- `inperson_address` (required, integer): Office location - 1=Adelaide, 2=melbourne\n\n**Note:** slot_overwrite is automatically set to 0 internally and not required in the request."
 					},
 					"response": [
 						{
@@ -9178,10 +9172,6 @@
 							"originalRequest": {
 								"method": "POST",
 								"header": [
-									{
-										"key": "Authorization",
-										"value": "Bearer {{auth_token}}"
-									},
 									{
 										"key": "Accept",
 										"value": "application/json"
@@ -9228,10 +9218,6 @@
 							"originalRequest": {
 								"method": "POST",
 								"header": [
-									{
-										"key": "Authorization",
-										"value": "Bearer {{auth_token}}"
-									},
 									{
 										"key": "Accept",
 										"value": "application/json"
@@ -9281,12 +9267,6 @@
 						"method": "POST",
 						"header": [
 							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}",
-								"type": "text",
-								"description": "Use token from login response"
-							},
-							{
 								"key": "Accept",
 								"value": "application/json"
 							},
@@ -9314,7 +9294,7 @@
 								"get-disabled-slots"
 							]
 						},
-						"description": "Get disabled time slots for a specific date from calendar. The slot_overwrite parameter is automatically set to 0 (not passed in input).\n\n**Input Parameters:**\n\n```json\n{\n    \"service_id\": 1,  // 1=>consultation, 2=>paid-consultation, 3=>overseas-enquiry\n    \"enquiry_item\": 1,  // 1=>permanent-residency, 2=>temporary-residency, 3=>jrp-skill-assessment, 4=>tourist-visa, 5=>education-visa, 6=>complex-matters, 7=>visa-cancellation, 8=>international-migration\n    \"inperson_address\": 1,  // 1=>adelaide, 2=>melbourne\n    \"sel_date\": \"29/01/2026\"  // Date in dd/mm/yyyy format\n}\n```\n\n**Parameter Details:**\n- `service_id` (required, integer): Service type - 1=consultation, 2=paid-consultation, 3=overseas-enquiry\n- `enquiry_item` (required, integer): Enquiry type - 1=permanent-residency, 2=temporary-residency, 3=jrp-skill-assessment, 4=tourist-visa, 5=education-visa, 6=complex-matters, 7=visa-cancellation, 8=international-migration\n- `inperson_address` (required, integer): Office location - 1=adelaide, 2=melbourne\n- `sel_date` (required, string): Selected date in dd/mm/yyyy format (e.g., \"29/01/2026\")\n\n**Note:** slot_overwrite is automatically set to 0 internally and not required in the request."
+						"description": "**Public API - No authentication required.**\n\nGet disabled time slots for a specific date from calendar. The slot_overwrite parameter is automatically set to 0 (not passed in input). Works for both guest and logged-in users.\n\n**Input Parameters:**\n\n```json\n{\n    \"service_id\": 1,  // 1=>consultation, 2=>paid-consultation, 3=>overseas-enquiry\n    \"enquiry_item\": 1,  // 1=>permanent-residency, 2=>temporary-residency, 3=>jrp-skill-assessment, 4=>tourist-visa, 5=>education-visa, 6=>complex-matters, 7=>visa-cancellation, 8=>international-migration\n    \"inperson_address\": 1,  // 1=>adelaide, 2=>melbourne\n    \"sel_date\": \"29/01/2026\"  // Date in dd/mm/yyyy format\n}\n```\n\n**Parameter Details:**\n- `service_id` (required, integer): Service type - 1=consultation, 2=paid-consultation, 3=overseas-enquiry\n- `enquiry_item` (required, integer): Enquiry type - 1=permanent-residency, 2=temporary-residency, 3=jrp-skill-assessment, 4=tourist-visa, 5=education-visa, 6=complex-matters, 7=visa-cancellation, 8=international-migration\n- `inperson_address` (required, integer): Office location - 1=adelaide, 2=melbourne\n- `sel_date` (required, string): Selected date in dd/mm/yyyy format (e.g., \"29/01/2026\")\n\n**Note:** slot_overwrite is automatically set to 0 internally and not required in the request."
 					},
 					"response": [
 						{
@@ -9322,10 +9302,6 @@
 							"originalRequest": {
 								"method": "POST",
 								"header": [
-									{
-										"key": "Authorization",
-										"value": "Bearer {{auth_token}}"
-									},
 									{
 										"key": "Accept",
 										"value": "application/json"
@@ -9373,10 +9349,6 @@
 								"method": "POST",
 								"header": [
 									{
-										"key": "Authorization",
-										"value": "Bearer {{auth_token}}"
-									},
-									{
 										"key": "Accept",
 										"value": "application/json"
 									},
@@ -9422,10 +9394,6 @@
 							"originalRequest": {
 								"method": "POST",
 								"header": [
-									{
-										"key": "Authorization",
-										"value": "Bearer {{auth_token}}"
-									},
 									{
 										"key": "Accept",
 										"value": "application/json"
@@ -9815,6 +9783,80 @@
 							"body": "{\n    \"success\": true,\n    \"message\": \"No payment history found for this appointment\",\n    \"data\": []\n}"
 						}
 					]
+				},
+				{
+					"name": "Add Appointment without Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"noe_id\": 1,\n    \"service_id\": 1,\n    \"appoint_date\": \"18/03/2026\",\n    \"appoint_time\": \"3:00 PM-3:15 PM\",\n    \"description\": \"Enquiry1\",\n    \"appointment_details\": 1,\n    \"preferred_language\": 2,\n    \"inperson_address\": 1,\n    \"full_name\": \"John Smith\",\n    \"email\": \"john@example.com\",\n    \"phone\": \"400 000 000\",\n    \"country_code\": \"+61\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/appointments/add-appointment-without-login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"appointments",
+								"add-appointment-without-login"
+							]
+						},
+						"description": "Create a new appointment without login (public API). No authentication required.\n\nIf email or phone matches an existing client/lead, that client will be used. If no match, a new lead is created in admins, client_emails, and client_contacts.\n\n**Input Parameters:**\n- `noe_id` (required, integer, 1-8): Nature of Enquiry ID\n- `service_id` (required, integer, 1-3): Service ID\n- `appoint_date` (required, string): Date in dd/mm/yyyy format\n- `appoint_time` (required, string): Time slot (e.g., \"3:00 PM-3:15 PM\")\n- `description` (required, string): Enquiry details\n- `appointment_details` (required, integer, 1-3): 1=Phone, 2=In Person, 3=Video Call\n- `preferred_language` (required, integer, 1-3): 1=English, 2=Hindi, 3=Punjabi\n- `inperson_address` (required, integer, 1 or 2): 1=Adelaide, 2=Melbourne\n- `full_name` (required, string): Contact full name\n- `email` (required, email): Contact email\n- `phone` (required, string): Contact phone number\n- `country_code` (optional, string): E.g. \"+61\" for Australia"
+					},
+					"response": []
+				},
+				{
+					"name": "Record Payment without Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"appointment_id\": 123,\n    \"payment_intent_id\": \"pi_xxxxxxxxxxxxx\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/appointments/record-payment-without-login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"appointments",
+								"record-payment-without-login"
+							]
+						},
+						"description": "**Public API - No authentication required.**\n\nRecord payment for a guest appointment (created via Add Appointment without Login). Call after the frontend has confirmed the Stripe PaymentIntent. Client is identified from appointment's client_id.\n\n**Input Parameters:**\n- `appointment_id` (required, integer): The appointment ID\n- `payment_intent_id` (required, string): Stripe PaymentIntent ID (pi_...)\n\n**Flow:**\n1. Create appointment via POST /appointments/add-appointment-without-login\n2. Frontend creates and confirms Stripe PaymentIntent\n3. Call this API with appointment_id, payment_intent_id"
+					},
+					"response": []
 				}
 			]
 		},

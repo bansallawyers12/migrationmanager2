@@ -50,6 +50,16 @@ Route::get('/search-occupation', [ClientPortalCommonListingController::class, 's
 // Appointment Variable Lists API (public route)
 Route::get('/appointment-variable-lists', [ClientPortalAppointmentController::class, 'getAppointmentVariableLists']);
 
+// Add Appointment Without Login (public route)
+Route::post('/appointments/add-appointment-without-login', [ClientPortalAppointmentController::class, 'addAppointmentWithoutLogin']);
+
+// Get Disabled Dates/Slots (public - no auth required, used for calendar availability)
+Route::post('/appointments/get-disabled-dates', [ClientPortalAppointmentController::class, 'getDisabledDateFromCalendar']);
+Route::post('/appointments/get-disabled-slots', [ClientPortalAppointmentController::class, 'getDisabledSlotsOfAnyDateFromCalendar']);
+
+// Record Payment Without Login (public - for guests who booked via add-appointment-without-login)
+Route::post('/appointments/record-payment-without-login', [ClientPortalAppointmentController::class, 'recordAppointmentPaymentWithoutLogin']);
+
 // Blog routes (public)
 Route::get('/blogs/list', [OthersController::class, 'getBlogList']);
 Route::get('/blogs/detail/{id}', [OthersController::class, 'getBlogDetail']);
@@ -233,8 +243,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/appointments', [ClientPortalAppointmentController::class, 'addAppointment']);
     Route::post('/appointments/{id}/status', [ClientPortalAppointmentController::class, 'updateAppointmentStatus']);
     Route::post('/appointments/update-appointment', [ClientPortalAppointmentController::class, 'updateAppointment']);
-    Route::post('/appointments/get-disabled-dates', [ClientPortalAppointmentController::class, 'getDisabledDateFromCalendar']);
-    Route::post('/appointments/get-disabled-slots', [ClientPortalAppointmentController::class, 'getDisabledSlotsOfAnyDateFromCalendar']);
     
 });
 
