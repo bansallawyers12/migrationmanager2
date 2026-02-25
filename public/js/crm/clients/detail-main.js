@@ -14,43 +14,17 @@
     }
     window.safeParseJsonResponse = safeParseJsonResponse;
 
-    // Flatpickr + Editor helpers - see utils/flatpickr-helpers.js, utils/editor-helpers.js
-
-
-
-    // adjustActivityFeedHeight - see utils/dom-helpers.js
-
-
+    // Utilities (see utils/): Flatpickr, Editor - flatpickr-helpers.js, editor-helpers.js | DOM - dom-helpers.js (adjustActivityFeedHeight, adjustPreviewContainers, downloadFile)
 
     $(document).ready(function() {
-
-        
-
-        // Flag to prevent redirects during page initialization (now global)
-
-
-
         // Run on load
-
         adjustActivityFeedHeight();
-
-
-
         // Run on resize (for responsiveness)
-
         $(window).on('resize', function () {
-
             adjustActivityFeedHeight();
-
         });
 
-
-
-        // Update Personal/Visa category, delete category - see modules/documents.js
-
-
-
-        //Save reference click
+        // Save reference click (chip UI in modules/references.js)
 
         $(document).delegate('.saveReferenceValue', 'click', function() {
 
@@ -444,9 +418,7 @@
 
 
 
-        // ============================================================================
-        // DRAG AND DROP FUNCTIONALITY FOR CLIENT FUNDS LEDGER FORM
-        // ============================================================================
+        // --- DRAG AND DROP: Client Funds Ledger Form ---
         
         
         function initLedgerDragDrop() {
@@ -715,9 +687,7 @@
 
 
 
-        // ============================================================================
-        // DRAG AND DROP FUNCTIONALITY FOR OFFICE RECEIPT FORM
-        // ============================================================================
+        // --- DRAG AND DROP: Office Receipt Form ---
         
         
         function initOfficeDragDrop() {
@@ -4673,11 +4643,7 @@ success: function(response) {
 
 
 
-        /////////////////////////////////////////////
-
-        ////// not picked call button code start /////////
-
-        /////////////////////////////////////////////
+        // --- not picked call button code start ---
 
         $(document).delegate('.not_picked_call', 'click', function (e) {
 
@@ -4758,16 +4724,9 @@ Bansal Immigration`;
 
 
 
-        /////////////////////////////////////////////
-
-        ////// not picked call button code end //////
-
-        /////////////////////////////////////////////
+        // --- not picked call button code end ---
 
         // Appointment booking, time slots, getDisabledDateTime, calendar UI - see modules/appointments.js
-
-
-
 
         $('.manual_email_phone_verified').on('change', function(){
 
@@ -8862,9 +8821,7 @@ Bansal Immigration`;
 
 
 
-        // ============================================================================
-        // DRAG AND DROP FUNCTIONALITY FOR PERSONAL & VISA DOCUMENTS
-        // ============================================================================
+        // --- DRAG AND DROP: Personal & Visa Documents ---
 
         // Prevent browser's default drag behavior (required for file drops to work)
         // This must be on document level, but we let drop zones handle their own events
@@ -8886,9 +8843,7 @@ Bansal Immigration`;
             e.preventDefault();
         });
 
-        // -------------------------------------------------------------------------
-        // PERSONAL DOCUMENTS - Drag and Drop Handlers
-        // -------------------------------------------------------------------------
+        // Personal Documents - Drag and Drop Handlers
         
         // Debug: Check if handlers are being attached
 
@@ -8956,9 +8911,7 @@ Bansal Immigration`;
             return false;
         });
         
-        // -------------------------------------------------------------------------
-        // VISA DOCUMENTS - Drag and Drop Handlers
-        // -------------------------------------------------------------------------
+        // Visa Documents - Drag and Drop Handlers
         
         $(document).delegate('.visa-doc-drag-zone', 'dragover', function(e) {
             e.preventDefault();
@@ -8993,9 +8946,7 @@ Bansal Immigration`;
             fileInput.click();
         });
         
-        // -------------------------------------------------------------------------
-        // PERSONAL DOCUMENTS - Upload Handler
-        // -------------------------------------------------------------------------
+        // Personal Documents - Upload Handler
         
         function handlePersonalDocDragDrop(dragZone, file) {
             var fileid = dragZone.data('fileid');
@@ -9071,9 +9022,7 @@ Bansal Immigration`;
             });
         }
         
-        // -------------------------------------------------------------------------
-        // VISA DOCUMENTS - Upload Handler
-        // -------------------------------------------------------------------------
+        // Visa Documents - Upload Handler
         
         function handleVisaDocDragDrop(dragZone, file) {
             var fileid = dragZone.data('fileid');
