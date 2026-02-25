@@ -2251,22 +2251,10 @@
 									"description": "Select file(s) - single or multiple at once (max 20, 10MB each)"
 								},
 								{
-									"key": "allowed_checklist_ids[]",
-									"value": "14",
+									"key": "allowed_checklist_ids",
+									"value": "14,14,15",
 									"type": "text",
-									"description": "Checklist ID for file 1 - add rows for each file (same order as files[])"
-								},
-								{
-									"key": "allowed_checklist_ids[]",
-									"value": "14",
-									"type": "text",
-									"description": "Checklist ID for file 2"
-								},
-								{
-									"key": "allowed_checklist_ids[]",
-									"value": "15",
-									"type": "text",
-									"description": "Checklist ID for file 3 - duplicate/remove rows to match file count"
+									"description": "Comma-separated checklist IDs - one per file, same order as files[] (e.g. 14,14,15 for 3 files)"
 								}
 							]
 						},
@@ -2280,7 +2268,7 @@
 								"upload-allowed-checklist"
 							]
 						},
-						"description": "Single API for single and multiple uploads.\n\n**Parameters:**\n- client_matter_id (required)\n- files[] - select 1 or more files (multi-select in one picker)\n- allowed_checklist_ids[] - add one row per file, same order (e.g. 14, 14, 15 for 3 files)\n\n**Alternative:** allowed_checklist_ids as comma-separated: \"14,14,15\"\n\nSingle: 1 file + 1 allowed_checklist_ids[] row. Multiple: N files + N allowed_checklist_ids[] rows. Max 20 files, 10MB each."
+						"description": "Single API for single and multiple uploads.\n\n**Parameters:**\n- client_matter_id (required)\n- files[] - select 1 or more files in one picker (multi-select)\n- allowed_checklist_ids - comma-separated IDs, one per file, same order as files[] (e.g. 14,14,15 for 3 files)\n\nSame as files[]: single input can hold multiple values. Max 20 files, 10MB each."
 					},
 					"response": [
 						{
