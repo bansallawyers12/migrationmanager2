@@ -22,20 +22,18 @@ use App\Models\ClientMatter;
 use Carbon\Carbon;
 use App\Models\ClientVisaCountry;
 use App\Services\EmailService;
+use App\Services\CrmSentEmailS3Service;
 
 class CRMUtilityController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
     protected $emailService;
+    protected $crmSentEmailS3Service;
 
-    public function __construct(EmailService $emailService)
+    public function __construct(EmailService $emailService, CrmSentEmailS3Service $crmSentEmailS3Service)
     {
         $this->middleware('auth:admin');
         $this->emailService = $emailService;
+        $this->crmSentEmailS3Service = $crmSentEmailS3Service;
     }
     // Dashboard functionality moved to DashboardController
 
@@ -1346,6 +1344,19 @@ public function getChapters(Request $request)
                     $attachments,
                     $ccarray
                 );
+
+                // Store full email to S3 for archival (HTML snapshot + attachments)
+                try {
+                    $attachmentTuples = [];
+                    foreach ($attachments as $p) {
+                        if (is_string($p) && file_exists($p)) {
+                            $attachmentTuples[] = ['path' => $p, 'name' => basename($p)];
+                        }
+                    }
+                    $this->crmSentEmailS3Service->storeToS3($obj, $subject, $message, $attachmentTuples);
+                } catch (\Exception $s3Ex) {
+                    \Log::warning('CRM sent email S3 storage failed (email still sent)', ['error' => $s3Ex->getMessage()]);
+                }
 
                 // Return JSON response for AJAX requests, redirect for regular form submissions
                 if ($request->ajax() || $request->wantsJson()) {

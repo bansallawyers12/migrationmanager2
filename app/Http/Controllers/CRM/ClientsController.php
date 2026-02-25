@@ -3783,24 +3783,23 @@ class ClientsController extends Controller
             // Base URL for AWS S3
             $url = 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/';
 
-            // Map emails with additional data
+            // Map emails with additional data (matches filterEmails logic)
             $emails = $emails->map(function ($email) use ($url, $client_id) {
                 $previewUrl = '';
-
                 if (!empty($email->uploaded_doc_id)) {
                     $docInfo = \App\Models\Document::select('id', 'doc_type', 'myfile', 'myfile_key', 'mail_type')
                         ->where('id', $email->uploaded_doc_id)
                         ->first();
-					if ($docInfo) {
-                        if ($docInfo->myfile_key) {
-							$previewUrl = $docInfo->myfile;
-						} else {
-							$previewUrl = $url . $client_id . '/' . ($docInfo->doc_type ?? 'mail') . '/' . ($docInfo->mail_type ?? 'sent') . '/' . $docInfo->myfile;
-						}
-					}
-				} else {
-					$previewUrl = '';
-				}
+                    $adminInfo = \App\Models\Admin::select('client_id')->where('id', $email->client_id)->first();
+                    if ($docInfo) {
+                        if (!empty($docInfo->myfile_key)) {
+                            $previewUrl = $docInfo->myfile;
+                        } else {
+                            $clientRef = ($adminInfo && $adminInfo->client_id) ? $adminInfo->client_id : ('client_' . ($email->client_id ?? $client_id ?? 0));
+                            $previewUrl = $url . $clientRef . '/' . ($docInfo->doc_type ?? 'mail') . '/' . ($docInfo->mail_type ?? 'sent') . '/' . ($docInfo->myfile ?? '');
+                        }
+                    }
+                }
 
 				// Ensure attachments and labels relationships are loaded
 				if (!$email->relationLoaded('attachments')) {
@@ -3931,13 +3930,16 @@ class ClientsController extends Controller
             $emails = $emails->map(function ($email) use ($url, $client_id) {
                 $previewUrl = '';
                 if (!empty($email->uploaded_doc_id)) {
-                    $AdminInfo = \App\Models\Admin::select('client_id')->where('id', $email->client_id)->first();
-                    $DocInfo = \App\Models\Document::select('id', 'doc_type', 'myfile', 'myfile_key', 'mail_type')
+                    $docInfo = \App\Models\Document::select('id', 'doc_type', 'myfile', 'myfile_key', 'mail_type')
                         ->where('id', $email->uploaded_doc_id)->first();
-                    if ($DocInfo && $AdminInfo) {
-                        $previewUrl = !empty($DocInfo->myfile_key)
-                            ? $DocInfo->myfile
-                            : $url . ($AdminInfo->client_id ?? $client_id) . '/' . ($DocInfo->doc_type ?? 'mail') . '/' . ($DocInfo->mail_type ?? 'sent') . '/' . $DocInfo->myfile;
+                    if ($docInfo) {
+                        if (!empty($docInfo->myfile_key)) {
+                            $previewUrl = $docInfo->myfile;
+                        } else {
+                            $adminInfo = \App\Models\Admin::withoutGlobalScopes()->select('client_id')->where('id', $email->client_id)->first();
+                            $clientRef = $adminInfo && $adminInfo->client_id ? $adminInfo->client_id : ('client_' . $client_id);
+                            $previewUrl = $url . $clientRef . '/' . ($docInfo->doc_type ?? 'mail') . '/' . ($docInfo->mail_type ?? 'sent') . '/' . ($docInfo->myfile ?? '');
+                        }
                     }
                 }
 

@@ -185,8 +185,8 @@
         if (email.received_date) {
             return email.received_date;
         }
-        // Last resort: use created_at (upload time)
-        return getEmailDate(email);
+        // Last resort: use created_at - CRM-sent emails have this (was bug: recursive call caused stack overflow)
+        return email.created_at || null;
     }
 
     /**
