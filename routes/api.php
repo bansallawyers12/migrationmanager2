@@ -18,6 +18,7 @@ use App\Http\Controllers\API\ClientPortalAppointmentController;
 use App\Http\Controllers\API\ClientPortalBillingController;
 use App\Http\Controllers\API\FCMController;
 use App\Http\Controllers\API\OthersController;
+use App\Http\Controllers\API\VisaPricingEstimatorController;
 
 /*
 |--------------------------------------------------------------------------
@@ -154,6 +155,13 @@ Route::get('/occupation-finder', [OthersController::class, 'searchOccupation']);
 // Postcode Checker routes (public)
 Route::get('/postcode-search', [OthersController::class, 'searchPostcode']);
 Route::get('/postcode-result', [OthersController::class, 'getPostcodeResult']);
+
+// Visa Estimate routes (public - no authentication required)
+// Reference: https://immi.homeaffairs.gov.au/visas/visa-pricing-estimator
+Route::prefix('visa-estimate')->name('visa-estimate.')->group(function () {
+    Route::get('/visa-list', [VisaPricingEstimatorController::class, 'getVisaList']);
+    Route::post('/estimate', [VisaPricingEstimatorController::class, 'getEstimate']);
+});
 
 // Protected routes (authentication required)
 Route::middleware('auth:sanctum')->group(function () {
