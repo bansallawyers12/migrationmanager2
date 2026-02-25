@@ -749,7 +749,17 @@ class DocumentController extends Controller
                 $tmpPdfPath = storage_path('app/public/' . $url);
                 $isLocalFile = true;
             } else {
-                if (!empty($document->myfile_key) && !empty($document->doc_type) && !empty($document->client_id)) {
+                // Fallback: visa/personal docs use client_id/doc_type/filename (client_id = client person ID)
+                $filename = $document->myfile_key ?: $document->myfile;
+                if ($filename && $document->doc_type && $document->client_id) {
+                    $s3Key = $document->client_id . '/' . $document->doc_type . '/' . ltrim($filename, '/');
+                    if (Storage::disk('s3')->exists($s3Key)) {
+                        $tmpPdfPath = storage_path('app/tmp_' . uniqid() . '.pdf');
+                        file_put_contents($tmpPdfPath, Storage::disk('s3')->get($s3Key));
+                    }
+                }
+                // Legacy fallback: admin-based lookup (document.client_id treated as admin id)
+                if (!$tmpPdfPath && !empty($document->myfile_key) && !empty($document->doc_type) && !empty($document->client_id)) {
                     $admin = DB::table('admins')->select('client_id')->where('id', $document->client_id)->first();
                     if ($admin && $admin->client_id) {
                         $s3Key = $admin->client_id . '/' . $document->doc_type . '/' . $document->myfile_key;

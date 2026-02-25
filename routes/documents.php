@@ -111,12 +111,11 @@ Route::get('/debug-pdf-page/{id}/{page}', function($id, $page) {
             $tmpPdfPath = storage_path('app/public/' . $url);
             $isLocalFile = true;
         } else {
-            // Try to build S3 key from DB fields as fallback
-            if (!empty($document->myfile_key) && !empty($document->doc_type) && !empty($document->client_id)) {
-                $s3Key = $document->client_id . '/' . $document->doc_type . '/' . $document->myfile_key;
-                
+            // Fallback: visa/personal docs use client_id/doc_type/filename
+            $filename = $document->myfile_key ?: $document->myfile;
+            if ($filename && $document->doc_type && $document->client_id) {
+                $s3Key = $document->client_id . '/' . $document->doc_type . '/' . ltrim($filename, '/');
                 if (\Storage::disk('s3')->exists($s3Key)) {
-                    // Download PDF from S3 to a temp file
                     $tmpPdfPath = storage_path('app/tmp_' . uniqid() . '.pdf');
                     $pdfStream = \Storage::disk('s3')->get($s3Key);
                     file_put_contents($tmpPdfPath, $pdfStream);
