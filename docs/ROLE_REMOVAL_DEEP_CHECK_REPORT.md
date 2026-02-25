@@ -21,7 +21,6 @@ Staff have been moved to the `staff` table. The `admins` table now holds only cl
 | `AdminFactory` | `role => 7` → `type => 'client'` |
 | `LeadFactory` | Removed `role => 7`; `user_id` now uses `Staff::query()->value('id')` |
 | `ClientPortalController` (API) | Removed `role` from getProfile and updateProfile responses |
-| `RandomClientSelectionReward` | Removed `role` from `client_monthly_rewards` insert |
 | `ClientExportService` | Already uses `whereIn('type', ['client', 'lead'])` ✓ |
 | `ClientImportService` | Already uses `whereIn('type', ['client', 'lead'])` and sets `type` ✓ |
 | `ClientsController` export | Already uses `whereIn('type', ['client', 'lead'])` ✓ |
@@ -57,21 +56,16 @@ All `Auth::user()->role` usages in CRM/AdminConsole refer to **Staff** (admin gu
 
 ## Potential Edge Cases
 
-### 1. `client_monthly_rewards` table
-- **Removed:** `role` from insert in `RandomClientSelectionReward`
-- **Risk:** If `role` column is NOT NULL without default, insert may fail
-- **Mitigation:** If errors occur, add `'role' => null` to insert or check table schema
-
-### 2. `LeadFactory` user_id
+### 1. `LeadFactory` user_id
 - **Change:** `Staff::query()->value('id')` (returns null if no staff)
 - **Risk:** If `user_id` is NOT NULL and no staff exists, Lead factory fails
 - **Mitigation:** Tests typically seed staff; production has staff
 
-### 3. Admin `usertype()` relationship
+### 2. Admin `usertype()` relationship
 - For clients with `role = null`, `usertype()` returns null
 - `offices/viewclient.blade.php` loads `with(['usertype'])` but does not display it – safe
 
-### 4. `verify_staff_migration.php`
+### 3. `verify_staff_migration.php`
 - Compares admins.role with staff.role – legacy verification script
 - Clients in admins may have null role – script may report mismatches; not critical for app
 

@@ -21,7 +21,6 @@ class Kernel extends ConsoleKernel
         '\App\Console\Commands\MigrateSecondDatabase',
         '\App\Console\Commands\CleanUtf8Data',
         '\App\Console\Commands\BackfillEoiRoiData',
-        //'\App\Console\Commands\RandomClientSelectionReward',
         //'\App\Console\Commands\VisaExpireReminderEmail',
         
         // Appointment Sync System Commands
@@ -74,8 +73,6 @@ class Kernel extends ConsoleKernel
 
         //InPerson Complete Task Removal daily 1 time
         $schedule->command('InPersonCompleteTaskRemoval:daily')->daily();
-        //Random client selection in each month at 1st day
-        //$schedule->command('RandomClientSelectionReward:monthly')->monthly();
         //visa expire Reminder email before 15 days daily at 1 time
         //$schedule->command('VisaExpireReminderEmail:daily')->daily();
         

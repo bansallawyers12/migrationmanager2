@@ -47,7 +47,7 @@ These use `Admin::where('role', 7)` or `where('type','client')` to fetch **clien
 - OfficeVisitController, CheckinLog, DashboardService (client lookup)
 - ArtSheetController, VisaTypeSheetController, TrSheetController, EoiRoiSheetController
 - SignatureDashboardController, ClientReferenceService, Form956Controller, ReportController
-- Console commands: UpdateClientAges, ResetSampleAppointments, RandomClientSelectionReward, FixDuplicateClientReferences, VisaExpireReminderEmail
+- Console commands: UpdateClientAges, ResetSampleAppointments, FixDuplicateClientReferences, VisaExpireReminderEmail
 - BansalAppointmentSync services
 - `ClientQueries` trait, `Lead` model
 - Views: companies/detail, clients/detail, offices/view, offices/viewclient
