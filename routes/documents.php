@@ -90,36 +90,39 @@ Route::get('/debug-pdf-page/{id}/{page}', function($id, $page) {
         $tmpPdfPath = null;
         $isLocalFile = false;
         
-        // Check if URL is a full S3 URL or local path
+        // Try 1: Full S3 URL in myfile
         if ($url && filter_var($url, FILTER_VALIDATE_URL) && strpos($url, 's3') !== false) {
-            // This is an S3 URL - extract the key
-            $s3Key = null;
             $parsed = parse_url($url);
-            if (isset($parsed['path'])) {
-                $s3Key = ltrim(urldecode($parsed['path']), '/');
-            }
-            
+            $s3Key = isset($parsed['path']) ? ltrim(urldecode($parsed['path']), '/') : null;
             if ($s3Key && \Storage::disk('s3')->exists($s3Key)) {
-                // Download PDF from S3 to a temp file
                 $tmpPdfPath = storage_path('app/tmp_' . uniqid() . '.pdf');
-                $pdfStream = \Storage::disk('s3')->get($s3Key);
-                file_put_contents($tmpPdfPath, $pdfStream);
-                \Log::info('Debug route: Downloaded S3 file for preview', ['s3Key' => $s3Key, 'tempPath' => $tmpPdfPath]);
+                file_put_contents($tmpPdfPath, \Storage::disk('s3')->get($s3Key));
             }
-        } elseif ($url && file_exists(storage_path('app/public/' . $url))) {
-            // This is a local file path and file exists
+        }
+        // Try 2: Local file
+        if (!$tmpPdfPath && $url && file_exists(storage_path('app/public/' . $url))) {
             $tmpPdfPath = storage_path('app/public/' . $url);
             $isLocalFile = true;
-        } else {
-            // Fallback: visa/personal docs use client_id/doc_type/filename
+        }
+        // Try 3: Admin fallback for visa/personal
+        if (!$tmpPdfPath && $document->doc_type && $document->client_id) {
+            // Fallback: visa/personal docs use Admin.client_id (unique ref) + doc_type + filename
             $filename = $document->myfile_key ?: $document->myfile;
             if ($filename && $document->doc_type && $document->client_id) {
-                $s3Key = $document->client_id . '/' . $document->doc_type . '/' . ltrim($filename, '/');
-                if (\Storage::disk('s3')->exists($s3Key)) {
-                    $tmpPdfPath = storage_path('app/tmp_' . uniqid() . '.pdf');
-                    $pdfStream = \Storage::disk('s3')->get($s3Key);
-                    file_put_contents($tmpPdfPath, $pdfStream);
-                    \Log::info('Debug route: Downloaded S3 file via fallback', ['s3Key' => $s3Key, 'tempPath' => $tmpPdfPath]);
+                $admin = \App\Models\Admin::where('id', $document->client_id)->select('client_id')->first();
+                $clientUniqueId = $admin && !empty($admin->client_id) ? $admin->client_id : null;
+                $keysToTry = [];
+                if ($clientUniqueId) {
+                    $keysToTry[] = $clientUniqueId . '/' . $document->doc_type . '/' . ltrim($filename, '/');
+                }
+                $keysToTry[] = $document->client_id . '/' . $document->doc_type . '/' . ltrim($filename, '/');
+                foreach ($keysToTry as $s3Key) {
+                    if (\Storage::disk('s3')->exists($s3Key)) {
+                        $tmpPdfPath = storage_path('app/tmp_' . uniqid() . '.pdf');
+                        file_put_contents($tmpPdfPath, \Storage::disk('s3')->get($s3Key));
+                        \Log::info('Debug route: Downloaded S3 file via fallback', ['s3Key' => $s3Key]);
+                        break;
+                    }
                 }
             }
         }

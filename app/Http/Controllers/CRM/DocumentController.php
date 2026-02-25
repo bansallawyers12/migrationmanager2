@@ -737,41 +737,52 @@ class DocumentController extends Controller
             $tmpPdfPath = null;
             $isLocalFile = false;
 
-            if ($url && filter_var($url, FILTER_VALIDATE_URL) && strpos($url, 's3') !== false) {
+            // Try 1: Full S3 URL in myfile
+            if (!$tmpPdfPath && $url && filter_var($url, FILTER_VALIDATE_URL) && strpos($url, 's3') !== false) {
                 $parsed = parse_url($url);
                 $s3Key = isset($parsed['path']) ? ltrim(urldecode($parsed['path']), '/') : null;
-                if (!$s3Key || !Storage::disk('s3')->exists($s3Key)) {
-                    return response()->json(['success' => false, 'message' => 'Document file not found.'], 404);
+                if ($s3Key && Storage::disk('s3')->exists($s3Key)) {
+                    $tmpPdfPath = storage_path('app/tmp_' . uniqid() . '.pdf');
+                    file_put_contents($tmpPdfPath, Storage::disk('s3')->get($s3Key));
                 }
-                $tmpPdfPath = storage_path('app/tmp_' . uniqid() . '.pdf');
-                file_put_contents($tmpPdfPath, Storage::disk('s3')->get($s3Key));
-            } elseif ($url && file_exists(storage_path('app/public/' . $url))) {
+            }
+            // Try 2: Local file
+            if (!$tmpPdfPath && $url && file_exists(storage_path('app/public/' . $url))) {
                 $tmpPdfPath = storage_path('app/public/' . $url);
                 $isLocalFile = true;
-            } else {
-                // Fallback: visa/personal docs use client_id/doc_type/filename (client_id = client person ID)
+            }
+            // Try 3: visa/personal docs - Admin.client_id (unique ref) + doc_type + filename
+            if (!$tmpPdfPath && $document->doc_type && $document->client_id) {
                 $filename = $document->myfile_key ?: $document->myfile;
-                if ($filename && $document->doc_type && $document->client_id) {
-                    $s3Key = $document->client_id . '/' . $document->doc_type . '/' . ltrim($filename, '/');
-                    if (Storage::disk('s3')->exists($s3Key)) {
-                        $tmpPdfPath = storage_path('app/tmp_' . uniqid() . '.pdf');
-                        file_put_contents($tmpPdfPath, Storage::disk('s3')->get($s3Key));
-                    }
-                }
-                // Legacy fallback: admin-based lookup (document.client_id treated as admin id)
-                if (!$tmpPdfPath && !empty($document->myfile_key) && !empty($document->doc_type) && !empty($document->client_id)) {
-                    $admin = DB::table('admins')->select('client_id')->where('id', $document->client_id)->first();
-                    if ($admin && $admin->client_id) {
-                        $s3Key = $admin->client_id . '/' . $document->doc_type . '/' . $document->myfile_key;
+                if ($filename) {
+                    $admin = Admin::where('id', $document->client_id)->select('client_id')->first();
+                    $clientUniqueId = $admin && !empty($admin->client_id) ? $admin->client_id : null;
+                    if ($clientUniqueId) {
+                        $s3Key = $clientUniqueId . '/' . $document->doc_type . '/' . ltrim($filename, '/');
                         if (Storage::disk('s3')->exists($s3Key)) {
                             $tmpPdfPath = storage_path('app/tmp_' . uniqid() . '.pdf');
                             file_put_contents($tmpPdfPath, Storage::disk('s3')->get($s3Key));
                         }
                     }
+                    if (!$tmpPdfPath) {
+                        $s3KeyAlt = $document->client_id . '/' . $document->doc_type . '/' . ltrim($filename, '/');
+                        if (Storage::disk('s3')->exists($s3KeyAlt)) {
+                            $tmpPdfPath = storage_path('app/tmp_' . uniqid() . '.pdf');
+                            file_put_contents($tmpPdfPath, Storage::disk('s3')->get($s3KeyAlt));
+                        }
+                    }
                 }
-                if (!$tmpPdfPath || !file_exists($tmpPdfPath)) {
-                    return response()->json(['success' => false, 'message' => 'Document file not found.'], 404);
-                }
+            }
+
+            if (!$tmpPdfPath || !file_exists($tmpPdfPath)) {
+                Log::warning('getSignaturePlacementData: Document file not found', [
+                    'document_id' => $document->id,
+                    'doc_type' => $document->doc_type,
+                    'client_id' => $document->client_id,
+                    'myfile' => $document->myfile ? substr($document->myfile, 0, 100) : null,
+                    'myfile_key' => $document->myfile_key,
+                ]);
+                return response()->json(['success' => false, 'message' => 'Document file not found.'], 404);
             }
 
             $pdfPages = 1;
