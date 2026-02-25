@@ -30,11 +30,11 @@
         </div>
         
         <div class="control-section filter-section">
-            {{-- <label for="mailTypeFilter">Type:</label>
+            <label for="mailTypeFilter">Type:</label>
             <select id="mailTypeFilter" class="filter-select">
                 <option value="inbox">Inbox</option>
                 <option value="sent">Sent</option>
-            </select> --}}
+            </select>
             
             <label for="labelFilter">Label:</label>
             <select id="labelFilter" class="filter-select">
@@ -176,31 +176,16 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Upload area found:', !!uploadArea);
     console.log('File status found:', !!fileStatus);
     
-    // Check if email was just sent successfully - if so, switch to "Sent" tab
-    const successMessages = document.querySelectorAll('.alert-success, .alert.alert-success');
-    let emailSentSuccessfully = false;
-    
-    successMessages.forEach(function(alert) {
-        const text = alert.textContent || alert.innerText;
-        if (text.includes('Email sent successfully') || text.includes('Email Sent Successfully')) {
-            emailSentSuccessfully = true;
+    // If email was just sent, switch to "Sent" tab (flag set before page reload)
+    const switchToSent = localStorage.getItem('emailTabSwitchToSent');
+    if (switchToSent === '1') {
+        localStorage.removeItem('emailTabSwitchToSent');
+        const mailTypeFilter = document.getElementById('mailTypeFilter');
+        if (mailTypeFilter && typeof window.setEmailMailType === 'function') {
+            window.setEmailMailType('sent');
+            mailTypeFilter.value = 'sent';
         }
-    });
-    
-    // If email was sent, switch to "Sent" tab
-    // Commented out - Type dropdown is disabled
-    // if (emailSentSuccessfully) {
-    //     const mailTypeFilter = document.getElementById('mailTypeFilter');
-    //     if (mailTypeFilter) {
-    //         mailTypeFilter.value = 'sent';
-    //         // Update the module's currentMailType variable if function exists
-    //         if (typeof window.setEmailMailType === 'function') {
-    //             window.setEmailMailType('sent');
-    //         }
-    //         // Trigger change event to reload emails
-    //         mailTypeFilter.dispatchEvent(new Event('change'));
-    //     }
-    // }
+    }
     
     // Debug: Check if modules are available
     console.log('initializeUpload available:', typeof window.initializeUpload);
@@ -228,7 +213,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Small delay to ensure filter is set correctly
         setTimeout(function() {
             window.loadEmails();
-        }, emailSentSuccessfully ? 100 : 0);
+        }, switchToSent === '1' ? 100 : 0);
     } else {
         console.error('Load emails function not available!');
     }

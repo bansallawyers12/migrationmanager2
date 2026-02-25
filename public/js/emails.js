@@ -922,7 +922,14 @@
         emailList.innerHTML = '';
 
         if (!emails || emails.length === 0) {
-            renderEmptyState();
+            let emptyMsg = null;
+            let emptySub = null;
+            if (isLeadContext()) {
+                emptySub = 'Emails sent to this lead from the CRM will appear here.';
+            } else if (currentMailType === 'sent') {
+                emptySub = 'Emails sent from the CRM will appear here.';
+            }
+            renderEmptyState(emptyMsg, emptySub);
             return;
         }
 
@@ -1015,10 +1022,11 @@
     /**
      * Render empty state
      */
-    function renderEmptyState(message = null) {
+    function renderEmptyState(message = null, subtitle = null) {
         const emailList = document.getElementById('emailList');
         if (!emailList) return;
 
+        const sub = subtitle || (message ? 'Please try again.' : (currentMailType === 'sent' ? 'Emails sent from the CRM will appear here.' : 'Upload .msg files to get started with email management.'));
         emailList.innerHTML = `
             <div class="empty-state">
                 <div class="empty-state-icon">
@@ -1026,7 +1034,7 @@
                 </div>
                 <div class="empty-state-text">
                     <h3>${message || 'No emails found'}</h3>
-                    <p>${message ? 'Please try again.' : 'Upload .msg files to get started with email management.'}</p>
+                    <p>${sub}</p>
                 </div>
             </div>
         `;
