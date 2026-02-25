@@ -545,91 +545,43 @@ class ClientPortalWorkflowController extends Controller
     }
 
     /**
-     * Upload Allowed Checklist Document
+     * Upload Allowed Checklist Document - Single Upload
      * POST /api/workflow/upload-allowed-checklist
      *
-     * Single API for both single and multiple document uploads.
-     *
-     * Primary format: client_matter_id, files[], allowed_checklist_ids[]
-     * - files[]: select 1 or more files (multi-select)
-     * - allowed_checklist_ids[]: one row per file, same order (e.g. 14, 14, 15 for 3 files)
-     *
-     * Alternative: allowed_checklist_ids as comma-separated string "14,14,15"
-     *
-     * Legacy (single): client_matter_id, allowed_checklist_id, file
+     * Uploads a single document. Params: client_matter_id, file, allowed_checklist_id
      */
     public function uploadAllowedChecklistDocument(Request $request)
+    {
+        return $this->processChecklistDocumentUpload($request, $singleOnly = true);
+    }
+
+    /**
+     * Upload Allowed Checklist Document - Bulk Upload
+     * POST /api/workflow/upload-allowed-checklist-bulk-upload
+     *
+     * Uploads multiple documents. Params: client_matter_id, files[], allowed_checklist_ids (comma-separated e.g. "41,42,43").
+     * Number of files must equal number of checklist IDs.
+     */
+    public function uploadAllowedChecklistDocumentBulk(Request $request)
+    {
+        return $this->processChecklistDocumentUpload($request, $singleOnly = false);
+    }
+
+    /**
+     * Shared logic for checklist document upload (single and bulk)
+     */
+    private function processChecklistDocumentUpload(Request $request, bool $singleOnly)
     {
         try {
             $admin = $request->user();
             $clientId = $admin->id;
 
             $clientMatterId = $request->input('client_matter_id');
-            $useBulkFormat = $request->has('files') || $request->hasFile('files');
-            $useLegacyFormat = $request->hasFile('file') && $request->has('allowed_checklist_id');
-
-            // Normalize inputs to arrays for unified processing
             $files = [];
             $allowedChecklistIds = [];
 
-            if ($useBulkFormat) {
-                // Bulk format: files[] + allowed_checklist_ids (comma-separated or array)
-                $validator = Validator::make($request->all(), [
-                    'client_matter_id' => 'required|integer|min:1',
-                    'files' => 'required|array',
-                    'files.*' => 'required|file|max:10240',
-                ]);
-
-                if ($validator->fails()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Validation failed',
-                        'errors' => $validator->errors()
-                    ], 422);
-                }
-
-                $files = array_values($request->file('files'));
-
-                // Parse allowed_checklist_ids: comma-separated string OR array (backward compat)
-                $allowedChecklistIdsInput = $request->input('allowed_checklist_ids') ?? $request->input('allowed_checklist_ids[]');
-                if (is_string($allowedChecklistIdsInput)) {
-                    $allowedChecklistIds = array_values(array_map(function ($id) {
-                        return (int) trim($id);
-                    }, array_filter(explode(',', $allowedChecklistIdsInput), function ($id) {
-                        return trim($id) !== '';
-                    })));
-                } elseif (is_array($allowedChecklistIdsInput)) {
-                    $allowedChecklistIds = array_values(array_map('intval', $allowedChecklistIdsInput));
-                } else {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'allowed_checklist_ids is required. Use comma-separated values (e.g. "14,14,15") or allowed_checklist_ids[] array.'
-                    ], 422);
-                }
-
-                // Validate all IDs are positive
-                if (count(array_filter($allowedChecklistIds, fn($id) => $id < 1)) > 0) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Each allowed_checklist_id must be a positive integer'
-                    ], 422);
-                }
-
-                if (count($files) !== count($allowedChecklistIds)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Number of files must match number of allowed_checklist_ids. Expected ' . count($files) . ' IDs (comma-separated or array).'
-                    ], 422);
-                }
-
-                if (count($files) > 20) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Maximum 20 files allowed per request'
-                    ], 422);
-                }
-            } elseif ($useLegacyFormat) {
-                // Legacy format: file and allowed_checklist_id (backward compatibility)
+            if ($singleOnly) {
+                // Single upload: file + allowed_checklist_id
                 $validator = Validator::make($request->all(), [
                     'client_matter_id' => 'required|integer|min:1',
                     'allowed_checklist_id' => 'required|integer|min:1',
@@ -647,10 +599,60 @@ class ClientPortalWorkflowController extends Controller
                 $files = [$request->file('file')];
                 $allowedChecklistIds = [(int) $request->input('allowed_checklist_id')];
             } else {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid request. Use either: (file + allowed_checklist_id) for single, or (files[] + allowed_checklist_ids) for single/multiple. allowed_checklist_ids can be comma-separated (e.g. "14,14,15").'
-                ], 422);
+                // Bulk upload: files[] + allowed_checklist_ids (comma-separated or array)
+                $validator = Validator::make($request->all(), [
+                    'client_matter_id' => 'required|integer|min:1',
+                    'files' => 'required|array',
+                    'files.*' => 'required|file|max:10240',
+                ]);
+
+                if ($validator->fails()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Validation failed',
+                        'errors' => $validator->errors()
+                    ], 422);
+                }
+
+                $files = array_values($request->file('files'));
+
+                // Single parameter: allowed_checklist_ids as comma-separated (e.g. "41,42,43")
+                $allowedChecklistIdsInput = $request->input('allowed_checklist_ids') ?? $request->input('allowed_checklist_ids[]');
+                if (is_string($allowedChecklistIdsInput)) {
+                    $allowedChecklistIds = array_values(array_map(function ($id) {
+                        return (int) trim($id);
+                    }, array_filter(explode(',', $allowedChecklistIdsInput), function ($id) {
+                        return trim($id) !== '';
+                    })));
+                } elseif (is_array($allowedChecklistIdsInput)) {
+                    $allowedChecklistIds = array_values(array_map('intval', $allowedChecklistIdsInput));
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'allowed_checklist_ids is required. Use comma-separated values (e.g. "41,42,43"). Number of IDs must match number of files.'
+                    ], 422);
+                }
+
+                if (count(array_filter($allowedChecklistIds, fn($id) => $id < 1)) > 0) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Each allowed_checklist_id must be a positive integer'
+                    ], 422);
+                }
+
+                if (count($files) !== count($allowedChecklistIds)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Number of files must match number of allowed_checklist_ids. You uploaded ' . count($files) . ' file(s), but provided ' . count($allowedChecklistIds) . ' checklist ID(s). Use comma-separated format (e.g. "41,42,43").'
+                    ], 422);
+                }
+
+                if (count($files) > 20) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Maximum 20 files allowed per request'
+                    ], 422);
+                }
             }
 
             // Get client information
@@ -871,8 +873,8 @@ class ClientPortalWorkflowController extends Controller
             $uploadedCount = count($uploadedDocuments);
             $failedCount = count($errors);
 
-            // Legacy format: single upload returns original response structure for backward compatibility
-            if ($useLegacyFormat && $uploadedCount === 1) {
+            // Single upload response format
+            if ($singleOnly && $uploadedCount === 1) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Allowed checklist document uploaded successfully',
@@ -880,7 +882,7 @@ class ClientPortalWorkflowController extends Controller
                 ], 201);
             }
 
-            // Bulk format response
+            // Bulk upload response format
             return response()->json([
                 'success' => true,
                 'message' => $uploadedCount . ' document(s) uploaded successfully' . ($failedCount > 0 ? ', ' . $failedCount . ' failed' : ''),

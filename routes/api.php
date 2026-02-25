@@ -215,6 +215,7 @@ Route::middleware('auth:sanctum')->group(function () {
    
     Route::get('/workflow/allowed-checklist', [ClientPortalWorkflowController::class, 'allowedChecklistForStages']);
     Route::post('/workflow/upload-allowed-checklist', [ClientPortalWorkflowController::class, 'uploadAllowedChecklistDocument']);
+    Route::post('/workflow/upload-allowed-checklist-bulk-upload', [ClientPortalWorkflowController::class, 'uploadAllowedChecklistDocumentBulk']);
     
     // Messaging routes (specific routes first to avoid conflicts)
     Route::post('/messages/send', [ClientPortalMessageController::class, 'sendMessage']);
