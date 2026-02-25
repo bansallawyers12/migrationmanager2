@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\Staff;
+use App\Events\NotificationCountUpdated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -689,6 +691,84 @@ class ClientPortalWorkflowController extends Controller
                 DB::table('applications')
                     ->where('id', $applicationId)
                     ->update(['updated_at' => now()]);
+
+                // Notify Super admin and Migration agent (related to this matter) on website
+                $clientMatter = DB::table('client_matters')
+                    ->leftJoin('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
+                    ->where('client_matters.id', $clientMatterId)
+                    ->select(
+                        'client_matters.client_id',
+                        'client_matters.client_unique_matter_no',
+                        'client_matters.sel_migration_agent',
+                        'matters.title as matter_title',
+                        'matters.nick_name as matter_nick_name'
+                    )
+                    ->first();
+
+                if ($clientMatter) {
+                    $matterName = 'Matter';
+                    if (!empty($clientMatter->matter_title) || !empty($clientMatter->matter_nick_name)) {
+                        $matterName = trim(($clientMatter->matter_nick_name ?? '') . ' - ' . ($clientMatter->matter_title ?? ''));
+                        if (empty(trim($matterName, ' -'))) {
+                            $matterName = $clientMatter->matter_title ?? $clientMatter->matter_nick_name ?? 'Matter';
+                        }
+                    }
+                    if (!empty($clientMatter->client_unique_matter_no)) {
+                        $matterName .= ' (' . $clientMatter->client_unique_matter_no . ')';
+                    }
+
+                    $notificationMessage = 'Client has uploaded document in this checklist - ' . $checklistName . ' of this matter - ' . $matterName . '. You can review and approve/reject this.';
+
+                    $encodedClientId = base64_encode(convert_uuencode($clientMatter->client_id));
+                    $matterRef = $clientMatter->client_unique_matter_no ?? '';
+                    $notificationUrl = $matterRef
+                        ? url('/clients/detail/' . $encodedClientId . '/' . $matterRef . '/checklists')
+                        : url('/clients/detail/' . $encodedClientId . '/checklists');
+
+                    $recipientIds = collect();
+
+                    $superAdminIds = Staff::where('role', 1)->where('status', 1)->pluck('id');
+                    $recipientIds = $recipientIds->merge($superAdminIds);
+
+                    if (!empty($clientMatter->sel_migration_agent)) {
+                        $recipientIds = $recipientIds->push($clientMatter->sel_migration_agent);
+                    }
+
+                    $recipientIds = $recipientIds->unique()->filter()->values();
+
+                    foreach ($recipientIds as $receiverStaffId) {
+                        if (!$receiverStaffId || !Staff::where('id', $receiverStaffId)->exists()) {
+                            continue;
+                        }
+
+                        DB::table('notifications')->insert([
+                            'sender_id' => $clientId,
+                            'receiver_id' => $receiverStaffId,
+                            'module_id' => $clientMatterId,
+                            'url' => $notificationUrl,
+                            'notification_type' => 'checklist',
+                            'message' => $notificationMessage,
+                            'receiver_status' => 0,
+                            'sender_status' => 1,
+                            'seen' => 0,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+
+                        try {
+                            $unreadCount = DB::table('notifications')
+                                ->where('receiver_id', $receiverStaffId)
+                                ->where('receiver_status', 0)
+                                ->count();
+                            broadcast(new NotificationCountUpdated($receiverStaffId, $unreadCount, $notificationMessage, $notificationUrl));
+                        } catch (\Exception $e) {
+                            Log::warning('Failed to broadcast notification count for checklist upload', [
+                                'receiver_id' => $receiverStaffId,
+                                'error' => $e->getMessage(),
+                            ]);
+                        }
+                    }
+                }
 
                 return response()->json([
                     'success' => true,
