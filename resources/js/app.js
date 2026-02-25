@@ -113,6 +113,39 @@ if (import.meta.env.VITE_REVERB_APP_KEY) {
     window.EchoDisabled = true;
 }
 
+// Polling fallback for notification badge (updates without page refresh when WebSocket unavailable)
+(function pollNotificationCount() {
+    const badgeEl = document.getElementById('countbell_notification');
+    const userId = document.querySelector('meta[name="current-user-id"]')?.content;
+    if (!badgeEl || !userId) return;
+
+    function fetchCount() {
+        if (document.visibilityState === 'hidden') return;
+        fetch('/fetch-notification', {
+            method: 'GET',
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'include'
+        })
+            .then((r) => r.json())
+            .then((data) => {
+                const count = parseInt(data.unseen_notification || 0, 10) || 0;
+                if (typeof window.updateNotificationBell === 'function') {
+                    window.updateNotificationBell(count, { showToast: false });
+                } else if (badgeEl) {
+                    badgeEl.textContent = count > 0 ? String(count) : '';
+                    badgeEl.style.display = count > 0 ? 'inline' : 'none';
+                }
+            })
+            .catch(() => {});
+    }
+
+    setTimeout(fetchCount, 5000);
+    setInterval(fetchCount, 30000);
+    document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') fetchCount();
+    });
+})();
+
 /*
 |--------------------------------------------------------------------------
 | FullCalendar v6
