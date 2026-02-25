@@ -134,7 +134,7 @@ class AdminConsoleRoutesTest extends TestCase
     public function non_admin_user_cannot_access_adminconsole_routes()
     {
         $user = Admin::factory()->create([
-            'role' => 7, // Client role
+            'type' => 'client',
             'email' => 'client@test.com',
             'password' => bcrypt('password')
         ]);

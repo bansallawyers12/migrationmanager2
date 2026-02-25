@@ -19,9 +19,8 @@ class LeadFactory extends Factory
             'email' => $this->faker->unique()->safeEmail(),
             'phone' => $this->faker->phoneNumber(),
             'password' => bcrypt('password'),
-            'role' => 7, // Lead role
             'type' => 'lead', // Lead type
-            'user_id' => Admin::factory()->create(['role' => 2])->id, // Assigned to staff
+            'user_id' => \App\Models\Staff::query()->value('id'), // Assigned to staff (null if no staff)
             'lead_quality' => $this->faker->randomElement(['hot', 'warm', 'cold']),
             'lead_status' => $this->faker->randomElement(['new', 'contacted', 'qualified', 'lost']),
             'source' => $this->faker->optional()->randomElement(['website', 'referral', 'social_media', 'direct']),

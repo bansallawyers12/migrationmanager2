@@ -51,7 +51,7 @@ class ClientExportService
     {
         try {
             $client = Admin::where('id', $clientId)
-                ->where('role', 7) // Only clients
+                ->whereIn('type', ['client', 'lead'])
                 ->first();
 
             if (!$client) {
@@ -437,7 +437,7 @@ class ClientImportService
             // Check for duplicate email if skip_duplicates is enabled
             if ($skipDuplicates && !empty($clientData['email'])) {
                 $existingClient = Admin::where('email', $clientData['email'])
-                    ->where('role', 7)
+                    ->whereIn('type', ['client', 'lead'])
                     ->first();
 
                 if ($existingClient) {
@@ -513,7 +513,6 @@ class ClientImportService
             
             // System fields
             $client->client_id = $client_id;
-            $client->role = 7; // Client role
             $client->password = Hash::make('CLIENT_IMPORT_' . time()); // Temporary password
             $client->decrypt_password = null;
             $client->status = $clientData['status'] ?? 1;
@@ -847,7 +846,7 @@ public function export($id)
 {
     try {
         $client = Admin::where('id', $id)
-            ->where('role', 7)
+            ->whereIn('type', ['client', 'lead'])
             ->first();
 
         if (!$client) {

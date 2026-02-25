@@ -182,7 +182,7 @@ class DocumentPolicyTest extends TestCase
     {
         $admin = Admin::factory()->create(['role' => 1]);
         $staff = Admin::factory()->create(['role' => 2]);
-        $client = Admin::factory()->create(['role' => 7]); // Client portal user
+        $client = Admin::factory()->create(['type' => 'client']); // Client portal user
 
         $this->assertTrue($this->policy->create($admin));
         $this->assertTrue($this->policy->create($staff));

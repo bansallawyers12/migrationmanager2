@@ -361,15 +361,15 @@ class SampleBookingAppointmentsSeeder extends Seeder
 
         foreach ($sampleClientData as $index => $clientData) {
             // Check if client already exists
-            $client = Admin::where('role', 7)
+            $client = Admin::whereIn('type', ['client', 'lead'])
                 ->where('email', $clientData['email'])
                 ->first();
 
             if (!$client) {
                 // Get next client counter
-                $clientCntExist = Admin::where('role', 7)->count();
+                $clientCntExist = Admin::whereIn('type', ['client', 'lead'])->count();
                 if ($clientCntExist > 0) {
-                    $clientLatestArr = Admin::where('role', 7)
+                    $clientLatestArr = Admin::whereIn('type', ['client', 'lead'])
                         ->latest()
                         ->first();
                     $client_latest_counter = $clientLatestArr ? $clientLatestArr->client_counter : "00000";
@@ -392,7 +392,6 @@ class SampleBookingAppointmentsSeeder extends Seeder
                     'country_code' => '+61',
                     'client_counter' => $client_current_counter,
                     'client_id' => $client_id,
-                    'role' => 7,
                     'type' => 'lead',
                     'source' => 'Bansal Website (Test Data)',
                     'created_at' => Carbon::now()->subMonths(rand(1, 6)),

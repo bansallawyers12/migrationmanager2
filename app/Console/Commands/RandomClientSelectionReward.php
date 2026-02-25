@@ -36,7 +36,6 @@ class RandomClientSelectionReward extends Command
                 [
                     'reward_date' => $current_date,
                     'client_id' => $query[0]->id,
-                    'role' => $query[0]->role,
                     'first_name' => $query[0]->first_name,
                     'last_name' => $query[0]->last_name,
                     'email' => $query[0]->email,

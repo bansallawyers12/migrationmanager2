@@ -25,8 +25,10 @@ class Admin extends Authenticatable
         'id',
         // Core Identity
         'first_name', 'last_name', 'email', 'password',
-        // Role (staff only; clients/leads identified by type)
+        // Role: deprecated for clients/leads (use type). Column kept for backward compat.
         'role',
+        // Type: 'client' or 'lead' for CRM (replaces role=7 for clients/leads)
+        'type',
         // Contact Information
         'phone', 'country_code',
         // Address

@@ -203,7 +203,7 @@ class PointsServiceTest extends TestCase
     protected function createTestClient(array $overrides = []): Admin
     {
         return Admin::factory()->create(array_merge([
-            'role' => 7, // Client role
+            'type' => 'client',
             'dob' => now()->subYears(30)->format('Y-m-d'),
             'first_name' => 'Test',
             'last_name' => 'Client',

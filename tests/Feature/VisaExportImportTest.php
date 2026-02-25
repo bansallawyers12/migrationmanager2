@@ -55,7 +55,7 @@ class VisaExportImportTest extends TestCase
             'last_name' => 'VisaTest',
             'email' => 'export-visa-test-' . uniqid() . '@example.com',
             'password' => Hash::make('password'),
-            'role' => 7,
+            'type' => 'client',
             'client_id' => 'EXPT' . time(),
             'client_counter' => str_pad((string) random_int(1, 99999), 5, '0', STR_PAD_LEFT),
         ]);

@@ -28,7 +28,7 @@ class AdminFactory extends Factory
             'last_name' => fake()->lastName(),
             'email' => fake()->unique()->safeEmail(),
             'password' => bcrypt('password'),
-            'role' => 7, // Default to client role
+            'type' => 'client',
             'country' => 'Australia',
             'state' => 'VIC',
             'city' => fake()->city(),

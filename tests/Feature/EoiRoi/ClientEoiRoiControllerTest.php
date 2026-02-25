@@ -27,7 +27,7 @@ class ClientEoiRoiControllerTest extends TestCase
 
         // Create a client
         $this->client = Admin::factory()->create([
-            'role' => 7, // Client role
+            'type' => 'client',
             'dob' => now()->subYears(30)->format('Y-m-d'),
         ]);
     }
@@ -262,7 +262,7 @@ class ClientEoiRoiControllerTest extends TestCase
     /** @test */
     public function it_prevents_accessing_other_clients_eoi_records()
     {
-        $otherClient = Admin::factory()->create(['role' => 7]);
+        $otherClient = Admin::factory()->create(['type' => 'client']);
         $eoi = ClientEoiReference::factory()->create([
             'client_id' => $otherClient->id,
         ]);
