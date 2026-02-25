@@ -60,6 +60,82 @@ Route::post('/appointments/get-disabled-slots', [ClientPortalAppointmentControll
 // Record Payment Without Login (public - for guests who booked via add-appointment-without-login)
 Route::post('/appointments/record-payment-without-login', [ClientPortalAppointmentController::class, 'recordAppointmentPaymentWithoutLogin']);
 
+// Create Payment Intent (public - works with or without auth; used by both logged-in users and guests)
+Route::post('/payments/create-payment-intent', function (Request $request) {
+    $validated = $request->validate([
+        'amount' => ['required', 'integer', 'min:50'],
+        'currency' => ['sometimes', 'string', 'size:3'],
+        'customer' => ['sometimes', 'string'],
+        'description' => ['sometimes', 'string', 'max:255'],
+        'metadata' => ['sometimes', 'array'],
+        'receipt_email' => ['sometimes', 'email'],
+        'automatic_payment_methods.enabled' => ['sometimes', 'boolean'],
+    ]);
+
+    try {
+        $stripeSecret = config('services.stripe.secret');
+
+        if (!$stripeSecret) {
+            return response()->json([
+                'message' => 'Stripe secret key is not configured.',
+            ], 500);
+        }
+
+        $stripe = new \Stripe\StripeClient($stripeSecret);
+
+        $payload = [
+            'amount' => $validated['amount'],
+            'currency' => strtolower($validated['currency'] ?? 'usd'),
+            'automatic_payment_methods' => [
+                'enabled' => data_get($validated, 'automatic_payment_methods.enabled', true),
+            ],
+        ];
+
+        if (isset($validated['customer'])) {
+            $payload['customer'] = $validated['customer'];
+        }
+
+        if (isset($validated['description'])) {
+            $payload['description'] = $validated['description'];
+        }
+
+        if (isset($validated['metadata'])) {
+            $payload['metadata'] = $validated['metadata'];
+        }
+
+        if (isset($validated['receipt_email'])) {
+            $payload['receipt_email'] = $validated['receipt_email'];
+        }
+
+        $paymentIntent = $stripe->paymentIntents->create($payload);
+
+        return response()->json([
+            'id' => $paymentIntent->id,
+            'status' => $paymentIntent->status,
+            'client_secret' => $paymentIntent->client_secret,
+            'amount' => $paymentIntent->amount,
+            'currency' => $paymentIntent->currency,
+        ], 201);
+    } catch (\Stripe\Exception\ApiErrorException $exception) {
+        Log::error('Stripe PaymentIntent creation failed', [
+            'message' => $exception->getMessage(),
+        ]);
+
+        return response()->json([
+            'message' => 'Unable to create payment intent.',
+            'error' => $exception->getMessage(),
+        ], 400);
+    } catch (\Throwable $exception) {
+        Log::error('Unexpected error creating PaymentIntent', [
+            'message' => $exception->getMessage(),
+        ]);
+
+        return response()->json([
+            'message' => 'An unexpected error occurred.',
+        ], 500);
+    }
+});
+
 // Blog routes (public)
 Route::get('/blogs/list', [OthersController::class, 'getBlogList']);
 Route::get('/blogs/detail/{id}', [OthersController::class, 'getBlogDetail']);
@@ -145,81 +221,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/notifications', [ClientPortalNotificationController::class, 'index']);
     Route::get('/notifications/{id}', [ClientPortalNotificationController::class, 'show']);
     Route::post('/notifications/{id}/read', [ClientPortalNotificationController::class, 'markAsRead']);
-
-    Route::post('/payments/create-payment-intent', function (Request $request) {
-        $validated = $request->validate([
-            'amount' => ['required', 'integer', 'min:50'],
-            'currency' => ['sometimes', 'string', 'size:3'],
-            'customer' => ['sometimes', 'string'],
-            'description' => ['sometimes', 'string', 'max:255'],
-            'metadata' => ['sometimes', 'array'],
-            'receipt_email' => ['sometimes', 'email'],
-            'automatic_payment_methods.enabled' => ['sometimes', 'boolean'],
-        ]);
-
-        try {
-            $stripeSecret = config('services.stripe.secret');
-
-            if (!$stripeSecret) {
-                return response()->json([
-                    'message' => 'Stripe secret key is not configured.',
-                ], 500);
-            }
-
-            $stripe = new \Stripe\StripeClient($stripeSecret);
-
-            $payload = [
-                'amount' => $validated['amount'],
-                'currency' => strtolower($validated['currency'] ?? 'usd'),
-                'automatic_payment_methods' => [
-                    'enabled' => data_get($validated, 'automatic_payment_methods.enabled', true),
-                ],
-            ];
-
-            if (isset($validated['customer'])) {
-                $payload['customer'] = $validated['customer'];
-            }
-
-            if (isset($validated['description'])) {
-                $payload['description'] = $validated['description'];
-            }
-
-            if (isset($validated['metadata'])) {
-                $payload['metadata'] = $validated['metadata'];
-            }
-
-            if (isset($validated['receipt_email'])) {
-                $payload['receipt_email'] = $validated['receipt_email'];
-            }
-
-            $paymentIntent = $stripe->paymentIntents->create($payload);
-
-            return response()->json([
-                'id' => $paymentIntent->id,
-                'status' => $paymentIntent->status,
-                'client_secret' => $paymentIntent->client_secret,
-                'amount' => $paymentIntent->amount,
-                'currency' => $paymentIntent->currency,
-            ], 201);
-        } catch (\Stripe\Exception\ApiErrorException $exception) {
-            Log::error('Stripe PaymentIntent creation failed', [
-                'message' => $exception->getMessage(),
-            ]);
-
-            return response()->json([
-                'message' => 'Unable to create payment intent.',
-                'error' => $exception->getMessage(),
-            ], 400);
-        } catch (\Throwable $exception) {
-            Log::error('Unexpected error creating PaymentIntent', [
-                'message' => $exception->getMessage(),
-            ]);
-
-            return response()->json([
-                'message' => 'An unexpected error occurred.',
-            ], 500);
-        }
-    });
 
     // Broadcast notifications
     Route::get('/notifications/broadcasts/unread', [BroadcastNotificationController::class, 'unread']);

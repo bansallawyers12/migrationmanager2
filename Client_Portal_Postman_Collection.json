@@ -722,7 +722,7 @@
 							{
 								"key": "Authorization",
 								"value": "Bearer {{auth_token}}",
-								"description": "Requires authenticated client token"
+								"description": "Optional - works with or without authentication (both logged-in users and guests)"
 							}
 						],
 						"body": {
@@ -739,7 +739,7 @@
 								"create-payment-intent"
 							]
 						},
-						"description": "Create a Stripe PaymentIntent via POST /api/payments/create-payment-intent to obtain the client_secret for frontend payment confirmation."
+						"description": "Create a Stripe PaymentIntent via POST /api/payments/create-payment-intent to obtain the client_secret for frontend payment confirmation. **No authentication required** - works for both logged-in users and guests (e.g. appointment payments without login)."
 					},
 					"response": [
 						{
@@ -2245,16 +2245,28 @@
 									"description": "Client matter ID"
 								},
 								{
-									"key": "allowed_checklist_id",
-									"value": "14",
-									"type": "text",
-									"description": "Allowed checklist ID from the allowed checklist list"
-								},
-								{
-									"key": "file",
+									"key": "files[]",
 									"type": "file",
 									"src": [],
-									"description": "File to upload (max 10MB)"
+									"description": "Select file(s) - single or multiple at once (max 20, 10MB each)"
+								},
+								{
+									"key": "allowed_checklist_ids[]",
+									"value": "14",
+									"type": "text",
+									"description": "Checklist ID for file 1 - add rows for each file (same order as files[])"
+								},
+								{
+									"key": "allowed_checklist_ids[]",
+									"value": "14",
+									"type": "text",
+									"description": "Checklist ID for file 2"
+								},
+								{
+									"key": "allowed_checklist_ids[]",
+									"value": "15",
+									"type": "text",
+									"description": "Checklist ID for file 3 - duplicate/remove rows to match file count"
 								}
 							]
 						},
@@ -2268,61 +2280,38 @@
 								"upload-allowed-checklist"
 							]
 						},
-						"description": "Upload a document for an allowed checklist item. Requires client_matter_id, allowed_checklist_id, and file. The file will be uploaded to AWS S3 in the application_documents/{client_unique_id}/ folder and stored in the application_documents table."
+						"description": "Single API for single and multiple uploads.\n\n**Parameters:**\n- client_matter_id (required)\n- files[] - select 1 or more files (multi-select in one picker)\n- allowed_checklist_ids[] - add one row per file, same order (e.g. 14, 14, 15 for 3 files)\n\n**Alternative:** allowed_checklist_ids as comma-separated: \"14,14,15\"\n\nSingle: 1 file + 1 allowed_checklist_ids[] row. Multiple: N files + N allowed_checklist_ids[] rows. Max 20 files, 10MB each."
 					},
 					"response": [
 						{
-							"name": "Success Response",
+							"name": "Single File Success",
 							"originalRequest": {
 								"method": "POST",
-								"header": [
-									{
-										"key": "Authorization",
-										"value": "Bearer {{auth_token}}"
-									}
-								],
-								"body": {
-									"mode": "formdata",
-									"formdata": [
-										{
-											"key": "client_matter_id",
-											"value": "9",
-											"type": "text"
-										},
-										{
-											"key": "allowed_checklist_id",
-											"value": "14",
-											"type": "text"
-										},
-										{
-											"key": "file",
-											"type": "file",
-											"src": []
-										}
-									]
-								},
-								"url": {
-									"raw": "{{base_url}}/workflow/upload-allowed-checklist",
-									"host": [
-										"{{base_url}}"
-									],
-									"path": [
-										"workflow",
-										"upload-allowed-checklist"
-									]
-								}
+								"header": [{"key": "Authorization", "value": "Bearer {{auth_token}}"}],
+								"body": {"mode": "formdata", "formdata": []},
+								"url": {"raw": "{{base_url}}/workflow/upload-allowed-checklist", "host": ["{{base_url}}"], "path": ["workflow", "upload-allowed-checklist"]}
 							},
 							"status": "Created",
 							"code": 201,
 							"_postman_previewlanguage": "json",
-							"header": [
-								{
-									"key": "Content-Type",
-									"value": "application/json"
-								}
-							],
+							"header": [{"key": "Content-Type", "value": "application/json"}],
 							"cookie": [],
 							"body": "{\n    \"success\": true,\n    \"message\": \"Allowed checklist document uploaded successfully\",\n    \"data\": {\n        \"document_id\": 123,\n        \"application_id\": 20736,\n        \"client_matter_id\": 9,\n        \"allowed_checklist_id\": 14,\n        \"checklist_name\": \"Passport\",\n        \"file_name\": \"John_Passport_1703123456\",\n        \"file_type\": \"pdf\",\n        \"file_size\": 2048576,\n        \"file_size_formatted\": \"2.0 MB\",\n        \"file_url\": \"https://bansalcrm.s3.ap-southeast-2.amazonaws.com/application_documents/CLI-001/John_Passport_1703123456.pdf\",\n        \"file_key\": \"John_Passport_1703123456.pdf\",\n        \"s3_path\": \"application_documents/CLI-001/John_Passport_1703123456.pdf\",\n        \"uploaded_at\": \"2024-01-01T00:00:00Z\"\n    }\n}"
+						},
+						{
+							"name": "Multiple Files Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [{"key": "Authorization", "value": "Bearer {{auth_token}}"}],
+								"body": {"mode": "formdata", "formdata": []},
+								"url": {"raw": "{{base_url}}/workflow/upload-allowed-checklist", "host": ["{{base_url}}"], "path": ["workflow", "upload-allowed-checklist"]}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [{"key": "Content-Type", "value": "application/json"}],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"message\": \"2 document(s) uploaded successfully\",\n    \"data\": {\n        \"documents\": [\n            {\n                \"document_id\": 123,\n                \"application_id\": 20736,\n                \"client_matter_id\": 9,\n                \"allowed_checklist_id\": 14,\n                \"checklist_name\": \"Passport\",\n                \"file_name\": \"John_Passport_1703123456_0\",\n                \"file_type\": \"pdf\",\n                \"file_size\": 2048576,\n                \"file_size_formatted\": \"2.0 MB\",\n                \"file_url\": \"https://bansalcrm.s3.ap-southeast-2.amazonaws.com/application_documents/CLI-001/John_Passport_1703123456_0.pdf\",\n                \"file_key\": \"John_Passport_1703123456_0.pdf\",\n                \"s3_path\": \"application_documents/CLI-001/John_Passport_1703123456_0.pdf\",\n                \"uploaded_at\": \"2024-01-01T00:00:00Z\"\n            },\n            {\n                \"document_id\": 124,\n                \"application_id\": 20736,\n                \"client_matter_id\": 9,\n                \"allowed_checklist_id\": 15,\n                \"checklist_name\": \"Driver License\",\n                \"file_name\": \"John_Driver_License_1703123456_1\",\n                \"file_type\": \"pdf\",\n                \"file_size\": 1024000,\n                \"file_size_formatted\": \"1000.0 KB\",\n                \"file_url\": \"https://bansalcrm.s3.ap-southeast-2.amazonaws.com/application_documents/CLI-001/John_Driver_License_1703123456_1.pdf\",\n                \"file_key\": \"John_Driver_License_1703123456_1.pdf\",\n                \"s3_path\": \"application_documents/CLI-001/John_Driver_License_1703123456_1.pdf\",\n                \"uploaded_at\": \"2024-01-01T00:00:00Z\"\n            }\n        ],\n        \"uploaded_count\": 2,\n        \"failed_count\": 0,\n        \"total_count\": 2,\n        \"application_id\": 20736,\n        \"client_matter_id\": 9\n    }\n}"
 						}
 					]
 				}
