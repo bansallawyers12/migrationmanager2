@@ -363,10 +363,12 @@
     position: absolute;
     border: 2px dashed #3b82f6;
     background: rgba(59, 130, 246, 0.15);
-    cursor: pointer;
+    cursor: move;
     pointer-events: auto;
+    user-select: none;
 }
 .sig-field-preview:hover { background: rgba(59, 130, 246, 0.25); }
+.sig-field-preview.dragging { border-color: #1d4ed8; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4); }
 .sig-field-label {
     position: absolute;
     top: -18px;
@@ -1086,8 +1088,9 @@
             signatureFields: [],
             selectedFieldIndex: -1,
             isDragging: false,
-            dragStartX: 0,
-            dragStartY: 0
+            dragFieldIndex: -1,
+            dragOffsetX: 0,
+            dragOffsetY: 0
         };
 
         function openSignaturePlacementModal(docId) {
@@ -1240,6 +1243,45 @@
                 }
             });
             $('#sig-preview-image').off('load.sig').on('load.sig', function() { updateSigPreview(); });
+
+            // Drag to reposition signature fields
+            $(document).off('mousedown.sig', '.sig-field-preview').on('mousedown.sig', '.sig-field-preview', function(e) {
+                e.preventDefault();
+                var i = parseInt($(this).data('index'));
+                if (isNaN(i) || !sigState.signatureFields[i]) return;
+                sigState.isDragging = true;
+                sigState.dragFieldIndex = i;
+                sigState.dragOffsetX = e.offsetX;
+                sigState.dragOffsetY = e.offsetY;
+                $(this).addClass('dragging');
+            });
+            $(document).off('mousemove.sig').on('mousemove.sig', function(e) {
+                if (!sigState.isDragging || sigState.dragFieldIndex < 0) return;
+                var f = sigState.signatureFields[sigState.dragFieldIndex];
+                if (!f || f.page_number !== sigState.currentPage) return;
+                var $img = $('#sig-preview-image');
+                if (!$img.length) return;
+                var rect = $img[0].getBoundingClientRect();
+                var dims = getSigDisplayDims();
+                if (!dims.width || !dims.height) return;
+                var localX = e.clientX - rect.left - sigState.dragOffsetX;
+                var localY = e.clientY - rect.top - sigState.dragOffsetY;
+                var maxX = dims.width * (1 - f.w_percent);
+                var maxY = dims.height * (1 - f.h_percent);
+                localX = Math.max(0, Math.min(localX, maxX));
+                localY = Math.max(0, Math.min(localY, maxY));
+                f.x_percent = localX / dims.width;
+                f.y_percent = localY / dims.height;
+                updateSigPreview();
+                $('#sig-fields-preview .sig-field-preview[data-index="' + sigState.dragFieldIndex + '"]').addClass('dragging');
+            });
+            $(document).off('mouseup.sig').on('mouseup.sig', function() {
+                if (sigState.isDragging) {
+                    sigState.isDragging = false;
+                    sigState.dragFieldIndex = -1;
+                    $('.sig-field-preview').removeClass('dragging');
+                }
+            });
 
             $('#sig-save-btn').off('click.sig').on('click.sig', function() {
                 if (sigState.signatureFields.length === 0) {

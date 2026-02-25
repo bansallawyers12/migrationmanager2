@@ -3868,6 +3868,134 @@ class ClientsController extends Controller
 		}
 	}
 
+    /**
+     * Filter emails for a lead (no matter context).
+     * Returns CRM-sent emails to the lead.
+     */
+    public function filterLeadEmails(Request $request)
+    {
+        try {
+            $client_id = $request->input('client_id'); // lead id
+            $status = $request->input('status');
+            $search = $request->input('search');
+            $label_id = $request->input('label_id');
+
+            if (!$client_id) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Lead ID is required'
+                ], 400);
+            }
+
+            $query = \App\Models\EmailLog::where('client_id', $client_id)
+                ->where('type', 'lead')
+                ->where('mail_type', 1)
+                ->where(function ($q) {
+                    $q->whereNull('conversion_type')
+                        ->orWhere(function ($subQuery) {
+                            $subQuery->where('conversion_type', 'conversion_email_fetch')
+                                ->where('mail_body_type', 'sent');
+                        });
+                })
+                ->with(['labels', 'attachments'])
+                ->orderBy('created_at', 'DESC');
+
+            if ($status !== null && $status !== '') {
+                if ($status == 1) {
+                    $query->where('mail_is_read', 1);
+                } elseif ($status == 2) {
+                    $query->where(function ($q) {
+                        $q->where('mail_is_read', 0)->orWhereNull('mail_is_read');
+                    });
+                }
+            }
+
+            if ($search !== null && $search !== '') {
+                $query->where(function ($q) use ($search) {
+                    $q->where('subject', 'LIKE', "%{$search}%")
+                      ->orWhere('message', 'LIKE', "%{$search}%")
+                      ->orWhere('from_mail', 'LIKE', "%{$search}%")
+                      ->orWhere('to_mail', 'LIKE', "%{$search}%");
+                });
+            }
+
+            if (!empty($label_id)) {
+                $query->whereHas('labels', function ($q) use ($label_id) {
+                    $q->where('email_labels.id', $label_id);
+                });
+            }
+
+            $emails = $query->get();
+            $url = 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/';
+
+            $emails = $emails->map(function ($email) use ($url, $client_id) {
+                $previewUrl = '';
+                if (!empty($email->uploaded_doc_id)) {
+                    $AdminInfo = \App\Models\Admin::select('client_id')->where('id', $email->client_id)->first();
+                    $DocInfo = \App\Models\Document::select('id', 'doc_type', 'myfile', 'myfile_key', 'mail_type')
+                        ->where('id', $email->uploaded_doc_id)->first();
+                    if ($DocInfo && $AdminInfo) {
+                        $previewUrl = !empty($DocInfo->myfile_key)
+                            ? $DocInfo->myfile
+                            : $url . ($AdminInfo->client_id ?? $client_id) . '/' . ($DocInfo->doc_type ?? 'mail') . '/' . ($DocInfo->mail_type ?? 'sent') . '/' . $DocInfo->myfile;
+                    }
+                }
+
+                if (!$email->relationLoaded('attachments')) {
+                    $email->load('attachments');
+                }
+                if (!$email->relationLoaded('labels')) {
+                    $email->load('labels');
+                }
+
+                $emailArray = $email->toArray();
+                $attachments = $email->attachments;
+                if (!$attachments || (method_exists($attachments, 'count') && $attachments->count() === 0)) {
+                    $attachments = \App\Models\EmailLogAttachment::where('email_log_id', $email->id)->get();
+                }
+                $emailArray['attachments'] = ($attachments && $attachments->count() > 0)
+                    ? $attachments->map(function ($attachment) {
+                        return [
+                            'id' => $attachment->id,
+                            'mail_report_id' => $attachment->email_log_id,
+                            'filename' => $attachment->filename,
+                            'display_name' => $attachment->display_name ?? $attachment->filename,
+                            'content_type' => $attachment->content_type,
+                            'file_path' => $attachment->file_path,
+                            's3_key' => $attachment->s3_key,
+                            'file_size' => (int) $attachment->file_size,
+                            'content_id' => $attachment->content_id,
+                            'is_inline' => (bool) $attachment->is_inline,
+                            'description' => $attachment->description,
+                            'extension' => $attachment->extension,
+                        ];
+                    })->values()->toArray()
+                    : [];
+                $emailArray['preview_url'] = $previewUrl;
+                $emailArray['from_mail'] = $emailArray['from_mail'] ?? '';
+                $toMail = $emailArray['to_mail'] ?? '';
+                if ($toMail && is_numeric(trim($toMail))) {
+                    $leadRecipient = \App\Models\Admin::where('id', (int) $toMail)->where('type', 'lead')->first();
+                    if ($leadRecipient && $leadRecipient->email) {
+                        $toMail = $leadRecipient->email;
+                    }
+                }
+                $emailArray['to_mail'] = $toMail;
+                $emailArray['subject'] = $emailArray['subject'] ?? '';
+                $emailArray['message'] = $emailArray['message'] ?? '';
+                return $emailArray;
+            });
+
+            return response()->json($emails, 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        } catch (\Exception $e) {
+            Log::error('Error in filterLeadEmails: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'An error occurred while fetching lead emails',
+            ], 500);
+        }
+    }
+
      //Seach Client Relationship
 
     // OLD HTTP DOWNLOAD METHOD - COMMENTED OUT

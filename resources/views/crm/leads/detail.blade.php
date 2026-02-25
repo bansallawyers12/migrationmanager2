@@ -243,6 +243,7 @@
 							<div class="history_timeline">
 								<ul class="nav nav-tabs" id="myTab" role="tablist">
 									<li class="nav-item"><a class="nav-link active" href="#overview" data-toggle="tab">Overview</a></li>
+									<li class="nav-item"><a class="nav-link" href="#emails" data-toggle="tab"><i class="fa fa-inbox"></i> Emails</a></li>
 									<li class="nav-item"><a class="nav-link" href="#notes" data-toggle="tab">Notes</a></li>
 								</ul>
 								<div class="tab-content">								
@@ -291,6 +292,13 @@
 												</tbody>
 											</table>
 											
+										</div>
+									</div>
+									
+									<!-- Emails Tab -->
+									<div class="tab-pane" id="emails">
+										<div style="padding: 20px;">
+											@include('crm.emails_lead')
 										</div>
 									</div>
 									

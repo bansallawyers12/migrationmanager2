@@ -250,10 +250,10 @@
 							</div>
 							<div class="history_timeline">
 								<ul class="nav nav-tabs" id="myTab" role="tablist">
-									<li class="nav-item "><a class="nav-link active" href="#history" data-toggle="tab">History</a></li> 
+									<li class="nav-item "><a class="nav-link active" href="#timeline" data-toggle="tab">History</a></li>
+									<li class="nav-item"><a class="nav-link" href="#emails" data-toggle="tab"><i class="fa fa-inbox"></i> Emails</a></li>
 								</ul>
 								<div class="tab-content">								
-									<!-- /.tab-pane -->
 									<div class="active tab-pane" id="timeline">
 										<!-- The timeline -->
 										<div class="timeline timeline-inverse followuphistory">
@@ -261,6 +261,12 @@
 											<div>
 												<i class="far fa-clock bg-gray"></i>
 											</div>
+										</div>
+									</div>
+									<!-- Emails Tab -->
+									<div class="tab-pane" id="emails">
+										<div style="padding: 20px;">
+											@include('crm.emails_lead')
 										</div>
 									</div>
 								</div>

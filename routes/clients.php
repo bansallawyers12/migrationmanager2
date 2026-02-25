@@ -111,6 +111,7 @@ Route::post('/updatemailreadbit', 'CRM\ClientsController@updatemailreadbit')->na
 
 Route::post('/clients/filter-emails', 'CRM\ClientsController@filterEmails')->name('clients.filter.emails');
 Route::post('/clients/filter-sentemails', 'CRM\ClientsController@filterSentEmails')->name('clients.filter.sentmails');
+Route::post('/clients/filter-lead-emails', 'CRM\ClientsController@filterLeadEmails')->name('clients.filter.leademails');
 Route::delete('/email-logs/{id}', 'CRM\ClientsController@deleteEmailLog')->name('email-logs.delete');
 Route::post('/mail/enhance', 'CRM\ClientsController@enhanceMessage')->name('mail.enhance');
 

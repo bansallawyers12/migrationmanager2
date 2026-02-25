@@ -67,12 +67,17 @@
         // Check if the container has the required attribute
         const matterId = container.dataset.matterId;
         if (!matterId || matterId === '') {
-            // Container exists but matter ID is not set - page may not be configured for emails
-            // This is not an error, just return null silently
             return null;
         }
-        
         return matterId;
+    }
+
+    /**
+     * Check if we're in lead context (lead detail page - no matter)
+     */
+    function isLeadContext() {
+        const container = document.querySelector('.email-interface-container');
+        return container && container.dataset.context === 'lead';
     }
 
     /**
@@ -764,21 +769,18 @@
      * Initialize email list and load initial emails
      */
     window.loadEmails = function() {
-        // Check if email interface exists on this page before attempting to load
         const container = document.querySelector('.email-interface-container');
         if (!container) {
-            // Page doesn't support emails - silently return
             return;
         }
-        
-        // Check if required attributes are present
-        if (!container.dataset.clientId || !container.dataset.matterId) {
-            // Email interface container exists but is not properly configured
-            // This page may not be set up for emails yet
+        const isLead = isLeadContext();
+        if (!container.dataset.clientId) {
             return;
         }
-        
-        console.log('Loading emails...');
+        if (!isLead && !container.dataset.matterId) {
+            return;
+        }
+        console.log('Loading emails...' + (isLead ? ' (lead context)' : ''));
         loadEmailsFromServer();
     };
 
@@ -788,21 +790,17 @@
     async function loadEmailsFromServer() {
         const clientId = getClientId();
         const matterId = getMatterId();
+        const isLead = isLeadContext();
         
         if (!clientId) {
-            // Client ID not available - page may not support emails
-            // Don't show warning as this is expected on pages without email interface
             return;
         }
         
-        if (!matterId) {
-            // Matter ID not available - show message only if email interface exists
+        if (!isLead && !matterId) {
             const container = document.querySelector('.email-interface-container');
             if (container) {
-                // Container exists but matter ID is missing - show user-friendly message
                 renderEmptyState('Please select a matter to view emails');
             }
-            // Otherwise, silently return (page doesn't support emails)
             return;
         }
 
@@ -815,18 +813,13 @@
         updateLoadingState(true);
 
         try {
-            // Determine endpoint based on mail type
-            const endpoint = currentMailType === 'sent' 
-                ? '/clients/filter-sentemails' 
-                : '/clients/filter-emails';
+            const endpoint = isLead 
+                ? '/clients/filter-lead-emails'
+                : (currentMailType === 'sent' ? '/clients/filter-sentemails' : '/clients/filter-emails');
 
-            const requestBody = {
-                client_id: clientId,
-                client_matter_id: matterId, // Add matter_id to filter emails
-                search: currentSearch,
-                status: '', // Keep for backward compatibility (mail_is_read)
-                label_id: currentLabelId
-            };
+            const requestBody = isLead
+                ? { client_id: clientId, search: currentSearch, status: '', label_id: currentLabelId }
+                : { client_id: clientId, client_matter_id: matterId, search: currentSearch, status: '', label_id: currentLabelId };
 
             console.log('Fetching emails from:', endpoint, requestBody);
 
