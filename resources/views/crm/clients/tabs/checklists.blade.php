@@ -257,9 +257,11 @@
                                                                 <div class="col-12">
                                                                     <h6 class="font-weight-bold mb-3"><i class="fas fa-tools mr-2"></i>Actions</h6>
                                                                     <div class="d-flex flex-wrap gap-2">
-                                                                        <a href="{{ route('forms.preview', $form) }}" target="_blank" class="btn btn-outline-primary btn-sm btn-view-cost-assignment" title="View Cost Assignment" data-preview-url="{{ route('forms.preview', $form) }}">
-                                                                            <i class="fas fa-eye mr-1"></i>View
+                                                                        @if($agreementDoc && $agreementDoc->status === 'signed' && $agreementDoc->signed_doc_link)
+                                                                        <a href="{{ route('documents.download.signed', $agreementDoc->id) }}" target="_blank" class="btn btn-success btn-sm" title="Download Signed Document">
+                                                                            <i class="fas fa-download mr-1"></i>Download Signed
                                                                         </a>
+                                                                        @endif
                                                                         <button type="button" class="btn btn-outline-info btn-sm btn-send-checklist" title="Send Document Checklist to client"
                                                                             data-client-id="{{ $fetchedData->id ?? '' }}"
                                                                             data-client-email="{{ $fetchedData->email ?? '' }}"
@@ -277,7 +279,16 @@
                                                                 </div>
                                                             </div>
                                                             
-                                                            @if($agreementDoc && $agreementDoc->signature_doc_link)
+                                                            @if($agreementDoc && $agreementDoc->status === 'signed' && $agreementDoc->signed_doc_link)
+                                                            <!-- Document Signed - Download Section -->
+                                                            <div class="signature-section mt-3 p-3 rounded border border-success" style="background-color: rgba(40, 167, 69, 0.1);">
+                                                                <h6 class="font-weight-bold mb-2 text-success"><i class="fas fa-check-circle mr-2"></i>Document Signed</h6>
+                                                                <p class="mb-2 small text-muted">The client has signed the cost agreement. Download the signed copy below.</p>
+                                                                <a href="{{ route('documents.download.signed', $agreementDoc->id) }}" target="_blank" class="btn btn-success btn-sm">
+                                                                    <i class="fas fa-download mr-1"></i>Download Signed Document
+                                                                </a>
+                                                            </div>
+                                                            @elseif($agreementDoc && $agreementDoc->signature_doc_link)
                                                             @php
                                                                 // Decode the JSON signature link
                                                                 $signatureLinks = json_decode($agreementDoc->signature_doc_link, true);
@@ -832,16 +843,6 @@
             $(this).prev('.checklist-item-header').attr('aria-expanded', 'true');
         }).on('hidden.bs.collapse', function() {
             $(this).prev('.checklist-item-header').attr('aria-expanded', 'false');
-        });
-
-        // View Cost Assignment - open preview in new tab (explicit handler so popup always opens)
-        $(document).on('click', '.btn-view-cost-assignment', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            var url = $(this).data('preview-url') || $(this).attr('href');
-            if (url) {
-                window.open(url, '_blank', 'noopener,noreferrer');
-            }
         });
 
         // Send Checklist - open compose modal with matter selected and matter checklists auto-selected

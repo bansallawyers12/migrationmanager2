@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivitiesLog;
+use App\Models\ClientMatter;
 use App\Models\Document;
 use App\Models\Signer;
+use App\Models\WorkflowStage;
 use App\Services\PythonService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Public Document Controller
@@ -608,6 +612,95 @@ class PublicDocumentController extends Controller
                         Log::info('Created visa _signed row', ['original_id' => $document->id, 'signed_id' => $signedDoc->id]);
                     } catch (\Exception $e) {
                         Log::warning('Failed to create visa _signed row', ['document_id' => $document->id, 'error' => $e->getMessage()]);
+                    }
+                }
+
+                // Advance workflow to next stage when document is tied to a checklist/client matter
+                if ($document->client_matter_id && $document->client_id) {
+                    try {
+                        ClientMatter::where('id', $document->client_matter_id)->update(['updated_at_type' => 'signed', 'updated_at' => now()]);
+
+                        // Agreement-specific activity log (Cost Agreement)
+                        if ($document->doc_type === 'agreement') {
+                            $clientMatterInfo = ClientMatter::select('client_unique_matter_no', 'sel_person_responsible')
+                                ->where('id', $document->client_matter_id)->first();
+                            if ($clientMatterInfo && $clientMatterInfo->sel_person_responsible) {
+                                $docSignerInfo = \App\Models\Admin::select('first_name', 'last_name', 'client_id')
+                                    ->where('id', $document->client_id)->first();
+                                $docSignerFullName = $docSignerInfo ? trim(($docSignerInfo->first_name ?? '') . ' ' . ($docSignerInfo->last_name ?? '')) : 'NA';
+                                $docSignerClientId = $docSignerInfo?->client_id ?? 'NA';
+                                $clientMatterReference = $docSignerClientId . '-' . ($clientMatterInfo->client_unique_matter_no ?? '');
+                                $signedDocName = ($document->file_name ?? 'document') . '.' . ($document->filetype ?? 'pdf');
+                                $subject = $docSignerFullName . ' signed cost agreement for matter ref no - ' . $clientMatterReference . ' at document ' . $signedDocName;
+                                ActivitiesLog::create([
+                                    'client_id' => $document->client_id,
+                                    'created_by' => $clientMatterInfo->sel_person_responsible,
+                                    'description' => '',
+                                    'subject' => $subject,
+                                    'activity_type' => 'document',
+                                    'task_status' => 0,
+                                    'pin' => 0,
+                                ]);
+                            }
+                        }
+
+                        // Advance workflow stage to next in sequence (when next stage doesn't require manual input)
+                        $clientMatter = ClientMatter::find($document->client_matter_id);
+                        if ($clientMatter && $clientMatter->workflow_stage_id) {
+                            $currentStage = WorkflowStage::find($clientMatter->workflow_stage_id);
+                            if ($currentStage) {
+                                $currentStageName = strtolower(trim($currentStage->name ?? ''));
+                                $verificationStages = ['payment verified', 'verification: payment, service agreement, forms'];
+                                $isAtVerificationStage = in_array($currentStageName, $verificationStages);
+
+                                // Do NOT auto-advance from Verification stage - Migration Agent must verify manually
+                                if ($isAtVerificationStage) {
+                                    Log::info('Skipping workflow advancement - at Verification stage (requires Migration Agent)', [
+                                        'document_id' => $document->id,
+                                        'current_stage' => $currentStage->name,
+                                    ]);
+                                } else {
+                                    $currentOrder = $currentStage->sort_order ?? $currentStage->id;
+                                    $stageQuery = WorkflowStage::whereRaw('COALESCE(sort_order, id) > ?', [$currentOrder]);
+                                    $workflowId = $clientMatter->workflow_id ?? $currentStage->workflow_id;
+                                    if ($workflowId) {
+                                        $stageQuery->where('workflow_id', $workflowId);
+                                    }
+                                    $nextStage = $stageQuery->orderByRaw('COALESCE(sort_order, id) ASC')->first();
+
+                                    // Only auto-advance if next stage is NOT "Decision Received" (requires outcome/note)
+                                    if ($nextStage && strtolower(trim($nextStage->name ?? '')) !== 'decision received') {
+                                        $clientMatter->workflow_stage_id = $nextStage->id;
+                                        $clientMatter->save();
+
+                                        // Update applications table if exists (backward compatibility)
+                                        $application = DB::table('applications')
+                                            ->where('client_matter_id', $document->client_matter_id)
+                                            ->where('client_id', $clientMatter->client_id)
+                                            ->first();
+                                        if ($application && $nextStage) {
+                                            DB::table('applications')->where('id', $application->id)->update([
+                                                'stage' => $nextStage->name,
+                                                'updated_at' => now(),
+                                            ]);
+                                        }
+
+                                        Log::info('Workflow advanced on document sign', [
+                                            'document_id' => $document->id,
+                                            'client_matter_id' => $document->client_matter_id,
+                                            'from_stage' => $currentStage->name,
+                                            'to_stage' => $nextStage->name,
+                                        ]);
+                                    }
+                                }
+                            }
+                        }
+                    } catch (\Exception $e) {
+                        Log::warning('Workflow advancement on sign failed', [
+                            'document_id' => $document->id,
+                            'client_matter_id' => $document->client_matter_id ?? null,
+                            'error' => $e->getMessage(),
+                        ]);
                     }
                 }
 
