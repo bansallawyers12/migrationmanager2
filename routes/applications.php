@@ -31,7 +31,7 @@ use App\Http\Controllers\HomeController;
 /*---------- Application Operations ----------*/
 // REMOVED - Old application detail route (replaced by modern client portal tab)
 // Route::get('/getapplicationdetail', [ClientPortalController::class, 'getapplicationdetail']);
-Route::post('/load-application-insert-update-data', [ClientPortalController::class, 'loadApplicationInsertUpdateData']);
+Route::post('/client-portal/load-matter-upsert', [ClientPortalController::class, 'loadApplicationInsertUpdateData']);
 Route::get('/updatestage', [ClientPortalController::class, 'updatestage']);
 Route::get('/completestage', [ClientPortalController::class, 'completestage']);
 Route::get('/updatebackstage', [ClientPortalController::class, 'updatebackstage']);
@@ -64,10 +64,10 @@ Route::get('/clients/message-attachment/{id}/download', [ClientPortalController:
 // Channel authorization is defined in routes/channels.php
 // The /broadcasting/auth route is automatically registered by Broadcast::routes()
 
-/*---------- Application Updates ----------*/
-Route::get('/application/updateintake', [ClientPortalController::class, 'updateintake']);
-Route::get('/application/updatedates', [ClientPortalController::class, 'updatedates']);
-Route::get('/application/updateexpectwin', [ClientPortalController::class, 'updateexpectwin']);
+/*---------- Client Portal Updates ----------*/
+Route::get('/client-portal/updateintake', [ClientPortalController::class, 'updateintake']);
+Route::get('/client-portal/updatedates', [ClientPortalController::class, 'updatedates']);
+Route::get('/client-portal/updateexpectwin', [ClientPortalController::class, 'updateexpectwin']);
 // REMOVED - Unused route (no references found in views or JavaScript)
 // Route::get('/application/getapplicationbycid', [ClientPortalController::class, 'getapplicationbycid']);
 
@@ -75,7 +75,7 @@ Route::get('/application/updateexpectwin', [ClientPortalController::class, 'upda
 // REMOVED - Super/Sub agents for applications feature
 // Route::post('/application/spagent_application', ...);
 // Route::post('/application/sbagent_application', ...);
-Route::post('/application/application_ownership', [ClientPortalController::class, 'application_ownership']);
+Route::post('/client-portal/ownership', [ClientPortalController::class, 'application_ownership']);
 // Route::get('/superagent', ...);
 // Route::get('/subagent', ...);
 
@@ -84,12 +84,12 @@ Route::post('/application/application_ownership', [ClientPortalController::class
 // Route::get('/application/export/pdf/{id}', [ClientPortalController::class, 'exportapplicationpdf']);
 Route::get('/crm/document-checklists-options', [ClientPortalController::class, 'getDocumentChecklistsOptions']);
 Route::post('/add-checklists', [ClientPortalController::class, 'addchecklists']);
-Route::post('/application/checklistupload', [ClientPortalController::class, 'checklistupload']);
-Route::get('/deleteapplicationdocs', [ClientPortalController::class, 'deleteapplicationdocs']);
-Route::get('/application/publishdoc', [ClientPortalController::class, 'publishdoc']);
-Route::post('/application/approve-document', [ClientPortalController::class, 'approveDocument']);
-Route::post('/application/reject-document', [ClientPortalController::class, 'rejectDocument']);
-Route::get('/application/download-document', [ClientPortalController::class, 'downloadDocument']);
+Route::post('/client-portal/checklistupload', [ClientPortalController::class, 'checklistupload']);
+Route::get('/client-portal/delete-docs', [ClientPortalController::class, 'deleteapplicationdocs']);
+Route::get('/client-portal/publishdoc', [ClientPortalController::class, 'publishdoc']);
+Route::post('/client-portal/approve-document', [ClientPortalController::class, 'approveDocument']);
+Route::post('/client-portal/reject-document', [ClientPortalController::class, 'rejectDocument']);
+Route::get('/client-portal/download-document', [ClientPortalController::class, 'downloadDocument']);
 
 /*---------- Migration Index ----------*/
 // REMOVED - Standalone migration index page (not linked from anywhere, orphaned page)

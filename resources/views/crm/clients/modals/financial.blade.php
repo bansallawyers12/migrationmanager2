@@ -44,7 +44,7 @@
 						</div>
 						<div class="col-12 col-md-12 col-lg-12">
 							<div class="form-group">
-								<label for="description">Application <span class="span_req">*</span></label>
+								<label for="description">Matter <span class="span_req">*</span></label>
 								<select data-valid="required" class="form-control select2" name="application">
 									<option value="">Select</option>
 									@foreach(\App\Models\ClientMatter::where('client_id',$fetchedData->id)->orderBy('id','desc')->get() as $matter)

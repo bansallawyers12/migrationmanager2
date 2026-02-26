@@ -1,5 +1,5 @@
 <!-- Client Portal Tab -->
-<div class="tab-pane" id="application-tab">
+<div class="tab-pane" id="client_portal-tab">
     <div class="card full-width client-portal-container">
         <div class="portal-header">
             <h3><i class="fas fa-globe"></i> Client Portal Access</h3>
@@ -48,7 +48,7 @@
                 $matterNumber = '';
                 
                 // Tab names that should NOT be treated as matter reference - use latest matter instead
-                $validTabNames = ['personaldetails', 'noteterm', 'personaldocuments', 'visadocuments', 'eoiroi', 'emails', 'formgenerations', 'formgenerationsL', 'application', 'workflow', 'checklists'];
+                $validTabNames = ['personaldetails', 'noteterm', 'personaldocuments', 'visadocuments', 'eoiroi', 'emails', 'formgenerations', 'formgenerationsL', 'client_portal', 'workflow', 'checklists'];
                 $isMatterIdInUrl = isset($id1) && $id1 != "" && !in_array(strtolower($id1), array_map('strtolower', $validTabNames));
                 
                 if ($isMatterIdInUrl) {
@@ -498,7 +498,7 @@
                                                                                 @endif
                                                                             @else
                                                                                 <tr>
-                                                                                    <td colspan="5" class="text-center text-muted">No application found for this matter.</td>
+                                                                                    <td colspan="5" class="text-center text-muted">No matter found.</td>
                                                                                 </tr>
                                                                             @endif
                                                                         </tbody>
@@ -514,7 +514,7 @@
                                                         @if(!$selectedMatter)
                                                             Please select a matter to view documents.
                                                         @elseif(!$applicationId)
-                                                            No application found for this matter. Please create an application first.
+                                                            No matter found. Please create a matter first.
                                                         @else
                                                             No workflow stages available.
                                                         @endif
@@ -3218,7 +3218,7 @@
                                           
 <?php
                 // Tab names that should NOT be treated as matter reference
-                $validTabNames = ['personaldetails', 'noteterm', 'personaldocuments', 'visadocuments', 'eoiroi', 'emails', 'formgenerations', 'formgenerationsL', 'application', 'workflow', 'checklists'];
+                $validTabNames = ['personaldetails', 'noteterm', 'personaldocuments', 'visadocuments', 'eoiroi', 'emails', 'formgenerations', 'formgenerationsL', 'client_portal', 'workflow', 'checklists'];
                 $isMatterIdInUrl = isset($id1) && $id1 != "" && !in_array(strtolower($id1), array_map('strtolower', $validTabNames));
                 
                 if ($isMatterIdInUrl) {
@@ -3478,7 +3478,7 @@ document.addEventListener('DOMContentLoaded', function() {
         $('#verification-payment-forms-modal').modal('hide');
 
         const payload = { matter_id: matterId, verification_confirm: true, verification_note: note };
-        if (document.querySelector('.client-nav-button.active')?.getAttribute('data-tab') === 'application') {
+        if (document.querySelector('.client-nav-button.active')?.getAttribute('data-tab') === 'client_portal') {
             payload.source = 'client_portal';
         }
         fetch('{{ route("clients.matter.update-next-stage") }}', {
@@ -3534,7 +3534,7 @@ document.addEventListener('DOMContentLoaded', function() {
         $('#decision-received-modal').modal('hide');
 
         const decisionPayload = { matter_id: matterId, decision_outcome: outcome, decision_note: note };
-        if (document.querySelector('.client-nav-button.active')?.getAttribute('data-tab') === 'application') {
+        if (document.querySelector('.client-nav-button.active')?.getAttribute('data-tab') === 'client_portal') {
             decisionPayload.source = 'client_portal';
         }
         fetch('{{ route("clients.matter.update-next-stage") }}', {
@@ -4720,14 +4720,14 @@ $(document).ready(function() {
         form.find('.custom-error').remove();
         
         // Validate hidden required fields first
-        var applicationId = $.trim(form.find('#checklistapp_id').val());
+        var clientMatterId = $.trim(form.find('#checklistapp_id').val());
         var checklistType = $.trim(form.find('#checklist_type').val());
         var checklistTypename = $.trim(form.find('#checklist_typename').val());
         
-        if (!applicationId) {
+        if (!clientMatterId) {
             isValid = false;
-            alert('Error: Application ID is missing. Please close and reopen the checklist modal.');
-            console.error('Application ID (checklistapp_id) is missing');
+            alert('Error: Client matter ID is missing. Please close and reopen the checklist modal.');
+            console.error('Client matter ID (checklistapp_id) is missing');
             return false;
         }
         
@@ -4791,7 +4791,7 @@ $(document).ready(function() {
         // Store current active tab before submission
         var currentActiveTab = $('.application-tab-item.active').attr('data-tab') || 'documents';
         
-        // Variables checklistType, checklistTypename, and applicationId are already defined above in validation section
+        // Variables checklistType, checklistTypename, and clientMatterId are already defined above in validation section
         
         // Submit via AJAX (document_type[] is submitted from the select)
         var formData = new FormData(form[0]);
@@ -4807,7 +4807,7 @@ $(document).ready(function() {
         
         // Debug: Log form data
         console.log('Submitting checklist form:', {
-            app_id: applicationId,
+            app_id: clientMatterId,
             client_id: form.find('input[name="client_id"]').val(),
             type: checklistType,
             typename: checklistTypename,
@@ -5018,7 +5018,7 @@ $(document).ready(function() {
         var documentId = $('#approve_document_id').val();
         
         $.ajax({
-            url: '{{ URL::to("/application/approve-document") }}',
+            url: '{{ URL::to("/client-portal/approve-document") }}',
             type: 'POST',
             data: {
                 _token: '{{ csrf_token() }}',
@@ -5080,7 +5080,7 @@ $(document).ready(function() {
         }
         
         $.ajax({
-            url: '{{ URL::to("/application/reject-document") }}',
+            url: '{{ URL::to("/client-portal/reject-document") }}',
             type: 'POST',
             data: {
                 _token: '{{ csrf_token() }}',
@@ -5252,7 +5252,7 @@ $(document).ready(function() {
         // Show confirmation
         if (confirm('Are you sure you want to delete this document? All documents with the same checklist will be deleted.')) {
             $.ajax({
-                url: '{{ URL::to("/deleteapplicationdocs") }}',
+                url: '{{ URL::to("/client-portal/delete-docs") }}',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -5552,7 +5552,7 @@ $(document).ready(function() {
         }
         
         // Use server-side download endpoint to force download
-        var downloadUrl = '{{ URL::to("/application/download-document") }}?document_id=' + documentId;
+        var downloadUrl = '{{ URL::to("/client-portal/download-document") }}?document_id=' + documentId;
         
         // Method 1: Try using fetch to get blob and trigger download
         fetch(downloadUrl)

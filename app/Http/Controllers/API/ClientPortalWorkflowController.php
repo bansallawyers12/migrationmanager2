@@ -484,7 +484,6 @@ class ClientPortalWorkflowController extends Controller
                 'success' => true,
                 'data' => [
                     'application_info' => [
-                        'application_id' => $clientMatterId,
                         'client_matter_id' => $clientMatterId,
                         'client_id' => $clientId,
                         'current_stage' => $stageName ?? null,
@@ -754,7 +753,6 @@ class ClientPortalWorkflowController extends Controller
 
                 $uploadedDocuments[] = [
                     'document_id' => $documentId,
-                    'application_id' => $applicationId,
                     'client_matter_id' => $clientMatterId,
                     'allowed_checklist_id' => $allowedChecklistId,
                     'checklist_name' => $checklistName,
@@ -865,7 +863,6 @@ class ClientPortalWorkflowController extends Controller
                     'uploaded_count' => $uploadedCount,
                     'failed_count' => $failedCount,
                     'total_count' => $totalCount,
-                    'application_id' => $applicationId,
                     'client_matter_id' => $clientMatterId,
                 ],
                 'errors' => $failedCount > 0 ? $errors : null

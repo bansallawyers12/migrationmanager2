@@ -21,6 +21,7 @@
 					<input type="hidden" class="checklisttypename" value="">
 					<input type="hidden" class="checklistid" value="">
 					<input type="hidden" class="application_id" value="">
+					<input type="hidden" class="client_matter_id" value="">
 						<div id="ddArea" style="text-align: center;">
 							Click or drag to upload new file from your device
 

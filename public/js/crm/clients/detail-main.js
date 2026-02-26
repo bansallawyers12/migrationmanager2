@@ -944,7 +944,7 @@ $(document).ready(function() {
 
         // Show loading message in the application tab
 
-        $('#application-tab').html('<h4>Please wait, upserting application record...</h4>');
+        $('#client_portal-tab').html('<h4>Please wait, upserting application record...</h4>');
 
         
 
@@ -952,7 +952,7 @@ $(document).ready(function() {
 
         $.ajax({
 
-            url: window.ClientDetailConfig.urls.loadApplicationInsertUpdate,
+            url: window.ClientDetailConfig.urls.loadMatterUpsert || window.ClientDetailConfig.urls.loadApplicationInsertUpdate,
 
             type: 'POST',
 
@@ -972,19 +972,19 @@ $(document).ready(function() {
 
             success: function(upsertResponse) {
 
-                if(upsertResponse.status && upsertResponse.application_id) {
+                if(upsertResponse.status && (upsertResponse.client_matter_id || upsertResponse.application_id)) {
 
                     // Update loading message
 
-                    $('#application-tab').html('<h4>Please wait, loading application details...</h4>');
+                    $('#client_portal-tab').html('<h4>Please wait, loading application details...</h4>');
 
-                    var appliid = upsertResponse.application_id;
+                    var appliid = upsertResponse.client_matter_id || upsertResponse.application_id;
 
                     // Step 2: Call getapplicationdetail route with the application_id from upsert response
 
                     $.ajax({
 
-                        url: window.ClientDetailConfig.urls.getApplicationDetail,
+                        url: window.ClientDetailConfig.urls.getClientPortalDetail || window.ClientDetailConfig.urls.getApplicationDetail,
 
                         type: 'GET',
 
@@ -994,7 +994,7 @@ $(document).ready(function() {
 
                             // Display the response directly in the application tab
 
-                            $('#application-tab').html(response);
+                            $('#client_portal-tab').html(response);
 
                             
 
@@ -1002,11 +1002,11 @@ $(document).ready(function() {
 
                             // Render only inside the Application tab to avoid leaking into Personal Details
 
-                            $('#application-tab').html(response);
+                            $('#client_portal-tab').html(response);
 
                             // Initialize Flatpickr for application date fields
                             if (typeof flatpickr !== 'undefined') {
-                                $('#application-tab .datepicker').each(function() {
+                                $('#client_portal-tab .datepicker').each(function() {
                                     if (!$(this).data('flatpickr')) {
                                         const element = this;
                                         const $this = $(this);
@@ -1227,7 +1227,7 @@ $(document).ready(function() {
 
                             console.error('Error loading application details:', error);
 
-                            $('#application-tab').html('<h4>Error loading application details. Please try again.</h4>');
+                            $('#client_portal-tab').html('<h4>Error loading application details. Please try again.</h4>');
 
                         }
 
@@ -1235,7 +1235,7 @@ $(document).ready(function() {
 
                 } else {
 
-                    $('#application-tab').html('<h4>Error upserting application record. Please try again.</h4>');
+                    $('#client_portal-tab').html('<h4>Error upserting application record. Please try again.</h4>');
 
                 }
 
@@ -1245,7 +1245,7 @@ $(document).ready(function() {
 
                 console.error('Error upserting application:', error);
 
-                $('#application-tab').html('<h4>Error upserting application record. Please try again.</h4>');
+                $('#client_portal-tab').html('<h4>Error upserting application record. Please try again.</h4>');
 
             }
 
@@ -6450,6 +6450,8 @@ Bansal Immigration`;
             var deleteUrl;
             if(delhref == 'deletenote'){
                 deleteUrl = window.ClientDetailConfig.urls.deleteNote;
+            } else if(delhref == 'deleteapplicationdocs' && window.ClientDetailConfig.urls.deleteClientPortalDoc){
+                deleteUrl = window.ClientDetailConfig.urls.deleteClientPortalDoc;
             } else {
                 deleteUrl = window.ClientDetailConfig.urls.admin + '/documents/delete';
             }
@@ -6523,7 +6525,7 @@ Bansal Immigration`;
 
                                 type:'GET',
 
-                                data:{client_id:window.ClientDetailConfig.clientId,appid:res.application_id},
+                                data:{client_id:window.ClientDetailConfig.clientId,appid:res.client_matter_id || res.application_id},
 
                                 success: function(responses){
 
@@ -6537,7 +6539,7 @@ Bansal Immigration`;
 
                             $('.mychecklistdocdata').html(res.doclistdata);
 
-                            $('.checklistuploadcount').html(res.applicationuploadcount);
+                            $('.checklistuploadcount').html(res.client_portal_upload_count);
 
                             $('.'+res.type+'_checklists').html(res.checklistdata);
 

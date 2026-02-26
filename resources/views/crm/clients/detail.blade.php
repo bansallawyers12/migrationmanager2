@@ -362,7 +362,7 @@ use App\Http\Controllers\Controller;
                     <i class="fas fa-stream"></i>
                     <span>Workflow</span>
                 </button>
-                <button class="client-nav-button" data-tab="application">
+                <button class="client-nav-button" data-tab="client_portal">
                     <i class="fas fa-globe"></i>
                     <span>Client Portal</span>
                 </button>
@@ -1319,11 +1319,11 @@ $(document).ready(function() {
             listOfInvoice: '{{ URL::to("/clients/listOfInvoice") }}',
             clientLedgerBalance: '{{ URL::to("/clients/clientLedgerBalanceAmount") }}',
             getInvoicesByMatter: '{{ URL::to("/get-invoices-by-matter") }}',
-            loadApplicationInsertUpdate: '{{ URL::to("/load-application-insert-update-data") }}',
-            getApplicationDetail: '{{ URL::to("/getapplicationdetail") }}',
-            updateIntake: '{{ URL::to("/application/updateintake") }}',
-            updateExpectWin: '{{ URL::to("/application/updateexpectwin") }}',
-            updateDates: '{{ URL::to("/application/updatedates") }}',
+            loadMatterUpsert: '{{ URL::to("/client-portal/load-matter-upsert") }}',
+            getClientPortalDetail: '{{ URL::to("/getapplicationdetail") }}',
+            updateIntake: '{{ URL::to("/client-portal/updateintake") }}',
+            updateExpectWin: '{{ URL::to("/client-portal/updateexpectwin") }}',
+            updateDates: '{{ URL::to("/client-portal/updatedates") }}',
             updateNoteDatetime: '{{ URL::to("/update-note-datetime") }}',
             referencesStore: '{{ route("references.store") }}',
             updateClientFundsLedger: '{{ route("clients.update-client-funds-ledger") }}',
@@ -1348,7 +1348,8 @@ $(document).ready(function() {
             uploadAgreement: '{{ route("clients.uploadAgreement", $fetchedData->id) }}',
             fetchClientContactNo: '{{ URL::to("/clients/fetchClientContactNo") }}',
             followupStore: '{{ URL::to("/clients/action/store") }}',
-            publishDoc: '{{ URL::to("/application/publishdoc") }}',
+            publishDoc: '{{ URL::to("/client-portal/publishdoc") }}',
+            deleteClientPortalDoc: '{{ URL::to("/client-portal/delete-docs") }}',
             deleteCostagreement: '{{ URL::to("/deletecostagreement") }}',
             deleteAction: '{{ URL::to("/delete_action") }}',
             pinNote: '{{ URL::to("/pinnote") }}',
@@ -1371,7 +1372,7 @@ $(document).ready(function() {
             completeStage: '{{ URL::to("/completestage") }}',
             updateBackStage: '{{ URL::to("/updatebackstage") }}',
             getApplicationNotes: '{{ URL::to("/getapplicationnotes") }}',
-            checklistUpload: '{{ URL::to("/application/checklistupload") }}',
+            checklistUpload: '{{ URL::to("/client-portal/checklistupload") }}',
             sendToHubdoc: '{{ url("/clients/sendToHubdoc") }}',
             checkHubdocStatus: '{{ url("/clients/checkHubdocStatus") }}',
             sendToClientApplication: '{{ url("/clients/send-invoice-to-client-application") }}',

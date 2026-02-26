@@ -23,7 +23,7 @@
                 $('.popuploader').hide();
                 $('#openfileuploadmodal').modal('hide');
                 $('.mychecklistdocdata').html(obj.doclistdata);
-                $('.checklistuploadcount').html(obj.applicationuploadcount);
+                $('.checklistuploadcount').html(obj.client_portal_upload_count || obj.applicationuploadcount);
                 $('.'+obj.type+'_checklists').html(obj.checklistdata);
                 $('#selectfile').val('');
             }
@@ -43,7 +43,7 @@
             formData.append("type", $('.checklisttype').val());
             formData.append("typename", $('.checklisttypename').val());
             formData.append("id", $('.checklistid').val());
-            formData.append("application_id", $('.application_id').val());
+            formData.append("client_matter_id", $('.client_matter_id').val() || $('.application_id').val());
             uploadFormData(formData);
         };
     }
@@ -61,6 +61,7 @@
             $(".checklisttype").val(type);
             $(".checklistid").val(id);
             $(".checklisttypename").val(typename);
+            $(".client_matter_id").val(aid);
             $(".application_id").val(aid);
             $('#openfileuploadmodal').modal('show');
         });
@@ -71,6 +72,7 @@
             var aid = $(this).attr('data-id');
             $(".checklisttype").val(type);
             $(".checklistid").val(id);
+            $(".client_matter_id").val(aid);
             $(".application_id").val(aid);
             $('#openfileuploadmodal').modal('show');
         });

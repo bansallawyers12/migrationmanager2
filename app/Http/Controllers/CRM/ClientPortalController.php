@@ -624,8 +624,7 @@ class ClientPortalController extends Controller
     }
 
 	//Load Application Insert Update Data
-	// applications table removed - returns client_matter_id as application_id for backward compat with JS
-	public function loadApplicationInsertUpdateData(Request $request){
+		public function loadApplicationInsertUpdateData(Request $request){
 		$clientId = $request->client_id;
 		$clientMatterId = $request->client_matter_id;
 
@@ -640,7 +639,7 @@ class ClientPortalController extends Controller
 		
 		return response()->json([
 			'status' => true,
-			'application_id' => $clientMatterId,
+			'client_matter_id' => $clientMatterId,
 			'message' => 'Ready'
 		]);
 	}
@@ -656,7 +655,7 @@ class ClientPortalController extends Controller
 		$clientMatter->matter_status = 0; // Discontinued/completed
 		$saved = $clientMatter->save();
 		if ($saved) {
-			$response = ['status' => true, 'stage' => $stageName, 'width' => 100, 'message' => 'Application has been successfully completed.'];
+			$response = ['status' => true, 'stage' => $stageName, 'width' => 100, 'message' => 'Matter has been successfully completed.'];
 		} else {
 			$response = ['status' => false, 'message' => 'Please try again'];
 		}
@@ -695,7 +694,7 @@ class ClientPortalController extends Controller
 			$obj->save();
 			$lastStage = $stages->last();
 			$displayback = $lastStage && $lastStage->name == $nextStage->name;
-			$response = ['status' => true, 'stage' => $nextStage->name, 'width' => $width, 'displaycomplete' => $displayback, 'message' => 'Application has been successfully moved to next stage.'];
+			$response = ['status' => true, 'stage' => $nextStage->name, 'width' => $width, 'displaycomplete' => $displayback, 'message' => 'Matter has been successfully moved to next stage.'];
 		} else {
 			$response = ['status' => false, 'message' => 'Please try again'];
 		}
@@ -735,7 +734,7 @@ class ClientPortalController extends Controller
 			$obj->save();
 			$lastStage = $stages->last();
 			$displayback = $lastStage && $lastStage->name == $prevStage->name;
-			$response = ['status' => true, 'stage' => $prevStage->name, 'width' => $width, 'displaycomplete' => $displayback, 'message' => 'Application has been successfully moved to previous stage.'];
+			$response = ['status' => true, 'stage' => $prevStage->name, 'width' => $width, 'displaycomplete' => $displayback, 'message' => 'Matter has been successfully moved to previous stage.'];
 		} else {
 			$response = ['status' => false, 'message' => 'Please try again'];
 		}
@@ -1797,7 +1796,7 @@ class ClientPortalController extends Controller
 		}
 		$obj->matter_status = 0;
 		$saved = $obj->save();
-		echo json_encode(['status' => $saved, 'message' => $saved ? 'Application successfully discontinued.' : 'Please try again']);
+		echo json_encode(['status' => $saved, 'message' => $saved ? 'Matter successfully discontinued.' : 'Please try again']);
 	}
 
 	public function revert_application(Request $request){
@@ -1815,7 +1814,7 @@ class ClientPortalController extends Controller
 		$width = $stages->count() > 0 ? round(($idx / $stages->count()) * 100) : 0;
 		$lastStage = $stages->last();
 		$displayback = $lastStage && $stage && $lastStage->name == $stage->name;
-		echo json_encode(['status' => $saved, 'width' => $width, 'displaycomplete' => $displayback, 'message' => $saved ? 'Application successfully reverted.' : 'Please try again']);
+		echo json_encode(['status' => $saved, 'width' => $width, 'displaycomplete' => $displayback, 'message' => $saved ? 'Matter successfully reverted.' : 'Please try again']);
 	}
 
 	public function application_ownership(Request $request){
@@ -1896,7 +1895,7 @@ class ClientPortalController extends Controller
 			'typename' => 'required|string'
 		], [
 			'client_id.required' => 'Client ID is required.',
-			'app_id.required' => 'Application ID is required.',
+			'app_id.required' => 'Client matter ID is required.',
 			'type.required' => 'Type is required.',
 			'typename.required' => 'Type name is required.'
 		]);
@@ -1954,7 +1953,7 @@ class ClientPortalController extends Controller
 				'client_id' => $client_id,
 				'created_by' => Auth::user()->id,
 				'subject' => 'Added checklist in Client Portal (Documents tab)',
-				'description' => 'Checklist(s) "' . $checklistNames . '" added via Client Portal tab (website) for application ID: ' . $app_id,
+				'description' => 'Checklist(s) "' . $checklistNames . '" added via Client Portal tab (website) for matter ID: ' . $app_id,
 				'task_status' => 0,
 				'pin' => 0,
 				'source' => 'client_portal_web',
@@ -2014,7 +2013,7 @@ class ClientPortalController extends Controller
 
 	public function checklistupload(Request $request){
 		 $imageData = '';
-		$clientMatter = $request->application_id ? DB::table('client_matters')->where('id', $request->application_id)->first() : null;
+		$clientMatter = $request->client_matter_id ? DB::table('client_matters')->where('id', $request->client_matter_id)->first() : null;
 		if (isset($_FILES['file']['name'][0])) {
 		  foreach ($_FILES['file']['name'] as $keys => $values) {
 			$fileName = $_FILES['file']['name'][$keys];
@@ -2026,7 +2025,7 @@ class ClientPortalController extends Controller
 					'cp_list_id' => $request->id,
 					'file_name' => $fileName,
 					'user_id' => Auth::user()->id,
-					'client_matter_id' => $request->application_id,
+					'client_matter_id' => $request->client_matter_id,
 					'client_id' => $clientMatter?->client_id ?? null,
 					'checklist' => $list ? $list->document_type : null,
 					'cp_doc_status' => 0,
@@ -2038,13 +2037,13 @@ class ClientPortalController extends Controller
 
 		// Log activity when at least one document was uploaded (Client Portal Documents tab - website)
 		if (!empty($imageData)) {
-			$clientMatter = DB::table('client_matters')->where('id', $request->application_id)->first();
+			$clientMatter = DB::table('client_matters')->where('id', $request->client_matter_id)->first();
 			if ($clientMatter && !empty($clientMatter->client_id)) {
 				DB::table('activities_logs')->insert([
 					'client_id' => $clientMatter->client_id,
 					'created_by' => Auth::user()->id,
 					'subject' => 'Uploaded document(s) to checklist in Client Portal (Documents tab)',
-					'description' => 'Document(s) uploaded via Client Portal tab (website) for matter ID: ' . $request->application_id,
+					'description' => 'Document(s) uploaded via Client Portal tab (website) for matter ID: ' . $request->client_matter_id,
 					'task_status' => 0,
 					'pin' => 0,
 					'source' => 'client_portal_web',
@@ -2054,7 +2053,7 @@ class ClientPortalController extends Controller
 			}
 		}
 
-		$doclists = Document::workflowChecklist()->where('client_matter_id',$request->application_id)->orderBy('created_at','DESC')->get();
+		$doclists = Document::workflowChecklist()->where('client_matter_id',$request->client_matter_id)->orderBy('created_at','DESC')->get();
 		$doclistdata = '';
 		foreach($doclists as $doclist){
 			$docdata = CpDocChecklist::where('id', $doclist->cp_list_id)->first();
@@ -2090,17 +2089,17 @@ class ClientPortalController extends Controller
 			</td>';
 			$doclistdata .= '</tr>';
 		}
-		$application_id = $request->application_id;
-		$applicationuploadcount = DB::select("SELECT COUNT(DISTINCT cp_list_id) AS cnt FROM documents WHERE cp_list_id IS NOT NULL AND client_matter_id = " . (int)$application_id);
+		$clientMatterId = $request->client_matter_id;
+		$uploadCount = DB::select("SELECT COUNT(DISTINCT cp_list_id) AS cnt FROM documents WHERE cp_list_id IS NOT NULL AND client_matter_id = " . (int)$clientMatterId);
 		$response['status'] 	= 	true;
 		$response['imagedata']	=	$imageData;
 		$response['doclistdata']	=	$doclistdata;
-		$response['applicationuploadcount']	=	@$applicationuploadcount[0]->cnt;
+		$response['client_portal_upload_count']	=	@$uploadCount[0]->cnt;
 
-		$applicationdocuments = CpDocChecklist::where('client_matter_id', $application_id)->where('type', $request->type)->get();
+		$checklistItems = CpDocChecklist::where('client_matter_id', $clientMatterId)->where('type', $request->type)->get();
 			$checklistdata = '<table class="table"><tbody>';
-			foreach($applicationdocuments as $applicationdocument){
-				$appcount = Document::workflowChecklist()->where('cp_list_id', $applicationdocument->id)->count();
+			foreach($checklistItems as $checklistItem){
+				$appcount = Document::workflowChecklist()->where('cp_list_id', $checklistItem->id)->count();
 				$checklistdata .= '<tr>';
 				if($appcount >0){
 					$checklistdata .= '<td><span class="check"><i class="fa fa-check"></i></span></td>';
@@ -2108,7 +2107,7 @@ class ClientPortalController extends Controller
 					$checklistdata .= '<td><span class="round"></span></td>';
 				}
 
-					$checklistdata .= '<td>'.@$applicationdocument->document_type.'</td>';
+					$checklistdata .= '<td>'.@$checklistItem->document_type.'</td>';
 					$checklistdata .= '<td><div class="circular-box cursor-pointer"><button class="transparent-button paddingNone">'.$appcount.'</button></div></td>';
 				$checklistdata .= '</tr>';
 			}
@@ -2201,12 +2200,12 @@ class ClientPortalController extends Controller
 		$response['status'] 	= 	true;
 
 		$response['doclistdata']	=	$doclistdata;
-		$response['applicationuploadcount']	=	@$applicationuploadcount[0]->cnt;
+		$response['client_portal_upload_count']	=	@$applicationuploadcount[0]->cnt;
 
-		$applicationdocuments = $clientMatterId ? CpDocChecklist::where('client_matter_id', $clientMatterId)->where('type', $appdoc->doc_type)->get() : collect();
+		$checklistItems = $clientMatterId ? CpDocChecklist::where('client_matter_id', $clientMatterId)->where('type', $appdoc->doc_type)->get() : collect();
 			$checklistdata = '<table class="table"><tbody>';
-			foreach($applicationdocuments as $applicationdocument){
-				$appcount = Document::workflowChecklist()->where('cp_list_id', $applicationdocument->id)->count();
+			foreach($checklistItems as $checklistItem){
+				$appcount = Document::workflowChecklist()->where('cp_list_id', $checklistItem->id)->count();
 				$checklistdata .= '<tr>';
 				if($appcount >0){
 					$checklistdata .= '<td><span class="check"><i class="fa fa-check"></i></span></td>';
@@ -2214,7 +2213,7 @@ class ClientPortalController extends Controller
 					$checklistdata .= '<td><span class="round"></span></td>';
 				}
 
-					$checklistdata .= '<td>'.@$applicationdocument->document_type.'</td>';
+					$checklistdata .= '<td>'.@$checklistItem->document_type.'</td>';
 					$checklistdata .= '<td><div class="circular-box cursor-pointer"><button class="transparent-button paddingNone">'.$appcount.'</button></div></td>';
 				$checklistdata .= '</tr>';
 			}

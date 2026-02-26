@@ -1240,7 +1240,7 @@
                     $('.modal .modal-body .is_application select').attr('data-valid', '');
                     $('.modal .modal-body .is_partner select').attr('data-valid', 'required');
                 }
-                else if(relid == 'application'){
+                else if(relid == 'client_portal'){
                     $('.modal .modal-body .is_contact').hide();
                     $('.modal .modal-body .is_partner').hide();
                     $('.modal .modal-body .is_application').show();

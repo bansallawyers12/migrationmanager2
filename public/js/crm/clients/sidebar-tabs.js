@@ -220,7 +220,7 @@
                     }
                 }, 300);
                 break;
-            case 'application':
+            case 'client_portal':
                 if (typeof showClientMatterApplicationData === 'function') {
                     showClientMatterApplicationData(SidebarTabs.selectedMatter);
                 }

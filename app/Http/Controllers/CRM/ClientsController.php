@@ -1990,7 +1990,7 @@ class ClientsController extends Controller
             // so that every downstream view receives a clean null $id1.
             $knownTabNames = [
                 'personaldetails', 'noteterm', 'personaldocuments', 'visadocuments',
-                'eoiroi', 'emails', 'formgenerations', 'formgenerationsl', 'application',
+                'eoiroi', 'emails', 'formgenerations', 'formgenerationsl', 'client_portal',
                 'workflow', 'checklists', 'account', 'notuseddocuments',
             ];
             if ($id1 && in_array(strtolower($id1), $knownTabNames)) {
