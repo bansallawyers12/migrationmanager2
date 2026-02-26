@@ -183,7 +183,7 @@
     }
 
     /**
-     * Send Invoice to Client Application (Client Portal / Mobile App)
+     * Send Invoice to Client Portal (Client Portal / Mobile App)
      */
     function handleSendInvoiceToClientApplication($btn) {
         var invoiceId = $btn.data('invoice-id');
@@ -191,7 +191,7 @@
 
         if (typeof Swal !== 'undefined') {
             Swal.fire({
-                title: 'Send to Client Application?',
+                title: 'Send to Client Portal?',
                 text: 'This will send invoice #' + invoiceNo + ' to the client\'s mobile app / portal.',
                 icon: 'question',
                 showCancelButton: true,
@@ -205,7 +205,7 @@
                 }
             });
         } else {
-            if (confirm('Are you sure you want to send invoice #' + invoiceNo + ' to the Client Application?')) {
+            if (confirm('Are you sure you want to send invoice #' + invoiceNo + ' to the Client Portal?')) {
                 sendInvoiceToClientApplicationAjax(invoiceId, invoiceNo, $btn);
             }
         }

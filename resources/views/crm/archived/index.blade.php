@@ -236,7 +236,7 @@
                                         <?php
                                         $agent = \App\Models\AgentDetails::where('id', $list->agent_id)->first();
                                         ?>
-                                        <td style="white-space: initial;">@if($agent) <a target="_blank" href="{{URL::to('/agent/detail/'.base64_encode(convert_uuencode(@$agent->id)))}}">{{@$agent->full_name}}</a>@else - @endif</td>
+                                        <td style="white-space: initial;">@if($agent) {{ @$agent->full_name }} @else - @endif</td>
                                         <td style="white-space: initial;">-</td>
                                         <td style="white-space: initial;">{{@$list->city}}</td>
                                         <?php

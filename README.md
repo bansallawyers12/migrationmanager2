@@ -299,12 +299,8 @@ Add to `C:\Windows\System32\drivers\etc\hosts`:
 - Track visa expiry dates
 - Communication with case manager
 
-### Agent Module
-- Manage assigned clients
-- Track applications
-- Create invoices
-- Schedule appointments
-- Commission tracking
+### Migration Agent (Staff Role)
+Staff can be designated as Migration Agents (`is_migration_agent`) with role-based permissions (e.g. verifying workflow stages in the client portal). They use the main Admin/CRM interface. A separate Agent portal is not implemented.
 
 ## Project Structure
 
@@ -457,11 +453,6 @@ The system includes Python-based document conversion:
 - `GET /portal/invoices` - View invoices and payments
 - `GET /portal/appointments` - Book appointments
 - `POST /portal/documents/upload` - Upload document
-
-### Agent Routes (Protected)
-- `GET /agent/dashboard` - Agent dashboard
-- `GET /agent/clients` - Assigned clients
-- `GET /agent/commissions` - Commission tracking
 
 ## Configuration
 
