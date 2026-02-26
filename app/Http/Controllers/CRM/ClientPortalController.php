@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Str;
 use App\Models\Admin;
 use App\Models\ActivitiesLog;
+use App\Models\CpDocChecklist;
 use App\Models\Document;
 use App\Models\ClientPortalDetailAudit;
 use App\Models\ClientMatter;
@@ -1924,7 +1925,7 @@ class ClientPortalController extends Controller
 
 		$savedCount = 0;
 		foreach ($documentTypes as $document_type) {
-			$obj = new \App\Models\ApplicationDocumentList;
+			$obj = new CpDocChecklist;
 			$obj->type = $type;
 			$obj->typename = $typename;
 			$obj->client_id = $client_id;
@@ -1983,7 +1984,7 @@ class ClientPortalController extends Controller
 				]);
 			}
 
-			$applicationdocuments = \App\Models\ApplicationDocumentList::where('client_matter_id', $app_id)->where('client_id', $client_id)->where('type', $type)->get();
+			$applicationdocuments = CpDocChecklist::where('client_matter_id', $app_id)->where('client_id', $client_id)->where('type', $type)->get();
 			$checklistdata = '<table class="table"><tbody>';
 			foreach($applicationdocuments as $applicationdocument){
 				$appcount = Document::workflowChecklist()->where('cp_list_id', $applicationdocument->id)->count();
@@ -2002,7 +2003,7 @@ class ClientPortalController extends Controller
 			$response['status'] 	= 	true;
 			$response['message']	=	$savedCount == 1 ? 'Checklist added successfully' : $savedCount . ' checklists added successfully';
 			$response['data']	=	$checklistdata;
-			$countchecklist = \App\Models\ApplicationDocumentList::where('client_matter_id', $app_id)->count();
+			$countchecklist = CpDocChecklist::where('client_matter_id', $app_id)->count();
 			$response['countchecklist']	=	$countchecklist;
 		} else {
 			$response['status'] = false;
@@ -2056,7 +2057,7 @@ class ClientPortalController extends Controller
 		$doclists = Document::workflowChecklist()->where('client_matter_id',$request->application_id)->orderBy('created_at','DESC')->get();
 		$doclistdata = '';
 		foreach($doclists as $doclist){
-			$docdata = \App\Models\ApplicationDocumentList::where('id', $doclist->cp_list_id)->first();
+			$docdata = CpDocChecklist::where('id', $doclist->cp_list_id)->first();
 			$fileUrl = ($doclist->myfile && str_starts_with($doclist->myfile, 'http')) ? $doclist->myfile : URL::to('/public/img/documents').'/'.$doclist->file_name;
 			$docStatus = $doclist->cp_doc_status ?? 0;
 			$doclistdata .= '<tr id="">';
@@ -2096,7 +2097,7 @@ class ClientPortalController extends Controller
 		$response['doclistdata']	=	$doclistdata;
 		$response['applicationuploadcount']	=	@$applicationuploadcount[0]->cnt;
 
-		$applicationdocuments = \App\Models\ApplicationDocumentList::where('client_matter_id', $application_id)->where('type', $request->type)->get();
+		$applicationdocuments = CpDocChecklist::where('client_matter_id', $application_id)->where('type', $request->type)->get();
 			$checklistdata = '<table class="table"><tbody>';
 			foreach($applicationdocuments as $applicationdocument){
 				$appcount = Document::workflowChecklist()->where('cp_list_id', $applicationdocument->id)->count();
@@ -2161,7 +2162,7 @@ class ClientPortalController extends Controller
 				$doclists = $clientMatterId ? Document::workflowChecklist()->where('client_matter_id', $clientMatterId)->orderBy('created_at','DESC')->get() : collect();
 		$doclistdata = '';
 		foreach($doclists as $doclist){
-			$docdata = \App\Models\ApplicationDocumentList::where('id', $doclist->cp_list_id)->first();
+			$docdata = CpDocChecklist::where('id', $doclist->cp_list_id)->first();
 			$fileUrl = ($doclist->myfile && str_starts_with($doclist->myfile, 'http')) ? $doclist->myfile : URL::to('/public/img/documents').'/'.$doclist->file_name;
 			$docStatus = $doclist->cp_doc_status ?? 0;
 			$doclistdata .= '<tr id="">';
@@ -2202,7 +2203,7 @@ class ClientPortalController extends Controller
 		$response['doclistdata']	=	$doclistdata;
 		$response['applicationuploadcount']	=	@$applicationuploadcount[0]->cnt;
 
-		$applicationdocuments = $clientMatterId ? \App\Models\ApplicationDocumentList::where('client_matter_id', $clientMatterId)->where('type', $appdoc->doc_type)->get() : collect();
+		$applicationdocuments = $clientMatterId ? CpDocChecklist::where('client_matter_id', $clientMatterId)->where('type', $appdoc->doc_type)->get() : collect();
 			$checklistdata = '<table class="table"><tbody>';
 			foreach($applicationdocuments as $applicationdocument){
 				$appcount = Document::workflowChecklist()->where('cp_list_id', $applicationdocument->id)->count();
@@ -2268,7 +2269,7 @@ class ClientPortalController extends Controller
 				$doclists = $clientMatterId ? Document::workflowChecklist()->where('client_matter_id', $clientMatterId)->orderBy('created_at','DESC')->get() : collect();
 		$doclistdata = '';
 		foreach($doclists as $doclist){
-			$docdata = \App\Models\ApplicationDocumentList::where('id', $doclist->cp_list_id)->first();
+			$docdata = CpDocChecklist::where('id', $doclist->cp_list_id)->first();
 			$fileUrl = ($doclist->myfile && str_starts_with($doclist->myfile, 'http')) ? $doclist->myfile : URL::to('/public/img/documents').'/'.$doclist->file_name;
 			$docStatus = $doclist->cp_doc_status ?? 0;
 			$doclistdata .= '<tr id="">';
@@ -2330,7 +2331,7 @@ class ClientPortalController extends Controller
 				$doclists = $clientMatterId ? Document::workflowChecklist()->where('client_matter_id', $clientMatterId)->orderBy('created_at','DESC')->get() : collect();
 		$doclistdata = '';
 		foreach($doclists as $doclist){
-			$docdata = \App\Models\ApplicationDocumentList::where('id', $doclist->cp_list_id)->first();
+			$docdata = CpDocChecklist::where('id', $doclist->cp_list_id)->first();
 			$fileUrl = ($doclist->myfile && str_starts_with($doclist->myfile, 'http')) ? $doclist->myfile : URL::to('/public/img/documents').'/'.$doclist->file_name;
 			$docStatus = $doclist->cp_doc_status ?? 0;
 			$doclistdata .= '<tr id="">';

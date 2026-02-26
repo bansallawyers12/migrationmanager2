@@ -4,8 +4,7 @@ ActivitiesLog.php
 Admin.php
 AdminMeta.php
 AgentDetails.php
-Application.php
-ApplicationDocumentList.php
+CpDocChecklist.php
 Attachment.php
 Branch.php
 CheckinHistory.php
