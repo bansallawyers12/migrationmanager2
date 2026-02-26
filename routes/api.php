@@ -18,6 +18,7 @@ use App\Http\Controllers\API\ClientPortalAppointmentController;
 use App\Http\Controllers\API\ClientPortalBillingController;
 use App\Http\Controllers\API\FCMController;
 use App\Http\Controllers\API\OthersController;
+use App\Http\Controllers\API\VisaPricingEstimatorController;
 
 /*
 |--------------------------------------------------------------------------
@@ -155,6 +156,13 @@ Route::get('/occupation-finder', [OthersController::class, 'searchOccupation']);
 Route::get('/postcode-search', [OthersController::class, 'searchPostcode']);
 Route::get('/postcode-result', [OthersController::class, 'getPostcodeResult']);
 
+// Visa Estimate routes (public - no authentication required)
+// Reference: https://immi.homeaffairs.gov.au/visas/visa-pricing-estimator
+Route::prefix('visa-estimate')->name('visa-estimate.')->group(function () {
+    Route::get('/visa-list', [VisaPricingEstimatorController::class, 'getVisaList']);
+    Route::post('/estimate', [VisaPricingEstimatorController::class, 'getEstimate']);
+});
+
 // Protected routes (authentication required)
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [ClientPortalController::class, 'logout']);
@@ -207,6 +215,7 @@ Route::middleware('auth:sanctum')->group(function () {
    
     Route::get('/workflow/allowed-checklist', [ClientPortalWorkflowController::class, 'allowedChecklistForStages']);
     Route::post('/workflow/upload-allowed-checklist', [ClientPortalWorkflowController::class, 'uploadAllowedChecklistDocument']);
+    Route::post('/workflow/upload-allowed-checklist-bulk-upload', [ClientPortalWorkflowController::class, 'uploadAllowedChecklistDocumentBulk']);
     
     // Messaging routes (specific routes first to avoid conflicts)
     Route::post('/messages/send', [ClientPortalMessageController::class, 'sendMessage']);

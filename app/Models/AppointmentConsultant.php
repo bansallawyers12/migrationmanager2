@@ -100,6 +100,7 @@ class AppointmentConsultant extends Model
                 'tourist' => 'Tourist Visa',
                 'adelaide' => 'Adelaide Office',
                 'ajay' => 'Ajay Calendar',
+                'kunal' => 'Kunal Calendar',
                 default => ucfirst($this->calendar_type)
             }
         );

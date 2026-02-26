@@ -23,6 +23,7 @@ class AppointmentConsultantSeeder extends Seeder
             9 => 4,  // Tourist Visa Team - old ID 9 -> new ID 4
             10 => 5, // Adelaide Office - old ID 10 -> new ID 5
             11 => 6, // Ajay Calendar - old ID 11 -> new ID 6
+            12 => 7, // Kunal Calendar - old ID 12 -> new ID 7 (if exists)
         ];
         
         // Update appointments to use temporary IDs (1000+) to avoid conflicts
@@ -91,12 +92,20 @@ class AppointmentConsultantSeeder extends Seeder
                 'specializations' => json_encode([]), // Transfer-only calendar, no specializations needed
                 'is_active' => true,
             ],
+            [
+                'name' => 'Kunal Calendar',
+                'email' => 'kunal@bansalimmigration.com',
+                'calendar_type' => 'kunal',
+                'location' => 'melbourne',
+                'specializations' => json_encode([]),
+                'is_active' => true,
+            ],
         ];
 
-        // Insert consultants in order so they get IDs 1-6
+        // Insert consultants in order so they get IDs 1-7
         foreach ($consultants as $index => $consultant) {
             AppointmentConsultant::create([
-                'id' => $index + 1, // Explicitly set ID: 1, 2, 3, 4, 5, 6
+                'id' => $index + 1, // Explicitly set ID: 1, 2, 3, 4, 5, 6, 7
                 'name' => $consultant['name'],
                 'email' => $consultant['email'],
                 'calendar_type' => $consultant['calendar_type'],
@@ -114,7 +123,7 @@ class AppointmentConsultantSeeder extends Seeder
                 ->update(['consultant_id' => $newId]);
         }
         
-        $this->command->info('✓ Created 6 appointment consultants with IDs 1-6 (including Ajay Calendar)');
+        $this->command->info('✓ Created 7 appointment consultants with IDs 1-7 (including Ajay Calendar and Kunal Calendar)');
         $this->command->info('✓ Updated all appointments to reference new consultant IDs');
     }
 }
