@@ -6492,16 +6492,8 @@ Bansal Immigration`;
 
                         // deleteservices block REMOVED - route and controller method no longer exist; /get-services route also removed
 
-                        if(delhref == 'superagent'){
-
-                            $('.supagent_data').html('');
-
-                        }else if(delhref == 'subagent'){
-
-                            $('.subagent_data').html('');
-
                         // DEPRECATED: Appointment system removed - deleteappointment route no longer exists
-                        }else if(delhref == 'deleteappointment'){
+                        if(delhref == 'deleteappointment'){
 
                             // Commented out - appointment system removed
                             /*

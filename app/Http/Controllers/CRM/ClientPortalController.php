@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Str;
 use App\Models\Admin;
-use App\Models\Application;
 use App\Models\ActivitiesLog;
 use App\Models\ClientPortalDetailAudit;
 use App\Models\ClientMatter;
@@ -623,173 +622,121 @@ class ClientPortalController extends Controller
     }
 
 	//Load Application Insert Update Data
+	// applications table removed - returns client_matter_id as application_id for backward compat with JS
 	public function loadApplicationInsertUpdateData(Request $request){
-		// Get client_id and client_matter_id from request
 		$clientId = $request->client_id;
 		$clientMatterId = $request->client_matter_id;
 
-		// get workflow stage name from 
-		$workflowStage = DB::table('client_matters')
-			->where('client_matters.client_id', $clientId)
-			->where('client_matters.id', $clientMatterId)
-			->join('workflow_stages', 'client_matters.workflow_stage_id', '=', 'workflow_stages.id')
-			->select('workflow_stages.name','workflow_stages.w_id')
-			->first();
-		
-		// Check if record exists in applications table
-		$existingApplication = DB::table('applications')
+		$matter = DB::table('client_matters')
 			->where('client_id', $clientId)
-			->where('client_matter_id', $clientMatterId)
+			->where('id', $clientMatterId)
 			->first();
-			
-		if($existingApplication) {
-			// Update existing record
-			$applicationId = DB::table('applications')
-				->where('client_id', $clientId)
-				->where('client_matter_id', $clientMatterId)
-				->update([
-					'user_id' => Auth::user()->id,
-					'stage' => $workflowStage->name,
-					'workflow' => $workflowStage->w_id,
-					'updated_at' => now()
-				]);
-				
-			$applicationId = $existingApplication->id;
-		} else {
-			// Insert new record
-			$applicationId = DB::table('applications')->insertGetId([
-				'client_matter_id' => $clientMatterId,
-				'user_id' => Auth::user()->id,
-				'client_id' => $clientId,
-				'stage' => $workflowStage->name,
-				'workflow' => $workflowStage->w_id,
-				'created_at' => now(),
-				'updated_at' => now()
-			]);
+
+		if (!$matter) {
+			return response()->json(['status' => false, 'message' => 'Matter not found'], 404);
 		}
 		
 		return response()->json([
 			'status' => true,
-			'application_id' => $applicationId,
-			'message' => $existingApplication ? 'Application updated successfully' : 'Application created successfully'
+			'application_id' => $clientMatterId,
+			'message' => 'Ready'
 		]);
 	}
 
 	public function completestage(Request $request){
-		$fetchData = Application::find($request->id);
-		$fetchData->status = 1;
-
-		$saved = $fetchData->save();
-		if($saved){
-			$response['status'] 	= 	true;
-			$response['stage']	=	$fetchData->stage;
-			$response['width']	=	100;
-			$response['message']	=	'Application has been successfully completed.';
-		}else{
-			$response['status'] 	= 	false;
-			$response['message']	=	'Please try again';
+		$matterId = $request->id ?? $request->client_matter_id;
+		$clientMatter = ClientMatter::with('workflowStage')->find($matterId);
+		if (!$clientMatter) {
+			echo json_encode(['status' => false, 'message' => 'Matter not found']);
+			return;
 		}
-
+		$stageName = $clientMatter->workflowStage?->name ?? '';
+		$clientMatter->matter_status = 0; // Discontinued/completed
+		$saved = $clientMatter->save();
+		if ($saved) {
+			$response = ['status' => true, 'stage' => $stageName, 'width' => 100, 'message' => 'Application has been successfully completed.'];
+		} else {
+			$response = ['status' => false, 'message' => 'Please try again'];
+		}
 		echo json_encode($response);
 	}
 	public function updatestage(Request $request){
-		$fetchData = Application::find($request->id);
-		$workflowstagecount = \App\Models\WorkflowStage::where('w_id', $fetchData->workflow)->count();
-		$widthcount = 0;
-		if($workflowstagecount !== 0){
-			$s = 100 / $workflowstagecount;
-			$widthcount = round($s);
+		$matterId = $request->id ?? $request->client_matter_id;
+		$clientMatter = ClientMatter::with('workflowStage')->find($matterId);
+		if (!$clientMatter || !$clientMatter->workflowStage) {
+			echo json_encode(['status' => false, 'message' => 'Matter or stage not found']);
+			return;
 		}
-		//$workflowstage = \App\Models\WorkflowStage::where('name', $fetchData->stage)->where('w_id', $fetchData->workflow)->first();
-		$workflowstage = \App\Models\WorkflowStage::where('name', 'like', '%'.$fetchData->stage.'%')->where('w_id', $fetchData->workflow)->first();
-		$nextid = \App\Models\WorkflowStage::where('id', '>', $workflowstage->id)->where('w_id', $fetchData->workflow)->orderBy('id','asc')->first();
-
-		$fetchData->stage = $nextid->name;
-		$comments = 'moved the stage from  <b>'.$workflowstage->name.'</b> to <b>'.$nextid->name.'</b>';
-
-		$width = $fetchData->progresswidth + $widthcount;
-		$fetchData->progresswidth = $width;
-		$saved = $fetchData->save();
-		if($saved){
+		$currentStage = $clientMatter->workflowStage;
+		$workflowId = $currentStage->w_id ?? $clientMatter->workflow_id;
+		$nextStage = WorkflowStage::where('id', '>', $currentStage->id)
+			->when($workflowId, fn($q) => $q->where('w_id', $workflowId))
+			->orderBy('id','asc')->first();
+		if (!$nextStage) {
+			echo json_encode(['status' => false, 'message' => 'No next stage']);
+			return;
+		}
+		$stages = WorkflowStage::when($workflowId, fn($q) => $q->where('w_id', $workflowId))->orderBy('id')->get();
+		$nextIndex = $stages->search(fn($s) => $s->id == $nextStage->id) + 1;
+		$width = $stages->count() > 0 ? round(($nextIndex / $stages->count()) * 100) : 0;
+		$clientMatter->workflow_stage_id = $nextStage->id;
+		$saved = $clientMatter->save();
+		if ($saved) {
+			$comments = 'moved the stage from <b>' . $currentStage->name . '</b> to <b>' . $nextStage->name . '</b>';
 			$obj = new ActivitiesLog;
-			$obj->client_id = $fetchData->client_id;
+			$obj->client_id = $clientMatter->client_id;
 			$obj->created_by = Auth::user()->id;
-			$obj->subject = 'Stage: ' . $workflowstage->name;
+			$obj->subject = 'Stage: ' . $currentStage->name;
 			$obj->description = $comments;
 			$obj->activity_type = 'stage';
 			$obj->use_for = 'application';
-			$saved = $obj->save();
-			$displayback = false;
-			$workflowstage = \App\Models\WorkflowStage::where('w_id', $fetchData->workflow)->orderBy('id','desc')->first();
-
-			if($workflowstage->name == $fetchData->stage){
-				$displayback = true;
-			}
-			$response['status'] 	= 	true;
-			$response['stage']	=	$fetchData->stage;
-			$response['width']	=	$width;
-			$response['displaycomplete']	=	$displayback;
-			$response['message']	=	'Application has been successfully moved to next stage.';
-		}else{
-			$response['status'] 	= 	false;
-			$response['message']	=	'Please try again';
+			$obj->save();
+			$lastStage = $stages->last();
+			$displayback = $lastStage && $lastStage->name == $nextStage->name;
+			$response = ['status' => true, 'stage' => $nextStage->name, 'width' => $width, 'displaycomplete' => $displayback, 'message' => 'Application has been successfully moved to next stage.'];
+		} else {
+			$response = ['status' => false, 'message' => 'Please try again'];
 		}
 		echo json_encode($response);
 	}
 
 	public function updatebackstage(Request $request){
-		$fetchData = Application::find($request->id);
-		$workflowstage = \App\Models\WorkflowStage::where('name', $fetchData->stage)->where('w_id', $fetchData->workflow)->first();
-		$nextid = \App\Models\WorkflowStage::where('id', '<', $workflowstage->id)->where('w_id', $fetchData->workflow)->orderBy('id','Desc')->first();
-		if($nextid){
-			$workflowstagecount = \App\Models\WorkflowStage::where('w_id', $fetchData->workflow)->count();
-			$widthcount = 0;
-			if($workflowstagecount !== 0){
-				$s = 100 / $workflowstagecount;
-				$widthcount = round($s);
-			}
-			$fetchData->stage = $nextid->name;
-			$comments = 'moved the stage from  <b>'.$workflowstage->name.'</b> to <b>'.$nextid->name.'</b>';
-			$width = $fetchData->progresswidth - $widthcount;
-			if($width <= 0){
-				$width = 0;
-			}
-
-			$fetchData->progresswidth = $width;
-
-			$saved = $fetchData->save();
-			if($saved){
-
-				$obj = new ActivitiesLog;
-				$obj->client_id = $fetchData->client_id;
-				$obj->created_by = Auth::user()->id;
-				$obj->subject = 'Stage: ' . $workflowstage->name; // Fixed: was ->stage, should be ->name
-				$obj->description = $comments;
-				$obj->activity_type = 'stage';
-				$obj->use_for = 'application';
-				$saved = $obj->save();
-
-				$displayback = false;
-				$workflowstage = \App\Models\WorkflowStage::where('w_id', $fetchData->workflow)->orderBy('id','desc')->first();
-
-				if($workflowstage->name == $fetchData->stage){
-					$displayback = true;
-				}
-
-				$response['status'] 	= 	true;
-				$response['stage']	=	$fetchData->stage;
-				$response['displaycomplete']	=	$displayback;
-
-				$response['width']	=	$width;
-				$response['message']	=	'Application has been successfully moved to previous stage.';
-			}else{
-				$response['status'] 	= 	false;
-				$response['message']	=	'Please try again';
-			}
-	   }else{
-		   $response['status'] 	= 	false;
-				$response['message']	=	'';
-	   }
+		$matterId = $request->id ?? $request->client_matter_id;
+		$clientMatter = ClientMatter::with('workflowStage')->find($matterId);
+		if (!$clientMatter || !$clientMatter->workflowStage) {
+			echo json_encode(['status' => false, 'message' => 'Matter or stage not found']);
+			return;
+		}
+		$currentStage = $clientMatter->workflowStage;
+		$workflowId = $currentStage->w_id ?? $clientMatter->workflow_id;
+		$prevStage = WorkflowStage::where('id', '<', $currentStage->id)
+			->when($workflowId, fn($q) => $q->where('w_id', $workflowId))
+			->orderBy('id','Desc')->first();
+		if (!$prevStage) {
+			echo json_encode(['status' => false, 'message' => '']);
+			return;
+		}
+		$stages = WorkflowStage::when($workflowId, fn($q) => $q->where('w_id', $workflowId))->orderBy('id')->get();
+		$prevIndex = $stages->search(fn($s) => $s->id == $prevStage->id) + 1;
+		$width = $stages->count() > 0 ? round(($prevIndex / $stages->count()) * 100) : 0;
+		$clientMatter->workflow_stage_id = $prevStage->id;
+		$saved = $clientMatter->save();
+		if ($saved) {
+			$comments = 'moved the stage from <b>' . $currentStage->name . '</b> to <b>' . $prevStage->name . '</b>';
+			$obj = new ActivitiesLog;
+			$obj->client_id = $clientMatter->client_id;
+			$obj->created_by = Auth::user()->id;
+			$obj->subject = 'Stage: ' . $currentStage->name;
+			$obj->description = $comments;
+			$obj->activity_type = 'stage';
+			$obj->use_for = 'application';
+			$obj->save();
+			$lastStage = $stages->last();
+			$displayback = $lastStage && $lastStage->name == $prevStage->name;
+			$response = ['status' => true, 'stage' => $prevStage->name, 'width' => $width, 'displaycomplete' => $displayback, 'message' => 'Application has been successfully moved to previous stage.'];
+		} else {
+			$response = ['status' => false, 'message' => 'Please try again'];
+		}
 		echo json_encode($response);
 	}
 
@@ -930,49 +877,7 @@ class ClientPortalController extends Controller
 			$saved = $clientMatter->save();
 
 			if ($saved) {
-				// Update applications table if it exists (for backward compatibility)
-				// This follows the same pattern as loadApplicationInsertUpdateData method
-				$application = DB::table('applications')
-					->where('client_matter_id', $matterId)
-					->where('client_id', $clientMatter->client_id)
-					->first();
-
-				if ($application) {
-					// Get workflow info from workflow_stages table
-					// Note: w_id is a legacy field that may or may not exist
-					// Following the same pattern as loadApplicationInsertUpdateData (line 554)
-					try {
-						$workflowInfo = DB::table('workflow_stages')
-							->where('id', $nextStage->id)
-							->select('workflow_stages.name', 'workflow_stages.w_id')
-							->first();
-
-						if ($workflowInfo) {
-							$updateData = [
-								'stage' => $workflowInfo->name,
-								'updated_at' => now()
-							];
-							
-							// Only include workflow if w_id exists and is not null
-							if (isset($workflowInfo->w_id) && !is_null($workflowInfo->w_id)) {
-								$updateData['workflow'] = $workflowInfo->w_id;
-							}
-							
-							DB::table('applications')
-								->where('id', $application->id)
-								->update($updateData);
-						}
-					} catch (\Exception $e) {
-						// If w_id column doesn't exist, just update stage field
-						// This maintains backward compatibility
-						DB::table('applications')
-							->where('id', $application->id)
-							->update([
-								'stage' => $nextStage->name,
-								'updated_at' => now()
-							]);
-					}
-				}
+				// applications table removed - workflow tracked via client_matters.workflow_stage_id
 
 				// Calculate progress percentage (by sort_order) - scope to same workflow
 				$progressQuery = WorkflowStage::query();
@@ -1157,39 +1062,7 @@ class ClientPortalController extends Controller
 			$saved = $clientMatter->save();
 
 			if ($saved) {
-				$application = DB::table('applications')
-					->where('client_matter_id', $matterId)
-					->where('client_id', $clientMatter->client_id)
-					->first();
-
-				if ($application) {
-					try {
-						$workflowInfo = DB::table('workflow_stages')
-							->where('id', $prevStage->id)
-							->select('workflow_stages.name', 'workflow_stages.w_id')
-							->first();
-
-						if ($workflowInfo) {
-							$updateData = [
-								'stage' => $workflowInfo->name,
-								'updated_at' => now()
-							];
-							if (isset($workflowInfo->w_id) && !is_null($workflowInfo->w_id)) {
-								$updateData['workflow'] = $workflowInfo->w_id;
-							}
-							DB::table('applications')
-								->where('id', $application->id)
-								->update($updateData);
-						}
-					} catch (\Exception $e) {
-						DB::table('applications')
-							->where('id', $application->id)
-							->update([
-								'stage' => $prevStage->name,
-								'updated_at' => now()
-							]);
-					}
-				}
+				// applications table removed - workflow tracked via client_matters
 
 				$totalStages = WorkflowStage::count();
 				$prevOrder = $prevStage->sort_order ?? $prevStage->id;
@@ -1370,11 +1243,7 @@ class ClientPortalController extends Controller
 			$saved = $clientMatter->save();
 
 			if ($saved) {
-				// Update applications table if exists (legacy sync)
-				DB::table('applications')
-					->where('client_matter_id', $matterId)
-					->where('client_id', $clientMatter->client_id)
-					->update(['status' => 2, 'updated_at' => now()]);
+				// applications table removed
 
 				$description = 'Discontinued matter. Reason: <b>' . e($reason) . '</b>';
 				if (!empty(trim($notes))) {
@@ -1490,10 +1359,7 @@ class ClientPortalController extends Controller
 			$saved = $clientMatter->save();
 
 			if ($saved) {
-				DB::table('applications')
-					->where('client_matter_id', $matterId)
-					->where('client_id', $clientMatter->client_id)
-					->update(['status' => 0, 'updated_at' => now()]);
+				// applications table removed
 
 				$activityLog = new ActivitiesLog;
 				$activityLog->client_id = $clientMatter->client_id;
@@ -1699,20 +1565,22 @@ class ClientPortalController extends Controller
 	// LEGACY METHOD - Still used by some JavaScript but outputs HTML directly (old pattern)
 	// TODO: Refactor to return JSON and handle rendering in frontend
 	public function getapplicationslogs(Request $request){
-		$id = $request->id;
-		$fetchData = Application::find($id);
+		$id = $request->id ?? $request->client_matter_id;
+		$clientMatter = ClientMatter::with('workflowStage')->find($id);
 
-		if (!$fetchData) {
-			return response()->json(['error' => 'Application not found'], 404);
+		if (!$clientMatter || !$clientMatter->workflowStage) {
+			return response()->json(['error' => 'Matter not found'], 404);
 		}
 
-		$stagesquery = \App\Models\WorkflowStage::where('w_id', $fetchData->workflow)->get();
+		$workflowId = $clientMatter->workflowStage->w_id ?? $clientMatter->workflow_id;
+		$currentStage = $clientMatter->workflowStage;
+		$stagesquery = \App\Models\WorkflowStage::when($workflowId, fn($q) => $q->where('w_id', $workflowId))->orderBy('id')->get();
 		foreach($stagesquery as $stages){
 			$stage1 = '';
 
-			$workflowstagess = \App\Models\WorkflowStage::where('name', $fetchData->stage)->where('w_id', $fetchData->workflow)->first();
+			$workflowstagess = \App\Models\WorkflowStage::where('name', $currentStage->name)->when($workflowId, fn($q) => $q->where('w_id', $workflowId))->first();
 
-			$prevdata = \App\Models\WorkflowStage::where('id', '<', $workflowstagess->id)->where('w_id', $fetchData->workflow)->orderBy('id','Desc')->get();
+			$prevdata = $workflowstagess ? \App\Models\WorkflowStage::where('id', '<', $workflowstagess->id)->when($workflowId, fn($q) => $q->where('w_id', $workflowId))->orderBy('id','Desc')->get() : collect();
 			$stagearray = array();
 			foreach($prevdata as $pre){
 				$stagearray[] = $pre->id;
@@ -1721,24 +1589,24 @@ class ClientPortalController extends Controller
 			if(in_array($stages->id, $stagearray)){
 				$stage1 = 'app_green';
 			}
-			if($fetchData->status == 1){
+			if($clientMatter->matter_status == 0){
 				$stage1 = 'app_green';
 			}
 			$stagname = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $stages->name)));
 			?>
 
 			<div class="accordion cus_accrodian">
-				<div class="accordion-header collapsed <?php echo $stage1; ?> <?php if($fetchData->stage == $stages->name && $fetchData->status != 1){ echo  'app_blue'; }  ?>" role="button" data-toggle="collapse" data-target="#<?php echo $stagname; ?>_accor" aria-expanded="false">
+				<div class="accordion-header collapsed <?php echo $stage1; ?> <?php if($currentStage->name == $stages->name && $clientMatter->matter_status == 1){ echo  'app_blue'; }  ?>" role="button" data-toggle="collapse" data-target="#<?php echo $stagname; ?>_accor" aria-expanded="false">
 					<h4><?php echo $stages->name; ?></h4>
 					<div class="accord_hover">
-						<a title="Add Note" class="openappnote" data-app-type="<?php echo $stages->name; ?>" data-id="<?php echo $fetchData->id; ?>" href="javascript:;"><i class="fa fa-file-alt"></i></a>
-						<a title="Add Document" class="opendocnote" data-app-type="<?php echo $stagname; ?>" data-id="<?php echo $fetchData->id; ?>" href="javascript:;"><i class="fa fa-file-image"></i></a>
+						<a title="Add Note" class="openappnote" data-app-type="<?php echo $stages->name; ?>" data-id="<?php echo $clientMatter->id; ?>" href="javascript:;"><i class="fa fa-file-alt"></i></a>
+						<a title="Add Document" class="opendocnote" data-app-type="<?php echo $stagname; ?>" data-id="<?php echo $clientMatter->id; ?>" href="javascript:;"><i class="fa fa-file-image"></i></a>
 						<!-- REMOVED: Old appointment system reference (openappappoint) -->
-						<a data-app-type="<?php echo $stages->name; ?>" title="Email" data-id="<?php echo $fetchData->id; ?>" data-email="" data-name="" class="openclientemail" title="Compose Mail" href="javascript:;"><i class="fa fa-envelope"></i></a>
+						<a data-app-type="<?php echo $stages->name; ?>" title="Email" data-id="<?php echo $clientMatter->id; ?>" data-email="" data-name="" class="openclientemail" title="Compose Mail" href="javascript:;"><i class="fa fa-envelope"></i></a>
 					</div>
 				</div>
 				<?php
-				$applicationlists = \App\Models\ActivitiesLog::where('client_id', $fetchData->client_id)
+				$applicationlists = \App\Models\ActivitiesLog::where('client_id', $clientMatter->client_id)
 					->where('use_for', 'application')
 					->where('subject', 'like', '%Stage: ' . $stages->name . '%')
 					->orderby('created_at', 'DESC')->get();
@@ -1775,12 +1643,12 @@ class ClientPortalController extends Controller
 	}
 
 	public function addNote(Request $request){
-		$noteid =  $request->noteid;
-		$type =  $request->type;
-		$application = Application::find($noteid);
+		$noteid = $request->noteid;
+		$type = $request->type;
+		$clientMatter = ClientMatter::find($noteid);
 
 		$obj = new ActivitiesLog;
-		$obj->client_id = $application ? $application->client_id : null;
+		$obj->client_id = $clientMatter ? $clientMatter->client_id : null;
 		$obj->created_by = Auth::user()->id;
 		$obj->subject = $request->title;
 		$obj->description = $request->description;
@@ -1798,12 +1666,12 @@ class ClientPortalController extends Controller
 	}
 
 	public function getapplicationnotes(Request $request){
-		$noteid =  $request->id;
-		$application = Application::find($noteid);
+		$noteid = $request->id;
+		$clientMatter = ClientMatter::find($noteid);
 
 		$lists = ActivitiesLog::where('activity_type','note')
 			->where('use_for','application')
-			->where('client_id', $application ? $application->client_id : null)
+			->where('client_id', $clientMatter ? $clientMatter->client_id : null)
 			->orderby('created_at', 'DESC')->get();
 
 		ob_start();
@@ -1866,9 +1734,9 @@ class ClientPortalController extends Controller
 			}
 				$sent = $this->send_compose_template($to, $subject, 'support@digitrex.live', $message, 'digitrex', $array, $ccarray ?? []);
 			if($sent){
-				$application = Application::find($request->noteid);
+				$clientMatter = ClientMatter::find($request->noteid);
 				$objs = new ActivitiesLog;
-				$objs->client_id = $application ? $application->client_id : null;
+				$objs->client_id = $clientMatter ? $clientMatter->client_id : null;
 				$objs->created_by = Auth::user()->id;
 				$objs->subject = '<b>Subject : '.$subject.'</b>';
 				$objs->description = '<b>To: '.$to.'</b></br>'.$message;
@@ -1886,275 +1754,71 @@ class ClientPortalController extends Controller
 	}
 
 	public function updateintake(Request $request){
-		$requestData = $request->all();
-		$user_id = @Auth::user()->id;
-		$obj = Application::find($request->appid);
-		$obj->intakedate = $request->from;
-		$saved = $obj->save();
-			if($saved){
-
-				$response['status'] 	= 	true;
-				$response['message']	=	'Applied date successfully updated.';
-			}else{
-				$response['status'] 	= 	true;
-				$response['message']	=	'Please try again';
-			}
-
-		echo json_encode($response);
+		// intakedate was on applications table which has been removed
+		echo json_encode(['status' => true, 'message' => 'Date field removed with applications table.']);
 	}
 
 	public function updateexpectwin(Request $request){
-		$requestData = $request->all();
-		$user_id = @Auth::user()->id;
-		$obj = Application::find($request->appid);
-		$obj->expect_win_date = $request->from;
-		$saved = $obj->save();
-			if($saved){
-
-				$response['status'] 	= 	true;
-				$response['message']	=	'Date successfully updated.';
-			}else{
-				$response['status'] 	= 	true;
-				$response['message']	=	'Please try again';
-			}
-
-		echo json_encode($response);
+		// expect_win_date was on applications table - use client_matters.deadline instead
+		$obj = ClientMatter::find($request->appid ?? $request->client_matter_id);
+		if ($obj && Schema::hasColumn('client_matters', 'deadline')) {
+			$obj->deadline = $request->from;
+			$saved = $obj->save();
+			echo json_encode(['status' => $saved, 'message' => $saved ? 'Date successfully updated.' : 'Please try again']);
+		} else {
+			echo json_encode(['status' => true, 'message' => 'Date field migrated to matter deadline.']);
+		}
 	}
 
 	public function updatedates(Request $request){
-		$requestData = $request->all();
-		$user_id = @Auth::user()->id;
-		$obj = Application::find($request->appid);
-		if($request->datetype == 'start'){
-			$obj->start_date = $request->from;
-		}else{
-			$obj->end_date = $request->from;
-		}
-		$saved = $obj->save();
-			if($saved){
-
-				$response['status'] 	= 	true;
-				$response['message']	=	'Date successfully updated.';
-				if($request->datetype == 'start'){
-					$response['dates']	=	array(
-						'date' => date('d',strtotime($obj->start_date)),
-						'month' => date('M',strtotime($obj->start_date)),
-						'year' => date('Y',strtotime($obj->start_date)),
-					);
-				}else{
-					$response['dates']	=	array(
-						'date' => date('d',strtotime($obj->end_date)),
-						'month' => date('M',strtotime($obj->end_date)),
-						'year' => date('Y',strtotime($obj->end_date)),
-					);
-				}
-
-			}else{
-				$response['status'] 	= 	true;
-				$response['message']	=	'Please try again';
+		// start_date/end_date were on applications - use client_matters.deadline
+		$obj = ClientMatter::find($request->appid ?? $request->client_matter_id);
+		if ($obj && Schema::hasColumn('client_matters', 'deadline')) {
+			$obj->deadline = $request->from;
+			$saved = $obj->save();
+			if ($saved) {
+				$d = $obj->deadline ? date_parse($obj->deadline) : null;
+				echo json_encode(['status' => true, 'message' => 'Date successfully updated.', 'dates' => $d ? ['date' => sprintf('%02d', $d['day']), 'month' => date('M', strtotime($obj->deadline)), 'year' => $d['year']] : []]);
+			} else {
+				echo json_encode(['status' => false, 'message' => 'Please try again']);
 			}
-
-		echo json_encode($response);
+		} else {
+			echo json_encode(['status' => true, 'message' => 'Date fields migrated to matter.']);
+		}
 	}
 
 	public function discontinue_application(Request $request){
-		$requestData = $request->all();
-		$user_id = @Auth::user()->id;
-		$obj = Application::find($request->diapp_id);
-		$obj->status = 2;
+		$obj = ClientMatter::find($request->diapp_id ?? $request->client_matter_id);
+		if (!$obj) {
+			echo json_encode(['status' => false, 'message' => 'Matter not found']);
+			return;
+		}
+		$obj->matter_status = 0;
 		$saved = $obj->save();
-			if($saved){
-
-				$response['status'] 	= 	true;
-				$response['message']	=	'Application successfully discontinued.';
-			}else{
-				$response['status'] 	= 	true;
-				$response['message']	=	'Please try again';
-			}
-
-		echo json_encode($response);
+		echo json_encode(['status' => $saved, 'message' => $saved ? 'Application successfully discontinued.' : 'Please try again']);
 	}
 
 	public function revert_application(Request $request){
-		$requestData = $request->all();
-		$user_id = @Auth::user()->id;
-		$obj = Application::find($request->revapp_id);
-		$obj->status = 0;
-		$workflowstagecount = \App\Models\WorkflowStage::where('w_id', $obj->workflow)->count();
-			$widthcount = 0;
-			if($workflowstagecount !== 0){
-				$s = 100 / $workflowstagecount;
-				$widthcount = round($s);
-			}
-		$progresswidth = $obj->progresswidth - $widthcount;
-		$obj->progresswidth = $progresswidth;
+		$obj = ClientMatter::with('workflowStage')->find($request->revapp_id ?? $request->client_matter_id);
+		if (!$obj) {
+			echo json_encode(['status' => false, 'message' => 'Matter not found']);
+			return;
+		}
+		$obj->matter_status = 1;
 		$saved = $obj->save();
-			if($saved){
-			$displayback = false;
-				$workflowstage = \App\Models\WorkflowStage::where('w_id', $obj->workflow)->orderBy('id','desc')->first();
-
-				if($workflowstage->name == $obj->stage){
-					$displayback = true;
-				}
-				$response['status'] 	= 	true;
-				$response['width'] 	= 	$progresswidth;
-				$response['displaycomplete'] 	= 	$displayback;
-				$response['message']	=	'Application successfully reverted.';
-			}else{
-				$response['status'] 	= 	true;
-				$response['message']	=	'Please try again';
-			}
-
-		echo json_encode($response);
-	}
-
-	public function spagent_application(Request $request){
-		$requestData = $request->all();
-		$flag = true;
-		/* if(Application::where('super_agent',$request->super_agent)->exists()){
-			$flag = false;
-			$response['message']	=	'Agent is already exists';
-		}
-		if(Application::where('sub_agent',$request->super_agent)->exists()){
-			$flag = false;
-			$response['message']	=	'Agent is already exists in sub admin';
-		} */
-		if($flag){
-			$user_id = @Auth::user()->id;
-			$obj = Application::find($request->siapp_id);
-			$obj->super_agent = $request->super_agent;
-			$saved = $obj->save();
-			if($saved){
-				$agent = \App\Models\AgentDetails::where('id',$request->super_agent)->first();
-				$response['status'] 	= 	true;
-				$response['message']	=	'Application successfully updated.';
-				$agentName = $agent->agent_name ?? $agent->business_name ?? 'Agent';
-				$response['data']	=	'<div class="client_info">
-							<div class="cl_logo" style="display: inline-block;width: 30px;height: 30px; border-radius: 50%;background: #6777ef;text-align: center;color: #fff;font-size: 14px; line-height: 30px; vertical-align: top;">'.substr($agentName, 0, 1).'</div>
-							<div class="cl_name" style="display: inline-block;margin-left: 5px;width: calc(100% - 60px);">
-								<span class="name">'.$agentName.'</span>
-								<span class="ui label zippyLabel alignMiddle yellow">
-							  '.($agent->business_name ?? '').'
-							</span>
-							</div>
-							<div class="cl_del" style="display: inline-block;">
-								<a href=""><i class="fa fa-times"></i></a>
-							</div>
-						</div>';
-			}else{
-				$response['status'] 	= 	false;
-				$response['message']	=	'Please try again';
-			}
-		}else{
-			$response['status'] 	= 	false;
-		}
-
-		echo json_encode($response);
-	}
-
-	public function sbagent_application(Request $request){
-		$requestData = $request->all();
-		$flag = true;
-		/* if(Application::where('super_agent',$request->sub_agent)->exists()){
-			$flag = false;
-			$response['message']	=	'Agent is already exists in super admin';
-		}
-		if(Application::where('sub_agent',$request->sub_agent)->exists()){
-			$flag = false;
-			$response['message']	=	'Agent is already exists';
-		} */
-		if($flag){
-			$user_id = @Auth::user()->id;
-			$obj = Application::find($request->sbapp_id);
-			$obj->sub_agent = $request->sub_agent;
-			$saved = $obj->save();
-			if($saved){
-				$agent = \App\Models\AgentDetails::where('id',$request->sub_agent)->first();
-				$response['status'] 	= 	true;
-				$response['message']	=	'Application successfully updated.';
-				$agentName = $agent->agent_name ?? $agent->business_name ?? 'Agent';
-				$response['data']	=	'<div class="client_info">
-							<div class="cl_logo" style="display: inline-block;width: 30px;height: 30px; border-radius: 50%;background: #6777ef;text-align: center;color: #fff;font-size: 14px; line-height: 30px; vertical-align: top;">'.substr($agentName, 0, 1).'</div>
-							<div class="cl_name" style="display: inline-block;margin-left: 5px;width: calc(100% - 60px);">
-								<span class="name">'.$agentName.'</span>
-								<span class="ui label zippyLabel alignMiddle yellow">
-							  '.($agent->business_name ?? '').'
-							</span>
-							</div>
-							<div class="cl_del" style="display: inline-block;">
-								<a href=""><i class="fa fa-times"></i></a>
-							</div>
-						</div>';
-			}else{
-				$response['status'] 	= 	false;
-				$response['message']	=	'Please try again';
-			}
-		}else{
-			$response['status'] 	= 	false;
-		}
-
-		echo json_encode($response);
-	}
-
-	public function superagent(Request $request){
-		$requestData = $request->all();
-
-			$user_id = @Auth::user()->id;
-			$obj = Application::find($request->note_id);
-			$obj->super_agent = '';
-			$saved = $obj->save();
-			if($saved){
-
-				$response['status'] 	= 	true;
-				$response['message']	=	'Application successfully updated.';
-
-			}else{
-				$response['status'] 	= 	false;
-				$response['message']	=	'Please try again';
-			}
-
-		echo json_encode($response);
-	}
-
-	public function subagent(Request $request){
-		$requestData = $request->all();
-
-			$user_id = @Auth::user()->id;
-			$obj = Application::find($request->note_id);
-			$obj->sub_agent = '';
-			$saved = $obj->save();
-			if($saved){
-
-				$response['status'] 	= 	true;
-				$response['message']	=	'Application successfully updated.';
-
-			}else{
-				$response['status'] 	= 	false;
-				$response['message']	=	'Please try again';
-			}
-
-		echo json_encode($response);
+		$stage = $obj->workflowStage;
+		$workflowId = $stage->w_id ?? $obj->workflow_id;
+		$stages = \App\Models\WorkflowStage::when($workflowId, fn($q) => $q->where('w_id', $workflowId))->orderBy('id')->get();
+		$idx = $stages->search(fn($s) => $s->id == ($stage->id ?? 0)) + 1;
+		$width = $stages->count() > 0 ? round(($idx / $stages->count()) * 100) : 0;
+		$lastStage = $stages->last();
+		$displayback = $lastStage && $stage && $lastStage->name == $stage->name;
+		echo json_encode(['status' => $saved, 'width' => $width, 'displaycomplete' => $displayback, 'message' => $saved ? 'Application successfully reverted.' : 'Please try again']);
 	}
 
 	public function application_ownership(Request $request){
-		$requestData = $request->all();
-
-			$user_id = @Auth::user()->id;
-			$obj = Application::find($request->mapp_id);
-			$obj->ratio = $request->ratio;
-			$saved = $obj->save();
-			if($saved){
-
-				$response['status'] 	= 	true;
-				$response['message']	=	'Application successfully updated.';
-				$response['ratio']	=	$obj->ratio;
-
-			}else{
-				$response['status'] 	= 	false;
-				$response['message']	=	'Please try again';
-			}
-
-		echo json_encode($response);
+		// ratio was on applications - client_matters does not have ratio
+		echo json_encode(['status' => true, 'message' => 'Ownership ratio field removed with applications table.', 'ratio' => $request->ratio ?? 0]);
 	}
 
 	// Removed legacy method: saleforcast
@@ -2263,7 +1927,7 @@ class ClientPortalController extends Controller
 			$obj->type = $type;
 			$obj->typename = $typename;
 			$obj->client_id = $client_id;
-			$obj->application_id = $app_id;
+			$obj->client_matter_id = $app_id;
 			$obj->document_type = $document_type;
 			$obj->description = $request->description ?? null;
 			$obj->allow_client = $request->allow_upload_docu ?? 0;
@@ -2297,17 +1961,16 @@ class ClientPortalController extends Controller
 			]);
 
 			// Notify client of new checklist (for List Notifications API)
-			$application = DB::table('applications')->where('id', $app_id)->first();
-			if ($application && !empty($application->client_matter_id)) {
-				$clientMatter = DB::table('client_matters')->where('id', $application->client_matter_id)->first();
-				$matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID: ' . $application->client_matter_id) : 'ID: ' . $application->client_matter_id;
+			$clientMatter = DB::table('client_matters')->where('id', $app_id)->first();
+			if ($clientMatter && !empty($clientMatter->client_id)) {
+				$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $app_id;
 				$notificationMessage = count($documentTypes) == 1
 					? 'New checklist "' . $documentTypes[0] . '" added for matter ' . $matterNo
 					: count($documentTypes) . ' new checklists added for matter ' . $matterNo;
 				DB::table('notifications')->insert([
 					'sender_id' => Auth::user()->id,
 					'receiver_id' => $client_id,
-					'module_id' => $application->client_matter_id,
+					'module_id' => $app_id,
 					'url' => '/documents',
 					'notification_type' => 'checklist',
 					'message' => $notificationMessage,
@@ -2319,7 +1982,7 @@ class ClientPortalController extends Controller
 				]);
 			}
 
-			$applicationdocuments = \App\Models\ApplicationDocumentList::where('application_id', $app_id)->where('client_id', $client_id)->where('type', $type)->get();
+			$applicationdocuments = \App\Models\ApplicationDocumentList::where('client_matter_id', $app_id)->where('client_id', $client_id)->where('type', $type)->get();
 			$checklistdata = '<table class="table"><tbody>';
 			foreach($applicationdocuments as $applicationdocument){
 				$appcount = \App\Models\ApplicationDocument::where('list_id', $applicationdocument->id)->count();
@@ -2338,7 +2001,7 @@ class ClientPortalController extends Controller
 			$response['status'] 	= 	true;
 			$response['message']	=	$savedCount == 1 ? 'Checklist added successfully' : $savedCount . ' checklists added successfully';
 			$response['data']	=	$checklistdata;
-			$countchecklist = \App\Models\ApplicationDocumentList::where('application_id', $app_id)->count();
+			$countchecklist = \App\Models\ApplicationDocumentList::where('client_matter_id', $app_id)->count();
 			$response['countchecklist']	=	$countchecklist;
 		} else {
 			$response['status'] = false;
@@ -2359,7 +2022,7 @@ class ClientPortalController extends Controller
 				$obj->list_id = $request->id;
 				$obj->file_name = $fileName;
 				$obj->user_id = Auth::user()->id;
-				$obj->application_id = $request->application_id;
+				$obj->client_matter_id = $request->application_id;
 				$save = $obj->save();
 			  $imageData .= '<li><i class="fa fa-file"></i> '.$fileName.'</li>';
 			}
@@ -2368,13 +2031,13 @@ class ClientPortalController extends Controller
 
 		// Log activity when at least one document was uploaded (Client Portal Documents tab - website)
 		if (!empty($imageData)) {
-			$appRecord = DB::table('applications')->where('id', $request->application_id)->first();
-			if ($appRecord && !empty($appRecord->client_id)) {
+			$clientMatter = DB::table('client_matters')->where('id', $request->application_id)->first();
+			if ($clientMatter && !empty($clientMatter->client_id)) {
 				DB::table('activities_logs')->insert([
-					'client_id' => $appRecord->client_id,
+					'client_id' => $clientMatter->client_id,
 					'created_by' => Auth::user()->id,
 					'subject' => 'Uploaded document(s) to checklist in Client Portal (Documents tab)',
-					'description' => 'Document(s) uploaded via Client Portal tab (website) for application ID: ' . $request->application_id,
+					'description' => 'Document(s) uploaded via Client Portal tab (website) for matter ID: ' . $request->application_id,
 					'task_status' => 0,
 					'pin' => 0,
 					'source' => 'client_portal_web',
@@ -2384,7 +2047,7 @@ class ClientPortalController extends Controller
 			}
 		}
 
-		$doclists = \App\Models\ApplicationDocument::where('application_id',$request->application_id)->orderby('created_at','DESC')->get();
+		$doclists = \App\Models\ApplicationDocument::where('client_matter_id',$request->application_id)->orderby('created_at','DESC')->get();
 		$doclistdata = '';
 		foreach($doclists as $doclist){
 			$docdata = \App\Models\ApplicationDocumentList::where('id', $doclist->list_id)->first();
@@ -2419,13 +2082,13 @@ class ClientPortalController extends Controller
 			$doclistdata .= '</tr>';
 		}
 		$application_id = $request->application_id;
-		$applicationuploadcount = DB::select("SELECT COUNT(DISTINCT list_id) AS cnt FROM application_documents where application_id = '$application_id'");
+		$applicationuploadcount = DB::select("SELECT COUNT(DISTINCT list_id) AS cnt FROM application_documents where client_matter_id = " . (int)$application_id);
 		$response['status'] 	= 	true;
 		$response['imagedata']	=	$imageData;
 		$response['doclistdata']	=	$doclistdata;
 		$response['applicationuploadcount']	=	@$applicationuploadcount[0]->cnt;
 
-		$applicationdocuments = \App\Models\ApplicationDocumentList::where('application_id', $application_id)->where('type', $request->type)->get();
+		$applicationdocuments = \App\Models\ApplicationDocumentList::where('client_matter_id', $application_id)->where('type', $request->type)->get();
 			$checklistdata = '<table class="table"><tbody>';
 			foreach($applicationdocuments as $applicationdocument){
 				$appcount = \App\Models\ApplicationDocument::where('list_id', $applicationdocument->id)->count();
@@ -2464,17 +2127,17 @@ class ClientPortalController extends Controller
 				$response['message'] 	= 	'Record removed successfully';
 
 				// Notify client (for List Notifications API)
-				$app = DB::table('applications')->where('id', $appdoc->application_id)->first();
-				if ($app && !empty($app->client_id) && !empty($app->client_matter_id)) {
-					$clientMatter = DB::table('client_matters')->where('id', $app->client_matter_id)->first();
-					$matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID: ' . $app->client_matter_id) : 'ID: ' . $app->client_matter_id;
+				$clientMatterId = $appdoc->client_matter_id ?? $appdoc->application_id ?? null;
+				$clientMatter = $clientMatterId ? DB::table('client_matters')->where('id', $clientMatterId)->first() : null;
+				if ($clientMatter && !empty($clientMatter->client_id)) {
+					$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatter->id;
 					$docList = DB::table('application_document_lists')->where('id', $appdoc->list_id)->first();
 					$docType = $docList ? $docList->document_type : ($appdoc->file_name ?? 'Document');
 					$notificationMessage = 'Document "' . $docType . '" removed for matter ' . $matterNo;
 					DB::table('notifications')->insert([
 						'sender_id' => Auth::guard('admin')->id(),
-						'receiver_id' => $app->client_id,
-						'module_id' => $app->client_matter_id,
+						'receiver_id' => $clientMatter->client_id,
+						'module_id' => $clientMatter->id,
 						'url' => '/documents',
 						'notification_type' => 'document_deleted',
 						'message' => $notificationMessage,
@@ -2486,7 +2149,8 @@ class ClientPortalController extends Controller
 					]);
 				}
 
-				$doclists = \App\Models\ApplicationDocument::where('application_id',$appdoc->application_id)->orderby('created_at','DESC')->get();
+				$clientMatterId = $appdoc->client_matter_id ?? $appdoc->application_id ?? null;
+				$doclists = $clientMatterId ? \App\Models\ApplicationDocument::where('client_matter_id', $clientMatterId)->orderby('created_at','DESC')->get() : collect();
 		$doclistdata = '';
 		foreach($doclists as $doclist){
 			$docdata = \App\Models\ApplicationDocumentList::where('id', $doclist->list_id)->first();
@@ -2520,14 +2184,14 @@ class ClientPortalController extends Controller
 			</td>';
 			$doclistdata .= '</tr>';
 		}
-		$application_id = $appdoc->application_id;
-		$applicationuploadcount = DB::select("SELECT COUNT(DISTINCT list_id) AS cnt FROM application_documents where application_id = '$application_id'");
+		$clientMatterId = $appdoc->client_matter_id ?? $appdoc->application_id ?? null;
+		$applicationuploadcount = $clientMatterId ? DB::select("SELECT COUNT(DISTINCT list_id) AS cnt FROM application_documents where client_matter_id = " . (int)$clientMatterId) : [((object)['cnt' => 0])];
 		$response['status'] 	= 	true;
 
 		$response['doclistdata']	=	$doclistdata;
 		$response['applicationuploadcount']	=	@$applicationuploadcount[0]->cnt;
 
-		$applicationdocuments = \App\Models\ApplicationDocumentList::where('application_id', $application_id)->where('type', $appdoc->type)->get();
+		$applicationdocuments = $clientMatterId ? \App\Models\ApplicationDocumentList::where('client_matter_id', $clientMatterId)->where('type', $appdoc->type)->get() : collect();
 			$checklistdata = '<table class="table"><tbody>';
 			foreach($applicationdocuments as $applicationdocument){
 				$appcount = \App\Models\ApplicationDocument::where('list_id', $applicationdocument->id)->count();
@@ -2566,17 +2230,17 @@ class ClientPortalController extends Controller
 				$response['message'] 	= 	'Record removed successfully';
 
 				// Notify client (for List Notifications API)
-				$app = DB::table('applications')->where('id', $appdoc->application_id)->first();
-				if ($app && !empty($app->client_id) && !empty($app->client_matter_id)) {
-					$clientMatter = DB::table('client_matters')->where('id', $app->client_matter_id)->first();
-					$matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID: ' . $app->client_matter_id) : 'ID: ' . $app->client_matter_id;
+				$clientMatterId = $appdoc->client_matter_id ?? $appdoc->application_id ?? null;
+				$clientMatter = $clientMatterId ? DB::table('client_matters')->where('id', $clientMatterId)->first() : null;
+				if ($clientMatter && !empty($clientMatter->client_id)) {
+					$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatter->id;
 					$docList = DB::table('application_document_lists')->where('id', $appdoc->list_id)->first();
 					$docType = $docList ? $docList->document_type : ($appdoc->file_name ?? 'Document');
 					$notificationMessage = 'Document "' . $docType . '" removed for matter ' . $matterNo;
 					DB::table('notifications')->insert([
 						'sender_id' => Auth::guard('admin')->id(),
-						'receiver_id' => $app->client_id,
-						'module_id' => $app->client_matter_id,
+						'receiver_id' => $clientMatter->client_id,
+						'module_id' => $clientMatter->id,
 						'url' => '/documents',
 						'notification_type' => 'document_deleted',
 						'message' => $notificationMessage,
@@ -2588,7 +2252,8 @@ class ClientPortalController extends Controller
 					]);
 				}
 
-				$doclists = \App\Models\ApplicationDocument::where('application_id',$appdoc->application_id)->orderby('created_at','DESC')->get();
+				$clientMatterId = $appdoc->client_matter_id ?? $appdoc->application_id ?? null;
+				$doclists = $clientMatterId ? \App\Models\ApplicationDocument::where('client_matter_id', $clientMatterId)->orderby('created_at','DESC')->get() : collect();
 		$doclistdata = '';
 		foreach($doclists as $doclist){
 			$docdata = \App\Models\ApplicationDocumentList::where('id', $doclist->list_id)->first();
@@ -2647,7 +2312,8 @@ class ClientPortalController extends Controller
 			if($saved){
 				$response['status'] 	= 	true;
 				$response['message'] 	= 	'Record updated successfully';
-				$doclists = \App\Models\ApplicationDocument::where('application_id',$appdoc->application_id)->orderby('created_at','DESC')->get();
+				$clientMatterId = $appdoc->client_matter_id ?? $appdoc->application_id ?? null;
+				$doclists = $clientMatterId ? \App\Models\ApplicationDocument::where('client_matter_id', $clientMatterId)->orderby('created_at','DESC')->get() : collect();
 		$doclistdata = '';
 		foreach($doclists as $doclist){
 			$docdata = \App\Models\ApplicationDocumentList::where('id', $doclist->list_id)->first();
@@ -2699,16 +2365,15 @@ class ClientPortalController extends Controller
 
 	public function getapplications(Request $request){
 		$client_id = $request->client_id;
-		$applications = Application::where('client_id', '=', $client_id)->get();
+		$matters = ClientMatter::where('client_id', '=', $client_id)->orderBy('id','desc')->get();
 		ob_start();
 		?>
-		<option value="">Choose Application</option>
+		<option value="">Choose Matter</option>
 		<?php
-		foreach($applications as $application){
-			
-			// Partner functionality removed
+		foreach($matters as $matter){
+			$label = $matter->client_unique_matter_no ?? 'Matter #' . $matter->id;
 			?>
-		<option value="<?php echo $application->id; ?>">(#<?php echo $application->id; ?>) Application (Partner)</option>
+		<option value="<?php echo $matter->id; ?>"><?php echo e($label); ?></option>
 			<?php
 		}
 		return ob_get_clean();
@@ -2746,10 +2411,11 @@ class ClientPortalController extends Controller
 				// Log activity (Client Portal Documents tab - website)
 				$doc = DB::table('application_documents')->where('id', $documentId)->first();
 				if ($doc) {
-					$app = DB::table('applications')->where('id', $doc->application_id)->first();
-					if ($app && !empty($app->client_id)) {
+					$clientMatterId = $doc->client_matter_id ?? $doc->application_id ?? null;
+					$clientMatter = $clientMatterId ? DB::table('client_matters')->where('id', $clientMatterId)->first() : null;
+					if ($clientMatter && !empty($clientMatter->client_id)) {
 						DB::table('activities_logs')->insert([
-							'client_id' => $app->client_id,
+							'client_id' => $clientMatter->client_id,
 							'created_by' => Auth::guard('admin')->id(),
 							'subject' => 'Approved document in Client Portal (Documents tab)',
 							'description' => 'Document approved via Client Portal tab (website) for document ID: ' . $documentId,
@@ -2761,26 +2427,23 @@ class ClientPortalController extends Controller
 						]);
 
 						// Notify client (for List Notifications API)
-						if (!empty($app->client_matter_id)) {
-							$clientMatter = DB::table('client_matters')->where('id', $app->client_matter_id)->first();
-							$matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID: ' . $app->client_matter_id) : 'ID: ' . $app->client_matter_id;
-							$docList = DB::table('application_document_lists')->where('id', $doc->list_id)->first();
-							$docType = $docList ? $docList->document_type : ($doc->file_name ?? 'Document');
-							$notificationMessage = 'Document "' . $docType . '" approved for matter ' . $matterNo;
-							DB::table('notifications')->insert([
-								'sender_id' => Auth::guard('admin')->id(),
-								'receiver_id' => $app->client_id,
-								'module_id' => $app->client_matter_id,
-								'url' => '/documents',
-								'notification_type' => 'document_approved',
-								'message' => $notificationMessage,
-								'created_at' => now(),
-								'updated_at' => now(),
-								'sender_status' => 1,
-								'receiver_status' => 0,
-								'seen' => 0
-							]);
-						}
+						$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatter->id;
+						$docList = DB::table('application_document_lists')->where('id', $doc->list_id)->first();
+						$docType = $docList ? $docList->document_type : ($doc->file_name ?? 'Document');
+						$notificationMessage = 'Document "' . $docType . '" approved for matter ' . $matterNo;
+						DB::table('notifications')->insert([
+							'sender_id' => Auth::guard('admin')->id(),
+							'receiver_id' => $clientMatter->client_id,
+							'module_id' => $clientMatter->id,
+							'url' => '/documents',
+							'notification_type' => 'document_approved',
+							'message' => $notificationMessage,
+							'created_at' => now(),
+							'updated_at' => now(),
+							'sender_status' => 1,
+							'receiver_status' => 0,
+							'seen' => 0
+						]);
 					}
 				}
 				$response['status'] = true;
@@ -2791,7 +2454,7 @@ class ClientPortalController extends Controller
 		} catch (\Exception $e) {
 			$response['message'] = 'An error occurred: ' . $e->getMessage();
 		}
-		
+
 		return response()->json($response);
 	}
 
@@ -2835,10 +2498,11 @@ class ClientPortalController extends Controller
 				// Log activity (Client Portal Documents tab - website)
 				$doc = DB::table('application_documents')->where('id', $documentId)->first();
 				if ($doc) {
-					$app = DB::table('applications')->where('id', $doc->application_id)->first();
-					if ($app && !empty($app->client_id)) {
+					$clientMatterId = $doc->client_matter_id ?? $doc->application_id ?? null;
+					$clientMatter = $clientMatterId ? DB::table('client_matters')->where('id', $clientMatterId)->first() : null;
+					if ($clientMatter && !empty($clientMatter->client_id)) {
 						DB::table('activities_logs')->insert([
-							'client_id' => $app->client_id,
+							'client_id' => $clientMatter->client_id,
 							'created_by' => Auth::guard('admin')->id(),
 							'subject' => 'Rejected document in Client Portal (Documents tab)',
 							'description' => 'Document rejected via Client Portal tab (website) for document ID: ' . $documentId . (trim($rejectReason ?? '') !== '' ? '. Reason: ' . trim($rejectReason) : ''),
@@ -2850,26 +2514,23 @@ class ClientPortalController extends Controller
 						]);
 
 						// Notify client (for List Notifications API)
-						if (!empty($app->client_matter_id)) {
-							$clientMatter = DB::table('client_matters')->where('id', $app->client_matter_id)->first();
-							$matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID: ' . $app->client_matter_id) : 'ID: ' . $app->client_matter_id;
-							$docList = DB::table('application_document_lists')->where('id', $doc->list_id)->first();
-							$docType = $docList ? $docList->document_type : ($doc->file_name ?? 'Document');
-							$notificationMessage = 'Document "' . $docType . '" rejected for matter ' . $matterNo;
-							DB::table('notifications')->insert([
-								'sender_id' => Auth::guard('admin')->id(),
-								'receiver_id' => $app->client_id,
-								'module_id' => $app->client_matter_id,
-								'url' => '/documents',
-								'notification_type' => 'document_rejected',
-								'message' => $notificationMessage,
-								'created_at' => now(),
-								'updated_at' => now(),
-								'sender_status' => 1,
-								'receiver_status' => 0,
-								'seen' => 0
-							]);
-						}
+						$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatter->id;
+						$docList = DB::table('application_document_lists')->where('id', $doc->list_id)->first();
+						$docType = $docList ? $docList->document_type : ($doc->file_name ?? 'Document');
+						$notificationMessage = 'Document "' . $docType . '" rejected for matter ' . $matterNo;
+						DB::table('notifications')->insert([
+							'sender_id' => Auth::guard('admin')->id(),
+							'receiver_id' => $clientMatter->client_id,
+							'module_id' => $clientMatter->id,
+							'url' => '/documents',
+							'notification_type' => 'document_rejected',
+							'message' => $notificationMessage,
+							'created_at' => now(),
+							'updated_at' => now(),
+							'sender_status' => 1,
+							'receiver_status' => 0,
+							'seen' => 0
+						]);
 					}
 				}
 				$response['status'] = true;
@@ -2966,17 +2627,17 @@ class ClientPortalController extends Controller
 			$encodedFileName = rawurlencode($fileName);
 			
 			// Notify client (for List Notifications API)
-			$app = DB::table('applications')->where('id', $document->application_id)->first();
-			if ($app && !empty($app->client_id) && !empty($app->client_matter_id) && Auth::guard('admin')->check()) {
-				$clientMatter = DB::table('client_matters')->where('id', $app->client_matter_id)->first();
-				$matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID: ' . $app->client_matter_id) : 'ID: ' . $app->client_matter_id;
+			$clientMatterId = $document->client_matter_id ?? $document->application_id ?? null;
+			$clientMatter = $clientMatterId ? DB::table('client_matters')->where('id', $clientMatterId)->first() : null;
+			if ($clientMatter && !empty($clientMatter->client_id) && Auth::guard('admin')->check()) {
+				$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatter->id;
 				$docList = DB::table('application_document_lists')->where('id', $document->list_id)->first();
 				$docType = $docList ? $docList->document_type : ($document->file_name ?? 'Document');
 				$notificationMessage = 'Document "' . $docType . '" downloaded for matter ' . $matterNo;
 				DB::table('notifications')->insert([
 					'sender_id' => Auth::guard('admin')->id(),
-					'receiver_id' => $app->client_id,
-					'module_id' => $app->client_matter_id,
+					'receiver_id' => $clientMatter->client_id,
+					'module_id' => $clientMatter->id,
 					'url' => '/documents',
 					'notification_type' => 'document_downloaded',
 					'message' => $notificationMessage,

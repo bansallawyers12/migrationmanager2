@@ -28,19 +28,8 @@ class ClientPortalWorkflowController extends Controller
             // Get client_matter_id parameter (optional)
             $clientMatterId = $request->get('client_matter_id');
             
-            // Get application_id if client_matter_id is provided
-            $applicationId = null;
-            if (!is_null($clientMatterId)) {
-                $application = DB::table('applications')
-                    ->select('id as application_id')
-                    ->where('client_matter_id', $clientMatterId)
-                    ->where('client_id', $clientId)
-                    ->first();
-                
-                if ($application) {
-                    $applicationId = $application->application_id;
-                }
-            }
+            // applications table removed - use client_matter_id as applicationId for document checklists
+            $applicationId = $clientMatterId;
 
             // Get all workflow stages (ordered by sort_order, then id)
             $workflowStages = DB::table('workflow_stages')
@@ -59,7 +48,7 @@ class ClientPortalWorkflowController extends Controller
                     
                     if (!is_null($applicationId)) {
                         $checklistItems = DB::table('application_document_lists')
-                            ->where('application_id', $applicationId)
+                            ->where('client_matter_id', $applicationId)
                             ->where('client_id', $clientId)
                             ->where('typename', $stage->name)
                             ->where('allow_client', 1)
@@ -373,17 +362,16 @@ class ClientPortalWorkflowController extends Controller
                 }
             }
 
-            // Step 1: Get application_id from applications table
-            $application = DB::table('applications')
-                ->select('id as application_id', 'client_matter_id', 'client_id', 'stage', 'status')
-                ->where('client_matter_id', $clientMatterId)
+            // applications table removed - use client_matter_id as applicationId
+            $clientMatter = DB::table('client_matters')
+                ->where('id', $clientMatterId)
                 ->where('client_id', $clientId)
                 ->first();
 
-            if (!$application) {
+            if (!$clientMatter) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No application found for the specified client matter',
+                    'message' => 'No matter found for the specified client',
                     'data' => [
                         'client_matter_id' => $clientMatterId,
                         'client_id' => $clientId
@@ -391,7 +379,7 @@ class ClientPortalWorkflowController extends Controller
                 ], 404);
             }
 
-            $applicationId = $application->application_id;
+            $applicationId = $clientMatterId;
 
             // Step 2: Get allowed checklist names from application_document_lists table
             // Join with workflow_stages table to get type_id based on typename
@@ -399,7 +387,7 @@ class ClientPortalWorkflowController extends Controller
             // (multiple uploads per checklist would otherwise create duplicate checklist entries)
             $latestDocSubquery = DB::table('application_documents')
                 ->select('list_id', DB::raw('MAX(id) as latest_doc_id'))
-                ->where('application_id', $applicationId)
+                ->where('client_matter_id', $applicationId)
                 ->groupBy('list_id');
 
             $query = DB::table('application_document_lists')
@@ -408,7 +396,7 @@ class ClientPortalWorkflowController extends Controller
                 ->leftJoin('application_documents as ad', function($join) use ($applicationId) {
                     $join->on('ad.list_id', '=', 'application_document_lists.id')
                          ->on('ad.id', '=', 'latest_docs.latest_doc_id')
-                         ->where('ad.application_id', '=', $applicationId);
+                         ->where('ad.client_matter_id', '=', $applicationId);
                 })
                 ->select(
                     'application_document_lists.id',
@@ -427,7 +415,7 @@ class ClientPortalWorkflowController extends Controller
                     'ad.status as doc_status',
                     'ad.doc_rejection_reason'
                 )
-                ->where('application_document_lists.application_id', $applicationId)
+                ->where('application_document_lists.client_matter_id', $applicationId)
                 ->where('application_document_lists.allow_client', 1); // Only documents allowed for client
             
             // Filter by stage name (typename) if stage_id is provided
@@ -496,11 +484,11 @@ class ClientPortalWorkflowController extends Controller
                 'success' => true,
                 'data' => [
                     'application_info' => [
-                        'application_id' => $application->application_id,
-                        'client_matter_id' => $application->client_matter_id,
-                        'client_id' => $application->client_id,
-                        'current_stage' => $application->stage,
-                        'status' => $application->status
+                        'application_id' => $clientMatterId,
+                        'client_matter_id' => $clientMatterId,
+                        'client_id' => $clientId,
+                        'current_stage' => $stageName ?? null,
+                        'status' => $clientMatter->matter_status ?? 1
                     ],
                     'allowed_checklists' => $allowedChecklists,
                     'total_allowed_checklists' => $allowedChecklists->count(),
@@ -671,21 +659,8 @@ class ClientPortalWorkflowController extends Controller
             $clientUniqueId = $adminInfo->client_id;
             $clientFirstName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $adminInfo->first_name);
 
-            // Get application_id from applications table
-            $application = DB::table('applications')
-                ->select('id as application_id', 'client_matter_id', 'client_id', 'stage')
-                ->where('client_matter_id', $clientMatterId)
-                ->where('client_id', $clientId)
-                ->first();
-
-            if (!$application) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No application found for the specified client matter'
-                ], 404);
-            }
-
-            $applicationId = $application->application_id;
+            // applications table removed - use client_matter_id
+            $applicationId = $clientMatterId;
 
             // Get client matter for notifications (once per batch)
             $clientMatter = DB::table('client_matters')
@@ -714,7 +689,7 @@ class ClientPortalWorkflowController extends Controller
                 // Verify the allowed checklist exists and is allowed for client
                 $allowedChecklist = DB::table('application_document_lists')
                     ->where('id', $allowedChecklistId)
-                    ->where('application_id', $applicationId)
+                    ->where('client_matter_id', $applicationId)
                     ->where('allow_client', 1)
                     ->first();
 
@@ -761,7 +736,7 @@ class ClientPortalWorkflowController extends Controller
                     'myfile' => $fileUrl,
                     'myfile_key' => $newFileName,
                     'file_size' => $fileSize,
-                    'application_id' => $applicationId,
+                    'client_matter_id' => $applicationId,
                     'status' => 0,
                     'created_at' => now(),
                     'updated_at' => now(),
@@ -791,10 +766,7 @@ class ClientPortalWorkflowController extends Controller
                     'uploaded_at' => now()->toISOString()
                 ];
 
-                // Update application timestamp
-                DB::table('applications')
-                    ->where('id', $applicationId)
-                    ->update(['updated_at' => now()]);
+                // applications table removed
 
                 // Send notifications for each uploaded document
                 if ($clientMatter) {

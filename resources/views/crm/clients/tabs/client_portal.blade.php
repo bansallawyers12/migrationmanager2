@@ -260,13 +260,8 @@
                                             $applicationData = null;
                                             $applicationId = null;
                                             if($selectedMatter) {
-                                                $applicationData = DB::table('applications')
-                                                    ->where('client_matter_id', $selectedMatter->id)
-                                                    ->where('client_id', $fetchedData->id)
-                                                    ->first();
-                                                if($applicationData) {
-                                                    $applicationId = $applicationData->id;
-                                                }
+                                                // applications table removed - use client_matter_id directly
+                                            $applicationId = $selectedMatter->id;
                                             }
                                             ?>
                                             
@@ -286,7 +281,7 @@
                                                                             $stageChecklists = [];
                                                                             if($applicationId) {
                                                                                 $stageChecklists = DB::table('application_document_lists')
-                                                                                    ->where('application_id', $applicationId)
+                                                                                    ->where('client_matter_id', $applicationId)
                                                                                     ->where('type', $stageNameSlug)
                                                                                     ->orderBy('id', 'asc')
                                                                                     ->get();
@@ -371,7 +366,7 @@
                                                                             @if($applicationId)
                                                                                 @php
                                                                                     $allDocuments = DB::table('application_documents')
-                                                                                        ->where('application_id', $applicationId)
+                                                                                        ->where('client_matter_id', $applicationId)
                                                                                         ->orderBy('created_at', 'DESC')
                                                                                         ->get();
                                                                                 @endphp

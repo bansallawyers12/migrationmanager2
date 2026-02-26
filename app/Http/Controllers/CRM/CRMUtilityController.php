@@ -761,7 +761,8 @@ class CRMUtilityController extends Controller
                             }
 						}
                         else if($requestData['table'] == 'products'){
-                            $applicationisexist	= DB::table('applications')->where('product_id', $requestData['id'])->exists();
+                            // applications table removed - product_id check no longer needed
+                            $applicationisexist = false;
 
                             if($applicationisexist){
                                 $message = "Can't Delete its have relation with other records";

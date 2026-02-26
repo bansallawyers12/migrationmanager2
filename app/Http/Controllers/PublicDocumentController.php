@@ -673,17 +673,7 @@ class PublicDocumentController extends Controller
                                         $clientMatter->workflow_stage_id = $nextStage->id;
                                         $clientMatter->save();
 
-                                        // Update applications table if exists (backward compatibility)
-                                        $application = DB::table('applications')
-                                            ->where('client_matter_id', $document->client_matter_id)
-                                            ->where('client_id', $clientMatter->client_id)
-                                            ->first();
-                                        if ($application && $nextStage) {
-                                            DB::table('applications')->where('id', $application->id)->update([
-                                                'stage' => $nextStage->name,
-                                                'updated_at' => now(),
-                                            ]);
-                                        }
+                                        // applications table removed - workflow tracked via client_matters
 
                                         Log::info('Workflow advanced on document sign', [
                                             'document_id' => $document->id,

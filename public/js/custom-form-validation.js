@@ -1900,58 +1900,6 @@ function customValidate(formName, savetype = '')
 							}
 						});
 
-					}else if(formName == 'spagent_application'){
-
-						var myform = document.getElementById('spagent_application');
-						var fd = new FormData(myform);
-
-						$.ajax({
-							type:'post',
-							url:$("form[name="+formName+"]").attr('action'),
-							processData: false,
-							contentType: false,
-							data: fd,
-							success: function(response){
-								$('.popuploader').hide();
-								var obj = $.parseJSON(response);
-								$('#superagent_application').modal('hide');
-								if(obj.status){
-									$('#super_agent').val('');
-								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
-
-								$('.supagent_data').html(obj.data);
-								}else{
-									alert(obj.message);
-								}
-							}
-						});
-
-					}else if(formName == 'sbagent_application'){
-
-						var myform = document.getElementById('sbagent_application');
-						var fd = new FormData(myform);
-
-						$.ajax({
-							type:'post',
-							url:$("form[name="+formName+"]").attr('action'),
-							processData: false,
-							contentType: false,
-							data: fd,
-							success: function(response){
-								$('.popuploader').hide();
-								var obj = $.parseJSON(response);
-								$('#subagent_application').modal('hide');
-								if(obj.status){
-								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
-
-									$('.subagent_data').html(obj.data);
-								}else{
-									alert(obj.message);
-
-								}
-							}
-						});
-
 					}else if(formName == 'xapplication_ownership'){
 
 						var myform = document.getElementById('xapplication_ownership');

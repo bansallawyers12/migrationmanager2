@@ -1185,8 +1185,6 @@
             });
 
             $('#personal_details .is_business').hide();
-            $('#office_income_share .is_super_agent').hide();
-            $('#office_income_share .is_sub_agent').hide();
 
             $('.modal-body form#addgroupinvoice .is_superagentinv').hide();
 
@@ -1257,23 +1255,6 @@
                     $('.modal .modal-body .is_contact input').attr('data-valid', '');
                     $('.modal .modal-body .is_partner input').attr('data-valid', '');
                     $('.modal .modal-body .is_application input').attr('data-valid', '');
-                }
-            });
-
-            $('#agenttype input#super_agent').on('click', function(){
-                if ($(this).is(":checked")) {
-                    $('#office_income_share .is_super_agent').show();
-                }
-                else{
-                    $('#office_income_share .is_super_agent').hide();
-                }
-            });
-
-            $('#agenttype input#sub_agent').on('click', function(){
-                if ($(this).is(":checked")) {
-                    $('#office_income_share .is_sub_agent').show();
-                } else{
-                    $('#office_income_share .is_sub_agent').hide();
                 }
             });
 

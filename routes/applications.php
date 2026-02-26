@@ -72,11 +72,12 @@ Route::get('/application/updateexpectwin', [ClientPortalController::class, 'upda
 // Route::get('/application/getapplicationbycid', [ClientPortalController::class, 'getapplicationbycid']);
 
 /*---------- Application Agents ----------*/
-Route::post('/application/spagent_application', [ClientPortalController::class, 'spagent_application']);
-Route::post('/application/sbagent_application', [ClientPortalController::class, 'sbagent_application']);
+// REMOVED - Super/Sub agents for applications feature
+// Route::post('/application/spagent_application', ...);
+// Route::post('/application/sbagent_application', ...);
 Route::post('/application/application_ownership', [ClientPortalController::class, 'application_ownership']);
-Route::get('/superagent', [ClientPortalController::class, 'superagent']);
-Route::get('/subagent', [ClientPortalController::class, 'subagent']);
+// Route::get('/superagent', ...);
+// Route::get('/subagent', ...);
 
 /*---------- Application Documents ----------*/
 // REMOVED - Application PDF export route (functionality was broken and unused)

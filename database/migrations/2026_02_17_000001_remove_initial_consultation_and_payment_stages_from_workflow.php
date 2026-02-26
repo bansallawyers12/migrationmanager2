@@ -43,15 +43,17 @@ return new class extends Migration
             ->whereIn('workflow_stage_id', $idsToRemove)
             ->update(['workflow_stage_id' => $newStageId]);
 
-        // Update applications.stage where it matches removed stage names
-        $removedNames = DB::table('workflow_stages')
-            ->whereIn('id', $idsToRemove)
-            ->pluck('name')
-            ->toArray();
+        // Update applications.stage where it matches removed stage names (if applications table exists)
+        if (\Illuminate\Support\Facades\Schema::hasTable('applications')) {
+            $removedNames = DB::table('workflow_stages')
+                ->whereIn('id', $idsToRemove)
+                ->pluck('name')
+                ->toArray();
 
-        DB::table('applications')
-            ->whereIn('stage', $removedNames)
-            ->update(['stage' => $newStageName]);
+            DB::table('applications')
+                ->whereIn('stage', $removedNames)
+                ->update(['stage' => $newStageName]);
+        }
 
         // Delete the workflow stages
         DB::table('workflow_stages')->whereIn('id', $idsToRemove)->delete();

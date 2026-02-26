@@ -47,12 +47,11 @@
 								<label for="description">Application <span class="span_req">*</span></label>
 								<select data-valid="required" class="form-control select2" name="application">
 									<option value="">Select</option>
-									@foreach(\App\Models\Application::where('client_id',$fetchedData->id)->get() as $aplist)
+									@foreach(\App\Models\ClientMatter::where('client_id',$fetchedData->id)->orderBy('id','desc')->get() as $matter)
 									<?php
-
-				$workflow = \App\Models\Workflow::where('id', $aplist->workflow)->first();
+				$workflow = $matter->workflow_id ? \App\Models\Workflow::find($matter->workflow_id) : null;
 									?>
-										<option value="{{$aplist->id}}">Application #{{$aplist->id}}</option>
+										<option value="{{$matter->id}}">{{ $matter->client_unique_matter_no ?? 'Matter #'.$matter->id }}</option>
 									@endforeach
 								</select>
 
@@ -116,12 +115,13 @@
 								<label for="description">Service <span class="span_req">*</span></label>
 								<select data-valid="required" class="form-control select2" name="application">
 									<option value="">Select</option>
-									@foreach(\App\Models\Application::where('client_id',$fetchedData->id)->select('workflow')->distinct()->get() as $aplist)
+									@foreach(\App\Models\ClientMatter::where('client_id',$fetchedData->id)->whereNotNull('workflow_id')->select('workflow_id')->distinct()->get() as $m)
 									<?php
-
-				$workflow = \App\Models\Workflow::where('id', $aplist->workflow)->first();
+				$workflow = $m->workflow_id ? \App\Models\Workflow::find($m->workflow_id) : null;
 									?>
+										@if($workflow)
 										<option value="{{$workflow->id}}">{{$workflow->name}}</option>
+										@endif
 									@endforeach
 								</select>
 
