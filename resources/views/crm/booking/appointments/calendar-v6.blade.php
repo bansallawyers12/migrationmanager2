@@ -41,6 +41,10 @@
                        class="btn btn-sm {{ $type === 'ajay' ? 'btn-primary' : 'btn-outline-primary' }}">
                         <i class="fas fa-calendar-alt"></i> Ajay Calendar
                     </a>
+                    <a href="{{ route('booking.appointments.calendar', ['type' => 'kunal']) }}" 
+                       class="btn btn-sm {{ $type === 'kunal' ? 'btn-primary' : 'btn-outline-primary' }}">
+                        <i class="fas fa-calendar-alt"></i> Kunal Calendar
+                    </a>
                 </div>
             </div>
 

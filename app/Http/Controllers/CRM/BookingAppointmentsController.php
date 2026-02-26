@@ -289,7 +289,7 @@ class BookingAppointmentsController extends Controller
      */
     public function calendar($type)
     {
-        $validTypes = ['paid', 'jrp', 'education', 'tourist', 'adelaide', 'ajay'];
+        $validTypes = ['paid', 'jrp', 'education', 'tourist', 'adelaide', 'ajay', 'kunal'];
         
         if (!in_array($type, $validTypes)) {
             abort(404);
@@ -312,6 +312,7 @@ class BookingAppointmentsController extends Controller
             'tourist' => 'Tourist Visa',
             'adelaide' => 'Adelaide Office',
             'ajay' => 'Ajay Calendar',
+            'kunal' => 'Kunal Calendar',
             default => ucfirst($type)
         };
         
