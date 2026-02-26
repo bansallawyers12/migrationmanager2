@@ -312,7 +312,7 @@
                                                                                                             <span class="round"></span>
                                                                                                         @endif
                                                                                                     </td>
-                                                                                                    <td class="checklist-name">{{ $checklist->document_type ?? 'N/A' }}</td>
+                                                                                                    <td class="checklist-name">{{ $checklist->cp_checklist_name ?? 'N/A' }}</td>
                                                                     <td class="checklist-count">
                                                                         <div class="circular-box cursor-pointer">
                                                                             <button class="transparent-button paddingNone">{{ $uploadCount }}</button>
@@ -398,7 +398,7 @@
                                                                                     <tr>
                                                                                         <td>
                                                                                             <div style="margin-bottom: 5px;">
-                                                                                                <strong>{{ $docList->document_type ?? 'N/A' }}</strong>
+                                                                                                <strong>{{ $docList->cp_checklist_name ?? 'N/A' }}</strong>
                                                                                             </div>
                                                                                             @if($document->file_name)
                                                                                                 @php
@@ -4640,7 +4640,6 @@ $(document).ready(function() {
     $('#create_checklist').on('hidden.bs.modal', function() {
         $('.modal-backdrop').removeClass('create-checklist-backdrop');
         $('#create_checklist_form')[0].reset();
-        $('#appoint_date_container, #appoint_time_container').hide();
         if ($('#checklist_name_input').data('select2')) {
             $('#checklist_name_input').val(null).trigger('change');
         }
@@ -4649,14 +4648,6 @@ $(document).ready(function() {
         $('#create_checklist_submit_btn').prop('disabled', false);
     });
 
-    $('#due_date_check').on('change', function() {
-        if ($(this).is(':checked')) {
-            $('#appoint_date_container, #appoint_time_container').show();
-        } else {
-            $('#appoint_date_container, #appoint_time_container').hide();
-        }
-    });
-    
     // Explicit close button handlers for create_checklist modal
     $(document).on('click', '#create_checklist_close_btn, #create_checklist_close_btn_footer', function(e) {
         e.preventDefault();
@@ -4760,8 +4751,8 @@ $(document).ready(function() {
             if (dataValidation && dataValidation.indexOf('required') !== -1) {
                 if (!$.trim($(this).val())) {
                     isValid = false;
-                    // Only add error if not already added for document_type
-                    if ($(this).attr('id') !== 'document_type') {
+                    // Only add error if not already added for cp_checklist_name
+                    if ($(this).attr('id') !== 'checklist_name_input') {
                         $(this).after('<span class="custom-error" role="alert" style="color: red; display: block; margin-top: 5px;"><strong>This field is required.</strong></span>');
                     }
                 }
@@ -4793,17 +4784,13 @@ $(document).ready(function() {
         
         // Variables checklistType, checklistTypename, and clientMatterId are already defined above in validation section
         
-        // Submit via AJAX (document_type[] is submitted from the select)
+        // Submit via AJAX (cp_checklist_name[] is submitted from the select)
         var formData = new FormData(form[0]);
         
         // Ensure checkboxes are properly included (even if unchecked)
         var allowUpload = form.find('input[name="allow_upload_docu"]').is(':checked') ? '1' : '0';
-        var proceedNext = form.find('input[name="proceed_next_stage"]').is(':checked') ? '1' : '0';
-        var dueDate = form.find('input[name="due_date"]').is(':checked') ? '1' : '0';
         
         formData.set('allow_upload_docu', allowUpload);
-        formData.set('proceed_next_stage', proceedNext);
-        formData.set('due_date', dueDate);
         
         // Debug: Log form data
         console.log('Submitting checklist form:', {
@@ -4812,9 +4799,7 @@ $(document).ready(function() {
             type: checklistType,
             typename: checklistTypename,
             document_types: $('#checklist_name_input').val(),
-            allow_upload_docu: allowUpload,
-            proceed_next_stage: proceedNext,
-            due_date: dueDate
+            allow_upload_docu: allowUpload
         });
         
         $.ajax({
@@ -4952,8 +4937,8 @@ $(document).ready(function() {
                             firstErrorField.focus();
                         }
                         // Show general error message
-                        if (validationErrors.document_type) {
-                            errorMsg = validationErrors.document_type[0] || 'Checklist Name is required.';
+                        if (validationErrors.cp_checklist_name) {
+                            errorMsg = validationErrors.cp_checklist_name[0] || 'Checklist Name is required.';
                         }
                     }
                 } else if (xhr.responseText && xhr.responseText.trim()) {

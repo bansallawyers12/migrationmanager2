@@ -1899,10 +1899,10 @@ class ClientPortalController extends Controller
 	}
 
 	public function addchecklists(Request $request){
-		// Accept document_type as string or array (multiple checklists)
-		$documentTypes = $request->document_type;
+		// Accept cp_checklist_name as string or array (multiple checklists)
+		$documentTypes = $request->cp_checklist_name;
 		if (!is_array($documentTypes)) {
-			$documentTypes = $request->filled('document_type') ? [$documentTypes] : [];
+			$documentTypes = $request->filled('cp_checklist_name') ? [$documentTypes] : [];
 		}
 		$documentTypes = array_filter(array_map('trim', $documentTypes));
 
@@ -1947,14 +1947,9 @@ class ClientPortalController extends Controller
 			$obj->typename = $typename;
 			$obj->client_id = $client_id;
 			$obj->client_matter_id = $app_id;
-			$obj->document_type = $document_type;
+			$obj->cp_checklist_name = $document_type;
 			$obj->description = $request->description ?? null;
 			$obj->allow_client = $request->allow_upload_docu ?? 0;
-			$obj->make_mandatory = $request->proceed_next_stage ?? null;
-			if(isset($requestData['due_date']) && $requestData['due_date'] == 1){
-				$obj->date = $request->appoint_date ?? null;
-				$obj->time = $request->appoint_time ?? null;
-			}
 			$obj->user_id = Auth::user()->id;
 			if ($obj->save()) {
 				$savedCount++;
@@ -2012,7 +2007,7 @@ class ClientPortalController extends Controller
 					$checklistdata .= '<td><span class="round"></span></td>';
 				}
 
-					$checklistdata .= '<td>'.@$applicationdocument->document_type.'</td>';
+					$checklistdata .= '<td>'.@$applicationdocument->cp_checklist_name.'</td>';
 					$checklistdata .= '<td><div class="circular-box cursor-pointer"><button class="transparent-button paddingNone">'.$appcount.'</button></div></td>';
 				$checklistdata .= '</tr>';
 			}
@@ -2045,7 +2040,7 @@ class ClientPortalController extends Controller
 					'user_id' => Auth::user()->id,
 					'client_matter_id' => $request->client_matter_id,
 					'client_id' => $clientMatter?->client_id ?? null,
-					'checklist' => $list ? $list->document_type : null,
+					'checklist' => $list ? $list->cp_checklist_name : null,
 					'cp_doc_status' => 0,
 				]);
 			  $imageData .= '<li><i class="fa fa-file"></i> '.$fileName.'</li>';
@@ -2078,9 +2073,9 @@ class ClientPortalController extends Controller
 			$fileUrl = ($doclist->myfile && str_starts_with($doclist->myfile, 'http')) ? $doclist->myfile : URL::to('/public/img/documents').'/'.$doclist->file_name;
 			$docStatus = $doclist->cp_doc_status ?? 0;
 			$doclistdata .= '<tr id="">';
-				$doclistdata .= '<td><i class="fa fa-file"></i> '. $doclist->file_name.'<br>'.@$docdata->document_type.'</td>';
-				$doclistdata .= '<td>';
-					$doclistdata .=  $doclist->doc_type ?? '';
+			$doclistdata .= '<td><i class="fa fa-file"></i> '. $doclist->file_name.'<br>'.@$docdata->cp_checklist_name.'</td>';
+			$doclistdata .= '<td>';
+				$doclistdata .=  $doclist->doc_type ?? '';
 				$doclistdata .= '</td>';
 				$staff = \App\Models\Staff::where('id', @$doclist->user_id)->first();
 
@@ -2125,11 +2120,11 @@ class ClientPortalController extends Controller
 					$checklistdata .= '<td><span class="round"></span></td>';
 				}
 
-					$checklistdata .= '<td>'.@$checklistItem->document_type.'</td>';
-					$checklistdata .= '<td><div class="circular-box cursor-pointer"><button class="transparent-button paddingNone">'.$appcount.'</button></div></td>';
-				$checklistdata .= '</tr>';
-			}
-			$checklistdata .= '</tbody></table>';
+				$checklistdata .= '<td>'.@$checklistItem->cp_checklist_name.'</td>';
+				$checklistdata .= '<td><div class="circular-box cursor-pointer"><button class="transparent-button paddingNone">'.$appcount.'</button></div></td>';
+			$checklistdata .= '</tr>';
+		}
+		$checklistdata .= '</tbody></table>';
 		$response['checklistdata']	=	$checklistdata;
 		$response['type']	=	$request->type;
 		echo json_encode($response);
@@ -2158,9 +2153,9 @@ class ClientPortalController extends Controller
 				if ($clientMatter && !empty($clientMatter->client_id)) {
 					$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatter->id;
 					$docList = DB::table('cp_doc_checklist')->where('id', $appdoc->cp_list_id)->first();
-					$docType = $docList ? $docList->document_type : ($appdoc->file_name ?? 'Document');
-					$notificationMessage = 'Document "' . $docType . '" removed for matter ' . $matterNo;
-					DB::table('notifications')->insert([
+$docType = $docList ? $docList->cp_checklist_name : ($appdoc->file_name ?? 'Document');
+				$notificationMessage = 'Document "' . $docType . '" removed for matter ' . $matterNo;
+				DB::table('notifications')->insert([
 						'sender_id' => Auth::guard('admin')->id(),
 						'receiver_id' => $clientMatter->client_id,
 						'module_id' => $clientMatter->id,
@@ -2183,7 +2178,7 @@ class ClientPortalController extends Controller
 			$fileUrl = ($doclist->myfile && str_starts_with($doclist->myfile, 'http')) ? $doclist->myfile : URL::to('/public/img/documents').'/'.$doclist->file_name;
 			$docStatus = $doclist->cp_doc_status ?? 0;
 			$doclistdata .= '<tr id="">';
-				$doclistdata .= '<td><i class="fa fa-file"></i> '. $doclist->file_name.'<br>'.@$docdata->document_type.'</td>';
+				$doclistdata .= '<td><i class="fa fa-file"></i> '. $doclist->file_name.'<br>'.@$docdata->cp_checklist_name.'</td>';
 				$doclistdata .= '<td>';
 				$docType = $doclist->doc_type ?? '';
 				if($docType == 'application'){ $doclistdata .= 'Application'; }else if($docType == 'acceptance'){ $doclistdata .=  'Acceptance'; }else if($docType == 'payment'){ $doclistdata .=  'Payment'; }else if($docType == 'formi20'){ $doclistdata .=  'Form I 20'; }else if($docType == 'visaapplication'){ $doclistdata .=  'Visa Application'; }else if($docType == 'interview'){ $doclistdata .=  'Interview'; }else if($docType == 'enrolment'){ $doclistdata .=  'Enrolment'; }else if($docType == 'courseongoing'){ $doclistdata .=  'Course Ongoing'; }else{ $doclistdata .= $docType; }
@@ -2231,11 +2226,11 @@ class ClientPortalController extends Controller
 					$checklistdata .= '<td><span class="round"></span></td>';
 				}
 
-					$checklistdata .= '<td>'.@$checklistItem->document_type.'</td>';
-					$checklistdata .= '<td><div class="circular-box cursor-pointer"><button class="transparent-button paddingNone">'.$appcount.'</button></div></td>';
-				$checklistdata .= '</tr>';
-			}
-			$checklistdata .= '</tbody></table>';
+				$checklistdata .= '<td>'.@$checklistItem->cp_checklist_name.'</td>';
+				$checklistdata .= '<td><div class="circular-box cursor-pointer"><button class="transparent-button paddingNone">'.$appcount.'</button></div></td>';
+			$checklistdata .= '</tr>';
+		}
+		$checklistdata .= '</tbody></table>';
 		$response['checklistdata']	=	$checklistdata;
 		$response['type']	=	$appdoc->doc_type ?? $appdoc->type ?? '';
 			}else{
@@ -2265,9 +2260,9 @@ class ClientPortalController extends Controller
 				if ($clientMatter && !empty($clientMatter->client_id)) {
 					$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatter->id;
 					$docList = DB::table('cp_doc_checklist')->where('id', $appdoc->cp_list_id)->first();
-					$docType = $docList ? $docList->document_type : ($appdoc->file_name ?? 'Document');
-					$notificationMessage = 'Document "' . $docType . '" removed for matter ' . $matterNo;
-					DB::table('notifications')->insert([
+$docType = $docList ? $docList->cp_checklist_name : ($appdoc->file_name ?? 'Document');
+				$notificationMessage = 'Document "' . $docType . '" removed for matter ' . $matterNo;
+				DB::table('notifications')->insert([
 						'sender_id' => Auth::guard('admin')->id(),
 						'receiver_id' => $clientMatter->client_id,
 						'module_id' => $clientMatter->id,
@@ -2290,7 +2285,7 @@ class ClientPortalController extends Controller
 			$fileUrl = ($doclist->myfile && str_starts_with($doclist->myfile, 'http')) ? $doclist->myfile : URL::to('/public/img/documents').'/'.$doclist->file_name;
 			$docStatus = $doclist->cp_doc_status ?? 0;
 			$doclistdata .= '<tr id="">';
-				$doclistdata .= '<td><i class="fa fa-file"></i> '. $doclist->file_name.'<br>'.@$docdata->document_type.'</td>';
+				$doclistdata .= '<td><i class="fa fa-file"></i> '. $doclist->file_name.'<br>'.@$docdata->cp_checklist_name.'</td>';
 				$doclistdata .= '<td>';
 				$docType = $doclist->doc_type ?? '';
 				if($docType == 'application'){ $doclistdata .= 'Application'; }else if($docType == 'acceptance'){ $doclistdata .=  'Acceptance'; }else if($docType == 'payment'){ $doclistdata .=  'Payment'; }else if($docType == 'formi20'){ $doclistdata .=  'Form I 20'; }else if($docType == 'visaapplication'){ $doclistdata .=  'Visa Application'; }else if($docType == 'interview'){ $doclistdata .=  'Interview'; }else if($docType == 'enrolment'){ $doclistdata .=  'Enrolment'; }else if($docType == 'courseongoing'){ $doclistdata .=  'Course Ongoing'; }else{ $doclistdata .= $docType; }
@@ -2352,7 +2347,7 @@ class ClientPortalController extends Controller
 			$fileUrl = ($doclist->myfile && str_starts_with($doclist->myfile, 'http')) ? $doclist->myfile : URL::to('/public/img/documents').'/'.$doclist->file_name;
 			$docStatus = $doclist->cp_doc_status ?? 0;
 			$doclistdata .= '<tr id="">';
-				$doclistdata .= '<td><i class="fa fa-file"></i> '. $doclist->file_name.'<br>'.@$docdata->document_type.'</td>';
+				$doclistdata .= '<td><i class="fa fa-file"></i> '. $doclist->file_name.'<br>'.@$docdata->cp_checklist_name.'</td>';
 				$doclistdata .= '<td>';
 				$docType = $doclist->doc_type ?? '';
 				if($docType == 'application'){ $doclistdata .= 'Application'; }else if($docType == 'acceptance'){ $doclistdata .=  'Acceptance'; }else if($docType == 'payment'){ $doclistdata .=  'Payment'; }else if($docType == 'formi20'){ $doclistdata .=  'Form I 20'; }else if($docType == 'visaapplication'){ $doclistdata .=  'Visa Application'; }else if($docType == 'interview'){ $doclistdata .=  'Interview'; }else if($docType == 'enrolment'){ $doclistdata .=  'Enrolment'; }else if($docType == 'courseongoing'){ $doclistdata .=  'Course Ongoing'; }else{ $doclistdata .= $docType; }
@@ -2465,8 +2460,8 @@ class ClientPortalController extends Controller
 						// Notify client (for List Notifications API)
 						$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatter->id;
 						$docList = DB::table('cp_doc_checklist')->where('id', $doc->cp_list_id)->first();
-						$docType = $docList ? $docList->document_type : ($doc->file_name ?? 'Document');
-						$notificationMessage = 'Document "' . $docType . '" approved for matter ' . $matterNo;
+$docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Document');
+					$notificationMessage = 'Document "' . $docType . '" approved for matter ' . $matterNo;
 						DB::table('notifications')->insert([
 							'sender_id' => Auth::guard('admin')->id(),
 							'receiver_id' => $clientMatter->client_id,
@@ -2546,8 +2541,8 @@ class ClientPortalController extends Controller
 						// Notify client (for List Notifications API)
 						$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatter->id;
 						$docList = DB::table('cp_doc_checklist')->where('id', $doc->cp_list_id)->first();
-						$docType = $docList ? $docList->document_type : ($doc->file_name ?? 'Document');
-						$notificationMessage = 'Document "' . $docType . '" rejected for matter ' . $matterNo;
+$docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Document');
+					$notificationMessage = 'Document "' . $docType . '" rejected for matter ' . $matterNo;
 						DB::table('notifications')->insert([
 							'sender_id' => Auth::guard('admin')->id(),
 							'receiver_id' => $clientMatter->client_id,
@@ -2681,7 +2676,7 @@ class ClientPortalController extends Controller
 			if ($clientMatter && !empty($clientMatter->client_id) && Auth::guard('admin')->check()) {
 				$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatter->id;
 				$docList = DB::table('cp_doc_checklist')->where('id', $document->cp_list_id)->first();
-				$docType = $docList ? $docList->document_type : ($document->file_name ?? 'Document');
+				$docType = $docList ? $docList->cp_checklist_name : ($document->file_name ?? 'Document');
 				$notificationMessage = 'Document "' . $docType . '" downloaded for matter ' . $matterNo;
 				DB::table('notifications')->insert([
 					'sender_id' => Auth::guard('admin')->id(),

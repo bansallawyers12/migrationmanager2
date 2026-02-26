@@ -52,7 +52,7 @@ class ClientPortalWorkflowController extends Controller
                             ->where('client_id', $clientId)
                             ->where('typename', $stage->name)
                             ->where('allow_client', 1)
-                            ->select('id', 'document_type')
+                            ->select('id', 'cp_checklist_name')
                             ->orderBy('id', 'asc')
                             ->get();
                         
@@ -62,7 +62,7 @@ class ClientPortalWorkflowController extends Controller
                         $allowedChecklist = $checklistItems->map(function ($item) {
                             return [
                                 'id' => $item->id,
-                                'name' => $item->document_type
+                                'name' => $item->cp_checklist_name
                             ];
                         })->toArray();
                     }
@@ -400,13 +400,10 @@ class ClientPortalWorkflowController extends Controller
                 })
                 ->select(
                     'cp_doc_checklist.id',
-                    'cp_doc_checklist.document_type',
+                    'cp_doc_checklist.cp_checklist_name',
                     'cp_doc_checklist.description',
                     'cp_doc_checklist.type',
                     'cp_doc_checklist.typename',
-                    'cp_doc_checklist.make_mandatory',
-                    'cp_doc_checklist.date',
-                    'cp_doc_checklist.time',
                     'cp_doc_checklist.created_at',
                     'cp_doc_checklist.updated_at',
                     'workflow_stages.id as type_id',
@@ -460,15 +457,12 @@ class ClientPortalWorkflowController extends Controller
                     
                     return [
                         'id' => $item->id,
-                        'checklist_name' => $item->document_type,
-                        'document_type' => $item->document_type,
+                        'checklist_name' => $item->cp_checklist_name,
+                        'document_type' => $item->cp_checklist_name,
                         'description' => $item->description,
                         'type' => $item->type,
                         'type_id' => $item->type_id,
                         'type_name' => $item->typename,
-                        'is_mandatory' => $item->make_mandatory == 1,
-                        'due_date' => $item->date,
-                        'due_time' => $item->time,
                         'is_upload' => $isUploaded,
                         'file_name' => $isUploaded ? $item->file_name : null,
                         'file_url' => $isUploaded ? $item->file_url : null,
@@ -491,8 +485,6 @@ class ClientPortalWorkflowController extends Controller
                     ],
                     'allowed_checklists' => $allowedChecklists,
                     'total_allowed_checklists' => $allowedChecklists->count(),
-                    'mandatory_checklists' => $allowedChecklists->where('is_mandatory', true)->count(),
-                    'optional_checklists' => $allowedChecklists->where('is_mandatory', false)->count(),
                     'client_matter_id' => $clientMatterId,
                     'stage_id' => $stageId ? (int)$stageId : null,
                     'stage_name' => $stageName
@@ -707,7 +699,7 @@ class ClientPortalWorkflowController extends Controller
                 // Get file details
                 $fileSize = $file->getSize();
                 $extension = $file->getClientOriginalExtension();
-                $checklistName = $allowedChecklist->document_type;
+                $checklistName = $allowedChecklist->cp_checklist_name;
 
                 // Build new file name with microtime to avoid collisions in bulk upload
                 $timestamp = time() . '_' . $index;
