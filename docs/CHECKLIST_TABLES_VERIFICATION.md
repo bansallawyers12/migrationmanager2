@@ -65,7 +65,7 @@ All usages of `UploadChecklist` and `DocumentChecklist` models automatically use
 ## No Foreign Keys
 
 - `documents` table uses `checklist` (varchar) for the checklist *name*, not an ID. No FK to either table.
-- `application_documents` uses `list_id` → `application_document_lists`, a different table.
+- `application_documents` uses `list_id` → `cp_doc_checklist`, a different table.
 - No other tables have FKs to `document_checklists` or `upload_checklists`.
 
 ---

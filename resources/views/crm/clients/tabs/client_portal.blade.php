@@ -280,7 +280,7 @@
                                                                             // Get checklists for this stage
                                                                             $stageChecklists = [];
                                                                             if($applicationId) {
-                                                                                $stageChecklists = DB::table('application_document_lists')
+                                                                                $stageChecklists = DB::table('cp_doc_checklist')
                                                                                     ->where('client_matter_id', $applicationId)
                                                                                     ->where('type', $stageNameSlug)
                                                                                     ->orderBy('id', 'asc')
@@ -299,8 +299,9 @@
                                                                                         <tbody>
                                                                                             @foreach($stageChecklists as $checklist)
                                                                                                 @php
-                                                                                                    $uploadCount = DB::table('application_documents')
-                                                                                                        ->where('list_id', $checklist->id)
+                                                                                                    $uploadCount = DB::table('documents')
+                                                                                                        ->where('cp_list_id', $checklist->id)
+                                                                                                        ->whereNotNull('cp_list_id')
                                                                                                         ->count();
                                                                                                 @endphp
                                                                                                 <tr class="checklist-row">
@@ -365,22 +366,23 @@
                                                                         <tbody class="checklist-details-tbody">
                                                                             @if($applicationId)
                                                                                 @php
-                                                                                    $allDocuments = DB::table('application_documents')
+                                                                                    $allDocuments = DB::table('documents')
                                                                                         ->where('client_matter_id', $applicationId)
+                                                                                        ->whereNotNull('cp_list_id')
                                                                                         ->orderBy('created_at', 'DESC')
                                                                                         ->get();
                                                                                 @endphp
                                                                                 @foreach($allDocuments as $document)
                                                                                     @php
-                                                                                        $docList = DB::table('application_document_lists')
-                                                                                            ->where('id', $document->list_id)
+                                                                                        $docList = DB::table('cp_doc_checklist')
+                                                                                            ->where('id', $document->cp_list_id)
                                                                                             ->first();
                                                                                         $addedBy = DB::table('admins')
                                                                                             ->where('id', $document->user_id)
                                                                                             ->first();
                                                                                         
                                                                                         // Get status and format display text
-                                                                                        $status = isset($document->status) ? (int)$document->status : 0;
+                                                                                        $status = isset($document->cp_doc_status) ? (int)$document->cp_doc_status : 0;
                                                                                         $statusText = 'InProgress';
                                                                                         $statusClass = 'warning';
                                                                                         $rejectionReason = '';
@@ -390,8 +392,7 @@
                                                                                         } elseif($status == 2) {
                                                                                             $statusText = 'Rejected';
                                                                                             $statusClass = 'danger';
-                                                                                            // Get rejection reason for tooltip
-                                                                                            $rejectionReason = isset($document->doc_rejection_reason) ? $document->doc_rejection_reason : (isset($document->reject_reason) ? $document->reject_reason : '');
+                                                                                            $rejectionReason = $document->cp_rejection_reason ?? '';
                                                                                         }
                                                                                     @endphp
                                                                                     <tr>
@@ -400,8 +401,11 @@
                                                                                                 <strong>{{ $docList->document_type ?? 'N/A' }}</strong>
                                                                                             </div>
                                                                                             @if($document->file_name)
+                                                                                                @php
+                                                                                                    $fileUrl = ($document->myfile && str_starts_with($document->myfile, 'http')) ? $document->myfile : (URL::to('/public/img/documents') . '/' . $document->file_name);
+                                                                                                @endphp
                                                                                                 <div>
-                                                                                                    <a href="{{ $document->myfile ?? '#' }}" target="_blank" style="color: #007bff; text-decoration: none; cursor: pointer;" title="Click to view document">
+                                                                                                    <a href="{{ $fileUrl }}" target="_blank" style="color: #007bff; text-decoration: none; cursor: pointer;" title="Click to view document">
                                                                                                         <i class="fa fa-file"></i> {{ $document->file_name }}
                                                                                                     </a>
                                                                                                 </div>
@@ -411,7 +415,7 @@
                                                                                                 </div>
                                                                                             @endif
                                                                                         </td>
-                                                                                        <td style="white-space: normal; word-wrap: break-word;">{{ $document->typename ?? 'N/A' }}</td>
+                                                                                        <td style="white-space: normal; word-wrap: break-word;">{{ $document->doc_type ?? 'N/A' }}</td>
                                                                                         <td>
                                                                                             <div style="margin-bottom: 5px;">
                                                                                                 <div class="user-info">
@@ -448,7 +452,7 @@
                                                                                                         <i class="fa fa-download"></i>
                                                                                                     </a>
                                                                                                     <!-- Delete -->
-                                                                                                    <a href="javascript:void(0);" class="btn btn-sm btn-danger delete-document-by-list" data-list-id="{{ $document->list_id }}" data-document-id="{{ $document->id }}" title="Delete">
+                                                                                                    <a href="javascript:void(0);" class="btn btn-sm btn-danger delete-document-by-list" data-list-id="{{ $document->cp_list_id }}" data-document-id="{{ $document->id }}" title="Delete">
                                                                                                         <i class="fa fa-trash"></i>
                                                                                                     </a>
                                                                                                 </div>

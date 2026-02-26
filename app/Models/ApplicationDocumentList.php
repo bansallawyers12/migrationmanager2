@@ -10,5 +10,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 class ApplicationDocumentList extends Authenticatable
 {
     use Notifiable;
-	use Sortable;	
+    use Sortable;
+
+    protected $table = 'cp_doc_checklist';	
 }

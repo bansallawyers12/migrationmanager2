@@ -47,7 +47,7 @@ class ClientPortalWorkflowController extends Controller
                     $allowedChecklist = [];
                     
                     if (!is_null($applicationId)) {
-                        $checklistItems = DB::table('application_document_lists')
+                        $checklistItems = DB::table('cp_doc_checklist')
                             ->where('client_matter_id', $applicationId)
                             ->where('client_id', $clientId)
                             ->where('typename', $stage->name)
@@ -381,50 +381,50 @@ class ClientPortalWorkflowController extends Controller
 
             $applicationId = $clientMatterId;
 
-            // Step 2: Get allowed checklist names from application_document_lists table
+            // Step 2: Get allowed checklist names from cp_doc_checklist table
             // Join with workflow_stages table to get type_id based on typename
-            // Join with application_documents - only the LATEST document per checklist to avoid duplicate rows
-            // (multiple uploads per checklist would otherwise create duplicate checklist entries)
-            $latestDocSubquery = DB::table('application_documents')
-                ->select('list_id', DB::raw('MAX(id) as latest_doc_id'))
+            // Join with documents (workflow checklist) - only the LATEST document per checklist to avoid duplicate rows
+            $latestDocSubquery = DB::table('documents')
+                ->select('cp_list_id', DB::raw('MAX(id) as latest_doc_id'))
                 ->where('client_matter_id', $applicationId)
-                ->groupBy('list_id');
+                ->whereNotNull('cp_list_id')
+                ->groupBy('cp_list_id');
 
-            $query = DB::table('application_document_lists')
-                ->leftJoin('workflow_stages', 'application_document_lists.typename', '=', 'workflow_stages.name')
-                ->leftJoinSub($latestDocSubquery, 'latest_docs', 'application_document_lists.id', '=', 'latest_docs.list_id')
-                ->leftJoin('application_documents as ad', function($join) use ($applicationId) {
-                    $join->on('ad.list_id', '=', 'application_document_lists.id')
+            $query = DB::table('cp_doc_checklist')
+                ->leftJoin('workflow_stages', 'cp_doc_checklist.typename', '=', 'workflow_stages.name')
+                ->leftJoinSub($latestDocSubquery, 'latest_docs', 'cp_doc_checklist.id', '=', 'latest_docs.cp_list_id')
+                ->leftJoin('documents as ad', function($join) use ($applicationId) {
+                    $join->on('ad.cp_list_id', '=', 'cp_doc_checklist.id')
                          ->on('ad.id', '=', 'latest_docs.latest_doc_id')
                          ->where('ad.client_matter_id', '=', $applicationId);
                 })
                 ->select(
-                    'application_document_lists.id',
-                    'application_document_lists.document_type',
-                    'application_document_lists.description',
-                    'application_document_lists.type',
-                    'application_document_lists.typename',
-                    'application_document_lists.make_mandatory',
-                    'application_document_lists.date',
-                    'application_document_lists.time',
-                    'application_document_lists.created_at',
-                    'application_document_lists.updated_at',
+                    'cp_doc_checklist.id',
+                    'cp_doc_checklist.document_type',
+                    'cp_doc_checklist.description',
+                    'cp_doc_checklist.type',
+                    'cp_doc_checklist.typename',
+                    'cp_doc_checklist.make_mandatory',
+                    'cp_doc_checklist.date',
+                    'cp_doc_checklist.time',
+                    'cp_doc_checklist.created_at',
+                    'cp_doc_checklist.updated_at',
                     'workflow_stages.id as type_id',
                     'ad.file_name',
                     'ad.myfile as file_url',
-                    'ad.status as doc_status',
-                    'ad.doc_rejection_reason'
+                    'ad.cp_doc_status as doc_status',
+                    'ad.cp_rejection_reason as doc_rejection_reason'
                 )
-                ->where('application_document_lists.client_matter_id', $applicationId)
-                ->where('application_document_lists.allow_client', 1); // Only documents allowed for client
+                ->where('cp_doc_checklist.client_matter_id', $applicationId)
+                ->where('cp_doc_checklist.allow_client', 1); // Only documents allowed for client
             
             // Filter by stage name (typename) if stage_id is provided
             if (!empty($stageName)) {
-                $query->where('application_document_lists.typename', $stageName);
+                $query->where('cp_doc_checklist.typename', $stageName);
             }
             
             $allowedChecklists = $query
-                ->orderBy('application_document_lists.id', 'asc')
+                ->orderBy('cp_doc_checklist.id', 'asc')
                 ->get()
                 ->map(function ($item) {
                     $isUploaded = !is_null($item->file_name) && !is_null($item->file_url);
@@ -687,7 +687,7 @@ class ClientPortalWorkflowController extends Controller
                 }
 
                 // Verify the allowed checklist exists and is allowed for client
-                $allowedChecklist = DB::table('application_document_lists')
+                $allowedChecklist = DB::table('cp_doc_checklist')
                     ->where('id', $allowedChecklistId)
                     ->where('client_matter_id', $applicationId)
                     ->where('allow_client', 1)
@@ -726,24 +726,26 @@ class ClientPortalWorkflowController extends Controller
                     continue;
                 }
 
-                // Prepare data for insertion into application_documents table
+                // Prepare data for insertion into documents table (workflow checklist)
                 $documentData = [
-                    'type' => $allowedChecklist->type,
-                    'list_id' => $allowedChecklistId,
+                    'type' => 'workflow_checklist',
+                    'doc_type' => $allowedChecklist->type,
+                    'cp_list_id' => $allowedChecklistId,
                     'user_id' => $clientId,
+                    'client_id' => $clientMatter->client_id ?? null,
                     'file_name' => $clientFirstName . "_" . $checklistName . "_" . $timestamp,
-                    'file_type' => $extension,
+                    'filetype' => $extension,
                     'myfile' => $fileUrl,
                     'myfile_key' => $newFileName,
                     'file_size' => $fileSize,
                     'client_matter_id' => $applicationId,
-                    'status' => 0,
+                    'checklist' => $checklistName,
+                    'cp_doc_status' => 0,
                     'created_at' => now(),
                     'updated_at' => now(),
-                    'typename' => $allowedChecklist->typename
                 ];
 
-                $documentId = DB::table('application_documents')->insertGetId($documentData);
+                $documentId = DB::table('documents')->insertGetId($documentData);
 
                 if (!$documentId) {
                     $errors[] = ['index' => $index, 'file' => $fileName, 'message' => 'Failed to save document record'];

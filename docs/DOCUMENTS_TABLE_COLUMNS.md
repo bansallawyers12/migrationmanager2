@@ -518,7 +518,7 @@ This document describes every column in the `documents` table, how it is used in
 - **signers** – document signers (FK: `document_id`)
 - **signature_fields** – signature field placements (FK: `document_id`)
 - **signature_activities** – signature workflow audit trail (FK: `document_id`)
-- **application_document_lists** – checklist definitions (different table; documents link via checklist/folder_name)
+- **cp_doc_checklist** – checklist definitions (different table; documents link via checklist/folder_name)
 - **personal_document_types** – personal doc categories (documents.folder_name)
 - **visa_document_types** – visa doc categories (documents.folder_name)
 

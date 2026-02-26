@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Str;
 use App\Models\Admin;
 use App\Models\ActivitiesLog;
+use App\Models\Document;
 use App\Models\ClientPortalDetailAudit;
 use App\Models\ClientMatter;
 use App\Models\WorkflowStage;
@@ -1985,7 +1986,7 @@ class ClientPortalController extends Controller
 			$applicationdocuments = \App\Models\ApplicationDocumentList::where('client_matter_id', $app_id)->where('client_id', $client_id)->where('type', $type)->get();
 			$checklistdata = '<table class="table"><tbody>';
 			foreach($applicationdocuments as $applicationdocument){
-				$appcount = \App\Models\ApplicationDocument::where('list_id', $applicationdocument->id)->count();
+				$appcount = Document::workflowChecklist()->where('cp_list_id', $applicationdocument->id)->count();
 				$checklistdata .= '<tr>';
 				if($appcount >0){
 					$checklistdata .= '<td><span class="check"><i class="fa fa-check"></i></span></td>';
@@ -2012,18 +2013,23 @@ class ClientPortalController extends Controller
 
 	public function checklistupload(Request $request){
 		 $imageData = '';
+		$clientMatter = $request->application_id ? DB::table('client_matters')->where('id', $request->application_id)->first() : null;
 		if (isset($_FILES['file']['name'][0])) {
 		  foreach ($_FILES['file']['name'] as $keys => $values) {
 			$fileName = $_FILES['file']['name'][$keys];
 			if (move_uploaded_file($_FILES['file']['tmp_name'][$keys], config('constants.documents').'/'. $fileName)) {
-				$obj = new \App\Models\ApplicationDocument;
-				$obj->type = $request->type;
-				$obj->typename = $request->typename;
-				$obj->list_id = $request->id;
-				$obj->file_name = $fileName;
-				$obj->user_id = Auth::user()->id;
-				$obj->client_matter_id = $request->application_id;
-				$save = $obj->save();
+				$list = DB::table('cp_doc_checklist')->where('id', $request->id)->first();
+				Document::create([
+					'type' => 'workflow_checklist',
+					'doc_type' => $request->type ?? 'workflow_checklist',
+					'cp_list_id' => $request->id,
+					'file_name' => $fileName,
+					'user_id' => Auth::user()->id,
+					'client_matter_id' => $request->application_id,
+					'client_id' => $clientMatter?->client_id ?? null,
+					'checklist' => $list ? $list->document_type : null,
+					'cp_doc_status' => 0,
+				]);
 			  $imageData .= '<li><i class="fa fa-file"></i> '.$fileName.'</li>';
 			}
 		  }
@@ -2047,30 +2053,32 @@ class ClientPortalController extends Controller
 			}
 		}
 
-		$doclists = \App\Models\ApplicationDocument::where('client_matter_id',$request->application_id)->orderby('created_at','DESC')->get();
+		$doclists = Document::workflowChecklist()->where('client_matter_id',$request->application_id)->orderBy('created_at','DESC')->get();
 		$doclistdata = '';
 		foreach($doclists as $doclist){
-			$docdata = \App\Models\ApplicationDocumentList::where('id', $doclist->list_id)->first();
+			$docdata = \App\Models\ApplicationDocumentList::where('id', $doclist->cp_list_id)->first();
+			$fileUrl = ($doclist->myfile && str_starts_with($doclist->myfile, 'http')) ? $doclist->myfile : URL::to('/public/img/documents').'/'.$doclist->file_name;
+			$docStatus = $doclist->cp_doc_status ?? 0;
 			$doclistdata .= '<tr id="">';
 				$doclistdata .= '<td><i class="fa fa-file"></i> '. $doclist->file_name.'<br>'.@$docdata->document_type.'</td>';
 				$doclistdata .= '<td>';
-					$doclistdata .=  $doclist->typename;
+					$doclistdata .=  $doclist->doc_type ?? '';
 				$doclistdata .= '</td>';
 				$staff = \App\Models\Staff::where('id', @$doclist->user_id)->first();
 
 			$doclistdata .= '<td><span style="    position: relative;background: rgb(3, 169, 244);font-size: .8rem;height: 24px;line-height: 24px;min-width: 24px;width: 24px;color: #fff;display: block;font-weight: 600;letter-spacing: 1px;text-align: center;border-radius: 50%;overflow: hidden;">'.($staff ? substr($staff->first_name, 0, 1) : '?').'</span>'.($staff ? $staff->first_name : 'System').'</td>';
 			$doclistdata .= '<td>'.date('Y-m-d',strtotime($doclist->created_at)).'</td>';
 			$doclistdata .= '<td>';
-			if($doclist->status == 1){
+			if($docStatus == 1){
 				$doclistdata .= '<span class="check"><i class="fa fa-eye"></i></span>';
 			}
 				$doclistdata .= '<div class="dropdown d-inline">
 					<button class="btn btn-primary dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
 					<div class="dropdown-menu">
-						<a target="_blank" class="dropdown-item" href="'.URL::to('/public/img/documents').'/'.$doclist->file_name.'">Preview</a>
+						<a target="_blank" class="dropdown-item" href="'.$fileUrl.'">Preview</a>
 						<a data-id="'.$doclist->id.'" class="dropdown-item deletenote" data-href="deleteapplicationdocs" href="javascript:;">Delete</a>
-						<a download class="dropdown-item" href="'.URL::to('/public/img/documents').'/'.$doclist->file_name.'">Download</a>';
-						if($doclist->status == 0){
+						<a download class="dropdown-item" href="'.$fileUrl.'">Download</a>';
+						if($docStatus == 0){
 							$doclistdata .= '<a data-id="'.$doclist->id.'" class="dropdown-item publishdoc" href="javascript:;">Publish Document</a>';
 						}else{
 							$doclistdata .= '<a data-id="'.$doclist->id.'"  class="dropdown-item unpublishdoc" href="javascript:;">Unpublish Document</a>';
@@ -2082,7 +2090,7 @@ class ClientPortalController extends Controller
 			$doclistdata .= '</tr>';
 		}
 		$application_id = $request->application_id;
-		$applicationuploadcount = DB::select("SELECT COUNT(DISTINCT list_id) AS cnt FROM application_documents where client_matter_id = " . (int)$application_id);
+		$applicationuploadcount = DB::select("SELECT COUNT(DISTINCT cp_list_id) AS cnt FROM documents WHERE cp_list_id IS NOT NULL AND client_matter_id = " . (int)$application_id);
 		$response['status'] 	= 	true;
 		$response['imagedata']	=	$imageData;
 		$response['doclistdata']	=	$doclistdata;
@@ -2091,7 +2099,7 @@ class ClientPortalController extends Controller
 		$applicationdocuments = \App\Models\ApplicationDocumentList::where('client_matter_id', $application_id)->where('type', $request->type)->get();
 			$checklistdata = '<table class="table"><tbody>';
 			foreach($applicationdocuments as $applicationdocument){
-				$appcount = \App\Models\ApplicationDocument::where('list_id', $applicationdocument->id)->count();
+				$appcount = Document::workflowChecklist()->where('cp_list_id', $applicationdocument->id)->count();
 				$checklistdata .= '<tr>';
 				if($appcount >0){
 					$checklistdata .= '<td><span class="check"><i class="fa fa-check"></i></span></td>';
@@ -2112,26 +2120,26 @@ class ClientPortalController extends Controller
 	public function deleteapplicationdocs(Request $request){
 		// Check if we're deleting by list_id (new method) or by id (old method for backward compatibility)
 		if($request->has('list_id') && $request->list_id){
-			// Delete all documents with the same list_id
+			// Delete all documents with the same cp_list_id
 			$listId = $request->list_id;
 			
-			// Get first document to get application_id for response
-			$appdoc = \App\Models\ApplicationDocument::where('list_id', $listId)->first();
+			// Get first document to get client_matter_id for response
+			$appdoc = Document::workflowChecklist()->where('cp_list_id', $listId)->first();
 			
 			if($appdoc){
-				// Delete all documents with this list_id
-				$res = \App\Models\ApplicationDocument::where('list_id', $listId)->delete();
+				// Delete all documents with this cp_list_id
+				$res = Document::workflowChecklist()->where('cp_list_id', $listId)->delete();
 				
 				if($res){
 				$response['status'] 	= 	true;
 				$response['message'] 	= 	'Record removed successfully';
 
 				// Notify client (for List Notifications API)
-				$clientMatterId = $appdoc->client_matter_id ?? $appdoc->application_id ?? null;
+				$clientMatterId = $appdoc->client_matter_id ?? null;
 				$clientMatter = $clientMatterId ? DB::table('client_matters')->where('id', $clientMatterId)->first() : null;
 				if ($clientMatter && !empty($clientMatter->client_id)) {
 					$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatter->id;
-					$docList = DB::table('application_document_lists')->where('id', $appdoc->list_id)->first();
+					$docList = DB::table('cp_doc_checklist')->where('id', $appdoc->cp_list_id)->first();
 					$docType = $docList ? $docList->document_type : ($appdoc->file_name ?? 'Document');
 					$notificationMessage = 'Document "' . $docType . '" removed for matter ' . $matterNo;
 					DB::table('notifications')->insert([
@@ -2149,31 +2157,34 @@ class ClientPortalController extends Controller
 					]);
 				}
 
-				$clientMatterId = $appdoc->client_matter_id ?? $appdoc->application_id ?? null;
-				$doclists = $clientMatterId ? \App\Models\ApplicationDocument::where('client_matter_id', $clientMatterId)->orderby('created_at','DESC')->get() : collect();
+				$clientMatterId = $appdoc->client_matter_id ?? null;
+				$doclists = $clientMatterId ? Document::workflowChecklist()->where('client_matter_id', $clientMatterId)->orderBy('created_at','DESC')->get() : collect();
 		$doclistdata = '';
 		foreach($doclists as $doclist){
-			$docdata = \App\Models\ApplicationDocumentList::where('id', $doclist->list_id)->first();
+			$docdata = \App\Models\ApplicationDocumentList::where('id', $doclist->cp_list_id)->first();
+			$fileUrl = ($doclist->myfile && str_starts_with($doclist->myfile, 'http')) ? $doclist->myfile : URL::to('/public/img/documents').'/'.$doclist->file_name;
+			$docStatus = $doclist->cp_doc_status ?? 0;
 			$doclistdata .= '<tr id="">';
 				$doclistdata .= '<td><i class="fa fa-file"></i> '. $doclist->file_name.'<br>'.@$docdata->document_type.'</td>';
 				$doclistdata .= '<td>';
-				if($doclist->type == 'application'){ $doclistdata .= 'Application'; }else if($doclist->type == 'acceptance'){ $doclistdata .=  'Acceptance'; }else if($doclist->type == 'payment'){ $doclistdata .=  'Payment'; }else if($doclist->type == 'formi20'){ $doclistdata .=  'Form I 20'; }else if($doclist->type == 'visaapplication'){ $doclistdata .=  'Visa Application'; }else if($doclist->type == 'interview'){ $doclistdata .=  'Interview'; }else if($doclist->type == 'enrolment'){ $doclistdata .=  'Enrolment'; }else if($doclist->type == 'courseongoing'){ $doclistdata .=  'Course Ongoing'; }
+				$docType = $doclist->doc_type ?? '';
+				if($docType == 'application'){ $doclistdata .= 'Application'; }else if($docType == 'acceptance'){ $doclistdata .=  'Acceptance'; }else if($docType == 'payment'){ $doclistdata .=  'Payment'; }else if($docType == 'formi20'){ $doclistdata .=  'Form I 20'; }else if($docType == 'visaapplication'){ $doclistdata .=  'Visa Application'; }else if($docType == 'interview'){ $doclistdata .=  'Interview'; }else if($docType == 'enrolment'){ $doclistdata .=  'Enrolment'; }else if($docType == 'courseongoing'){ $doclistdata .=  'Course Ongoing'; }else{ $doclistdata .= $docType; }
 				$doclistdata .= '</td>';
 				$staff = \App\Models\Staff::where('id', $doclist->user_id)->first();
 
 			$doclistdata .= '<td><span style="    position: relative;background: rgb(3, 169, 244);font-size: .8rem;height: 24px;line-height: 24px;min-width: 24px;width: 24px;color: #fff;display: block;font-weight: 600;letter-spacing: 1px;text-align: center;border-radius: 50%;overflow: hidden;">'.($staff ? substr($staff->first_name, 0, 1) : '?').'</span>'.($staff ? $staff->first_name : 'System').'</td>';
 			$doclistdata .= '<td>'.date('Y-m-d',strtotime($doclist->created_at)).'</td>';
 			$doclistdata .= '<td>';
-			if($doclist->status == 1){
+			if($docStatus == 1){
 				$doclistdata .= '<span class="check"><i class="fa fa-eye"></i></span>';
 			}
 				$doclistdata .= '<div class="dropdown d-inline">
 					<button class="btn btn-primary dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
 					<div class="dropdown-menu">
-						<a target="_blank" class="dropdown-item" href="'.URL::to('/public/img/documents').'/'.$doclist->file_name.'">Preview</a>
+						<a target="_blank" class="dropdown-item" href="'.$fileUrl.'">Preview</a>
 						<a data-id="'.$doclist->id.'" class="dropdown-item deletenote" data-href="deleteapplicationdocs" href="javascript:;">Delete</a>
-						<a download class="dropdown-item" href="'.URL::to('/public/img/documents').'/'.$doclist->file_name.'">Download</a>';
-						if($doclist->status == 0){
+						<a download class="dropdown-item" href="'.$fileUrl.'">Download</a>';
+						if($docStatus == 0){
 							$doclistdata .= '<a data-id="'.$doclist->id.'" class="dropdown-item publishdoc" href="javascript:;">Publish Document</a>';
 						}else{
 							$doclistdata .= '<a data-id="'.$doclist->id.'"  class="dropdown-item unpublishdoc" href="javascript:;">Unpublish Document</a>';
@@ -2184,17 +2195,17 @@ class ClientPortalController extends Controller
 			</td>';
 			$doclistdata .= '</tr>';
 		}
-		$clientMatterId = $appdoc->client_matter_id ?? $appdoc->application_id ?? null;
-		$applicationuploadcount = $clientMatterId ? DB::select("SELECT COUNT(DISTINCT list_id) AS cnt FROM application_documents where client_matter_id = " . (int)$clientMatterId) : [((object)['cnt' => 0])];
+		$clientMatterId = $appdoc->client_matter_id ?? null;
+		$applicationuploadcount = $clientMatterId ? DB::select("SELECT COUNT(DISTINCT cp_list_id) AS cnt FROM documents WHERE cp_list_id IS NOT NULL AND client_matter_id = " . (int)$clientMatterId) : [((object)['cnt' => 0])];
 		$response['status'] 	= 	true;
 
 		$response['doclistdata']	=	$doclistdata;
 		$response['applicationuploadcount']	=	@$applicationuploadcount[0]->cnt;
 
-		$applicationdocuments = $clientMatterId ? \App\Models\ApplicationDocumentList::where('client_matter_id', $clientMatterId)->where('type', $appdoc->type)->get() : collect();
+		$applicationdocuments = $clientMatterId ? \App\Models\ApplicationDocumentList::where('client_matter_id', $clientMatterId)->where('type', $appdoc->doc_type)->get() : collect();
 			$checklistdata = '<table class="table"><tbody>';
 			foreach($applicationdocuments as $applicationdocument){
-				$appcount = \App\Models\ApplicationDocument::where('list_id', $applicationdocument->id)->count();
+				$appcount = Document::workflowChecklist()->where('cp_list_id', $applicationdocument->id)->count();
 				$checklistdata .= '<tr>';
 				if($appcount >0){
 					$checklistdata .= '<td><span class="check"><i class="fa fa-check"></i></span></td>';
@@ -2208,7 +2219,7 @@ class ClientPortalController extends Controller
 			}
 			$checklistdata .= '</tbody></table>';
 		$response['checklistdata']	=	$checklistdata;
-		$response['type']	=	$appdoc->type;
+		$response['type']	=	$appdoc->doc_type ?? $appdoc->type ?? '';
 			}else{
 				$response['status'] 	= 	false;
 				$response['message'] 	= 	'Please try again';
@@ -2222,19 +2233,20 @@ class ClientPortalController extends Controller
 		}
 		
 		// Backward compatibility: Delete by document id (old method)
-		if(\App\Models\ApplicationDocument::where('id', $request->note_id)->exists()){
-			$appdoc = \App\Models\ApplicationDocument::where('id', $request->note_id)->first();
-			$res = \App\Models\ApplicationDocument::where('id', $request->note_id)->delete();
+		$docToDelete = Document::workflowChecklist()->where('id', $request->note_id)->first();
+		if($docToDelete){
+			$appdoc = $docToDelete;
+			$res = $docToDelete->delete();
 			if($res){
 				$response['status'] 	= 	true;
 				$response['message'] 	= 	'Record removed successfully';
 
 				// Notify client (for List Notifications API)
-				$clientMatterId = $appdoc->client_matter_id ?? $appdoc->application_id ?? null;
+				$clientMatterId = $appdoc->client_matter_id ?? null;
 				$clientMatter = $clientMatterId ? DB::table('client_matters')->where('id', $clientMatterId)->first() : null;
 				if ($clientMatter && !empty($clientMatter->client_id)) {
 					$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatter->id;
-					$docList = DB::table('application_document_lists')->where('id', $appdoc->list_id)->first();
+					$docList = DB::table('cp_doc_checklist')->where('id', $appdoc->cp_list_id)->first();
 					$docType = $docList ? $docList->document_type : ($appdoc->file_name ?? 'Document');
 					$notificationMessage = 'Document "' . $docType . '" removed for matter ' . $matterNo;
 					DB::table('notifications')->insert([
@@ -2252,31 +2264,34 @@ class ClientPortalController extends Controller
 					]);
 				}
 
-				$clientMatterId = $appdoc->client_matter_id ?? $appdoc->application_id ?? null;
-				$doclists = $clientMatterId ? \App\Models\ApplicationDocument::where('client_matter_id', $clientMatterId)->orderby('created_at','DESC')->get() : collect();
+				$clientMatterId = $appdoc->client_matter_id ?? null;
+				$doclists = $clientMatterId ? Document::workflowChecklist()->where('client_matter_id', $clientMatterId)->orderBy('created_at','DESC')->get() : collect();
 		$doclistdata = '';
 		foreach($doclists as $doclist){
-			$docdata = \App\Models\ApplicationDocumentList::where('id', $doclist->list_id)->first();
+			$docdata = \App\Models\ApplicationDocumentList::where('id', $doclist->cp_list_id)->first();
+			$fileUrl = ($doclist->myfile && str_starts_with($doclist->myfile, 'http')) ? $doclist->myfile : URL::to('/public/img/documents').'/'.$doclist->file_name;
+			$docStatus = $doclist->cp_doc_status ?? 0;
 			$doclistdata .= '<tr id="">';
 				$doclistdata .= '<td><i class="fa fa-file"></i> '. $doclist->file_name.'<br>'.@$docdata->document_type.'</td>';
 				$doclistdata .= '<td>';
-				if($doclist->type == 'application'){ $doclistdata .= 'Application'; }else if($doclist->type == 'acceptance'){ $doclistdata .=  'Acceptance'; }else if($doclist->type == 'payment'){ $doclistdata .=  'Payment'; }else if($doclist->type == 'formi20'){ $doclistdata .=  'Form I 20'; }else if($doclist->type == 'visaapplication'){ $doclistdata .=  'Visa Application'; }else if($doclist->type == 'interview'){ $doclistdata .=  'Interview'; }else if($doclist->type == 'enrolment'){ $doclistdata .=  'Enrolment'; }else if($doclist->type == 'courseongoing'){ $doclistdata .=  'Course Ongoing'; }
+				$docType = $doclist->doc_type ?? '';
+				if($docType == 'application'){ $doclistdata .= 'Application'; }else if($docType == 'acceptance'){ $doclistdata .=  'Acceptance'; }else if($docType == 'payment'){ $doclistdata .=  'Payment'; }else if($docType == 'formi20'){ $doclistdata .=  'Form I 20'; }else if($docType == 'visaapplication'){ $doclistdata .=  'Visa Application'; }else if($docType == 'interview'){ $doclistdata .=  'Interview'; }else if($docType == 'enrolment'){ $doclistdata .=  'Enrolment'; }else if($docType == 'courseongoing'){ $doclistdata .=  'Course Ongoing'; }else{ $doclistdata .= $docType; }
 				$doclistdata .= '</td>';
 				$staff = \App\Models\Staff::where('id', $doclist->user_id)->first();
 
 			$doclistdata .= '<td><span style="    position: relative;background: rgb(3, 169, 244);font-size: .8rem;height: 24px;line-height: 24px;min-width: 24px;width: 24px;color: #fff;display: block;font-weight: 600;letter-spacing: 1px;text-align: center;border-radius: 50%;overflow: hidden;">'.($staff ? substr($staff->first_name, 0, 1) : '?').'</span>'.($staff ? $staff->first_name : 'System').'</td>';
 			$doclistdata .= '<td>'.date('Y-m-d',strtotime($doclist->created_at)).'</td>';
 			$doclistdata .= '<td>';
-			if($doclist->status == 1){
+			if($docStatus == 1){
 				$doclistdata .= '<span class="check"><i class="fa fa-eye"></i></span>';
 			}
 				$doclistdata .= '<div class="dropdown d-inline">
 					<button class="btn btn-primary dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
 					<div class="dropdown-menu">
-						<a target="_blank" class="dropdown-item" href="'.URL::to('/public/img/documents').'/'.$doclist->file_name.'">Preview</a>
+						<a target="_blank" class="dropdown-item" href="'.$fileUrl.'">Preview</a>
 						<a data-id="'.$doclist->id.'" class="dropdown-item deletenote" data-href="deleteapplicationdocs" href="javascript:;">Delete</a>
-						<a download class="dropdown-item" href="'.URL::to('/public/img/documents').'/'.$doclist->file_name.'">Download</a>';
-						if($doclist->status == 0){
+						<a download class="dropdown-item" href="'.$fileUrl.'">Download</a>';
+						if($docStatus == 0){
 							$doclistdata .= '<a data-id="'.$doclist->id.'" class="dropdown-item publishdoc" href="javascript:;">Publish Document</a>';
 						}else{
 							$doclistdata .= '<a data-id="'.$doclist->id.'"  class="dropdown-item unpublishdoc" href="javascript:;">Unpublish Document</a>';
@@ -2304,39 +2319,41 @@ class ClientPortalController extends Controller
 	}
 
 	public function publishdoc(Request $request){
-		if(\App\Models\ApplicationDocument::where('id', $request->appid)->exists()){
-			$appdoc = \App\Models\ApplicationDocument::where('id', $request->appid)->first();
-			$obj = \App\Models\ApplicationDocument::find($request->appid);
-			$obj->status = $request->status;
-			$saved = $obj->save();
+		$doc = Document::workflowChecklist()->where('id', $request->appid)->first();
+		if($doc){
+			$doc->cp_doc_status = (int) $request->status;
+			$saved = $doc->save();
 			if($saved){
 				$response['status'] 	= 	true;
 				$response['message'] 	= 	'Record updated successfully';
-				$clientMatterId = $appdoc->client_matter_id ?? $appdoc->application_id ?? null;
-				$doclists = $clientMatterId ? \App\Models\ApplicationDocument::where('client_matter_id', $clientMatterId)->orderby('created_at','DESC')->get() : collect();
+				$clientMatterId = $doc->client_matter_id ?? null;
+				$doclists = $clientMatterId ? Document::workflowChecklist()->where('client_matter_id', $clientMatterId)->orderBy('created_at','DESC')->get() : collect();
 		$doclistdata = '';
 		foreach($doclists as $doclist){
-			$docdata = \App\Models\ApplicationDocumentList::where('id', $doclist->list_id)->first();
+			$docdata = \App\Models\ApplicationDocumentList::where('id', $doclist->cp_list_id)->first();
+			$fileUrl = ($doclist->myfile && str_starts_with($doclist->myfile, 'http')) ? $doclist->myfile : URL::to('/public/img/documents').'/'.$doclist->file_name;
+			$docStatus = $doclist->cp_doc_status ?? 0;
 			$doclistdata .= '<tr id="">';
 				$doclistdata .= '<td><i class="fa fa-file"></i> '. $doclist->file_name.'<br>'.@$docdata->document_type.'</td>';
 				$doclistdata .= '<td>';
-				if($doclist->type == 'application'){ $doclistdata .= 'Application'; }else if($doclist->type == 'acceptance'){ $doclistdata .=  'Acceptance'; }else if($doclist->type == 'payment'){ $doclistdata .=  'Payment'; }else if($doclist->type == 'formi20'){ $doclistdata .=  'Form I 20'; }else if($doclist->type == 'visaapplication'){ $doclistdata .=  'Visa Application'; }else if($doclist->type == 'interview'){ $doclistdata .=  'Interview'; }else if($doclist->type == 'enrolment'){ $doclistdata .=  'Enrolment'; }else if($doclist->type == 'courseongoing'){ $doclistdata .=  'Course Ongoing'; }
+				$docType = $doclist->doc_type ?? '';
+				if($docType == 'application'){ $doclistdata .= 'Application'; }else if($docType == 'acceptance'){ $doclistdata .=  'Acceptance'; }else if($docType == 'payment'){ $doclistdata .=  'Payment'; }else if($docType == 'formi20'){ $doclistdata .=  'Form I 20'; }else if($docType == 'visaapplication'){ $doclistdata .=  'Visa Application'; }else if($docType == 'interview'){ $doclistdata .=  'Interview'; }else if($docType == 'enrolment'){ $doclistdata .=  'Enrolment'; }else if($docType == 'courseongoing'){ $doclistdata .=  'Course Ongoing'; }else{ $doclistdata .= $docType; }
 				$doclistdata .= '</td>';
 				$staff = \App\Models\Staff::where('id', $doclist->user_id)->first();
 
 			$doclistdata .= '<td><span style="    position: relative;background: rgb(3, 169, 244);font-size: .8rem;height: 24px;line-height: 24px;min-width: 24px;width: 24px;color: #fff;display: block;font-weight: 600;letter-spacing: 1px;text-align: center;border-radius: 50%;overflow: hidden;">'.($staff ? substr($staff->first_name, 0, 1) : '?').'</span>'.($staff ? $staff->first_name : 'System').'</td>';
 			$doclistdata .= '<td>'.date('Y-m-d',strtotime($doclist->created_at)).'</td>';
 			$doclistdata .= '<td>';
-			if($doclist->status == 1){
+			if($docStatus == 1){
 				$doclistdata .= '<span class="check"><i class="fa fa-eye"></i></span>';
 			}
 				$doclistdata .= '<div class="dropdown d-inline">
 					<button class="btn btn-primary dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
 					<div class="dropdown-menu">
-						<a target="_blank" class="dropdown-item" href="'.URL::to('/public/img/documents').'/'.$doclist->file_name.'">Preview</a>
+						<a target="_blank" class="dropdown-item" href="'.$fileUrl.'">Preview</a>
 						<a data-id="'.$doclist->id.'" class="dropdown-item deletenote" data-href="deleteapplicationdocs" href="javascript:;">Delete</a>
-						<a download class="dropdown-item" href="'.URL::to('/public/img/documents').'/'.$doclist->file_name.'">Download</a>';
-						if($doclist->status == 0){
+						<a download class="dropdown-item" href="'.$fileUrl.'">Download</a>';
+						if($docStatus == 0){
 							$doclistdata .= '<a data-id="'.$doclist->id.'" class="dropdown-item publishdoc" href="javascript:;">Publish Document</a>';
 						}else{
 							$doclistdata .= '<a data-id="'.$doclist->id.'"  class="dropdown-item unpublishdoc" href="javascript:;">Unpublish Document</a>';
@@ -2399,19 +2416,20 @@ class ClientPortalController extends Controller
 				return response()->json($response);
 			}
 			
-			// Update document status to 1 (Approved)
-			$updated = DB::table('application_documents')
+			// Update document cp_doc_status to 1 (Approved)
+			$updated = DB::table('documents')
 				->where('id', $documentId)
+				->whereNotNull('cp_list_id')
 				->update([
-					'status' => 1,
+					'cp_doc_status' => 1,
 					'updated_at' => now()
 				]);
 			
 			if ($updated) {
 				// Log activity (Client Portal Documents tab - website)
-				$doc = DB::table('application_documents')->where('id', $documentId)->first();
+				$doc = DB::table('documents')->where('id', $documentId)->first();
 				if ($doc) {
-					$clientMatterId = $doc->client_matter_id ?? $doc->application_id ?? null;
+					$clientMatterId = $doc->client_matter_id ?? null;
 					$clientMatter = $clientMatterId ? DB::table('client_matters')->where('id', $clientMatterId)->first() : null;
 					if ($clientMatter && !empty($clientMatter->client_id)) {
 						DB::table('activities_logs')->insert([
@@ -2428,7 +2446,7 @@ class ClientPortalController extends Controller
 
 						// Notify client (for List Notifications API)
 						$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatter->id;
-						$docList = DB::table('application_document_lists')->where('id', $doc->list_id)->first();
+						$docList = DB::table('cp_doc_checklist')->where('id', $doc->cp_list_id)->first();
 						$docType = $docList ? $docList->document_type : ($doc->file_name ?? 'Document');
 						$notificationMessage = 'Document "' . $docType . '" approved for matter ' . $matterNo;
 						DB::table('notifications')->insert([
@@ -2475,30 +2493,24 @@ class ClientPortalController extends Controller
 				return response()->json($response);
 			}
 			
-			// Update data with status and rejection reason
+			// Update cp_doc_status to 2 (Rejected) and cp_rejection_reason
 			$updateData = [
-				'status' => 2,
+				'cp_doc_status' => 2,
+				'cp_rejection_reason' => trim($rejectReason),
 				'updated_at' => now()
 			];
 			
-			// Update doc_rejection_reason if column exists
-			if (Schema::hasColumn('application_documents', 'doc_rejection_reason')) {
-				$updateData['doc_rejection_reason'] = trim($rejectReason);
-			} elseif (Schema::hasColumn('application_documents', 'reject_reason')) {
-				// Fallback to reject_reason if doc_rejection_reason doesn't exist
-				$updateData['reject_reason'] = trim($rejectReason);
-			}
-			
 			// Update document status to 2 (Rejected)
-			$updated = DB::table('application_documents')
+			$updated = DB::table('documents')
 				->where('id', $documentId)
+				->whereNotNull('cp_list_id')
 				->update($updateData);
 			
 			if ($updated) {
 				// Log activity (Client Portal Documents tab - website)
-				$doc = DB::table('application_documents')->where('id', $documentId)->first();
+				$doc = DB::table('documents')->where('id', $documentId)->first();
 				if ($doc) {
-					$clientMatterId = $doc->client_matter_id ?? $doc->application_id ?? null;
+					$clientMatterId = $doc->client_matter_id ?? null;
 					$clientMatter = $clientMatterId ? DB::table('client_matters')->where('id', $clientMatterId)->first() : null;
 					if ($clientMatter && !empty($clientMatter->client_id)) {
 						DB::table('activities_logs')->insert([
@@ -2515,7 +2527,7 @@ class ClientPortalController extends Controller
 
 						// Notify client (for List Notifications API)
 						$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatter->id;
-						$docList = DB::table('application_document_lists')->where('id', $doc->list_id)->first();
+						$docList = DB::table('cp_doc_checklist')->where('id', $doc->cp_list_id)->first();
 						$docType = $docList ? $docList->document_type : ($doc->file_name ?? 'Document');
 						$notificationMessage = 'Document "' . $docType . '" rejected for matter ' . $matterNo;
 						DB::table('notifications')->insert([
@@ -2556,46 +2568,65 @@ class ClientPortalController extends Controller
 				return response()->json($response);
 			}
 			
-			// Get document from database
-			$document = DB::table('application_documents')
+			// Get document from database (workflow checklist docs only)
+			$document = DB::table('documents')
 				->where('id', $documentId)
+				->whereNotNull('cp_list_id')
 				->first();
 			
-			if (!$document || !$document->myfile) {
+			if (!$document) {
 				$response['message'] = 'Document not found.';
 				return response()->json($response);
 			}
 			
-			$fileUrl = $document->myfile;
 			$fileName = $document->file_name ?: 'document.pdf';
+			$fileContent = false;
 			
-			// Fetch file from S3/URL
-			$fileContent = @file_get_contents($fileUrl);
+			// Prefer S3/URL (myfile) when available
+			if ($document->myfile && str_starts_with((string) $document->myfile, 'http')) {
+				$fileUrl = $document->myfile;
+				$fileContent = @file_get_contents($fileUrl);
+			}
 			
-			if ($fileContent === false) {
-				// Try using cURL if file_get_contents fails
-				$ch = curl_init($fileUrl);
+			// Fallback: local file (workflow checklist via website upload)
+			if ($fileContent === false && $fileName) {
+				$localPath = config('constants.documents') . '/' . $fileName;
+				if (file_exists($localPath)) {
+					$fileContent = file_get_contents($localPath);
+				}
+			}
+			
+			// Retry S3 via cURL if file_get_contents failed
+			if ($fileContent === false && $document->myfile && str_starts_with((string) $document->myfile, 'http')) {
+				$ch = curl_init($document->myfile);
 				curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 				curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 				curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 				$fileContent = curl_exec($ch);
 				$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-				// cURL handle freed when $ch goes out of scope (curl_close deprecated in PHP 8+)
-				
 				if ($httpCode !== 200 || $fileContent === false) {
-					$response['message'] = 'Failed to fetch file from URL.';
-					return response()->json($response);
+					$fileContent = false;
 				}
 			}
+			
+			if ($fileContent === false) {
+				$response['message'] = 'Document not found or could not be retrieved.';
+				return response()->json($response);
+			}
+			
+			$fileUrl = $document->myfile ?? '';
 			
 			// Determine content type based on file extension or file URL
 			$extension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
 			
-			// If extension is empty, try to get it from URL
-			if (empty($extension)) {
-				$urlExtension = strtolower(pathinfo(parse_url($fileUrl, PHP_URL_PATH), PATHINFO_EXTENSION));
-				if (!empty($urlExtension)) {
-					$extension = $urlExtension;
+			// If extension is empty, try to get it from URL (for S3 links)
+			if (empty($extension) && $fileUrl) {
+				$urlPath = parse_url($fileUrl, PHP_URL_PATH);
+				if ($urlPath) {
+					$urlExtension = strtolower(pathinfo($urlPath, PATHINFO_EXTENSION));
+					if (!empty($urlExtension)) {
+						$extension = $urlExtension;
+					}
 				}
 			}
 			
@@ -2627,11 +2658,11 @@ class ClientPortalController extends Controller
 			$encodedFileName = rawurlencode($fileName);
 			
 			// Notify client (for List Notifications API)
-			$clientMatterId = $document->client_matter_id ?? $document->application_id ?? null;
+			$clientMatterId = $document->client_matter_id ?? null;
 			$clientMatter = $clientMatterId ? DB::table('client_matters')->where('id', $clientMatterId)->first() : null;
 			if ($clientMatter && !empty($clientMatter->client_id) && Auth::guard('admin')->check()) {
 				$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatter->id;
-				$docList = DB::table('application_document_lists')->where('id', $document->list_id)->first();
+				$docList = DB::table('cp_doc_checklist')->where('id', $document->cp_list_id)->first();
 				$docType = $docList ? $docList->document_type : ($document->file_name ?? 'Document');
 				$notificationMessage = 'Document "' . $docType . '" downloaded for matter ' . $matterNo;
 				DB::table('notifications')->insert([
