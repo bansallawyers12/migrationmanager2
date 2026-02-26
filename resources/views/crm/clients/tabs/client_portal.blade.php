@@ -208,26 +208,26 @@
                             
                             @if($selectedMatter && $allWorkflowStages->count() > 0)
                                 <!-- Tabs Navigation -->
-                                <div class="application-tabs-container mt-3">
-                                    <ul class="application-tabs-nav" role="tablist">
-                                        <li class="application-tab-item active" data-tab="activities">
-                                            <a href="javascript:void(0);" class="application-tab-link">Activities</a>
+                                <div class="client-portal-tabs-container mt-3">
+                                    <ul class="client-portal-tabs-nav" role="tablist">
+                                        <li class="client-portal-tab-item active" data-tab="activities">
+                                            <a href="javascript:void(0);" class="client-portal-tab-link">Activities</a>
                                         </li>
-                                        <li class="application-tab-item" data-tab="documents">
-                                            <a href="javascript:void(0);" class="application-tab-link">Documents</a>
+                                        <li class="client-portal-tab-item" data-tab="documents">
+                                            <a href="javascript:void(0);" class="client-portal-tab-link">Documents</a>
                                         </li>
-                                        <li class="application-tab-item" data-tab="messages">
-                                            <a href="javascript:void(0);" class="application-tab-link">Messages</a>
+                                        <li class="client-portal-tab-item" data-tab="messages">
+                                            <a href="javascript:void(0);" class="client-portal-tab-link">Messages</a>
                                         </li>
-                                        <li class="application-tab-item" data-tab="details">
-                                            <a href="javascript:void(0);" class="application-tab-link">Details</a>
+                                        <li class="client-portal-tab-item" data-tab="details">
+                                            <a href="javascript:void(0);" class="client-portal-tab-link">Details</a>
                                         </li>
                                     </ul>
                                     
                                     <!-- Tab Contents -->
-                                    <div class="application-tabs-content">
+                                    <div class="client-portal-tabs-content">
                                         <!-- Activities Tab (Default) -->
-                                        <div class="application-tab-pane active" id="activities-tab">
+                                        <div class="client-portal-tab-pane active" id="activities-tab">
                                             <div class="workflow-stages-container mt-3">
                                                 <div class="workflow-stages-list">
                                                     @foreach($allWorkflowStages as $index => $stage)
@@ -254,7 +254,7 @@
                                         </div>
                                         
                                         <!-- Documents Tab -->
-                                        <div class="application-tab-pane" id="documents-tab">
+                                        <div class="client-portal-tab-pane" id="documents-tab">
                                             <?php
                                             // Get application for the selected matter
                                             $applicationData = null;
@@ -524,7 +524,7 @@
                                         </div>
                                         
                                         <!-- Messages Tab -->
-                                        <div class="application-tab-pane" id="messages-tab">
+                                        <div class="client-portal-tab-pane" id="messages-tab">
                                             <!-- Message info modal (WhatsApp-style) -->
                                             <div class="message-info-modal-overlay" id="message-info-modal">
                                                 <div class="message-info-modal">
@@ -597,7 +597,7 @@
                                         </div>
                                         
                                         <!-- Details Tab -->
-                                        <div class="application-tab-pane" id="details-tab">
+                                        <div class="client-portal-tab-pane" id="details-tab">
                                             <div class="details-container" id="details-container">
                                                 <div class="details-loading" id="details-loading" style="display: none;">
                                                     <div class="loading-spinner"></div>
@@ -1228,11 +1228,11 @@
 }
 
 /* Application Tabs Styles */
-.application-tabs-container {
+.client-portal-tabs-container {
     margin-top: 20px;
 }
 
-.application-tabs-nav {
+.client-portal-tabs-nav {
     display: flex;
     list-style: none;
     padding: 0;
@@ -1241,12 +1241,12 @@
     gap: 0;
 }
 
-.application-tab-item {
+.client-portal-tab-item {
     margin: 0;
     padding: 0;
 }
 
-.application-tab-link {
+.client-portal-tab-link {
     display: block;
     padding: 12px 24px;
     text-decoration: none;
@@ -1258,29 +1258,29 @@
     background: transparent;
 }
 
-.application-tab-item.active .application-tab-link {
+.client-portal-tab-item.active .client-portal-tab-link {
     color: #9333ea;
     border-bottom-color: #9333ea;
     background: rgba(147, 51, 234, 0.05);
 }
 
-.application-tab-link:hover {
+.client-portal-tab-link:hover {
     color: #9333ea;
     background: rgba(147, 51, 234, 0.05);
 }
 
-.application-tabs-content {
+.client-portal-tabs-content {
     position: relative;
     min-height: 200px;
 }
 
-.application-tab-pane {
+.client-portal-tab-pane {
     display: none;
     padding: 20px 0;
     animation: fadeIn 0.3s ease;
 }
 
-.application-tab-pane.active {
+.client-portal-tab-pane.active {
     display: block;
 }
 
@@ -3576,8 +3576,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Application Tabs Switching Functionality
-    const applicationTabItems = document.querySelectorAll('.application-tab-item');
-    const applicationTabPanes = document.querySelectorAll('.application-tab-pane');
+    const applicationTabItems = document.querySelectorAll('.client-portal-tab-item');
+    const applicationTabPanes = document.querySelectorAll('.client-portal-tab-pane');
   
     
     
@@ -3621,7 +3621,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let messagesLoaded = false;
     
     applicationTabItems.forEach(function(tabItem) {
-        const tabLink = tabItem.querySelector('.application-tab-link');
+        const tabLink = tabItem.querySelector('.client-portal-tab-link');
         if (tabLink) {
             tabLink.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -3674,7 +3674,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Check if Messages tab is already active on page load
     setTimeout(function() {
         const messagesTab = document.getElementById('messages-tab');
-        const messagesTabLink = document.querySelector('.application-tab-item[data-tab="messages"]');
+        const messagesTabLink = document.querySelector('.client-portal-tab-item[data-tab="messages"]');
         
         // Check if Messages tab is active (either by class or by checking which tab link has active class)
         const isMessagesTabActive = (messagesTab && messagesTab.classList.contains('active')) || 
@@ -4789,7 +4789,7 @@ $(document).ready(function() {
         submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Adding...');
         
         // Store current active tab before submission
-        var currentActiveTab = $('.application-tab-item.active').attr('data-tab') || 'documents';
+        var currentActiveTab = $('.client-portal-tab-item.active').attr('data-tab') || 'documents';
         
         // Variables checklistType, checklistTypename, and clientMatterId are already defined above in validation section
         
@@ -4897,11 +4897,11 @@ $(document).ready(function() {
                     
                     // Always ensure Documents tab is active after adding checklist
                     // (since checklist is added from Documents tab)
-                    $('.application-tab-item').removeClass('active');
-                    $('.application-tab-pane').removeClass('active');
+                    $('.client-portal-tab-item').removeClass('active');
+                    $('.client-portal-tab-pane').removeClass('active');
                     
                     // Add active class to Documents tab
-                    $('.application-tab-item[data-tab="documents"]').addClass('active');
+                    $('.client-portal-tab-item[data-tab="documents"]').addClass('active');
                     $('#documents-tab').addClass('active');
                     
                     // Scroll to Documents tab if needed (smooth scroll)

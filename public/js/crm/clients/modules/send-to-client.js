@@ -268,7 +268,7 @@
                 }
             },
             error: function(xhr) {
-                console.error('Error sending invoice to client application:', xhr);
+                console.error('Error sending invoice to client portal:', xhr);
                 var errorMsg = 'Failed to send. Please try again.';
                 if (xhr.responseJSON && xhr.responseJSON.message) {
                     errorMsg = xhr.responseJSON.message;

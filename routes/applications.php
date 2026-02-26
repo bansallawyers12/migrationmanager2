@@ -29,9 +29,8 @@ use App\Http\Controllers\HomeController;
 // Route::post('/applications-import', [ClientPortalController::class, 'import'])->name('applications.import');
 
 /*---------- Application Operations ----------*/
-// REMOVED - Old application detail route (replaced by modern client portal tab)
-// Route::get('/getapplicationdetail', [ClientPortalController::class, 'getapplicationdetail']);
-Route::post('/client-portal/load-matter-upsert', [ClientPortalController::class, 'loadApplicationInsertUpdateData']);
+Route::get('/client-portal/detail', [ClientPortalController::class, 'getClientPortalDetail']);
+Route::post('/client-portal/load-matter-upsert', [ClientPortalController::class, 'loadMatterUpsert']);
 Route::get('/updatestage', [ClientPortalController::class, 'updatestage']);
 Route::get('/completestage', [ClientPortalController::class, 'completestage']);
 Route::get('/updatebackstage', [ClientPortalController::class, 'updatebackstage']);
@@ -42,16 +41,16 @@ Route::post('/clients/matter/reopen', [ClientPortalController::class, 'reopenCli
 Route::post('/clients/matter/delete', [ClientPortalController::class, 'deleteClientMatter'])->name('clients.matter.delete');
 Route::post('/clients/matter/update-deadline', [ClientPortalController::class, 'updateClientMatterDeadline'])->name('clients.matter.update-deadline');
 Route::post('/clients/matter/change-workflow', [ClientPortalController::class, 'changeClientMatterWorkflow'])->name('clients.matter.change-workflow');
-Route::get('/get-applications-logs', [ClientPortalController::class, 'getapplicationslogs']);
-Route::get('/get-applications', [ClientPortalController::class, 'getapplications']);
+Route::get('/client-portal/logs', [ClientPortalController::class, 'getMatterLogs']);
+Route::get('/client-portal/list', [ClientPortalController::class, 'getapplications']);
 
-Route::post('/discontinue_application', [ClientPortalController::class, 'discontinue_application']);
-Route::post('/revert_application', [ClientPortalController::class, 'revert_application']);
+Route::post('/client-portal/discontinue', [ClientPortalController::class, 'discontinueMatter']);
+Route::post('/client-portal/revert', [ClientPortalController::class, 'revertMatter']);
 
 /*---------- Application Notes & Communication ----------*/
 Route::post('/create-app-note', [ClientPortalController::class, 'addNote']);
-Route::get('/getapplicationnotes', [ClientPortalController::class, 'getapplicationnotes']);
-Route::post('/application-sendmail', [ClientPortalController::class, 'applicationsendmail']);
+Route::get('/client-portal/notes', [ClientPortalController::class, 'getMatterNotes']);
+Route::post('/client-portal/sendmail', [ClientPortalController::class, 'clientPortalSendmail']);
 
 /*---------- Application Messages (Client Portal) ----------*/
 Route::get('/clients/matter-messages', [ClientPortalController::class, 'getMatterMessages'])->name('clients.matter-messages');
@@ -85,7 +84,7 @@ Route::post('/client-portal/ownership', [ClientPortalController::class, 'applica
 Route::get('/crm/document-checklists-options', [ClientPortalController::class, 'getDocumentChecklistsOptions']);
 Route::post('/add-checklists', [ClientPortalController::class, 'addchecklists']);
 Route::post('/client-portal/checklistupload', [ClientPortalController::class, 'checklistupload']);
-Route::get('/client-portal/delete-docs', [ClientPortalController::class, 'deleteapplicationdocs']);
+Route::get('/client-portal/delete-docs', [ClientPortalController::class, 'deleteClientPortalDocs']);
 Route::get('/client-portal/publishdoc', [ClientPortalController::class, 'publishdoc']);
 Route::post('/client-portal/approve-document', [ClientPortalController::class, 'approveDocument']);
 Route::post('/client-portal/reject-document', [ClientPortalController::class, 'rejectDocument']);

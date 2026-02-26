@@ -251,7 +251,7 @@ function customValidate(formName, savetype = '')
 								if(obj.status){
 									$('#create_applicationnote').modal('hide');
 									$.ajax({
-										url: site_url+'/get-applications-logs',
+										url: site_url+'/client-portal/logs',
 										type:'GET',
 										data:{id: noteid},
 										success: function(responses){
@@ -1822,9 +1822,9 @@ function customValidate(formName, savetype = '')
 							}
 						});
 
-					}else if(formName == 'discontinue_application'){
-							var client_id = $('#discontinue_application input[name="client_id"]').val();
-						var myform = document.getElementById('discontinue_application');
+					}else if(formName == 'discontinue_matter'){
+							var client_id = $('#discontinue_matter input[name="client_id"]').val();
+						var myform = document.getElementById('discontinue_matter');
 						var fd = new FormData(myform);
 
 						$.ajax({
@@ -1864,11 +1864,11 @@ function customValidate(formName, savetype = '')
 							success: function(response){
 								$('.popuploader').hide();
 								var obj = $.parseJSON(response);
-								$('#revert_application').modal('hide');
+								$('#revert_matter').modal('hide');
 								if(obj.status){
 
 									$.ajax({
-										url: site_url+'/get-applications-logs',
+										url: site_url+'/client-portal/logs',
 										type:'GET',
 										data:{id: appliid},
 										success: function(responses){
@@ -2106,7 +2106,7 @@ function customValidate(formName, savetype = '')
 									});
 
 									$.ajax({
-										url: site_url+'/get-applications-logs',
+										url: site_url+'/client-portal/logs',
 										type:'GET',
 										data:{id: noteid},
 										success: function(responses){
@@ -2162,7 +2162,7 @@ function customValidate(formName, savetype = '')
 									});
 
 									$.ajax({
-										url: site_url+'/get-applications-logs',
+										url: site_url+'/client-portal/logs',
 										type:'GET',
 										data:{id: noteid},
 										success: function(responses){
@@ -2692,7 +2692,7 @@ function customValidate(formName, savetype = '')
 						$("form[name="+formName+"]").submit();
 						return true;
 					}
-					else if(formName == 'stags_application')
+					else if(formName == 'stags_matter')
 					{
 						var $form = $("form[name="+formName+"]");
 						var $container = $form.find('#tags_modal_container');

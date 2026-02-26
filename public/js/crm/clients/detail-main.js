@@ -866,7 +866,7 @@ $(document).ready(function() {
 
     // Tags form: collect tags from pills and submit
 
-    $(document).on('submit', '#stags_application', function(e){
+    $(document).on('submit', '#stags_matter', function(e){
 
         var $form = $(this);
 
@@ -934,7 +934,7 @@ $(document).ready(function() {
 
     //Handle Client Portal tab click specifically
 
-    function showClientMatterApplicationData(selectedMatter){
+    function showClientMatterPortalData(selectedMatter){
 
         // Get client_id from the current page
 
@@ -6450,7 +6450,7 @@ Bansal Immigration`;
             var deleteUrl;
             if(delhref == 'deletenote'){
                 deleteUrl = window.ClientDetailConfig.urls.deleteNote;
-            } else if(delhref == 'deleteapplicationdocs' && window.ClientDetailConfig.urls.deleteClientPortalDoc){
+            } else if(delhref == 'deleteclientportaldocs' && window.ClientDetailConfig.urls.deleteClientPortalDoc){
                 deleteUrl = window.ClientDetailConfig.urls.deleteClientPortalDoc;
             } else {
                 deleteUrl = window.ClientDetailConfig.urls.admin + '/documents/delete';
@@ -6535,7 +6535,7 @@ Bansal Immigration`;
 
                             });
 
-                        } else if(delhref == 'deleteapplicationdocs'){
+                        } else if(delhref == 'deleteclientportaldocs'){
 
                             $('.mychecklistdocdata').html(res.doclistdata);
 

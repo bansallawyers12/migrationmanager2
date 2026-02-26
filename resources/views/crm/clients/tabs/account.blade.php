@@ -534,7 +534,7 @@
                                                     </a>
                                                 <?php } ?>
                                                 <?php 
-                                                // Send to Client Application: show only when Status = Pending (Unpaid = 0)
+                                                // Send to Client Portal: show only when Status = Pending (Unpaid = 0)
                                                 if($inc_val->invoice_status == 0) { 
                                                     $client_app_sent = DB::table('account_client_receipts')
                                                         ->where('receipt_type', 3)
@@ -558,7 +558,7 @@
                                                     <?php } ?>
                                                 <?php } else { ?>
                                                     <a class="dropdown-item send-to-client-application-btn" href="javascript:;" data-invoice-id="<?php echo $inc_val->receipt_id; ?>" data-invoice-no="<?php echo $inc_val->trans_no; ?>">
-                                                        <i class="fas fa-mobile-alt"></i> Send to Client Application
+                                                        <i class="fas fa-mobile-alt"></i> Send to Client Portal
                                                     </a>
                                                 <?php } ?>
                                                 <?php } ?>

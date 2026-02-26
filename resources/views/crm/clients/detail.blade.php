@@ -879,7 +879,7 @@ use App\Http\Controllers\Controller;
 				</button>
 			</div>
 			<div class="modal-body">
-                <form method="post" action="{{url('/save_tag')}}" name="stags_application" id="stags_application" autocomplete="off" enctype="multipart/form-data">
+                <form method="post" action="{{url('/save_tag')}}" name="stags_matter" id="stags_matter" autocomplete="off" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="client_id" id="client_id" value="">
 				<input type="hidden" name="create_new_as_red" id="create_new_as_red" value="0">
@@ -917,7 +917,7 @@ use App\Http\Controllers\Controller;
 						</div>
 
 						<div class="col-12 col-md-12 col-lg-12">
-							<button onclick="customValidate('stags_application')" type="button" class="btn btn-primary">Save</button>
+							<button onclick="customValidate('stags_matter')" type="button" class="btn btn-primary">Save</button>
 							<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
 						</div>
 					</div>
@@ -1320,7 +1320,7 @@ $(document).ready(function() {
             clientLedgerBalance: '{{ URL::to("/clients/clientLedgerBalanceAmount") }}',
             getInvoicesByMatter: '{{ URL::to("/get-invoices-by-matter") }}',
             loadMatterUpsert: '{{ URL::to("/client-portal/load-matter-upsert") }}',
-            getClientPortalDetail: '{{ URL::to("/getapplicationdetail") }}',
+            getClientPortalDetail: '{{ URL::to("/client-portal/detail") }}',
             updateIntake: '{{ URL::to("/client-portal/updateintake") }}',
             updateExpectWin: '{{ URL::to("/client-portal/updateexpectwin") }}',
             updateDates: '{{ URL::to("/client-portal/updatedates") }}',
@@ -1371,7 +1371,7 @@ $(document).ready(function() {
             updateStage: '{{ URL::to("/updatestage") }}',
             completeStage: '{{ URL::to("/completestage") }}',
             updateBackStage: '{{ URL::to("/updatebackstage") }}',
-            getApplicationNotes: '{{ URL::to("/getapplicationnotes") }}',
+            getMatterNotes: '{{ URL::to("/client-portal/notes") }}',
             checklistUpload: '{{ URL::to("/client-portal/checklistupload") }}',
             sendToHubdoc: '{{ url("/clients/sendToHubdoc") }}',
             checkHubdocStatus: '{{ url("/clients/checkHubdocStatus") }}',

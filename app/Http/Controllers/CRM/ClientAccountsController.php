@@ -5535,7 +5535,7 @@ public function getInvoiceAmount(Request $request)
     }
 
     /**
-     * Send Invoice to Client Application (Client Portal / Mobile App)
+     * Send Invoice to Client Portal (Client Portal / Mobile App)
      * Sends push notification to the client, sets client_application_sent=1 and client_application_sent_at, logs the activity.
      */
     public function sendInvoiceToClientApplication(Request $request, $id)
@@ -5569,7 +5569,7 @@ public function getInvoiceAmount(Request $request)
             if (isset($receipt_entry->invoice_status) && $receipt_entry->invoice_status != 0) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Invoice must be Pending (Unpaid) to send to Client Application'
+                    'message' => 'Invoice must be Pending (Unpaid) to send to Client Portal'
                 ], 400);
             }
 
@@ -5656,7 +5656,7 @@ public function getInvoiceAmount(Request $request)
                 'message' => 'Invoice sent to Client Application successfully!'
             ]);
         } catch (\Exception $e) {
-            Log::error('Error sending invoice to client application: ' . $e->getMessage());
+            Log::error('Error sending invoice to client portal: ' . $e->getMessage());
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to send: ' . $e->getMessage()

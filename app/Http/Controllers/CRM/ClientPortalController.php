@@ -624,7 +624,7 @@ class ClientPortalController extends Controller
     }
 
 	//Load Application Insert Update Data
-		public function loadApplicationInsertUpdateData(Request $request){
+		public function loadMatterUpsert(Request $request){
 		$clientId = $request->client_id;
 		$clientMatterId = $request->client_matter_id;
 
@@ -642,6 +642,24 @@ class ClientPortalController extends Controller
 			'client_matter_id' => $clientMatterId,
 			'message' => 'Ready'
 		]);
+	}
+
+	/**
+	 * Returns the client portal tab HTML for AJAX load when matter changes.
+	 * Used by showClientMatterPortalData in detail-main.js.
+	 */
+	public function getClientPortalDetail(Request $request){
+		$matterId = $request->id ?? $request->client_matter_id;
+		$clientMatter = ClientMatter::with('workflowStage')->find($matterId);
+		if (!$clientMatter) {
+			return response('<div class="p-4 text-danger">Matter not found.</div>', 404);
+		}
+		$fetchedData = Admin::whereIn('type', ['client', 'lead'])->find($clientMatter->client_id);
+		if (!$fetchedData) {
+			return response('<div class="p-4 text-danger">Client not found.</div>', 404);
+		}
+		$id1 = $clientMatter->client_unique_matter_no;
+		return view('crm.clients.tabs.client_portal', compact('fetchedData', 'id1'));
 	}
 
 	public function completestage(Request $request){
@@ -1565,7 +1583,7 @@ class ClientPortalController extends Controller
 
 	// LEGACY METHOD - Still used by some JavaScript but outputs HTML directly (old pattern)
 	// TODO: Refactor to return JSON and handle rendering in frontend
-	public function getapplicationslogs(Request $request){
+	public function getMatterLogs(Request $request){
 		$id = $request->id ?? $request->client_matter_id;
 		$clientMatter = ClientMatter::with('workflowStage')->find($id);
 
@@ -1666,7 +1684,7 @@ class ClientPortalController extends Controller
 		echo json_encode($response);
 	}
 
-	public function getapplicationnotes(Request $request){
+	public function getMatterNotes(Request $request){
 		$noteid = $request->id;
 		$clientMatter = ClientMatter::find($noteid);
 
@@ -1709,7 +1727,7 @@ class ClientPortalController extends Controller
 
 	}
 
-	public function applicationsendmail(Request $request){
+	public function clientPortalSendmail(Request $request){
 		$requestData = $request->all();
 		$user_id = @Auth::user()->id;
 		$subject = $requestData['subject'];
@@ -1788,7 +1806,7 @@ class ClientPortalController extends Controller
 		}
 	}
 
-	public function discontinue_application(Request $request){
+	public function discontinueMatter(Request $request){
 		$obj = ClientMatter::find($request->diapp_id ?? $request->client_matter_id);
 		if (!$obj) {
 			echo json_encode(['status' => false, 'message' => 'Matter not found']);
@@ -1799,7 +1817,7 @@ class ClientPortalController extends Controller
 		echo json_encode(['status' => $saved, 'message' => $saved ? 'Matter successfully discontinued.' : 'Please try again']);
 	}
 
-	public function revert_application(Request $request){
+	public function revertMatter(Request $request){
 		$obj = ClientMatter::with('workflowStage')->find($request->revapp_id ?? $request->client_matter_id);
 		if (!$obj) {
 			echo json_encode(['status' => false, 'message' => 'Matter not found']);
@@ -2076,7 +2094,7 @@ class ClientPortalController extends Controller
 					<button class="btn btn-primary dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
 					<div class="dropdown-menu">
 						<a target="_blank" class="dropdown-item" href="'.$fileUrl.'">Preview</a>
-						<a data-id="'.$doclist->id.'" class="dropdown-item deletenote" data-href="deleteapplicationdocs" href="javascript:;">Delete</a>
+						<a data-id="'.$doclist->id.'" class="dropdown-item deletenote" data-href="deleteclientportaldocs" href="javascript:;">Delete</a>
 						<a download class="dropdown-item" href="'.$fileUrl.'">Download</a>';
 						if($docStatus == 0){
 							$doclistdata .= '<a data-id="'.$doclist->id.'" class="dropdown-item publishdoc" href="javascript:;">Publish Document</a>';
@@ -2117,7 +2135,7 @@ class ClientPortalController extends Controller
 		echo json_encode($response);
 	}
 
-	public function deleteapplicationdocs(Request $request){
+	public function deleteClientPortalDocs(Request $request){
 		// Check if we're deleting by list_id (new method) or by id (old method for backward compatibility)
 		if($request->has('list_id') && $request->list_id){
 			// Delete all documents with the same cp_list_id
@@ -2182,7 +2200,7 @@ class ClientPortalController extends Controller
 					<button class="btn btn-primary dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
 					<div class="dropdown-menu">
 						<a target="_blank" class="dropdown-item" href="'.$fileUrl.'">Preview</a>
-						<a data-id="'.$doclist->id.'" class="dropdown-item deletenote" data-href="deleteapplicationdocs" href="javascript:;">Delete</a>
+						<a data-id="'.$doclist->id.'" class="dropdown-item deletenote" data-href="deleteclientportaldocs" href="javascript:;">Delete</a>
 						<a download class="dropdown-item" href="'.$fileUrl.'">Download</a>';
 						if($docStatus == 0){
 							$doclistdata .= '<a data-id="'.$doclist->id.'" class="dropdown-item publishdoc" href="javascript:;">Publish Document</a>';
@@ -2289,7 +2307,7 @@ class ClientPortalController extends Controller
 					<button class="btn btn-primary dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
 					<div class="dropdown-menu">
 						<a target="_blank" class="dropdown-item" href="'.$fileUrl.'">Preview</a>
-						<a data-id="'.$doclist->id.'" class="dropdown-item deletenote" data-href="deleteapplicationdocs" href="javascript:;">Delete</a>
+						<a data-id="'.$doclist->id.'" class="dropdown-item deletenote" data-href="deleteclientportaldocs" href="javascript:;">Delete</a>
 						<a download class="dropdown-item" href="'.$fileUrl.'">Download</a>';
 						if($docStatus == 0){
 							$doclistdata .= '<a data-id="'.$doclist->id.'" class="dropdown-item publishdoc" href="javascript:;">Publish Document</a>';
@@ -2351,7 +2369,7 @@ class ClientPortalController extends Controller
 					<button class="btn btn-primary dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
 					<div class="dropdown-menu">
 						<a target="_blank" class="dropdown-item" href="'.$fileUrl.'">Preview</a>
-						<a data-id="'.$doclist->id.'" class="dropdown-item deletenote" data-href="deleteapplicationdocs" href="javascript:;">Delete</a>
+						<a data-id="'.$doclist->id.'" class="dropdown-item deletenote" data-href="deleteclientportaldocs" href="javascript:;">Delete</a>
 						<a download class="dropdown-item" href="'.$fileUrl.'">Download</a>';
 						if($docStatus == 0){
 							$doclistdata .= '<a data-id="'.$doclist->id.'" class="dropdown-item publishdoc" href="javascript:;">Publish Document</a>';

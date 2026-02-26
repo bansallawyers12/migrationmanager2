@@ -17,7 +17,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" action="{{URL::to('/discontinue_application')}}" name="discontinue_application" id="discontinue_application" autocomplete="off" enctype="multipart/form-data">
+				<form method="post" action="{{URL::to('/client-portal/discontinue')}}" name="discontinue_matter" id="discontinue_matter" autocomplete="off" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="diapp_id" value="">
 					<div class="row">
@@ -46,7 +46,7 @@
 							</div>
 						</div>
 						<div class="col-12 col-md-12 col-lg-12">
-							<button onclick="customValidate('discontinue_application')" type="button" class="btn btn-primary">Save</button>
+							<button onclick="customValidate('discontinue_matter')" type="button" class="btn btn-primary">Save</button>
 							<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
 						</div>
 					</div>
@@ -229,7 +229,7 @@
 </div>
 
 {{-- 3. Revert Discontinued Application Modal --}}
-<div class="modal fade custom_modal" id="revert_application" tabindex="-1" role="dialog" aria-labelledby="applicationModalLabel" aria-hidden="true">
+<div class="modal fade custom_modal" id="revert_matter" tabindex="-1" role="dialog" aria-labelledby="applicationModalLabel" aria-hidden="true">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
@@ -239,7 +239,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" action="{{URL::to('/revert_application')}}" name="revertapplication" id="revertapplication" autocomplete="off" enctype="multipart/form-data">
+				<form method="post" action="{{URL::to('/client-portal/revert')}}" name="revertapplication" id="revertapplication" autocomplete="off" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="revapp_id" value="">
 					<div class="row">
