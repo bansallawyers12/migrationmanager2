@@ -49,6 +49,21 @@ class ClientImportService
 
             $clientData = $importData['client'];
 
+            // Normalize office_visit_form_v1 format for CRM compatibility
+            if (isset($importData['format']) && $importData['format'] === 'office_visit_form_v1') {
+                if (!isset($clientData['visaExpiry']) && isset($clientData['visa_expiry'])) {
+                    $clientData['visaExpiry'] = $clientData['visa_expiry'];
+                }
+                if (isset($importData['test_scores']) && is_array($importData['test_scores'])) {
+                    foreach ($importData['test_scores'] as &$ts) {
+                        if (isset($ts['overall']) && !isset($ts['overall_score'])) {
+                            $ts['overall_score'] = $ts['overall'];
+                        }
+                    }
+                    unset($ts);
+                }
+            }
+
             // Check for duplicate email if skip_duplicates is enabled
             if ($skipDuplicates) {
                 $email = isset($clientData['email']) ? trim((string) $clientData['email']) : '';
