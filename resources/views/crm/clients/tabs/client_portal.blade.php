@@ -4903,11 +4903,11 @@ $(document).on('click', '.cp-reject-doc-btn', function () {
 </script>
 
 {{-- ── Move Document Modal ─────────────────────────────────────────────── --}}
-<div class="modal fade" id="moveDocumentModal" tabindex="-1" role="dialog" aria-labelledby="moveDocumentModalLabel" aria-hidden="true">
+<div class="modal fade" id="cpWorkflowMoveDocModal" tabindex="-1" role="dialog" aria-labelledby="cpWorkflowMoveDocModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="moveDocumentModalLabel"><i class="fa fa-arrows-alt mr-1"></i> Move Document</h5>
+                <h5 class="modal-title" id="cpWorkflowMoveDocModalLabel"><i class="fa fa-arrows-alt mr-1"></i> Move Document</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </div>
             <div class="modal-body">
@@ -4948,7 +4948,7 @@ $(document).on('click', '.cp-move-doc-btn', function () {
     $('#moveDestination').val('');
     $('#moveCategoryGroup').hide();
     $('#moveCategory').html('<option value="">-- Select Category --</option>');
-    $('#moveDocumentModal').modal('show');
+    $('#cpWorkflowMoveDocModal').modal('show');
 });
 
 // Load categories when destination changes
@@ -5000,7 +5000,7 @@ $('#moveDocumentSubmitBtn').on('click', function () {
         success: function (response) {
             $btn.prop('disabled', false).text('Move Document');
             if (response.status) {
-                $('#moveDocumentModal').modal('hide');
+                $('#cpWorkflowMoveDocModal').modal('hide');
                 // Remove the row — document now lives in personal/visa docs
                 $('.cp-move-doc-btn[data-document-id="' + documentId + '"]').closest('tr').fadeOut(400, function () {
                     $(this).remove();
