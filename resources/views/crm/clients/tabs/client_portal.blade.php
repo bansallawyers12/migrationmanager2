@@ -4860,7 +4860,13 @@ $(document).on('click', '.cp-approve-doc-btn', function () {
 
 // Reject document
 $(document).on('click', '.cp-reject-doc-btn', function () {
-    var reason = prompt('Enter rejection reason (optional):') || '';
+    var reason = prompt('Enter rejection reason (required):');
+    if (reason === null) return; // cancelled
+    reason = reason.trim();
+    if (!reason) {
+        alert('Rejection reason is required. Please enter a reason before rejecting.');
+        return;
+    }
     var documentId = $(this).data('document-id');
     var $btn = $(this);
     $.ajax({
