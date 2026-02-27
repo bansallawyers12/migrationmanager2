@@ -4788,7 +4788,7 @@ $(document).on('click', '.cp-doc-checklist-row', function () {
                         + '<td>' + (doc.file_name || 'N/A') + '</td>'
                         + '<td>' + (doc.created_at || '') + '</td>'
                         + '<td>' + statusBadge + '</td>'
-                        + '<td><div class="action-buttons"><div class="action-row">' + downloadBtn + deleteBtn + '</div><div class="action-row">' + approveBtn + rejectBtn + '</div>' + (moveBtn ? '<div class="action-row">' + moveBtn + '</div>' : '') + '</div></td>'
+                        + '<td><div class="action-buttons"><div class="action-row">' + downloadBtn + deleteBtn + '</div><div class="action-row">' + approveBtn + rejectBtn + '</div>' + (moveBtn ? '<div class="action-row action-row-move">' + moveBtn + '</div>' : '') + '</div></td>'
                         + '</tr>';
                 });
             }
