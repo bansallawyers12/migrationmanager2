@@ -2451,15 +2451,17 @@
 /* Action buttons container */
 .checklist-details-table tbody td:nth-child(5) .action-buttons {
     display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    gap: 6px;
+    flex-direction: column;
+    gap: 4px;
     align-items: center;
     justify-content: center;
 }
 
 .checklist-details-table tbody td:nth-child(5) .action-buttons .action-row {
-    display: contents;
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    justify-content: center;
 }
 
 .checklist-details-table tbody td:nth-child(5) .action-buttons .btn {
@@ -4802,7 +4804,7 @@ $(document).on('click', '.cp-doc-checklist-row', function () {
                         + '<td>' + fileNameCell + '</td>'
                         + '<td>' + (doc.created_at || '') + '</td>'
                         + '<td>' + statusBadge + '</td>'
-                        + '<td><div class="action-buttons"><div class="action-row">' + downloadBtn + deleteBtn + '</div><div class="action-row">' + approveBtn + rejectBtn + '</div>' + (moveBtn ? '<div class="action-row action-row-move">' + moveBtn + '</div>' : '') + '</div></td>'
+                        + '<td><div class="action-buttons"><div class="action-row">' + downloadBtn + deleteBtn + '</div><div class="action-row action-row-move">' + approveBtn + rejectBtn + moveBtn + '</div></div></td>'
                         + '</tr>';
                 });
             }
@@ -4854,27 +4856,22 @@ $(document).on('click', '.cp-approve-doc-btn', function () {
     var documentId = $(this).data('document-id');
     var $btn = $(this);
     // Capture DOM references BEFORE .html() detaches $btn from the DOM
-    var $actionRow     = $btn.closest('.action-row');
-    var $actionButtons = $btn.closest('.action-buttons');
-    var $statusCell    = $btn.closest('tr').find('td:nth-child(3)');
-    var matterId       = $btn.closest('tr').data('matter-id') || '';
+    var $actionRow  = $btn.closest('.action-row');
+    var $statusCell = $btn.closest('tr').find('td:nth-child(3)');
+    var matterId    = $btn.closest('tr').data('matter-id') || '';
     $.ajax({
         url: '/api/client-portal/update-document-status',
         method: 'POST',
         data: { document_id: documentId, status: 1, _token: $('meta[name="csrf-token"]').attr('content') },
         success: function (response) {
             if (response.success) {
-                // Update status badge
                 $statusCell.html('<span class="badge badge-success">Approved</span>');
-                // Update action buttons: Approved → show only Reject
+                // Row 2: Approved → [spacer][Reject][Move] all in one row
                 $actionRow.html(
                     '<span style="width:32px;display:inline-block;"></span>' +
-                    '<a href="javascript:void(0);" class="btn btn-sm btn-warning cp-reject-doc-btn" data-document-id="' + documentId + '" title="Reject"><i class="fa fa-times-circle"></i></a>'
+                    '<a href="javascript:void(0);" class="btn btn-sm btn-warning cp-reject-doc-btn" data-document-id="' + documentId + '" title="Reject"><i class="fa fa-times-circle"></i></a>' +
+                    '<a href="javascript:void(0);" class="btn btn-sm btn-info cp-move-doc-btn" data-document-id="' + documentId + '" data-matter-id="' + matterId + '" title="Move Document"><i class="fa fa-arrows-alt"></i></a>'
                 );
-                // Show Move Document button (only visible when Approved)
-                if ($actionButtons.find('.action-row-move').length === 0) {
-                    $actionButtons.append('<div class="action-row action-row-move"><a href="javascript:void(0);" class="btn btn-sm btn-info cp-move-doc-btn" data-document-id="' + documentId + '" data-matter-id="' + matterId + '" title="Move Document"><i class="fa fa-arrows-alt"></i></a></div>');
-                }
                 alert('Document has been approved successfully.');
             } else {
                 alert(response.message || 'Failed to approve document.');
@@ -4901,15 +4898,12 @@ $(document).on('click', '.cp-reject-doc-btn', function () {
         data: { document_id: documentId, status: 2, rejection_reason: reason, _token: $('meta[name="csrf-token"]').attr('content') },
         success: function (response) {
             if (response.success) {
-                // Update status badge
                 $btn.closest('tr').find('td:nth-child(3)').html('<span class="badge badge-danger" title="' + $('<div>').text(reason || 'No reason provided').html() + '" style="cursor:help;">Rejected</span>');
-                // Update action buttons: Rejected → show only Approve
+                // Row 2: Rejected → [Approve][spacer] (no Move — only shown when Approved)
                 $btn.closest('.action-row').html(
                     '<a href="javascript:void(0);" class="btn btn-sm btn-success cp-approve-doc-btn" data-document-id="' + documentId + '" title="Approve"><i class="fa fa-check-circle"></i></a>' +
                     '<span style="width:32px;display:inline-block;"></span>'
                 );
-                // Remove Move button (only shown when Approved)
-                $btn.closest('.action-buttons').find('.action-row-move').remove();
             } else {
                 alert(response.message || 'Failed to reject document.');
             }
