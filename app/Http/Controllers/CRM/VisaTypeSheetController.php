@@ -300,7 +300,7 @@ class VisaTypeSheetController extends Controller
 
         $leadRows = collect();
         if ($leadRefTable && Schema::hasTable($leadRefTable)) {
-            $matterIds = DB::table('matters')->whereRaw($matterCondition)->pluck('id');
+            $matterIds = DB::table(DB::raw('matters as m'))->whereRaw($matterCondition)->pluck('id');
             if ($matterIds->isNotEmpty()) {
                 $leadQuery = DB::table($leadRefTable . ' as lr')
                     ->where('lr.type', $refType)
