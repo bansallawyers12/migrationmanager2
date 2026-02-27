@@ -75,6 +75,13 @@
                 if (typeof adjustActivityFeedHeight === 'function') {
                     adjustActivityFeedHeight();
                 }
+            },
+            error: function(xhr, status, error) {
+                $('.popuploader').hide();
+                console.error('[getallnotes] Failed to refresh notes:', status, error);
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('Notes refreshed but some data may be outdated. Please refresh the page.');
+                }
             }
         });
     }

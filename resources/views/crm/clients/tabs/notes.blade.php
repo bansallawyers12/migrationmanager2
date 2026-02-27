@@ -181,11 +181,20 @@
                             position: absolute;
                             top: 24px;
                             right: 180px;
-                            z-index: 1;
+                            z-index: 5;
+                            display: inline-flex;
+                            align-items: center;
+                            padding: 4px 8px;
+                            background: #e3f0fd;
+                            border-radius: 6px;
+                            border: 1px solid #2563eb;
                         }
                         .pined_note i {
-                            color: #6c757d;
-                            font-size: 1rem;
+                            color: #2563eb;
+                            font-size: 0.9rem;
+                        }
+                        .note-card-redesign.pinned {
+                            border-left: 3px solid #2563eb;
                         }
                     </style>
 

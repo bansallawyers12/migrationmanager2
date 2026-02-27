@@ -321,7 +321,7 @@ window.openTaskDetail = function(taskId) {
     $('#taskDetailTitle').text(stripHtml(data.description));
     $('#taskDetailClientName').text(data.clientName || 'Personal Action');
     $('#taskDetailClientCode').text(data.clientCode ? `(${data.clientCode})` : '');
-    $('#taskDetailClientLink').attr('href', isPersonalAction ? '/action' : `/clients/detail/${btoa(String(data.clientId))}`);
+    $('#taskDetailClientLink').attr('href', isPersonalAction ? '/action' : (data.clientDetailUrl || '#'));
     
     // Handle deadline display
     if (data.deadline) {

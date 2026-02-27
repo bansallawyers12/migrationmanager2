@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Log;
 use App\Models\Admin;
 use App\Models\Note;
+use App\Models\Staff;
 use App\Models\ActivitiesLog;
 // use App\Models\OnlineForm; // REMOVED: OnlineForm model has been deleted
 use App\Models\ClientMatter;
@@ -354,75 +355,73 @@ class ClientNotesController extends Controller
         }*/
         ob_start();
         foreach($notelist as $list){
-            $admin = Admin::where('id', $list->user_id)->first();
+            $staff = Staff::where('id', $list->user_id)->first();
+            $authorFirstName = $staff ? ($staff->first_name ?? 'NA') : 'NA';
+            $authorLastName = $staff ? ($staff->last_name ?? 'NA') : 'NA';
 
-            // Determine type label and color
+            // Determine type label, class, and inline class (match notes.blade.php)
             if($list->task_group === null || $list->task_group === '') {
-                // Handle NULL or empty task_group - assign to "Others"
                 $typeLabel = 'Others';
                 $typeClass = 'note-type-others';
+                $typeInlineClass = 'others';
             } else {
                 $type11 = strtolower($list->task_group);
                 $typeLabel = 'Others';
                 $typeClass = 'note-type-others';
+                $typeInlineClass = 'others';
 
-                if(strpos($type11, 'call') !== false) { $typeLabel = 'Call'; $typeClass = 'note-type-call'; }
-                else if(strpos($type11, 'email') !== false) { $typeLabel = 'Email'; $typeClass = 'note-type-email'; }
-                else if(strpos($type11, 'in-person') !== false) { $typeLabel = 'In-Person'; $typeClass = 'note-type-inperson'; }
-                else if(strpos($type11, 'others') !== false) { $typeLabel = 'Others'; $typeClass = 'note-type-others'; }
-                else if(strpos($type11, 'attention') !== false) { $typeLabel = 'Attention'; $typeClass = 'note-type-attention'; }
+                if(strpos($type11, 'call') !== false) { $typeLabel = 'Call'; $typeClass = 'note-type-call'; $typeInlineClass = 'call'; }
+                else if(strpos($type11, 'email') !== false) { $typeLabel = 'Email'; $typeClass = 'note-type-email'; $typeInlineClass = 'email'; }
+                else if(strpos($type11, 'in-person') !== false) { $typeLabel = 'In-Person'; $typeClass = 'note-type-inperson'; $typeInlineClass = 'inperson'; }
+                else if(strpos($type11, 'others') !== false) { $typeLabel = 'Others'; $typeClass = 'note-type-others'; $typeInlineClass = 'others'; }
+                else if(strpos($type11, 'attention') !== false) { $typeLabel = 'Attention'; $typeClass = 'note-type-attention'; $typeInlineClass = 'attention'; }
             }
-            //$desc = strip_tags($list->description);
             ?>
             <div class="note-card-redesign <?php if($list->pin == 1) echo 'pinned'; ?>" data-matterid="<?php echo $list->matter_id; ?>" id="note_id_<?php echo $list->id; ?>" data-id="<?php echo $list->id;?>" data-type="<?php echo $typeLabel;?>">
                 <?php if($list->pin == 1) { ?>
                     <div class="pined_note">
                         <i class="fa fa-thumb-tack" aria-hidden="true"></i>
                     </div>
-                <?php } ?>    
-            <div class="note-card-info">
-                    <span class="note-type-label <?php echo $typeClass;?>"><?php echo $typeLabel; ?></span>
-                    <span class="author-name-created"><?php echo $admin->first_name ?? 'NA' ;?> <?php echo $admin->last_name ?? 'NA' ;?></span>
+                <?php } ?>
+
+                <div class="date-time-menu-container">
                     <span class="author-updated-date-time"><?php echo date('d/m/Y h:i A', strtotime($list->updated_at));?></span>
-                </div>
-
-                <!--<div class="note-content-redesign"><?php //echo nl2br(htmlspecialchars($desc, ENT_QUOTES, 'UTF-8'));?></div>-->
-                <div class="note-content-redesign">
-                    <?php 
-                    if (!empty($list->description)) {
-                        $description = $list->description;
-
-                        // Check for unwanted Word/Office XML markup
-                        if (strpos($description, '<xml>') !== false || strpos($description, '<o:OfficeDocumentSettings>') !== false) {
-                            $finalDescription = htmlentities($description);
-                        } else {
-                            $finalDescription = $description;
-                        }
-                    } else {
-                        $finalDescription = '';
-                    }
-                    ?>
-                    <?php echo $finalDescription; ?>
-                </div>
-                <div class="note-toggle-btn-div">
-                    <div class="dropdown">
-                        <button class="btn btn-link dropdown-toggle note-toggle-btn-div-type" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <i class="fa fa-ellipsis-v"></i>
-                        </button>
-                        <div class="dropdown-menu">
-                            <a class="dropdown-item opennoteform" data-id="<?php echo $list->id;?>" href="javascript:;">Edit</a>
-                            <?php if( Auth::user()->role == 1 || Auth::user()->role == 16 ) { ?>
-                                <a class="dropdown-item editdatetime" data-id="<?php echo $list->id;?>" href="javascript:;">Edit Date Time</a>
-                            <?php }?>
-
-                            <a data-id="<?php echo $list->id;?>"  data-href="deletenote" class="dropdown-item deletenote" href="javascript:;">Delete</a>
-                            <?php if($list->pin == 1) { ?>
-                                <a data-id="<?php echo $list->id;?>" class="dropdown-item pinnote" href="javascript:;">Unpin</a>
-                            <?php } else { ?>
-                                <a data-id="<?php echo $list->id;?>" class="dropdown-item pinnote" href="javascript:;">Pin</a>
-                            <?php } ?>
+                    <div class="note-toggle-btn-div">
+                        <div class="dropdown">
+                            <button class="btn btn-link dropdown-toggle note-toggle-btn-div-type" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fa fa-ellipsis-v"></i>
+                            </button>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item opennoteform" data-id="<?php echo $list->id;?>" href="javascript:;">Edit</a>
+                                <?php if( Auth::user()->role == 1 || Auth::user()->role == 16 ) { ?>
+                                    <a class="dropdown-item editdatetime" data-id="<?php echo $list->id;?>" href="javascript:;">Edit Date Time</a>
+                                <?php }?>
+                                <a data-id="<?php echo $list->id;?>" data-href="deletenote" class="dropdown-item deletenote" href="javascript:;">Delete</a>
+                                <?php if($list->pin == 1) { ?>
+                                    <a data-id="<?php echo $list->id;?>" class="dropdown-item pinnote" href="javascript:;">Unpin</a>
+                                <?php } else { ?>
+                                    <a data-id="<?php echo $list->id;?>" class="dropdown-item pinnote" href="javascript:;">Pin</a>
+                                <?php } ?>
+                            </div>
                         </div>
                     </div>
+                </div>
+
+                <div class="note-card-info">
+                    <span class="author-name-created"><?php echo htmlspecialchars($authorFirstName); ?> <?php echo htmlspecialchars($authorLastName); ?> added the</span><span class="note-type-inline <?php echo $typeInlineClass;?>"><?php echo $typeLabel; ?> notes</span>
+                </div>
+
+                <div class="note-content-redesign">
+                    <?php
+                    if (!empty($list->description)) {
+                        $description = $list->description;
+                        if (strpos($description, '<xml>') !== false || strpos($description, '<o:OfficeDocumentSettings>') !== false) {
+                            echo '<p>' . htmlentities($description) . '</p>';
+                        } else {
+                            echo '<p>' . $description . '</p>';
+                        }
+                    }
+                    ?>
                 </div>
             </div>
             <?php
@@ -482,24 +481,21 @@ class ClientNotesController extends Controller
     {
 		$noteId = $request->input('note_id');
 
-		if ($noteId && Note::where('id', $noteId)->exists()) {
-			$note = Note::where('id', $noteId)->first();
-			if ($note->pin == 0) {
-				$obj = Note::find($note->id);
-				$obj->pin = 1;
-				$obj->save();
-			} else {
-				$obj = Note::find($note->id);
-				$obj->pin = 0;
-				$obj->save();
-			}
-			$response['status'] = true;
-			$response['message'] = 'Pin Option added successfully';
-		} else {
-			$response['status'] = false;
-			$response['message'] = 'Record not found';
+		if (!$noteId || !Note::where('id', $noteId)->exists()) {
+			return response()->json(['status' => false, 'message' => 'Record not found']);
 		}
-		return response()->json($response);
+
+		$note = Note::find($noteId);
+		$currentPin = (int) $note->pin;
+		$newPin = $currentPin ? 0 : 1;
+
+		$note->pin = $newPin;
+		$note->save();
+
+		return response()->json([
+			'status' => true,
+			'message' => $newPin ? 'Note pinned successfully' : 'Note unpinned successfully'
+		]);
 	}
 
     /**
