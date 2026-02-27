@@ -80,6 +80,9 @@
                                 <label class="checkbox-inline">
                                     <input type="checkbox" name="eoi_subclasses[]" value="491"> 491
                                 </label>
+                                <label class="checkbox-inline">
+                                    <input type="checkbox" name="eoi_subclasses[]" value="491-Family"> 491-Family
+                                </label>
                             </div>
                             <small class="form-text text-muted">Select all applicable subclasses</small>
                         </div>
@@ -248,6 +251,7 @@
                     <option value="189">Subclass 189</option>
                     <option value="190">Subclass 190</option>
                     <option value="491">Subclass 491</option>
+                    <option value="491-Family">Subclass 491-Family</option>
                 </select>
             </div>
 

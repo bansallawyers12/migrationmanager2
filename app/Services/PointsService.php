@@ -61,7 +61,7 @@ class PointsService
      */
     public function clearCache(int $clientId): void
     {
-        $subclasses = ['189', '190', '491', null];
+        $subclasses = ['189', '190', '491', '491-Family', null];
         
         foreach ($subclasses as $subclass) {
             Cache::forget("points_{$clientId}_{$subclass}_6");
@@ -717,13 +717,14 @@ class PointsService
     protected function calculateNominationPoints(?string $subclass): array
     {
         $points = match ($subclass) {
-            '491' => self::NOMINATION_491,
+            '491', '491-Family' => self::NOMINATION_491,
             '190' => self::NOMINATION_190,
             default => self::NOMINATION_189,
         };
 
         $detail = match ($subclass) {
             '491' => 'Subclass 491 nomination (15 pts)',
+            '491-Family' => 'Subclass 491-Family nomination (15 pts)',
             '190' => 'Subclass 190 nomination (5 pts)',
             '189' => 'Subclass 189 - no nomination',
             default => 'No subclass selected',

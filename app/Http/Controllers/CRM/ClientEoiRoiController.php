@@ -1006,7 +1006,7 @@ class ClientEoiRoiController extends Controller
             'id' => 'nullable|integer|exists:client_eoi_references,id',
             'eoi_number' => 'required|string|max:50',
             'eoi_subclasses' => 'required|array|min:1',
-            'eoi_subclasses.*' => ['required', 'string', Rule::in(['189', '190', '491'])],
+            'eoi_subclasses.*' => ['required', 'string', Rule::in(['189', '190', '491', '491-Family'])],
             'eoi_states' => 'required|array|min:1',
             'eoi_states.*' => ['required', 'string', Rule::in(['ACT', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA', 'FED'])],
             'eoi_occupation' => 'nullable|string|max:100',
@@ -1019,7 +1019,7 @@ class ClientEoiRoiController extends Controller
             'eoi_password' => 'nullable|string|max:50',
             'eoi_status' => ['nullable', 'string', Rule::in(['draft', 'submitted', 'invited', 'nominated', 'rejected', 'withdrawn'])],
         ], [
-            'eoi_subclasses.*.in' => 'Each subclass must be 189, 190, or 491',
+            'eoi_subclasses.*.in' => 'Each subclass must be 189, 190, 491, or 491-Family',
             'eoi_states.*.in' => 'Each state must be a valid Australian state/territory code',
         ]);
     }

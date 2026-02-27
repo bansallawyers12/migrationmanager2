@@ -458,6 +458,10 @@
                                                 <input class="form-check-input" type="checkbox" name="subclass[]" value="491" id="subclass_491" {{ is_array(request('subclass')) && in_array('491', request('subclass')) ? 'checked' : '' }}>
                                                 <label class="form-check-label" for="subclass_491">491</label>
                                             </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="subclass[]" value="491-Family" id="subclass_491_family" {{ is_array(request('subclass')) && in_array('491-Family', request('subclass')) ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="subclass_491_family">491-Family</label>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
