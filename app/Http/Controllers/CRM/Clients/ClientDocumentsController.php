@@ -1424,10 +1424,11 @@ class ClientDocumentsController extends Controller
                     return response()->json($response);
                 }
                 
-                $document->doc_type = 'personal';
+                $document->type       = 'client';
+                $document->doc_type   = 'personal';
                 $document->folder_name = $targetId;
                 $document->client_matter_id = null; // Clear matter association
-                // Keep checklist name if moving from visa
+                $document->cp_list_id = null;       // Remove from workflow checklist scope
                 
                 $targetName = $category->title;
                 
@@ -1440,11 +1441,13 @@ class ClientDocumentsController extends Controller
                     return response()->json($response);
                 }
                 
-                $document->doc_type = 'visa';
+                $document->type       = 'client';
+                $document->doc_type   = 'visa';
                 $document->folder_name = $targetId; // Category ID
                 // Preserve document's matter when target category is global (client_matter_id null)
                 // so the document stays visible in the matter-filtered visa documents view
                 $document->client_matter_id = $category->client_matter_id ?? $document->client_matter_id;
+                $document->cp_list_id = null;       // Remove from workflow checklist scope
                 
                 $targetName = $category->title;
             }
