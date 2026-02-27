@@ -2439,19 +2439,15 @@
 /* Action buttons container */
 .checklist-details-table tbody td:nth-child(5) .action-buttons {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: nowrap;
     gap: 6px;
     align-items: center;
     justify-content: center;
-    width: 100%;
 }
 
 .checklist-details-table tbody td:nth-child(5) .action-buttons .action-row {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
+    display: contents;
 }
 
 .checklist-details-table tbody td:nth-child(5) .action-buttons .btn {
