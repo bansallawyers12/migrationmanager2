@@ -342,6 +342,7 @@
                                                                                     <th><div>File Name</div></th>
                                                                                     <th><div>Uploaded</div></th>
                                                                                     <th><div>Status</div></th>
+                                                                                    <th><div>Download</div></th>
                                                                                     <th><div>Actions</div></th>
                                                                                 </tr>
                                                                             </thead>
@@ -4748,7 +4749,7 @@ $(document).on('click', '.cp-doc-checklist-row', function () {
     $('#cp-checklist-placeholder').hide();
     $('#cp-checklist-documents-content').show();
     $('#cp-checklist-selected-name').text(checklistName);
-    $('#cp-checklist-documents-tbody').html('<tr><td colspan="4" class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>');
+    $('#cp-checklist-documents-tbody').html('<tr><td colspan="5" class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>');
 
     $.ajax({
         url: '/api/client-portal/checklist-documents',
@@ -4759,7 +4760,7 @@ $(document).on('click', '.cp-doc-checklist-row', function () {
             var docs = response.documents || [];
             var html = '';
             if (docs.length === 0) {
-                html = '<tr><td colspan="4" class="text-center text-muted">No documents uploaded yet.</td></tr>';
+                html = '<tr><td colspan="5" class="text-center text-muted">No documents uploaded yet.</td></tr>';
             } else {
                 $.each(docs, function (i, doc) {
                     var statusBadge = '';
@@ -4780,6 +4781,12 @@ $(document).on('click', '.cp-doc-checklist-row', function () {
                         ? '<a href="javascript:void(0);" class="btn btn-sm btn-warning cp-reject-doc-btn" data-document-id="' + doc.id + '" title="Reject"><i class="fa fa-times-circle"></i></a>'
                         : '<span style="width:32px;display:inline-block;"></span>';
 
+                    var fileUrl     = doc.myfile || '';
+                    var fileNameDisplay = doc.file_name || 'N/A';
+                    var fileNameCell = fileUrl
+                        ? '<a href="' + fileUrl + '" target="_blank" title="Click to preview" style="color:inherit;text-decoration:underline;cursor:pointer;">' + fileNameDisplay + '</a>'
+                        : fileNameDisplay;
+
                     var downloadBtn = '<a href="javascript:void(0);" class="btn btn-sm btn-primary cp-download-doc-btn" data-document-id="' + doc.id + '" data-file-name="' + (doc.file_name || 'document') + '" title="Download"><i class="fa fa-download"></i></a>';
                     var deleteBtn   = '<a href="javascript:void(0);" class="btn btn-sm btn-danger cp-delete-doc-btn" data-document-id="' + doc.id + '" data-list-id="' + checklistId + '" title="Delete"><i class="fa fa-trash"></i></a>';
                     var moveBtn     = (doc.cp_doc_status == 1)
@@ -4787,17 +4794,18 @@ $(document).on('click', '.cp-doc-checklist-row', function () {
                         : '';
 
                     html += '<tr data-matter-id="' + (matterId || '') + '">'
-                        + '<td>' + (doc.file_name || 'N/A') + '</td>'
+                        + '<td>' + fileNameCell + '</td>'
                         + '<td>' + (doc.created_at || '') + '</td>'
                         + '<td>' + statusBadge + '</td>'
-                        + '<td><div class="action-buttons"><div class="action-row">' + downloadBtn + deleteBtn + '</div><div class="action-row">' + approveBtn + rejectBtn + '</div>' + (moveBtn ? '<div class="action-row action-row-move">' + moveBtn + '</div>' : '') + '</div></td>'
+                        + '<td style="text-align:center;">' + downloadBtn + '</td>'
+                        + '<td><div class="action-buttons"><div class="action-row">' + deleteBtn + '</div><div class="action-row">' + approveBtn + rejectBtn + '</div>' + (moveBtn ? '<div class="action-row action-row-move">' + moveBtn + '</div>' : '') + '</div></td>'
                         + '</tr>';
                 });
             }
             $('#cp-checklist-documents-tbody').html(html);
         },
         error: function () {
-            $('#cp-checklist-documents-tbody').html('<tr><td colspan="4" class="text-center text-danger">Failed to load documents.</td></tr>');
+            $('#cp-checklist-documents-tbody').html('<tr><td colspan="5" class="text-center text-danger">Failed to load documents.</td></tr>');
         }
     });
 });
@@ -4826,7 +4834,7 @@ $(document).on('click', '.cp-delete-doc-btn', function () {
             if (response.success) {
                 $row.remove();
                 if ($('#cp-checklist-documents-tbody tr').length === 0) {
-                    $('#cp-checklist-documents-tbody').html('<tr><td colspan="4" class="text-center text-muted">No documents uploaded yet.</td></tr>');
+                    $('#cp-checklist-documents-tbody').html('<tr><td colspan="5" class="text-center text-muted">No documents uploaded yet.</td></tr>');
                 }
             } else {
                 alert(response.message || 'Failed to delete document.');
@@ -5009,7 +5017,7 @@ $('#moveDocumentSubmitBtn').on('click', function () {
                 $('.cp-move-doc-btn[data-document-id="' + documentId + '"]').closest('tr').fadeOut(400, function () {
                     $(this).remove();
                     if ($('#cp-checklist-documents-tbody tr:visible').length === 0) {
-                        $('#cp-checklist-documents-tbody').html('<tr><td colspan="4" class="text-center text-muted">No documents uploaded yet.</td></tr>');
+                        $('#cp-checklist-documents-tbody').html('<tr><td colspan="5" class="text-center text-muted">No documents uploaded yet.</td></tr>');
                     }
                 });
                 alert(response.message || 'Document moved successfully.');
