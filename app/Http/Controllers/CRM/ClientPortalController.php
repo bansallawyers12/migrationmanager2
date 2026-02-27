@@ -1622,8 +1622,7 @@ class ClientPortalController extends Controller
 					<h4><?php echo $stages->name; ?></h4>
 					<div class="accord_hover">
 						<a title="Add Note" class="openappnote" data-app-type="<?php echo $stages->name; ?>" data-id="<?php echo $clientMatter->id; ?>" href="javascript:;"><i class="fa fa-file-alt"></i></a>
-						<a title="Add Document" class="opendocnote" data-app-type="<?php echo $stagname; ?>" data-id="<?php echo $clientMatter->id; ?>" href="javascript:;"><i class="fa fa-file-image"></i></a>
-						<!-- REMOVED: Old appointment system reference (openappappoint) -->
+						<!-- opendocnote REMOVED - workflow checklist upload flow dead (no modal, no handler) -->
 						<a data-app-type="<?php echo $stages->name; ?>" title="Email" data-id="<?php echo $clientMatter->id; ?>" data-email="" data-name="" class="openclientemail" title="Compose Mail" href="javascript:;"><i class="fa fa-envelope"></i></a>
 					</div>
 				</div>

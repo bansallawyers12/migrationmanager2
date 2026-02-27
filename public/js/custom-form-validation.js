@@ -1685,51 +1685,7 @@ function customValidate(formName, savetype = '')
 								}
 							}
 						});
-					}else if(formName == 'ajaxinvoicepaymentform'){
-							var client_id = $('#ajaxinvoicepaymentform input[name="client_id"]').val();
-						var myform = document.getElementById('ajaxinvoicepaymentform');
-						var fd = new FormData(myform);
-
-						$.ajax({
-							type:'post',
-							url:$("form[name="+formName+"]").attr('action'),
-							processData: false,
-							contentType: false,
-							data: fd,
-							success: function(response){
-								$('.popuploader').hide();
-								var obj = $.parseJSON(response);
-								$('#addpaymentmodal').modal('hide');
-								if(obj.status){
-								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
-									 $.ajax({
-										url: site_url+'/get-invoices',
-										type:'GET',
-										data:{clientid:client_id},
-										success: function(responses){
-												 $('.invoicetable').DataTable().destroy();
-													$('.invoicedatalist').html(responses);
-												$('.invoicetable').DataTable({
-													"searching": false,
-													"lengthChange": false,
-												  "columnDefs": [
-													{ "sortable": false, "targets": [0, 2, 3] }
-												  ],
-												  order: [[1, "desc"]] //column indexes is zero based
-
-
-												}).draw();
-
-										}
-									});
-
-								}else{
-									$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
-
-								}
-							}
-						});
-
+					// ajaxinvoicepaymentform REMOVED - addpaymentmodal and invoice/payment-store route removed (unused)
 					}else if(formName == 'discontinue_matter'){
 							var client_id = $('#discontinue_matter input[name="client_id"]').val();
 						var myform = document.getElementById('discontinue_matter');

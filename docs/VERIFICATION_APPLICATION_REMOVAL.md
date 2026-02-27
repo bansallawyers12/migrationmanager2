@@ -21,18 +21,18 @@
 | GET /client-portal/updatedates | updatedates | ✓ |
 | GET /client-portal/updateexpectwin | updateexpectwin | ✓ |
 | POST /client-portal/ownership | application_ownership | ✓ |
-| POST /client-portal/checklistupload | checklistupload | ✓ |
-| GET /client-portal/delete-docs | deleteClientPortalDocs | ✓ |
-| GET /client-portal/publishdoc | publishdoc | ✓ |
-| POST /client-portal/approve-document | approveDocument | ✓ |
-| POST /client-portal/reject-document | rejectDocument | ✓ |
+| POST /client-portal/checklistupload | checklistupload | ✗ REMOVED (workflow checklist upload dead) |
+| GET /client-portal/delete-docs | deleteClientPortalDocs | ✗ REMOVED |
+| GET /client-portal/publishdoc | publishdoc | ✗ REMOVED |
+| POST /client-portal/approve-document | approveDocument | ✗ REMOVED |
+| POST /client-portal/reject-document | rejectDocument | ✗ REMOVED |
 | GET /client-portal/download-document | downloadDocument | ✓ |
 
 ---
 
 ## 2. ClientDetailConfig URLs ✓
 
-All URLs in `detail.blade.php` and `companies/detail.blade.php` use `/client-portal/*` paths. Keys: `loadMatterUpsert`, `getClientPortalDetail`, `getMatterNotes`, `deleteClientPortalDoc`, `checklistUpload`, `publishDoc`, `updateIntake`, `updateExpectWin`, `updateDates`.
+All URLs in `detail.blade.php` and `companies/detail.blade.php` use `/client-portal/*` paths. Keys: `loadMatterUpsert`, `getClientPortalDetail`, `getMatterNotes`, `updateIntake`, `updateExpectWin`, `updateDates`. Removed: `deleteClientPortalDoc`, `checklistUpload`, `publishDoc` (workflow checklist flow dead).
 
 ---
 
@@ -71,15 +71,13 @@ All `.application-tab-*` / `.application-tabs-*` renamed to `.client-portal-tab-
 
 ## 7. Known / Minor Items
 
-1. **obj.application_id** (custom-form-validation.js, payment schedules): Form/response may still use `application_id`; fallback `res.client_matter_id || res.application_id` kept in detail-main.js for delete-payment-schedule flow.
+1. **Payment schedules**: REMOVED. No setup-paymentschedule, create-invoice, get-all-paymentschedules routes. Payment schedule handlers removed from custom-form-validation.js. payment-schedules.blade.php not included in app.
 
-2. **documents.blade.php**: Keeps `.application_id` as fallback; `.client_matter_id` is primary. Checklist.js sends `client_matter_id` and falls back to `application_id` if needed.
+2. **documents.blade.php**: openfileuploadmodal REMOVED. Personal/Visa document modals use `client_matter_id` where needed. No `.application_id` fallback.
 
-3. **payment-schedules.blade.php**: Hidden input `application_id` / `app_id` retained for form compatibility; backend may expect it.
+3. **StoreClientRequest**: `application_id` in validation rules kept for legacy form support (client import/creation).
 
-4. **StoreClientRequest**: `application_id` in validation rules kept for legacy form support.
-
-5. **ClientPortalWorkflowController API**: Returns `client_matter_id` only (no `application_id`).
+4. **ClientPortalWorkflowController API**: Returns `client_matter_id` only (no `application_id`).
 
 ---
 
@@ -97,7 +95,6 @@ All `.application-tab-*` / `.application-tabs-*` renamed to `.client-portal-tab-
 
 1. **Client Portal tab**: Change matter dropdown → click Client Portal → tab loads for selected matter
 2. **Discontinue / Revert**: Discontinue matter → revert matter → activities accordion refreshes
-3. **Client portal documents**: Upload checklist doc → delete doc → upload count updates
-4. **Send to Client Portal**: From accounts, send invoice to client portal
-5. **Application send mail**: Compose and send application email
-6. **Checklist upload**: Add checklist → upload document for matter
+3. **Send to Client Portal**: From accounts, send invoice to client portal
+4. **Application send mail**: Compose and send application email
+5. **Personal/Visa Documents**: Add checklist → upload document (workflow checklist upload removed)

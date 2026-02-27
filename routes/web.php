@@ -252,8 +252,8 @@ Route::middleware(['auth:admin'])->group(function() {
 	/*--------------------------------------------------
 	| SECTION: Applications & Office Visits Routes
 	|--------------------------------------------------*/
-	// All application, office visit, and appointment routes moved to routes/applications.php
-	require __DIR__ . '/applications.php';
+	// Client Portal, Office Visits, and Booking Appointments routes
+	require __DIR__ . '/client_portal.php';
 
 	/*---------- Audit Logs ----------*/
 	Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('auditlogs.index');

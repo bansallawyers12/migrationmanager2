@@ -244,7 +244,6 @@ Add to `C:\Windows\System32\drivers\etc\hosts`:
 - Generate professional invoices for services
 - Track payment status: Paid, Unpaid, Partially Paid
 - Send invoices via email to clients
-- Create payment schedules for installments
 - View invoice history and reports
 
 ### 6) Document Management

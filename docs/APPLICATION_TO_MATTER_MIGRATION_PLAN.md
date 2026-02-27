@@ -25,25 +25,9 @@ This document lists remaining changes to complete the migration from "applicatio
 
 ---
 
-## 2. Payment Schedule & Invoice Forms: `application_id` → `client_matter_id`
+## 2. Payment Schedule & Invoice Forms – OBSOLETE ✓
 
-**Current state:** Forms use `application_id` / `app_id` for client matter reference.
-
-**Files affected:**
-- `resources/views/crm/clients/modals/payment-schedules.blade.php` (lines 21, 157)
-- `resources/views/crm/clients/modals/documents.blade.php` (line 23 – class `application_id`)
-- `public/js/crm/clients/modules/checklist.js` (lines 46, 65, 76)
-- `public/js/custom-form-validation.js` (lines 1438, 1502 – `obj.application_id`)
-- Backend: verify `setup-paymentschedule` and `create-invoice` controllers accept `client_matter_id`
-
-**Migration steps:**
-1. Find the controller handling `/setup-paymentschedule` and `/create-invoice`.
-2. If they use `application_id`, add support for `client_matter_id` (or migrate fully).
-3. Update Blade forms: `name="application_id"` → `name="client_matter_id"`, `#application_id` → `#client_matter_id`.
-4. Update checklist.js: `.application_id` → `.client_matter_id`.
-5. Update custom-form-validation.js: `obj.application_id` → `obj.client_matter_id` (ensure backend returns this key).
-
-**Risk:** Medium – verify payment schedule and invoice creation still work after changes.
+**Status:** All features removed. Payment schedule setup, Create Invoice from schedule, Commission Invoice, Edit/Add payment schedule, and workflow checklist upload no longer exist. See `docs/SECTION_2_PAYMENT_INVOICE_APPLICATION_TO_CLIENT_MATTER_PLAN.md` for details.
 
 ---
 
