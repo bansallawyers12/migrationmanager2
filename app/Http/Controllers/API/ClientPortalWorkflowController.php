@@ -44,7 +44,7 @@ class ClientPortalWorkflowController extends Controller
                         $checklistItems = DB::table('cp_doc_checklists')
                             ->where('client_matter_id', $clientMatterId)
                             ->where('client_id', $clientId)
-                            ->where('typename', $stage->name)
+                            ->where('wf_stage', $stage->name)
                             ->where('allow_client', 1)
                             ->select('id', 'cp_checklist_name')
                             ->orderBy('id', 'asc')
