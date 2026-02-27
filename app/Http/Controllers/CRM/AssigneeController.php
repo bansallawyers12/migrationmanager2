@@ -200,9 +200,17 @@ class AssigneeController extends Controller
             })
             ->when($task_group !== 'All', function ($query) use ($task_group) {
                 return $query->where('task_group', 'like', $task_group);
-            })
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
+            });
+
+        // Apply sorting - match Action page: default action_date desc; respect sortable links
+        $sortParam = $request->get('sort', '-action_date');
+        $sortColumn = ltrim($sortParam, '-');
+        $sortDirection = str_starts_with($sortParam, '-') ? 'desc' : 'asc';
+        if (in_array($sortColumn, ['action_date', 'task_group', 'created_at'])) {
+            $assignees_completed = $assignees_completed->orderBy('notes.' . $sortColumn, $sortDirection)->paginate(20);
+        } else {
+            $assignees_completed = $assignees_completed->orderBy('notes.action_date', 'desc')->paginate(20);
+        }
 
         // Get action group counts with single optimized query
         $taskGroupCounts = $this->getCompletedActionGroupCounts($staff);

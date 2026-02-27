@@ -6835,6 +6835,110 @@ Bansal Immigration`;
 
 
 
+        $(document).delegate('.send-google-review', 'click', function(){
+
+            var $btn = $(this);
+
+            var templateId = $btn.data('template-id');
+
+            if (!templateId) {
+
+                if (typeof iziToast !== 'undefined') {
+
+                    iziToast.warning({ message: 'Google Review template not found. Please create a CRM Email Template with name containing "Google Review" or alias "google_review".', position: 'topRight' });
+
+                } else {
+
+                    alert('Google Review template not found. Please create a CRM Email Template with name containing "Google Review" or alias "google_review" in Admin Console.');
+
+                }
+
+                return;
+
+            }
+
+            $('#emailmodal #compose_client_matter_id').val('');
+
+            $('#emailmodal').modal('show');
+
+            var array = [];
+
+            var data = [];
+
+            var id = $btn.attr('data-id');
+
+            array.push(id);
+
+            var email = $btn.attr('data-email');
+
+            var name = $btn.attr('data-name');
+
+            var status = 'Client';
+
+            data.push({
+
+                id: id,
+
+                text: name,
+
+                html:  "<div  class='select2-result-repository ag-flex ag-space-between ag-align-center'>" +
+
+                    "<div  class='ag-flex ag-align-start'>" +
+
+                    "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'>"+name+"</span>&nbsp;</div>" +
+
+                    "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'>"+email+"</small ></div>" +
+
+                    "</div>" +
+
+                    "</div>" +
+
+                    "<div class='ag-flex ag-flex-column ag-align-end'>" +
+
+                    "<span class='ui label yellow select2-result-repository__statistics'>"+ status +
+
+                    "</span>" +
+
+                    "</div>" +
+
+                    "</div>",
+
+                title: name
+
+            });
+
+            $(".js-data-example-ajax").select2({
+
+                data: data,
+
+                escapeMarkup: function(markup) { return markup; },
+
+                templateResult: function(data) { return data.html; },
+
+                templateSelection: function(data) { return data.text; }
+
+            });
+
+            $('.js-data-example-ajax').val(array);
+
+            $('.js-data-example-ajax').trigger('change');
+
+            $('#emailmodal').one('shown.bs.modal', function(){
+
+                var $templateSelect = $('#emailmodal select.selecttemplate');
+
+                if ($templateSelect.length && templateId) {
+
+                    $templateSelect.val(templateId).trigger('change');
+
+                }
+
+            });
+
+        });
+
+
+
         $(document).delegate('.change_client_status', 'click', function(e){
 
 

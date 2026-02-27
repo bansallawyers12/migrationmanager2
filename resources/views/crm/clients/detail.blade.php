@@ -57,6 +57,10 @@ use App\Http\Controllers\Controller;
                     <div class="client-actions">
                         <a href="javascript:;" class="create_note_d" datatype="note" title="Add Notes"><i class="fas fa-plus"></i></a>
                         <a href="javascript:;" data-id="{{@$fetchedData->id}}" data-email="{{@$fetchedData->email}}" data-name="{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}" class="clientemail" title="Compose Mail"><i class="fa fa-envelope"></i></a>
+                        @php
+                            $googleReviewTemplate = \App\Models\EmailTemplate::crm()->where('alias', 'google_review')->orWhere('name', 'like', '%Google Review%')->orderBy('id')->first();
+                        @endphp
+                        <a href="javascript:;" class="send-google-review" data-id="{{@$fetchedData->id}}" data-email="{{@$fetchedData->email}}" data-name="{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}" data-template-id="{{ optional($googleReviewTemplate)->id ?? '' }}" title="Send Google Review"><i class="fab fa-google"></i></a>
                         <a href="javascript:;" class="send-sms-btn" data-client-id="{{@$fetchedData->id}}" data-client-name="{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}" title="Send SMS"><i class="fas fa-sms"></i></a>
                         <a href="javascript:;" datatype="not_picked_call" class="not_picked_call" title="Not Picked Call"><i class="fas fa-mobile-alt"></i></a>
                         <a href="javascript:;" data-toggle="modal" data-target="#create_appoint" title="Add Appointment"><i class="fas fa-calendar-plus"></i></a>
