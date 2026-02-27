@@ -6,9 +6,9 @@
  */
 
 // Lead assignment functions
-function assignLead(leadId, userId) {
+function assignLead(leadId, staffId) {
     // Future implementation for AJAX lead assignment
-    console.log('Assigning lead', leadId, 'to user', userId);
+    console.log('Assigning lead', leadId, 'to staff', staffId);
 }
 
 // Lead conversion functions
@@ -18,9 +18,9 @@ function convertLeadToClient(leadId) {
 }
 
 // Bulk operations
-function bulkAssignLeads(leadIds, userId) {
+function bulkAssignLeads(leadIds, staffId) {
     // Future implementation for bulk lead assignment
-    console.log('Bulk assigning leads', leadIds, 'to user', userId);
+    console.log('Bulk assigning leads', leadIds, 'to staff', staffId);
 }
 
 function bulkConvertLeads(leadIds) {

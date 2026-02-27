@@ -102,7 +102,7 @@
 												}
 											?>
 											<td>{{ ++$i }}</td>
-											<td>{{ $list->assigned_user->first_name ?? ''}}  {{$list->assigned_user->last_name ?? ''}}</td>
+											<td>{{ $list->assigned_staff->first_name ?? ''}}  {{$list->assigned_staff->last_name ?? ''}}</td>
 											<td>{{ $client_name??'N/P' }}</td>
                                             <td><a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->client_id)))}}" target="_blank" >{{ $list->noteClient->client_id ?? 'N/P' }}</a></td>
 											<td>{{ date('d/m/Y h:i:s',strtotime($list->action_date)) ?? 'N/P'}} </td>

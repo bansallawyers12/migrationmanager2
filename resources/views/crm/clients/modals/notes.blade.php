@@ -222,8 +222,8 @@
 	</div>
 </div>
 
-{{-- 4. View Application Note Modal --}}
-<div class="modal fade custom_modal" id="view_application_note" tabindex="-1" role="dialog" aria-labelledby="view_application_noteModalLabel" aria-hidden="true">
+{{-- 4. View Matter Note Modal --}}
+<div class="modal fade custom_modal" id="view_application_note" tabindex="-1" role="dialog" aria-labelledby="view_matter_noteModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
@@ -238,12 +238,12 @@
 	</div>
 </div>
 
-{{-- 5. Create Application Note Modal --}}
+{{-- 5. Create Matter Note Modal --}}
 <div class="modal fade custom_modal" id="create_applicationnote" tabindex="-1" role="dialog" aria-labelledby="create_noteModalLabel" aria-hidden="true">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title" id="appliationModalLabel">Create Note</h5>
+				<h5 class="modal-title" id="appliationModalLabel">Create Matter Note</h5>
 				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>

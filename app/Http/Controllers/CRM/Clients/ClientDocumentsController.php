@@ -125,11 +125,11 @@ class ClientDocumentsController extends Controller
                     $response['status'] = true;
                     $response['message'] = 'You\'ve successfully added your personal checklist';
 
-                    $fetchd = Document::with('user')->where('client_id',$clientid)->whereNull('not_used_doc')->where('doc_type',$doctype)->where('type',$request->type)->where('folder_name',$request->folder_name)->orderby('updated_at', 'DESC')->get();
+                    $fetchd = Document::with('staff')->where('client_id',$clientid)->whereNull('not_used_doc')->where('doc_type',$doctype)->where('type',$request->type)->where('folder_name',$request->folder_name)->orderby('updated_at', 'DESC')->get();
                     ob_start();
                     foreach($fetchd as $docKey=>$fetch)
                     {
-                        $admin = $fetch->user;
+                        $admin = $fetch->staff;
                         $fileUrl = $fetch->myfile_key ? $fetch->myfile : 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/' . $clientid . '/personal/' . $fetch->myfile;
                         ?>
                         <tr class="drow" id="id_<?php echo $fetch->id; ?>">
@@ -204,7 +204,7 @@ class ClientDocumentsController extends Controller
                     ob_start();
                     foreach($fetchd as $fetch)
                     {
-                        $admin = $fetch->user;
+                        $admin = $fetch->staff;
                         ?>
                         <div class="grid_list">
                             <div class="grid_col">
@@ -561,7 +561,7 @@ class ClientDocumentsController extends Controller
                     $response['message']	=	'You have added uploaded your visa checklist';
 
                     // Get all documents for this client (original behavior - no strict filtering)
-                    $fetchd = Document::with('user')->where('client_id',$clientid)
+                    $fetchd = Document::with('staff')->where('client_id',$clientid)
                         ->whereNull('not_used_doc')
                         ->where('doc_type',$doctype)
                         ->where('type',$request->type)
@@ -571,7 +571,7 @@ class ClientDocumentsController extends Controller
                     ob_start();
                     foreach($fetchd as $visaKey=>$fetch)
                     {
-                        $admin = $fetch->user;
+                        $admin = $fetch->staff;
                         $VisaDocumentType = VisaDocumentType::where('id', $fetch->folder_name)->first();
                         $fileUrl = $fetch->myfile_key ? $fetch->myfile : 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/' . $fetch->client_id . '/visa/' . $fetch->myfile;
                         
@@ -663,7 +663,7 @@ class ClientDocumentsController extends Controller
                     ob_start();
                     foreach($fetchd as $fetch)
                     {
-                        $admin = $fetch->user;
+                        $admin = $fetch->staff;
                         ?>
                         <div class="grid_list">
                             <div class="grid_col">
@@ -1579,7 +1579,7 @@ class ClientDocumentsController extends Controller
             if(\App\Models\Document::where('id',$doc_id)->exists()){
             $upd = DB::table('documents')->where('id', $doc_id)->update(array('not_used_doc' => 1));
             if($upd){
-                $docInfo = \App\Models\Document::with(['user'])->where('id',$doc_id)->first();
+                $docInfo = \App\Models\Document::with(['staff'])->where('id',$doc_id)->first();
                 $matterRef = $this->getMatterReference($docInfo->client_id);
                 $subject = !empty($matterRef) 
                     ? "moved {$doc_type} Document to Not Used - {$matterRef}"
@@ -1594,8 +1594,8 @@ class ClientDocumentsController extends Controller
                 );
 
                 if($docInfo){
-                    if( isset($docInfo->user_id) && $docInfo->user_id!= "" && $docInfo->user ){
-                        $response['Added_By'] = $docInfo->user->first_name;
+                    if( isset($docInfo->user_id) && $docInfo->user_id!= "" && $docInfo->staff ){
+                        $response['Added_By'] = $docInfo->staff->first_name;
                         $response['Added_date'] = date('d/m/Y',strtotime($docInfo->created_at));
                     } else {
                         $response['Added_By'] = "N/A";
@@ -1714,7 +1714,7 @@ class ClientDocumentsController extends Controller
             if(\App\Models\Document::where('id',$doc_id)->exists()){
             $upd = DB::table('documents')->where('id', $doc_id)->update(array('not_used_doc' => null));
             if($upd){
-                $docInfo = \App\Models\Document::with(['user'])->where('id',$doc_id)->first();
+                $docInfo = \App\Models\Document::with(['staff'])->where('id',$doc_id)->first();
                 $matterRef = $this->getMatterReference($docInfo->client_id);
                 $subject = !empty($matterRef) 
                     ? "restored {$doc_type} Document - {$matterRef}"
@@ -1729,8 +1729,8 @@ class ClientDocumentsController extends Controller
                 );
 
                 if($docInfo){
-                    if( isset($docInfo->user_id) && $docInfo->user_id!= "" && $docInfo->user ){
-                        $response['Added_By'] = $docInfo->user->first_name;
+                    if( isset($docInfo->user_id) && $docInfo->user_id!= "" && $docInfo->staff ){
+                        $response['Added_By'] = $docInfo->staff->first_name;
                         $response['Added_date'] = date('d/m/Y',strtotime($docInfo->created_at));
                     } else {
                         $response['Added_By'] = "N/A";

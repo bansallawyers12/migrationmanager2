@@ -68,19 +68,19 @@
     <ul class="feed-list">
         @php
         // Handle search parameters
-        $user_search = $_REQUEST['user'] ?? '';
+        $staff_search = $_REQUEST['staff'] ?? $_REQUEST['user'] ?? ''; // 'user' kept for backward compatibility
         $keyword_search = $_REQUEST['keyword'] ?? '';
         
         // Query activities based on search parameters
-        if ($user_search != "" || $keyword_search != "") {
-            if ($user_search != "" && $keyword_search != "") {
-                // Both user and keyword search
+        if ($staff_search != "" || $keyword_search != "") {
+            if ($staff_search != "" && $keyword_search != "") {
+                // Both staff and keyword search
                 $activities = \App\Models\ActivitiesLog::select('activities_logs.*')
                     ->leftJoin('staff', 'activities_logs.created_by', '=', 'staff.id')
                     ->where('activities_logs.client_id', $fetchedData->id)
-                    ->where(function($query) use ($user_search) {
-                        $userSearchLower = strtolower($user_search);
-                        $query->whereRaw('LOWER(staff.first_name) LIKE ?', ['%'.$userSearchLower.'%']);
+                    ->where(function($query) use ($staff_search) {
+                        $staffSearchLower = strtolower($staff_search);
+                        $query->whereRaw('LOWER(staff.first_name) LIKE ?', ['%'.$staffSearchLower.'%']);
                     })
                     ->where(function($query) use ($keyword_search) {
                         $query->where('activities_logs.description', 'like', '%'.$keyword_search.'%');
@@ -88,7 +88,7 @@
                     })
                     ->orderby('activities_logs.created_at', 'DESC')
                     ->get();
-            } else if ($user_search == "" && $keyword_search != "") {
+            } else if ($staff_search == "" && $keyword_search != "") {
                 // Keyword search only
                 $activities = \App\Models\ActivitiesLog::select('activities_logs.*')
                     ->where('activities_logs.client_id', $fetchedData->id)
@@ -98,14 +98,14 @@
                     })
                     ->orderby('activities_logs.created_at', 'DESC')
                     ->get();
-            } else if ($user_search != "" && $keyword_search == "") {
-                // User search only
+            } else if ($staff_search != "" && $keyword_search == "") {
+                // Staff search only
                 $activities = \App\Models\ActivitiesLog::select('activities_logs.*','staff.first_name','staff.last_name','staff.email')
                     ->leftJoin('staff', 'activities_logs.created_by', '=', 'staff.id')
                     ->where('activities_logs.client_id', $fetchedData->id)
-                    ->where(function($query) use ($user_search) {
-                        $userSearchLower = strtolower($user_search);
-                        $query->whereRaw('LOWER(staff.first_name) LIKE ?', ['%'.$userSearchLower.'%']);
+                    ->where(function($query) use ($staff_search) {
+                        $staffSearchLower = strtolower($staff_search);
+                        $query->whereRaw('LOWER(staff.first_name) LIKE ?', ['%'.$staffSearchLower.'%']);
                     })
                     ->orderby('activities_logs.created_at', 'DESC')
                     ->get();

@@ -527,7 +527,7 @@ class ClientPortalMessageController extends Controller
                     if (!empty($clientMatter->client_unique_matter_no)) {
                         $path .= '/' . $clientMatter->client_unique_matter_no;
                     }
-                    $messageNotificationUrl = url($path . '/application');
+                    $messageNotificationUrl = url($path . '/client_portal');
                 }
                 foreach ($targetRecipients as $recipientId) {
                     if ($recipientId != $clientId) {

@@ -95,7 +95,7 @@
 										</tr>
                                         @foreach ($assignees_notCompleted as $list)
                                         <?php  //echo "<pre>list==";print_r($list);
-                                            $staff = \App\Models\Staff::find($list->user_id); // user_id = staff who created/owns
+                                            $staff = $list->noteStaff; // staff who created/assigned the action
                                             if($staff){
                                                 $first_name = $staff->first_name ?? 'N/A';
                                                 $last_name = $staff->last_name ?? 'N/A';
@@ -120,7 +120,7 @@
                                                     <a class="btn btn-success complete_task" data-id="{{ $list->id }}" href="javascript:void(0)">Complete</a>
                                                 <?php } ?>
                                             </td>
-											<td>{{ $list->assigned_user->first_name ?? ''}}  {{$list->assigned_user->last_name ?? ''}}</td>
+											<td>{{ $list->assigned_staff->first_name ?? ''}}  {{$list->assigned_staff->last_name ?? ''}}</td>
 											<td>{{ $full_name??'N/P' }}</td>
                                             <td><a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->client_id)))}}" target="_blank" >{{ $list->noteClient->client_id ?? 'N/P' }}</a></td>
 											<td>{{ date('d/m/Y',strtotime($list->action_date)) ?? 'N/P'}} </td>
@@ -271,7 +271,7 @@
 										</tr>
                                         @foreach ($assignees_completed as $keyC=>$listC)
                                         <?php  //echo "<pre>$listC==";print_r($listC);
-                                            $staffC = \App\Models\Staff::find($listC->user_id); // user_id = staff who created
+                                            $staffC = $listC->noteStaff; // staff who created/assigned the action
                                             if($staffC){
                                                 $first_nameC = $staffC->first_name ?? 'N/A';
                                                 $last_nameC = $staffC->last_name ?? 'N/A';
@@ -296,7 +296,7 @@
                                                     <a class="btn btn-success complete_task" data-id="{{ $listC->id }}" href="javascript:void(0)">Complete</a>
                                                 <?php } ?>
                                             </td>
-											<td>{{ $listC->assigned_user->first_name ?? ''}}  {{$listC->assigned_user->last_name ?? ''}}</td>
+											<td>{{ $listC->assigned_staff->first_name ?? ''}}  {{$listC->assigned_staff->last_name ?? ''}}</td>
 											<td>{{ $full_nameC??'N/P' }}</td>
                                             <td><a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$listC->client_id)))}}" target="_blank" >{{ $listC->noteClient->client_id ?? 'N/P' }}</a></td>
 											<td>{{ date('d/m/Y',strtotime($listC->action_date)) ?? 'N/P'}} </td>

@@ -28,9 +28,7 @@ class ClientPortalWorkflowController extends Controller
             // Get client_matter_id parameter (optional)
             $clientMatterId = $request->get('client_matter_id');
             
-            // applications table removed - use client_matter_id as applicationId for document checklists
-            $applicationId = $clientMatterId;
-
+            // Use client_matter_id for document checklists (migrated from applications table)
             // Get all workflow stages (ordered by sort_order, then id)
             $workflowStages = DB::table('workflow_stages')
                 ->orderByRaw('COALESCE(sort_order, id) ASC')
@@ -41,14 +39,14 @@ class ClientPortalWorkflowController extends Controller
                     'updated_at'
                 )
                 ->get()
-                ->map(function ($stage) use ($clientId, $applicationId) {
+                ->map(function ($stage) use ($clientId, $clientMatterId) {
                     // Calculate allowed_checklist_count and get allowed_checklist items for this stage
                     $allowedChecklistCount = 0;
                     $allowedChecklist = [];
                     
-                    if (!is_null($applicationId)) {
+                    if (!is_null($clientMatterId)) {
                         $checklistItems = DB::table('cp_doc_checklist')
-                            ->where('client_matter_id', $applicationId)
+                            ->where('client_matter_id', $clientMatterId)
                             ->where('client_id', $clientId)
                             ->where('typename', $stage->name)
                             ->where('allow_client', 1)
@@ -362,7 +360,7 @@ class ClientPortalWorkflowController extends Controller
                 }
             }
 
-            // applications table removed - use client_matter_id as applicationId
+            // Use client_matter_id (migrated from applications table)
             $clientMatter = DB::table('client_matters')
                 ->where('id', $clientMatterId)
                 ->where('client_id', $clientId)
@@ -379,24 +377,22 @@ class ClientPortalWorkflowController extends Controller
                 ], 404);
             }
 
-            $applicationId = $clientMatterId;
-
             // Step 2: Get allowed checklist names from cp_doc_checklist table
             // Join with workflow_stages table to get type_id based on typename
             // Join with documents (workflow checklist) - only the LATEST document per checklist to avoid duplicate rows
             $latestDocSubquery = DB::table('documents')
                 ->select('cp_list_id', DB::raw('MAX(id) as latest_doc_id'))
-                ->where('client_matter_id', $applicationId)
+                ->where('client_matter_id', $clientMatterId)
                 ->whereNotNull('cp_list_id')
                 ->groupBy('cp_list_id');
 
             $query = DB::table('cp_doc_checklist')
                 ->leftJoin('workflow_stages', 'cp_doc_checklist.typename', '=', 'workflow_stages.name')
                 ->leftJoinSub($latestDocSubquery, 'latest_docs', 'cp_doc_checklist.id', '=', 'latest_docs.cp_list_id')
-                ->leftJoin('documents as ad', function($join) use ($applicationId) {
+                ->leftJoin('documents as ad', function($join) use ($clientMatterId) {
                     $join->on('ad.cp_list_id', '=', 'cp_doc_checklist.id')
                          ->on('ad.id', '=', 'latest_docs.latest_doc_id')
-                         ->where('ad.client_matter_id', '=', $applicationId);
+                         ->where('ad.client_matter_id', '=', $clientMatterId);
                 })
                 ->select(
                     'cp_doc_checklist.id',
@@ -412,7 +408,7 @@ class ClientPortalWorkflowController extends Controller
                     'ad.cp_doc_status as doc_status',
                     'ad.cp_rejection_reason as doc_rejection_reason'
                 )
-                ->where('cp_doc_checklist.client_matter_id', $applicationId)
+                ->where('cp_doc_checklist.client_matter_id', $clientMatterId)
                 ->where('cp_doc_checklist.allow_client', 1); // Only documents allowed for client
             
             // Filter by stage name (typename) if stage_id is provided
@@ -477,7 +473,7 @@ class ClientPortalWorkflowController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => [
-                    'application_info' => [
+                    'matter_info' => [
                         'client_matter_id' => $clientMatterId,
                         'client_id' => $clientId,
                         'current_stage' => $stageName ?? null,
@@ -650,9 +646,6 @@ class ClientPortalWorkflowController extends Controller
             $clientUniqueId = $adminInfo->client_id;
             $clientFirstName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $adminInfo->first_name);
 
-            // applications table removed - use client_matter_id
-            $applicationId = $clientMatterId;
-
             // Get client matter for notifications (once per batch)
             $clientMatter = DB::table('client_matters')
                 ->leftJoin('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
@@ -680,7 +673,7 @@ class ClientPortalWorkflowController extends Controller
                 // Verify the allowed checklist exists and is allowed for client
                 $allowedChecklist = DB::table('cp_doc_checklist')
                     ->where('id', $allowedChecklistId)
-                    ->where('client_matter_id', $applicationId)
+                    ->where('client_matter_id', $clientMatterId)
                     ->where('allow_client', 1)
                     ->first();
 
@@ -729,7 +722,7 @@ class ClientPortalWorkflowController extends Controller
                     'myfile' => $fileUrl,
                     'myfile_key' => $newFileName,
                     'file_size' => $fileSize,
-                    'client_matter_id' => $applicationId,
+                    'client_matter_id' => $clientMatterId,
                     'checklist' => $checklistName,
                     'cp_doc_status' => 0,
                     'created_at' => now(),

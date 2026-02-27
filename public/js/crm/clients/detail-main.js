@@ -369,7 +369,8 @@
                         form.querySelectorAll('input[type="text"], textarea').forEach(field => {
                             if (!field.name.includes('client_id') &&
                                 !field.name.includes('matter_id') &&
-                                !field.name.includes('loggedin_userid') &&
+                                !field.name.includes('loggedin_staffid') &&
+                                !field.name.includes('loggedin_userid') && // backward compat
                                 !field.name.includes('receipt_type') &&
                                 !field.name.includes('client')) {
                                 field.value = '';
@@ -942,13 +943,13 @@ $(document).ready(function() {
 
         
 
-        // Show loading message in the application tab
+        // Show loading message in the client portal tab
 
-        $('#client_portal-tab').html('<h4>Please wait, upserting application record...</h4>');
+        $('#client_portal-tab').html('<h4>Please wait, upserting matter record...</h4>');
 
         
 
-        // Step 1: Insert/Update record in applications table
+        // Step 1: Insert/Update client_matters record (loadMatterUpsert)
 
         $.ajax({
 
@@ -972,15 +973,15 @@ $(document).ready(function() {
 
             success: function(upsertResponse) {
 
-                if(upsertResponse.status && (upsertResponse.client_matter_id || upsertResponse.application_id)) {
+                if(upsertResponse.status && upsertResponse.client_matter_id) {
 
                     // Update loading message
 
-                    $('#client_portal-tab').html('<h4>Please wait, loading application details...</h4>');
+                    $('#client_portal-tab').html('<h4>Please wait, loading client portal details...</h4>');
 
-                    var appliid = upsertResponse.client_matter_id || upsertResponse.application_id;
+                    var clientMatterId = upsertResponse.client_matter_id;
 
-                    // Step 2: Call getapplicationdetail route with the application_id from upsert response
+                    // Step 2: Call getClientPortalDetail route with the client_matter_id from upsert response
 
                     $.ajax({
 
@@ -988,11 +989,11 @@ $(document).ready(function() {
 
                         type: 'GET',
 
-                        data: {id: appliid},
+                        data: {id: clientMatterId},
 
                         success: function(response){
 
-                            // Display the response directly in the application tab
+                            // Display the response directly in the client portal tab
 
                             $('#client_portal-tab').html(response);
 
@@ -1000,11 +1001,11 @@ $(document).ready(function() {
 
                             $('.popuploader').hide();
 
-                            // Render only inside the Application tab to avoid leaking into Personal Details
+                            // Render only inside the Client Portal tab to avoid leaking into Personal Details
 
                             $('#client_portal-tab').html(response);
 
-                            // Initialize Flatpickr for application date fields
+                            // Initialize Flatpickr for matter date fields
                             if (typeof flatpickr !== 'undefined') {
                                 $('#client_portal-tab .datepicker').each(function() {
                                     if (!$(this).data('flatpickr')) {
@@ -1018,13 +1019,13 @@ $(document).ready(function() {
                                             onChange: function(selectedDates, dateStr, instance) {
                                                 $this.val(dateStr);
                                                 // Trigger AJAX call when date changes (same as old daterangepicker)
-                                                if (dateStr && appliid) {
+                                                if (dateStr && clientMatterId) {
                                                     $('#popuploader').show();
                                                     $.ajax({
                                                         url: window.ClientDetailConfig.urls.updateIntake,
                                                         method: "GET",
                                                         dataType: "json",
-                                                        data: {from: dateStr, appid: appliid},
+                                                        data: {from: dateStr, appid: clientMatterId},
                                                         success: function(result) {
                                                             $('#popuploader').hide();
 
@@ -1225,9 +1226,9 @@ $(document).ready(function() {
 
                         error: function(xhr, status, error) {
 
-                            console.error('Error loading application details:', error);
+                            console.error('Error loading client portal details:', error);
 
-                            $('#client_portal-tab').html('<h4>Error loading application details. Please try again.</h4>');
+                            $('#client_portal-tab').html('<h4>Error loading client portal details. Please try again.</h4>');
 
                         }
 
@@ -1235,7 +1236,7 @@ $(document).ready(function() {
 
                 } else {
 
-                    $('#client_portal-tab').html('<h4>Error upserting application record. Please try again.</h4>');
+                    $('#client_portal-tab').html('<h4>Error upserting matter record. Please try again.</h4>');
 
                 }
 
@@ -1243,7 +1244,7 @@ $(document).ready(function() {
 
             error: function(xhr, status, error) {
 
-                console.error('Error upserting application:', error);
+                console.error('Error upserting matter:', error);
 
                 $('#client_portal-tab').html('<h4>Error upserting application record. Please try again.</h4>');
 
@@ -1518,9 +1519,9 @@ $(document).ready(function() {
 
             $('#inbox_reassignemail_modal #memail_id').val(val);
 
-            var user_mail = $(this).attr('user_mail');
+            var staff_mail = $(this).attr('staff_mail') || $(this).attr('user_mail');
 
-            $('#inbox_reassignemail_modal #user_mail').val(user_mail);
+            $('#inbox_reassignemail_modal #staff_mail').val(staff_mail);
 
             var uploaded_doc_id = $(this).attr('uploaded_doc_id');
 
@@ -1614,9 +1615,9 @@ success: function(response) {
 
             $('#sent_reassignemail_modal #memail_id').val(val);
 
-            var user_mail = $(this).attr('user_mail');
+            var staff_mail = $(this).attr('staff_mail') || $(this).attr('user_mail');
 
-            $('#sent_reassignemail_modal #user_mail').val(user_mail);
+            $('#sent_reassignemail_modal #staff_mail').val(staff_mail);
 
             var uploaded_doc_id = $(this).attr('uploaded_doc_id');
 
@@ -1730,7 +1731,7 @@ success: function(response) {
 
         // Handle click event on the action button
 
-        $(document).delegate('.btn-assignuser, .btn-create-action', 'click', function(){
+        $(document).delegate('.btn-assignstaff, .btn-assignuser, .btn-create-action', 'click', function(){
 
             // Get the value from the #note_description TinyMCE editor
 
@@ -5681,7 +5682,11 @@ Bansal Immigration`;
 
                             // Reset assignee selection
 
-                            if (typeof updateSelectedUsers === 'function') {
+                            if (typeof updateSelectedStaff === 'function') {
+
+                                updateSelectedStaff();
+
+                            } else if (typeof updateSelectedUsers === 'function') {
 
                                 updateSelectedUsers();
 
@@ -6525,7 +6530,7 @@ Bansal Immigration`;
 
                                 type:'GET',
 
-                                data:{client_id:window.ClientDetailConfig.clientId,appid:res.client_matter_id || res.application_id},
+                                data:{client_id:window.ClientDetailConfig.clientId,appid:res.client_matter_id},
 
                                 success: function(responses){
 

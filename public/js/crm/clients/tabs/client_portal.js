@@ -1,4 +1,4 @@
-// Application tab scripts will be progressively migrated here.
+// Client Portal tab scripts (renamed from application.js).
 // Legacy sales forecast functionality is intentionally disabled (quarantined).
 
 (() => {
@@ -67,15 +67,13 @@
         });
     }
 
-    function initApplicationTab() {
+    function initClientPortalTab() {
         disableLegacySalesForecastUI();
     }
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initApplicationTab);
+        document.addEventListener('DOMContentLoaded', initClientPortalTab);
     } else {
-        initApplicationTab();
+        initClientPortalTab();
     }
 })();
-
-

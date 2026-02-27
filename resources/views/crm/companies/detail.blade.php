@@ -844,13 +844,13 @@ use App\Http\Controllers\Controller;
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title" id="appliationModalLabel">Application Ownership Ratio</h5>
+				<h5 class="modal-title" id="appliationModalLabel">Matter Ownership Ratio</h5>
 				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" action="{{url('/application/application_ownership')}}" name="xapplication_ownership" id="xapplication_ownership" autocomplete="off" enctype="multipart/form-data">
+				<form method="post" action="{{url('/client-portal/ownership')}}" name="xapplication_ownership" id="xapplication_ownership" autocomplete="off" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="mapp_id" id="mapp_id" value="">
 					<div class="row">
@@ -964,7 +964,7 @@ use App\Http\Controllers\Controller;
 					<div class="col-sm-12">
 						<input id="memail_id" name="memail_id" type="hidden" value="">
                         <input id="mail_type" name="mail_type" type="hidden" value="inbox">
-                        <input id="user_mail" name="user_mail" type="hidden" value="">
+                        <input id="staff_mail" name="staff_mail" type="hidden" value="">
                         <input id="uploaded_doc_id" name="uploaded_doc_id" type="hidden" value="">
 						<select id="reassign_client_id" name="reassign_client_id" class="form-control select2" style="width: 100%;" data-select2-id="1" tabindex="-1" aria-hidden="true" data-valid="required">
 							<option value="">Select Client</option>
@@ -1008,7 +1008,7 @@ use App\Http\Controllers\Controller;
 					<div class="col-sm-12">
 						<input id="memail_id" name="memail_id" type="hidden" value="">
                         <input id="mail_type" name="mail_type" type="hidden" value="sent">
-                        <input id="user_mail" name="user_mail" type="hidden" value="">
+                        <input id="staff_mail" name="staff_mail" type="hidden" value="">
                         <input id="uploaded_doc_id" name="uploaded_doc_id" type="hidden" value="">
 						<select id="reassign_sent_client_id" name="reassign_sent_client_id" class="form-control select2" style="width: 100%;" data-select2-id="1" tabindex="-1" aria-hidden="true" data-valid="required">
 							<option value="">Select Client</option>
@@ -1462,7 +1462,7 @@ $(document).ready(function() {
                         if (activityType === 'stage') {
                             contentHtml = '<div class="feed-item-stage">' +
                                 '<div class="feed-item-stage-header">' +
-                                    '<span class="feed-item-user">' + fullName + '</span>' +
+                                    '<span class="feed-item-staff">' + fullName + '</span>' +
                                     '<span class="feed-timestamp">' + date + '</span>' +
                                 '</div>' +
                                 '<div class="feed-item-stage-body">' + (v.message ? v.message : '') + '</div>' +
@@ -1504,7 +1504,7 @@ $(document).ready(function() {
 {{-- Newly added external JS placeholders for progressive migration --}}
 <script src="{{ URL::asset('js/crm/clients/shared.js') }}" defer></script>
 <script src="{{ URL::asset('js/crm/clients/detail.js') }}" defer></script>
-<script src="{{ URL::asset('js/crm/clients/tabs/application.js') }}" defer></script>
+<script src="{{ URL::asset('js/crm/clients/tabs/client_portal.js') }}" defer></script>
 
 {{-- Client detail utilities (must load before detail-main.js) --}}
 <script src="{{ URL::asset('js/crm/clients/utils/flatpickr-helpers.js') }}"></script>

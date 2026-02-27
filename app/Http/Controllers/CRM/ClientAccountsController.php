@@ -350,7 +350,7 @@ class ClientAccountsController extends Controller
                         $running_balance += $deposit - $withdraw;
    
                         $saved = DB::table('account_client_receipts')->insert([
-                            'user_id' => $requestData['loggedin_userid'],
+                            'user_id' => $requestData['loggedin_staffid'] ?? $requestData['loggedin_userid'] ?? null,
                             'client_id' => $requestData['client_id'],
                             'client_matter_id' => $requestData['client_matter_id'] ?? null,
                             'receipt_id' => $receipt_id,
@@ -410,7 +410,7 @@ class ClientAccountsController extends Controller
                                 $totalNewFeeTransferAmount += $withdraw;
 
                                 $saved = DB::table('account_client_receipts')->insert([
-                                    'user_id' => $requestData['loggedin_userid'],
+                                    'user_id' => $requestData['loggedin_staffid'] ?? $requestData['loggedin_userid'] ?? null,
                                     'client_id' => $requestData['client_id'],
                                     'client_matter_id' => $requestData['client_matter_id'] ?? null,
                                     'receipt_id' => $receipt_id,
@@ -461,7 +461,7 @@ class ClientAccountsController extends Controller
                             $running_balance += $excessAmount;
 
                             $residualReceiptId = DB::table('account_client_receipts')->insertGetId([
-                                'user_id' => $requestData['loggedin_userid'],
+                                'user_id' => $requestData['loggedin_staffid'] ?? $requestData['loggedin_userid'] ?? null,
                                 'client_id' => $requestData['client_id'],
                                 'client_matter_id' => $requestData['client_matter_id'] ?? null,
                                 'receipt_id' => $receipt_id,
@@ -622,7 +622,7 @@ class ClientAccountsController extends Controller
                 $running_balance += $deposit - $withdraw;
    
                 $saved = DB::table('account_client_receipts')->insert([
-                    'user_id' => $requestData['loggedin_userid'],
+                    'user_id' => $requestData['loggedin_staffid'] ?? $requestData['loggedin_userid'] ?? null,
                     'client_id' => $requestData['client_id'],
                      'client_matter_id' => $requestData['client_matter_id'] ?? null,
                     'receipt_id' => $receipt_id,
@@ -808,7 +808,7 @@ class ClientAccountsController extends Controller
                     $finalArr[$i]['invoice_status'] = $invoice_status; //unpaid
    
                     $lastInsertId    = AccountAllInvoiceReceipt::insertGetId([
-                        'user_id' => $requestData['loggedin_userid'],
+                        'user_id' => $requestData['loggedin_staffid'] ?? $requestData['loggedin_userid'] ?? null,
                         'client_id' =>  $requestData['client_id'],
                         'receipt_id'=>  $receipt_id,
                         'receipt_type' => $requestData['receipt_type'],
@@ -844,7 +844,7 @@ class ClientAccountsController extends Controller
    
                 //main table 'account_client_receipts' entry
                 $lastInsertId    = DB::table('account_client_receipts')->insertGetId([
-                    'user_id' => $requestData['loggedin_userid'],
+                    'user_id' => $requestData['loggedin_staffid'] ?? $requestData['loggedin_userid'] ?? null,
                     'client_id' =>  $requestData['client_id'],
                     'receipt_id'=>  $receipt_id,
                     'receipt_type' => $requestData['receipt_type'],
@@ -987,7 +987,7 @@ class ClientAccountsController extends Controller
                     $finalArr[$i]['invoice_status'] = $invoice_status; //unpaid
    
                     $lastInsertId    = AccountAllInvoiceReceipt::insertGetId([
-                        'user_id' => $requestData['loggedin_userid'],
+                        'user_id' => $requestData['loggedin_staffid'] ?? $requestData['loggedin_userid'] ?? null,
                         'client_id' =>  $requestData['client_id'],
                         'client_matter_id' =>  $requestData['client_matter_id'] ?? null,
                         'receipt_id'=>  $receipt_id,
@@ -1029,7 +1029,7 @@ class ClientAccountsController extends Controller
    
                 //main table 'account_client_receipts' entry
                 $lastInsertId    = DB::table('account_client_receipts')->insertGetId([
-                    'user_id' => $requestData['loggedin_userid'],
+                    'user_id' => $requestData['loggedin_staffid'] ?? $requestData['loggedin_userid'] ?? null,
                     'client_id' =>  $requestData['client_id'],
                     'client_matter_id' =>  $requestData['client_matter_id'] ?? null,
                     'receipt_id'=>  $receipt_id,
@@ -1119,7 +1119,7 @@ class ClientAccountsController extends Controller
                     $withdrawAmount = floatval($requestData['withdraw_amount'][$index]);
    
                     $entryData = [
-                        'user_id' => $requestData['loggedin_userid'],
+                        'user_id' => $requestData['loggedin_staffid'] ?? $requestData['loggedin_userid'] ?? null,
                         'client_id' => $requestData['client_id'],
                         'client_matter_id' =>  $requestData['client_matter_id'] ?? null,
                         'receipt_type' => $requestData['receipt_type'],
@@ -1526,7 +1526,7 @@ class ClientAccountsController extends Controller
 
           try {
               $insertedId = DB::table('account_client_receipts')->insertGetId([
-                  'user_id' => $requestData['loggedin_userid'],
+                  'user_id' => $requestData['loggedin_staffid'] ?? $requestData['loggedin_userid'] ?? null,
                   'client_id' => $requestData['client_id'],
                   'client_matter_id' => $requestData['client_matter_id'] ?? null,
                   'receipt_id' => $receipt_id,
@@ -2639,7 +2639,7 @@ class ClientAccountsController extends Controller
            $finalArr[$i]['withdrawal_amount'] = $withdrawAmount;
 
            $saved    = DB::table('account_client_receipts')->insert([
-               'user_id' => $requestData['loggedin_userid'],
+               'user_id' => $requestData['loggedin_staffid'] ?? $requestData['loggedin_userid'] ?? null,
                'client_id' =>  $requestData['client_id'],
                'agent_id' => !empty($requestData['agent_id']) ? $requestData['agent_id'] : null,
                'receipt_id'=>  $receipt_id,

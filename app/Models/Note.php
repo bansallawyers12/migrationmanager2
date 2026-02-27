@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Model;
  * - task_group (field name preserved): The action category (Call, Checklist, Review, Query, Urgent, Personal Action)
  * - action_date: The scheduled date for the action
  * - task_status (in ActivitiesLog): Action completion status (0 = incomplete, 1 = completed)
- * - assigned_to: The user assigned to complete this action
+ * - assigned_to: The staff member assigned to complete this action
  * - status: '0' = active/incomplete, '1' = completed
  * 
  * Note: Field names contain "task" and "followup" for database compatibility but refer to Actions in the UI
@@ -40,7 +40,7 @@ class Note extends Model
     }
 
     /**
-     * Get the user who created the note.
+     * Get the staff member who created the note.
      */
     public function user()
     {
@@ -48,11 +48,27 @@ class Note extends Model
     }
 
     /**
-     * Get the user assigned to the note.
+     * Alias for user() - Staff/Client/Lead terminology.
+     */
+    public function createdByStaff()
+    {
+        return $this->user();
+    }
+
+    /**
+     * Get the staff member assigned to the note/action.
      */
     public function assignedUser()
     {
         return $this->belongsTo(Staff::class, 'assigned_to');
+    }
+
+    /**
+     * Alias for assignedUser() - Staff/Client/Lead terminology.
+     */
+    public function assignedStaff()
+    {
+        return $this->assignedUser();
     }
 
     /**
@@ -74,7 +90,23 @@ class Note extends Model
     /**
      * Legacy method for backward compatibility
      */
+    public function noteStaff()
+    {
+        return $this->user();
+    }
+
+    /**
+     * Legacy method for backward compatibility
+     */
     public function assigned_user()
+    {
+        return $this->assignedUser();
+    }
+
+    /**
+     * Legacy alias - Staff terminology
+     */
+    public function assigned_staff()
     {
         return $this->assignedUser();
     }

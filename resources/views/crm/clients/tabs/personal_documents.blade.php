@@ -101,7 +101,7 @@
                                             </thead>
                                             <tbody class="tdata persdocumnetlist documnetlist_<?= $id ?>">
                                                 <?php
-                                                $documents = \App\Models\Document::with('user')->where('client_id', $clientId)
+                                                $documents = \App\Models\Document::with('staff')->where('client_id', $clientId)
                                                     ->whereNull('not_used_doc')
                                                     ->where('doc_type', 'personal')
                                                     ->where('folder_name', $folderName)
@@ -111,7 +111,7 @@
                                                 ?>
                                                 <?php foreach ($documents as $docKey => $fetch): ?>
                                                     <?php
-                                                    $admin = $fetch->user;
+                                                    $admin = $fetch->staff;
                                                     
                                                     // Ensure $fileUrl is always a valid full URL
                                                     if (!empty($fetch->myfile) && strpos($fetch->myfile, 'http') === 0) {

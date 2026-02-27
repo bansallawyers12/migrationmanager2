@@ -79,6 +79,14 @@ class Document extends Model
         return $this->belongsTo(Staff::class, 'user_id');
     }
 
+    /**
+     * Alias for user() - Staff/Client/Lead terminology (user_id stores Staff ID).
+     */
+    public function staff(): BelongsTo
+    {
+        return $this->user();
+    }
+
     public function lead(): BelongsTo
     {
         return $this->belongsTo(Lead::class);

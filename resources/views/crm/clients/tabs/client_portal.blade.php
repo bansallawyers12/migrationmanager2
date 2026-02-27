@@ -256,16 +256,14 @@
                                         <!-- Documents Tab -->
                                         <div class="client-portal-tab-pane" id="documents-tab">
                                             <?php
-                                            // Get application for the selected matter
-                                            $applicationData = null;
-                                            $applicationId = null;
+                                            // Get client matter ID for the selected matter
+                                            $clientMatterId = null;
                                             if($selectedMatter) {
-                                                // applications table removed - use client_matter_id directly
-                                            $applicationId = $selectedMatter->id;
+                                                $clientMatterId = $selectedMatter->id;
                                             }
                                             ?>
                                             
-                                            @if($selectedMatter && $applicationId && $allWorkflowStages->count() > 0)
+                                            @if($selectedMatter && $clientMatterId && $allWorkflowStages->count() > 0)
                                                 <div class="documents-checklist-container">
                                                     <div class="row">
                                                         <!-- Left Column: Stages -->
@@ -279,9 +277,9 @@
                                                                             
                                                                             // Get checklists for this stage
                                                                             $stageChecklists = [];
-                                                                            if($applicationId) {
+                                                                            if($clientMatterId) {
                                                                                 $stageChecklists = DB::table('cp_doc_checklist')
-                                                                                    ->where('client_matter_id', $applicationId)
+                                                                                    ->where('client_matter_id', $clientMatterId)
                                                                                     ->where('type', $stageNameSlug)
                                                                                     ->orderBy('id', 'asc')
                                                                                     ->get();
@@ -331,7 +329,7 @@
                                                                             
                                                                             <a href="javascript:void(0);" 
                                                                                class="add-checklist-link openchecklist" 
-                                                                               data-id="{{ $applicationId }}" 
+                                                                               data-id="{{ $clientMatterId }}" 
                                                                                data-typename="{{ $stage->name }}" 
                                                                                data-type="{{ $stageNameSlug }}">
                                                                                 <i class="fa fa-plus"></i> Add New Checklist
@@ -364,10 +362,10 @@
                                                                             </tr>
                                                                         </thead>
                                                                         <tbody class="checklist-details-tbody">
-                                                                            @if($applicationId)
+                                                                            @if($clientMatterId)
                                                                                 @php
                                                                                     $allDocuments = DB::table('documents')
-                                                                                        ->where('client_matter_id', $applicationId)
+                                                                                        ->where('client_matter_id', $clientMatterId)
                                                                                         ->whereNotNull('cp_list_id')
                                                                                         ->orderBy('created_at', 'DESC')
                                                                                         ->get();
@@ -513,7 +511,7 @@
                                                     <p class="text-muted">
                                                         @if(!$selectedMatter)
                                                             Please select a matter to view documents.
-                                                        @elseif(!$applicationId)
+                                                        @elseif(!$clientMatterId)
                                                             No matter found. Please create a matter first.
                                                         @else
                                                             No workflow stages available.
@@ -1227,7 +1225,7 @@
     color: #6c757d;
 }
 
-/* Application Tabs Styles */
+/* Client Portal Tabs Styles */
 .client-portal-tabs-container {
     margin-top: 20px;
 }
@@ -3575,9 +3573,9 @@ document.addEventListener('DOMContentLoaded', function() {
         $('#discontinue-matter-modal').modal('show');
     });
     
-    // Application Tabs Switching Functionality
-    const applicationTabItems = document.querySelectorAll('.client-portal-tab-item');
-    const applicationTabPanes = document.querySelectorAll('.client-portal-tab-pane');
+    // Client Portal Tabs Switching Functionality
+    const clientPortalTabItems = document.querySelectorAll('.client-portal-tab-item');
+    const clientPortalTabPanes = document.querySelectorAll('.client-portal-tab-pane');
   
     
     
@@ -3588,7 +3586,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const attachmentDownloadBaseUrl = '{{ url("/clients/message-attachment") }}';
     const markMessageAsReadBaseUrl = '{{ url("/clients/messages") }}';
     
-    // Get effective client matter ID: server value or dropdown fallback (for URLs like /application/application)
+    // Get effective client matter ID: server value or dropdown fallback (for URLs like /client_portal)
     function getEffectiveClientMatterId() {
         if (clientMatterId) return clientMatterId;
         const generalCheckbox = document.querySelector('.general_matter_checkbox_client_detail:checked');
@@ -3620,7 +3618,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let subscribedChannel = null;
     let messagesLoaded = false;
     
-    applicationTabItems.forEach(function(tabItem) {
+    clientPortalTabItems.forEach(function(tabItem) {
         const tabLink = tabItem.querySelector('.client-portal-tab-link');
         if (tabLink) {
             tabLink.addEventListener('click', function(e) {
@@ -3629,10 +3627,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 const targetTab = tabItem.getAttribute('data-tab');
                 
                 // Remove active class from all tabs and panes
-                applicationTabItems.forEach(function(item) {
+                clientPortalTabItems.forEach(function(item) {
                     item.classList.remove('active');
                 });
-                applicationTabPanes.forEach(function(pane) {
+                clientPortalTabPanes.forEach(function(pane) {
                     pane.classList.remove('active');
                 });
                 

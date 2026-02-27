@@ -58,7 +58,7 @@
         @if($activity->activity_type === 'stage')
             <div class="feed-item-stage">
                 <div class="feed-item-stage-header">
-                    <span class="feed-item-user">{{ $admin->first_name ?? 'NA' }}{{ isset($admin->last_name) ? ' ' . $admin->last_name : '' }}</span>
+                    <span class="feed-item-staff">{{ $admin->first_name ?? 'NA' }}{{ isset($admin->last_name) ? ' ' . $admin->last_name : '' }}</span>
                     <span class="feed-timestamp">{{ date('d M Y, H:i', strtotime($activity->created_at)) }}</span>
                 </div>
                 <div class="feed-item-stage-body">

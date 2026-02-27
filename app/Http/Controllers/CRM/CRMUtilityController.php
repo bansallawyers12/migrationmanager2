@@ -191,7 +191,7 @@ class CRMUtilityController extends Controller
 				}
 			else
 				{
-					return redirect()->back()->with('error', 'User is not exist, so you can not change the password.');
+					return redirect()->back()->with('error', 'Staff member does not exist, so you cannot change the password.');
 				}
 		}
 		return view('crm.change_password');
@@ -1496,7 +1496,7 @@ public function getChapters(Request $request)
 		$lists = \App\Models\Notification::where('receiver_id', Auth::user()->id)->orderby('created_at','DESC')->paginate(20);
 		// Fix URLs for notifications that point to non-existent or wrong routes
 		$lists->getCollection()->transform(function ($notification) {
-			// Message notifications: /messages (404) -> client detail + application tab
+			// Message notifications: /messages (404) -> client detail + client portal tab
 			if ($notification->notification_type === 'message' && ($notification->url === '/messages' || str_starts_with($notification->url ?? '', '/messages'))) {
 				$clientMatter = \DB::table('client_matters')->where('id', $notification->module_id)->first();
 				if ($clientMatter) {
@@ -1504,7 +1504,7 @@ public function getChapters(Request $request)
 					if (!empty($clientMatter->client_unique_matter_no)) {
 						$path .= '/' . $clientMatter->client_unique_matter_no;
 					}
-					$notification->url = url($path . '/application');
+					$notification->url = url($path . '/client_portal');
 				}
 			}
 			// Broadcast notifications: /broadcasts/{uuid} (404) -> manage page with batch param

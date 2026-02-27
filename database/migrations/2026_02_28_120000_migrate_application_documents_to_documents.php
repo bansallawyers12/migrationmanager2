@@ -43,8 +43,9 @@ return new class extends Migration
                     $matter = DB::table('client_matters')->where('id', $clientMatterId)->first();
                     $clientId = $matter->client_id ?? null;
                 }
-                $list = $ad->list_id ? DB::table('application_document_lists')->where('id', $ad->list_id)->first() : null;
-                $checklistName = $list ? $list->document_type : $ad->file_name;
+                $listTable = Schema::hasTable('cp_doc_checklist') ? 'cp_doc_checklist' : 'application_document_lists';
+                $list = $ad->list_id ? DB::table($listTable)->where('id', $ad->list_id)->first() : null;
+                $checklistName = $list ? ($list->cp_checklist_name ?? $list->document_type ?? null) : $ad->file_name;
 
                 DB::table('documents')->insert([
                     'cp_list_id' => $ad->list_id,

@@ -1,17 +1,17 @@
 {{-- ========================================
-    ALL APPLICATION-RELATED MODALS
-    This file contains all application modals for the client detail page
+    MATTER-RELATED MODALS (Client Portal / Workflow)
+    This file contains matter modals for the client detail page
     ======================================== --}}
 
-{{-- 1. Add Application Modal - REMOVED (orphaned, no UI trigger; applications created via client_matters sync) --}}
+{{-- 1. Add Application Modal - REMOVED (orphaned, no UI trigger; matters created via client_matters sync) --}}
 
-{{-- 2. Discontinue Application Modal --}}
-<!-- Discontinue Application Modal -->
-<div class="modal fade custom_modal" id="discon_application" tabindex="-1" role="dialog" aria-labelledby="applicationModalLabel" aria-hidden="true">
+{{-- 2. Discontinue Matter Modal --}}
+<!-- Discontinue Matter Modal -->
+<div class="modal fade custom_modal" id="discon_application" tabindex="-1" role="dialog" aria-labelledby="matterModalLabel" aria-hidden="true">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title" id="appliationModalLabel">Discontinue Application</h5>
+				<h5 class="modal-title" id="appliationModalLabel">Discontinue Matter</h5>
 				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
@@ -26,7 +26,7 @@
 								<label for="workflow">Discontinue Reason <span class="span_req">*</span></label>
 								<select data-valid="required" class="form-control workflow" id="workflow" name="workflow">
 									<option value="">Please Select</option>
-									<option value="Change of Application">Change of Application</option>
+									<option value="Change of Matter">Change of Matter</option>
 									<option value="Error by Team Member">Error by Team Member</option>
 									<option value="Financial Difficulties">Financial Difficulties</option>
 									<option value="Loss of competitor">Loss of competitor</option>
@@ -168,7 +168,7 @@
 								<label for="discontinue-reason">Reason for Discontinue <span class="span_req">*</span></label>
 								<select class="form-control" id="discontinue-reason" name="discontinue_reason" data-valid="required" required>
 									<option value="">Please Select</option>
-									<option value="Change of Application">Change of Application</option>
+									<option value="Change of Matter">Change of Matter</option>
 									<option value="Error by Team Member">Error by Team Member</option>
 									<option value="Financial Difficulties">Financial Difficulties</option>
 									<option value="Grant of Another visa">Grant of Another visa</option>
@@ -228,12 +228,12 @@
 	</div>
 </div>
 
-{{-- 3. Revert Discontinued Application Modal --}}
-<div class="modal fade custom_modal" id="revert_matter" tabindex="-1" role="dialog" aria-labelledby="applicationModalLabel" aria-hidden="true">
+{{-- 3. Revert Discontinued Matter Modal --}}
+<div class="modal fade custom_modal" id="revert_matter" tabindex="-1" role="dialog" aria-labelledby="matterModalLabel" aria-hidden="true">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title" id="appliationModalLabel">Revert Discontinued Application</h5>
+				<h5 class="modal-title" id="appliationModalLabel">Revert Discontinued Matter</h5>
 				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>

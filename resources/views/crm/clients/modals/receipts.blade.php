@@ -173,7 +173,7 @@
 				<form class="form-type" method="post" action="{{URL::to('/clients/saveaccountreport')}}" name="client_receipt_form" autocomplete="off" id="client_receipt_form" enctype="multipart/form-data">
 					@csrf
 					<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
-					<input type="hidden" name="loggedin_userid" value="{{@Auth::user()->id}}">
+					<input type="hidden" name="loggedin_staffid" value="{{@Auth::user()->id}}">
 					<input type="hidden" name="receipt_type" value="1">
                     <input type="hidden" name="client_ledger_balance_amount" id="client_ledger_balance_amount" value="">
                     <input type="hidden" name="client_matter_id" id="client_matter_id_ledger" value="">
@@ -304,7 +304,7 @@
 				<form class="form-type" method="post" action="{{URL::to('/clients/saveinvoicereport')}}" name="invoice_receipt_form" autocomplete="off" id="invoice_receipt_form" style="display:none;">
 					@csrf
 					<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
-					<input type="hidden" name="loggedin_userid" value="{{@Auth::user()->id}}">
+					<input type="hidden" name="loggedin_staffid" value="{{@Auth::user()->id}}">
 					<input type="hidden" name="receipt_type" value="3">
 					<input type="hidden" name="receipt_id" id="receipt_id" value="">
 					<input type="hidden" name="function_type" id="function_type" value="">
@@ -415,7 +415,7 @@
 				<form class="form-type"  method="post" action="{{URL::to('/clients/saveofficereport')}}" name="office_receipt_form" autocomplete="off" id="office_receipt_form" style="display:none;">
 					@csrf
 					<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
-					<input type="hidden" name="loggedin_userid" value="{{@Auth::user()->id}}">
+					<input type="hidden" name="loggedin_staffid" value="{{@Auth::user()->id}}">
 					<input type="hidden" name="receipt_type" value="2">
                     <input type="hidden" name="client_matter_id" id="client_matter_id_office" value="">
                     <input type="hidden" name="save_type" class="save_type_office" value="">
@@ -578,7 +578,7 @@
 				<form class="form-type" method="post" action="{{URL::to('/clients/saveadjustinvoicereport')}}" name="adjust_invoice_receipt_form" autocomplete="off" id="adjust_invoice_receipt_form">
 					@csrf
 					<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
-					<input type="hidden" name="loggedin_userid" value="{{@Auth::user()->id}}">
+					<input type="hidden" name="loggedin_staffid" value="{{@Auth::user()->id}}">
 					<input type="hidden" name="receipt_type" value="3">
 					<input type="hidden" name="receipt_id" id="receipt_id" value="">
 					<input type="hidden" name="function_type" id="function_type" value="add">
@@ -694,7 +694,7 @@
 				<form method="post" action="{{URL::to('/clients/saveaccountreport')}}" name="create_client_receipt" autocomplete="off" id="create_client_receipt" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
-                <input type="hidden" name="loggedin_userid" value="{{@Auth::user()->id}}">
+                <input type="hidden" name="loggedin_staffid" value="{{@Auth::user()->id}}">
                 <input type="hidden" name="receipt_type" value="1">
 					<div class="row">
 						<div class="col-6 col-md-6 col-lg-6">
@@ -822,7 +822,7 @@
 				<form method="post" action="{{URL::to('/clients/saveinvoicereport')}}" name="create_invoice_receipt" autocomplete="off" id="create_invoice_receipt" >
 				@csrf
 				<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
-                <input type="hidden" name="loggedin_userid" value="{{@Auth::user()->id}}">
+                <input type="hidden" name="loggedin_staffid" value="{{@Auth::user()->id}}">
                 <input type="hidden" name="receipt_type" value="3">
                 <input type="hidden" name="receipt_id" id="receipt_id" value="">
                 <input type="hidden" name="function_type" id="function_type" value="">
@@ -965,7 +965,7 @@
 				<form method="post" action="{{URL::to('/clients/saveofficereport')}}" name="create_office_receipt" autocomplete="off" id="create_office_receipt" >
 				@csrf
 				<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
-                <input type="hidden" name="loggedin_userid" value="{{@Auth::user()->id}}">
+                <input type="hidden" name="loggedin_staffid" value="{{@Auth::user()->id}}">
                 <input type="hidden" name="receipt_type" value="2">
 					<div class="row">
 						<div class="col-6 col-md-6 col-lg-6">
@@ -1117,7 +1117,7 @@
 				<form method="post" action="{{URL::to('/clients/savejournalreport')}}" name="create_journal_receipt" autocomplete="off" id="create_journal_receipt" >
 				@csrf
 				<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
-                <input type="hidden" name="loggedin_userid" value="{{@Auth::user()->id}}">
+                <input type="hidden" name="loggedin_staffid" value="{{@Auth::user()->id}}">
                 <input type="hidden" name="receipt_type" value="4">
 					<div class="row">
 						<div class="col-6 col-md-6 col-lg-6">

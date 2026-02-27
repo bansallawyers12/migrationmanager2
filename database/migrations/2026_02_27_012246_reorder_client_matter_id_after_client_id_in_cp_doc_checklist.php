@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * PostgreSQL does not support ALTER TABLE ... AFTER <column>.
@@ -15,7 +16,18 @@ return new class extends Migration
 {
     public function up(): void
     {
-        DB::transaction(function () {
+        $sourceTable = Schema::hasTable('cp_doc_checklist')
+            ? 'cp_doc_checklist'
+            : (Schema::hasTable('application_document_lists') ? 'application_document_lists' : null);
+
+        if (!$sourceTable) {
+            return;
+        }
+
+        $hasClientMatterId = Schema::hasColumn($sourceTable, 'client_matter_id');
+        $clientMatterIdSelect = $hasClientMatterId ? 'client_matter_id' : 'NULL::bigint AS client_matter_id';
+
+        DB::transaction(function () use ($sourceTable, $clientMatterIdSelect) {
             // 1. Create temp table with desired column order
             DB::statement('
                 CREATE TABLE cp_doc_checklist_reordered (
@@ -34,15 +46,15 @@ return new class extends Migration
             ');
 
             // 2. Copy all existing data
-            DB::statement('
+            DB::statement("
                 INSERT INTO cp_doc_checklist_reordered
                     (id, user_id, client_id, client_matter_id, typename, type,
                      document_type, description, allow_client, created_at, updated_at)
                 SELECT
-                    id, user_id, client_id, client_matter_id, typename, type,
+                    id, user_id, client_id, {$clientMatterIdSelect}, typename, type,
                     document_type, description, allow_client, created_at, updated_at
-                FROM cp_doc_checklist
-            ');
+                FROM {$sourceTable}
+            ");
 
             // 3. Sync the sequence to the current max id so auto-increment continues correctly
             DB::statement("
@@ -53,7 +65,7 @@ return new class extends Migration
             ");
 
             // 4. Drop original table
-            DB::statement('DROP TABLE cp_doc_checklist');
+            DB::statement("DROP TABLE {$sourceTable}");
 
             // 5. Rename temp table to the original name
             DB::statement('ALTER TABLE cp_doc_checklist_reordered RENAME TO cp_doc_checklist');

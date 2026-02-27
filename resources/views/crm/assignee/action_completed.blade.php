@@ -273,7 +273,7 @@
                                         @if(count($assignees_completed) > 0)
                                             @foreach($assignees_completed as $list)
                                                 <?php
-                                                    $staff = \App\Models\Staff::find($list->user_id);
+                                                    $staff = $list->noteStaff;
                                                     $full_name = $staff ? ($staff->first_name ?? 'N/A') . ' ' . ($staff->last_name ?? 'N/A') : 'N/A';
                                                     $client_name = $list->noteClient ? $list->noteClient->first_name . ' ' . $list->noteClient->last_name : 'N/P';
                                                 ?>

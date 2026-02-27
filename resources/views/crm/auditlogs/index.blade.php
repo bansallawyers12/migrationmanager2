@@ -26,7 +26,7 @@
 											<th>ID</th>
 											<th>Level</th>
 											<th>Date</th>
-											<th>User</th>
+											<th>Staff</th>
 											<th>IP Address</th>
 											<th>Message</th>
 										</tr>
@@ -49,10 +49,10 @@
 											<td>
 											<?php
 											if($list->user_id != ''){
-												$user = \App\Models\Staff::where('id', $list->user_id)->first();
-												if($user){
+												$staff = \App\Models\Staff::where('id', $list->user_id)->first();
+												if($staff){
 												?>
-												<a href="#">{{$user->first_name}}</a>
+												<a href="#">{{$staff->first_name}}</a>
 												<?php
 												}
 											}

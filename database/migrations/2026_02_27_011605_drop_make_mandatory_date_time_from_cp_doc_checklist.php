@@ -8,17 +8,29 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('cp_doc_checklist', function (Blueprint $table) {
-            $table->dropColumn(['make_mandatory', 'date', 'time']);
-        });
+        $tableName = Schema::hasTable('cp_doc_checklist')
+            ? 'cp_doc_checklist'
+            : (Schema::hasTable('application_document_lists') ? 'application_document_lists' : null);
+
+        if ($tableName) {
+            Schema::table($tableName, function (Blueprint $table) {
+                $table->dropColumn(['make_mandatory', 'date', 'time']);
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('cp_doc_checklist', function (Blueprint $table) {
-            $table->string('make_mandatory')->nullable();
-            $table->date('date')->nullable();
-            $table->time('time')->nullable();
-        });
+        $tableName = Schema::hasTable('cp_doc_checklist')
+            ? 'cp_doc_checklist'
+            : (Schema::hasTable('application_document_lists') ? 'application_document_lists' : null);
+
+        if ($tableName) {
+            Schema::table($tableName, function (Blueprint $table) {
+                $table->string('make_mandatory')->nullable();
+                $table->date('date')->nullable();
+                $table->time('time')->nullable();
+            });
+        }
     }
 };

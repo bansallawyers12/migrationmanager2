@@ -58,7 +58,7 @@ class VisaTypeSheetController extends Controller
         $request->merge($this->getFiltersFromSession($request, $sessionKey));
 
         // Default to 'all' so Ongoing and other tabs show all matters when no filter is set.
-        // Previously defaulted to 'me' which hid records not assigned to the current user.
+        // Previously defaulted to 'me' which hid records not assigned to the current staff member.
         if (!$request->has('assignee') || $request->input('assignee') === '') {
             $request->merge(['assignee' => 'all']);
         }
@@ -663,7 +663,7 @@ class VisaTypeSheetController extends Controller
         $query->orderByRaw("CASE WHEN admins.\"visaExpiry\" IS NULL OR admins.\"visaExpiry\"::text = '0000-00-00' THEN 1 ELSE 0 END ASC");
         $query->orderByRaw('admins."visaExpiry" ASC');
         
-        // Fifth priority: custom user sort if provided
+        // Fifth priority: custom staff sort if provided
         $sortField = $request->get('sort');
         $sortDirection = $request->get('direction', 'asc');
         if ($sortField && in_array(strtolower($sortDirection), ['asc', 'desc'])) {

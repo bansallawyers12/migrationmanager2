@@ -445,7 +445,7 @@
         .feed-icon-stage, .feed-item--stage .feed-icon { color: #0d6efd; background: rgba(13, 110, 253, 0.08); width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; }
         .feed-item-stage { padding: 2px 0; }
         .feed-item-stage-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px; }
-        .feed-item-stage-header .feed-item-user { font-weight: 600; color: #212529; font-size: 0.92em; }
+        .feed-item-stage-header .feed-item-staff { font-weight: 600; color: #212529; font-size: 0.92em; }
         .feed-item-stage-header .feed-timestamp { font-size: 0.78em; color: #6c757d; }
         .feed-item-stage-body { font-size: 0.9em; line-height: 1.5; color: #495057; }
         .feed-item-stage-body b { color: #212529; font-weight: 600; }

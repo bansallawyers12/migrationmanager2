@@ -18,7 +18,7 @@ class EmailLabelController extends Controller
     }
 
     /**
-     * Get all labels (system + user's custom)
+     * Get all labels (system + staff's custom)
      */
     public function index()
     {
@@ -59,7 +59,7 @@ class EmailLabelController extends Controller
                     'string',
                     'max:255',
                     function ($attribute, $value, $fail) use ($userId) {
-                        // Check if label name already exists for this user
+                        // Check if label name already exists for this staff member
                         $exists = EmailLabel::where('user_id', $userId)
                             ->where('name', $value)
                             ->where('is_active', true)
