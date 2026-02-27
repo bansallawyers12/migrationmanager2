@@ -307,13 +307,19 @@
         // Handle occupation data
         if (data.occupation) {
             $('#eoi-occupation').val(data.occupation);
-            // If we have ANZSCO data, populate hidden fields
+            // Populate or clear hidden fields - avoid stale values when switching records
             if (data.anzsco_occupation_id) {
                 $('#eoi-anzsco-id').val(data.anzsco_occupation_id);
+                $('#eoi-anzsco-code').val(data.anzsco_code || '');
+            } else {
+                $('#eoi-anzsco-id').val('');
+                $('#eoi-anzsco-code').val('');
+                // Fallback: try to resolve from occupation text (e.g. "254412 - Title")
+                resolveOccupationFromDisplayText(data.occupation);
             }
-            if (data.anzsco_code) {
-                $('#eoi-anzsco-code').val(data.anzsco_code);
-            }
+        } else {
+            $('#eoi-anzsco-id').val('');
+            $('#eoi-anzsco-code').val('');
         }
         
         $('#eoi-points').val(data.points);
@@ -620,7 +626,7 @@
     // Initialize occupation autocomplete
     function initializeOccupationAutocomplete() {
         const occupationInput = $('#eoi-occupation');
-        const autocompleteContainer = $('.autocomplete-items');
+        const autocompleteContainer = occupationInput.closest('.form-group').find('.autocomplete-items');
         
         let searchTimeout;
         
@@ -636,6 +642,13 @@
             if (query.length === 0) {
                 autocompleteContainer.hide();
                 clearOccupationSelection();
+                return;
+            }
+            
+            // If occupation text matches "CODE - Title" and anzsco-id is empty (e.g. after undo),
+            // try to restore the hidden fields - skip search dropdown
+            if (!$('#eoi-anzsco-id').val() && /^\d{4,6}\s*-\s*.+/.test(query)) {
+                searchTimeout = setTimeout(() => resolveOccupationFromDisplayText(query), 150);
                 return;
             }
             
@@ -749,6 +762,36 @@
         }
     }
     
+    /**
+     * Resolve occupation from display text (e.g. "254412 - Registered Nurse (Aged Care)").
+     * Extracts ANZSCO code and fetches occupation by code to populate hidden fields.
+     * Fixes legacy records and undo-after-clear scenarios.
+     */
+    async function resolveOccupationFromDisplayText(displayText) {
+        const m = (displayText || '').trim().match(/^(\d{4,6})\s*-\s*.+/);
+        if (!m) return;
+        const code = m[1];
+        try {
+            const response = await fetch(`/anzsco/code/${encodeURIComponent(code)}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                credentials: 'same-origin'
+            });
+            if (response.ok) {
+                const json = await response.json();
+                if (json.success && json.data) {
+                    $('#eoi-anzsco-id').val(json.data.id);
+                    $('#eoi-anzsco-code').val(json.data.anzsco_code || code);
+                }
+            }
+        } catch (err) {
+            console.warn('[EOI-ROI] Could not resolve occupation from text:', displayText, err);
+        }
+    }
+
     // Fill occupation data into form fields
     function fillOccupationData(inputElement, occupationData) {
         if (!inputElement) return;

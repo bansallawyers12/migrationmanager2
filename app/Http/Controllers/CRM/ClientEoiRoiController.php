@@ -21,6 +21,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\EoiConfirmationMail;
+use App\Models\AnzscoOccupation;
 
 class ClientEoiRoiController extends Controller
 {
@@ -1025,6 +1026,36 @@ class ClientEoiRoiController extends Controller
     }
 
     /**
+     * Resolve anzsco_occupation_id for legacy records that have EOI_occupation text but no FK.
+     * Attempts to match by extracting ANZSCO code from "CODE - Title" format.
+     */
+    protected function resolveAnzscoOccupationId(ClientEoiReference $eoi): ?int
+    {
+        if ($eoi->anzsco_occupation_id) {
+            return $eoi->anzsco_occupation_id;
+        }
+        $code = $this->extractAnzscoCodeFromOccupation($eoi->EOI_occupation);
+        if (!$code) {
+            return null;
+        }
+        $occupation = AnzscoOccupation::active()->where('anzsco_code', $code)->first();
+
+        return $occupation?->id;
+    }
+
+    /**
+     * Extract ANZSCO code from occupation display string (e.g. "254412 - Registered Nurse (Aged Care)").
+     */
+    protected function extractAnzscoCodeFromOccupation(?string $occupation): ?string
+    {
+        if (empty($occupation) || !preg_match('/^(\d{4,6})\s*-\s*.+/', trim($occupation), $m)) {
+            return null;
+        }
+
+        return $m[1];
+    }
+
+    /**
      * Format EOI record for API response
      */
     protected function formatEoiForResponse(ClientEoiReference $eoi, bool $includePassword = false): array
@@ -1037,8 +1068,8 @@ class ClientEoiRoiController extends Controller
             'formatted_subclasses' => $eoi->formatted_subclasses,
             'formatted_states' => $eoi->formatted_states,
             'occupation' => $eoi->EOI_occupation,
-            'anzsco_occupation_id' => $eoi->anzsco_occupation_id,
-            'anzsco_code' => $eoi->anzscoOccupation?->anzsco_code,
+            'anzsco_occupation_id' => $this->resolveAnzscoOccupationId($eoi),
+            'anzsco_code' => $eoi->anzscoOccupation?->anzsco_code ?: $this->extractAnzscoCodeFromOccupation($eoi->EOI_occupation),
             'points' => $eoi->EOI_point,
             'submission_date' => $eoi->EOI_submission_date?->format('d/m/Y'),
             'invitation_date' => $eoi->eoi_invitation_date?->format('d/m/Y'),
