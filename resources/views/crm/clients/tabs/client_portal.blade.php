@@ -2221,6 +2221,11 @@
     vertical-align: middle;
 }
 
+.cursor-pointer,
+.cursor-pointer td {
+    cursor: pointer;
+}
+
 .checklist-status {
     width: 30px;
     text-align: center;
