@@ -4781,7 +4781,7 @@ $(document).on('click', '.cp-doc-checklist-row', function () {
                     var downloadBtn = '<a href="javascript:void(0);" class="btn btn-sm btn-primary cp-download-doc-btn" data-document-id="' + doc.id + '" data-file-name="' + (doc.file_name || 'document') + '" title="Download"><i class="fa fa-download"></i></a>';
                     var deleteBtn   = '<a href="javascript:void(0);" class="btn btn-sm btn-danger cp-delete-doc-btn" data-document-id="' + doc.id + '" data-list-id="' + checklistId + '" title="Delete"><i class="fa fa-trash"></i></a>';
                     var moveBtn     = (doc.cp_doc_status == 1)
-                        ? '<a href="javascript:void(0);" class="btn btn-sm btn-info cp-move-doc-btn" data-document-id="' + doc.id + '" data-matter-id="' + (matterId || '') + '" title="Move Document"><i class="fa fa-arrows-alt"></i> Move</a>'
+                        ? '<a href="javascript:void(0);" class="btn btn-sm btn-info cp-move-doc-btn" data-document-id="' + doc.id + '" data-matter-id="' + (matterId || '') + '" title="Move Document"><i class="fa fa-arrows-alt"></i></a>'
                         : '';
 
                     html += '<tr data-matter-id="' + (matterId || '') + '">'
@@ -4859,7 +4859,7 @@ $(document).on('click', '.cp-approve-doc-btn', function () {
                 );
                 // Show Move Document button (only visible when Approved)
                 if ($actionButtons.find('.action-row-move').length === 0) {
-                    $actionButtons.append('<div class="action-row action-row-move"><a href="javascript:void(0);" class="btn btn-sm btn-info cp-move-doc-btn" data-document-id="' + documentId + '" data-matter-id="' + matterId + '" title="Move Document"><i class="fa fa-arrows-alt"></i> Move</a></div>');
+                    $actionButtons.append('<div class="action-row action-row-move"><a href="javascript:void(0);" class="btn btn-sm btn-info cp-move-doc-btn" data-document-id="' + documentId + '" data-matter-id="' + matterId + '" title="Move Document"><i class="fa fa-arrows-alt"></i></a></div>');
                 }
                 alert('Document has been approved successfully.');
             } else {
