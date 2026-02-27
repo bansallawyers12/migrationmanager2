@@ -172,7 +172,7 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin', 
     Route::prefix('system')->name('system.')->group(function() {
         
         // DEPRECATED: Legacy /users - Staff moved to adminconsole.staff.* (StaffController + staff table).
-        // Clients (role=7) now at adminconsole.system.clients.* (ClientController).
+        // Clients at adminconsole.system.clients.* (ClientController).
         // Redirect /users for backwards compatibility.
         Route::get('/users', fn () => redirect()->route('adminconsole.system.clients.clientlist'))->name('users.index');
         Route::get('/clients', [ClientController::class, 'clientlist'])->name('clients.clientlist');

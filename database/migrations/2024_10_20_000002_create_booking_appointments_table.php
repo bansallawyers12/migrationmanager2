@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('order_hash')->nullable()->comment('Payment order hash from Bansal');
             
             // Relationships
-            $table->unsignedInteger('client_id')->nullable()->comment('FK to admins.id (role=7)');
+            $table->unsignedInteger('client_id')->nullable()->comment('FK to admins.id (clients/leads)');
             $table->unsignedBigInteger('consultant_id')->nullable()->comment('FK to appointment_consultants.id');
             $table->unsignedInteger('assigned_by_admin_id')->nullable()->comment('Admin who assigned consultant');
             

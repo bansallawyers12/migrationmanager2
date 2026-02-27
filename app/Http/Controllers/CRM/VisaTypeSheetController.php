@@ -107,6 +107,7 @@ class VisaTypeSheetController extends Controller
         $branches = Branch::orderBy('office_name')->get(['id', 'office_name']);
         $assignees = $this->getAssignees();
         $currentStages = $this->getCurrentStagesForTab($tab, $config);
+        $matterTypes = $this->getMatterTypesForVisaType($config);
         $activeFilterCount = $this->countActiveFilters($request);
 
         return view('crm.clients.sheets.visa-type-sheet', compact(
@@ -117,6 +118,7 @@ class VisaTypeSheetController extends Controller
             'branches',
             'assignees',
             'currentStages',
+            'matterTypes',
             'config',
             'tabConfig',
             'visaType',
@@ -161,9 +163,10 @@ class VisaTypeSheetController extends Controller
 
     protected function getFiltersFromSession(Request $request, string $sessionKey): array
     {
-        $filterParams = ['branch', 'assignee', 'current_stage', 'visa_expiry_from', 'visa_expiry_to', 'search', 'per_page'];
+        $filterParams = ['branch', 'assignee', 'current_stage', 'visa_expiry_from', 'visa_expiry_to', 'deadline_from', 'deadline_to', 'matter_type', 'search', 'per_page'];
         foreach ($filterParams as $key) {
-            if ($request->has($key) && $request->input($key) !== null && $request->input($key) !== '') {
+            $val = $request->input($key);
+            if ($request->has($key) && $val !== null && $val !== '' && (!is_array($val) || !empty($val))) {
                 return [];
             }
         }
@@ -178,9 +181,17 @@ class VisaTypeSheetController extends Controller
             'current_stage' => $request->input('current_stage'),
             'visa_expiry_from' => $request->input('visa_expiry_from'),
             'visa_expiry_to' => $request->input('visa_expiry_to'),
+            'deadline_from' => $request->input('deadline_from'),
+            'deadline_to' => $request->input('deadline_to'),
+            'matter_type' => $request->input('matter_type'),
             'search' => $request->input('search'),
             'per_page' => $request->input('per_page'),
-        ], fn ($v) => $v !== null && $v !== '');
+        ], function ($v) {
+            if (is_array($v)) {
+                return !empty($v);
+            }
+            return $v !== null && $v !== '';
+        });
         session()->put($sessionKey, $payload);
     }
 
@@ -226,6 +237,27 @@ class VisaTypeSheetController extends Controller
         }
         return collect($stages)->filter(fn ($s) => $s !== null && trim((string) $s) !== '')
             ->values()->mapWithKeys(fn ($s) => [trim((string) $s) => trim((string) $s)]);
+    }
+
+    /**
+     * Get distinct matter types (titles) for the visa type, for filter dropdown.
+     */
+    protected function getMatterTypesForVisaType(array $config): array
+    {
+        $matterCondition = $this->getMatterCondition($config);
+        $titles = DB::table('matters as m')
+            ->whereRaw($matterCondition)
+            ->whereNotNull('m.title')
+            ->where('m.title', '!=', '')
+            ->distinct()
+            ->orderBy('m.title')
+            ->pluck('m.title')
+            ->map(fn ($t) => trim((string) $t))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+        return array_combine($titles, $titles) ?: [];
     }
 
     /**
@@ -343,6 +375,10 @@ class VisaTypeSheetController extends Controller
                             ->orWhereRaw('LOWER(a.last_name) LIKE ?', [$search])
                             ->orWhereRaw('LOWER(a.client_id) LIKE ?', [$search]);
                     });
+                }
+                if ($request->filled('matter_type')) {
+                    $val = $request->input('matter_type');
+                    $leadQuery->whereRaw('LOWER(m.title) LIKE ?', ['%' . strtolower($val) . '%']);
                 }
                 $leadRows = $leadQuery->get();
             }
@@ -567,14 +603,34 @@ class VisaTypeSheetController extends Controller
                 $query->whereRaw('admins."visaExpiry" <= ?', [$to]);
             } catch (\Exception $e) {}
         }
+        if ($request->filled('deadline_from')) {
+            try {
+                $from = Carbon::createFromFormat('d/m/Y', $request->input('deadline_from'))->startOfDay();
+                $query->whereRaw("{$matterAlias}.deadline >= ?", [$from]);
+            } catch (\Exception $e) {}
+        }
+        if ($request->filled('deadline_to')) {
+            try {
+                $to = Carbon::createFromFormat('d/m/Y', $request->input('deadline_to'))->endOfDay();
+                $query->whereRaw("{$matterAlias}.deadline <= ?", [$to]);
+            } catch (\Exception $e) {}
+        }
+        if ($request->filled('matter_type')) {
+            $val = $request->input('matter_type');
+            $matterTitleCol = $matterAlias === 'latest_matter' ? 'latest_matter.matter_title' : 'm.title';
+            $query->whereRaw("LOWER({$matterTitleCol}) LIKE ?", ['%' . strtolower($val) . '%']);
+        }
         if ($request->filled('search')) {
             $search = '%' . strtolower($request->input('search')) . '%';
-            $query->where(function ($q) use ($search, $refAlias) {
+            $query->where(function ($q) use ($search, $refAlias, $matterAlias) {
                 $q->whereRaw('LOWER(admins.first_name) LIKE ?', [$search])
                     ->orWhereRaw('LOWER(admins.last_name) LIKE ?', [$search])
                     ->orWhereRaw('LOWER(admins.client_id) LIKE ?', [$search])
                     ->orWhereRaw("LOWER({$refAlias}.current_status) LIKE ?", [$search])
-                    ->orWhereRaw('LOWER(ws.name) LIKE ?', [$search]);
+                    ->orWhereRaw('LOWER(ws.name) LIKE ?', [$search])
+                    ->orWhereRaw("LOWER({$matterAlias}.other_reference) LIKE ?", [$search])
+                    ->orWhereRaw("LOWER({$matterAlias}.department_reference) LIKE ?", [$search])
+                    ->orWhereRaw("LOWER({$matterAlias}.client_unique_matter_no) LIKE ?", [$search]);
             });
         }
         return $query;
@@ -636,6 +692,9 @@ class VisaTypeSheetController extends Controller
         if ($request->filled('current_stage')) $count++;
         if ($request->filled('visa_expiry_from')) $count++;
         if ($request->filled('visa_expiry_to')) $count++;
+        if ($request->filled('deadline_from')) $count++;
+        if ($request->filled('deadline_to')) $count++;
+        if ($request->filled('matter_type')) $count++;
         if ($request->filled('search')) $count++;
         return $count;
     }

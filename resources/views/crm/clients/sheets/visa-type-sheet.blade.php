@@ -152,6 +152,8 @@
     .visa-sheet-page .reminder-cell { min-width: 120px; }
     .visa-sheet-page .checklist-sent-cell { min-width: 120px; }
     .visa-sheet-page .checklist-not-sent-text { color: #374151; font-weight: 500; }
+    .visa-sheet-page .filter_panel { display: none; }
+    .visa-sheet-page .filter_panel.show { display: block; }
     .visa-sheet-page .filter_panel label { color: #374151; }
     
     /* Star/Pin Column Styles */
@@ -221,14 +223,6 @@
                                 <i class="fas fa-undo"></i> Clear Filters
                             </a>
                         @endif
-                        <label class="mb-0 mr-2" style="font-size: 13px; color: #374151;">Branch:</label>
-                        <select name="branch" id="visa_branch" class="form-control" style="max-width: 180px;">
-                            <option value="">All</option>
-                            @foreach($branches as $b)
-                                @php $reqBranch = request('branch'); $branchIds = is_array($reqBranch) ? $reqBranch : ($reqBranch ? [$reqBranch] : []); @endphp
-                                <option value="{{ $b->id }}" {{ in_array($b->id, $branchIds) && count($branchIds) === 1 ? 'selected' : '' }}>{{ $b->office_name }}</option>
-                            @endforeach
-                        </select>
                         <label class="mb-0 ml-2 mr-2" style="font-size: 13px; color: #374151;">Migration Agent:</label>
                         <select name="assignee" id="visa_assignee" class="form-control" style="max-width: 180px;">
                             <option value="all" {{ request('assignee') === 'all' ? 'selected' : '' }}>All</option>
@@ -251,12 +245,27 @@
                             <input type="hidden" name="tab" value="{{ $tab }}">
                             <input type="hidden" name="per_page" value="{{ $perPage }}">
                             <input type="hidden" name="assignee" value="{{ request('assignee') }}">
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label class="mb-2" style="font-weight: 600; color: #374151;"><i class="fas fa-building"></i> Filter by Branch:</label>
+                                    <div class="d-flex flex-wrap gap-3">
+                                        @foreach($branches as $b)
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="branch[]" value="{{ $b->id }}" id="branch_{{ $b->id }}"
+                                                    {{ in_array($b->id, (array)request('branch', [])) ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="branch_{{ $b->id }}" style="cursor: pointer;">{{ $b->office_name }}</label>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
                             <div class="row">
                                 <div class="col-md-2">
-                                    <label>Branch</label>
-                                    <select name="branch[]" class="form-control" multiple>
-                                        @foreach($branches as $b)
-                                            <option value="{{ $b->id }}" {{ in_array($b->id, (array)request('branch', [])) ? 'selected' : '' }}>{{ $b->office_name }}</option>
+                                    <label>Matter Type</label>
+                                    <select name="matter_type" class="form-control">
+                                        <option value="">All matter types</option>
+                                        @foreach($matterTypes as $val => $lbl)
+                                            <option value="{{ $val }}" {{ request('matter_type') == $val ? 'selected' : '' }}>{{ Str::limit($lbl, 40) }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -270,23 +279,32 @@
                                     </select>
                                 </div>
                                 <div class="col-md-2">
-                                    <label>Visa From</label>
+                                    <label>Visa Expiry From</label>
                                     <input type="text" name="visa_expiry_from" class="form-control datepicker" placeholder="dd/mm/yyyy" value="{{ request('visa_expiry_from') }}" autocomplete="off">
                                 </div>
                                 <div class="col-md-2">
-                                    <label>Visa To</label>
+                                    <label>Visa Expiry To</label>
                                     <input type="text" name="visa_expiry_to" class="form-control datepicker" placeholder="dd/mm/yyyy" value="{{ request('visa_expiry_to') }}" autocomplete="off">
                                 </div>
                                 <div class="col-md-2">
-                                    <label>Search</label>
-                                    <input type="text" name="search" class="form-control" placeholder="Name, CRM Ref..." value="{{ request('search') }}">
+                                    <label>Deadline From</label>
+                                    <input type="text" name="deadline_from" class="form-control datepicker" placeholder="dd/mm/yyyy" value="{{ request('deadline_from') }}" autocomplete="off">
                                 </div>
                                 <div class="col-md-2">
-                                    <label>&nbsp;</label>
-                                    <button type="submit" class="btn btn-primary btn-block">Apply</button>
+                                    <label>Deadline To</label>
+                                    <input type="text" name="deadline_to" class="form-control datepicker" placeholder="dd/mm/yyyy" value="{{ request('deadline_to') }}" autocomplete="off">
                                 </div>
                             </div>
-                            <a href="{{ route($sheetRoute, array_merge($sheetRouteParams, ['tab' => $tab])) }}" class="btn btn-secondary mt-2">Reset</a>
+                            <div class="row mt-2">
+                                <div class="col-md-4">
+                                    <label>Search</label>
+                                    <input type="text" name="search" class="form-control" placeholder="Name, CRM Ref, Matter ref..." value="{{ request('search') }}">
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end">
+                                    <button type="submit" class="btn btn-primary mr-2">Apply Filters</button>
+                                    <a href="{{ route($sheetRoute, array_merge($sheetRouteParams, ['tab' => $tab, 'clear_filters' => 1])) }}" class="btn btn-secondary">Reset</a>
+                                </div>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -504,18 +522,6 @@ jQuery(document).ready(function($) {
     $('#visa_per_page').on('change', function() {
         var u = new URL(window.location.href);
         u.searchParams.set('per_page', $(this).val());
-        u.searchParams.delete('page');
-        window.location.href = u.toString();
-    });
-    $('#visa_branch').on('change', function() {
-        var u = new URL(window.location.href);
-        var val = $(this).val();
-        if (val) {
-            u.searchParams.set('branch[]', val);
-        } else {
-            u.searchParams.delete('branch');
-            u.searchParams.delete('branch[]');
-        }
         u.searchParams.delete('page');
         window.location.href = u.toString();
     });

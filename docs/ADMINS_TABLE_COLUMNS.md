@@ -101,7 +101,7 @@ Remove or refactor the listed code before dropping the column.
 | **id** | integer, PK | Primary key; used everywhere. |
 | **client_id** | varchar | Client display ID (e.g. CLI-001). Used in client portal, documents, exports. |
 | **client_counter** | varchar | Used for generating unique client_id. |
-| **role** | integer | User role (e.g. 7 = client/lead). Used for auth and filtering. |
+| **role** | integer | Legacy; clients/leads identified by `type`, not role. |
 | **type** | varchar | `'lead'` or `'client'` for CRM; distinguishes leads vs clients. |
 
 ---

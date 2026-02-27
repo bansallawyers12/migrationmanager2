@@ -72,7 +72,7 @@ This document describes every column in the `booking_appointments` table, how it
 ## 3. Relationships
 
 ### `client_id` (integer, nullable)
-- **Type:** Unsigned Integer, FK to `admins.id` (role=7, client)
+- **Type:** Unsigned Integer, FK to `admins.id` (clients/leads)
 - **Usage:** Links appointment to CRM client when matched
 - **Used in:** `BookingAppointment::client()` relationship; `ClientMatchingService`; `ClientPortalAppointmentController` – filter by client; `Client_Portal_Postman_Collection` – appointments for authenticated client
 - **Status:** ✅ **Actively used**

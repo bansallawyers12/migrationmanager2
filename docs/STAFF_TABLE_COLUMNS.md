@@ -2,7 +2,7 @@
 
 **Purpose:** Identify which `admins` table columns apply to **staff only** and should be included in the new `staff` table.
 
-**Exclusion rule:** Staff = `role != 7`. Clients/leads = `role = 7`. Only staff-specific columns are copied.
+**Exclusion rule:** Staff are in `staff` table. Clients/leads are in `admins` (identified by `type`). Only staff-specific columns are copied.
 
 ---
 

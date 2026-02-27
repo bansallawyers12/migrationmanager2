@@ -10,7 +10,7 @@ return new class extends Migration
      * Run the migrations.
      *
      * Creates the staff table with columns copied from admins (staff-specific only).
-     * Staff are users with role != 7. Clients/leads remain in admins.
+     * Staff are CRM users (FK to user_roles). Clients/leads remain in admins (identified by type).
      */
     public function up(): void
     {

@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "12345678-1234-1234-1234-123456789012",
 		"name": "Client Portal Mobile App API",
-		"description": "Complete API collection for Client Portal Mobile App authentication and profile management. Includes both Client Portal login (role=7) and Admin Portal login (roles=1,12,13,16) for WebSocket messaging support.",
+		"description": "Complete API collection for Client Portal Mobile App authentication and profile management. Includes both Client Portal login (clients/leads, type-based) and Admin Portal login (staff roles 1,12,13,16) for WebSocket messaging support.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -986,7 +986,7 @@
 								}
 							],
 							"cookie": [],
-							"body": "{\n    \"success\": true,\n    \"message\": \"Profile updated successfully\",\n    \"data\": {\n        \"id\": 1,\n        \"client_id\": \"CLI-001\",\n        \"first_name\": \"John\",\n        \"last_name\": \"Doe\",\n        \"email\": \"client@example.com\",\n        \"phone\": \"+1234567890\",\n        \"address\": \"123 Main St\",\n        \"city\": \"Los Angeles\",\n        \"state\": \"CA\",\n        \"post_code\": \"90210\",\n        \"country\": \"USA\",\n        \"dob\": \"1990-01-01\",\n        \"gender\": \"Male\",\n        \"marital_status\": \"Single\",\n        \"profile_img\": \"path/to/profile/image.jpg\",\n        \"status\": 1,\n        \"role\": 7,\n        \"cp_status\": 1,\n        \"cp_code_verify\": 1,\n        \"email_verified_at\": \"2024-01-01T00:00:00Z\",\n        \"created_at\": \"2024-01-01T00:00:00Z\",\n        \"updated_at\": \"2024-01-01T00:00:00Z\"\n    }\n}"
+							"body": "{\n    \"success\": true,\n    \"message\": \"Profile updated successfully\",\n    \"data\": {\n        \"id\": 1,\n        \"client_id\": \"CLI-001\",\n        \"first_name\": \"John\",\n        \"last_name\": \"Doe\",\n        \"email\": \"client@example.com\",\n        \"phone\": \"+1234567890\",\n        \"address\": \"123 Main St\",\n        \"city\": \"Los Angeles\",\n        \"state\": \"CA\",\n        \"post_code\": \"90210\",\n        \"country\": \"USA\",\n        \"dob\": \"1990-01-01\",\n        \"gender\": \"Male\",\n        \"marital_status\": \"Single\",\n        \"profile_img\": \"path/to/profile/image.jpg\",\n        \"status\": 1,\n        \"cp_status\": 1,\n        \"cp_code_verify\": 1,\n        \"email_verified_at\": \"2024-01-01T00:00:00Z\",\n        \"created_at\": \"2024-01-01T00:00:00Z\",\n        \"updated_at\": \"2024-01-01T00:00:00Z\"\n    }\n}"
 						}
 					]
 				},
@@ -1592,7 +1592,7 @@
 							"status": "OK",
 							"code": 200,
 							"_postman_previewlanguage": "json",
-							"body": "{\n    \"success\": true,\n    \"message\": \"Profile updated successfully\",\n    \"data\": {\n        \"id\": 1,\n        \"client_id\": \"CLI-001\",\n        \"first_name\": \"John\",\n        \"last_name\": \"Doe\",\n        \"email\": \"client@example.com\",\n        \"phone\": \"+1234567890\",\n        \"address\": \"123 Main St\",\n        \"city\": \"Los Angeles\",\n        \"state\": \"CA\",\n        \"zip\": \"90210\",\n        \"country\": \"USA\",\n        \"marital_status\": \"Single\",\n        \"gender\": \"Male\",\n        \"dob\": \"1990-01-01\",\n        \"profile_img\": \"http://127.0.0.1:8000/img/avatar.png\",\n        \"status\": 1,\n        \"role\": 7,\n        \"cp_status\": 1,\n        \"cp_code_verify\": 1,\n        \"email_verified_at\": \"2024-01-01T00:00:00.000000Z\",\n        \"created_at\": \"2024-01-01T00:00:00.000000Z\",\n        \"updated_at\": \"2024-01-01T00:00:00.000000Z\"\n    }\n}"
+							"body": "{\n    \"success\": true,\n    \"message\": \"Profile updated successfully\",\n    \"data\": {\n        \"id\": 1,\n        \"client_id\": \"CLI-001\",\n        \"first_name\": \"John\",\n        \"last_name\": \"Doe\",\n        \"email\": \"client@example.com\",\n        \"phone\": \"+1234567890\",\n        \"address\": \"123 Main St\",\n        \"city\": \"Los Angeles\",\n        \"state\": \"CA\",\n        \"zip\": \"90210\",\n        \"country\": \"USA\",\n        \"marital_status\": \"Single\",\n        \"gender\": \"Male\",\n        \"dob\": \"1990-01-01\",\n        \"profile_img\": \"http://127.0.0.1:8000/img/avatar.png\",\n        \"status\": 1,\n        \"cp_status\": 1,\n        \"cp_code_verify\": 1,\n        \"email_verified_at\": \"2024-01-01T00:00:00.000000Z\",\n        \"created_at\": \"2024-01-01T00:00:00.000000Z\",\n        \"updated_at\": \"2024-01-01T00:00:00.000000Z\"\n    }\n}"
 						},
 						{
 							"name": "Validation Error - Email Already Exists",
@@ -1830,7 +1830,7 @@
 								}
 							],
 							"cookie": [],
-							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"id\": 1,\n        \"client_id\": \"CLI-001\",\n        \"first_name\": \"John\",\n        \"last_name\": \"Doe\",\n        \"email\": \"client@example.com\",\n        \"phone\": \"+1234567890\",\n        \"address\": \"123 Main St\",\n        \"city\": \"Los Angeles\",\n        \"state\": \"CA\",\n        \"post_code\": \"90210\",\n        \"country\": \"USA\",\n        \"dob\": \"1990-01-01\",\n        \"gender\": \"Male\",\n        \"marital_status\": \"Single\",\n        \"profile_img\": \"path/to/profile/image.jpg\",\n        \"status\": 1,\n        \"role\": 7,\n        \"cp_status\": 1,\n        \"cp_code_verify\": 1,\n        \"email_verified_at\": \"2024-01-01T00:00:00Z\",\n        \"created_at\": \"2024-01-01T00:00:00Z\",\n        \"updated_at\": \"2024-01-01T00:00:00Z\"\n    }\n}"
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"id\": 1,\n        \"client_id\": \"CLI-001\",\n        \"first_name\": \"John\",\n        \"last_name\": \"Doe\",\n        \"email\": \"client@example.com\",\n        \"phone\": \"+1234567890\",\n        \"address\": \"123 Main St\",\n        \"city\": \"Los Angeles\",\n        \"state\": \"CA\",\n        \"post_code\": \"90210\",\n        \"country\": \"USA\",\n        \"dob\": \"1990-01-01\",\n        \"gender\": \"Male\",\n        \"marital_status\": \"Single\",\n        \"profile_img\": \"path/to/profile/image.jpg\",\n        \"status\": 1,\n        \"cp_status\": 1,\n        \"cp_code_verify\": 1,\n        \"email_verified_at\": \"2024-01-01T00:00:00Z\",\n        \"created_at\": \"2024-01-01T00:00:00Z\",\n        \"updated_at\": \"2024-01-01T00:00:00Z\"\n    }\n}"
 						}
 					]
 				},

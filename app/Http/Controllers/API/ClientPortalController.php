@@ -343,7 +343,7 @@ class ClientPortalController extends Controller
         if (!in_array($admin->type ?? '', ['client', 'lead'])) {
             return response()->json([
                 'success' => false,
-                'message' => 'Your record exists in DB but your role is not Client. So you cannot access this mobile app.'
+                'message' => 'Your record exists in DB but your account type is not Client. So you cannot access this mobile app.'
             ], 200);
         }
         

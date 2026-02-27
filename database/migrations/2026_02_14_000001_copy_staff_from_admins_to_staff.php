@@ -10,7 +10,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * Copies staff (role != 7) from admins to staff table, preserving IDs.
+     * Copies staff from admins to staff table, preserving IDs (one-time migration; staff identified by role != 7 at the time).
      * No mapping table - FK columns keep same values, will reference staff.id instead of admins.id.
      */
     public function up(): void
