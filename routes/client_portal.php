@@ -86,6 +86,7 @@ Route::post('/add-checklists', [ClientPortalController::class, 'addChecklist'])-
 // checklistupload REMOVED - workflow checklist upload flow dead (no UI triggers it)
 // delete-docs, publishdoc, approve-document, reject-document REMOVED - workflow checklist unused
 Route::get('/client-portal/download-document', [ClientPortalController::class, 'downloadDocument']);
+Route::get('/client-portal/document-categories-for-move', [ClientPortalController::class, 'getDocumentCategoriesForMove']);
 
 /*---------- Migration Index ----------*/
 // REMOVED - Standalone migration index page (not linked from anywhere, orphaned page)

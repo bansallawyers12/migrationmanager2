@@ -3265,4 +3265,58 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 			Log::warning('S3 file deletion failed: ' . $e->getMessage(), ['myfile' => $myfile]);
 		}
 	}
+
+	/**
+	 * Return personal or visa document categories for the Move Document modal.
+	 * Called from the CRM web session (auth:admin), so Sanctum token is not needed.
+	 */
+	public function getDocumentCategoriesForMove(Request $request)
+	{
+		$type     = $request->get('type');         // 'personal' or 'visa'
+		$clientId = (int) $request->get('client_id');
+		$matterId = (int) $request->get('matter_id');
+
+		try {
+			if ($type === 'personal') {
+				$categories = DB::table('personal_document_types')
+					->where('status', 1)
+					->where(function ($q) use ($clientId) {
+						$q->whereNull('client_id')
+						  ->orWhere('client_id', $clientId);
+					})
+					->orderBy('id', 'asc')
+					->select('id', 'title')
+					->get();
+
+				return response()->json(['success' => true, 'categories' => $categories]);
+			}
+
+			if ($type === 'visa') {
+				$categories = DB::table('visa_document_types')
+					->where('status', 1)
+					->where(function ($q) use ($clientId, $matterId) {
+						$q->where(function ($q2) {
+								$q2->whereNull('client_id')->whereNull('client_matter_id');
+							})
+						  ->orWhere(function ($q2) use ($clientId) {
+								$q2->where('client_id', $clientId)->whereNull('client_matter_id');
+							})
+						  ->orWhere(function ($q2) use ($clientId, $matterId) {
+								$q2->where('client_id', $clientId)->where('client_matter_id', $matterId);
+							});
+					})
+					->orderBy('id', 'asc')
+					->select('id', 'title')
+					->get();
+
+				return response()->json(['success' => true, 'categories' => $categories]);
+			}
+
+			return response()->json(['success' => false, 'message' => 'Invalid type.'], 422);
+
+		} catch (\Exception $e) {
+			Log::error('getDocumentCategoriesForMove error: ' . $e->getMessage());
+			return response()->json(['success' => false, 'message' => 'Failed to load categories.'], 500);
+		}
+	}
 }

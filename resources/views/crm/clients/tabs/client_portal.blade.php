@@ -4955,25 +4955,24 @@ $(document).on('click', '.cp-move-doc-btn', function () {
 $('#moveDestination').on('change', function () {
     var type     = $(this).val();
     var matterId = $('#moveDocumentMatterId').val();
+    var clientId = $('#client-portal-toggle-tab').data('client-id') || '';
 
     $('#moveCategory').html('<option value="">-- Select Category --</option>');
     $('#moveCategoryGroup').hide();
 
     if (!type) return;
 
-    var url = type === 'personal'
-        ? '/api/documents/personal/categories'
-        : '/api/documents/visa/categories' + (matterId ? '?client_matter_id=' + matterId : '');
+    var params = { type: type, client_id: clientId, matter_id: matterId };
 
     $('#moveCategoryLabel').text(type === 'personal' ? 'Select Personal Category:' : 'Select Visa Category:');
     $('#moveCategory').html('<option value="">-- Loading... --</option>');
     $('#moveCategoryGroup').show();
 
-    $.get(url, function (response) {
+    $.get('/client-portal/document-categories-for-move', params, function (response) {
         var options = '<option value="">-- Select Category --</option>';
-        if (response.success && response.data && response.data.categories) {
-            $.each(response.data.categories, function (i, cat) {
-                options += '<option value="' + cat.id + '">' + (cat.title || cat.name) + '</option>';
+        if (response.success && response.categories && response.categories.length) {
+            $.each(response.categories, function (i, cat) {
+                options += '<option value="' + cat.id + '">' + cat.title + '</option>';
             });
         }
         $('#moveCategory').html(options);
