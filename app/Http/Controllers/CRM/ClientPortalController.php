@@ -1926,7 +1926,7 @@ class ClientPortalController extends Controller
 				$clientMatter = $clientMatterId ? DB::table('client_matters')->where('id', $clientMatterId)->first() : null;
 				if ($clientMatter && !empty($clientMatter->client_id)) {
 					$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatter->id;
-					$docList = DB::table('cp_doc_checklist')->where('id', $appdoc->cp_list_id)->first();
+					$docList = DB::table('cp_doc_checklists')->where('id', $appdoc->cp_list_id)->first();
 $docType = $docList ? $docList->cp_checklist_name : ($appdoc->file_name ?? 'Document');
 				$notificationMessage = 'Document "' . $docType . '" removed for matter ' . $matterNo;
 				DB::table('notifications')->insert([
@@ -2033,7 +2033,7 @@ $docType = $docList ? $docList->cp_checklist_name : ($appdoc->file_name ?? 'Docu
 				$clientMatter = $clientMatterId ? DB::table('client_matters')->where('id', $clientMatterId)->first() : null;
 				if ($clientMatter && !empty($clientMatter->client_id)) {
 					$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatter->id;
-					$docList = DB::table('cp_doc_checklist')->where('id', $appdoc->cp_list_id)->first();
+					$docList = DB::table('cp_doc_checklists')->where('id', $appdoc->cp_list_id)->first();
 $docType = $docList ? $docList->cp_checklist_name : ($appdoc->file_name ?? 'Document');
 				$notificationMessage = 'Document "' . $docType . '" removed for matter ' . $matterNo;
 				DB::table('notifications')->insert([
@@ -2233,7 +2233,7 @@ $docType = $docList ? $docList->cp_checklist_name : ($appdoc->file_name ?? 'Docu
 
 						// Notify client (for List Notifications API)
 						$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatter->id;
-						$docList = DB::table('cp_doc_checklist')->where('id', $doc->cp_list_id)->first();
+						$docList = DB::table('cp_doc_checklists')->where('id', $doc->cp_list_id)->first();
 $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Document');
 					$notificationMessage = 'Document "' . $docType . '" approved for matter ' . $matterNo;
 						DB::table('notifications')->insert([
@@ -2314,7 +2314,7 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 
 						// Notify client (for List Notifications API)
 						$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatter->id;
-						$docList = DB::table('cp_doc_checklist')->where('id', $doc->cp_list_id)->first();
+						$docList = DB::table('cp_doc_checklists')->where('id', $doc->cp_list_id)->first();
 $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Document');
 					$notificationMessage = 'Document "' . $docType . '" rejected for matter ' . $matterNo;
 						DB::table('notifications')->insert([
@@ -2449,7 +2449,7 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 			$clientMatter = $clientMatterId ? DB::table('client_matters')->where('id', $clientMatterId)->first() : null;
 			if ($clientMatter && !empty($clientMatter->client_id) && Auth::guard('admin')->check()) {
 				$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatter->id;
-				$docList = DB::table('cp_doc_checklist')->where('id', $document->cp_list_id)->first();
+				$docList = DB::table('cp_doc_checklists')->where('id', $document->cp_list_id)->first();
 				$docType = $docList ? $docList->cp_checklist_name : ($document->file_name ?? 'Document');
 				$notificationMessage = 'Document "' . $docType . '" downloaded for matter ' . $matterNo;
 				DB::table('notifications')->insert([

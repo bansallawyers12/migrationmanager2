@@ -41,7 +41,7 @@ class ClientPortalWorkflowController extends Controller
                     $allowedChecklist = [];
                     
                     if (!is_null($clientMatterId)) {
-                        $checklistItems = DB::table('cp_doc_checklist')
+                        $checklistItems = DB::table('cp_doc_checklists')
                             ->where('client_matter_id', $clientMatterId)
                             ->where('client_id', $clientId)
                             ->where('typename', $stage->name)

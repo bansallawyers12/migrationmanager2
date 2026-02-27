@@ -12,5 +12,5 @@ class CpDocChecklist extends Authenticatable
     use Notifiable;
     use Sortable;
 
-    protected $table = 'cp_doc_checklist';
+    protected $table = 'cp_doc_checklists';
 }
