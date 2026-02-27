@@ -312,6 +312,130 @@ class ClientPortalWorkflowController extends Controller
         }
     }
 
-    // allowedChecklistForStages REMOVED - GET /api/workflow/allowed-checklist unused (no consumer; Documents tab removed)
-    // formatFileSize, uploadAllowedChecklistDocument, uploadAllowedChecklistDocumentBulk, processChecklistDocumentUpload REMOVED - workflow checklist upload unused
+    /**
+     * Get Allowed Checklist for a Client Matter
+     * GET /api/workflow/allowed-checklist
+     *
+     * Returns all checklist items where allow_client = 1 for a given client matter,
+     * optionally filtered by workflow stage ID.
+     *
+     * Query params:
+     *   - client_matter_id (required): The client matter ID
+     *   - stage_id         (optional): Filter results to a specific workflow stage
+     */
+    public function getAllowedChecklist(Request $request)
+    {
+        try {
+            $admin    = $request->user();
+            $clientId = $admin->id;
+
+            $clientMatterId = $request->get('client_matter_id');
+            $stageId        = $request->get('stage_id');
+
+            if (!$clientMatterId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'client_matter_id is required'
+                ], 422);
+            }
+
+            // Verify the matter belongs to this client and get its current stage
+            $matter = DB::table('client_matters')
+                ->leftJoin('workflow_stages', 'client_matters.workflow_stage_id', '=', 'workflow_stages.id')
+                ->where('client_matters.id', $clientMatterId)
+                ->where('client_matters.client_id', $clientId)
+                ->select(
+                    'client_matters.id',
+                    'client_matters.client_id',
+                    'client_matters.matter_status',
+                    'workflow_stages.name as current_stage'
+                )
+                ->first();
+
+            if (!$matter) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Client matter not found'
+                ], 404);
+            }
+
+            // Fetch allowed checklist items, optionally filtered by stage
+            $query = DB::table('cp_doc_checklists')
+                ->where('client_matter_id', $clientMatterId)
+                ->where('client_id', $clientId)
+                ->where('allow_client', 1);
+
+            if ($stageId) {
+                $query->where('wf_stage_id', $stageId);
+            }
+
+            $checklistItems = $query
+                ->select('id', 'cp_checklist_name', 'description', 'wf_stage', 'wf_stage_id', 'allow_client')
+                ->orderBy('wf_stage_id', 'asc')
+                ->orderBy('id', 'asc')
+                ->get();
+
+            // Enrich each item with upload status from the documents table
+            $allowedChecklists = $checklistItems->map(function ($item) use ($clientMatterId) {
+                $latestDoc = DB::table('documents')
+                    ->where('cp_list_id', $item->id)
+                    ->where('type', 'workflow_checklist')
+                    ->where('client_matter_id', $clientMatterId)
+                    ->orderBy('id', 'desc')
+                    ->select('file_name', 'myfile', 'cp_doc_status')
+                    ->first();
+
+                // Convert stage name to a URL-friendly slug (e.g. "Immi Request Received" → "immi-request-received")
+                $stageSlug = $item->wf_stage
+                    ? strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', trim($item->wf_stage)))
+                    : null;
+
+                return [
+                    'id'             => $item->id,
+                    'checklist_name' => $item->cp_checklist_name,
+                    'document_type'  => $item->cp_checklist_name,
+                    'description'    => $item->description,
+                    'type'           => $stageSlug,
+                    'type_id'        => $item->wf_stage_id,
+                    'type_name'      => $item->wf_stage,
+                    'is_mandatory'   => (bool) $item->allow_client,
+                    'due_date'       => null,
+                    'due_time'       => null,
+                    'is_upload'      => !is_null($latestDoc),
+                    'file_name'      => $latestDoc->file_name ?? null,
+                    'file_url'       => $latestDoc->myfile ?? null,
+                    'doc_status'     => $latestDoc->cp_doc_status ?? null,
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data'    => [
+                    'matter_info' => [
+                        'client_matter_id' => (int) $clientMatterId,
+                        'client_id'        => $clientId,
+                        'current_stage'    => $matter->current_stage,
+                        'status'           => $matter->matter_status,
+                    ],
+                    'allowed_checklists'       => $allowedChecklists,
+                    'total_allowed_checklists' => $allowedChecklists->count(),
+                    'stage_filter'             => $stageId ? (int) $stageId : null,
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Allowed Checklist API Error: ' . $e->getMessage(), [
+                'user_id'          => $admin->id ?? null,
+                'client_matter_id' => $clientMatterId ?? null,
+                'stage_id'         => $stageId ?? null,
+                'trace'            => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch allowed checklist',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
+    }
 }
