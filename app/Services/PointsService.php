@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\Admin;
+use App\Models\AnzscoOccupation;
+use App\Models\ClientSpouseDetail;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -71,15 +73,18 @@ class PointsService
     /**
      * Get partner points only (e.g. for EOI/ROI sheet).
      * Single / no partner = 10 pts; partner citizen/PR = 10; partner with skills = 10; partner English only = 5; else 0.
+     * For subclass 189: skilled partner (10 pts) requires partner occupation on MLTSSL; if not on MLTSSL, 5 pts for English only.
+     * No Competent English = 0 pts regardless.
      *
      * @param Admin $client
+     * @param string|null $subclass EOI subclass (189, 190, 491) - 189 applies MLTSSL check for skilled partner
      * @return int|null Points value or null on error
      */
-    public function getPartnerPoints(Admin $client): ?int
+    public function getPartnerPoints(Admin $client, ?string $subclass = null): ?int
     {
         try {
             $referenceDate = $this->getInvitationDate($client);
-            $partnerData = $this->calculatePartnerPoints($client, $referenceDate);
+            $partnerData = $this->calculatePartnerPoints($client, $referenceDate, $subclass);
             return $partnerData['points'] ?? null;
         } catch (\Throwable $e) {
             Log::warning('PointsService::getPartnerPoints failed', [
@@ -122,8 +127,8 @@ class PointsService
         // 5. Bonus points (separate categories)
         $this->addBonusCategories($client, $breakdown);
         
-        // 6. Partner points
-        $partnerData = $this->calculatePartnerPoints($client, $invitationDate);
+        // 6. Partner points (subclass affects 189 MLTSSL rule for skilled partner)
+        $partnerData = $this->calculatePartnerPoints($client, $invitationDate, $selectedSubclass);
         $breakdown['partner'] = $partnerData;
         
         // 7. Nomination points based on subclass
@@ -620,8 +625,14 @@ class PointsService
     /**
      * Calculate partner points
      * Only includes partner if marital status is 'Married' or 'De Facto'
+     * For subclass 189: skilled partner (10 pts) requires partner occupation on MLTSSL; else 5 pts for English only if Competent English.
+     * No Competent English = 0 pts regardless.
+     *
+     * @param Admin $client
+     * @param Carbon $referenceDate
+     * @param string|null $subclass EOI subclass - 189 applies MLTSSL check for skilled partner
      */
-    protected function calculatePartnerPoints(Admin $client, Carbon $referenceDate): array
+    protected function calculatePartnerPoints(Admin $client, Carbon $referenceDate, ?string $subclass = null): array
     {
         // Check marital status - only Married/De Facto partners count for points
         if (!$client->marital_status || !in_array($client->marital_status, ['Married', 'De Facto', 'Defacto'])) {
@@ -644,7 +655,7 @@ class PointsService
             ];
         }
         
-        // Partner is citizen/PR - check if columns exist
+        // Partner is citizen/PR - check if columns exist (no English required for this path)
         if (($partner->is_citizen ?? 0) == 1 || ($partner->has_pr ?? 0) == 1) {
             return [
                 'detail' => 'Partner is citizen/PR (10 pts)',
@@ -659,8 +670,6 @@ class PointsService
         // Partner English level - calculate proficiency level using EnglishProficiencyService
         $hasEnglish = false;
         if (($partner->spouse_has_english_score ?? 0) == 1) {
-            // Use EnglishProficiencyService to properly calculate proficiency level
-            // This checks all 4 components (Listening, Reading, Writing, Speaking)
             $englishService = new \App\Services\EnglishProficiencyService();
             
             $scores = [
@@ -677,11 +686,17 @@ class PointsService
                 $partner->spouse_test_date ?? null
             );
             
-            // Check if proficiency level is at least "Competent English"
-            // Valid levels for partner skills: Competent, Proficient, Superior
-            // Vocational and below do not qualify
             $level = strtolower($proficiency['level'] ?? '');
             $hasEnglish = in_array($level, ['competent english', 'proficient english', 'superior english']);
+        }
+        
+        // No Competent English = 0 points regardless of skills
+        if (!$hasEnglish) {
+            return [
+                'detail' => 'Partner (no points – no Competent English)',
+                'points' => 0,
+                'category' => 'none',
+            ];
         }
         
         // Get partner age if DOB exists
@@ -694,28 +709,68 @@ class PointsService
             }
         }
         
+        // Skilled partner: skills + English + under 45. For 189, occupation must be on MLTSSL
         if ($hasSkills && $hasEnglish && $partnerAge < 45) {
-            return [
-                'detail' => 'Partner with skills (10 pts)',
-                'points' => 10,
-                'category' => 'skilled_partner',
-            ];
+            $occupationOnMltssl = true;
+            if ($subclass === '189') {
+                $occupationOnMltssl = $this->isPartnerOccupationOnMltssl($partner);
+            }
+            
+            if ($occupationOnMltssl) {
+                return [
+                    'detail' => 'Partner with skills (10 pts)',
+                    'points' => 10,
+                    'category' => 'skilled_partner',
+                ];
+            }
+            // For 189: partner has skills but occupation not on MLTSSL – fall through to English-only (5 pts)
         }
 
-        // Partner with competent English only
-        if ($hasEnglish) {
-            return [
-                'detail' => 'Partner with English (5 pts)',
-                'points' => 5,
-                'category' => 'english_partner',
-            ];
-        }
-
+        // Partner with competent English only (5 pts) – includes 189 case where occupation not on MLTSSL
         return [
-            'detail' => 'Partner (no points)',
-            'points' => 0,
-            'category' => 'none',
+            'detail' => 'Partner with English (5 pts)',
+            'points' => 5,
+            'category' => 'english_partner',
         ];
+    }
+
+    /**
+     * Check if partner's skills-assessed occupation is on the MLTSSL list.
+     * Resolves via related_client_id -> partner's latest ClientOccupation -> AnzscoOccupation.
+     *
+     * @param ClientSpouseDetail $partner ClientSpouseDetail for the partner
+     * @return bool True if occupation is on MLTSSL, false otherwise (or if cannot determine)
+     */
+    protected function isPartnerOccupationOnMltssl(ClientSpouseDetail $partner): bool
+    {
+        if (!$partner->related_client_id) {
+            return false;
+        }
+
+        $partnerClient = $partner->relatedClient;
+        if (!$partnerClient) {
+            return false;
+        }
+
+        $partnerOccupation = $partnerClient->occupations()->latest('id')->first();
+        if (!$partnerOccupation) {
+            return false;
+        }
+
+        // Prefer anzsco_occupation_id for direct lookup
+        if ($partnerOccupation->anzsco_occupation_id) {
+            $anzscoOccupation = AnzscoOccupation::find($partnerOccupation->anzsco_occupation_id);
+            return $anzscoOccupation && $anzscoOccupation->is_on_mltssl;
+        }
+
+        // Fallback: look up by occupation_code (ANZSCO code)
+        $occupationCode = $partnerOccupation->occupation_code ? trim((string) $partnerOccupation->occupation_code) : null;
+        if ($occupationCode) {
+            $anzscoOccupation = AnzscoOccupation::where('anzsco_code', $occupationCode)->first();
+            return $anzscoOccupation && $anzscoOccupation->is_on_mltssl;
+        }
+
+        return false;
     }
 
     /**

@@ -72,11 +72,14 @@
 			// SMS Management menu - Only for super admin
 			if(Auth::user()->role == 1) {
 				$smsclasstype = '';
-				if(str_starts_with(Route::currentRouteName() ?? '', 'adminconsole.features.sms.')){
+				$currentRoute = Route::currentRouteName() ?? '';
+				if(str_starts_with($currentRoute, 'adminconsole.features.sms.') && !str_starts_with($currentRoute, 'adminconsole.features.sms.templates.')){
 					$smsclasstype = 'active';
 				}
+				$smstemplatesclasstype = str_starts_with($currentRoute, 'adminconsole.features.sms.templates.') ? 'active' : '';
 			?>
 			<li class="{{$smsclasstype}}"><a class="nav-link" href="{{route('adminconsole.features.sms.dashboard')}}">SMS Management</a></li>
+			<li class="{{$smstemplatesclasstype}}"><a class="nav-link" href="{{route('adminconsole.features.sms.templates.index')}}">SMS Templates</a></li>
 			<?php
 			}
 			?>

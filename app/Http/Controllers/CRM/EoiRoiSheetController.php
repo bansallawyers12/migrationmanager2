@@ -75,10 +75,10 @@ class EoiRoiSheetController extends Controller
         // Calculate partner points and warnings (for Comments column) for each row
         $warningsCache = [];
         $rows->getCollection()->transform(function ($row) use (&$warningsCache) {
-            $row->partner_points = $this->calculatePartnerPoints($row->client_id);
+            $subclass = $this->getFirstSubclassFromRow($row);
+            $row->partner_points = $this->calculatePartnerPoints($row->client_id, $subclass);
 
             // Warnings (English expiry, age bracket, employment) for Comments column – cache by client + subclass
-            $subclass = $this->getFirstSubclassFromRow($row);
             $cacheKey = $row->client_id . '_' . ($subclass ?? '');
             if (!isset($warningsCache[$cacheKey])) {
                 $warningsCache[$cacheKey] = $this->getWarningsTextForClient($row->client_id, $subclass);
@@ -364,18 +364,20 @@ class EoiRoiSheetController extends Controller
 
     /**
      * Calculate partner points for a client (Single = 10, partner citizen/PR = 10, partner skills = 10, partner English = 5, else 0).
+     * For subclass 189: skilled partner requires occupation on MLTSSL; no Competent English = 0.
      *
      * @param int $clientId
+     * @param string|null $subclass EOI subclass (189, 190, 491) for 189 MLTSSL rule
      * @return int|null
      */
-    protected function calculatePartnerPoints($clientId)
+    protected function calculatePartnerPoints($clientId, ?string $subclass = null)
     {
         try {
             $client = Admin::find($clientId);
             if (!$client) {
                 return null;
             }
-            return $this->pointsService->getPartnerPoints($client);
+            return $this->pointsService->getPartnerPoints($client, $subclass);
         } catch (\Exception $e) {
             Log::error('Error calculating partner points', [
                 'client_id' => $clientId,

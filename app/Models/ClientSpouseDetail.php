@@ -5,6 +5,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class ClientSpouseDetail extends Model
 {
+    /**
+     * Get the related partner client (when related_client_id is set)
+     */
+    public function relatedClient()
+    {
+        return $this->belongsTo(Admin::class, 'related_client_id');
+    }
     protected $table = 'client_spouse_details';
 
     protected $fillable = [
