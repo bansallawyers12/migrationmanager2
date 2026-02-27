@@ -1965,11 +1965,19 @@ class ClientPortalController extends Controller
 		if($request->has('list_id') && $request->list_id){
 			// Delete all documents with the same cp_list_id
 			$listId = $request->list_id;
-			
+
+			// Collect all matching documents before deletion so we can remove their S3 files
+			$docsToDelete = Document::workflowChecklist()->where('cp_list_id', $listId)->get();
+
 			// Get first document to get client_matter_id for response
-			$appdoc = Document::workflowChecklist()->where('cp_list_id', $listId)->first();
+			$appdoc = $docsToDelete->first();
 			
 			if($appdoc){
+				// Remove each file from S3 (best-effort — failures are logged, never block DB delete)
+				foreach ($docsToDelete as $docForS3) {
+					$this->deleteS3File($docForS3->myfile);
+				}
+
 				// Delete all documents with this cp_list_id
 				$res = Document::workflowChecklist()->where('cp_list_id', $listId)->delete();
 				
@@ -3184,13 +3192,22 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 			return response()->json(['success' => false, 'message' => 'document_id is required.'], 422);
 		}
 
+		$document = DB::table('documents')->where('id', $documentId)->first();
+
+		if (!$document) {
+			return response()->json(['success' => false, 'message' => 'Document not found.'], 404);
+		}
+
+		// Remove the file from S3 before deleting the DB record (best-effort)
+		$this->deleteS3File($document->myfile);
+
 		$deleted = DB::table('documents')->where('id', $documentId)->delete();
 
 		if ($deleted) {
 			return response()->json(['success' => true]);
 		}
 
-		return response()->json(['success' => false, 'message' => 'Document not found.'], 404);
+		return response()->json(['success' => false, 'message' => 'Failed to delete document.'], 500);
 	}
 
 	/**
@@ -3221,5 +3238,31 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 		}
 
 		return response()->json(['success' => false, 'message' => 'Document not found.'], 404);
+	}
+
+	/**
+	 * Delete a file from S3 using its stored full URL.
+	 *
+	 * Best-effort: if the URL is not an S3 URL, or if deletion fails for any
+	 * reason, the error is logged but never propagated — DB deletion always proceeds.
+	 */
+	private function deleteS3File(?string $myfile): void
+	{
+		if (!$myfile || !str_starts_with($myfile, 'http')) {
+			return;
+		}
+
+		try {
+			$baseUrl = rtrim(Storage::disk('s3')->url(''), '/');
+			if (!$baseUrl || !str_starts_with($myfile, $baseUrl . '/')) {
+				return;
+			}
+			$key = substr($myfile, strlen($baseUrl) + 1);
+			if ($key) {
+				Storage::disk('s3')->delete($key);
+			}
+		} catch (\Exception $e) {
+			Log::warning('S3 file deletion failed: ' . $e->getMessage(), ['myfile' => $myfile]);
+		}
 	}
 }
