@@ -112,7 +112,7 @@ class AdminLoginController extends Controller
                 \Cookie::queue(\Cookie::forget('password'));
             }
 
-            $obj = new \App\Models\UserLog;
+            $obj = new \App\Models\StaffLoginLog;
             $obj->level = 'info';
             $obj->user_id = $user->id;
             $obj->ip_address = $request->getClientIp();
@@ -138,7 +138,7 @@ class AdminLoginController extends Controller
         if ($request->expectsJson()) {
             return response()->json($errors, 422);
         }
-		$obj = new \App\Models\UserLog;
+		$obj = new \App\Models\StaffLoginLog;
 		$obj->level = 'critical';
 		$obj->user_id = $staff ? $staff->id : null;
 		$obj->ip_address = $request->getClientIp();
@@ -152,7 +152,7 @@ class AdminLoginController extends Controller
     {
 		$user = $request->id;
 
-		$obj = new \App\Models\UserLog;
+		$obj = new \App\Models\StaffLoginLog;
 		$obj->level = 'info';
 		$obj->user_id = $user;
 		$obj->ip_address = $request->getClientIp();

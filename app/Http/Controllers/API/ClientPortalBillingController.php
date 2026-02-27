@@ -21,7 +21,7 @@ class ClientPortalBillingController extends Controller
      * - per_page: integer, default 10
      *
      * Returns invoices where:
-     * - client_application_sent = 1 (application sent to client)
+     * - client_portal_sent = 1 (invoice sent to client portal)
      * - invoice_status = 0 (Pending) OR invoice_status = 1 (Paid)
      *
      * @param Request $request
@@ -49,13 +49,13 @@ class ClientPortalBillingController extends Controller
                     DB::raw('MAX(COALESCE(invoice_status, 0)) as invoice_status'),
                     DB::raw('MAX(description) as description'),
                     DB::raw('MAX(trans_date) as latest_trans_date'),
-                    DB::raw('MAX(client_application_sent_at) as client_application_sent_at'),
+                    DB::raw('MAX(client_portal_sent_at) as client_portal_sent_at'),
                     DB::raw('MAX(client_matter_id) as client_matter_id')
                 )
                 ->where('client_id', $clientId)
                 ->where('client_matter_id', $clientMatterId)
                 ->where('receipt_type', 3)
-                ->where('client_application_sent', 1)
+                ->where('client_portal_sent', 1)
                 ->whereIn('invoice_status', [0, 1])
                 ->where(function ($query) {
                     $query->whereNull('void_invoice')
@@ -85,7 +85,7 @@ class ClientPortalBillingController extends Controller
                     'status' => $statusMap[$invoice->invoice_status] ?? 'Unknown',
                     'description' => $invoice->description,
                     'trans_date' => $invoice->latest_trans_date,
-                    'client_application_sent_at' => $invoice->client_application_sent_at,
+                    'client_portal_sent_at' => $invoice->client_portal_sent_at,
                     'client_matter_id' => $invoice->client_matter_id,
                 ];
             });

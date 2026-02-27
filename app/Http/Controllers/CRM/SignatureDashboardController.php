@@ -27,19 +27,19 @@ class SignatureDashboardController extends Controller
 
     public function index(Request $request)
     {
-        $user = Auth::guard('admin')->user();
+        $staff = Auth::guard('admin')->user();
         
         // Get all documents (global access - everyone can see everything)
         $query = Document::with(['creator', 'signers', 'client', 'lead'])
             ->forSignatureWorkflow()
-            ->visible($user)
+            ->visible($staff)
             ->notArchived()
             ->orderBy('created_at', 'desc');
 
         // Apply filters based on scope
-        $query->when($request->has('scope'), function ($q) use ($request, $user) {
+        $query->when($request->has('scope'), function ($q) use ($request, $staff) {
             return match($request->scope) {
-                'my_documents' => $q->forUser($user->id),
+                'my_documents' => $q->forUser($staff->id),
                 'team' => $q, // All documents (global access)
                 'organization' => $q, // All documents (global access)
                 default => $q
@@ -74,10 +74,10 @@ class SignatureDashboardController extends Controller
 
         // Get counts for dashboard cards (global access - all documents)
         $counts = [
-            'sent_by_me' => Document::forSignatureWorkflow()->forUser($user->id)->notArchived()->count(),
-            'visible_to_me' => Document::forSignatureWorkflow()->visible($user)->notArchived()->count(), // All documents (global)
-            'pending' => Document::forSignatureWorkflow()->visible($user)->byStatus('sent')->notArchived()->count(), // All pending (global)
-            'signed' => Document::forSignatureWorkflow()->visible($user)->byStatus('signed')->notArchived()->count(), // All signed (global)
+            'sent_by_me' => Document::forSignatureWorkflow()->forUser($staff->id)->notArchived()->count(),
+            'visible_to_me' => Document::forSignatureWorkflow()->visible($staff)->notArchived()->count(), // All documents (global)
+            'pending' => Document::forSignatureWorkflow()->visible($staff)->byStatus('sent')->notArchived()->count(), // All pending (global)
+            'signed' => Document::forSignatureWorkflow()->visible($staff)->byStatus('signed')->notArchived()->count(), // All signed (global)
             'overdue' => 0, // due_at column removed
         ];
 
@@ -95,12 +95,12 @@ class SignatureDashboardController extends Controller
         $leads = Lead::select('id', 'first_name', 'last_name', 'email')
             ->get();
 
-        return view('crm.signatures.dashboard', compact('documents', 'counts', 'user', 'errors', 'clients', 'leads'));
+        return view('crm.signatures.dashboard', compact('documents', 'counts', 'staff', 'errors', 'clients', 'leads'));
     }
 
     public function create(Request $request)
     {
-        $user = Auth::guard('admin')->user();
+        $staff = Auth::guard('admin')->user();
         
         // Check authorization
         $this->authorize('create', Document::class);
@@ -120,13 +120,13 @@ class SignatureDashboardController extends Controller
         if ($request->has('document_id')) {
             $document = Document::with('signatureFields')->findOrFail($request->document_id);
             // For existing documents, we'll allow adding signers even if status is not signature_placed
-            // The user can still add signers and the system will handle the workflow
+            // Staff can still add signers and the system will handle the workflow
         }
 
         // Provide errors variable for the layout
         $errors = request()->session()->get('errors') ?? new \Illuminate\Support\MessageBag();
 
-        return view('crm.signatures.create', compact('clients', 'leads', 'emailAccounts', 'user', 'errors', 'document'));
+        return view('crm.signatures.create', compact('clients', 'leads', 'emailAccounts', 'staff', 'errors', 'document'));
     }
 
     public function store(Request $request)
@@ -228,7 +228,7 @@ class SignatureDashboardController extends Controller
             }
 
             // Do NOT automatically send email or update status
-            // User must manually click "Send for Signature" when ready
+            // Staff must manually click "Send for Signature" when ready
             
             // Build success message
             $successMessage = "Signer added successfully: {$signer->email}. Click 'Send for Signature' when ready to send the signing link.";
@@ -273,7 +273,7 @@ class SignatureDashboardController extends Controller
             ]);
         }
 
-        $user = Auth::guard('admin')->user();
+        $staff = Auth::guard('admin')->user();
 
         // Set association if provided
         if ($request->association_type && $request->association_id) {
@@ -742,8 +742,8 @@ class SignatureDashboardController extends Controller
         // Check authorization (admin only)
         $this->authorize('update', $document);
 
-        $user = Auth::guard('admin')->user();
-        if ($user->role !== 1) {
+        $staff = Auth::guard('admin')->user();
+        if ($staff->role !== 1) {
             return back()->with('error', 'Only administrators can detach documents.');
         }
 
@@ -801,14 +801,14 @@ class SignatureDashboardController extends Controller
         ]);
         
         try {
-            $user = Auth::guard('admin')->user();
+            $staff = Auth::guard('admin')->user();
             $documents = Document::whereIn('id', $ids)->get();
             $count = 0;
             $skipped = 0;
             
             foreach ($documents as $doc) {
                 // Check authorization using Gate instead of policy directly
-                if ($user->can('void', $doc)) {
+                if ($staff->can('void', $doc)) {
                     if ($this->signatureService->void($doc, $request->reason)) {
                         $count++;
                     }

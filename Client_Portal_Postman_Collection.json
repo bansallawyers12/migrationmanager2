@@ -827,7 +827,7 @@
 								}
 							]
 						},
-						"description": "Get paginated list of billing invoices where client_application_sent=1 and invoice_status is Pending (0) or Paid (1). Requires client_matter_id (mandatory)."
+						"description": "Get paginated list of billing invoices where client_portal_sent=1 and invoice_status is Pending (0) or Paid (1). Requires client_matter_id (mandatory)."
 					},
 					"response": [
 						{
@@ -879,7 +879,7 @@
 								}
 							],
 							"cookie": [],
-							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"invoices\": [\n            {\n                \"trans_no\": \"INV-001\",\n                \"receipt_id\": 123,\n                \"balance_amount\": 1500.00,\n                \"invoice_status\": 0,\n                \"status\": \"Pending\",\n                \"description\": \"Professional fees\",\n                \"trans_date\": \"2026-02-15 10:00:00\",\n                \"client_application_sent_at\": \"2026-02-16 09:30:00\",\n                \"client_matter_id\": 5\n            }\n        ],\n        \"pagination\": {\n            \"current_page\": 1,\n            \"per_page\": 10,\n            \"total\": 1,\n            \"last_page\": 1,\n            \"from\": 1,\n            \"to\": 1\n        }\n    }\n}"
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"invoices\": [\n            {\n                \"trans_no\": \"INV-001\",\n                \"receipt_id\": 123,\n                \"balance_amount\": 1500.00,\n                \"invoice_status\": 0,\n                \"status\": \"Pending\",\n                \"description\": \"Professional fees\",\n                \"trans_date\": \"2026-02-15 10:00:00\",\n                \"client_portal_sent_at\": \"2026-02-16 09:30:00\",\n                \"client_matter_id\": 5\n            }\n        ],\n        \"pagination\": {\n            \"current_page\": 1,\n            \"per_page\": 10,\n            \"total\": 1,\n            \"last_page\": 1,\n            \"from\": 1,\n            \"to\": 1\n        }\n    }\n}"
 						},
 						{
 							"name": "422 - Validation Error (client_matter_id missing)",

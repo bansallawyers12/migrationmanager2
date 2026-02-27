@@ -311,7 +311,7 @@ use App\Http\Controllers\Controller;
             // Valid tab names that should NOT be treated as matter IDs
             $validTabNames = ['personaldetails', 'noteterm', 'personaldocuments', 'visadocuments', 
                               'eoiroi', 'emails', 
-                              'formgenerations', 'formgenerationsL', 'application', 'workflow', 'checklists'];
+                              'formgenerations', 'formgenerationsL', 'client_portal', 'application', 'workflow', 'checklists'];
             
             // Check if $id1 is a valid matter ID (not a tab name)
             $isMatterIdInUrl = isset($id1) && $id1 != "" && !in_array($id1, $validTabNames);

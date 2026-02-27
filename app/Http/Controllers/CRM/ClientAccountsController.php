@@ -5536,7 +5536,7 @@ public function getInvoiceAmount(Request $request)
 
     /**
      * Send Invoice to Client Portal (Client Portal / Mobile App)
-     * Sends push notification to the client, sets client_application_sent=1 and client_application_sent_at, logs the activity.
+     * Sends push notification to the client, sets client_portal_sent=1 and client_portal_sent_at, logs the activity.
      */
     public function sendInvoiceToClientApplication(Request $request, $id)
     {
@@ -5574,10 +5574,10 @@ public function getInvoiceAmount(Request $request)
             }
 
             // Check if already sent
-            if (!empty($receipt_entry->client_application_sent)) {
+            if (!empty($receipt_entry->client_portal_sent)) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Invoice has already been sent to Client Application'
+                    'message' => 'Invoice has already been sent to Client Portal'
                 ], 400);
             }
 
@@ -5599,7 +5599,7 @@ public function getInvoiceAmount(Request $request)
             try {
                 $fcmService = new FCMService();
                 $title = 'New Invoice Available';
-                $body = 'Invoice #' . $invoiceNo . ' has been sent to your client application.';
+                $body = 'Invoice #' . $invoiceNo . ' has been sent to your Client Portal.';
                 $data = [
                     'type' => 'invoice',
                     'invoice_id' => (string) $id,
@@ -5615,18 +5615,18 @@ public function getInvoiceAmount(Request $request)
                 ]);
             }
 
-            // Update client_application_sent = 1 and client_application_sent_at = now
+            // Update client_portal_sent = 1 and client_portal_sent_at = now
             DB::table('account_client_receipts')
                 ->where('receipt_type', 3)
                 ->where('receipt_id', $id)
                 ->update([
-                    'client_application_sent' => 1,
-                    'client_application_sent_at' => now()
+                    'client_portal_sent' => 1,
+                    'client_portal_sent_at' => now()
                 ]);
 
             // Insert in-app notification (visible in client portal notification center)
             $clientMatterId = $receipt_entry->client_matter_id ?? $record_get->client_matter_id ?? null;
-            $notificationMessage = 'Invoice #' . $invoiceNo . ' has been sent to your client application.';
+            $notificationMessage = 'Invoice #' . $invoiceNo . ' has been sent to your Client Portal.';
             DB::table('notifications')->insert([
                 'sender_id' => Auth::user()->id,
                 'receiver_id' => $record_get->client_id,
@@ -5645,15 +5645,15 @@ public function getInvoiceAmount(Request $request)
             $objs = new ActivitiesLog;
             $objs->client_id = $record_get->client_id;
             $objs->created_by = Auth::user()->id;
-            $objs->description = 'Invoice #' . $invoiceNo . ' sent to Client Application';
-            $objs->subject = 'Invoice sent to client application';
+            $objs->description = 'Invoice #' . $invoiceNo . ' sent to Client Portal';
+            $objs->subject = 'Invoice sent to Client Portal';
             $objs->task_status = 0;
             $objs->pin = 0;
             $objs->save();
 
             return response()->json([
                 'status' => true,
-                'message' => 'Invoice sent to Client Application successfully!'
+                'message' => 'Invoice sent to Client Portal successfully!'
             ]);
         } catch (\Exception $e) {
             Log::error('Error sending invoice to client portal: ' . $e->getMessage());

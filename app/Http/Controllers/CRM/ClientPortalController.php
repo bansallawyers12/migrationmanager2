@@ -708,7 +708,7 @@ class ClientPortalController extends Controller
 			$obj->subject = 'Stage: ' . $currentStage->name;
 			$obj->description = $comments;
 			$obj->activity_type = 'stage';
-			$obj->use_for = 'application';
+			$obj->use_for = 'matter';
 			$obj->save();
 			$lastStage = $stages->last();
 			$displayback = $lastStage && $lastStage->name == $nextStage->name;
@@ -748,7 +748,7 @@ class ClientPortalController extends Controller
 			$obj->subject = 'Stage: ' . $currentStage->name;
 			$obj->description = $comments;
 			$obj->activity_type = 'stage';
-			$obj->use_for = 'application';
+			$obj->use_for = 'matter';
 			$obj->save();
 			$lastStage = $stages->last();
 			$displayback = $lastStage && $lastStage->name == $prevStage->name;
@@ -939,8 +939,7 @@ class ClientPortalController extends Controller
 				$activityLog->subject = $matterNo . ' Stage: ' . $currentStage->name;
 				$activityLog->description = $comments;
 				$activityLog->activity_type = 'stage';
-				// Note: use_for is an integer field in PostgreSQL, so we don't set it here
-				// The existing code pattern for stage activities doesn't require use_for
+				$activityLog->use_for = 'matter';
 				$activityLog->task_status = 0;
 				$activityLog->pin = 0;
 				$activityLog->source = 'client_portal_web';
@@ -1098,6 +1097,7 @@ class ClientPortalController extends Controller
 				$activityLog->subject = $matterNo . ' Stage: ' . $currentStage->name;
 				$activityLog->description = $comments;
 				$activityLog->activity_type = 'stage';
+				$activityLog->use_for = 'matter';
 				$activityLog->task_status = 0;
 				$activityLog->pin = 0;
 				$activityLog->source = 'client_portal_web';
@@ -1207,6 +1207,7 @@ class ClientPortalController extends Controller
 			$activityLog->subject = $matterNo . ' Workflow changed to ' . $workflow->name;
 			$activityLog->description = 'Workflow changed to <b>' . e($workflow->name) . '</b>. Stage mapped accordingly.';
 			$activityLog->activity_type = 'stage';
+			$activityLog->use_for = 'matter';
 			$activityLog->task_status = 0;
 			$activityLog->pin = 0;
 			$activityLog->source = 'client_portal_web';
@@ -1275,6 +1276,7 @@ class ClientPortalController extends Controller
 				$activityLog->subject = 'Matter Discontinued';
 				$activityLog->description = $description;
 				$activityLog->activity_type = 'stage';
+				$activityLog->use_for = 'matter';
 				$activityLog->task_status = 0;
 				$activityLog->pin = 0;
 				$activityLog->source = 'client_portal_web';
@@ -1282,7 +1284,7 @@ class ClientPortalController extends Controller
 
 				// Notify client and send push when Discontinue is from Client Portal tab only
 				$currentTab = $request->input('current_tab', 'personaldetails');
-				if ($currentTab === 'application') {
+				if (in_array($currentTab, ['application', 'client_portal'])) {
 					$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $matterId;
 					$notificationMessage = 'Your matter ' . $matterNo . ' has been discontinued. Reason: ' . e($reason);
 					DB::table('notifications')->insert([
@@ -1386,6 +1388,7 @@ class ClientPortalController extends Controller
 				$activityLog->subject = 'Matter Reopened';
 				$activityLog->description = 'Matter was reopened and set back to active.';
 				$activityLog->activity_type = 'stage';
+				$activityLog->use_for = 'matter';
 				$activityLog->task_status = 0;
 				$activityLog->pin = 0;
 				$activityLog->source = 'client_portal_web';
@@ -1396,7 +1399,7 @@ class ClientPortalController extends Controller
 				$source = $request->input('source', '');
 				$shouldNotify = false;
 
-				if ($currentTab === 'application') {
+				if (in_array($currentTab, ['application', 'client_portal'])) {
 					// Reopen from Client Portal tab on client detail page - always notify
 					$shouldNotify = true;
 				} elseif ($source === 'matter_list') {
@@ -1626,7 +1629,7 @@ class ClientPortalController extends Controller
 				</div>
 				<?php
 				$applicationlists = \App\Models\ActivitiesLog::where('client_id', $clientMatter->client_id)
-					->where('use_for', 'application')
+					->where('use_for', 'matter')
 					->where('subject', 'like', '%Stage: ' . $stages->name . '%')
 					->orderby('created_at', 'DESC')->get();
 				?>
@@ -1672,7 +1675,7 @@ class ClientPortalController extends Controller
 		$obj->subject = $request->title;
 		$obj->description = $request->description;
 		$obj->activity_type = 'note';
-		$obj->use_for = 'application';
+		$obj->use_for = 'matter';
 		$saved = $obj->save();
 		if($saved){
 			$response['status'] 	= 	true;
@@ -1689,7 +1692,7 @@ class ClientPortalController extends Controller
 		$clientMatter = ClientMatter::find($noteid);
 
 		$lists = ActivitiesLog::where('activity_type','note')
-			->where('use_for','application')
+			->where('use_for','matter')
 			->where('client_id', $clientMatter ? $clientMatter->client_id : null)
 			->orderby('created_at', 'DESC')->get();
 
@@ -1760,7 +1763,7 @@ class ClientPortalController extends Controller
 				$objs->subject = '<b>Subject : '.$subject.'</b>';
 				$objs->description = '<b>To: '.$to.'</b></br>'.$message;
 				$objs->activity_type = 'email';
-				$objs->use_for = 'application';
+				$objs->use_for = 'matter';
 				$saved = $objs->save();
 				$response['status'] 	= 	true;
 				$response['message']	=	'Email Sent Successfully';

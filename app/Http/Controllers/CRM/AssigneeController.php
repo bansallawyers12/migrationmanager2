@@ -184,7 +184,7 @@ class AssigneeController extends Controller
         } else {
             $task_group = 'All';
         }
-        $user = Auth::user();
+        $staff = Auth::user();
 
         $assignees_completed = \App\Models\Note::with([
                 'noteStaff',
@@ -195,8 +195,8 @@ class AssigneeController extends Controller
             ->where('type', 'client')
             ->whereNotNull('client_id')
             ->where('is_action', 1)
-            ->when($user->role != 1, function ($query) use ($user) {
-                return $query->where('assigned_to', $user->id);
+            ->when($staff->role != 1, function ($query) use ($staff) {
+                return $query->where('assigned_to', $staff->id);
             })
             ->when($task_group !== 'All', function ($query) use ($task_group) {
                 return $query->where('task_group', 'like', $task_group);
@@ -205,7 +205,7 @@ class AssigneeController extends Controller
             ->paginate(20);
 
         // Get action group counts with single optimized query
-        $taskGroupCounts = $this->getCompletedActionGroupCounts($user);
+        $taskGroupCounts = $this->getCompletedActionGroupCounts($staff);
         
         //dd(count($assignees_completed));
         return view('crm.assignee.action_completed',compact('assignees_completed','task_group','taskGroupCounts'))->with('i', (request()->input('page', 1) - 1) * 20);
@@ -215,20 +215,20 @@ class AssigneeController extends Controller
      * Get completed action counts grouped by task_group (field name kept for database compatibility)
      * Uses a single query with GROUP BY for better performance
      * 
-     * @param \App\Models\Admin $user
+     * @param \App\Models\Admin $staff
      * @return array
      */
-    private function getCompletedActionGroupCounts($user)
+    private function getCompletedActionGroupCounts($staff)
     {
         $query = \App\Models\Note::where('status', 1)
             ->where('type', 'client')
             ->where('is_action', 1)
-            ->when($user->role != 1, function ($query) use ($user) {
-                return $query->where('assigned_to', $user->id);
+            ->when($staff->role != 1, function ($query) use ($staff) {
+                return $query->where('assigned_to', $staff->id);
             });
 
         // For admin role, add client_id filter
-        if ($user->role == 1) {
+        if ($staff->role == 1) {
             $query->whereNotNull('client_id');
         }
 
@@ -280,7 +280,7 @@ class AssigneeController extends Controller
                     ->where('notes.type', 'client')
                     ->where('notes.is_action', 1);
 
-                // Check if user is authenticated and has proper role
+                // Check if staff member is authenticated and has proper role
                 if (Auth::check() && Auth::user()->role != 1) {
                     $query->where('notes.assigned_to', Auth::user()->id);
                 }

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 
 use App\Models\Admin;
-use App\Models\UserLog;
+use App\Models\StaffLoginLog;
  
 use Auth;
 
@@ -31,7 +31,7 @@ class AuditLogController extends Controller
 	public function index(Request $request)  
 	{		
 	
-		$query 		= UserLog::query(); 
+		$query 		= StaffLoginLog::query(); 
 		$totalData 	= $query->count();	//for all data
 		$lists		= $query->sortable(['id' => 'desc'])->paginate(20);
 		return view('crm.auditlogs.index', compact(['lists', 'totalData']));

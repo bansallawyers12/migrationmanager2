@@ -18,7 +18,7 @@ class ImportLoginDataFromMySQL extends Command
     protected $signature = 'import:login-data 
                             {--source=mysql_source : MySQL source connection name}
                             {--target= : Target connection name (default: default connection)}
-                            {--table=* : Specific tables to import (only admins or user_logs allowed)}
+                            {--table=* : Specific tables to import (only admins or staff_login_logs allowed)}
                             {--skip-existing : Skip records that already exist}
                             {--update-existing : Update existing records instead of skipping}';
 
@@ -27,7 +27,7 @@ class ImportLoginDataFromMySQL extends Command
      *
      * @var string
      */
-    protected $description = 'Import login-related data (admins, user_logs) from MySQL to PostgreSQL';
+    protected $description = 'Import login-related data (admins, staff_login_logs) from MySQL to PostgreSQL';
 
     /**
      * Execute the console command.
@@ -41,7 +41,7 @@ class ImportLoginDataFromMySQL extends Command
         $updateExisting = $this->option('update-existing');
 
         // Define allowed tables (only login-related tables)
-        $allowedTables = ['admins', 'user_logs'];
+        $allowedTables = ['admins', 'staff_login_logs'];
         
         // If no tables specified, import all allowed tables
         if (empty($requestedTables)) {
@@ -95,9 +95,9 @@ class ImportLoginDataFromMySQL extends Command
             $totalErrors += $result['errors'];
         }
 
-        // Import user_logs table
-        if (in_array('user_logs', $tablesToImport)) {
-            $result = $this->importUserLogs($sourceConnection, $targetConnection, $skipExisting, $updateExisting);
+        // Import staff_login_logs table (formerly user_logs)
+        if (in_array('staff_login_logs', $tablesToImport)) {
+            $result = $this->importStaffLoginLogs($sourceConnection, $targetConnection, $skipExisting, $updateExisting);
             $totalImported += $result['imported'];
             $totalSkipped += $result['skipped'];
             $totalUpdated += $result['updated'];
@@ -247,24 +247,29 @@ class ImportLoginDataFromMySQL extends Command
     }
 
     /**
-     * Import user_logs table
+     * Import staff_login_logs table (formerly user_logs).
+     * Reads from staff_login_logs or user_logs in source (for legacy MySQL compatibility).
      */
-    protected function importUserLogs($sourceConnection, $targetConnection, $skipExisting, $updateExisting)
+    protected function importStaffLoginLogs($sourceConnection, $targetConnection, $skipExisting, $updateExisting)
     {
-        $this->info("Importing 'user_logs' table...");
+        $sourceTable = Schema::connection($sourceConnection)->hasTable('staff_login_logs')
+            ? 'staff_login_logs'
+            : (Schema::connection($sourceConnection)->hasTable('user_logs') ? 'user_logs' : null);
 
-        if (!Schema::connection($sourceConnection)->hasTable('user_logs')) {
-            $this->warn("  ⚠ Table 'user_logs' does not exist in source database");
+        if (!$sourceTable) {
+            $this->warn("  ⚠ Table 'staff_login_logs' or 'user_logs' does not exist in source database");
             return ['imported' => 0, 'skipped' => 0, 'updated' => 0, 'errors' => 0];
         }
 
+        $this->info("Importing '{$sourceTable}' from source to 'staff_login_logs'...");
+
         // Ensure target table exists
-        if (!Schema::connection($targetConnection)->hasTable('user_logs')) {
-            $this->error("  ✗ Table 'user_logs' does not exist in target database. Please run migrations first.");
+        if (!Schema::connection($targetConnection)->hasTable('staff_login_logs')) {
+            $this->error("  ✗ Table 'staff_login_logs' does not exist in target database. Please run migrations first.");
             return ['imported' => 0, 'skipped' => 0, 'updated' => 0, 'errors' => 1];
         }
 
-        $sourceLogs = DB::connection($sourceConnection)->table('user_logs')->get();
+        $sourceLogs = DB::connection($sourceConnection)->table($sourceTable)->get();
         $total = $sourceLogs->count();
         
         $this->info("  Found {$total} log records in MySQL");
@@ -294,7 +299,7 @@ class ImportLoginDataFromMySQL extends Command
                     // But check if we want to skip duplicates
                     if ($skipExisting && $logId) {
                         $existing = DB::connection($targetConnection)
-                            ->table('user_logs')
+                            ->table('staff_login_logs')
                             ->where('id', $logId)
                             ->first();
                         
@@ -307,11 +312,11 @@ class ImportLoginDataFromMySQL extends Command
 
                     // Insert new log record
                     // Let PostgreSQL auto-generate ID, or use original if preserving
-                    if ($logId && !$this->idExists($targetConnection, 'user_logs', $logId)) {
+                    if ($logId && !$this->idExists($targetConnection, 'staff_login_logs', $logId)) {
                         $logData['id'] = $logId;
                     }
 
-                    DB::connection($targetConnection)->table('user_logs')->insert($logData);
+                    DB::connection($targetConnection)->table('staff_login_logs')->insert($logData);
                     $imported++;
 
                     $bar->advance();
@@ -331,7 +336,7 @@ class ImportLoginDataFromMySQL extends Command
 
         $bar->finish();
         $this->newLine();
-        $this->info("  ✓ User Logs: {$imported} imported, {$updated} updated, {$skipped} skipped, {$errors} errors");
+        $this->info("  ✓ Staff Login Logs: {$imported} imported, {$updated} updated, {$skipped} skipped, {$errors} errors");
 
         return ['imported' => $imported, 'skipped' => $skipped, 'updated' => $updated, 'errors' => $errors];
     }

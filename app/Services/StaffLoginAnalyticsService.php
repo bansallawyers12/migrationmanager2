@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\UserLog;
+use App\Models\StaffLoginLog;
 use App\Models\Admin;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -14,17 +14,17 @@ class StaffLoginAnalyticsService
     /**
      * Get daily login counts for a date range
      */
-    public function getDailyLogins(?int $userId = null, ?Carbon $startDate = null, ?Carbon $endDate = null): Collection
+    public function getDailyLogins(?int $staffId = null, ?Carbon $startDate = null, ?Carbon $endDate = null): Collection
     {
         $startDate = $startDate ?? Carbon::now()->subDays(30);
         $endDate = $endDate ?? Carbon::now();
 
-        $query = UserLog::query()
+        $query = StaffLoginLog::query()
             ->where('message', 'like', '%Logged in%')
             ->whereBetween('created_at', [$startDate, $endDate]);
 
-        if ($userId) {
-            $query->where('user_id', $userId);
+        if ($staffId) {
+            $query->where('user_id', $staffId);
         }
 
         return $query->select(
@@ -47,17 +47,17 @@ class StaffLoginAnalyticsService
     /**
      * Get weekly login aggregates
      */
-    public function getWeeklyLogins(?int $userId = null, ?Carbon $startDate = null, ?Carbon $endDate = null): Collection
+    public function getWeeklyLogins(?int $staffId = null, ?Carbon $startDate = null, ?Carbon $endDate = null): Collection
     {
         $startDate = $startDate ?? Carbon::now()->subWeeks(12);
         $endDate = $endDate ?? Carbon::now();
 
-        $query = UserLog::query()
+        $query = StaffLoginLog::query()
             ->where('message', 'like', '%Logged in%')
             ->whereBetween('created_at', [$startDate, $endDate]);
 
-        if ($userId) {
-            $query->where('user_id', $userId);
+        if ($staffId) {
+            $query->where('user_id', $staffId);
         }
 
         return $query->select(
@@ -86,17 +86,17 @@ class StaffLoginAnalyticsService
     /**
      * Get monthly login aggregates
      */
-    public function getMonthlyLogins(?int $userId = null, ?Carbon $startDate = null, ?Carbon $endDate = null): Collection
+    public function getMonthlyLogins(?int $staffId = null, ?Carbon $startDate = null, ?Carbon $endDate = null): Collection
     {
         $startDate = $startDate ?? Carbon::now()->subMonths(12);
         $endDate = $endDate ?? Carbon::now();
 
-        $query = UserLog::query()
+        $query = StaffLoginLog::query()
             ->where('message', 'like', '%Logged in%')
             ->whereBetween('created_at', [$startDate, $endDate]);
 
-        if ($userId) {
-            $query->where('user_id', $userId);
+        if ($staffId) {
+            $query->where('user_id', $staffId);
         }
 
         return $query->select(
@@ -125,17 +125,17 @@ class StaffLoginAnalyticsService
     /**
      * Get hourly login distribution
      */
-    public function getHourlyDistribution(?int $userId = null, ?Carbon $startDate = null, ?Carbon $endDate = null): Collection
+    public function getHourlyDistribution(?int $staffId = null, ?Carbon $startDate = null, ?Carbon $endDate = null): Collection
     {
         $startDate = $startDate ?? Carbon::now()->subDays(30);
         $endDate = $endDate ?? Carbon::now();
 
-        $query = UserLog::query()
+        $query = StaffLoginLog::query()
             ->where('message', 'like', '%Logged in%')
             ->whereBetween('created_at', [$startDate, $endDate]);
 
-        if ($userId) {
-            $query->where('user_id', $userId);
+        if ($staffId) {
+            $query->where('user_id', $staffId);
         }
 
         return $query->select(
@@ -157,41 +157,41 @@ class StaffLoginAnalyticsService
     /**
      * Get login summary statistics
      */
-    public function getSummary(?int $userId = null, ?Carbon $startDate = null, ?Carbon $endDate = null): array
+    public function getSummary(?int $staffId = null, ?Carbon $startDate = null, ?Carbon $endDate = null): array
     {
         $startDate = $startDate ?? Carbon::now()->subDays(30);
         $endDate = $endDate ?? Carbon::now();
 
-        $query = UserLog::query()
+        $query = StaffLoginLog::query()
             ->where('message', 'like', '%Logged in%')
             ->whereBetween('created_at', [$startDate, $endDate]);
 
-        if ($userId) {
-            $query->where('user_id', $userId);
+        if ($staffId) {
+            $query->where('user_id', $staffId);
         }
 
         $totalLogins = $query->count();
         $uniqueStaff = $query->distinct('user_id')->count('user_id');
         
-        $failedLogins = UserLog::query()
+        $failedLogins = StaffLoginLog::query()
             ->where('level', 'critical')
             ->where('message', 'like', '%Invalid%')
             ->whereBetween('created_at', [$startDate, $endDate]);
         
-        if ($userId) {
-            $failedLogins->where('user_id', $userId);
+        if ($staffId) {
+            $failedLogins->where('user_id', $staffId);
         }
         $failedCount = $failedLogins->count();
 
         $avgPerDay = $totalLogins > 0 ? round($totalLogins / max(1, $startDate->diffInDays($endDate)), 2) : 0;
 
         // Get peak hour
-        $peakHour = $this->getHourlyDistribution($userId, $startDate, $endDate)
+        $peakHour = $this->getHourlyDistribution($staffId, $startDate, $endDate)
             ->sortByDesc('count')
             ->first();
 
         // Get most active day of week
-        $dayOfWeek = UserLog::query()
+        $dayOfWeek = StaffLoginLog::query()
             ->where('message', 'like', '%Logged in%')
             ->whereBetween('created_at', [$startDate, $endDate]);
         
@@ -240,7 +240,7 @@ class StaffLoginAnalyticsService
         $startDate = $startDate ?? Carbon::now()->subDays(30);
         $endDate = $endDate ?? Carbon::now();
 
-        return UserLog::query()
+        return StaffLoginLog::query()
             ->where('message', 'like', '%Logged in%')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->select(
@@ -267,7 +267,7 @@ class StaffLoginAnalyticsService
     /**
      * Get login trends (comparing periods)
      */
-    public function getTrends(?int $userId = null, string $period = 'month'): array
+    public function getTrends(?int $staffId = null, string $period = 'month'): array
     {
         $currentStart = match($period) {
             'day' => Carbon::now()->subDays(7),
@@ -279,17 +279,17 @@ class StaffLoginAnalyticsService
         $previousStart = $currentStart->copy()->sub($currentStart->diffInDays(Carbon::now()), 'days');
 
         $current = match($period) {
-            'day' => $this->getDailyLogins($userId, $currentStart, Carbon::now()),
-            'week' => $this->getWeeklyLogins($userId, $currentStart, Carbon::now()),
-            'month' => $this->getMonthlyLogins($userId, $currentStart, Carbon::now()),
-            default => $this->getMonthlyLogins($userId, $currentStart, Carbon::now()),
+            'day' => $this->getDailyLogins($staffId, $currentStart, Carbon::now()),
+            'week' => $this->getWeeklyLogins($staffId, $currentStart, Carbon::now()),
+            'month' => $this->getMonthlyLogins($staffId, $currentStart, Carbon::now()),
+            default => $this->getMonthlyLogins($staffId, $currentStart, Carbon::now()),
         };
 
         $previous = match($period) {
-            'day' => $this->getDailyLogins($userId, $previousStart, $currentStart),
-            'week' => $this->getWeeklyLogins($userId, $previousStart, $currentStart),
-            'month' => $this->getMonthlyLogins($userId, $previousStart, $currentStart),
-            default => $this->getMonthlyLogins($userId, $previousStart, $currentStart),
+            'day' => $this->getDailyLogins($staffId, $previousStart, $currentStart),
+            'week' => $this->getWeeklyLogins($staffId, $previousStart, $currentStart),
+            'month' => $this->getMonthlyLogins($staffId, $previousStart, $currentStart),
+            default => $this->getMonthlyLogins($staffId, $previousStart, $currentStart),
         };
 
         $currentTotal = $current->sum('count');

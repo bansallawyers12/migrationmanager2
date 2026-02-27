@@ -157,7 +157,7 @@
 
 									<div class="accordion">
 										<div class="accordion-header" role="button" data-toggle="collapse" data-target="#panel-body-8">
-											<h4>APPLICATIONS</h4>
+											<h4>MATTERS</h4>
 										</div>
 										<div class="accordion-body collapse" id="panel-body-8" data-parent="#accordion">
 											<div class="select_toggle">
@@ -165,14 +165,14 @@
 												<a href="javascript:;" data-class="applications" class="btn btn-secondary deselect_all">Deselect All</a>
 											</div>
 											<ul>
-												<li><label><input type="checkbox" name="module_access[34]" <?php if(array_key_exists('34',  $module_access)) { echo "checked"; } ?> class="applications"> Can list and create applications.</label></li>
-												<li><label><input type="checkbox" name="module_access[35]" <?php if(array_key_exists('35',  $module_access)) { echo "checked"; } ?> class="applications">  Can delete applications.</label></li>
+												<li><label><input type="checkbox" name="module_access[34]" <?php if(array_key_exists('34',  $module_access)) { echo "checked"; } ?> class="applications"> Can list and create matters.</label></li>
+												<li><label><input type="checkbox" name="module_access[35]" <?php if(array_key_exists('35',  $module_access)) { echo "checked"; } ?> class="applications">  Can delete matters.</label></li>
 												<li><label><input type="checkbox" name="module_access[36]" <?php if(array_key_exists('36',  $module_access)) { echo "checked"; } ?> class="applications"> Can setup payment schedule.</label></li>
 												<li><label><input type="checkbox" name="module_access[37]" <?php if(array_key_exists('37',  $module_access)) { echo "checked"; } ?> class="applications"> Can add a new payment schedule.</label></li>
 												<li><label><input type="checkbox" name="module_access[38]" <?php if(array_key_exists('38',  $module_access)) { echo "checked"; } ?> class="applications"> Can edit a payment schedule.</label></li>
 												<li><label><input type="checkbox" name="module_access[39]" <?php if(array_key_exists('39',  $module_access)) { echo "checked"; } ?> class="applications"> Can delete a payment schedule.</label></li>
-												<li><label><input type="checkbox" name="module_access[40]" <?php if(array_key_exists('40',  $module_access)) { echo "checked"; } ?> class="applications"> Can view/edit assigned and added application by the users of primary office.</label></li>
-												<li><label><input type="checkbox" name="module_access[41]" <?php if(array_key_exists('41',  $module_access)) { echo "checked"; } ?> class="applications"> Can view/edit assigned and added application by the users of secondary office.</label></li>
+												<li><label><input type="checkbox" name="module_access[40]" <?php if(array_key_exists('40',  $module_access)) { echo "checked"; } ?> class="applications"> Can view/edit assigned and added matter by the users of primary office.</label></li>
+												<li><label><input type="checkbox" name="module_access[41]" <?php if(array_key_exists('41',  $module_access)) { echo "checked"; } ?> class="applications"> Can view/edit assigned and added matter by the users of secondary office.</label></li>
 									{{-- Removed legacy sales forecast permissions (applications) --}}
 									{{-- Removed application fee permissions (module_access[42], [43]) - fee options feature removed --}}
 											</ul>
@@ -193,7 +193,7 @@
 												<li><label><input type="checkbox" name="module_access[47]" <?php if(array_key_exists('47',  $module_access)) { echo "checked"; } ?> class="accounts"> Can list, add, edit, delete and make/revert payments .</label></li>
 												<li><label><input type="checkbox" name="module_access[48]" <?php if(array_key_exists('48',  $module_access)) { echo "checked"; } ?> class="accounts"> Can add, edit, delete and make/revert payments of invoices.</label></li>
 												<li><label><input type="checkbox" name="module_access[49]" <?php if(array_key_exists('49',  $module_access)) { echo "checked"; } ?> class="accounts"> Can view invoices of only assigned clients. schedule.</label></li>
-												<li><label><input type="checkbox" name="module_access[50]" <?php if(array_key_exists('50',  $module_access)) { echo "checked"; } ?> class="accounts"> Can view invoices of all the clients of associated offices and shared applications.</label></li>
+												<li><label><input type="checkbox" name="module_access[50]" <?php if(array_key_exists('50',  $module_access)) { echo "checked"; } ?> class="accounts"> Can view invoices of all the clients of associated offices and shared matters.</label></li>
 												<li><label><input type="checkbox" name="module_access[51]" <?php if(array_key_exists('51',  $module_access)) { echo "checked"; } ?> class="accounts">  Can view income shared receivables of associated offices.</label></li>
 												<li><label><input type="checkbox" name="module_access[52]" <?php if(array_key_exists('52',  $module_access)) { echo "checked"; } ?> class="accounts"> Can make payments, revert and delete payables of income shared offices.</label></li>
 												<li><label><input type="checkbox" name="module_access[53]" <?php if(array_key_exists('53',  $module_access)) { echo "checked"; } ?> class="accounts"> Can view income shared payables.</label></li>
@@ -232,7 +232,7 @@
 												<a href="javascript:;" data-class="reports" class="btn btn-secondary deselect_all">Deselect All</a>
 											</div>
 											<ul>
-												<li><label><input type="checkbox" name="module_access[62]" <?php if(array_key_exists('62',  $module_access)) { echo "checked"; } ?> class="reports"> Can view Client and Application Reports.</label></li>
+												<li><label><input type="checkbox" name="module_access[62]" <?php if(array_key_exists('62',  $module_access)) { echo "checked"; } ?> class="reports"> Can view Client and Matter Reports.</label></li>
 												<li><label><input type="checkbox" name="module_access[63]" <?php if(array_key_exists('63',  $module_access)) { echo "checked"; } ?> class="reports"> Can view Invoice Report.</label></li>
 												<li><label><input type="checkbox" name="module_access[64]" <?php if(array_key_exists('64',  $module_access)) { echo "checked"; } ?> class="reports"> Can view Office Check-In Report.</label></li>
 									{{-- Removed legacy sales forecast report permissions --}}

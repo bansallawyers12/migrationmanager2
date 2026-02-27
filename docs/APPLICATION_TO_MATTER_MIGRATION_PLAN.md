@@ -136,17 +136,9 @@ This document lists remaining changes to complete the migration from "applicatio
 
 ---
 
-## 8. `client_application_sent` Column (Low Priority)
+## 8. `client_application_sent` → `client_portal_sent` ✅ DONE
 
-**Location:** `account_client_receipts` table; `ClientAccountsController`, `ClientPortalBillingController`
-
-**Meaning:** Invoice sent to client portal.
-
-**Options:**
-- Keep as-is (domain-specific: "application" = client portal).
-- Rename to `client_portal_sent` via migration (requires code updates).
-
-**Risk:** Low – rename only if doing broader schema cleanup.
+**Completed:** Migration `2026_02_27_120000_rename_client_application_sent_to_client_portal_sent` created. Columns renamed; all code updated.
 
 ---
 
