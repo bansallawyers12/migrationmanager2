@@ -102,16 +102,7 @@
     window.loadInvoicesForQuickReceipt = loadInvoicesForQuickReceipt;
     window.populateQuickReceiptOfficeForm = populateQuickReceiptOfficeForm;
 
-    $(document).ready(function() {
-        $(document).delegate('.createapplicationnewinvoice', 'click', function() {
-            $('#opencreateinvoiceform').modal('show');
-            var sid = $(this).attr('data-id');
-            var cid = $(this).attr('data-cid');
-            var aid = $(this).attr('data-app-id');
-            $('#client_id').val(cid);
-            $('#app_id').val(aid);
-            $('#schedule_id').val(sid);
-        });
-    });
+    // createapplicationnewinvoice handler REMOVED - Create Invoice from Schedule flow unused
+    // (payment schedule list removed; no /create-invoice route)
 
 })(typeof jQuery !== 'undefined' ? jQuery : null);

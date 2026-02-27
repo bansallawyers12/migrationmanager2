@@ -7,75 +7,11 @@
     'use strict';
     if (!$) return;
 
-    function uploadFormData(form_data) {
-        $('.popuploader').show();
-        $.ajax({
-            url: window.ClientDetailConfig.urls.checklistUpload,
-            method: "POST",
-            data: form_data,
-            dataType: 'json',
-            contentType: false,
-            cache: false,
-            processData: false,
-            success: function(response) {
-                var obj = (typeof response === 'object' && response !== null) ? response : (typeof response === 'string' && response.trim() ? (function(){ try { return JSON.parse(response); } catch(e) { return null; } })() : null);
-                if (!obj) return;
-                $('.popuploader').hide();
-                $('#openfileuploadmodal').modal('hide');
-                $('.mychecklistdocdata').html(obj.doclistdata);
-                $('.checklistuploadcount').html(obj.client_portal_upload_count || obj.applicationuploadcount);
-                $('.'+obj.type+'_checklists').html(obj.checklistdata);
-                $('#selectfile').val('');
-            }
-        });
-    }
-
-    function file_explorer() {
-        var fileInput = document.getElementById("selectfile");
-        if (!fileInput) return;
-        fileInput.click();
-        fileInput.onchange = function() {
-            var files = fileInput.files;
-            var formData = new FormData();
-            for (var i = 0; i < files.length; i++) {
-                formData.append("file[]", files[i]);
-            }
-            formData.append("type", $('.checklisttype').val());
-            formData.append("typename", $('.checklisttypename').val());
-            formData.append("id", $('.checklistid').val());
-            formData.append("client_matter_id", $('.client_matter_id').val() || $('.application_id').val());
-            uploadFormData(formData);
-        };
-    }
+    // uploadFormData, file_explorer, .openfileupload, .opendocnote, #ddArea handlers REMOVED - workflow checklist upload flow dead
 
     $(document).ready(function() {
         // ---- Application checklist: open modal ----
         // NOTE: .openchecklist handler moved to detail-main.js (same pattern as Add Personal/Visa Checklist)
-
-        // ---- File upload modal: set context ----
-        $(document).delegate('.openfileupload', 'click', function(){
-            var id = $(this).attr('data-id');
-            var type = $(this).attr('data-type');
-            var typename = $(this).attr('data-typename');
-            var aid = $(this).attr('data-aid');
-            $(".checklisttype").val(type);
-            $(".checklistid").val(id);
-            $(".checklisttypename").val(typename);
-            $(".client_matter_id").val(aid);
-            $(".application_id").val(aid);
-            $('#openfileuploadmodal').modal('show');
-        });
-
-        $(document).delegate('.opendocnote', 'click', function(){
-            var id = '';
-            var type = $(this).attr('data-app-type');
-            var aid = $(this).attr('data-id');
-            $(".checklisttype").val(type);
-            $(".checklistid").val(id);
-            $(".client_matter_id").val(aid);
-            $(".application_id").val(aid);
-            $('#openfileuploadmodal').modal('show');
-        });
 
         // ---- Due date toggle ----
         $(document).delegate('.due_date_sec a.due_date_btn', 'click', function(){
@@ -88,32 +24,6 @@
             $('.due_date_sec .due_date_col').hide();
             $('.due_date_sec a.due_date_btn').show();
             $('.checklistdue_date').val(0);
-        });
-
-        // ---- Checklist file upload (ddArea) ----
-        $(document).delegate("#ddArea", "dragover", function(){
-            $(this).addClass("drag_over");
-            return false;
-        });
-
-        $(document).delegate("#ddArea", "dragleave", function(){
-            $(this).removeClass("drag_over");
-            return false;
-        });
-
-        $(document).delegate("#ddArea", "click", function(e){
-            file_explorer();
-        });
-
-        $(document).delegate("#ddArea", "drop", function(e){
-            e.preventDefault();
-            $(this).removeClass("drag_over");
-            var formData = new FormData();
-            var files = e.originalEvent.dataTransfer.files;
-            for (var i = 0; i < files.length; i++) {
-                formData.append("file[]", files[i]);
-            }
-            uploadFormData(formData);
         });
 
         // ---- Rename checklist: Personal documents ----

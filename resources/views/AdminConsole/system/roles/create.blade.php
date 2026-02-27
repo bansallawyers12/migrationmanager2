@@ -161,10 +161,7 @@
 											<ul>
 												<li><label><input type="checkbox" name="module_access[34]" class="applications"> Can create matters.</label></li>
 												<li><label><input type="checkbox" name="module_access[35]" class="applications">  Can delete matters.</label></li>
-												<li><label><input type="checkbox" name="module_access[36]" class="applications"> Can setup payment schedule.</label></li>
-												<li><label><input type="checkbox" name="module_access[37]" class="applications"> Can add a new payment schedule.</label></li>
-												<li><label><input type="checkbox" name="module_access[38]" class="applications"> Can edit a payment schedule.</label></li>
-												<li><label><input type="checkbox" name="module_access[39]" class="applications"> Can delete a payment schedule.</label></li>
+												{{-- Payment schedule permissions (36-39) removed - feature unused --}}
 												<li><label><input type="checkbox" name="module_access[40]" class="applications"> Can view/edit assigned and added matter by the users of primary office.</label></li>
 												<li><label><input type="checkbox" name="module_access[41]" class="applications"> Can view/edit assigned and added matter by the users of secondary office.</label></li>
 									{{-- Removed legacy sales forecast permissions (applications) --}}

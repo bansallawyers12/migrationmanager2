@@ -1389,65 +1389,7 @@ function customValidate(formName, savetype = '')
 					}else if(formName == 'applicationfeeform'){
 						$('.custom-error-msg').html('<span class="alert alert-danger">Application fee options feature has been removed.</span>');
 				// servicefeeform handler REMOVED - form/modals no longer exist; /get-services route removed
-				}else if(formName == 'setuppaymentschedule'){
-
-						var myform = document.getElementById('setuppaymentschedule');
-						var fd = new FormData(myform);
-						$.ajax({
-							type:'post',
-							url:$("form[name="+formName+"]").attr('action'),
-							processData: false,
-							contentType: false,
-							data: fd,
-							success: function(response){
-								$('.popuploader').hide();
-									$('#create_apppaymentschedule').modal('hide');
-								var obj = $.parseJSON(response);
-
-								if(obj.status){
-
-								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
-									$('.openpaymentschedule').hide();
-								}else{
-									$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
-
-								}
-							}
-						});
-					}else if(formName == 'editinvpaymentschedule'){
-						if($('#editinvpaymentschedule input[name="is_ajax"]').val() == 'true'){
-						var myform = document.getElementById('editinvpaymentschedule');
-						var appliid = $('#editinvpaymentschedule input[name="id"]').val();
-						var fd = new FormData(myform);
-						$.ajax({
-							type:'post',
-							url:$("form[name="+formName+"]").attr('action'),
-							processData: false,
-							contentType: false,
-							data: fd,
-							success: function(response){
-								$('#editpaymentschedule').modal('hide');
-								var obj = $.parseJSON(response);
-
-									if(obj.status){
-
-								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
-									$.ajax({
-										url: site_url+'/get-all-paymentschedules',
-										type:'GET',
-										data:{appid:obj.application_id, client_id:obj.client_id},
-										success: function(responses){
-											 $('.popuploader').hide();
-											$('.showpaymentscheduledata').html(responses);
-										}
-									});
-								}else{
-									$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
-
-								}
-							}
-						});
-						}
+				// Payment schedule handlers (setuppaymentschedule, editinvpaymentschedule, addinvpaymentschedule) REMOVED - feature unused
 					}else if(formName == 'checklistform'){
 
 						var myform = document.getElementById('checklistform');
@@ -1471,40 +1413,6 @@ function customValidate(formName, savetype = '')
 									$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 									$('.'+checklist_type+'_checklists').html(obj.data);
 									$('.checklistcount').html(obj.countchecklist);
-								}else{
-									$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
-
-								}
-							}
-						});
-
-					}else if(formName == 'addinvpaymentschedule'){
-
-						var myform = document.getElementById('addinvpaymentschedule');
-
-						var fd = new FormData(myform);
-						$.ajax({
-							type:'post',
-							url:$("form[name="+formName+"]").attr('action'),
-							processData: false,
-							contentType: false,
-							data: fd,
-							success: function(response){
-								$('#addpaymentschedule').modal('hide');
-								var obj = $.parseJSON(response);
-
-									if(obj.status){
-
-								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
-									$.ajax({
-										url: site_url+'/get-all-paymentschedules',
-										type:'GET',
-										data:{appid:obj.application_id, client_id:obj.client_id},
-										success: function(responses){
-											 $('.popuploader').hide();
-											$('.showpaymentscheduledata').html(responses);
-										}
-									});
 								}else{
 									$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
 

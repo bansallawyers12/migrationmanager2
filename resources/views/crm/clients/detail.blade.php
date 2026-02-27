@@ -820,19 +820,7 @@ use App\Http\Controllers\Controller;
 	</div>
 </div>
 
-<div id="confirmpublishdocModal" tabindex="-1" role="dialog" aria-labelledby="confirmModalLabel" aria-hidden="false" class="modal fade" >
-	<div class="modal-dialog">
-		<div class="modal-content popUp">
-			<div class="modal-body text-center">
-				<button type="button" data-dismiss="modal" aria-label="Close" class="close"><span aria-hidden="true">&times;</span></button>
-				<h4 class="modal-title text-center message col-v-5">Publish Document?</h4>
-				<h5 class="">Publishing documents will allow client to access from client portal , Are you sure you want to continue ?</h5>
-				<button type="submit" style="margin-top: 40px;" class="button btn btn-danger acceptpublishdoc">Publish Anyway</button>
-				<button type="button" style="margin-top: 40px;" data-dismiss="modal" class="button btn btn-secondary cancel">Cancel</button>
-			</div>
-		</div>
-	</div>
-</div>
+{{-- confirmpublishdocModal REMOVED - workflow checklist unused --}}
 
 <div class="modal fade custom_modal" id="application_ownership" tabindex="-1" role="dialog" aria-labelledby="applicationModalLabel" aria-hidden="true">
 	<div class="modal-dialog">
@@ -1348,8 +1336,7 @@ $(document).ready(function() {
             uploadAgreement: '{{ route("clients.uploadAgreement", $fetchedData->id) }}',
             fetchClientContactNo: '{{ URL::to("/clients/fetchClientContactNo") }}',
             followupStore: '{{ URL::to("/clients/action/store") }}',
-            publishDoc: '{{ URL::to("/client-portal/publishdoc") }}',
-            deleteClientPortalDoc: '{{ URL::to("/client-portal/delete-docs") }}',
+            // publishDoc, deleteClientPortalDoc REMOVED - workflow checklist unused
             deleteCostagreement: '{{ URL::to("/deletecostagreement") }}',
             deleteAction: '{{ URL::to("/delete_action") }}',
             pinNote: '{{ URL::to("/pinnote") }}',
@@ -1372,7 +1359,6 @@ $(document).ready(function() {
             completeStage: '{{ URL::to("/completestage") }}',
             updateBackStage: '{{ URL::to("/updatebackstage") }}',
             getMatterNotes: '{{ URL::to("/client-portal/notes") }}',
-            checklistUpload: '{{ URL::to("/client-portal/checklistupload") }}',
             sendToHubdoc: '{{ url("/clients/sendToHubdoc") }}',
             checkHubdocStatus: '{{ url("/clients/checkHubdocStatus") }}',
             sendToClientApplication: '{{ url("/clients/send-invoice-to-client-application") }}',

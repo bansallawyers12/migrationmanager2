@@ -167,10 +167,7 @@
 											<ul>
 												<li><label><input type="checkbox" name="module_access[34]" <?php if(array_key_exists('34',  $module_access)) { echo "checked"; } ?> class="applications"> Can list and create matters.</label></li>
 												<li><label><input type="checkbox" name="module_access[35]" <?php if(array_key_exists('35',  $module_access)) { echo "checked"; } ?> class="applications">  Can delete matters.</label></li>
-												<li><label><input type="checkbox" name="module_access[36]" <?php if(array_key_exists('36',  $module_access)) { echo "checked"; } ?> class="applications"> Can setup payment schedule.</label></li>
-												<li><label><input type="checkbox" name="module_access[37]" <?php if(array_key_exists('37',  $module_access)) { echo "checked"; } ?> class="applications"> Can add a new payment schedule.</label></li>
-												<li><label><input type="checkbox" name="module_access[38]" <?php if(array_key_exists('38',  $module_access)) { echo "checked"; } ?> class="applications"> Can edit a payment schedule.</label></li>
-												<li><label><input type="checkbox" name="module_access[39]" <?php if(array_key_exists('39',  $module_access)) { echo "checked"; } ?> class="applications"> Can delete a payment schedule.</label></li>
+												{{-- Payment schedule permissions (36-39) removed - feature unused --}}
 												<li><label><input type="checkbox" name="module_access[40]" <?php if(array_key_exists('40',  $module_access)) { echo "checked"; } ?> class="applications"> Can view/edit assigned and added matter by the users of primary office.</label></li>
 												<li><label><input type="checkbox" name="module_access[41]" <?php if(array_key_exists('41',  $module_access)) { echo "checked"; } ?> class="applications"> Can view/edit assigned and added matter by the users of secondary office.</label></li>
 									{{-- Removed legacy sales forecast permissions (applications) --}}

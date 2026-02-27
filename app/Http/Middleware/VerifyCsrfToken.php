@@ -31,7 +31,6 @@ class VerifyCsrfToken extends Middleware
 		'admin/update_task_status',
 		'admin/update_task_priority',
 		'admin/updateduedate',
-		'admin/application/checklistupload',
 		'get-activities', // Client activities endpoint (GET request, no CSRF needed)
     ];
 }

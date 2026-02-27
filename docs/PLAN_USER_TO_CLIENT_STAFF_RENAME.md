@@ -198,7 +198,7 @@ WHERE tc.constraint_type = 'FOREIGN KEY' AND kcu.column_name = 'user_id';
 | # | Table | Column | FK Target | New Column | Notes |
 |---|-------|--------|-----------|------------|-------|
 | 1 | `admins` | `user_id` | admins (staff) | `staff_id` | Lead/client owner; admins table stores both |
-| 2 | `user_logs` | `user_id` | admins | `staff_id` | Staff who logged in |
+| 2 | `staff_login_logs` | `user_id` | admins | `staff_id` | Staff who logged in |
 | 3 | `notes` | `user_id` | staff | `staff_id` | Note creator (Note model already uses Staff) |
 | 4 | `email_labels` | `user_id` | admins | `staff_id` | Label owner |
 | 5 | `documents` | `user_id` | admins | `staff_id` | Document owner |
@@ -244,20 +244,20 @@ public function down()
 }
 ```
 
-#### Migration 2: user_logs.user_id → staff_id
+#### Migration 2: staff_login_logs.user_id → staff_id
 
 ```php
-// database/migrations/YYYY_MM_DD_HHMMSS_rename_user_id_to_staff_id_on_user_logs.php
+// database/migrations/YYYY_MM_DD_HHMMSS_rename_user_id_to_staff_id_on_staff_login_logs.php
 public function up()
 {
-    Schema::table('user_logs', function (Blueprint $table) {
+    Schema::table('staff_login_logs', function (Blueprint $table) {
         $table->renameColumn('user_id', 'staff_id');
     });
 }
 
 public function down()
 {
-    Schema::table('user_logs', function (Blueprint $table) {
+    Schema::table('staff_login_logs', function (Blueprint $table) {
         $table->renameColumn('staff_id', 'user_id');
     });
 }
@@ -530,7 +530,7 @@ If verification query in 4.1 shows `client_matters` has no `user_id` column:
 ### 6.3 Staff Activity Tracking
 - [ ] Staff login analytics (page loads, data displays)
 - [ ] Office visits / check-in log (staff check-ins work)
-- [ ] Staff activity logs (`user_logs` table)
+- [ ] Staff activity logs (`staff_login_logs` table)
 - [ ] Reception staff notifications (uses `reception_staff_id`)
 
 ### 6.4 Document & Content Ownership

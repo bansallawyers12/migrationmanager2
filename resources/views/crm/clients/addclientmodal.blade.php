@@ -34,14 +34,13 @@
 <!-- Appointment Booking Modal -->
 @include('crm.clients.modals.appointment')
 
-<!-- Financial modals (Commission Invoice, General Invoice, Payment Details) removed - now in modals/financial.blade.php -->
+<!-- Financial modals: Commission/General Invoice removed (broken /create-invoice flow); Payment Details etc. in modals/financial.blade.php -->
 
 <!-- Create Application Note Modal moved to resources/views/Admin/clients/modals/notes.blade.php -->
 
 <!-- Checklist modals (create_checklist, openeducationdocsmodal, openmigrationdocsmodal) removed - now in modals/checklists.blade.php -->
 
-<!-- All Payment Schedule Modals moved to resources/views/Admin/clients/modals/payment-schedules.blade.php -->
-@include('crm.clients.modals.payment-schedules')
+{{-- payment-schedules.blade.php REMOVED - Create Invoice from Schedule flow unused (no payment schedule list, no /create-invoice route) --}}
 
 <!-- Email modals (applicationemailmodal, uploadmail, uploadAndFetchMailModel, uploadSentAndFetchMailModel) removed - now in modals/emails.blade.php -->
 

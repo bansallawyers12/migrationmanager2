@@ -535,7 +535,7 @@ echo "✓ Verification passed: {$staffCount} staff copied, mapping table complet
 | `checkin_history` | `created_by` | admins | staff | Staff action |
 | `phone_verifications` | `verified_by` | admins | staff | Staff verification |
 | `email_verifications` | `verified_by` | admins | staff | Staff verification |
-| `user_logs` | `user_id` | admins | staff | Staff login logs |
+| `staff_login_logs` | `user_id` | admins | staff | Staff login logs |
 | `sessions` | `user_id` | admins | staff | Staff sessions (clients use API only) |
 
 **REMOVED from migration (client-only, stay on admins):**
@@ -706,7 +706,7 @@ DB::transaction(function () {
 - `checkin_log`: user_id
 - `checkin_history`: created_by
 - `phone_verifications`, `email_verifications`: verified_by
-- `user_logs`: user_id
+- `staff_login_logs`: user_id
 - `sessions`: user_id
 
 **Messages/notifications:** Update after polymorphic type columns added (see 4.1d).
