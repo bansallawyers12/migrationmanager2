@@ -49,12 +49,12 @@ Route::get('/clients/sheets/art/insights', [\App\Http\Controllers\CRM\ArtSheetCo
 Route::post('/clients/sheets/art/toggle-pin', [\App\Http\Controllers\CRM\ArtSheetController::class, 'togglePin'])->name('clients.sheets.art.toggle-pin');
 
 Route::get('/clients/sheets/{visaType}', [\App\Http\Controllers\CRM\VisaTypeSheetController::class, 'index'])
-    ->where('visaType', 'tr|visitor|student|pr|employer-sponsored')
+    ->where('visaType', 'tr|visitor|student|pr|employer-sponsored|partner|parents')
     ->name('clients.sheets.visa-type');
 
 // Sheet Pin/Star Actions
 Route::post('/clients/sheets/{visaType}/toggle-pin', [\App\Http\Controllers\CRM\VisaTypeSheetController::class, 'togglePin'])
-    ->where('visaType', 'tr|visitor|student|pr|employer-sponsored')
+    ->where('visaType', 'tr|visitor|student|pr|employer-sponsored|partner|parents')
     ->name('clients.sheets.visa-type.toggle-pin');
 
 // EOI Confirmation Workflow (Staff actions - requires auth)
