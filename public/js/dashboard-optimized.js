@@ -315,12 +315,13 @@ window.openTaskDetail = function(taskId) {
     
     const panel = $('#taskDetailPanel');
     const data = taskItem.data();
+    const isPersonalAction = !data.clientId;
     
     // Populate panel with task data
     $('#taskDetailTitle').text(stripHtml(data.description));
-    $('#taskDetailClientName').text(data.clientName);
-    $('#taskDetailClientCode').text(`(${data.clientCode})`);
-    $('#taskDetailClientLink').attr('href', `/clients/detail/${btoa(data.clientId)}`);
+    $('#taskDetailClientName').text(data.clientName || 'Personal Action');
+    $('#taskDetailClientCode').text(data.clientCode ? `(${data.clientCode})` : '');
+    $('#taskDetailClientLink').attr('href', isPersonalAction ? '/action' : `/clients/detail/${btoa(String(data.clientId))}`);
     
     // Handle deadline display
     if (data.deadline) {

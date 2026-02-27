@@ -43,29 +43,34 @@
     
     $assignedUser = $note->assignedUser ?? null;
     $assignedName = $assignedUser ? $assignedUser->first_name . ' ' . $assignedUser->last_name : 'Unassigned';
-    
+
+    // Client display: Personal Actions have null client
+    $clientName = $client ? trim($client->first_name . ' ' . $client->last_name) : 'Personal Action';
+    $clientCode = $client && $client->client_id ? $client->client_id : '';
+    $clientId = $client ? (string) $client->id : '';
+
     // Safely encode data for attributes
     $descriptionEncoded = htmlspecialchars($note->description, ENT_QUOTES, 'UTF-8');
+    $uniqueGroupIdSafe = $note->unique_group_id ? json_encode($note->unique_group_id) : 'null';
 @endphp
 
-@if($client)
-<li class="todo-task-item" 
+<li class="todo-task-item"
     data-task-id="{{ $note->id }}"
-    data-unique-group-id="{{ $note->unique_group_id }}"
-    data-client-id="{{ $client->id }}"
-    data-client-name="{{ $client->first_name }} {{ $client->last_name }}"
-    data-client-code="{{ $client->client_id }}"
+    data-unique-group-id="{{ $note->unique_group_id ?? '' }}"
+    data-client-id="{{ $clientId }}"
+    data-client-name="{{ e($clientName) }}"
+    data-client-code="{{ e($clientCode) }}"
     data-description="{{ $descriptionEncoded }}"
     data-deadline="{{ $note->note_deadline ?? '' }}"
     data-deadline-formatted="{{ $deadlineFormatted }}"
-    data-assigned-to="{{ $assignedName }}"
+    data-assigned-to="{{ e($assignedName) }}"
     data-urgency="{{ $urgencyClass }}">
     
     <div class="todo-task-checkbox">
-        <input type="checkbox" 
-               id="task-{{ $note->id }}" 
+        <input type="checkbox"
+               id="task-{{ $note->id }}"
                class="task-complete-checkbox"
-               onclick="event.stopPropagation(); handleTaskComplete({{ $note->id }}, {{ json_encode($note->unique_group_id) }})">
+               onclick="event.stopPropagation(); handleTaskComplete({{ $note->id }}, {{ $uniqueGroupIdSafe }})">
         <label for="task-{{ $note->id }}"></label>
     </div>
     
@@ -76,9 +81,9 @@
         <div class="todo-task-meta">
             <span class="task-client-info">
                 <i class="fas fa-user"></i>
-                {{ $client->first_name }} {{ $client->last_name }}
-                @if($client->client_id)
-                    <span class="task-client-code">({{ $client->client_id }})</span>
+                {{ $clientName }}
+                @if($clientCode)
+                    <span class="task-client-code">({{ $clientCode }})</span>
                 @endif
             </span>
         </div>
@@ -99,13 +104,13 @@
         </span>
         <div class="todo-task-hover-actions">
             @if($note->note_deadline)
-                <button class="todo-action-btn" 
+                <button class="todo-action-btn"
                         onclick="event.stopPropagation(); openExtendModal({{ $note->id }})"
                         title="Extend Deadline">
                     <i class="fas fa-calendar-plus"></i>
                 </button>
             @else
-                <button class="todo-action-btn" 
+                <button class="todo-action-btn"
                         onclick="event.stopPropagation(); openAddDeadlineModal({{ $note->id }})"
                         title="Add Deadline">
                     <i class="fas fa-calendar-plus"></i>
@@ -114,7 +119,6 @@
         </div>
     </div>
 </li>
-@endif
 
 <style>
 .todo-task-item {

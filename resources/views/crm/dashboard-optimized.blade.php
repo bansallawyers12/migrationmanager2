@@ -1186,7 +1186,8 @@
         updateStage: "{{ route('dashboard.update-stage') }}",
         columnPreferences: "{{ route('dashboard.column-preferences') }}",
         extendDeadline: "{{ route('dashboard.extend-deadline') }}",
-        updateActionCompleted: "{{ route('dashboard.update-action-completed') }}"
+        updateActionCompleted: "{{ route('dashboard.update-action-completed') }}",
+        updateTaskCompleted: "{{ route('dashboard.update-action-completed') }}"
     };
     
     window.dashboardData = {
@@ -1350,17 +1351,12 @@ $(function () {
         e.preventDefault();
         e.stopPropagation();
         
-        console.log('=== ADD MY TASK BUTTON CLICKED ===');
-        console.log('Button element:', this);
-        console.log('Button type:', $(this).attr('type'));
-        
         // Show loading overlay
         if ($(".popuploader").length) {
             $(".popuploader").show();
         }
         
         var flag = true;
-        var error = "";
         
         // Remove any existing error messages
         $(".custom-error").remove();
@@ -1375,18 +1371,12 @@ $(function () {
         $popover.find(".checkbox-item:checked").each(function() {
             selectedRemCat.push($(this).val());
         });
-        
-        console.log('Selected assignees:', selectedRemCat);
-        console.log('Task description:', $popover.find('#assignnote').val());
-        console.log('Client ID:', $popover.find('#assign_client_id').val());
-        console.log('Task group:', $popover.find('#task_group').val());
 
         if (selectedRemCat.length === 0) {
             if ($(".popuploader").length) {
                 $(".popuploader").hide();
             }
-            error = "Assignee field is required.";
-            $popover.find('#dropdownMenuButton').after("<span class='custom-error' role='alert' style='color: red; font-size: 12px; display: block; margin-top: 5px;'>" + error + "</span>");
+            $popover.find('#dropdownMenuButton').after("<span class='custom-error' role='alert' style='color: red; font-size: 12px; display: block; margin-top: 5px;'>Assignee field is required.</span>");
             flag = false;
         }
 
@@ -1395,13 +1385,11 @@ $(function () {
             if ($(".popuploader").length) {
                 $(".popuploader").hide();
             }
-            error = "Note field is required.";
-            $popover.find('#assignnote').after("<span class='custom-error' role='alert' style='color: red; font-size: 12px; display: block; margin-top: 5px;'>" + error + "</span>");
+            $popover.find('#assignnote').after("<span class='custom-error' role='alert' style='color: red; font-size: 12px; display: block; margin-top: 5px;'>Note field is required.</span>");
             flag = false;
         }
 
         if (flag) {
-            console.log('Validation passed, submitting form...');
             var formData = {
                 note_type: 'follow_up',
                 description: assignnoteValue,
@@ -1409,7 +1397,6 @@ $(function () {
                 rem_cat: selectedRemCat,
                 task_group: $popover.find('#task_group').val()
             };
-            console.log('Form data:', formData);
             
             $.ajax({
                 type: 'post',
@@ -1420,7 +1407,6 @@ $(function () {
                 dataType: 'json',
                 data: formData,
                 success: function(response) {
-                    console.log('Success response:', response);
                     if ($(".popuploader").length) {
                         $(".popuploader").hide();
                     }
@@ -1436,13 +1422,6 @@ $(function () {
                     }
                 },
                 error: function(xhr, status, error) {
-                    console.error('=== AJAX ERROR ===');
-                    console.error('Error:', error);
-                    console.error('Status:', status);
-                    console.error('Status Code:', xhr.status);
-                    console.error('Response Text:', xhr.responseText);
-                    console.error('Response JSON:', xhr.responseJSON);
-                    
                     if ($(".popuploader").length) {
                         $(".popuploader").hide();
                     }
@@ -1456,156 +1435,18 @@ $(function () {
                             if (errorData.message) {
                                 errorMsg = errorData.message;
                             }
-                        } catch(e) {
-                            console.error('Could not parse error response');
-                        }
+                        } catch(e) {}
                     }
                     alert(errorMsg);
                 }
             });
         } else {
-            console.log('Validation failed');
             if ($(".popuploader").length) {
                 $(".popuploader").hide();
             }
         }
         
         return false;
-    });
-    
-    // Also test if the handler is attached
-    console.log('Add My Task handler attached');
-    
-    // Test: Try to find the button when popover is shown
-    $(document).on('shown.bs.popover', '.add_my_task', function() {
-        setTimeout(function() {
-            var $button = $('#add_my_task');
-            console.log('Popover shown - Button found:', $button.length);
-            if ($button.length > 0) {
-                console.log('Button HTML:', $button[0].outerHTML);
-                // Add direct click handler as backup
-                $button.off('click.dashboard').on('click.dashboard', function(e) {
-                    console.log('Direct click handler fired!');
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    // Call the same logic as the document handler
-                    var $popover = $(this).closest('.popover');
-                    if ($popover.length === 0) {
-                        $popover = $('.popover:visible');
-                    }
-                    
-                    console.log('=== ADD MY TASK BUTTON CLICKED (Direct Handler) ===');
-                    
-                    if ($(".popuploader").length) {
-                        $(".popuploader").show();
-                    }
-                    
-                    var flag = true;
-                    var error = "";
-                    $(".custom-error").remove();
-
-                    var selectedRemCat = [];
-                    $popover.find(".checkbox-item:checked").each(function() {
-                        selectedRemCat.push($(this).val());
-                    });
-                    
-                    console.log('Selected assignees:', selectedRemCat);
-                    console.log('Task description:', $popover.find('#assignnote').val());
-                    console.log('Client ID:', $popover.find('#assign_client_id').val());
-                    console.log('Task group:', $popover.find('#task_group').val());
-
-                    if (selectedRemCat.length === 0) {
-                        if ($(".popuploader").length) {
-                            $(".popuploader").hide();
-                        }
-                        error = "Assignee field is required.";
-                        $popover.find('#dropdownMenuButton').after("<span class='custom-error' role='alert' style='color: red; font-size: 12px; display: block; margin-top: 5px;'>" + error + "</span>");
-                        flag = false;
-                    }
-
-                    var assignnoteValue = $popover.find('#assignnote').val();
-                    if (!assignnoteValue || assignnoteValue.trim() == '') {
-                        if ($(".popuploader").length) {
-                            $(".popuploader").hide();
-                        }
-                        error = "Note field is required.";
-                        $popover.find('#assignnote').after("<span class='custom-error' role='alert' style='color: red; font-size: 12px; display: block; margin-top: 5px;'>" + error + "</span>");
-                        flag = false;
-                    }
-
-                    if (flag) {
-                        console.log('Validation passed, submitting form...');
-                        var formData = {
-                            note_type: 'follow_up',
-                            description: assignnoteValue,
-                            client_id: $popover.find('#assign_client_id').val(),
-                            rem_cat: selectedRemCat,
-                            task_group: $popover.find('#task_group').val()
-                        };
-                        console.log('Form data:', formData);
-                        
-                        $.ajax({
-                            type: 'post',
-                            url: "{{URL::to('/')}}/clients/action/personal/store",
-                            headers: { 
-                                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                            },
-                            dataType: 'json',
-                            data: formData,
-                            success: function(response) {
-                                console.log('Success response:', response);
-                                if ($(".popuploader").length) {
-                                    $(".popuploader").hide();
-                                }
-                                if (response && response.success) {
-                                    $(".add_my_task").popover('hide');
-                                    $('.popover-backdrop').removeClass('show');
-                                    setTimeout(() => {
-                                        location.reload();
-                                    }, 500);
-                                } else {
-                                    alert(response && response.message ? response.message : 'An error occurred');
-                                }
-                            },
-                            error: function(xhr, status, error) {
-                                console.error('=== AJAX ERROR ===');
-                                console.error('Error:', error);
-                                console.error('Status:', status);
-                                console.error('Status Code:', xhr.status);
-                                console.error('Response Text:', xhr.responseText);
-                                
-                                if ($(".popuploader").length) {
-                                    $(".popuploader").hide();
-                                }
-                                
-                                var errorMsg = 'Failed to add task. Please try again.';
-                                if (xhr.responseJSON && xhr.responseJSON.message) {
-                                    errorMsg = xhr.responseJSON.message;
-                                } else if (xhr.responseText) {
-                                    try {
-                                        var errorData = JSON.parse(xhr.responseText);
-                                        if (errorData.message) {
-                                            errorMsg = errorData.message;
-                                        }
-                                    } catch(e) {
-                                        console.error('Could not parse error response');
-                                    }
-                                }
-                                alert(errorMsg);
-                            }
-                        });
-                    } else {
-                        console.log('Validation failed');
-                        if ($(".popuploader").length) {
-                            $(".popuploader").hide();
-                        }
-                    }
-                    
-                    return false;
-                });
-            }
-        }, 200);
     });
 });
 </script>
@@ -1674,17 +1515,8 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// Show welcome toast on page load
 document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(() => {
-        showToast('Welcome to your dashboard!', 'success');
-    }, 500);
-    
-    // Add tooltips info
-    console.log('%c🚀 Dashboard', 'font-size: 20px; color: #005792; font-weight: bold;');
-    console.log('%cKeyboard Shortcuts:', 'font-size: 14px; font-weight: bold;');
-    console.log('Alt + R: Refresh Dashboard');
-    console.log('Esc: Close Dropdowns');
+    // Dashboard ready
 });
 
 // Debounced search (override from original script)

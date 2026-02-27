@@ -88,16 +88,14 @@ class DashboardService
     /**
      * Get all actions (notes with is_action = 1) for the user
      * Shows actions with deadlines first (ordered by urgency), then actions without deadlines
+     * Matches Action page: includes Personal Actions (null client_id) and all task groups
      */
     private function getNotesData($user)
     {
         $query = Note::with(['client:id,first_name,last_name,client_id', 'assignedUser:id,first_name,last_name'])
             ->where('type', 'client')
             ->where('is_action', 1)
-            ->whereNotNull('client_id')
-            ->whereNotNull('unique_group_id')
-            ->where('status', '!=', 1)
-            ->whereHas('client'); // Ensure client relationship exists
+            ->where('status', '!=', 1);
 
         // Admin sees ALL actions (no assigned_to filter) - matching action page behavior
         // Other roles only see notes assigned to them
@@ -243,13 +241,12 @@ class DashboardService
 
     /**
      * Get note deadline count (all actions count)
+     * Matches Action page getActionCounts: includes Personal Actions
      */
     private function getNoteDeadlineCount($user): int
     {
         $query = Note::where('type', 'client')
             ->where('is_action', 1)
-            ->whereNotNull('client_id')
-            ->whereNotNull('unique_group_id')
             ->where('status', '!=', 1);
 
         // Admin sees ALL actions (no assigned_to filter) - matching action page behavior
@@ -507,17 +504,20 @@ class DashboardService
         try {
             // Create notification only if assigned_to exists
             if ($note->assigned_to) {
+                $notificationUrl = $note->client_id
+                    ? url('/clients/detail/' . base64_encode(convert_uuencode($note->client_id)))
+                    : url('/action');
                 Notification::create([
                     'sender_id' => Auth::id(),
                     'receiver_id' => $note->assigned_to,
-                    'module_id' => $note->client_id,
-                    'url' => url('/clients/detail/' . $note->client_id),
+                    'module_id' => $note->client_id ?? 0,
+                    'url' => $notificationUrl,
                     'notification_type' => 'client',
                     'message' => 'Action Extended by ' . Auth::user()->first_name . ' ' . Auth::user()->last_name . ' on ' . date('d/M/Y h:i A')
                 ]);
             }
 
-            // Create activity log
+            // Create activity log (client_id may be null for Personal Actions)
             ActivitiesLog::create([
                 'client_id' => $note->client_id,
                 'created_by' => Auth::id(),
