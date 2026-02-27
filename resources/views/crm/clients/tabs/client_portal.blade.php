@@ -4797,7 +4797,7 @@ $(document).on('click', '.cp-doc-checklist-row', function () {
                     var downloadBtn = '<a href="javascript:void(0);" class="btn btn-sm btn-primary cp-download-doc-btn" data-document-id="' + doc.id + '" data-file-name="' + (doc.file_name || 'document') + '" title="Download"><i class="fa fa-download"></i></a>';
                     var deleteBtn   = '<a href="javascript:void(0);" class="btn btn-sm btn-danger cp-delete-doc-btn" data-document-id="' + doc.id + '" data-list-id="' + checklistId + '" title="Delete"><i class="fa fa-trash"></i></a>';
                     var moveBtn     = (doc.cp_doc_status == 1)
-                        ? '<a href="javascript:void(0);" class="btn btn-sm btn-info cp-move-doc-btn" data-document-id="' + doc.id + '" data-matter-id="' + (matterId || '') + '" title="Move Document"><i class="fa fa-arrows-alt"></i></a>'
+                        ? '<a href="javascript:void(0);" class="btn btn-sm btn-info cp-move-doc-btn" data-document-id="' + doc.id + '" data-matter-id="' + (matterId || '') + '" data-list-id="' + checklistId + '" title="Move Document"><i class="fa fa-arrows-alt"></i></a>'
                         : '';
 
                     html += '<tr data-matter-id="' + (matterId || '') + '">'
@@ -4880,9 +4880,10 @@ $(document).on('click', '.cp-approve-doc-btn', function () {
             if (response.success) {
                 $statusCell.html('<span class="badge badge-success">Approved</span>');
                 // Row 2: Approved → [Reject][Move]
+                var listId = $actionRow.closest('td').find('.cp-delete-doc-btn').data('list-id') || '';
                 $actionRow.html(
                     '<a href="javascript:void(0);" class="btn btn-sm btn-warning cp-reject-doc-btn" data-document-id="' + documentId + '" title="Reject"><i class="fa fa-times-circle"></i></a>' +
-                    '<a href="javascript:void(0);" class="btn btn-sm btn-info cp-move-doc-btn" data-document-id="' + documentId + '" data-matter-id="' + matterId + '" title="Move Document"><i class="fa fa-arrows-alt"></i></a>'
+                    '<a href="javascript:void(0);" class="btn btn-sm btn-info cp-move-doc-btn" data-document-id="' + documentId + '" data-matter-id="' + matterId + '" data-list-id="' + listId + '" title="Move Document"><i class="fa fa-arrows-alt"></i></a>'
                 );
                 alert('Document has been approved successfully.');
             } else {
@@ -4935,6 +4936,7 @@ $(document).on('click', '.cp-reject-doc-btn', function () {
             <div class="modal-body">
                 <input type="hidden" id="moveDocumentId">
                 <input type="hidden" id="moveDocumentMatterId">
+                <input type="hidden" id="moveDocumentListId">
                 <div class="form-group">
                     <label for="moveDestination"><strong>Move to:</strong></label>
                     <select class="form-control" id="moveDestination">
@@ -4965,8 +4967,10 @@ $(document).on('click', '.cp-reject-doc-btn', function () {
 $(document).on('click', '.cp-move-doc-btn', function () {
     var documentId = $(this).data('document-id');
     var matterId   = $(this).data('matter-id') || $(this).closest('tr').data('matter-id') || '';
+    var listId     = $(this).data('list-id') || '';
     $('#moveDocumentId').val(documentId);
     $('#moveDocumentMatterId').val(matterId);
+    $('#moveDocumentListId').val(listId);
     $('#moveDestination').val('');
     $('#moveCategoryGroup').hide();
     $('#moveCategory').html('<option value="">-- Select Category --</option>');
@@ -5008,6 +5012,7 @@ $('#moveDocumentSubmitBtn').on('click', function () {
     var documentId = $('#moveDocumentId').val();
     var targetType = $('#moveDestination').val();
     var targetId   = $('#moveCategory').val();
+    var listId     = $('#moveDocumentListId').val();
 
     if (!targetType) { alert('Please select a destination.'); return; }
     if (!targetId)   { alert('Please select a category.');    return; }
@@ -5029,6 +5034,18 @@ $('#moveDocumentSubmitBtn').on('click', function () {
                         $('#cp-checklist-documents-tbody').html('<tr><td colspan="4" class="text-center text-muted">No documents uploaded yet.</td></tr>');
                     }
                 });
+                // Decrement the checklist counter badge in the left panel
+                if (listId) {
+                    var $checklistRow = $('.cp-doc-checklist-row[data-checklist-id="' + listId + '"]');
+                    if ($checklistRow.length) {
+                        var $countSpan = $checklistRow.find('.checklist-count .circular-box span');
+                        var newCount = Math.max(0, (parseInt($countSpan.text(), 10) || 0) - 1);
+                        $countSpan.text(newCount);
+                        if (newCount === 0) {
+                            $checklistRow.find('.checklist-status').html('<span class="round"></span>');
+                        }
+                    }
+                }
                 alert(response.message || 'Document moved successfully.');
             } else {
                 alert(response.message || 'Failed to move document.');
