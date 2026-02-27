@@ -936,14 +936,13 @@
 
 
                     <div class="card">
-                        <h3><i class="fas fa-address-card"></i> Tag(s):   
-                            <span class="float-right text-muted" style="margin-left:180px;">
-                            <a href="javascript:;" data-id="{{$fetchedData->id}}" class="btn btn-primary opentagspopup btn-sm">Add Tag</a>
-                            <a href="javascript:;" data-id="{{$fetchedData->id}}" class="btn btn-outline-danger openredtagspopup btn-sm ml-1" title="Add Tag (hidden by default)">
-                                <i class="fas fa-exclamation-triangle"></i> Add Tag
-                            </a>
-                            </span>
-                        </h3>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h3><i class="fas fa-address-card"></i> Tag(s):</h3>
+                            <div class="d-flex gap-1">
+                                <a href="javascript:;" data-id="{{$fetchedData->id}}" class="btn btn-primary opentagspopup btn-sm d-inline-flex align-items-center justify-content-center" style="width:28px;height:28px;min-width:28px;padding:0;" title="Add Tag"><i class="fas fa-plus"></i></a>
+                                <a href="javascript:;" data-id="{{$fetchedData->id}}" class="btn btn-danger openredtagspopup btn-sm d-inline-flex align-items-center justify-content-center" style="width:28px;height:28px;min-width:28px;padding:0;" title="Add Tag (hidden by default)"><i class="fas fa-plus"></i></a>
+                            </div>
+                        </div>
                        
 
                         <div class="" style="overflow-wrap: break-word; word-wrap: break-word; max-width: 100%;">
