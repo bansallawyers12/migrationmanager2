@@ -3457,12 +3457,6 @@ window.savePartnerInfo = function() {
         return; // Exit the function early
     }
     
-    // Check if there are any valid partners to save
-    if (partners.length === 0) {
-        showNotification('No valid partner entries to save', 'info');
-        return; // Exit the function early
-    }
-    
     const formData = new FormData();
     formData.append('partners', JSON.stringify(partners));
     
