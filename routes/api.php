@@ -212,9 +212,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Workflow Management routes
     Route::get('/workflow/stages', [ClientPortalWorkflowController::class, 'getWorkflowStages']);
     Route::get('/workflow/stages/{stage_id}', [ClientPortalWorkflowController::class, 'getWorkflowStageDetails']);
-   
-    // workflow/allowed-checklist REMOVED - unused (no client portal frontend calls it; Documents tab removed)
-    // upload-allowed-checklist, upload-allowed-checklist-bulk-upload REMOVED - workflow checklist upload unused
+    Route::get('/workflow/allowed-checklist', [ClientPortalWorkflowController::class, 'getAllowedChecklist']);
     
     // Messaging routes (specific routes first to avoid conflicts)
     Route::post('/messages/send', [ClientPortalMessageController::class, 'sendMessage']);
