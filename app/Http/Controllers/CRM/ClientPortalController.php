@@ -3091,4 +3091,79 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 			'Content-Disposition' => 'attachment; filename="' . addslashes($filename) . '"',
 		]);
 	}
+
+	/**
+	 * GET /api/client-portal/checklist-documents
+	 * Returns documents for a given cp_doc_checklists entry.
+	 */
+	public function getChecklistDocuments(Request $request)
+	{
+		$checklistId   = $request->get('checklist_id');
+		$clientMatterId = $request->get('client_matter_id');
+
+		if (!$checklistId) {
+			return response()->json(['success' => false, 'message' => 'checklist_id is required.'], 422);
+		}
+
+		$documents = DB::table('documents')
+			->where('cp_list_id', $checklistId)
+			->where('type', 'workflow_checklist')
+			->when($clientMatterId, fn($q) => $q->where('client_matter_id', $clientMatterId))
+			->select('id', 'file_name', 'myfile', 'cp_doc_status', 'cp_rejection_reason', 'created_at')
+			->orderBy('id', 'asc')
+			->get();
+
+		return response()->json(['success' => true, 'documents' => $documents]);
+	}
+
+	/**
+	 * POST /api/client-portal/delete-document
+	 * Deletes a single document by ID.
+	 */
+	public function deleteChecklistDocument(Request $request)
+	{
+		$documentId = $request->get('document_id');
+
+		if (!$documentId) {
+			return response()->json(['success' => false, 'message' => 'document_id is required.'], 422);
+		}
+
+		$deleted = DB::table('documents')->where('id', $documentId)->delete();
+
+		if ($deleted) {
+			return response()->json(['success' => true]);
+		}
+
+		return response()->json(['success' => false, 'message' => 'Document not found.'], 404);
+	}
+
+	/**
+	 * POST /api/client-portal/update-document-status
+	 * Updates cp_doc_status (1=Approved, 2=Rejected) on a document.
+	 */
+	public function updateChecklistDocumentStatus(Request $request)
+	{
+		$documentId      = $request->get('document_id');
+		$status          = (int) $request->get('status');
+		$rejectionReason = $request->get('rejection_reason', '');
+
+		if (!$documentId || !in_array($status, [1, 2])) {
+			return response()->json(['success' => false, 'message' => 'document_id and valid status (1 or 2) are required.'], 422);
+		}
+
+		$data = ['cp_doc_status' => $status];
+		if ($status === 2) {
+			$data['cp_rejection_reason'] = $rejectionReason;
+		} else {
+			$data['cp_rejection_reason'] = null;
+		}
+
+		$updated = DB::table('documents')->where('id', $documentId)->update($data);
+
+		if ($updated !== false) {
+			return response()->json(['success' => true]);
+		}
+
+		return response()->json(['success' => false, 'message' => 'Document not found.'], 404);
+	}
 }

@@ -213,7 +213,9 @@
                                         <li class="client-portal-tab-item active" data-tab="activities">
                                             <a href="javascript:void(0);" class="client-portal-tab-link">Activities</a>
                                         </li>
-                                        {{-- Documents tab REMOVED - workflow checklist unused --}}
+                                        <li class="client-portal-tab-item" data-tab="documents">
+                                            <a href="javascript:void(0);" class="client-portal-tab-link">Documents</a>
+                                        </li>
                                         <li class="client-portal-tab-item" data-tab="messages">
                                             <a href="javascript:void(0);" class="client-portal-tab-link">Messages</a>
                                         </li>
@@ -251,7 +253,112 @@
                                             </div>
                                         </div>
                                         
-                                        {{-- Documents tab REMOVED - workflow checklist unused --}}
+                                        <!-- Documents Tab -->
+                                        <div class="client-portal-tab-pane" id="documents-tab">
+                                            @if($selectedMatter && $allWorkflowStages->count() > 0)
+                                                <div class="documents-checklist-container">
+                                                    <div class="row">
+                                                        <!-- Left Column: Stages & Checklists -->
+                                                        <div class="col-md-5">
+                                                            <div class="stages-checklist-list">
+                                                                <ul class="stages-list">
+                                                                    @foreach($allWorkflowStages as $stage)
+                                                                        @php
+                                                                            $isActiveStage = ($currentWorkflowStageId && $currentWorkflowStageId == $stage->id);
+                                                                            $stageChecklists = DB::table('cp_doc_checklists')
+                                                                                ->where('client_matter_id', $selectedMatter->id)
+                                                                                ->where('typename', $stage->name)
+                                                                                ->orderBy('id', 'asc')
+                                                                                ->get();
+                                                                        @endphp
+                                                                        <li class="stage-checklist-item {{ $isActiveStage ? 'active' : '' }}"
+                                                                            data-stage-name="{{ $stage->name }}">
+                                                                            <div class="stage-header">
+                                                                                <span class="stage-title">{{ $stage->name }}</span>
+                                                                                <span class="stage-checklist-count">({{ $stageChecklists->count() }})</span>
+                                                                            </div>
+
+                                                                            @if($stageChecklists->count() > 0)
+                                                                                <div class="stage-checklists">
+                                                                                    <table class="table checklist-table">
+                                                                                        <tbody>
+                                                                                            @foreach($stageChecklists as $checklist)
+                                                                                                @php
+                                                                                                    $uploadCount = DB::table('documents')
+                                                                                                        ->where('cp_list_id', $checklist->id)
+                                                                                                        ->where('type', 'workflow_checklist')
+                                                                                                        ->count();
+                                                                                                @endphp
+                                                                                                <tr class="checklist-row cursor-pointer cp-doc-checklist-row"
+                                                                                                    data-checklist-id="{{ $checklist->id }}"
+                                                                                                    data-checklist-name="{{ $checklist->cp_checklist_name ?? 'N/A' }}"
+                                                                                                    data-stage-name="{{ $stage->name }}"
+                                                                                                    data-matter-id="{{ $selectedMatter->id }}">
+                                                                                                    <td class="checklist-status">
+                                                                                                        @if($uploadCount > 0)
+                                                                                                            <span class="check"><i class="fa fa-check"></i></span>
+                                                                                                        @else
+                                                                                                            <span class="round"></span>
+                                                                                                        @endif
+                                                                                                    </td>
+                                                                                                    <td class="checklist-name">{{ $checklist->cp_checklist_name ?? 'N/A' }}</td>
+                                                                                                    <td class="checklist-count">
+                                                                                                        <div class="circular-box">
+                                                                                                            <span>{{ $uploadCount }}</span>
+                                                                                                        </div>
+                                                                                                    </td>
+                                                                                                </tr>
+                                                                                            @endforeach
+                                                                                        </tbody>
+                                                                                    </table>
+                                                                                </div>
+                                                                            @endif
+                                                                        </li>
+                                                                    @endforeach
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Right Column: Documents for selected checklist -->
+                                                        <div class="col-md-7">
+                                                            <div class="checklist-details-panel" id="cp-checklist-details-panel">
+                                                                <div class="text-muted text-center py-4" id="cp-checklist-placeholder">
+                                                                    <i class="fas fa-hand-point-left fa-2x mb-2"></i>
+                                                                    <p>Select a checklist item on the left to view its documents.</p>
+                                                                </div>
+                                                                <div id="cp-checklist-documents-content" style="display:none;">
+                                                                    <h6 class="mb-3" id="cp-checklist-selected-name"></h6>
+                                                                    <div class="table-responsive">
+                                                                        <table class="table checklist-details-table">
+                                                                            <thead>
+                                                                                <tr>
+                                                                                    <th><div>File Name</div></th>
+                                                                                    <th><div>Uploaded</div></th>
+                                                                                    <th><div>Status</div></th>
+                                                                                    <th><div>Actions</div></th>
+                                                                                </tr>
+                                                                            </thead>
+                                                                            <tbody id="cp-checklist-documents-tbody">
+                                                                            </tbody>
+                                                                        </table>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @else
+                                                <div class="tab-content-placeholder">
+                                                    <p class="text-muted">
+                                                        @if(!$selectedMatter)
+                                                            Please select a matter to view documents.
+                                                        @else
+                                                            No workflow stages available.
+                                                        @endif
+                                                    </p>
+                                                </div>
+                                            @endif
+                                        </div>
 
                                         <!-- Messages Tab -->
                                         <div class="client-portal-tab-pane" id="messages-tab">
@@ -4429,6 +4536,145 @@ $(document).ready(function() {
     }
 </script>
 
-{{-- Workflow checklist dropdown + download handlers REMOVED - Documents tab unused --}}
+<script>
+// Documents Tab: Load documents when a checklist row is clicked
+$(document).on('click', '.cp-doc-checklist-row', function () {
+    var checklistId   = $(this).data('checklist-id');
+    var checklistName = $(this).data('checklist-name');
+    var matterId      = $(this).data('matter-id');
 
-{{-- approve_document_modal, reject_document_modal REMOVED - workflow checklist unused --}}
+    // Highlight selected row
+    $('.cp-doc-checklist-row').removeClass('table-active');
+    $(this).addClass('table-active');
+
+    $('#cp-checklist-placeholder').hide();
+    $('#cp-checklist-documents-content').show();
+    $('#cp-checklist-selected-name').text(checklistName);
+    $('#cp-checklist-documents-tbody').html('<tr><td colspan="4" class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>');
+
+    $.ajax({
+        url: '/api/client-portal/checklist-documents',
+        method: 'GET',
+        data: { checklist_id: checklistId, client_matter_id: matterId },
+        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+        success: function (response) {
+            var docs = response.documents || [];
+            var html = '';
+            if (docs.length === 0) {
+                html = '<tr><td colspan="4" class="text-center text-muted">No documents uploaded yet.</td></tr>';
+            } else {
+                $.each(docs, function (i, doc) {
+                    var statusBadge = '';
+                    if (doc.cp_doc_status == 1) {
+                        statusBadge = '<span class="badge badge-success">Approved</span>';
+                    } else if (doc.cp_doc_status == 2) {
+                        var reason = doc.cp_rejection_reason ? doc.cp_rejection_reason : 'No reason provided';
+                        statusBadge = '<span class="badge badge-danger" title="' + $('<div>').text(reason).html() + '" style="cursor:help;">Rejected</span>';
+                    } else {
+                        statusBadge = '<span class="badge badge-warning">In Progress</span>';
+                    }
+
+                    var approveBtn = (doc.cp_doc_status != 1)
+                        ? '<a href="javascript:void(0);" class="btn btn-sm btn-success cp-approve-doc-btn" data-document-id="' + doc.id + '" title="Approve"><i class="fa fa-check-circle"></i></a>'
+                        : '<span style="width:32px;display:inline-block;"></span>';
+
+                    var rejectBtn = (doc.cp_doc_status != 2)
+                        ? '<a href="javascript:void(0);" class="btn btn-sm btn-warning cp-reject-doc-btn" data-document-id="' + doc.id + '" title="Reject"><i class="fa fa-times-circle"></i></a>'
+                        : '<span style="width:32px;display:inline-block;"></span>';
+
+                    var downloadBtn = '<a href="javascript:void(0);" class="btn btn-sm btn-primary cp-download-doc-btn" data-file-url="' + (doc.myfile || '') + '" data-file-name="' + (doc.file_name || 'document') + '" title="Download"><i class="fa fa-download"></i></a>';
+                    var deleteBtn   = '<a href="javascript:void(0);" class="btn btn-sm btn-danger cp-delete-doc-btn" data-document-id="' + doc.id + '" data-list-id="' + checklistId + '" title="Delete"><i class="fa fa-trash"></i></a>';
+
+                    html += '<tr>'
+                        + '<td>' + (doc.file_name || 'N/A') + '</td>'
+                        + '<td>' + (doc.created_at || '') + '</td>'
+                        + '<td>' + statusBadge + '</td>'
+                        + '<td><div class="action-buttons"><div class="action-row">' + downloadBtn + deleteBtn + '</div><div class="action-row">' + approveBtn + rejectBtn + '</div></div></td>'
+                        + '</tr>';
+                });
+            }
+            $('#cp-checklist-documents-tbody').html(html);
+        },
+        error: function () {
+            $('#cp-checklist-documents-tbody').html('<tr><td colspan="4" class="text-center text-danger">Failed to load documents.</td></tr>');
+        }
+    });
+});
+
+// Download document
+$(document).on('click', '.cp-download-doc-btn', function () {
+    var fileUrl  = $(this).data('file-url');
+    var fileName = $(this).data('file-name');
+    if (fileUrl) {
+        var a = document.createElement('a');
+        a.href = fileUrl;
+        a.download = fileName;
+        a.target = '_blank';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+});
+
+// Delete document
+$(document).on('click', '.cp-delete-doc-btn', function () {
+    if (!confirm('Are you sure you want to delete this document?')) return;
+    var documentId = $(this).data('document-id');
+    var $row = $(this).closest('tr');
+    $.ajax({
+        url: '/api/client-portal/delete-document',
+        method: 'POST',
+        data: { document_id: documentId, _token: $('meta[name="csrf-token"]').attr('content') },
+        success: function (response) {
+            if (response.success) {
+                $row.remove();
+                if ($('#cp-checklist-documents-tbody tr').length === 0) {
+                    $('#cp-checklist-documents-tbody').html('<tr><td colspan="4" class="text-center text-muted">No documents uploaded yet.</td></tr>');
+                }
+            } else {
+                alert(response.message || 'Failed to delete document.');
+            }
+        },
+        error: function () { alert('Failed to delete document.'); }
+    });
+});
+
+// Approve document
+$(document).on('click', '.cp-approve-doc-btn', function () {
+    var documentId = $(this).data('document-id');
+    var $btn = $(this);
+    $.ajax({
+        url: '/api/client-portal/update-document-status',
+        method: 'POST',
+        data: { document_id: documentId, status: 1, _token: $('meta[name="csrf-token"]').attr('content') },
+        success: function (response) {
+            if (response.success) {
+                $btn.closest('tr').find('td:nth-child(3)').html('<span class="badge badge-success">Approved</span>');
+            } else {
+                alert(response.message || 'Failed to approve document.');
+            }
+        },
+        error: function () { alert('Failed to approve document.'); }
+    });
+});
+
+// Reject document
+$(document).on('click', '.cp-reject-doc-btn', function () {
+    var reason = prompt('Enter rejection reason (optional):') || '';
+    var documentId = $(this).data('document-id');
+    var $btn = $(this);
+    $.ajax({
+        url: '/api/client-portal/update-document-status',
+        method: 'POST',
+        data: { document_id: documentId, status: 2, rejection_reason: reason, _token: $('meta[name="csrf-token"]').attr('content') },
+        success: function (response) {
+            if (response.success) {
+                $btn.closest('tr').find('td:nth-child(3)').html('<span class="badge badge-danger" title="' + $('<div>').text(reason || 'No reason provided').html() + '" style="cursor:help;">Rejected</span>');
+            } else {
+                alert(response.message || 'Failed to reject document.');
+            }
+        },
+        error: function () { alert('Failed to reject document.'); }
+    });
+});
+</script>

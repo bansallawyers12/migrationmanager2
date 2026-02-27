@@ -348,6 +348,9 @@ Route::get('/get-appointments', 'CRM\ClientsController@getAppointments');
 Route::post('/clients/toggle-client-portal', 'CRM\ClientPortalController@toggleClientPortal')->name('clients.toggleClientPortal');
 Route::post('/api/client-portal-details/approve-audit', 'CRM\ClientPortalController@approveAuditValue')->name('clients.approveAuditValue');
 Route::post('/api/client-portal-details/reject-audit', 'CRM\ClientPortalController@rejectAuditValue')->name('clients.rejectAuditValue');
+Route::get('/api/client-portal/checklist-documents', 'CRM\ClientPortalController@getChecklistDocuments')->name('clients.getChecklistDocuments');
+Route::post('/api/client-portal/delete-document', 'CRM\ClientPortalController@deleteChecklistDocument')->name('clients.deleteChecklistDocument');
+Route::post('/api/client-portal/update-document-status', 'CRM\ClientPortalController@updateChecklistDocumentStatus')->name('clients.updateChecklistDocumentStatus');
 
 /*---------- ANZSCO Occupation Search ----------*/
 Route::get('/anzsco/search', [AnzscoOccupationController::class, 'search'])->name('anzsco.search');
