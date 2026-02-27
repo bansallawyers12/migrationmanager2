@@ -19,14 +19,13 @@ class LeadAnalyticsController extends Controller
     
     /**
      * Display analytics dashboard
-     * Only super admin can access
+     * Only admin and super admin can access (roles 1, 12)
      */
     public function index(Request $request)
     {
-        // Check if user is super admin (role = 1)
         $user = Auth::user();
-        if ($user->role != 1) {
-            return redirect()->back()->with('error', 'Only super admin can view analytics.');
+        if (!in_array($user->role ?? 0, [1, 12])) {
+            return redirect()->back()->with('error', 'Only admin and super admin can view analytics.');
         }
         
         // Get date range from request or default to last 30 days
@@ -53,12 +52,11 @@ class LeadAnalyticsController extends Controller
     
     /**
      * Get trends data for charts (AJAX)
-     * Only super admin can access
+     * Only admin and super admin can access (roles 1, 12)
      */
     public function getTrends(Request $request)
     {
-        // Check if user is super admin (role = 1)
-        if (Auth::user()->role != 1) {
+        if (!in_array(Auth::user()->role ?? 0, [1, 12])) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
         
@@ -72,12 +70,11 @@ class LeadAnalyticsController extends Controller
     
     /**
      * Export analytics report
-     * Only super admin can export
+     * Only admin and super admin can export (roles 1, 12)
      */
     public function export(Request $request)
     {
-        // Check if user is super admin (role = 1)
-        if (Auth::user()->role != 1) {
+        if (!in_array(Auth::user()->role ?? 0, [1, 12])) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
         
@@ -98,12 +95,11 @@ class LeadAnalyticsController extends Controller
     
     /**
      * Get agent comparison data (AJAX)
-     * Only super admin can compare agents
+     * Only admin and super admin can compare agents (roles 1, 12)
      */
     public function compareAgents(Request $request)
     {
-        // Check if user is super admin (role = 1)
-        if (Auth::user()->role != 1) {
+        if (!in_array(Auth::user()->role ?? 0, [1, 12])) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
         

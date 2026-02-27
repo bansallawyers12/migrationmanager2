@@ -278,9 +278,11 @@
                 <div class="card-header">
                     <h4>All Clients Matters</h4>
                     <div class="card-header-actions">
+                        @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
                         <a href="{{ route('clients.insights', ['section' => 'matters']) }}" class="btn btn-theme btn-theme-sm" title="Matter Insights">
                             <i class="fas fa-chart-line"></i> Insights
                         </a>
+                        @endif
                         <select name="per_page" id="per_page" class="form-control per-page-select">
                             @foreach([10, 20, 50, 100, 200] as $option)
                                 <option value="{{ $option }}" {{ ($perPage ?? 20) == $option ? 'selected' : '' }}>

@@ -228,10 +228,12 @@
                                             </div>
                                         </div>
                                         <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                            @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
                                             <a href="{{ route('staff-login-analytics.index') }}" class="btn btn-light btn-sm active-staff-action-btn">
                                                 <i class="fas fa-chart-line"></i>
                                                 <span class="d-none d-md-inline">Analytics</span>
                                             </a>
+                                            @endif
                                             <button type="button" class="btn btn-sm active-staff-refresh-btn" id="active-staff-refresh">
                                                 <i class="fas fa-sync-alt"></i>
                                                 <span class="d-none d-md-inline">Refresh</span>

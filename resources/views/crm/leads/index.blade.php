@@ -226,9 +226,11 @@
                     <h4>All Leads</h4>
 
                     <div class="card-header-actions">
+                        @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
                         <a href="{{ route('clients.insights', ['section' => 'leads']) }}" class="btn btn-theme btn-theme-sm" title="Lead Insights">
                             <i class="fas fa-chart-line"></i> Insights
                         </a>
+                        @endif
                         <a href="{{route('leads.create')}}" class="btn btn-primary">Create Lead</a>
                         <select name="per_page" id="per_page" class="form-control per-page-select">
                             @foreach([10, 20, 50, 100, 200] as $option)

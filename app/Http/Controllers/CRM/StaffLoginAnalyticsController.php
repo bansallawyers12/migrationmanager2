@@ -7,6 +7,7 @@ use App\Services\StaffLoginAnalyticsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class StaffLoginAnalyticsController extends Controller
 {
@@ -17,10 +18,21 @@ class StaffLoginAnalyticsController extends Controller
     }
 
     /**
+     * Check if user is admin or super admin (roles 1, 12)
+     */
+    protected function canAccessAnalytics(): bool
+    {
+        return in_array(Auth::user()->role ?? 0, [1, 12]);
+    }
+
+    /**
      * Display the staff login analytics dashboard
      */
     public function index(Request $request)
     {
+        if (!$this->canAccessAnalytics()) {
+            return redirect()->back()->with('error', 'Only admin and super admin can view staff login analytics.');
+        }
         return view('crm.staff-login-analytics.index');
     }
 
@@ -29,6 +41,9 @@ class StaffLoginAnalyticsController extends Controller
      */
     public function daily(Request $request): JsonResponse
     {
+        if (!$this->canAccessAnalytics()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
         $staffIdParam = $request->query('staff_id') ?? $request->query('user_id');
         $staffId = $staffIdParam !== null && $staffIdParam !== '' ? (int) $staffIdParam : null;
         $startDate = $request->query('start_date') ? Carbon::parse($request->query('start_date')) : null;
@@ -47,6 +62,9 @@ class StaffLoginAnalyticsController extends Controller
      */
     public function weekly(Request $request): JsonResponse
     {
+        if (!$this->canAccessAnalytics()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
         $staffIdParam = $request->query('staff_id') ?? $request->query('user_id');
         $staffId = $staffIdParam !== null && $staffIdParam !== '' ? (int) $staffIdParam : null;
         $startDate = $request->query('start_date') ? Carbon::parse($request->query('start_date')) : null;
@@ -65,6 +83,9 @@ class StaffLoginAnalyticsController extends Controller
      */
     public function monthly(Request $request): JsonResponse
     {
+        if (!$this->canAccessAnalytics()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
         $staffIdParam = $request->query('staff_id') ?? $request->query('user_id');
         $staffId = $staffIdParam !== null && $staffIdParam !== '' ? (int) $staffIdParam : null;
         $startDate = $request->query('start_date') ? Carbon::parse($request->query('start_date')) : null;
@@ -83,6 +104,9 @@ class StaffLoginAnalyticsController extends Controller
      */
     public function hourly(Request $request): JsonResponse
     {
+        if (!$this->canAccessAnalytics()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
         $staffIdParam = $request->query('staff_id') ?? $request->query('user_id');
         $staffId = $staffIdParam !== null && $staffIdParam !== '' ? (int) $staffIdParam : null;
         $startDate = $request->query('start_date') ? Carbon::parse($request->query('start_date')) : null;
@@ -101,6 +125,9 @@ class StaffLoginAnalyticsController extends Controller
      */
     public function summary(Request $request): JsonResponse
     {
+        if (!$this->canAccessAnalytics()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
         $staffIdParam = $request->query('staff_id') ?? $request->query('user_id');
         $staffId = $staffIdParam !== null && $staffIdParam !== '' ? (int) $staffIdParam : null;
         $startDate = $request->query('start_date') ? Carbon::parse($request->query('start_date')) : null;
@@ -119,6 +146,9 @@ class StaffLoginAnalyticsController extends Controller
      */
     public function topStaff(Request $request): JsonResponse
     {
+        if (!$this->canAccessAnalytics()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
         $limit = $request->query('limit', 10);
         $startDate = $request->query('start_date') ? Carbon::parse($request->query('start_date')) : null;
         $endDate = $request->query('end_date') ? Carbon::parse($request->query('end_date')) : null;
@@ -136,6 +166,9 @@ class StaffLoginAnalyticsController extends Controller
      */
     public function trends(Request $request): JsonResponse
     {
+        if (!$this->canAccessAnalytics()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
         $staffIdParam = $request->query('staff_id') ?? $request->query('user_id');
         $staffId = $staffIdParam !== null && $staffIdParam !== '' ? (int) $staffIdParam : null;
         $period = $request->query('period', 'month'); // day, week, month

@@ -234,9 +234,11 @@
                                 <a href="{{ route('clients.sheets.art') }}" class="sheet-tab active">
                                     <i class="fas fa-list"></i> List
                                 </a>
+                                @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
                                 <a href="{{ route('clients.sheets.art.insights') }}" class="sheet-tab">
                                     <i class="fas fa-chart-bar"></i> Insights
                                 </a>
+                                @endif
                             </div>
                         </div>
                     </div>

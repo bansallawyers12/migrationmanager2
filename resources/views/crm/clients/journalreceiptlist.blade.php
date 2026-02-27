@@ -460,7 +460,9 @@
                 <div class="card-header">
                     <h4 style="color: #4a5568 !important;">All Journal Receipt List</h4>
                     <div class="d-flex align-items-center">
+                        @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
                         <a href="{{ route('clients.analytics-dashboard') }}" class="btn btn-theme btn-theme-sm mr-2" title="View Financial Analytics Dashboard"><i class="fas fa-chart-line"></i> Analytics</a>
+                        @endif
                         <a href="javascript:;" style="background: #394eea;color: white;" class="btn btn-theme btn-theme-sm filter_btn mr-2"><i class="fas fa-filter"></i> Filter</a>
                         <button class="btn btn-primary Validate_Receipt" style="background-color: #394eea !important; color: white !important;">
                             <i class="fas fa-check-circle"></i>

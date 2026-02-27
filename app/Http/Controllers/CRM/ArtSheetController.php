@@ -66,6 +66,11 @@ class ArtSheetController extends Controller
      */
     public function insights(Request $request)
     {
+        // Restrict to admin and super admin only (roles 1, 12)
+        if (!in_array(Auth::user()->role ?? 0, [1, 12])) {
+            return redirect()->back()->with('error', 'Only admin and super admin can view insights.');
+        }
+
         if (!$this->hasModuleAccess('20')) {
             abort(403, 'Unauthorized');
         }

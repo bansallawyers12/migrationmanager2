@@ -311,9 +311,11 @@
                     <h4>All Clients</h4>
 
                     <div class="card-header-actions">
+                        @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
                         <a href="{{ route('clients.insights', ['section' => 'clients']) }}" class="btn btn-theme btn-theme-sm" title="View Insights">
                             <i class="fas fa-chart-line"></i> Insights
                         </a>
+                        @endif
                         <a href="javascript:;" class="btn btn-theme btn-theme-sm" data-toggle="modal" data-target="#importClientModal" title="Import Client">
                             <i class="fas fa-upload"></i> Import Client
                         </a>
