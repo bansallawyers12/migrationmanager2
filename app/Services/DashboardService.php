@@ -456,17 +456,72 @@ class DashboardService
     }
 
     /**
-     * Update action completion status
+     * Update action completion status and create completed action activity
+     * Matches Action tab behavior: updates note(s), creates ActivitiesLog with optional completion notes
      */
-    public function updateActionCompleted($noteId, $uniqueGroupId): array
+    public function updateActionCompleted($noteId, $uniqueGroupId, ?string $completionNotes = null): array
     {
-        $updated = Note::where('id', $noteId)
+        $noteData = Note::where('id', $noteId)
             ->where('unique_group_id', $uniqueGroupId)
-            ->update(['status' => 1]);
+            ->first();
 
-        return $updated 
-            ? ['success' => true, 'message' => 'Action completed successfully']
-            : ['success' => false, 'message' => 'Failed to complete action'];
+        if (!$noteData) {
+            return ['success' => false, 'message' => 'Action not found'];
+        }
+
+        // Update all notes in the group (matches Action tab behavior), or single note if no group
+        $updated = 0;
+        if (!empty(trim($uniqueGroupId ?? ''))) {
+            $updated = Note::where('unique_group_id', $uniqueGroupId)
+                ->whereNotNull('unique_group_id')
+                ->update(['status' => 1]);
+        }
+        if (!$updated) {
+            $updated = Note::where('id', $noteId)->update(['status' => 1]);
+        }
+        if (!$updated) {
+            return ['success' => false, 'message' => 'Failed to complete action'];
+        }
+
+        // Create completed action activity log (only if client_id exists - Personal Actions have null)
+        if ($noteData->client_id) {
+            $assigneeName = 'N/A';
+            if ($noteData->assigned_to) {
+                $assignee = \App\Models\Staff::find($noteData->assigned_to);
+                $assigneeName = $assignee ? $assignee->first_name . ' ' . $assignee->last_name : 'N/A';
+            }
+
+            $description = '';
+            if (!empty($completionNotes)) {
+                $description .= '<p>';
+                $description .= '<i class="fas fa-ellipsis-v convert-activity-to-note" ';
+                $description .= 'style="cursor: pointer; color: #6c757d;" ';
+                $description .= 'title="Convert to Note" ';
+                $description .= 'data-activity-id="" ';
+                $description .= 'data-activity-subject="Completion Notes" ';
+                $description .= 'data-activity-description="' . htmlspecialchars($completionNotes, ENT_QUOTES) . '" ';
+                $description .= 'data-activity-created-by="' . Auth::id() . '" ';
+                $description .= 'data-activity-created-at="' . now() . '" ';
+                $description .= 'data-client-id="' . $noteData->client_id . '"></i></p>';
+                $description .= '<p>' . nl2br(htmlspecialchars($completionNotes)) . '</p>';
+                $description .= '<hr>';
+            }
+            $description .= '<p>' . ($noteData->description ?? '') . '</p>';
+
+            ActivitiesLog::create([
+                'client_id' => $noteData->client_id,
+                'created_by' => Auth::id(),
+                'subject' => 'completed action for ' . $assigneeName,
+                'description' => $description,
+                'use_for' => (Auth::id() != $noteData->assigned_to) ? $noteData->assigned_to : null,
+                'followup_date' => $noteData->updated_at,
+                'task_group' => $noteData->task_group ?? null,
+                'task_status' => 1,
+                'pin' => 0,
+            ]);
+        }
+
+        return ['success' => true, 'message' => 'Action completed successfully'];
     }
 
     /**

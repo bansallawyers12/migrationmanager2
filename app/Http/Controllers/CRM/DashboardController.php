@@ -141,12 +141,14 @@ class DashboardController extends Controller
             
             $this->validate($request, [
                 'id' => 'required|integer',
-                'unique_group_id' => 'required|string'
+                'unique_group_id' => 'nullable|string',
+                'completion_notes' => 'nullable|string|max:5000'
             ]);
 
             $result = $this->dashboardService->updateActionCompleted(
-                $request->id, 
-                $request->unique_group_id
+                $request->id,
+                $request->unique_group_id ?? '',
+                $request->completion_notes
             );
             
             Log::info('Update action completed result:', $result);

@@ -375,3 +375,44 @@
         </div>
     </div>
 </div>
+
+{{-- Task Completion Notes Modal --}}
+<div class="modal fade" id="dashboardCompletionNotesModal" tabindex="-1" role="dialog" aria-labelledby="dashboardCompletionNotesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #3498db; color: white;">
+                <h5 class="modal-title" id="dashboardCompletionNotesModalLabel">
+                    <i class="fa fa-check-circle"></i> Complete Task
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.8;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="dashboardCompletionNotes" class="font-weight-bold">
+                        <i class="fa fa-comment"></i> Completion Notes (optional)
+                    </label>
+                    <textarea
+                        class="form-control"
+                        id="dashboardCompletionNotes"
+                        rows="5"
+                        placeholder="Add any notes or feedback about completing this task..."
+                        style="resize: vertical; border: 2px solid #e9ecef; border-radius: 8px; padding: 12px;"
+                    ></textarea>
+                    <small class="form-text text-muted">
+                        <i class="fa fa-info-circle"></i> These notes will be saved in the activity log.
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer" style="background-color: #f8f9fa;">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fa fa-times"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-success" id="dashboardConfirmTaskCompletion">
+                    <i class="fa fa-check"></i> Complete Task
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

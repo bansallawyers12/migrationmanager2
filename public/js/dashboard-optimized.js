@@ -51,6 +51,23 @@ function initializeEventHandlers() {
     // Search and actions
     $('input[name="client_name"]').on('blur keypress', handleSearchInput);
     $(document).on('click', '.action-button', handleActionClick);
+
+    // Completion notes modal - confirm task completion
+    $(document).on('click', '#dashboardConfirmTaskCompletion', function() {
+        if (dashboardPendingTaskId) {
+            var notes = $('#dashboardCompletionNotes').val();
+            $('#dashboardCompletionNotesModal').modal('hide');
+            completeTask(dashboardPendingTaskId, dashboardPendingUniqueGroupId, notes);
+            dashboardPendingTaskId = null;
+            dashboardPendingUniqueGroupId = null;
+        }
+    });
+
+    // Clear pending completion when modal is closed without completing
+    $(document).on('hidden.bs.modal', '#dashboardCompletionNotesModal', function() {
+        dashboardPendingTaskId = null;
+        dashboardPendingUniqueGroupId = null;
+    });
 }
 
 function updateStage(itemId, stageId) {
@@ -356,38 +373,46 @@ window.closeTaskDetail = function() {
     $('#taskDetailPanel').removeClass('active');
 };
 
-// Handle Task Complete from Checkbox
+// Pending task completion (stored when modal opens)
+var dashboardPendingTaskId = null;
+var dashboardPendingUniqueGroupId = null;
+
+// Handle Task Complete from Checkbox - open completion notes modal
 window.handleTaskComplete = function(taskId, uniqueGroupId) {
-    if (confirm('Mark this action as complete?')) {
-        completeTask(taskId, uniqueGroupId);
-    }
+    dashboardPendingTaskId = taskId;
+    dashboardPendingUniqueGroupId = uniqueGroupId;
+    $('#dashboardCompletionNotes').val('');
+    $('#dashboardCompletionNotesModal').modal('show');
 };
 
-// Complete Task from Detail Panel
+// Complete Task from Detail Panel - open completion notes modal
 window.completeTaskFromDetail = function() {
     const panel = $('#taskDetailPanel');
-    const taskId = panel.data('taskId');
-    const uniqueGroupId = panel.data('uniqueGroupId');
-    
-    if (confirm('Mark this action as complete?')) {
-        completeTask(taskId, uniqueGroupId);
-    }
+    dashboardPendingTaskId = panel.data('taskId');
+    dashboardPendingUniqueGroupId = panel.data('uniqueGroupId');
+    $('#dashboardCompletionNotes').val('');
+    $('#dashboardCompletionNotesModal').modal('show');
 };
 
-// Complete Task Function
-function completeTask(taskId, uniqueGroupId) {
-    if (!taskId || !uniqueGroupId) {
+// Complete Task Function (called after modal confirm or directly)
+function completeTask(taskId, uniqueGroupId, completionNotes) {
+    if (!taskId) {
         showNotification('Invalid action data', 'error');
         return;
     }
     
     $('.popuploader').show();
     
+    var postData = { id: taskId, unique_group_id: uniqueGroupId || '' };
+    if (typeof completionNotes === 'string' && completionNotes.trim()) {
+        postData.completion_notes = completionNotes.trim();
+    }
+    
     $.ajax({
         type: 'POST',
         url: window.dashboardRoutes.updateTaskCompleted,
         headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-        data: { id: taskId, unique_group_id: uniqueGroupId },
+        data: postData,
         success: function(response) {
             $('.popuploader').hide();
             if (response.success) {
