@@ -4836,7 +4836,13 @@ $(document).on('click', '.cp-approve-doc-btn', function () {
         data: { document_id: documentId, status: 1, _token: $('meta[name="csrf-token"]').attr('content') },
         success: function (response) {
             if (response.success) {
+                // Update status badge
                 $btn.closest('tr').find('td:nth-child(3)').html('<span class="badge badge-success">Approved</span>');
+                // Update action buttons: Approved → show only Reject
+                $btn.closest('.action-row').html(
+                    '<span style="width:32px;display:inline-block;"></span>' +
+                    '<a href="javascript:void(0);" class="btn btn-sm btn-warning cp-reject-doc-btn" data-document-id="' + documentId + '" title="Reject"><i class="fa fa-times-circle"></i></a>'
+                );
             } else {
                 alert(response.message || 'Failed to approve document.');
             }
@@ -4856,7 +4862,13 @@ $(document).on('click', '.cp-reject-doc-btn', function () {
         data: { document_id: documentId, status: 2, rejection_reason: reason, _token: $('meta[name="csrf-token"]').attr('content') },
         success: function (response) {
             if (response.success) {
+                // Update status badge
                 $btn.closest('tr').find('td:nth-child(3)').html('<span class="badge badge-danger" title="' + $('<div>').text(reason || 'No reason provided').html() + '" style="cursor:help;">Rejected</span>');
+                // Update action buttons: Rejected → show only Approve
+                $btn.closest('.action-row').html(
+                    '<a href="javascript:void(0);" class="btn btn-sm btn-success cp-approve-doc-btn" data-document-id="' + documentId + '" title="Approve"><i class="fa fa-check-circle"></i></a>' +
+                    '<span style="width:32px;display:inline-block;"></span>'
+                );
             } else {
                 alert(response.message || 'Failed to reject document.');
             }
