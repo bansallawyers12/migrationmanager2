@@ -351,35 +351,42 @@ class PointsService
 
     /**
      * Calculate years from experience records
+     * Only counts experience within the last 10 years from the reference date.
      * Note: For EOI purposes, any employment 20+ hours/week counts as full-time
      */
     protected function calculateFTEYears($experiences, Carbon $referenceDate): float
     {
         $totalDays = 0;
-        
+        $windowStart = $referenceDate->copy()->subYears(10);
+
         foreach ($experiences as $exp) {
             // Use actual field names from ClientExperience model
             if (!$exp->job_start_date) {
                 continue;
             }
-            
+
             $start = Carbon::parse($exp->job_start_date);
             $end = $exp->job_finish_date ? Carbon::parse($exp->job_finish_date) : $referenceDate;
-            
+
             // Don't count future experience
             if ($start->gt($referenceDate)) {
                 continue;
             }
-            
+
             $end = $end->min($referenceDate);
-            
-            $days = $start->diffInDays($end);
-            
-            // Count all work as full-time (20+ hours/week qualifies for EOI)
-            // No FTE multiplier needed - part-time, casual, full-time all count the same
-            $totalDays += $days;
+
+            // Only count the portion that falls within the last 10 years
+            $overlapStart = $start->max($windowStart);
+            $overlapEnd = $end->min($referenceDate);
+
+            if ($overlapStart->lt($overlapEnd)) {
+                $days = $overlapStart->diffInDays($overlapEnd);
+                // Count all work as full-time (20+ hours/week qualifies for EOI)
+                // No FTE multiplier needed - part-time, casual, full-time all count the same
+                $totalDays += $days;
+            }
         }
-        
+
         return round($totalDays / 365, 2);
     }
 
