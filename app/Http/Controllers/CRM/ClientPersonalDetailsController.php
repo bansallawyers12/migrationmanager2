@@ -3985,6 +3985,35 @@ class ClientPersonalDetailsController extends Controller
                 }
             }
 
+            // Clear ClientSpouseDetail when points calculation would be stale:
+            // 1. All partners removed - no partner to calculate for
+            // 2. Selected partner (related_client_id) was removed but other partners remain - orphaned EOI data
+            $hasValidPartners = collect($partners)->contains(fn ($p) => !empty($p['details']) || !empty($p['relationship_type']));
+            $newPartnerClientIds = collect($partners)
+                ->filter(fn ($p) => !empty($p['details']) || !empty($p['relationship_type']))
+                ->map(fn ($p) => (!empty($p['partner_id']) && $p['partner_id'] !== '0' && is_numeric($p['partner_id'])) ? (int) $p['partner_id'] : null)
+                ->filter()
+                ->unique()
+                ->values()
+                ->toArray();
+
+            $spouseDetail = ClientSpouseDetail::where('client_id', $client->id)->first();
+            $shouldClearSpouse = false;
+            if (!$hasValidPartners) {
+                $shouldClearSpouse = true;
+            } elseif ($spouseDetail && $spouseDetail->related_client_id !== null) {
+                if (!in_array((int) $spouseDetail->related_client_id, $newPartnerClientIds, true)) {
+                    $shouldClearSpouse = true; // Selected partner was removed from Partner section
+                }
+            }
+
+            if ($shouldClearSpouse) {
+                ClientSpouseDetail::where('client_id', $client->id)->delete();
+                if (class_exists(\App\Services\PointsService::class)) {
+                    (new \App\Services\PointsService())->clearCache($client->id);
+                }
+            }
+
             // Insert new partner records
             $partnerCount = 0;
             foreach ($partners as $partnerData) {

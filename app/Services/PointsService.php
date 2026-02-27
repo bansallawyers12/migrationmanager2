@@ -617,7 +617,7 @@ class PointsService
     protected function calculatePartnerPoints(Admin $client, Carbon $referenceDate): array
     {
         // Check marital status - only Married/De Facto partners count for points
-        if (!$client->marital_status || !in_array($client->marital_status, ['Married', 'De Facto'])) {
+        if (!$client->marital_status || !in_array($client->marital_status, ['Married', 'De Facto', 'Defacto'])) {
             return [
                 'detail' => 'Single (10 pts)',
                 'points' => 10,
