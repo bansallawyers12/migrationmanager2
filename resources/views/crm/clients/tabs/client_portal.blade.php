@@ -4780,12 +4780,15 @@ $(document).on('click', '.cp-doc-checklist-row', function () {
 
                     var downloadBtn = '<a href="javascript:void(0);" class="btn btn-sm btn-primary cp-download-doc-btn" data-document-id="' + doc.id + '" data-file-name="' + (doc.file_name || 'document') + '" title="Download"><i class="fa fa-download"></i></a>';
                     var deleteBtn   = '<a href="javascript:void(0);" class="btn btn-sm btn-danger cp-delete-doc-btn" data-document-id="' + doc.id + '" data-list-id="' + checklistId + '" title="Delete"><i class="fa fa-trash"></i></a>';
+                    var moveBtn     = (doc.cp_doc_status == 1)
+                        ? '<a href="javascript:void(0);" class="btn btn-sm btn-info cp-move-doc-btn" data-document-id="' + doc.id + '" data-matter-id="' + (matterId || '') + '" title="Move Document"><i class="fa fa-arrows-alt"></i> Move</a>'
+                        : '';
 
-                    html += '<tr>'
+                    html += '<tr data-matter-id="' + (matterId || '') + '">'
                         + '<td>' + (doc.file_name || 'N/A') + '</td>'
                         + '<td>' + (doc.created_at || '') + '</td>'
                         + '<td>' + statusBadge + '</td>'
-                        + '<td><div class="action-buttons"><div class="action-row">' + downloadBtn + deleteBtn + '</div><div class="action-row">' + approveBtn + rejectBtn + '</div></div></td>'
+                        + '<td><div class="action-buttons"><div class="action-row">' + downloadBtn + deleteBtn + '</div><div class="action-row">' + approveBtn + rejectBtn + '</div>' + (moveBtn ? '<div class="action-row">' + moveBtn + '</div>' : '') + '</div></td>'
                         + '</tr>';
                 });
             }
@@ -4849,6 +4852,12 @@ $(document).on('click', '.cp-approve-doc-btn', function () {
                     '<span style="width:32px;display:inline-block;"></span>' +
                     '<a href="javascript:void(0);" class="btn btn-sm btn-warning cp-reject-doc-btn" data-document-id="' + documentId + '" title="Reject"><i class="fa fa-times-circle"></i></a>'
                 );
+                // Show Move Document button (only visible when Approved)
+                var $actionButtons = $btn.closest('.action-buttons');
+                if ($actionButtons.find('.action-row-move').length === 0) {
+                    var matterId = $btn.closest('tr').data('matter-id') || '';
+                    $actionButtons.append('<div class="action-row action-row-move"><a href="javascript:void(0);" class="btn btn-sm btn-info cp-move-doc-btn" data-document-id="' + documentId + '" data-matter-id="' + matterId + '" title="Move Document"><i class="fa fa-arrows-alt"></i> Move</a></div>');
+                }
                 alert('Document has been approved successfully.');
             } else {
                 alert(response.message || 'Failed to approve document.');
@@ -4882,11 +4891,132 @@ $(document).on('click', '.cp-reject-doc-btn', function () {
                     '<a href="javascript:void(0);" class="btn btn-sm btn-success cp-approve-doc-btn" data-document-id="' + documentId + '" title="Approve"><i class="fa fa-check-circle"></i></a>' +
                     '<span style="width:32px;display:inline-block;"></span>'
                 );
+                // Remove Move button (only shown when Approved)
+                $btn.closest('.action-buttons').find('.action-row-move').remove();
             } else {
                 alert(response.message || 'Failed to reject document.');
             }
         },
         error: function () { alert('Failed to reject document.'); }
+    });
+});
+</script>
+
+{{-- ── Move Document Modal ─────────────────────────────────────────────── --}}
+<div class="modal fade" id="moveDocumentModal" tabindex="-1" role="dialog" aria-labelledby="moveDocumentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="moveDocumentModalLabel"><i class="fa fa-arrows-alt mr-1"></i> Move Document</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="moveDocumentId">
+                <input type="hidden" id="moveDocumentMatterId">
+                <div class="form-group">
+                    <label for="moveDestination"><strong>Move to:</strong></label>
+                    <select class="form-control" id="moveDestination">
+                        <option value="">-- Select Destination --</option>
+                        <option value="personal">Personal Documents</option>
+                        <option value="visa">Visa Documents</option>
+                    </select>
+                </div>
+                <div class="form-group" id="moveCategoryGroup" style="display:none;">
+                    <label id="moveCategoryLabel"><strong>Select Category:</strong></label>
+                    <select class="form-control" id="moveCategory">
+                        <option value="">-- Select Category --</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="moveDocumentSubmitBtn" style="background:#6f42c1;border-color:#6f42c1;">Move Document</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ── Move Document ─────────────────────────────────────────────────────────
+
+// Open modal
+$(document).on('click', '.cp-move-doc-btn', function () {
+    var documentId = $(this).data('document-id');
+    var matterId   = $(this).data('matter-id') || $(this).closest('tr').data('matter-id') || '';
+    $('#moveDocumentId').val(documentId);
+    $('#moveDocumentMatterId').val(matterId);
+    $('#moveDestination').val('');
+    $('#moveCategoryGroup').hide();
+    $('#moveCategory').html('<option value="">-- Select Category --</option>');
+    $('#moveDocumentModal').modal('show');
+});
+
+// Load categories when destination changes
+$('#moveDestination').on('change', function () {
+    var type     = $(this).val();
+    var matterId = $('#moveDocumentMatterId').val();
+
+    $('#moveCategory').html('<option value="">-- Select Category --</option>');
+    $('#moveCategoryGroup').hide();
+
+    if (!type) return;
+
+    var url = type === 'personal'
+        ? '/api/documents/personal/categories'
+        : '/api/documents/visa/categories' + (matterId ? '?client_matter_id=' + matterId : '');
+
+    $('#moveCategoryLabel').text(type === 'personal' ? 'Select Personal Category:' : 'Select Visa Category:');
+    $('#moveCategory').html('<option value="">-- Loading... --</option>');
+    $('#moveCategoryGroup').show();
+
+    $.get(url, function (response) {
+        var options = '<option value="">-- Select Category --</option>';
+        if (response.success && response.data && response.data.categories) {
+            $.each(response.data.categories, function (i, cat) {
+                options += '<option value="' + cat.id + '">' + (cat.title || cat.name) + '</option>';
+            });
+        }
+        $('#moveCategory').html(options);
+    }).fail(function () {
+        $('#moveCategory').html('<option value="">-- Failed to load categories --</option>');
+    });
+});
+
+// Submit move
+$('#moveDocumentSubmitBtn').on('click', function () {
+    var documentId = $('#moveDocumentId').val();
+    var targetType = $('#moveDestination').val();
+    var targetId   = $('#moveCategory').val();
+
+    if (!targetType) { alert('Please select a destination.'); return; }
+    if (!targetId)   { alert('Please select a category.');    return; }
+
+    var $btn = $(this).prop('disabled', true).text('Moving...');
+
+    $.ajax({
+        url: '/documents/move',
+        method: 'POST',
+        data: { document_id: documentId, target_type: targetType, target_id: targetId, _token: $('meta[name="csrf-token"]').attr('content') },
+        success: function (response) {
+            $btn.prop('disabled', false).text('Move Document');
+            if (response.status) {
+                $('#moveDocumentModal').modal('hide');
+                // Remove the row — document now lives in personal/visa docs
+                $('.cp-move-doc-btn[data-document-id="' + documentId + '"]').closest('tr').fadeOut(400, function () {
+                    $(this).remove();
+                    if ($('#cp-checklist-documents-tbody tr:visible').length === 0) {
+                        $('#cp-checklist-documents-tbody').html('<tr><td colspan="4" class="text-center text-muted">No documents uploaded yet.</td></tr>');
+                    }
+                });
+                alert(response.message || 'Document moved successfully.');
+            } else {
+                alert(response.message || 'Failed to move document.');
+            }
+        },
+        error: function () {
+            $btn.prop('disabled', false).text('Move Document');
+            alert('Failed to move document. Please try again.');
+        }
     });
 });
 </script>
