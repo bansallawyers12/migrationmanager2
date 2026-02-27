@@ -341,7 +341,7 @@
                                                                                 <tr>
                                                                                     <th><div>File Name</div></th>
                                                                                     <th><div>Uploaded</div></th>
-                                                                                    <th style="width:90px;"><div>Status</div></th>
+                                                                                    <th><div>Status</div></th>
                                                                                     <th><div>Actions</div></th>
                                                                                 </tr>
                                                                             </thead>
@@ -2377,7 +2377,8 @@
 }
 
 .checklist-details-table thead th:nth-child(3) {
-    width: 20%;
+    width: 100px;
+    white-space: nowrap;
 }
 
 .checklist-details-table thead th:nth-child(4) {
@@ -2393,6 +2394,11 @@
     vertical-align: top;
     word-wrap: break-word;
     font-size: 0.9rem;
+}
+
+.checklist-details-table tbody td:nth-child(3) {
+    width: 100px;
+    white-space: nowrap;
 }
 
 .checklist-details-table tbody td:nth-child(4) {
