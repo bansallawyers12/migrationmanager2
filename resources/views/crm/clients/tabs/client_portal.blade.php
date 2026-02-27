@@ -4831,6 +4831,7 @@ $(document).on('click', '.cp-download-doc-btn', function () {
 $(document).on('click', '.cp-delete-doc-btn', function () {
     if (!confirm('Are you sure you want to delete this document?')) return;
     var documentId = $(this).data('document-id');
+    var listId     = $(this).data('list-id');
     var $row = $(this).closest('tr');
     $.ajax({
         url: '/api/client-portal/delete-document',
@@ -4841,6 +4842,18 @@ $(document).on('click', '.cp-delete-doc-btn', function () {
                 $row.remove();
                 if ($('#cp-checklist-documents-tbody tr').length === 0) {
                     $('#cp-checklist-documents-tbody').html('<tr><td colspan="4" class="text-center text-muted">No documents uploaded yet.</td></tr>');
+                }
+                // Decrement the counter badge on the checklist row in the left panel
+                var $checklistRow = $('.cp-doc-checklist-row[data-checklist-id="' + listId + '"]');
+                if ($checklistRow.length) {
+                    var $countSpan = $checklistRow.find('.checklist-count .circular-box span');
+                    var current = parseInt($countSpan.text(), 10) || 0;
+                    var newCount = Math.max(0, current - 1);
+                    $countSpan.text(newCount);
+                    // Update tick/circle icon based on new count
+                    if (newCount === 0) {
+                        $checklistRow.find('.checklist-status').html('<span class="round"></span>');
+                    }
                 }
             } else {
                 alert(response.message || 'Failed to delete document.');
