@@ -259,7 +259,7 @@
                                                 <div class="documents-checklist-container">
                                                     <div class="row">
                                                         <!-- Left Column: Stages & Checklists -->
-                                                        <div class="col-md-5">
+                                                        <div class="col-md-4">
                                                             <div class="stages-checklist-list">
                                                                 <ul class="stages-list">
                                                                     @foreach($allWorkflowStages as $stage)
@@ -327,7 +327,7 @@
                                                         </div>
 
                                                         <!-- Right Column: Documents for selected checklist -->
-                                                        <div class="col-md-7">
+                                                        <div class="col-md-8">
                                                             <div class="checklist-details-panel" id="cp-checklist-details-panel">
                                                                 <div class="text-muted text-center py-4" id="cp-checklist-placeholder">
                                                                     <i class="fas fa-hand-point-left fa-2x mb-2"></i>
@@ -2190,6 +2190,9 @@
 
 .stage-title {
     flex: 1;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    min-width: 0;
 }
 
 .stage-checklist-count {
@@ -2234,6 +2237,9 @@
 .checklist-name {
     flex: 1;
     font-weight: 500;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    min-width: 0;
 }
 
 .checklist-count {
