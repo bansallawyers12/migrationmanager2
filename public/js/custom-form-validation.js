@@ -249,7 +249,7 @@ function customValidate(formName, savetype = '')
 									$('.popuploader').hide();
 								var obj = $.parseJSON(response);
 								if(obj.status){
-									$('#create_applicationnote').modal('hide');
+									$('#create_matternote').modal('hide');
 									$.ajax({
 										url: site_url+'/client-portal/logs',
 										type:'GET',
@@ -260,7 +260,7 @@ function customValidate(formName, savetype = '')
 										}
 									});
 								}else{
-									$('#create_applicationnote .customerror').html('<span class="alert alert-danger">'+obj.message+'</span>');
+									$('#create_matternote .customerror').html('<span class="alert alert-danger">'+obj.message+'</span>');
 
 								}
 							}

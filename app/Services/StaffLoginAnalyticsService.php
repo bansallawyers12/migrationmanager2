@@ -195,8 +195,8 @@ class StaffLoginAnalyticsService
             ->where('message', 'like', '%Logged in%')
             ->whereBetween('created_at', [$startDate, $endDate]);
         
-        if ($userId) {
-            $dayOfWeek->where('user_id', $userId);
+        if ($staffId) {
+            $dayOfWeek->where('user_id', $staffId);
         }
         
         $dayStats = $dayOfWeek->select(

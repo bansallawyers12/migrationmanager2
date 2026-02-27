@@ -788,7 +788,7 @@ public function createdBy(): BelongsTo
 - `PhoneVerification`, `EmailVerification`
 - `ClientEmail`, `ClientContact`
 - `ClientPortalDetailAudit`
-- `UserLog`
+- `StaffLoginLog`
 
 ### 5.2 Models – HasMany Staff
 

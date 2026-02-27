@@ -381,7 +381,7 @@ Run the FK verification query and adjust each migration accordingly.
 |-------|------|---------|
 | `Admin` | `app/Models/Admin.php` | Add `staff_id` to `$fillable` if present; remove `user_id` from fillable if listed |
 | `Lead` | `app/Models/Lead.php` | `createdBy()`: `'user_id'` → `'staff_id'` in belongsTo |
-| `UserLog` | `app/Models/UserLog.php` | `$fillable` / `$casts`: `user_id` → `staff_id` |
+| `StaffLoginLog` | `app/Models/StaffLoginLog.php` | `$fillable` / `$casts`: `user_id` → `staff_id` |
 | `Note` | `app/Models/Note.php` | `$fillable`: `user_id` → `staff_id`; `user()`: `'user_id'` → `'staff_id'` |
 | `EmailLabel` | `app/Models/EmailLabel.php` | `$fillable`: `user_id` → `staff_id`; relationship FK |
 | `Document` | `app/Models/Document.php` | `$fillable`: `user_id` → `staff_id`; relationship FK; `$lead->user_id` → `$lead->staff_id` |
@@ -420,7 +420,7 @@ Apply these changes **in the same release** as Phase 4 migrations. The code must
 |-------|------|---------|
 | Lead | `app/Models/Lead.php` | `belongsTo(..., 'user_id', ...)` → `'staff_id'` |
 | Note | `app/Models/Note.php` | `$fillable` `user_id`→`staff_id`; `user()` relationship `user_id`→`staff_id` |
-| UserLog | `app/Models/UserLog.php` | `$fillable` `user_id`→`staff_id` |
+| StaffLoginLog | `app/Models/StaffLoginLog.php` | `$fillable` `user_id`→`staff_id` |
 | CheckinLog | `app/Models/CheckinLog.php` | `$fillable` `user_id`→`staff_id`; `belongsTo` FK `user_id`→`staff_id` |
 | Document | `app/Models/Document.php` | `$fillable` `user_id`→`staff_id`; relationship; `$lead->user_id`→`$lead->staff_id` (line ~294) |
 | EmailLabel | `app/Models/EmailLabel.php` | `$fillable` `user_id`→`staff_id`; relationship; scope `user_id`→`staff_id` |
@@ -449,7 +449,7 @@ Apply these changes **in the same release** as Phase 4 migrations. The code must
 | `app/Http/Controllers/API/ClientPortalController.php` | 70, 81, 100, 185, 209, 257, 261, 290, 294, 560, 591, 615, 655, 656, 672, 680, 711, 719, 729, 773, 787, 796, 926 | Client Portal: `user_id` in device_tokens, refresh_tokens → `client_id`; error messages may stay as `user_id` for backward compat |
 | `app/Http/Controllers/API/ClientPortalMessageController.php` | 272, 574, 730, 846, 953, 966, 1051 | Log keys; some refer to client → `client_id` where appropriate |
 | `app/Services/ActiveUserService.php` | 45, 46, 49, 172 | `user_id` in sessions table → `staff_id` (sessions migration) |
-| `app/Services/StaffLoginAnalyticsService.php` | 27, 60, 99, 138, 170, 174, 182, 199, 247, 251, 256, 258, 259 | `user_id` in UserLog queries → `staff_id`; keep `user_id` param name for API compat or rename to `staff_id` |
+| `app/Services/StaffLoginAnalyticsService.php` | 27, 60, 99, 138, 170, 174, 182, 199, 247, 251, 256, 258, 259 | `user_id` in StaffLoginLog queries → `staff_id`; keep `user_id` param name for API compat or rename to `staff_id` |
 | `app/Services/DashboardService.php` | 436, 523 | `'user_id'`, `$note->user_id` → `staff_id` |
 | `app/Services/SignatureAnalyticsService.php` | 264 | `'user_id'` in array → `staff_id` |
 
@@ -482,7 +482,7 @@ Apply these changes **in the same release** as Phase 4 migrations. The code must
 
 ### 5.7 StaffLoginAnalyticsService & Controller
 
-The service queries `UserLog` which will have `staff_id` after migration. Update:
+The service queries `StaffLoginLog` which will have `staff_id` after migration. Update:
 
 - `StaffLoginAnalyticsService`: All `->where('user_id', ...)`, `->select('user_id')`, `->groupBy('user_id')`, `$item->user_id` → `staff_id`
 - Query param `user_id` in API: consider keeping for backward compat or add `staff_id` as alias
@@ -653,7 +653,7 @@ If Phase 4 renames `device_tokens.user_id` → `client_id`, this MAY break mobil
 | Category | Count | Files |
 |----------|-------|-------|
 | Config | 1 | `config/constants.php` |
-| Models | 14+ | Lead, Note, UserLog, CheckinLog, Document, EmailLabel, MailReport, Application, AccountClientReceipt, AccountAllInvoiceReceipt, BookingAppointment, ClientMatter, DeviceToken, RefreshToken |
+| Models | 14+ | Lead, Note, StaffLoginLog, CheckinLog, Document, EmailLabel, MailReport, Application, AccountClientReceipt, AccountAllInvoiceReceipt, BookingAppointment, ClientMatter, DeviceToken, RefreshToken |
 | Controllers | 12+ | ClientsController, LeadConversionController, LeadController, ClientAccountsController, ClientPortalController, AssigneeController, CRMUtilityController, OfficeVisitController, AdminLoginController, ClientPortalController (API), ClientPortalMessageController |
 | Services | 4 | ActiveUserService, StaffLoginAnalyticsService, DashboardService, SignatureAnalyticsService |
 | Views | 8+ | assign_to_me, action_completed, officevisits, visa_documents, client_portal, appointments, detail, quotaion, client-management |

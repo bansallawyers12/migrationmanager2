@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\Staff;
-use App\Models\UserLog;
+use App\Models\StaffLoginLog;
 use App\Models\Team;
 use App\Models\Branch;
 use Illuminate\Support\Carbon;
@@ -168,7 +168,7 @@ class ActiveStaffService
      */
     protected function resolveLastLogin(int $staffId, ?Carbon $fallback): ?Carbon
     {
-        $userLog = UserLog::query()
+        $staffLoginLog = StaffLoginLog::query()
             ->where('user_id', $staffId)
             ->where(function ($query) {
                 $query->where('message', 'like', '%Logged in%')
@@ -177,8 +177,8 @@ class ActiveStaffService
             ->latest('created_at')
             ->first();
 
-        if ($userLog) {
-            return Carbon::parse($userLog->created_at);
+        if ($staffLoginLog) {
+            return Carbon::parse($staffLoginLog->created_at);
         }
 
         return $fallback ? Carbon::parse($fallback) : null;

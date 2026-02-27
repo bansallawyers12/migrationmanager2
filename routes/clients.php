@@ -136,7 +136,8 @@ Route::post('/update-note-datetime', [ClientNotesController::class, 'updateNoteD
 Route::get('/getnotedetail', [ClientNotesController::class, 'getnotedetail'])->name('clients.getnotedetail');
 Route::get('/deletenote', [ClientNotesController::class, 'deletenote'])->name('clients.deletenote');
 Route::get('/viewnotedetail', [ClientNotesController::class, 'viewnotedetail']);
-Route::get('/viewapplicationnote', [ClientNotesController::class, 'viewapplicationnote']);
+Route::get('/viewmatternote', [ClientNotesController::class, 'viewapplicationnote'])->name('clients.viewmatternote');
+Route::get('/viewapplicationnote', [ClientNotesController::class, 'viewapplicationnote']); // backward compat
 // REMOVED Phase 4: prev_visa column dropped - Route::post('/saveprevvisa', [ClientNotesController::class, 'saveprevvisa']);
 // REMOVED: saveonlineform routes - OnlineForm model deleted, no frontend calls these routes
 Route::get('/get-notes', [ClientNotesController::class, 'getnotes'])->name('clients.getnotes');

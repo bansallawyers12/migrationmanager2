@@ -75,7 +75,7 @@ Testimonial.php
 TestScore.php
 UploadChecklist.php
 User.php
-UserLog.php
+StaffLoginLog.php
 UserRole.php
 UserType.php
 VisaDocumentType.php

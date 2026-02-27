@@ -1362,7 +1362,7 @@ $(document).ready(function() {
             getRecipients: '{{ URL::to("/clients/get-recipients") }}',
             updateSessionCompleted: '{{ URL::to("/clients/update-session-completed") }}',
             viewNoteDetail: '{{ URL::to("/viewnotedetail") }}',
-            viewApplicationNote: '{{ URL::to("/viewapplicationnote") }}',
+            viewMatterNote: '{{ URL::to("/viewmatternote") }}',
             changeClientStatus: '{{ URL::to("/change-client-status") }}',
             getTemplates: '{{ URL::to("/get-templates") }}',
             getComposeDefaults: '{{ URL::to("/get-compose-defaults") }}',

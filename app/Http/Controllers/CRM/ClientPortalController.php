@@ -1705,7 +1705,7 @@ class ClientPortalController extends Controller
 				?>
 					<div class="note_col" id="note_id_<?php echo $list->id; ?>">
 						<div class="note_content">
-						<h4><a class="viewapplicationnote" data-id="<?php echo $list->id; ?>" href="javascript:;"><?php echo @$list->subject == "" ? config('constants.empty') : Str::limit(@$list->subject, 19, '...'); ?></a></h4>
+						<h4><a class="viewmatternote" data-id="<?php echo $list->id; ?>" href="javascript:;"><?php echo @$list->subject == "" ? config('constants.empty') : Str::limit(@$list->subject, 19, '...'); ?></a></h4>
 						<p><?php echo @$list->description == "" ? config('constants.empty') : Str::limit(@$list->description, 15, '...'); ?></p>
 						</div>
 						<div class="extra_content">

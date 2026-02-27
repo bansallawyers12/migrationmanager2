@@ -190,13 +190,13 @@
             });
         });
 
-        $(document).delegate('.viewapplicationnote', 'click', function() {
-            $('#view_application_note').modal('show');
+        $(document).delegate('.viewmatternote', 'click', function() {
+            $('#view_matter_note').modal('show');
             var v = $(this).attr('data-id');
-            $('#view_application_note input[name="noteid"]').val(v);
+            $('#view_matter_note input[name="noteid"]').val(v);
             $('.popuploader').show();
             $.ajax({
-                url: window.ClientDetailConfig.urls.viewApplicationNote,
+                url: (window.ClientDetailConfig.urls.viewMatterNote || window.ClientDetailConfig.urls.viewApplicationNote),
                 type: 'GET',
                 dataType: 'json',
                 data: { note_id: v },
@@ -204,8 +204,8 @@
                     $('.popuploader').hide();
                     var res = safeParse(response);
                     if (!res || !res.status) return;
-                    $('#view_application_note .modal-body .note_content h5').html(res.data.title);
-                    $("#view_application_note .modal-body .note_content p").html(res.data.description);
+                    $('#view_matter_note .modal-body .note_content h5').html(res.data.title);
+                    $("#view_matter_note .modal-body .note_content p").html(res.data.description);
                 }
             });
         });
