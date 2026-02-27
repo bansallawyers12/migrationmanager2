@@ -313,6 +313,13 @@
                                                                                     </table>
                                                                                 </div>
                                                                             @endif
+
+                                                                            <a href="javascript:void(0);"
+                                                                               class="add-checklist-link openchecklist"
+                                                                               data-matter-id="{{ $selectedMatter->id }}"
+                                                                               data-typename="{{ $stage->name }}">
+                                                                                <i class="fa fa-plus"></i> Add New Checklist
+                                                                            </a>
                                                                         </li>
                                                                     @endforeach
                                                                 </ul>
@@ -4418,11 +4425,195 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-{{-- create_checklist modal + workflow checklist handlers REMOVED - workflow checklist unused --}}
+<!-- Create Checklist Modal -->
+<div class="modal fade custom_modal" id="create_checklist" tabindex="-1" role="dialog" aria-labelledby="createChecklistModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createChecklistModalLabel">Add New Checklist</h5>
+                <button type="button" class="close" id="create_checklist_close_btn" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="{{ URL::to('/add-checklists') }}" name="create_checklist_form" id="create_checklist_form" autocomplete="off">
+                    @csrf
+                    <input type="hidden" name="client_matter_id" id="checklist_client_matter_id" value="">
+                    <input type="hidden" name="typename" id="checklist_typename" value="">
+                    <div class="form-group">
+                        <label for="cp_checklist_names">Select Checklist <span class="span_req">*</span></label>
+                        <select name="cp_checklist_names[]" id="cp_checklist_names" class="form-control" multiple="multiple" style="width:100%;">
+                        </select>
+                        <small class="text-muted">You can select multiple checklists at once.</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="cp_checklist_description">Description <small class="text-muted">(optional)</small></label>
+                        <textarea name="description" id="cp_checklist_description" class="form-control" rows="3" placeholder="Enter a description (optional)"></textarea>
+                    </div>
+                    <div class="form-group mb-0">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="cp_allow_client" name="allow_client" value="1" checked>
+                            <label class="custom-control-label" for="cp_allow_client">Allow For Client</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="create_checklist_submit_btn" class="btn btn-primary">Add Checklist</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
-$(document).ready(function() {
-    // Workflow checklist handlers (create_checklist, approve/reject/delete docs) REMOVED - unused
+$(document).ready(function () {
+
+    // Initialise Select2 on the checklist multi-select inside the modal
+    $('#cp_checklist_names').select2({
+        dropdownParent: $('#create_checklist'),
+        placeholder: 'Search and select checklists...',
+        allowClear: true,
+        multiple: true,
+        minimumInputLength: 0,
+        ajax: {
+            url: '{{ URL::to('/crm/document-checklists-options') }}',
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return { q: params.term || '' };
+            },
+            processResults: function (data) {
+                return { results: data.results };
+            },
+            cache: true
+        }
+    });
+
+    // Open "Add New Checklist" modal when clicking any .openchecklist link
+    $(document).on('click', '.openchecklist', function (e) {
+        e.stopPropagation(); // prevent triggering checklist-row click
+        var matterId = $(this).data('matter-id');
+        var typename = $(this).data('typename');
+
+        $('#checklist_client_matter_id').val(matterId);
+        $('#checklist_typename').val(typename);
+
+        // Clear fields and any previous errors
+        $('#cp_checklist_names').val(null).trigger('change');
+        $('#cp_checklist_names').closest('.form-group').find('.custom-error').remove();
+        $('#cp_checklist_description').val('');
+        $('#cp_allow_client').prop('checked', true);
+
+        $('#create_checklist').modal('show');
+    });
+
+    // Close modal cleanup
+    $('#create_checklist').on('hidden.bs.modal', function () {
+        $('#cp_checklist_names').val(null).trigger('change');
+        $('#cp_checklist_names').closest('.form-group').find('.custom-error').remove();
+        $('#cp_checklist_description').val('');
+        $('#cp_allow_client').prop('checked', true);
+        $('#create_checklist_submit_btn').prop('disabled', false).text('Add Checklist');
+    });
+
+    // Submit: Add New Checklist (supports multiple selections)
+    $(document).on('click', '#create_checklist_submit_btn', function (e) {
+        e.preventDefault();
+
+        var selectedNames = $('#cp_checklist_names').val(); // array of selected name strings
+        $('#cp_checklist_names').closest('.form-group').find('.custom-error').remove();
+
+        if (!selectedNames || selectedNames.length === 0) {
+            $('#cp_checklist_names').closest('.form-group')
+                .append('<span class="custom-error" style="color:red;display:block;margin-top:4px;"><strong>Please select at least one checklist.</strong></span>');
+            return;
+        }
+
+        var matterId = $('#checklist_client_matter_id').val();
+        var typename = $('#checklist_typename').val();
+
+        if (!matterId || !typename) {
+            alert('Missing matter or stage information. Please try again.');
+            return;
+        }
+
+        var $btn = $(this);
+        $btn.prop('disabled', true).text('Adding...');
+
+        $.ajax({
+            url: '{{ URL::to('/add-checklists') }}',
+            method: 'POST',
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content'),
+                client_matter_id: matterId,
+                typename: typename,
+                'cp_checklist_names[]': selectedNames,
+                description: $('#cp_checklist_description').val(),
+                allow_client: $('#cp_allow_client').is(':checked') ? 1 : 0
+            },
+            success: function (response) {
+                $btn.prop('disabled', false).text('Add Checklist');
+
+                if (response.success) {
+                    $('#create_checklist').modal('hide');
+
+                    var $stageItem = $('.stage-checklist-item[data-stage-name="' + typename + '"]');
+                    var addedCount = 0;
+
+                    if ($stageItem.length && response.data && response.data.length > 0) {
+                        var $stageChecklists = $stageItem.find('.stage-checklists');
+                        var newRows = '';
+
+                        $.each(response.data, function (i, item) {
+                            addedCount++;
+                            newRows += '<tr class="checklist-row cursor-pointer cp-doc-checklist-row"'
+                                + ' data-checklist-id="' + item.id + '"'
+                                + ' data-checklist-name="' + $('<div>').text(item.cp_checklist_name).html() + '"'
+                                + ' data-stage-name="' + $('<div>').text(typename).html() + '"'
+                                + ' data-matter-id="' + matterId + '">'
+                                + '<td class="checklist-status"><span class="round"></span></td>'
+                                + '<td class="checklist-name">' + $('<div>').text(item.cp_checklist_name).html() + '</td>'
+                                + '<td class="checklist-count"><div class="circular-box"><span>0</span></div></td>'
+                                + '</tr>';
+                        });
+
+                        if ($stageChecklists.length) {
+                            $stageChecklists.find('tbody').append(newRows);
+                        } else {
+                            var tableHtml = '<div class="stage-checklists"><table class="table checklist-table"><tbody>'
+                                + newRows + '</tbody></table></div>';
+                            $stageItem.find('.add-checklist-link').before(tableHtml);
+                        }
+
+                        // Update count badge
+                        var currentCount = parseInt($stageItem.find('.stage-checklist-count').text().replace(/[()]/g, '')) || 0;
+                        $stageItem.find('.stage-checklist-count').text('(' + (currentCount + addedCount) + ')');
+                    }
+
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success(response.message || 'Checklist(s) added successfully');
+                    } else {
+                        alert(response.message || 'Checklist(s) added successfully');
+                    }
+                } else {
+                    alert(response.message || 'Failed to add checklist.');
+                }
+            },
+            error: function (xhr) {
+                $btn.prop('disabled', false).text('Add Checklist');
+                var msg = 'Failed to add checklist.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                } else if (xhr.responseJSON && xhr.responseJSON.errors) {
+                    var errors = xhr.responseJSON.errors;
+                    msg = errors[Object.keys(errors)[0]][0];
+                }
+                alert(msg);
+            }
+        });
+    });
+
 });
 </script>
 

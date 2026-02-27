@@ -1889,10 +1889,9 @@ class ClientPortalController extends Controller
 			->get(['id', 'name', 'doc_type']);
 
 		$results = $checklists->map(function ($item) {
-			$typeLabel = $item->doc_type == 1 ? 'Personal' : 'Visa';
 			return [
-				'id' => $item->name,
-				'text' => $item->name . ' (' . $typeLabel . ')',
+				'id'   => $item->name,
+				'text' => $item->name,
 				'name' => $item->name,
 			];
 		});
@@ -1900,7 +1899,60 @@ class ClientPortalController extends Controller
 		return response()->json(['results' => $results]);
 	}
 
-	// addchecklists REMOVED - workflow checklist unused
+	/**
+	 * POST /add-checklists
+	 * Adds one or more checklist items to cp_doc_checklists for a given client matter and workflow stage.
+	 */
+	public function addChecklist(Request $request)
+	{
+		$request->validate([
+			'client_matter_id'    => 'required|integer',
+			'typename'            => 'required|string|max:255',
+			'cp_checklist_names'  => 'required|array|min:1',
+			'cp_checklist_names.*'=> 'required|string|max:255',
+			'description'         => 'nullable|string|max:1000',
+			'allow_client'        => 'nullable|integer|in:0,1',
+		]);
+
+		$clientMatterId = (int) $request->client_matter_id;
+		$typename       = trim($request->typename);
+		$names          = array_filter(array_map('trim', $request->cp_checklist_names));
+		$description    = $request->description ? trim($request->description) : null;
+		$allowClient    = $request->has('allow_client') ? (int) $request->allow_client : 1;
+
+		$matter = DB::table('client_matters')->where('id', $clientMatterId)->first();
+		if (!$matter) {
+			return response()->json(['success' => false, 'message' => 'Matter not found.'], 404);
+		}
+
+		$inserted  = [];
+		$now       = now();
+		$adminUser = Auth::guard('admin')->user();
+		$userId    = $adminUser ? $adminUser->id : null;
+
+		foreach ($names as $name) {
+			$newId = DB::table('cp_doc_checklists')->insertGetId([
+				'user_id'           => $userId,
+				'client_matter_id'  => $clientMatterId,
+				'client_id'         => $matter->client_id,
+				'typename'          => $typename,
+				'cp_checklist_name' => $name,
+				'description'       => $description,
+				'allow_client'      => $allowClient,
+				'created_at'        => $now,
+				'updated_at'        => $now,
+			]);
+			$inserted[] = DB::table('cp_doc_checklists')->where('id', $newId)->first();
+		}
+
+		$count = count($inserted);
+
+		return response()->json([
+			'success' => true,
+			'message' => $count . ' checklist' . ($count > 1 ? 's' : '') . ' added successfully.',
+			'data'    => $inserted,
+		]);
+	}
 
 	// checklistupload REMOVED - workflow checklist upload flow dead (no UI triggers it)
 

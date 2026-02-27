@@ -82,7 +82,7 @@ Route::post('/client-portal/ownership', [ClientPortalController::class, 'applica
 // REMOVED - Application PDF export route (functionality was broken and unused)
 // Route::get('/application/export/pdf/{id}', [ClientPortalController::class, 'exportapplicationpdf']);
 Route::get('/crm/document-checklists-options', [ClientPortalController::class, 'getDocumentChecklistsOptions']);
-// add-checklists REMOVED - workflow checklist unused
+Route::post('/add-checklists', [ClientPortalController::class, 'addChecklist'])->name('client_portal.addChecklist');
 // checklistupload REMOVED - workflow checklist upload flow dead (no UI triggers it)
 // delete-docs, publishdoc, approve-document, reject-document REMOVED - workflow checklist unused
 Route::get('/client-portal/download-document', [ClientPortalController::class, 'downloadDocument']);
