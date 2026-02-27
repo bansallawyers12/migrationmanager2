@@ -4773,7 +4773,7 @@ $(document).on('click', '.cp-doc-checklist-row', function () {
                         ? '<a href="javascript:void(0);" class="btn btn-sm btn-warning cp-reject-doc-btn" data-document-id="' + doc.id + '" title="Reject"><i class="fa fa-times-circle"></i></a>'
                         : '<span style="width:32px;display:inline-block;"></span>';
 
-                    var downloadBtn = '<a href="javascript:void(0);" class="btn btn-sm btn-primary cp-download-doc-btn" data-file-url="' + (doc.myfile || '') + '" data-file-name="' + (doc.file_name || 'document') + '" title="Download"><i class="fa fa-download"></i></a>';
+                    var downloadBtn = '<a href="javascript:void(0);" class="btn btn-sm btn-primary cp-download-doc-btn" data-document-id="' + doc.id + '" data-file-name="' + (doc.file_name || 'document') + '" title="Download"><i class="fa fa-download"></i></a>';
                     var deleteBtn   = '<a href="javascript:void(0);" class="btn btn-sm btn-danger cp-delete-doc-btn" data-document-id="' + doc.id + '" data-list-id="' + checklistId + '" title="Delete"><i class="fa fa-trash"></i></a>';
 
                     html += '<tr>'
@@ -4793,17 +4793,13 @@ $(document).on('click', '.cp-doc-checklist-row', function () {
 });
 
 // Download document
+// Uses the server-side endpoint so the browser receives Content-Disposition: attachment,
+// which forces a real file download regardless of file type or origin (S3 URLs are cross-origin
+// so the HTML5 `download` attribute is ignored by browsers — server proxy is required).
 $(document).on('click', '.cp-download-doc-btn', function () {
-    var fileUrl  = $(this).data('file-url');
-    var fileName = $(this).data('file-name');
-    if (fileUrl) {
-        var a = document.createElement('a');
-        a.href = fileUrl;
-        a.download = fileName;
-        a.target = '_blank';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+    var documentId = $(this).data('document-id');
+    if (documentId) {
+        window.location.href = '/client-portal/download-document?document_id=' + documentId;
     }
 });
 
