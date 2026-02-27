@@ -267,7 +267,7 @@
                                                                             $isActiveStage = ($currentWorkflowStageId && $currentWorkflowStageId == $stage->id);
                                                                             $stageChecklists = DB::table('cp_doc_checklists')
                                                                                 ->where('client_matter_id', $selectedMatter->id)
-                                                                                ->where('typename', $stage->name)
+                                                                                ->where('wf_stage', $stage->name)
                                                                                 ->orderBy('id', 'asc')
                                                                                 ->get();
                                                                         @endphp
@@ -317,7 +317,7 @@
                                                                             <a href="javascript:void(0);"
                                                                                class="add-checklist-link openchecklist"
                                                                                data-matter-id="{{ $selectedMatter->id }}"
-                                                                               data-typename="{{ $stage->name }}">
+                                                                               data-wf-stage="{{ $stage->name }}">
                                                                                 <i class="fa fa-plus"></i> Add New Checklist
                                                                             </a>
                                                                         </li>
@@ -4439,7 +4439,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <form method="post" action="{{ URL::to('/add-checklists') }}" name="create_checklist_form" id="create_checklist_form" autocomplete="off">
                     @csrf
                     <input type="hidden" name="client_matter_id" id="checklist_client_matter_id" value="">
-                    <input type="hidden" name="typename" id="checklist_typename" value="">
+                    <input type="hidden" name="wf_stage" id="checklist_wf_stage" value="">
                     <div class="form-group">
                         <label for="cp_checklist_names">Select Checklist <span class="span_req">*</span></label>
                         <select name="cp_checklist_names[]" id="cp_checklist_names" class="form-control" multiple="multiple" style="width:100%;">
@@ -4494,10 +4494,10 @@ $(document).ready(function () {
     $(document).on('click', '.openchecklist', function (e) {
         e.stopPropagation(); // prevent triggering checklist-row click
         var matterId = $(this).data('matter-id');
-        var typename = $(this).data('typename');
+        var wfStage  = $(this).data('wf-stage');
 
         $('#checklist_client_matter_id').val(matterId);
-        $('#checklist_typename').val(typename);
+        $('#checklist_wf_stage').val(wfStage);
 
         // Clear fields and any previous errors
         $('#cp_checklist_names').val(null).trigger('change');
@@ -4531,9 +4531,9 @@ $(document).ready(function () {
         }
 
         var matterId = $('#checklist_client_matter_id').val();
-        var typename = $('#checklist_typename').val();
+        var wfStage  = $('#checklist_wf_stage').val();
 
-        if (!matterId || !typename) {
+        if (!matterId || !wfStage) {
             alert('Missing matter or stage information. Please try again.');
             return;
         }
@@ -4547,7 +4547,7 @@ $(document).ready(function () {
             data: {
                 _token: $('meta[name="csrf-token"]').attr('content'),
                 client_matter_id: matterId,
-                typename: typename,
+                wf_stage: wfStage,
                 'cp_checklist_names[]': selectedNames,
                 description: $('#cp_checklist_description').val(),
                 allow_client: $('#cp_allow_client').is(':checked') ? 1 : 0
@@ -4558,7 +4558,7 @@ $(document).ready(function () {
                 if (response.success) {
                     $('#create_checklist').modal('hide');
 
-                    var $stageItem = $('.stage-checklist-item[data-stage-name="' + typename + '"]');
+                    var $stageItem = $('.stage-checklist-item[data-stage-name="' + wfStage + '"]');
                     var addedCount = 0;
 
                     if ($stageItem.length && response.data && response.data.length > 0) {
@@ -4570,7 +4570,7 @@ $(document).ready(function () {
                             newRows += '<tr class="checklist-row cursor-pointer cp-doc-checklist-row"'
                                 + ' data-checklist-id="' + item.id + '"'
                                 + ' data-checklist-name="' + $('<div>').text(item.cp_checklist_name).html() + '"'
-                                + ' data-stage-name="' + $('<div>').text(typename).html() + '"'
+                                + ' data-stage-name="' + $('<div>').text(wfStage).html() + '"'
                                 + ' data-matter-id="' + matterId + '">'
                                 + '<td class="checklist-status"><span class="round"></span></td>'
                                 + '<td class="checklist-name">' + $('<div>').text(item.cp_checklist_name).html() + '</td>'

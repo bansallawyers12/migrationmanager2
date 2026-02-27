@@ -1907,7 +1907,7 @@ class ClientPortalController extends Controller
 	{
 		$request->validate([
 			'client_matter_id'    => 'required|integer',
-			'typename'            => 'required|string|max:255',
+			'wf_stage'            => 'required|string|max:255',
 			'cp_checklist_names'  => 'required|array|min:1',
 			'cp_checklist_names.*'=> 'required|string|max:255',
 			'description'         => 'nullable|string|max:1000',
@@ -1915,7 +1915,7 @@ class ClientPortalController extends Controller
 		]);
 
 		$clientMatterId = (int) $request->client_matter_id;
-		$typename       = trim($request->typename);
+		$wfStage        = trim($request->wf_stage);
 		$names          = array_filter(array_map('trim', $request->cp_checklist_names));
 		$description    = $request->description ? trim($request->description) : null;
 		$allowClient    = $request->has('allow_client') ? (int) $request->allow_client : 1;
@@ -1924,6 +1924,9 @@ class ClientPortalController extends Controller
 		if (!$matter) {
 			return response()->json(['success' => false, 'message' => 'Matter not found.'], 404);
 		}
+
+		$stage     = DB::table('workflow_stages')->where('name', $wfStage)->first();
+		$wfStageId = $stage ? $stage->id : null;
 
 		$inserted  = [];
 		$now       = now();
@@ -1935,7 +1938,8 @@ class ClientPortalController extends Controller
 				'user_id'           => $userId,
 				'client_matter_id'  => $clientMatterId,
 				'client_id'         => $matter->client_id,
-				'typename'          => $typename,
+				'wf_stage'          => $wfStage,
+				'wf_stage_id'       => $wfStageId,
 				'cp_checklist_name' => $name,
 				'description'       => $description,
 				'allow_client'      => $allowClient,
@@ -2041,7 +2045,7 @@ $docType = $docList ? $docList->cp_checklist_name : ($appdoc->file_name ?? 'Docu
 		$response['doclistdata']	=	$doclistdata;
 		$response['client_portal_upload_count']	=	@$applicationuploadcount[0]->cnt;
 
-		$checklistItems = $clientMatterId ? CpDocChecklist::where('client_matter_id', $clientMatterId)->where('type', $appdoc->doc_type)->get() : collect();
+		$checklistItems = $clientMatterId ? CpDocChecklist::where('client_matter_id', $clientMatterId)->get() : collect();
 			$checklistdata = '<table class="table"><tbody>';
 			foreach($checklistItems as $checklistItem){
 				$appcount = Document::workflowChecklist()->where('cp_list_id', $checklistItem->id)->count();
