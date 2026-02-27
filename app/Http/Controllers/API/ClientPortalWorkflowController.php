@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class ClientPortalWorkflowController extends Controller
 {
@@ -437,5 +439,348 @@ class ClientPortalWorkflowController extends Controller
                 'error'   => $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Upload Allowed Checklist Document - Single Upload
+     * POST /api/workflow/upload-allowed-checklist
+     *
+     * Form-data params:
+     *   - client_matter_id    (required): Client matter ID
+     *   - allowed_checklist_id (required): ID from cp_doc_checklists
+     *   - file                (required): Single file, max 10 MB
+     */
+    public function uploadAllowedChecklistDocument(Request $request)
+    {
+        try {
+            $admin    = $request->user();
+            $clientId = $admin->id;
+
+            $validator = Validator::make($request->all(), [
+                'client_matter_id'     => 'required|integer|min:1',
+                'allowed_checklist_id' => 'required|integer|min:1',
+                'file'                 => 'required|file|max:10240',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors'  => $validator->errors()
+                ], 422);
+            }
+
+            $clientMatterId    = (int) $request->input('client_matter_id');
+            $allowedChecklistId = (int) $request->input('allowed_checklist_id');
+            $file              = $request->file('file');
+
+            // Verify matter belongs to this client
+            $matter = DB::table('client_matters')
+                ->where('id', $clientMatterId)
+                ->where('client_id', $clientId)
+                ->first();
+
+            if (!$matter) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Client matter not found'
+                ], 404);
+            }
+
+            // Verify checklist item belongs to this matter and is allowed
+            $checklistItem = DB::table('cp_doc_checklists')
+                ->where('id', $allowedChecklistId)
+                ->where('client_matter_id', $clientMatterId)
+                ->where('client_id', $clientId)
+                ->where('allow_client', 1)
+                ->first();
+
+            if (!$checklistItem) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Allowed checklist item not found'
+                ], 404);
+            }
+
+            // Validate file name characters
+            $originalName = $file->getClientOriginalName();
+            if (!preg_match('/^[a-zA-Z0-9_\-\.\s\$]+$/', $originalName)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), and dollar signs ($). Please rename the file and try again.'
+                ], 422);
+            }
+
+            // Get client display info for file naming
+            $adminInfo = DB::table('admins')
+                ->select('client_id', 'first_name')
+                ->where('id', $clientId)
+                ->first();
+
+            $clientUniqueId  = $adminInfo->client_id ?? $clientId;
+            $clientFirstName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $adminInfo->first_name ?? 'client');
+            $checklistName   = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $checklistItem->cp_checklist_name ?? 'doc');
+
+            $extension   = $file->getClientOriginalExtension();
+            $fileSize    = $file->getSize();
+            $newFileName = $clientFirstName . '_' . $checklistName . '_' . time() . '.' . $extension;
+            $filePath    = $clientUniqueId . '/workflow_checklist/' . $newFileName;
+
+            // Upload to S3
+            Storage::disk('s3')->put($filePath, file_get_contents($file));
+            $fileUrl = Storage::disk('s3')->url($filePath);
+
+            // Insert new document record
+            $documentId = DB::table('documents')->insertGetId([
+                'cp_list_id'      => $allowedChecklistId,
+                'user_id'         => $clientId,
+                'client_id'       => $clientId,
+                'client_matter_id'=> $clientMatterId,
+                'file_name'       => $clientFirstName . '_' . $checklistName . '_' . time(),
+                'filetype'        => $extension,
+                'myfile'          => $fileUrl,
+                'myfile_key'      => $newFileName,
+                'file_size'       => $fileSize,
+                'type'            => 'workflow_checklist',
+                'doc_type'        => 'workflow_checklist',
+                'checklist'       => $checklistItem->cp_checklist_name,
+                'cp_doc_status'   => 0,
+                'status'          => 'draft',
+                'created_at'      => now(),
+                'updated_at'      => now(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Allowed checklist document uploaded successfully',
+                'data'    => [
+                    'document_id'          => $documentId,
+                    'client_matter_id'     => $clientMatterId,
+                    'allowed_checklist_id' => $allowedChecklistId,
+                    'checklist_name'       => $checklistItem->cp_checklist_name,
+                    'file_name'            => pathinfo($newFileName, PATHINFO_FILENAME),
+                    'file_type'            => $extension,
+                    'file_size'            => $fileSize,
+                    'file_size_formatted'  => $this->formatFileSize($fileSize),
+                    'file_url'             => $fileUrl,
+                    'file_key'             => $newFileName,
+                    's3_path'              => $filePath,
+                    'uploaded_at'          => now()->toISOString(),
+                ]
+            ], 201);
+
+        } catch (\Exception $e) {
+            Log::error('Upload Allowed Checklist Document API Error: ' . $e->getMessage(), [
+                'user_id'              => $admin->id ?? null,
+                'client_matter_id'     => $clientMatterId ?? null,
+                'allowed_checklist_id' => $allowedChecklistId ?? null,
+                'trace'                => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to upload document',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Upload Allowed Checklist Documents - Bulk Upload
+     * POST /api/workflow/upload-allowed-checklist-bulk-upload
+     *
+     * Form-data params:
+     *   - client_matter_id      (required): Client matter ID
+     *   - files[]               (required): Multiple files, max 20, each max 10 MB
+     *   - allowed_checklist_ids (required): Comma-separated checklist IDs, one per file in same order
+     *                                       e.g. "14,14,15" for 3 files
+     */
+    public function uploadAllowedChecklistDocumentBulk(Request $request)
+    {
+        try {
+            $admin    = $request->user();
+            $clientId = $admin->id;
+
+            $validator = Validator::make($request->all(), [
+                'client_matter_id'      => 'required|integer|min:1',
+                'files'                 => 'required|array|min:1|max:20',
+                'files.*'               => 'required|file|max:10240',
+                'allowed_checklist_ids' => 'required|string',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors'  => $validator->errors()
+                ], 422);
+            }
+
+            $clientMatterId  = (int) $request->input('client_matter_id');
+            $files           = $request->file('files');
+            $checklistIdsRaw = $request->input('allowed_checklist_ids');
+
+            // Parse comma-separated checklist IDs
+            $checklistIds = array_map('intval', array_filter(array_map('trim', explode(',', $checklistIdsRaw))));
+
+            if (count($files) !== count($checklistIds)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Number of files (' . count($files) . ') must match number of checklist IDs (' . count($checklistIds) . ')'
+                ], 422);
+            }
+
+            // Verify matter belongs to this client
+            $matter = DB::table('client_matters')
+                ->where('id', $clientMatterId)
+                ->where('client_id', $clientId)
+                ->first();
+
+            if (!$matter) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Client matter not found'
+                ], 404);
+            }
+
+            // Get client display info for file naming
+            $adminInfo = DB::table('admins')
+                ->select('client_id', 'first_name')
+                ->where('id', $clientId)
+                ->first();
+
+            $clientUniqueId  = $adminInfo->client_id ?? $clientId;
+            $clientFirstName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $adminInfo->first_name ?? 'client');
+
+            $uploadedDocuments = [];
+            $errors            = [];
+
+            foreach ($files as $index => $file) {
+                $allowedChecklistId = $checklistIds[$index];
+
+                // Validate file name
+                $originalName = $file->getClientOriginalName();
+                if (!preg_match('/^[a-zA-Z0-9_\-\.\s\$]+$/', $originalName)) {
+                    $errors[] = [
+                        'index'   => $index,
+                        'file'    => $originalName,
+                        'message' => 'Invalid file name characters. Only letters, numbers, dashes, underscores, spaces, dots, and dollar signs are allowed.'
+                    ];
+                    continue;
+                }
+
+                // Verify checklist item belongs to this matter and is allowed
+                $checklistItem = DB::table('cp_doc_checklists')
+                    ->where('id', $allowedChecklistId)
+                    ->where('client_matter_id', $clientMatterId)
+                    ->where('client_id', $clientId)
+                    ->where('allow_client', 1)
+                    ->first();
+
+                if (!$checklistItem) {
+                    $errors[] = [
+                        'index'                => $index,
+                        'allowed_checklist_id' => $allowedChecklistId,
+                        'message'              => 'Allowed checklist item ID ' . $allowedChecklistId . ' not found or not accessible'
+                    ];
+                    continue;
+                }
+
+                $checklistName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $checklistItem->cp_checklist_name ?? 'doc');
+                $extension     = $file->getClientOriginalExtension();
+                $fileSize      = $file->getSize();
+                $newFileName   = $clientFirstName . '_' . $checklistName . '_' . time() . '_' . $index . '.' . $extension;
+                $filePath      = $clientUniqueId . '/workflow_checklist/' . $newFileName;
+
+                // Upload to S3
+                Storage::disk('s3')->put($filePath, file_get_contents($file));
+                $fileUrl = Storage::disk('s3')->url($filePath);
+
+                // Insert document record
+                $documentId = DB::table('documents')->insertGetId([
+                    'cp_list_id'       => $allowedChecklistId,
+                    'user_id'          => $clientId,
+                    'client_id'        => $clientId,
+                    'client_matter_id' => $clientMatterId,
+                    'file_name'        => $clientFirstName . '_' . $checklistName . '_' . time() . '_' . $index,
+                    'filetype'         => $extension,
+                    'myfile'           => $fileUrl,
+                    'myfile_key'       => $newFileName,
+                    'file_size'        => $fileSize,
+                    'type'             => 'workflow_checklist',
+                    'doc_type'         => 'workflow_checklist',
+                    'checklist'        => $checklistItem->cp_checklist_name,
+                    'cp_doc_status'    => 0,
+                    'status'           => 'draft',
+                    'created_at'       => now(),
+                    'updated_at'       => now(),
+                ]);
+
+                $uploadedDocuments[] = [
+                    'document_id'          => $documentId,
+                    'client_matter_id'     => $clientMatterId,
+                    'allowed_checklist_id' => $allowedChecklistId,
+                    'checklist_name'       => $checklistItem->cp_checklist_name,
+                    'file_name'            => pathinfo($newFileName, PATHINFO_FILENAME),
+                    'file_type'            => $extension,
+                    'file_size'            => $fileSize,
+                    'file_size_formatted'  => $this->formatFileSize($fileSize),
+                    'file_url'             => $fileUrl,
+                    'file_key'             => $newFileName,
+                    's3_path'              => $filePath,
+                    'uploaded_at'          => now()->toISOString(),
+                ];
+            }
+
+            $uploadedCount = count($uploadedDocuments);
+            $errorCount    = count($errors);
+
+            if ($uploadedCount === 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No documents were uploaded',
+                    'errors'  => $errors
+                ], 422);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $uploadedCount . ' document(s) uploaded successfully' . ($errorCount > 0 ? ', ' . $errorCount . ' failed' : ''),
+                'data'    => [
+                    'documents'       => $uploadedDocuments,
+                    'uploaded_count'  => $uploadedCount,
+                    'failed_count'    => $errorCount,
+                    'errors'          => $errors,
+                ]
+            ], 201);
+
+        } catch (\Exception $e) {
+            Log::error('Bulk Upload Allowed Checklist API Error: ' . $e->getMessage(), [
+                'user_id'          => $admin->id ?? null,
+                'client_matter_id' => $clientMatterId ?? null,
+                'trace'            => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to upload documents',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Format bytes into a human-readable size string
+     */
+    private function formatFileSize(int $bytes): string
+    {
+        if ($bytes >= 1073741824) {
+            return number_format($bytes / 1073741824, 2) . ' GB';
+        } elseif ($bytes >= 1048576) {
+            return number_format($bytes / 1048576, 2) . ' MB';
+        } elseif ($bytes >= 1024) {
+            return number_format($bytes / 1024, 2) . ' KB';
+        }
+        return $bytes . ' bytes';
     }
 }
