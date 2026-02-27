@@ -1,9 +1,12 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\CRM\DocumentController as AdminDocumentController;
 use App\Http\Controllers\PublicDocumentController;
 use App\Http\Controllers\CRM\SignatureDashboardController;
+use App\Http\Controllers\CRM\DocToPdfController;
 
 /*
 |--------------------------------------------------------------------------
@@ -41,11 +44,11 @@ Route::get('/test-signature', function () {
 })->name('test.signature');
 
 // DOC/DOCX to PDF Converter Routes
-Route::get('/doc-to-pdf', 'CRM\DocToPdfController@showForm')->name('doc-to-pdf.form');
-Route::post('/doc-to-pdf/convert', 'CRM\DocToPdfController@convertLocal')->name('doc-to-pdf.convert');
-Route::get('/doc-to-pdf/test', 'CRM\DocToPdfController@testLocalConversion')->name('doc-to-pdf.test');
-Route::get('/doc-to-pdf/test-python', 'CRM\DocToPdfController@testPythonConversion')->name('doc-to-pdf.test-python');
-Route::get('/doc-to-pdf/debug', 'CRM\DocToPdfController@debugConfig')->name('doc-to-pdf.debug');
+Route::get('/doc-to-pdf', [DocToPdfController::class, 'showForm'])->name('doc-to-pdf.form');
+Route::post('/doc-to-pdf/convert', [DocToPdfController::class, 'convertLocal'])->name('doc-to-pdf.convert');
+Route::get('/doc-to-pdf/test', [DocToPdfController::class, 'testLocalConversion'])->name('doc-to-pdf.test');
+Route::get('/doc-to-pdf/test-python', [DocToPdfController::class, 'testPythonConversion'])->name('doc-to-pdf.test-python');
+Route::get('/doc-to-pdf/debug', [DocToPdfController::class, 'debugConfig'])->name('doc-to-pdf.debug');
 
 /*---------- Signature Dashboard Routes ----------*/
 Route::prefix('signatures')->group(function () {
@@ -94,9 +97,9 @@ Route::get('/debug-pdf-page/{id}/{page}', function($id, $page) {
         if ($url && filter_var($url, FILTER_VALIDATE_URL) && strpos($url, 's3') !== false) {
             $parsed = parse_url($url);
             $s3Key = isset($parsed['path']) ? ltrim(urldecode($parsed['path']), '/') : null;
-            if ($s3Key && \Storage::disk('s3')->exists($s3Key)) {
+            if ($s3Key && Storage::disk('s3')->exists($s3Key)) {
                 $tmpPdfPath = storage_path('app/tmp_' . uniqid() . '.pdf');
-                file_put_contents($tmpPdfPath, \Storage::disk('s3')->get($s3Key));
+                file_put_contents($tmpPdfPath, Storage::disk('s3')->get($s3Key));
             }
         } elseif ($url && file_exists(storage_path('app/public/' . $url))) {
             $tmpPdfPath = storage_path('app/public/' . $url);
@@ -107,9 +110,9 @@ Route::get('/debug-pdf-page/{id}/{page}', function($id, $page) {
                 $admin = \App\Models\Admin::where('id', $document->client_id)->select('client_id')->first();
                 if ($admin && $admin->client_id) {
                     $s3Key = $admin->client_id . '/' . $document->doc_type . '/' . $document->myfile_key;
-                    if (\Storage::disk('s3')->exists($s3Key)) {
+                    if (Storage::disk('s3')->exists($s3Key)) {
                         $tmpPdfPath = storage_path('app/tmp_' . uniqid() . '.pdf');
-                        file_put_contents($tmpPdfPath, \Storage::disk('s3')->get($s3Key));
+                        file_put_contents($tmpPdfPath, Storage::disk('s3')->get($s3Key));
                     }
                 }
             }
@@ -145,7 +148,7 @@ Route::get('/debug-pdf-page/{id}/{page}', function($id, $page) {
         
         return response()->json(['error' => 'Failed to generate image', 'document_id' => $id, 'page' => $page], 500);
     } catch (\Exception $e) {
-        \Log::error('Debug route error', ['error' => $e->getMessage(), 'document_id' => $id, 'page' => $page]);
+        Log::error('Debug route error', ['error' => $e->getMessage(), 'document_id' => $id, 'page' => $page]);
         return response()->json(['error' => $e->getMessage()], 500);
     }
 })->name('debug.pdf.page');
