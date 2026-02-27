@@ -2453,15 +2453,14 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    align-items: center;
-    justify-content: center;
+    align-items: flex-start;
 }
 
 .checklist-details-table tbody td:nth-child(5) .action-buttons .action-row {
     display: flex;
     gap: 4px;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
 }
 
 .checklist-details-table tbody td:nth-child(5) .action-buttons .btn {
@@ -4780,13 +4779,14 @@ $(document).on('click', '.cp-doc-checklist-row', function () {
                         statusBadge = '<span class="badge badge-warning">In Progress</span>';
                     }
 
-                    var approveBtn = (doc.cp_doc_status != 1)
+                    // Row 2 buttons — no spacers; show only what's relevant for each status
+                    var approveBtn = (doc.cp_doc_status != 1)   // hide when already Approved
                         ? '<a href="javascript:void(0);" class="btn btn-sm btn-success cp-approve-doc-btn" data-document-id="' + doc.id + '" title="Approve"><i class="fa fa-check-circle"></i></a>'
-                        : '<span style="width:32px;display:inline-block;"></span>';
+                        : '';
 
-                    var rejectBtn = (doc.cp_doc_status != 2)
+                    var rejectBtn = (doc.cp_doc_status != 2)    // hide when already Rejected
                         ? '<a href="javascript:void(0);" class="btn btn-sm btn-warning cp-reject-doc-btn" data-document-id="' + doc.id + '" title="Reject"><i class="fa fa-times-circle"></i></a>'
-                        : '<span style="width:32px;display:inline-block;"></span>';
+                        : '';
 
                     var fileUrl     = doc.myfile || '';
                     var fileNameDisplay = doc.file_name || 'N/A';
@@ -4866,9 +4866,8 @@ $(document).on('click', '.cp-approve-doc-btn', function () {
         success: function (response) {
             if (response.success) {
                 $statusCell.html('<span class="badge badge-success">Approved</span>');
-                // Row 2: Approved → [spacer][Reject][Move] all in one row
+                // Row 2: Approved → [Reject][Move]
                 $actionRow.html(
-                    '<span style="width:32px;display:inline-block;"></span>' +
                     '<a href="javascript:void(0);" class="btn btn-sm btn-warning cp-reject-doc-btn" data-document-id="' + documentId + '" title="Reject"><i class="fa fa-times-circle"></i></a>' +
                     '<a href="javascript:void(0);" class="btn btn-sm btn-info cp-move-doc-btn" data-document-id="' + documentId + '" data-matter-id="' + matterId + '" title="Move Document"><i class="fa fa-arrows-alt"></i></a>'
                 );
@@ -4899,10 +4898,9 @@ $(document).on('click', '.cp-reject-doc-btn', function () {
         success: function (response) {
             if (response.success) {
                 $btn.closest('tr').find('td:nth-child(3)').html('<span class="badge badge-danger" title="' + $('<div>').text(reason || 'No reason provided').html() + '" style="cursor:help;">Rejected</span>');
-                // Row 2: Rejected → [Approve][spacer] (no Move — only shown when Approved)
+                // Row 2: Rejected → [Approve] only (Move only shows when Approved)
                 $btn.closest('.action-row').html(
-                    '<a href="javascript:void(0);" class="btn btn-sm btn-success cp-approve-doc-btn" data-document-id="' + documentId + '" title="Approve"><i class="fa fa-check-circle"></i></a>' +
-                    '<span style="width:32px;display:inline-block;"></span>'
+                    '<a href="javascript:void(0);" class="btn btn-sm btn-success cp-approve-doc-btn" data-document-id="' + documentId + '" title="Approve"><i class="fa fa-check-circle"></i></a>'
                 );
             } else {
                 alert(response.message || 'Failed to reject document.');
