@@ -4833,6 +4833,7 @@ $(document).on('click', '.cp-delete-doc-btn', function () {
 
 // Approve document
 $(document).on('click', '.cp-approve-doc-btn', function () {
+    if (!confirm('Are you sure you want to approve this document?')) return;
     var documentId = $(this).data('document-id');
     var $btn = $(this);
     $.ajax({
@@ -4848,6 +4849,7 @@ $(document).on('click', '.cp-approve-doc-btn', function () {
                     '<span style="width:32px;display:inline-block;"></span>' +
                     '<a href="javascript:void(0);" class="btn btn-sm btn-warning cp-reject-doc-btn" data-document-id="' + documentId + '" title="Reject"><i class="fa fa-times-circle"></i></a>'
                 );
+                alert('Document has been approved successfully.');
             } else {
                 alert(response.message || 'Failed to approve document.');
             }
