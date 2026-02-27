@@ -4839,6 +4839,11 @@ $(document).on('click', '.cp-approve-doc-btn', function () {
     if (!confirm('Are you sure you want to approve this document?')) return;
     var documentId = $(this).data('document-id');
     var $btn = $(this);
+    // Capture DOM references BEFORE .html() detaches $btn from the DOM
+    var $actionRow     = $btn.closest('.action-row');
+    var $actionButtons = $btn.closest('.action-buttons');
+    var $statusCell    = $btn.closest('tr').find('td:nth-child(3)');
+    var matterId       = $btn.closest('tr').data('matter-id') || '';
     $.ajax({
         url: '/api/client-portal/update-document-status',
         method: 'POST',
@@ -4846,16 +4851,14 @@ $(document).on('click', '.cp-approve-doc-btn', function () {
         success: function (response) {
             if (response.success) {
                 // Update status badge
-                $btn.closest('tr').find('td:nth-child(3)').html('<span class="badge badge-success">Approved</span>');
+                $statusCell.html('<span class="badge badge-success">Approved</span>');
                 // Update action buttons: Approved → show only Reject
-                $btn.closest('.action-row').html(
+                $actionRow.html(
                     '<span style="width:32px;display:inline-block;"></span>' +
                     '<a href="javascript:void(0);" class="btn btn-sm btn-warning cp-reject-doc-btn" data-document-id="' + documentId + '" title="Reject"><i class="fa fa-times-circle"></i></a>'
                 );
                 // Show Move Document button (only visible when Approved)
-                var $actionButtons = $btn.closest('.action-buttons');
                 if ($actionButtons.find('.action-row-move').length === 0) {
-                    var matterId = $btn.closest('tr').data('matter-id') || '';
                     $actionButtons.append('<div class="action-row action-row-move"><a href="javascript:void(0);" class="btn btn-sm btn-info cp-move-doc-btn" data-document-id="' + documentId + '" data-matter-id="' + matterId + '" title="Move Document"><i class="fa fa-arrows-alt"></i> Move</a></div>');
                 }
                 alert('Document has been approved successfully.');
