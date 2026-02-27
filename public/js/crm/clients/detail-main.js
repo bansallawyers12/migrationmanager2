@@ -6573,47 +6573,73 @@ Bansal Immigration`;
 
         $(document).on('click', '.pinnote', function(e) {
 
-            $('.popuploader').show();
+            e.preventDefault();
 
-            $.ajax({
+            var noteId = $(this).attr('data-id');
 
-                url: window.ClientDetailConfig.urls.pinNote + '/',
+            if (!noteId) {
 
-                type:'GET',
+                console.error('[PinNote] Missing data-id on pinnote element');
 
-                dataType:'json',
+                return;
 
-                data:{note_id:$(this).attr('data-id')},
-
-                success:function(response){
-
-                    getallnotes();
-
-                }
-
-            });
-
-        });
-
-
-
-        $('.pinnote').off('click').on('click', function(e) { 
+            }
 
             $('.popuploader').show();
 
             $.ajax({
 
-                url: window.ClientDetailConfig.urls.pinNote + '/',
+                url: window.ClientDetailConfig.urls.pinNote,
 
                 type:'GET',
 
                 dataType:'json',
 
-                data:{note_id:$(this).attr('data-id')},
+                data:{note_id: noteId},
 
                 success:function(response){
 
-                    getallnotes();
+                    if (response && response.status) {
+
+                        if (typeof getallnotes === 'function') {
+
+                            getallnotes();
+
+                        }
+
+                    } else {
+
+                        $('.popuploader').hide();
+
+                        if (typeof toastr !== 'undefined') {
+
+                            toastr.error(response && response.message ? response.message : 'Failed to pin note');
+
+                        } else {
+
+                            alert(response && response.message ? response.message : 'Failed to pin note');
+
+                        }
+
+                    }
+
+                },
+
+                error: function(xhr, status, error) {
+
+                    $('.popuploader').hide();
+
+                    console.error('[PinNote] AJAX error:', status, error, xhr.responseText);
+
+                    if (typeof toastr !== 'undefined') {
+
+                        toastr.error('Failed to pin note. Please try again.');
+
+                    } else {
+
+                        alert('Failed to pin note. Please try again.');
+
+                    }
 
                 }
 

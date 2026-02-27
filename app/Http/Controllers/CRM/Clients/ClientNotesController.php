@@ -480,26 +480,26 @@ class ClientNotesController extends Controller
      */
     public function pinnote(Request $request)
     {
-		$requestData = $request->all();
+		$noteId = $request->input('note_id');
 
-		if(Note::where('id',$requestData['note_id'])->exists()){
-			$note = Note::where('id',$requestData['note_id'])->first();
-			if($note->pin == 0){
+		if ($noteId && Note::where('id', $noteId)->exists()) {
+			$note = Note::where('id', $noteId)->first();
+			if ($note->pin == 0) {
 				$obj = Note::find($note->id);
 				$obj->pin = 1;
-				$saved = $obj->save();
-			}else{
+				$obj->save();
+			} else {
 				$obj = Note::find($note->id);
 				$obj->pin = 0;
-				$saved = $obj->save();
+				$obj->save();
 			}
-			$response['status'] 				= 	true;
-			$response['message']			=	'Pin Option added successfully';
-		}else{
-			$response['status'] 	= 	false;
-			$response['message']	=	'Record not found';
+			$response['status'] = true;
+			$response['message'] = 'Pin Option added successfully';
+		} else {
+			$response['status'] = false;
+			$response['message'] = 'Record not found';
 		}
-		echo json_encode($response);
+		return response()->json($response);
 	}
 
     /**
