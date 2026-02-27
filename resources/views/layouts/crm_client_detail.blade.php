@@ -519,7 +519,7 @@
         }
         
         /* Application Status Badge */
-        .application-status-badge {
+        .matter-status-badge {
             display: inline-block;
             background-color: #f3f4f6;
             padding: 7px 14px;

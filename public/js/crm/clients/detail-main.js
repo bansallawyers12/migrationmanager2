@@ -1236,7 +1236,7 @@ $(document).ready(function() {
 
                 } else {
 
-                    $('#client_portal-tab').html('<h4>Error upserting matter record. Please try again.</h4>');
+                    $('#client_portal-tab').html('<h4>Error upserting matter. Please try again.</h4>');
 
                 }
 
@@ -1246,7 +1246,7 @@ $(document).ready(function() {
 
                 console.error('Error upserting matter:', error);
 
-                $('#client_portal-tab').html('<h4>Error upserting application record. Please try again.</h4>');
+                $('#client_portal-tab').html('<h4>Error upserting matter. Please try again.</h4>');
 
             }
 
@@ -6661,7 +6661,7 @@ Bansal Immigration`;
 
                 closeOnSelect: false,
 
-                dropdownParent: $('#applicationemailmodal'),
+                dropdownParent: $('#matteremailmodal'),
 
                 ajax: {
 
@@ -7100,7 +7100,7 @@ Bansal Immigration`;
 
 
 
-        $(document).delegate('.selectapplicationtemplate', 'change', function(){
+        $(document).delegate('.selectmattertemplate', 'change', function(){
 
             var v = $(this).val();
 
@@ -7122,11 +7122,11 @@ Bansal Immigration`;
 
                     // Set content in TinyMCE editor
                     if (typeof setTinyMCEContent === 'function') {
-                        setTinyMCEContent('application_email_message', res.description);
-                    } else if (typeof tinymce !== 'undefined' && tinymce.get('application_email_message')) {
-                        tinymce.get('application_email_message').setContent(res.description);
+                        setTinyMCEContent('matter_email_message', res.description);
+                    } else if (typeof tinymce !== 'undefined' && tinymce.get('matter_email_message')) {
+                        tinymce.get('matter_email_message').setContent(res.description);
                     } else {
-                        $("#application_email_message").val(res.description);
+                        $("#matter_email_message").val(res.description);
                     }
 
                 }

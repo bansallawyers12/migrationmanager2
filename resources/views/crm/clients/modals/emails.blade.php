@@ -52,7 +52,7 @@
 </div>
 
 <!-- Compose Email Modal -->
-<div id="applicationemailmodal"  data-backdrop="static" data-keyboard="false" class="modal fade custom_modal" tabindex="-1" role="dialog" aria-labelledby="clientModalLabel" aria-hidden="true">
+<div id="matteremailmodal"  data-backdrop="static" data-keyboard="false" class="modal fade custom_modal" tabindex="-1" role="dialog" aria-labelledby="clientModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
@@ -113,7 +113,7 @@
 						<div class="col-12 col-md-6 col-lg-6">
 							<div class="form-group">
 								<label for="template">Templates </label>
-								<select data-valid="" class="form-control select2 selectapplicationtemplate" name="template">
+								<select data-valid="" class="form-control select2 selectmattertemplate" name="template">
 									<option value="">Select</option>
 									@foreach(\App\Models\EmailTemplate::crm()->orderBy('id', 'desc')->get() as $list)
 										<option value="{{$list->id}}">{{$list->name}}</option>
@@ -136,7 +136,7 @@
 						<div class="col-12 col-md-12 col-lg-12">
 							<div class="form-group">
 								<label for="message">Message <span class="span_req">*</span></label>
-								<textarea id="application_email_message" class="tinymce-editor selectedmessage" name="message" data-valid="required"></textarea>
+								<textarea id="matter_email_message" class="tinymce-editor selectedmessage" name="message" data-valid="required"></textarea>
 								@if ($errors->has('message'))
 									<span class="custom-error" role="alert">
 										<strong>{{ @$errors->first('message') }}</strong>

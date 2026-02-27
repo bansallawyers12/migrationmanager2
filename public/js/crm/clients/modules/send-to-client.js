@@ -395,7 +395,7 @@
             handleSendOfficeReceiptToClient($(this));
         });
 
-        $('.dropdown-menu .send-to-client-application-btn').off('click').on('click', function(e) {
+        $('.dropdown-menu .send-to-client-portal-btn').off('click').on('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             handleSendInvoiceToClientApplication($(this));
@@ -431,7 +431,7 @@
         handleSendOfficeReceiptToClient($(this));
     });
 
-    $(document).on('click', '.send-to-client-application-btn', function() {
+    $(document).on('click', '.send-to-client-portal-btn', function() {
         if ($(this).closest('.dropdown-menu').length > 0) {
             return;
         }

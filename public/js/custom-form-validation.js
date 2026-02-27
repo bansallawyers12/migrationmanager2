@@ -1705,7 +1705,7 @@ function customValidate(formName, savetype = '')
 								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 									 $('.ifdiscont').hide();
 									 $('.revertapp').show();
-									 $('.applicationstatus').html('Discontinued');
+									$('.matterstatus').html('Discontinued');
 
 								}else{
 									$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
@@ -1755,7 +1755,7 @@ function customValidate(formName, savetype = '')
 									$('.completestage').show();
 									 $('.nextstage').hide();
 									 $('.revertapp').hide();
-									 $('.applicationstatus').html('In Progress');
+									 $('.matterstatus').html('In Progress');
 
 								}else{
 									$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
@@ -1764,9 +1764,9 @@ function customValidate(formName, savetype = '')
 							}
 						});
 
-					}else if(formName == 'xapplication_ownership'){
+					}else if(formName == 'xmatter_ownership'){
 
-						var myform = document.getElementById('xapplication_ownership');
+						var myform = document.getElementById('xmatter_ownership');
 						var fd = new FormData(myform);
 
 						$.ajax({
@@ -1778,11 +1778,11 @@ function customValidate(formName, savetype = '')
 							success: function(response){
 								$('.popuploader').hide();
 								var obj = $.parseJSON(response);
-								$('#application_ownership').modal('hide');
+								$('#matter_ownership').modal('hide');
 								if(obj.status){
 								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 
-									$('.application_ownership').attr('data-ration',obj.ratio);
+									$('.matter_ownership').attr('data-ration',obj.ratio);
 								}else{
 									alert(obj.message);
 
@@ -2001,7 +2001,7 @@ function customValidate(formName, savetype = '')
 								var obj = $.parseJSON(response);
 
 								if(obj.status){
-									$('#applicationemailmodal').modal('hide');
+									$('#matteremailmodal').modal('hide');
 									$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 									// Show prominent success alert so user sees confirmation
 									var successMsg = obj.message || 'Email successfully sent.';

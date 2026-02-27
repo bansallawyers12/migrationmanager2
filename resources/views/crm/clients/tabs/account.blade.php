@@ -557,7 +557,7 @@
                                                     </div>
                                                     <?php } ?>
                                                 <?php } else { ?>
-                                                    <a class="dropdown-item send-to-client-application-btn" href="javascript:;" data-invoice-id="<?php echo $inc_val->receipt_id; ?>" data-invoice-no="<?php echo $inc_val->trans_no; ?>">
+                                                    <a class="dropdown-item send-to-client-portal-btn" href="javascript:;" data-invoice-id="<?php echo $inc_val->receipt_id; ?>" data-invoice-no="<?php echo $inc_val->trans_no; ?>">
                                                         <i class="fas fa-mobile-alt"></i> Send to Client Portal
                                                     </a>
                                                 <?php } ?>

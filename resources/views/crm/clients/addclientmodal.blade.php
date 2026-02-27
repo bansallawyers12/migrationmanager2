@@ -42,7 +42,7 @@
 
 {{-- payment-schedules.blade.php REMOVED - Create Invoice from Schedule flow unused (no payment schedule list, no /create-invoice route) --}}
 
-<!-- Email modals (applicationemailmodal, uploadmail, uploadAndFetchMailModel, uploadSentAndFetchMailModel) removed - now in modals/emails.blade.php -->
+<!-- Email modals (matteremailmodal, uploadmail, uploadAndFetchMailModel, uploadSentAndFetchMailModel) in modals/emails.blade.php -->
 
 <!-- Upload Document Modal removed - now in modals/documents.blade.php -->
 

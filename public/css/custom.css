@@ -461,7 +461,6 @@ padding: 5px 10px;width:100%;background-color: #fdfdff;}
 /* .fee_type_sec .fee_fields .fee_fields_row:first-child .field_col:nth-child(4){display:none;} */
 .fee_type_sec  .label_col label{font-size:14px;line-height:18px;color:#000;font-weight:bold;margin: 0px;}
 .fee_type_sec .fee_fields .select2-container{width:100%!important;}
-.add_payment_schedule .modal-body span.note{font-size:10px;line-height:14px;display: block;margin-top: 4px;}
 .totalfee_addbtn{margin-top:15px;border-top: 1px solid rgba(0,0,0,.1);padding-top: 15px;float:left;width:100%;}
 .totalfee_addbtn .feetype_btn{float:left;width:50%;}
 .totalfee_addbtn .total_fee{float:right;width:50%;text-align:right;}

@@ -204,7 +204,7 @@ use App\Http\Controllers\Controller;
                 @endif
             </div>
             
-            <div class="application-status-badge">
+            <div class="matter-status-badge">
                 <?php
                 // Get the current workflow stage for this client matter
                 $workflow_stage_arr = null;
@@ -822,7 +822,7 @@ use App\Http\Controllers\Controller;
 
 {{-- confirmpublishdocModal REMOVED - workflow checklist unused --}}
 
-<div class="modal fade custom_modal" id="application_ownership" tabindex="-1" role="dialog" aria-labelledby="applicationModalLabel" aria-hidden="true">
+<div class="modal fade custom_modal" id="matter_ownership" tabindex="-1" role="dialog" aria-labelledby="matterModalLabel" aria-hidden="true">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
@@ -832,7 +832,7 @@ use App\Http\Controllers\Controller;
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" action="{{url('/client-portal/ownership')}}" name="xapplication_ownership" id="xapplication_ownership" autocomplete="off" enctype="multipart/form-data">
+				<form method="post" action="{{url('/client-portal/ownership')}}" name="xmatter_ownership" id="xmatter_ownership" autocomplete="off" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="mapp_id" id="mapp_id" value="">
 					<div class="row">
@@ -847,7 +847,7 @@ use App\Http\Controllers\Controller;
 						</div>
 
 						<div class="col-12 col-md-12 col-lg-12">
-							<button onclick="customValidate('xapplication_ownership')" type="button" class="btn btn-primary">Save</button>
+							<button onclick="customValidate('xmatter_ownership')" type="button" class="btn btn-primary">Save</button>
 							<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
 						</div>
 					</div>
@@ -857,7 +857,7 @@ use App\Http\Controllers\Controller;
 	</div>
 </div>
 
-<div class="modal fade custom_modal" id="tags_clients" tabindex="-1" role="dialog" aria-labelledby="applicationModalLabel" aria-hidden="true">
+<div class="modal fade custom_modal" id="tags_clients" tabindex="-1" role="dialog" aria-labelledby="matterModalLabel" aria-hidden="true">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
@@ -1100,12 +1100,12 @@ function initTinyMCEForModals() {
     }
     
     // Application Email Modal
-    if ($('#application_email_message').length && !tinymce.get('application_email_message')) {
+    if ($('#matter_email_message').length && !tinymce.get('matter_email_message')) {
         tinymce.init({
             ...tinymceEmailConfig,
-            selector: '#application_email_message',
+            selector: '#matter_email_message',
             init_instance_callback: function(editor) {
-                $('#applicationemailmodal').on('shown.bs.modal', function() {
+                $('#matteremailmodal').on('shown.bs.modal', function() {
                     editor.focus();
                 });
             }
@@ -1142,8 +1142,8 @@ window.saveSendMessage = function() {
 };
 
 window.saveApplicationEmail = function() {
-    if (tinymce.get('application_email_message')) {
-        tinymce.get('application_email_message').save();
+    if (tinymce.get('matter_email_message')) {
+        tinymce.get('matter_email_message').save();
     }
     customValidate('appkicationsendmail');
 };
@@ -1198,7 +1198,7 @@ $(document).ready(function() {
     initTinyMCEForModals();
     
     // Re-initialize when modals are shown (in case they're dynamically loaded)
-    $('#emailmodal, #sendmsgmodal, #applicationemailmodal, #uploadmail').on('shown.bs.modal', function() {
+    $('#emailmodal, #sendmsgmodal, #matteremailmodal, #uploadmail').on('shown.bs.modal', function() {
         setTimeout(function() {
             initTinyMCEForModals();
         }, 100);
