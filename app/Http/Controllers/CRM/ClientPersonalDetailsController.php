@@ -1789,7 +1789,7 @@ class ClientPersonalDetailsController extends Controller
     }
 
     /**
-     * Save company info section (company_name, trading_name, ABN, ACN, company_type, website).
+     * Save company info section (company_name, has_trading_name, trading_names[], ABN, ACN, company_type, website, trust fields).
      * Only for company clients (is_company = true).
      */
     private function saveCompanySection($request, $client)
@@ -1800,20 +1800,62 @@ class ClientPersonalDetailsController extends Controller
 
         $validated = $request->validate([
             'company_name' => 'required|max:255',
-            'trading_name' => 'nullable|max:255',
+            'has_trading_name' => 'nullable|in:0,1',
+            'trading_names' => 'nullable|array',
+            'trading_names.*' => 'nullable|string|max:255',
+            'trading_name_primary' => 'nullable|integer|min:0',
             'ABN_number' => 'nullable|string|max:20',
             'ACN' => 'nullable|string|max:20',
             'company_type' => 'nullable|string|max:50',
             'company_website' => 'nullable|url|max:255',
+            'trust_name' => 'nullable|string|max:255',
+            'trust_abn' => 'nullable|string|max:20',
+            'trustee_name' => 'nullable|string|max:255',
+            'trustee_details' => 'nullable|string',
         ]);
 
         $company = Company::firstOrCreate(['admin_id' => $client->id], ['company_name' => $validated['company_name']]);
         $company->company_name = $validated['company_name'];
-        $company->trading_name = $validated['trading_name'] ?? null;
         $company->ABN_number = !empty($validated['ABN_number']) ? preg_replace('/\D/', '', $validated['ABN_number']) : null;
         $company->ACN = !empty($validated['ACN']) ? preg_replace('/\D/', '', $validated['ACN']) : null;
         $company->company_type = $validated['company_type'] ?? null;
         $company->company_website = $validated['company_website'] ?? null;
+
+        $hasTradingName = (int) ($validated['has_trading_name'] ?? 0) === 1;
+        $company->has_trading_name = $hasTradingName;
+
+        if ($hasTradingName && !empty($validated['trading_names'])) {
+            $tradingNames = array_values(array_filter(array_map('trim', $validated['trading_names'])));
+            $primaryIdx = min((int) ($validated['trading_name_primary'] ?? 0), max(0, count($tradingNames) - 1));
+
+            $company->tradingNames()->delete();
+            foreach ($tradingNames as $idx => $name) {
+                if ($name !== '') {
+                    $company->tradingNames()->create([
+                        'trading_name' => $name,
+                        'is_primary' => ($idx === $primaryIdx),
+                        'sort_order' => $idx,
+                    ]);
+                }
+            }
+            $company->trading_name = $tradingNames[$primaryIdx] ?? $tradingNames[0] ?? null;
+        } else {
+            $company->tradingNames()->delete();
+            $company->trading_name = null;
+        }
+
+        if (($validated['company_type'] ?? '') === 'Trust') {
+            $company->trust_name = $validated['trust_name'] ?? null;
+            $company->trust_abn = !empty($validated['trust_abn']) ? preg_replace('/\D/', '', $validated['trust_abn']) : null;
+            $company->trustee_name = $validated['trustee_name'] ?? null;
+            $company->trustee_details = $validated['trustee_details'] ?? null;
+        } else {
+            $company->trust_name = null;
+            $company->trust_abn = null;
+            $company->trustee_name = null;
+            $company->trustee_details = null;
+        }
+
         $company->save();
 
         return response()->json([

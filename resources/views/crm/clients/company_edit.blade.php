@@ -164,11 +164,20 @@
                                     </span>
                                 </div>
                                 @endif
+                                @if($company && $company->company_type === 'Trust' && ($company->trust_name || $company->trustee_name))
+                                <div class="summary-item">
+                                    <span class="summary-label">Trust:</span>
+                                    <span class="summary-value">{{ $company->trust_name ?? 'N/A' }}@if($company->trustee_name) (Trustee: {{ $company->trustee_name }})@endif</span>
+                                </div>
+                                @endif
                             </div>
                         </div>
 
                         <!-- Edit View -->
                         <div id="companyInfoEdit" class="edit-view hidden">
+                            @php
+                                $defaultHasTrading = $company && ($company->has_trading_name || $company->trading_name || $company->tradingNames->isNotEmpty()) ? 1 : 0;
+                            @endphp
                             <div class="content-grid">
                                 <div class="form-group">
                                     <label for="companyName">Company Name <span class="text-danger">*</span></label>
@@ -183,11 +192,11 @@
                                 <div class="form-group">
                                     <label>Does this company have a trading name?</label>
                                     <div style="display: flex; gap: 20px; margin-top: 5px;">
-                                        <label><input type="radio" name="has_trading_name" value="1" {{ old('has_trading_name', $company && $company->has_trading_name ? 1 : ($company && $company->trading_name ? 1 : 0)) ? 'checked' : '' }}> Yes</label>
-                                        <label><input type="radio" name="has_trading_name" value="0" {{ !old('has_trading_name', $company && ($company->has_trading_name || $company->trading_name) ? 1 : 0) ? 'checked' : '' }}> No</label>
+                                        <label><input type="radio" name="has_trading_name" value="1" {{ old('has_trading_name', $defaultHasTrading) ? 'checked' : '' }}> Yes</label>
+                                        <label><input type="radio" name="has_trading_name" value="0" {{ !old('has_trading_name', $defaultHasTrading) ? 'checked' : '' }}> No</label>
                                     </div>
                                 </div>
-                                <div id="tradingNamesContainer" class="form-group full-width" style="{{ !old('has_trading_name', $company && ($company->has_trading_name || $company->trading_name) ? 1 : 0) ? 'display:none;' : '' }}">
+                                <div id="tradingNamesContainer" class="form-group full-width" style="{{ !old('has_trading_name', $defaultHasTrading) ? 'display:none;' : '' }}">
                                     <label>Trading Names</label>
                                     <div id="tradingNamesList">
                                         @php
@@ -254,6 +263,28 @@
                                     @error('company_website')
                                         <span class="text-danger">{{ $message }}</span>
                                     @enderror
+                                </div>
+                                {{-- Trust section: visible when Business Type = Trust --}}
+                                <div id="trustSection" class="form-group full-width" style="display: none; grid-column: 1 / -1; border-top: 1px solid #dee2e6; padding-top: 15px; margin-top: 10px;">
+                                    <h4 style="margin-bottom: 10px;"><i class="fas fa-landmark"></i> Trust Details</h4>
+                                    <div class="content-grid">
+                                        <div class="form-group">
+                                            <label for="trustName">Trust Name</label>
+                                            <input type="text" id="trustName" name="trust_name" value="{{ old('trust_name', $company ? $company->trust_name : '') }}" placeholder="Trust name">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="trustAbn">Trust ABN</label>
+                                            <input type="text" id="trustAbn" name="trust_abn" value="{{ old('trust_abn', $company ? $company->trust_abn : '') }}" placeholder="11 digits" maxlength="11">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="trusteeName">Trustee Name</label>
+                                            <input type="text" id="trusteeName" name="trustee_name" value="{{ old('trustee_name', $company ? $company->trustee_name : '') }}" placeholder="Trustee name">
+                                        </div>
+                                        <div class="form-group full-width">
+                                            <label for="trusteeDetails">Trustee Details</label>
+                                            <textarea id="trusteeDetails" name="trustee_details" rows="3" placeholder="Additional trustee details">{{ old('trustee_details', $company ? $company->trustee_details : '') }}</textarea>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="edit-actions">
@@ -599,7 +630,47 @@
         $('#abn, #acn').on('input', function() {
             this.value = this.value.replace(/\D/g, '');
         });
+        $('#trustAbn').on('input', function() {
+            this.value = this.value.replace(/\D/g, '');
+        });
+
+        // Has trading name toggle
+        $('input[name="has_trading_name"]').on('change', function() {
+            $('#tradingNamesContainer').toggle($(this).val() === '1');
+        });
+
+        // Trust section visibility when Business Type = Trust
+        function toggleTrustSection() {
+            const isTrust = $('#companyType').val() === 'Trust';
+            $('#trustSection').toggle(isTrust);
+        }
+        $('#companyType').on('change', toggleTrustSection);
+        toggleTrustSection(); // Initial state
     });
+
+    function addTradingName() {
+        const container = $('#tradingNamesList');
+        const idx = container.find('.trading-name-row').length;
+        const row = $('<div class="trading-name-row" style="display: flex; gap: 10px; margin-bottom: 8px; align-items: center;">' +
+            '<input type="text" name="trading_names[]" placeholder="Trading name" style="flex: 1;">' +
+            '<label><input type="radio" name="trading_name_primary" value="' + idx + '"> Primary</label>' +
+            '<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeTradingName(this)"><i class="fas fa-times"></i></button>' +
+            '</div>');
+        container.append(row);
+        // Update primary radio values
+        container.find('.trading-name-row').each(function(i) {
+            $(this).find('input[name="trading_name_primary"]').val(i);
+        });
+    }
+
+    function removeTradingName(btn) {
+        const container = $('#tradingNamesList');
+        if (container.find('.trading-name-row').length <= 1) return;
+        $(btn).closest('.trading-name-row').remove();
+        $('#tradingNamesList .trading-name-row').each(function(i) {
+            $(this).find('input[name="trading_name_primary"]').val(i);
+        });
+    }
     
     // Save functions - use saveSectionData for AJAX save (fixes broken form.submit to clients.update)
     function saveCompanyInfo() {

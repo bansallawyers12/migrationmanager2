@@ -14,10 +14,15 @@
                     <span class="field-label">Company Name:</span>
                     <span class="field-value">{{ $fetchedData->company->company_name ?? 'N/A' }}</span>
                 </div>
-                @if($fetchedData->company->trading_name)
+                @php
+                    $tradingNamesDisplay = $fetchedData->company && $fetchedData->company->tradingNames->isNotEmpty()
+                        ? $fetchedData->company->tradingNames->pluck('trading_name')->join(', ')
+                        : ($fetchedData->company->trading_name ?? null);
+                @endphp
+                @if($tradingNamesDisplay)
                 <div class="field-group">
-                    <span class="field-label">Trading Name:</span>
-                    <span class="field-value">{{ $fetchedData->company->trading_name }}</span>
+                    <span class="field-label">Trading Name(s):</span>
+                    <span class="field-value">{{ $tradingNamesDisplay }}</span>
                 </div>
                 @endif
                 @if($fetchedData->company->ABN_number)
@@ -45,6 +50,17 @@
                         <a href="{{ $fetchedData->company->company_website }}" target="_blank" rel="noopener noreferrer">
                             {{ $fetchedData->company->company_website }}
                         </a>
+                    </span>
+                </div>
+                @endif
+                @if($fetchedData->company->company_type === 'Trust' && ($fetchedData->company->trust_name || $fetchedData->company->trust_abn || $fetchedData->company->trustee_name))
+                <div class="field-group" style="grid-column: 1 / -1;">
+                    <span class="field-label">Trust Details:</span>
+                    <span class="field-value">
+                        @if($fetchedData->company->trust_name) Trust: {{ $fetchedData->company->trust_name }}@endif
+                        @if($fetchedData->company->trust_abn) | ABN: {{ $fetchedData->company->trust_abn }}@endif
+                        @if($fetchedData->company->trustee_name) | Trustee: {{ $fetchedData->company->trustee_name }}@endif
+                        @if($fetchedData->company->trustee_details) | {{ $fetchedData->company->trustee_details }}@endif
                     </span>
                 </div>
                 @endif
