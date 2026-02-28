@@ -1954,23 +1954,37 @@ class ClientPersonalDetailsController extends Controller
             return response()->json(['success' => false, 'message' => 'Not a company client'], 400);
         }
         $company = Company::firstOrCreate(['admin_id' => $client->id], ['company_name' => 'Unnamed Company']);
+        $clientIds = $request->input('director_client_ids', []);
         $names = $request->input('director_names', []);
         $dobs = $request->input('director_dobs', []);
         $roles = $request->input('director_roles', []);
-        $ids = $request->input('director_ids', []);
         $primaryIdx = (int) $request->input('director_primary', 0);
         $company->directors()->delete();
-        foreach ($names as $idx => $name) {
-            $name = trim($name ?? '');
-            if ($name !== '') {
-                $company->directors()->create([
-                    'director_name' => $name,
-                    'director_dob' => !empty($dobs[$idx]) ? $dobs[$idx] : null,
-                    'director_role' => $roles[$idx] ?? null,
-                    'is_primary' => ($idx === $primaryIdx),
-                    'sort_order' => $idx,
-                ]);
+        $count = max(count($clientIds), count($names), 1);
+        for ($i = 0; $i < $count; $i++) {
+            $clientId = $clientIds[$i] ?? null;
+            $name = trim($names[$i] ?? '');
+            if ($clientId && $name) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Director " . ($i + 1) . ": Provide either a searchable client/lead OR a name (not in system), not both.",
+                    'errors' => ['director_person' => ['Cannot have both linked director and manual name.']]
+                ], 422);
             }
+            if (!$clientId && !$name) {
+                continue;
+            }
+            $directorClient = $clientId ? Admin::find($clientId) : null;
+            $linkedDob = $directorClient && $directorClient->dob ? \Carbon\Carbon::parse($directorClient->dob)->format('Y-m-d') : null;
+            $directorDob = !empty($dobs[$i]) ? $dobs[$i] : $linkedDob;
+            $company->directors()->create([
+                'director_client_id' => $clientId ?: null,
+                'director_name' => $clientId ? null : $name,
+                'director_dob' => $directorDob,
+                'director_role' => $roles[$i] ?? null,
+                'is_primary' => ($i === $primaryIdx),
+                'sort_order' => $i,
+            ]);
         }
         return response()->json(['success' => true, 'message' => 'Directors updated successfully']);
     }

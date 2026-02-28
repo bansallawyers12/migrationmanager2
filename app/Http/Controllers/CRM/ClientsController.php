@@ -2009,7 +2009,7 @@ class ClientsController extends Controller
             $activeTab = $tab ?? 'personaldetails';
 
             if (Admin::where('id', '=', $id)->whereIn('type', ['client', 'lead'])->exists()) {
-                $fetchedData = Admin::with(['company.contactPerson', 'company.tradingNames', 'company.directors', 'company.nominations.nominatedClient'])->find($id); //dd($fetchedData);
+                $fetchedData = Admin::with(['company.contactPerson', 'company.tradingNames', 'company.directors.directorClient', 'company.nominations.nominatedClient'])->find($id); //dd($fetchedData);
                 
                 // Route to company detail page if this is a company
                 if ($fetchedData && $fetchedData->is_company) {

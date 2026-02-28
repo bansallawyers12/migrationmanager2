@@ -11,6 +11,7 @@ class CompanyDirector extends Model
 
     protected $fillable = [
         'company_id',
+        'director_client_id',
         'director_name',
         'director_dob',
         'director_role',
@@ -27,5 +28,24 @@ class CompanyDirector extends Model
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
+    }
+
+    /**
+     * Director when they exist in system (client/lead).
+     */
+    public function directorClient(): BelongsTo
+    {
+        return $this->belongsTo(Admin::class, 'director_client_id', 'id');
+    }
+
+    /**
+     * Display name: from linked client when available, else director_name.
+     */
+    public function getDisplayNameAttribute(): string
+    {
+        if ($this->directorClient) {
+            return trim($this->directorClient->first_name . ' ' . $this->directorClient->last_name);
+        }
+        return $this->director_name ?? '';
     }
 }

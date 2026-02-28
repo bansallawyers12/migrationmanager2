@@ -89,7 +89,8 @@
             <h3><i class="fas fa-users-cog"></i> Directors</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
                 @foreach($comp->directors as $dir)
-                <div class="field-group"><span class="field-label">{{ $dir->director_name }}</span><span class="field-value">{{ $dir->director_role ?? '' }}@if($dir->director_dob) (DOB: {{ $dir->director_dob->format('d/m/Y') }})@endif</span></div>
+                @php $dirName = $dir->directorClient ? ($dir->directorClient->first_name.' '.$dir->directorClient->last_name) : ($dir->director_name ?? ''); @endphp
+                <div class="field-group"><span class="field-label">{{ $dirName }}</span><span class="field-value">{{ $dir->director_role ?? '' }}@if($dir->director_dob) (DOB: {{ $dir->director_dob->format('d/m/Y') }})@endif</span></div>
                 @endforeach
             </div>
         </div>

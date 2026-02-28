@@ -539,7 +539,7 @@
                             @if($company && $company->directors->isNotEmpty())
                             <div class="summary-grid">
                                 @foreach($company->directors as $dir)
-                                <div class="summary-item"><span class="summary-label">{{ $dir->director_name }}</span><span class="summary-value">{{ $dir->director_role ?? '' }}@if($dir->director_dob) (DOB: {{ $dir->director_dob->format('d/m/Y') }})@endif</span></div>
+                                <div class="summary-item"><span class="summary-label">{{ $dir->directorClient ? ($dir->directorClient->first_name.' '.$dir->directorClient->last_name) : ($dir->director_name ?? '') }}</span><span class="summary-value">{{ $dir->director_role ?? '' }}@if($dir->director_dob) (DOB: {{ $dir->director_dob->format('d/m/Y') }})@endif</span></div>
                                 @endforeach
                             </div>
                             @else
@@ -547,18 +547,41 @@
                             @endif
                         </div>
                         <div id="directorsEdit" class="edit-view hidden">
+                            <div class="form-group" style="margin-bottom:15px;">
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addContactPersonAsDirector()">
+                                    <i class="fas fa-user-plus"></i> Add contact person as director
+                                </button>
+                                <small class="form-text text-muted">Quick-add the selected contact person (from Contact Person section) to the directors list.</small>
+                            </div>
                             <div id="directorsContainer">
                                 @php
-                                    $directorsData = (optional($company)->directors?->isNotEmpty()) ? $company->directors : collect([(object)['id'=>null,'director_name'=>'','director_dob'=>null,'director_role'=>'','is_primary'=>true]]);
+                                    $directorsData = (optional($company)->directors?->isNotEmpty()) ? $company->directors : collect([(object)['id'=>null,'director_client_id'=>null,'directorClient'=>null,'director_name'=>'','director_dob'=>null,'director_role'=>'','is_primary'=>true]]);
                                 @endphp
                                 @foreach($directorsData as $idx => $dir)
-                                <div class="director-row repeatable-section" style="display:flex;gap:10px;margin-bottom:10px;align-items:center;flex-wrap:wrap;">
+                                <div class="director-row repeatable-section" style="border:1px solid #dee2e6;padding:15px;margin-bottom:15px;border-radius:6px;">
                                     <input type="hidden" name="director_ids[]" value="{{ $dir->id ?? '' }}">
-                                    <input type="text" name="director_names[]" value="{{ $dir->director_name ?? '' }}" placeholder="Director name" style="flex:1;min-width:150px;">
-                                    <input type="date" name="director_dobs[]" value="{{ isset($dir->director_dob) && $dir->director_dob ? $dir->director_dob->format('Y-m-d') : '' }}" placeholder="DOB">
-                                    <input type="text" name="director_roles[]" value="{{ $dir->director_role ?? '' }}" placeholder="Role" style="width:120px;">
-                                    <label><input type="radio" name="director_primary" value="{{ $idx }}" {{ ($dir->is_primary ?? ($idx===0)) ? 'checked' : '' }}> Primary</label>
-                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeDirectorRow(this)"><i class="fas fa-times"></i></button>
+                                    <div class="form-group" style="margin-bottom:10px;">
+                                        <label>Director</label>
+                                        <div style="display:flex;gap:15px;align-items:center;flex-wrap:wrap;">
+                                            <div style="flex:1;min-width:200px;">
+                                                <select name="director_client_ids[]" class="director-person-select form-control" data-placeholder="Search client/lead..." style="width:100%;">
+                                                    @if($dir->director_client_id && ($dir->directorClient ?? null))
+                                                    <option value="{{ $dir->director_client_id }}" selected>{{ $dir->directorClient->first_name }} {{ $dir->directorClient->last_name }}</option>
+                                                    @endif
+                                                </select>
+                                            </div>
+                                            <span>OR</span>
+                                            <div style="flex:1;min-width:200px;">
+                                                <input type="text" name="director_names[]" value="{{ $dir->director_name ?? '' }}" placeholder="Not in system - enter name">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                                        <input type="date" name="director_dobs[]" value="{{ isset($dir->director_dob) && $dir->director_dob ? $dir->director_dob->format('Y-m-d') : '' }}" placeholder="DOB" title="DOB">
+                                        <input type="text" name="director_roles[]" value="{{ $dir->director_role ?? '' }}" placeholder="Role" style="width:120px;">
+                                        <label><input type="radio" name="director_primary" value="{{ $idx }}" {{ ($dir->is_primary ?? ($idx===0)) ? 'checked' : '' }}> Primary</label>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeDirectorRow(this)"><i class="fas fa-times"></i> Remove</button>
+                                    </div>
                                 </div>
                                 @endforeach
                             </div>
@@ -1042,6 +1065,15 @@
                 });
             }
         });
+        // Init Select2 for director person search (existing rows)
+        $('.director-person-select').each(function() {
+            if (!$(this).hasClass('select2-hidden-accessible')) {
+                $(this).select2({
+                    ajax: { url: window.editClientConfig.searchContactPersonRoute, dataType: 'json', delay: 250, data: function(p) { return { q: p.term, exclude_id: window.currentClientId }; }, processResults: function(d) { return { results: d.results || [] }; } },
+                    minimumInputLength: 2, allowClear: true, placeholder: 'Search client/lead...'
+                });
+            }
+        });
     });
 
     function addTradingName() {
@@ -1068,19 +1100,43 @@
         });
     }
 
-    function addDirectorRow() {
+    function addDirectorRow(prefillClientId, prefillName) {
         const container = $('#directorsContainer');
         const idx = container.find('.director-row').length;
-        const row = '<div class="director-row repeatable-section" style="display:flex;gap:10px;margin-bottom:10px;align-items:center;flex-wrap:wrap;">' +
+        let selectOpt = '';
+        if (prefillClientId && prefillName) {
+            selectOpt = '<option value="' + prefillClientId + '" selected>' + prefillName + '</option>';
+        }
+        const row = '<div class="director-row repeatable-section" style="border:1px solid #dee2e6;padding:15px;margin-bottom:15px;border-radius:6px;">' +
             '<input type="hidden" name="director_ids[]" value="">' +
-            '<input type="text" name="director_names[]" placeholder="Director name" style="flex:1;min-width:150px;">' +
-            '<input type="date" name="director_dobs[]" placeholder="DOB">' +
+            '<div class="form-group" style="margin-bottom:10px;"><label>Director</label>' +
+            '<div style="display:flex;gap:15px;align-items:center;flex-wrap:wrap;">' +
+            '<div style="flex:1;min-width:200px;"><select name="director_client_ids[]" class="director-person-select form-control" data-placeholder="Search client/lead..." style="width:100%;">' + selectOpt + '</select></div>' +
+            '<span>OR</span><div style="flex:1;min-width:200px;"><input type="text" name="director_names[]" placeholder="Not in system - enter name"></div></div></div>' +
+            '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">' +
+            '<input type="date" name="director_dobs[]" placeholder="DOB" title="DOB">' +
             '<input type="text" name="director_roles[]" placeholder="Role" style="width:120px;">' +
             '<label><input type="radio" name="director_primary" value="' + idx + '"> Primary</label>' +
-            '<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeDirectorRow(this)"><i class="fas fa-times"></i></button>' +
-            '</div>';
+            '<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeDirectorRow(this)"><i class="fas fa-times"></i> Remove</button></div></div>';
         container.append(row);
         container.find('.director-row').each(function(i) { $(this).find('input[name="director_primary"]').val(i); });
+        if (typeof $().select2 === 'function') {
+            container.find('.director-person-select').last().select2({
+                ajax: { url: window.editClientConfig.searchContactPersonRoute, dataType: 'json', delay: 250, data: function(p) { return { q: p.term, exclude_id: window.currentClientId }; }, processResults: function(d) { return { results: d.results || [] }; } },
+                minimumInputLength: 2, allowClear: true, placeholder: 'Search client/lead...'
+            });
+        }
+    }
+    function addContactPersonAsDirector() {
+        const clientId = $('#contactPersonSearch').val();
+        if (!clientId) {
+            if (typeof showNotification === 'function') showNotification('Please select a contact person first (Contact Person section).', 'error');
+            else alert('Please select a contact person first (Contact Person section).');
+            return;
+        }
+        const displayName = $('#contactPersonSearch').find('option:selected').text() || '';
+        addDirectorRow(clientId, displayName);
+        if (typeof showNotification === 'function') showNotification('Contact person added to directors list.', 'success');
     }
     function removeDirectorRow(btn) {
         const container = $('#directorsContainer');
