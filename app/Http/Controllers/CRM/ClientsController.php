@@ -2149,7 +2149,8 @@ class ClientsController extends Controller
 		if($squery != ''){
 				$d = '';
 			 $squeryLower = strtolower($squery);
-			 $clients = \App\Models\Admin::where('is_archived', '=', 0)
+			 $clients = \App\Models\Admin::with('company')
+       ->where('is_archived', '=', 0)
        ->whereIn('type', ['client', 'lead'])
        ->where(
            function($query) use ($squeryLower) {
@@ -2159,7 +2160,10 @@ class ClientsController extends Controller
                     ->orWhereRaw('LOWER(last_name) LIKE ?', ['%'.$squeryLower.'%'])
                     ->orWhereRaw('LOWER(client_id) LIKE ?', ['%'.$squeryLower.'%'])
                     ->orWhereRaw('LOWER(phone) LIKE ?', ['%'.$squeryLower.'%'])
-                    ->orWhereRaw("LOWER(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) LIKE ?", ['%'.$squeryLower.'%']);
+                    ->orWhereRaw("LOWER(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) LIKE ?", ['%'.$squeryLower.'%'])
+                    ->orWhereHas('company', function($q) use ($squeryLower) {
+                        $q->whereRaw('LOWER(company_name) LIKE ?', ['%'.$squeryLower.'%']);
+                    });
             })
             ->get();
 
@@ -2172,9 +2176,22 @@ class ClientsController extends Controller
 				})
             ->get();*/
 
+			// Exclude contact persons when their company is already in results (avoid duplicates)
+			$companyIdsInResults = $clients->where('is_company', true)->pluck('id')->toArray();
+			$contactPersonIdsToExclude = \App\Models\Company::whereIn('admin_id', $companyIdsInResults)
+				->pluck('contact_person_id')
+				->filter()
+				->unique()
+				->values()
+				->toArray();
+
 			$items = array();
 			foreach($clients as $clint){
-				$items[] = array('name' => $clint->first_name.' '.$clint->last_name,'email'=>$clint->email,'status'=>$clint->type,'id'=>$clint->id,'cid'=>base64_encode(convert_uuencode(@$clint->id)));
+				if (!$clint->is_company && in_array($clint->id, $contactPersonIdsToExclude)) {
+					continue; // Skip contact person - their company is already in results
+				}
+				$displayName = $clint->company_name_or_personal_name;
+				$items[] = array('name' => $displayName,'email'=>$clint->email,'status'=>$clint->type,'id'=>$clint->id,'cid'=>base64_encode(convert_uuencode(@$clint->id)));
 			}
 
 			$litems = array();
@@ -2190,24 +2207,41 @@ class ClientsController extends Controller
 		$squery = $request->q;
 		if($squery != ''){
 				$d = '';
-			$clients = \App\Models\Admin::where('is_archived', '=', 0)
+			$squeryLower = strtolower($squery);
+			$clients = \App\Models\Admin::with('company')
+			->where('is_archived', '=', 0)
 			->whereIn('type', ['client', 'lead'])
 			->where(
-           function($query) use ($squery) {
-             	$squeryLower = strtolower($squery);
+           function($query) use ($squeryLower) {
              	return $query
                     ->whereRaw('LOWER(email) LIKE ?', ['%'.$squeryLower.'%'])
                     ->orWhereRaw('LOWER(first_name) LIKE ?', ['%'.$squeryLower.'%'])
                     ->orWhereRaw('LOWER(last_name) LIKE ?', ['%'.$squeryLower.'%'])
                     ->orWhereRaw('LOWER(client_id) LIKE ?', ['%'.$squeryLower.'%'])
                     ->orWhereRaw('LOWER(phone) LIKE ?', ['%'.$squeryLower.'%'])
-                    ->orWhereRaw("LOWER(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) LIKE ?", ['%'.$squeryLower.'%']);
+                    ->orWhereRaw("LOWER(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) LIKE ?", ['%'.$squeryLower.'%'])
+                    ->orWhereHas('company', function($q) use ($squeryLower) {
+                        $q->whereRaw('LOWER(company_name) LIKE ?', ['%'.$squeryLower.'%']);
+                    });
             })
             ->get();
 
+			// Exclude contact persons when their company is already in results (avoid duplicates)
+			$companyIdsInResults = $clients->where('is_company', true)->pluck('id')->toArray();
+			$contactPersonIdsToExclude = \App\Models\Company::whereIn('admin_id', $companyIdsInResults)
+				->pluck('contact_person_id')
+				->filter()
+				->unique()
+				->values()
+				->toArray();
+
 			$items = array();
 			foreach($clients as $clint){
-				$items[] = array('name' => $clint->first_name.' '.$clint->last_name,'email'=>$clint->email,'status'=>$clint->type,'id'=>$clint->id,'cid'=>base64_encode(convert_uuencode(@$clint->id)));
+				if (!$clint->is_company && in_array($clint->id, $contactPersonIdsToExclude)) {
+					continue; // Skip contact person - their company is already in results
+				}
+				$displayName = $clint->company_name_or_personal_name;
+				$items[] = array('name' => $displayName,'email'=>$clint->email,'status'=>$clint->type,'id'=>$clint->id,'cid'=>base64_encode(convert_uuencode(@$clint->id)));
 			}
 
 			$litems = array();
