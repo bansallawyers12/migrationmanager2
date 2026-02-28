@@ -1968,23 +1968,41 @@ class ClientPersonalDetailsController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => "Director " . ($i + 1) . ": Provide either a searchable client/lead OR a name (not in system), not both.",
-                    'errors' => ['director_person' => ['Cannot have both linked director and manual name.']]
+                    'errors' => ['director_client_ids' => ['Cannot have both linked director and manual name.']]
                 ], 422);
             }
             if (!$clientId && !$name) {
                 continue;
             }
-            $directorClient = $clientId ? Admin::find($clientId) : null;
+            $directorClient = null;
+            if ($clientId) {
+                $directorClient = Admin::where('id', $clientId)
+                    ->whereIn('type', ['client', 'lead'])
+                    ->where('is_company', false)
+                    ->first();
+                if (!$directorClient) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Director " . ($i + 1) . ": Selected person not found or invalid (must be client/lead, not company).",
+                        'errors' => ['director_client_ids' => ['Invalid or non-existent client/lead selected.']]
+                    ], 422);
+                }
+            }
             $linkedDob = $directorClient && $directorClient->dob ? \Carbon\Carbon::parse($directorClient->dob)->format('Y-m-d') : null;
             $directorDob = !empty($dobs[$i]) ? $dobs[$i] : $linkedDob;
             $company->directors()->create([
-                'director_client_id' => $clientId ?: null,
+                'director_client_id' => $directorClient ? $directorClient->id : null,
                 'director_name' => $clientId ? null : $name,
                 'director_dob' => $directorDob,
                 'director_role' => $roles[$i] ?? null,
                 'is_primary' => ($i === $primaryIdx),
                 'sort_order' => $i,
             ]);
+        }
+        // Ensure at least one director is primary when we have directors
+        $directors = $company->directors()->orderBy('sort_order')->get();
+        if ($directors->isNotEmpty() && !$directors->contains('is_primary', true)) {
+            $directors->first()->update(['is_primary' => true]);
         }
         return response()->json(['success' => true, 'message' => 'Directors updated successfully']);
     }

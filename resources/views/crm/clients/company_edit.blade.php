@@ -1105,7 +1105,8 @@
         const idx = container.find('.director-row').length;
         let selectOpt = '';
         if (prefillClientId && prefillName) {
-            selectOpt = '<option value="' + prefillClientId + '" selected>' + prefillName + '</option>';
+            const escaped = String(prefillName).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            selectOpt = '<option value="' + String(prefillClientId).replace(/"/g,'&quot;') + '" selected>' + escaped + '</option>';
         }
         const row = '<div class="director-row repeatable-section" style="border:1px solid #dee2e6;padding:15px;margin-bottom:15px;border-radius:6px;">' +
             '<input type="hidden" name="director_ids[]" value="">' +

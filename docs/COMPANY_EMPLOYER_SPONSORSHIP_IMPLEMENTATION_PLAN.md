@@ -223,3 +223,24 @@ All phases (0–5) have been implemented. See summary at end of document.
 | Null-safe company name | company_details.blade.php | `$fetchedData->company->company_name` → `optional($fetchedData->company)->company_name` to avoid error when company is null |
 | Empty company_website validation | ClientPersonalDetailsController | Merge empty string to null before validation in saveCompanySection (avoids `url` rule failure) |
 | Empty company_website on lead create | LeadController | Normalize empty string to null when creating company record |
+
+---
+
+## Director Search/Link Feature (Feb 28, 2026)
+
+| Component | Details |
+|-----------|---------|
+| Migration | `director_client_id` (nullable FK to admins), `director_name` nullable |
+| Model | CompanyDirector: directorClient(), getDisplayNameAttribute() |
+| Validation | Either director_client_id OR director_name per row; director_client_id must be valid client/lead (not company) |
+| UI | Search/select client/lead OR "Not in system" name; "Add contact person as director" button |
+| Display | directorClient name when linked, else director_name |
+
+### Verification Fixes (Post-Implementation)
+
+| Fix | File | Change |
+|-----|------|--------|
+| Validate director_client_id | ClientPersonalDetailsController | Ensure selected person exists, is client/lead, not company |
+| Error key for displaySectionErrors | ClientPersonalDetailsController | Use `director_client_ids` so validation errors display inline |
+| XSS in addDirectorRow | company_edit.blade.php | Escape prefillName and prefillClientId when building option HTML |
+| Primary director fallback | ClientPersonalDetailsController | If primary row was skipped, set first director as primary |
