@@ -1818,6 +1818,9 @@ class ClientPersonalDetailsController extends Controller
             return response()->json(['success' => false, 'message' => 'Not a company client'], 400);
         }
 
+        // Normalize empty company_website to null (avoids url validation failure on empty string)
+        $request->merge(['company_website' => $request->filled('company_website') ? trim($request->company_website) : null]);
+
         $validated = $request->validate([
             'company_name' => 'required|max:255',
             'has_trading_name' => 'nullable|in:0,1',

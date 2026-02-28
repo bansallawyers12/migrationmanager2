@@ -213,3 +213,13 @@ All phases (0–5) have been implemented. See summary at end of document.
 | Phase 5 | ✓ | Nomination UI: client/lead search or name-only, validation (either/or not both) |
 | Leads create | ✓ | Trading names flow added; LeadController saves to company_trading_names |
 | Company details view | ✓ | Employer sponsorship sections displayed (Sponsorship, Directors, Financial, etc.) |
+
+---
+
+## Post-Implementation Review Fixes (Feb 28, 2026)
+
+| Fix | File | Change |
+|-----|------|--------|
+| Null-safe company name | company_details.blade.php | `$fetchedData->company->company_name` → `optional($fetchedData->company)->company_name` to avoid error when company is null |
+| Empty company_website validation | ClientPersonalDetailsController | Merge empty string to null before validation in saveCompanySection (avoids `url` rule failure) |
+| Empty company_website on lead create | LeadController | Normalize empty string to null when creating company record |

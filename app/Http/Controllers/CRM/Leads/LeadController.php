@@ -673,7 +673,7 @@ class LeadController extends Controller
                             ? preg_replace('/\D/', '', $requestData['ACN'])
                             : null,
                         'company_type' => $requestData['company_type'] ?? null,
-                        'company_website' => $requestData['company_website'] ?? null,
+                        'company_website' => !empty(trim($requestData['company_website'] ?? '')) ? $requestData['company_website'] : null,
                         'contact_person_id' => $requestData['contact_person_id'] ?? null,
                         'contact_person_position' => $requestData['contact_person_position'] ?? null,
                         'created_at' => now(),

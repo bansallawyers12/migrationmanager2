@@ -13,7 +13,7 @@
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
                 <div class="field-group">
                     <span class="field-label">Company Name:</span>
-                    <span class="field-value">{{ $fetchedData->company->company_name ?? 'N/A' }}</span>
+                    <span class="field-value">{{ optional($fetchedData->company)->company_name ?? 'N/A' }}</span>
                 </div>
                 @php
                     $comp = $fetchedData->company ?? null;
