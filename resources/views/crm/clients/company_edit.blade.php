@@ -66,6 +66,44 @@
                         <i class="fas fa-user-tie"></i>
                         <span>Contact Person</span>
                     </button>
+                    @if($company && $company->company_type === 'Trust')
+                    <button class="nav-item" onclick="scrollToSection('trustSection')">
+                        <i class="fas fa-landmark"></i>
+                        <span>Trust</span>
+                    </button>
+                    @endif
+                    <button class="nav-item" onclick="scrollToSection('sponsorshipSection')">
+                        <i class="fas fa-file-contract"></i>
+                        <span>Sponsorship</span>
+                    </button>
+                    <button class="nav-item" onclick="scrollToSection('directorsSection')">
+                        <i class="fas fa-users-cog"></i>
+                        <span>Directors</span>
+                    </button>
+                    <button class="nav-item" onclick="scrollToSection('financialSection')">
+                        <i class="fas fa-dollar-sign"></i>
+                        <span>Financial</span>
+                    </button>
+                    <button class="nav-item" onclick="scrollToSection('workforceSection')">
+                        <i class="fas fa-users"></i>
+                        <span>Workforce</span>
+                    </button>
+                    <button class="nav-item" onclick="scrollToSection('operationsSection')">
+                        <i class="fas fa-briefcase"></i>
+                        <span>Operations</span>
+                    </button>
+                    <button class="nav-item" onclick="scrollToSection('lmtSection')">
+                        <i class="fas fa-clipboard-check"></i>
+                        <span>LMT</span>
+                    </button>
+                    <button class="nav-item" onclick="scrollToSection('trainingSection')">
+                        <i class="fas fa-graduation-cap"></i>
+                        <span>Training</span>
+                    </button>
+                    <button class="nav-item" onclick="scrollToSection('nominationsSection')">
+                        <i class="fas fa-user-check"></i>
+                        <span>Nominations</span>
+                    </button>
                     <button class="nav-item" onclick="scrollToSection('addressSection')">
                         <i class="fas fa-map-marker-alt"></i>
                         <span>Business Address</span>
@@ -164,12 +202,6 @@
                                     </span>
                                 </div>
                                 @endif
-                                @if($company && $company->company_type === 'Trust' && ($company->trust_name || $company->trustee_name))
-                                <div class="summary-item">
-                                    <span class="summary-label">Trust:</span>
-                                    <span class="summary-value">{{ $company->trust_name ?? 'N/A' }}@if($company->trustee_name) (Trustee: {{ $company->trustee_name }})@endif</span>
-                                </div>
-                                @endif
                             </div>
                         </div>
 
@@ -264,28 +296,6 @@
                                         <span class="text-danger">{{ $message }}</span>
                                     @enderror
                                 </div>
-                                {{-- Trust section: visible when Business Type = Trust --}}
-                                <div id="trustSection" class="form-group full-width" style="display: none; grid-column: 1 / -1; border-top: 1px solid #dee2e6; padding-top: 15px; margin-top: 10px;">
-                                    <h4 style="margin-bottom: 10px;"><i class="fas fa-landmark"></i> Trust Details</h4>
-                                    <div class="content-grid">
-                                        <div class="form-group">
-                                            <label for="trustName">Trust Name</label>
-                                            <input type="text" id="trustName" name="trust_name" value="{{ old('trust_name', $company ? $company->trust_name : '') }}" placeholder="Trust name">
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="trustAbn">Trust ABN</label>
-                                            <input type="text" id="trustAbn" name="trust_abn" value="{{ old('trust_abn', $company ? $company->trust_abn : '') }}" placeholder="11 digits" maxlength="11">
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="trusteeName">Trustee Name</label>
-                                            <input type="text" id="trusteeName" name="trustee_name" value="{{ old('trustee_name', $company ? $company->trustee_name : '') }}" placeholder="Trustee name">
-                                        </div>
-                                        <div class="form-group full-width">
-                                            <label for="trusteeDetails">Trustee Details</label>
-                                            <textarea id="trusteeDetails" name="trustee_details" rows="3" placeholder="Additional trustee details">{{ old('trustee_details', $company ? $company->trustee_details : '') }}</textarea>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
                             <div class="edit-actions">
                                 <button type="button" class="btn btn-primary" onclick="saveCompanyInfo()">Save</button>
@@ -361,8 +371,7 @@
                                     <select id="contactPersonSearch" name="contact_person_id" 
                                             class="form-control select2-contact-person" 
                                             data-placeholder="Type phone, email, name, or client ID to search..."
-                                            style="width: 100%;"
-                                            required>
+                                            style="width: 100%;">
                                         @if($contactPerson)
                                             <option value="{{ $contactPerson->id }}" selected>
                                                 {{ $contactPerson->first_name }} {{ $contactPerson->last_name }} 
@@ -379,18 +388,18 @@
                                 </div>
                                 
                                 <div class="form-group">
-                                    <label for="contactPersonFirstName">First Name <span class="text-danger">*</span></label>
+                                    <label for="contactPersonFirstName">First Name</label>
                                     <input type="text" id="contactPersonFirstName" name="contact_person_first_name" 
                                            value="{{ old('contact_person_first_name', $contactPerson ? $contactPerson->first_name : '') }}" 
-                                           class="contact-person-field" required readonly>
+                                           class="contact-person-field" readonly>
                                     <small class="form-text text-muted">Auto-filled from selected contact person</small>
                                 </div>
                                 
                                 <div class="form-group">
-                                    <label for="contactPersonLastName">Last Name <span class="text-danger">*</span></label>
+                                    <label for="contactPersonLastName">Last Name</label>
                                     <input type="text" id="contactPersonLastName" name="contact_person_last_name" 
                                            value="{{ old('contact_person_last_name', $contactPerson ? $contactPerson->last_name : '') }}" 
-                                           class="contact-person-field" required readonly>
+                                           class="contact-person-field" readonly>
                                 </div>
                                 
                                 <div class="form-group">
@@ -419,6 +428,395 @@
                             <div class="edit-actions">
                                 <button type="button" class="btn btn-primary" onclick="saveContactPersonInfo()">Save</button>
                                 <button type="button" class="btn btn-secondary" onclick="cancelEdit('contactPersonInfo')">Cancel</button>
+                            </div>
+                        </div>
+                    </section>
+                </section>
+
+                @if($company && $company->company_type === 'Trust')
+                <!-- Trust Section (visible when Business Type = Trust) -->
+                <section id="trustSection" class="content-section">
+                    <section class="form-section">
+                        <div class="section-header">
+                            <h3><i class="fas fa-landmark"></i> Trust Details</h3>
+                            <div class="section-actions">
+                                <button type="button" class="edit-section-btn" onclick="toggleEditMode('trust')">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="trustSummary" class="summary-view">
+                            <div class="summary-grid">
+                                @if($company->trust_name)
+                                <div class="summary-item"><span class="summary-label">Trust Name:</span><span class="summary-value">{{ $company->trust_name }}</span></div>
+                                @endif
+                                @if($company->trust_abn)
+                                <div class="summary-item"><span class="summary-label">Trust ABN:</span><span class="summary-value">{{ $company->trust_abn }}</span></div>
+                                @endif
+                                @if($company->trustee_name)
+                                <div class="summary-item"><span class="summary-label">Trustee:</span><span class="summary-value">{{ $company->trustee_name }}</span></div>
+                                @endif
+                                @if($company->trustee_details)
+                                <div class="summary-item full-width"><span class="summary-label">Trustee Details:</span><span class="summary-value">{{ $company->trustee_details }}</span></div>
+                                @endif
+                                @if(!$company->trust_name && !$company->trust_abn && !$company->trustee_name && !$company->trustee_details)
+                                <div class="empty-state"><p>No trust details added yet.</p></div>
+                                @endif
+                            </div>
+                        </div>
+                        <div id="trustEdit" class="edit-view hidden">
+                            <div class="content-grid">
+                                <div class="form-group"><label for="trustName">Trust Name</label><input type="text" id="trustName" name="trust_name" value="{{ $company->trust_name ?? '' }}" placeholder="Trust name"></div>
+                                <div class="form-group"><label for="trustAbn">Trust ABN</label><input type="text" id="trustAbn" name="trust_abn" value="{{ $company->trust_abn ?? '' }}" placeholder="11 digits" maxlength="11"></div>
+                                <div class="form-group"><label for="trusteeName">Trustee Name</label><input type="text" id="trusteeName" name="trustee_name" value="{{ $company->trustee_name ?? '' }}" placeholder="Trustee name"></div>
+                                <div class="form-group full-width"><label for="trusteeDetails">Trustee Details</label><textarea id="trusteeDetails" name="trustee_details" rows="3">{{ $company->trustee_details ?? '' }}</textarea></div>
+                            </div>
+                            <div class="edit-actions">
+                                <button type="button" class="btn btn-primary" onclick="saveTrustInfo()">Save</button>
+                                <button type="button" class="btn btn-secondary" onclick="cancelEdit('trust')">Cancel</button>
+                            </div>
+                        </div>
+                    </section>
+                </section>
+                @endif
+
+                <!-- Sponsorship Section -->
+                <section id="sponsorshipSection" class="content-section">
+                    <section class="form-section">
+                        <div class="section-header">
+                            <h3><i class="fas fa-file-contract"></i> Sponsorship</h3>
+                            <div class="section-actions">
+                                <button type="button" class="edit-section-btn" onclick="toggleEditMode('sponsorship')">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="sponsorshipSummary" class="summary-view">
+                            <div class="summary-grid">
+                                @if($company && ($company->sponsorship_type || $company->sponsorship_status || $company->trn))
+                                @if($company->sponsorship_type)<div class="summary-item"><span class="summary-label">Type:</span><span class="summary-value">{{ $company->sponsorship_type }}</span></div>@endif
+                                @if($company->sponsorship_status)<div class="summary-item"><span class="summary-label">Status:</span><span class="summary-value">{{ $company->sponsorship_status }}</span></div>@endif
+                                @if($company->trn)<div class="summary-item"><span class="summary-label">TRN:</span><span class="summary-value">{{ $company->trn }}</span></div>@endif
+                                @if($company->sponsorship_start_date)<div class="summary-item"><span class="summary-label">Start:</span><span class="summary-value">{{ $company->sponsorship_start_date?->format('d/m/Y') }}</span></div>@endif
+                                @if($company->sponsorship_end_date)<div class="summary-item"><span class="summary-label">End:</span><span class="summary-value">{{ $company->sponsorship_end_date?->format('d/m/Y') }}</span></div>@endif
+                                @else
+                                <div class="empty-state"><p>No sponsorship details added yet.</p></div>
+                                @endif
+                            </div>
+                        </div>
+                        <div id="sponsorshipEdit" class="edit-view hidden">
+                            <div class="content-grid">
+                                <div class="form-group"><label>Sponsorship Type</label><input type="text" name="sponsorship_type" value="{{ optional($company)->sponsorship_type ?? '' }}" placeholder="e.g. 482, 494"></div>
+                                <div class="form-group"><label>Status</label><input type="text" name="sponsorship_status" value="{{ optional($company)->sponsorship_status ?? '' }}" placeholder="Status"></div>
+                                <div class="form-group"><label>TRN</label><input type="text" name="trn" value="{{ optional($company)->trn ?? '' }}" placeholder="Training Reference Number"></div>
+                                <div class="form-group"><label>Start Date</label><input type="date" name="sponsorship_start_date" value="{{ optional($company)->sponsorship_start_date?->format('Y-m-d') ?? '' }}"></div>
+                                <div class="form-group"><label>End Date</label><input type="date" name="sponsorship_end_date" value="{{ optional($company)->sponsorship_end_date?->format('Y-m-d') ?? '' }}"></div>
+                                <div class="form-group"><label><input type="checkbox" name="regional_sponsorship" value="1" {{ optional($company)->regional_sponsorship ? 'checked' : '' }}> Regional Sponsorship</label></div>
+                                <div class="form-group"><label><input type="checkbox" name="adverse_information" value="1" {{ optional($company)->adverse_information ? 'checked' : '' }}> Adverse Information</label></div>
+                                <div class="form-group full-width"><label>Previous Sponsorship Notes</label><textarea name="previous_sponsorship_notes" rows="2">{{ optional($company)->previous_sponsorship_notes ?? '' }}</textarea></div>
+                            </div>
+                            <div class="edit-actions">
+                                <button type="button" class="btn btn-primary" onclick="saveSponsorshipInfo()">Save</button>
+                                <button type="button" class="btn btn-secondary" onclick="cancelEdit('sponsorship')">Cancel</button>
+                            </div>
+                        </div>
+                    </section>
+                </section>
+
+                <!-- Directors Section -->
+                <section id="directorsSection" class="content-section">
+                    <section class="form-section">
+                        <div class="section-header">
+                            <h3><i class="fas fa-users-cog"></i> Directors</h3>
+                            <div class="section-actions">
+                                <button type="button" class="edit-section-btn" onclick="toggleEditMode('directors')">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                                <button type="button" class="add-section-btn" onclick="addDirectorRow()" title="Add Director"><i class="fas fa-plus"></i></button>
+                            </div>
+                        </div>
+                        <div id="directorsSummary" class="summary-view">
+                            @if($company && $company->directors->isNotEmpty())
+                            <div class="summary-grid">
+                                @foreach($company->directors as $dir)
+                                <div class="summary-item"><span class="summary-label">{{ $dir->director_name }}</span><span class="summary-value">{{ $dir->director_role ?? '' }}@if($dir->director_dob) (DOB: {{ $dir->director_dob->format('d/m/Y') }})@endif</span></div>
+                                @endforeach
+                            </div>
+                            @else
+                            <div class="empty-state"><p>No directors added yet.</p></div>
+                            @endif
+                        </div>
+                        <div id="directorsEdit" class="edit-view hidden">
+                            <div id="directorsContainer">
+                                @php
+                                    $directorsData = (optional($company)->directors?->isNotEmpty()) ? $company->directors : collect([(object)['id'=>null,'director_name'=>'','director_dob'=>null,'director_role'=>'','is_primary'=>true]]);
+                                @endphp
+                                @foreach($directorsData as $idx => $dir)
+                                <div class="director-row repeatable-section" style="display:flex;gap:10px;margin-bottom:10px;align-items:center;flex-wrap:wrap;">
+                                    <input type="hidden" name="director_ids[]" value="{{ $dir->id ?? '' }}">
+                                    <input type="text" name="director_names[]" value="{{ $dir->director_name ?? '' }}" placeholder="Director name" style="flex:1;min-width:150px;">
+                                    <input type="date" name="director_dobs[]" value="{{ isset($dir->director_dob) && $dir->director_dob ? $dir->director_dob->format('Y-m-d') : '' }}" placeholder="DOB">
+                                    <input type="text" name="director_roles[]" value="{{ $dir->director_role ?? '' }}" placeholder="Role" style="width:120px;">
+                                    <label><input type="radio" name="director_primary" value="{{ $idx }}" {{ ($dir->is_primary ?? ($idx===0)) ? 'checked' : '' }}> Primary</label>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeDirectorRow(this)"><i class="fas fa-times"></i></button>
+                                </div>
+                                @endforeach
+                            </div>
+                            <button type="button" class="add-item-btn" onclick="addDirectorRow()"><i class="fas fa-plus-circle"></i> Add Director</button>
+                            <div class="edit-actions">
+                                <button type="button" class="btn btn-primary" onclick="saveDirectorsInfo()">Save</button>
+                                <button type="button" class="btn btn-secondary" onclick="cancelEdit('directors')">Cancel</button>
+                            </div>
+                        </div>
+                    </section>
+                </section>
+
+                <!-- Financial Section -->
+                <section id="financialSection" class="content-section">
+                    <section class="form-section">
+                        <div class="section-header">
+                            <h3><i class="fas fa-dollar-sign"></i> Financial</h3>
+                            <div class="section-actions">
+                                <button type="button" class="edit-section-btn" onclick="toggleEditMode('financial')">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="financialSummary" class="summary-view">
+                            <div class="summary-grid">
+                                @if($company && ($company->annual_turnover || $company->wages_expenditure))
+                                @if($company->annual_turnover)<div class="summary-item"><span class="summary-label">Annual Turnover:</span><span class="summary-value">${{ number_format($company->annual_turnover, 2) }}</span></div>@endif
+                                @if($company->wages_expenditure)<div class="summary-item"><span class="summary-label">Wages Expenditure:</span><span class="summary-value">${{ number_format($company->wages_expenditure, 2) }}</span></div>@endif
+                                @else
+                                <div class="empty-state"><p>No financial details added yet.</p></div>
+                                @endif
+                            </div>
+                        </div>
+                        <div id="financialEdit" class="edit-view hidden">
+                            <div class="content-grid">
+                                <div class="form-group"><label>Annual Turnover</label><input type="number" name="annual_turnover" value="{{ optional($company)->annual_turnover ?? '' }}" placeholder="0" step="0.01"></div>
+                                <div class="form-group"><label>Wages Expenditure</label><input type="number" name="wages_expenditure" value="{{ optional($company)->wages_expenditure ?? '' }}" placeholder="0" step="0.01"></div>
+                            </div>
+                            <div class="edit-actions">
+                                <button type="button" class="btn btn-primary" onclick="saveFinancialInfo()">Save</button>
+                                <button type="button" class="btn btn-secondary" onclick="cancelEdit('financial')">Cancel</button>
+                            </div>
+                        </div>
+                    </section>
+                </section>
+
+                <!-- Workforce Section -->
+                <section id="workforceSection" class="content-section">
+                    <section class="form-section">
+                        <div class="section-header">
+                            <h3><i class="fas fa-users"></i> Workforce</h3>
+                            <div class="section-actions">
+                                <button type="button" class="edit-section-btn" onclick="toggleEditMode('workforce')">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="workforceSummary" class="summary-view">
+                            <div class="summary-grid">
+                                @if($company && ($company->workforce_total || $company->workforce_australian_citizens !== null))
+                                @if($company->workforce_australian_citizens !== null)<div class="summary-item"><span class="summary-label">Australian Citizens:</span><span class="summary-value">{{ $company->workforce_australian_citizens }}</span></div>@endif
+                                @if($company->workforce_permanent_residents !== null)<div class="summary-item"><span class="summary-label">Permanent Residents:</span><span class="summary-value">{{ $company->workforce_permanent_residents }}</span></div>@endif
+                                @if($company->workforce_temp_visa_holders !== null)<div class="summary-item"><span class="summary-label">Temp Visa Holders:</span><span class="summary-value">{{ $company->workforce_temp_visa_holders }}</span></div>@endif
+                                @if($company->workforce_total !== null)<div class="summary-item"><span class="summary-label">Total:</span><span class="summary-value">{{ $company->workforce_total }}</span></div>@endif
+                                @else
+                                <div class="empty-state"><p>No workforce details added yet.</p></div>
+                                @endif
+                            </div>
+                        </div>
+                        <div id="workforceEdit" class="edit-view hidden">
+                            <div class="content-grid">
+                                <div class="form-group"><label>Australian Citizens</label><input type="number" name="workforce_australian_citizens" value="{{ optional($company)->workforce_australian_citizens ?? '' }}" min="0"></div>
+                                <div class="form-group"><label>Permanent Residents</label><input type="number" name="workforce_permanent_residents" value="{{ optional($company)->workforce_permanent_residents ?? '' }}" min="0"></div>
+                                <div class="form-group"><label>Temp Visa Holders</label><input type="number" name="workforce_temp_visa_holders" value="{{ optional($company)->workforce_temp_visa_holders ?? '' }}" min="0"></div>
+                                <div class="form-group"><label>Total</label><input type="number" name="workforce_total" value="{{ optional($company)->workforce_total ?? '' }}" min="0"></div>
+                            </div>
+                            <div class="edit-actions">
+                                <button type="button" class="btn btn-primary" onclick="saveWorkforceInfo()">Save</button>
+                                <button type="button" class="btn btn-secondary" onclick="cancelEdit('workforce')">Cancel</button>
+                            </div>
+                        </div>
+                    </section>
+                </section>
+
+                <!-- Operations Section -->
+                <section id="operationsSection" class="content-section">
+                    <section class="form-section">
+                        <div class="section-header">
+                            <h3><i class="fas fa-briefcase"></i> Operations</h3>
+                            <div class="section-actions">
+                                <button type="button" class="edit-section-btn" onclick="toggleEditMode('operations')">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="operationsSummary" class="summary-view">
+                            <div class="summary-grid">
+                                @if($company && ($company->business_operating_since || $company->main_business_activity))
+                                @if($company->business_operating_since)<div class="summary-item"><span class="summary-label">Operating Since:</span><span class="summary-value">{{ $company->business_operating_since->format('d/m/Y') }}</span></div>@endif
+                                @if($company->main_business_activity)<div class="summary-item full-width"><span class="summary-label">Main Activity:</span><span class="summary-value">{{ $company->main_business_activity }}</span></div>@endif
+                                @else
+                                <div class="empty-state"><p>No operations details added yet.</p></div>
+                                @endif
+                            </div>
+                        </div>
+                        <div id="operationsEdit" class="edit-view hidden">
+                            <div class="content-grid">
+                                <div class="form-group"><label>Business Operating Since</label><input type="date" name="business_operating_since" value="{{ optional($company)->business_operating_since?->format('Y-m-d') ?? '' }}"></div>
+                                <div class="form-group full-width"><label>Main Business Activity</label><input type="text" name="main_business_activity" value="{{ optional($company)->main_business_activity ?? '' }}" placeholder="Primary business activity"></div>
+                            </div>
+                            <div class="edit-actions">
+                                <button type="button" class="btn btn-primary" onclick="saveOperationsInfo()">Save</button>
+                                <button type="button" class="btn btn-secondary" onclick="cancelEdit('operations')">Cancel</button>
+                            </div>
+                        </div>
+                    </section>
+                </section>
+
+                <!-- LMT Section -->
+                <section id="lmtSection" class="content-section">
+                    <section class="form-section">
+                        <div class="section-header">
+                            <h3><i class="fas fa-clipboard-check"></i> Labour Market Testing (LMT)</h3>
+                            <div class="section-actions">
+                                <button type="button" class="edit-section-btn" onclick="toggleEditMode('lmt')">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="lmtSummary" class="summary-view">
+                            <div class="summary-grid">
+                                @if($company && ($company->lmt_required !== null || $company->lmt_start_date || $company->lmt_notes))
+                                @if($company->lmt_required !== null)<div class="summary-item"><span class="summary-label">LMT Required:</span><span class="summary-value">{{ $company->lmt_required ? 'Yes' : 'No' }}</span></div>@endif
+                                @if($company->lmt_start_date)<div class="summary-item"><span class="summary-label">Start:</span><span class="summary-value">{{ $company->lmt_start_date->format('d/m/Y') }}</span></div>@endif
+                                @if($company->lmt_end_date)<div class="summary-item"><span class="summary-label">End:</span><span class="summary-value">{{ $company->lmt_end_date->format('d/m/Y') }}</span></div>@endif
+                                @if($company->lmt_notes)<div class="summary-item full-width"><span class="summary-label">Notes:</span><span class="summary-value">{{ $company->lmt_notes }}</span></div>@endif
+                                @else
+                                <div class="empty-state"><p>No LMT details added yet.</p></div>
+                                @endif
+                            </div>
+                        </div>
+                        <div id="lmtEdit" class="edit-view hidden">
+                            <div class="content-grid">
+                                <div class="form-group"><label><input type="checkbox" name="lmt_required" value="1" {{ optional($company)->lmt_required ? 'checked' : '' }}> LMT Required</label></div>
+                                <div class="form-group"><label>LMT Start Date</label><input type="date" name="lmt_start_date" value="{{ optional($company)->lmt_start_date?->format('Y-m-d') ?? '' }}"></div>
+                                <div class="form-group"><label>LMT End Date</label><input type="date" name="lmt_end_date" value="{{ optional($company)->lmt_end_date?->format('Y-m-d') ?? '' }}"></div>
+                                <div class="form-group full-width"><label>LMT Notes</label><textarea name="lmt_notes" rows="2">{{ optional($company)->lmt_notes ?? '' }}</textarea></div>
+                            </div>
+                            <div class="edit-actions">
+                                <button type="button" class="btn btn-primary" onclick="saveLmtInfo()">Save</button>
+                                <button type="button" class="btn btn-secondary" onclick="cancelEdit('lmt')">Cancel</button>
+                            </div>
+                        </div>
+                    </section>
+                </section>
+
+                <!-- Training Section -->
+                <section id="trainingSection" class="content-section">
+                    <section class="form-section">
+                        <div class="section-header">
+                            <h3><i class="fas fa-graduation-cap"></i> Training</h3>
+                            <div class="section-actions">
+                                <button type="button" class="edit-section-btn" onclick="toggleEditMode('training')">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="trainingSummary" class="summary-view">
+                            <div class="summary-grid">
+                                @if($company && ($company->training_position_title || $company->trainer_name))
+                                @if($company->training_position_title)<div class="summary-item"><span class="summary-label">Position Title:</span><span class="summary-value">{{ $company->training_position_title }}</span></div>@endif
+                                @if($company->trainer_name)<div class="summary-item"><span class="summary-label">Trainer Name:</span><span class="summary-value">{{ $company->trainer_name }}</span></div>@endif
+                                @else
+                                <div class="empty-state"><p>No training details added yet.</p></div>
+                                @endif
+                            </div>
+                        </div>
+                        <div id="trainingEdit" class="edit-view hidden">
+                            <div class="content-grid">
+                                <div class="form-group"><label>Training Position Title</label><input type="text" name="training_position_title" value="{{ optional($company)->training_position_title ?? '' }}" placeholder="Position title"></div>
+                                <div class="form-group"><label>Trainer Name</label><input type="text" name="trainer_name" value="{{ optional($company)->trainer_name ?? '' }}" placeholder="Trainer name"></div>
+                            </div>
+                            <div class="edit-actions">
+                                <button type="button" class="btn btn-primary" onclick="saveTrainingInfo()">Save</button>
+                                <button type="button" class="btn btn-secondary" onclick="cancelEdit('training')">Cancel</button>
+                            </div>
+                        </div>
+                    </section>
+                </section>
+
+                <!-- Nominations Section -->
+                <section id="nominationsSection" class="content-section">
+                    <section class="form-section">
+                        <div class="section-header">
+                            <h3><i class="fas fa-user-check"></i> Nominations</h3>
+                            <div class="section-actions">
+                                <button type="button" class="edit-section-btn" onclick="toggleEditMode('nominations')">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                                <button type="button" class="add-section-btn" onclick="addNominationRow()" title="Add Nomination"><i class="fas fa-plus"></i></button>
+                            </div>
+                        </div>
+                        <div id="nominationsSummary" class="summary-view">
+                            @if($company && $company->nominations->isNotEmpty())
+                            <div class="summary-grid">
+                                @foreach($company->nominations as $nom)
+                                <div class="summary-item"><span class="summary-label">{{ $nom->position_title ?? 'Position' }}:</span><span class="summary-value">{{ $nom->nominatedClient ? $nom->nominatedClient->first_name.' '.$nom->nominatedClient->last_name : ($nom->nominated_person_name ?? 'N/A') }}@if($nom->trn) (TRN: {{ $nom->trn }})@endif</span></div>
+                                @endforeach
+                            </div>
+                            @else
+                            <div class="empty-state"><p>No nominations added yet.</p></div>
+                            @endif
+                        </div>
+                        <div id="nominationsEdit" class="edit-view hidden">
+                            <div id="nominationsContainer">
+                                @php
+                                    $nominationsData = (optional($company)->nominations?->isNotEmpty()) ? $company->nominations : collect([(object)['id'=>null,'position_title'=>'','anzsco_code'=>'','position_description'=>'','salary'=>null,'duration'=>'','nominated_client_id'=>null,'nominated_person_name'=>'','trn'=>'','status'=>'','nomination_date'=>null,'expiry_date'=>null]]);
+                                @endphp
+                                @foreach($nominationsData as $idx => $nom)
+                                <div class="nomination-row repeatable-section" style="border:1px solid #dee2e6;padding:15px;margin-bottom:15px;border-radius:6px;">
+                                    <input type="hidden" name="nomination_ids[]" value="{{ $nom->id ?? '' }}">
+                                    <div class="content-grid" style="margin-bottom:10px;">
+                                        <div class="form-group"><label>Position Title</label><input type="text" name="nomination_position_titles[]" value="{{ $nom->position_title ?? '' }}" placeholder="Position title"></div>
+                                        <div class="form-group"><label>ANZSCO Code</label><input type="text" name="nomination_anzsco_codes[]" value="{{ $nom->anzsco_code ?? '' }}" placeholder="e.g. 261312"></div>
+                                        <div class="form-group full-width"><label>Description</label><textarea name="nomination_descriptions[]" rows="2" placeholder="Position description">{{ $nom->position_description ?? '' }}</textarea></div>
+                                        <div class="form-group"><label>Salary</label><input type="number" name="nomination_salaries[]" value="{{ $nom->salary ?? '' }}" step="0.01" placeholder="0"></div>
+                                        <div class="form-group"><label>Duration</label><input type="text" name="nomination_durations[]" value="{{ $nom->duration ?? '' }}" placeholder="e.g. 2 years"></div>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom:10px;">
+                                        <label>Nominated Person (Visa Applicant)</label>
+                                        <div style="display:flex;gap:15px;align-items:center;flex-wrap:wrap;">
+                                            <div style="flex:1;min-width:200px;">
+                                                <select name="nomination_nominated_client_ids[]" class="nomination-person-select form-control" data-placeholder="Search client/lead..." style="width:100%;">
+                                                    @if($nom->nominated_client_id && $nom->nominatedClient)
+                                                    <option value="{{ $nom->nominated_client_id }}" selected>{{ $nom->nominatedClient->first_name }} {{ $nom->nominatedClient->last_name }}</option>
+                                                    @endif
+                                                </select>
+                                            </div>
+                                            <span>OR</span>
+                                            <div style="flex:1;min-width:200px;">
+                                                <input type="text" name="nomination_person_names[]" value="{{ $nom->nominated_person_name ?? '' }}" placeholder="Not in system - enter name only">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="content-grid">
+                                        <div class="form-group"><label>TRN</label><input type="text" name="nomination_trns[]" value="{{ $nom->trn ?? '' }}" placeholder="TRN"></div>
+                                        <div class="form-group"><label>Status</label><input type="text" name="nomination_statuses[]" value="{{ $nom->status ?? '' }}" placeholder="Status"></div>
+                                        <div class="form-group"><label>Nomination Date</label><input type="date" name="nomination_dates[]" value="{{ $nom->nomination_date?->format('Y-m-d') ?? '' }}"></div>
+                                        <div class="form-group"><label>Expiry Date</label><input type="date" name="nomination_expiries[]" value="{{ $nom->expiry_date?->format('Y-m-d') ?? '' }}"></div>
+                                        <div class="form-group" style="align-self:end;"><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeNominationRow(this)"><i class="fas fa-times"></i> Remove</button></div>
+                                    </div>
+                                </div>
+                                @endforeach
+                            </div>
+                            <button type="button" class="add-item-btn" onclick="addNominationRow()"><i class="fas fa-plus-circle"></i> Add Nomination</button>
+                            <div class="edit-actions">
+                                <button type="button" class="btn btn-primary" onclick="saveNominationsInfo()">Save</button>
+                                <button type="button" class="btn btn-secondary" onclick="cancelEdit('nominations')">Cancel</button>
                             </div>
                         </div>
                     </section>
@@ -630,22 +1028,20 @@
         $('#abn, #acn').on('input', function() {
             this.value = this.value.replace(/\D/g, '');
         });
-        $('#trustAbn').on('input', function() {
-            this.value = this.value.replace(/\D/g, '');
-        });
-
         // Has trading name toggle
         $('input[name="has_trading_name"]').on('change', function() {
             $('#tradingNamesContainer').toggle($(this).val() === '1');
         });
 
-        // Trust section visibility when Business Type = Trust
-        function toggleTrustSection() {
-            const isTrust = $('#companyType').val() === 'Trust';
-            $('#trustSection').toggle(isTrust);
-        }
-        $('#companyType').on('change', toggleTrustSection);
-        toggleTrustSection(); // Initial state
+        // Init Select2 for nomination person search (existing rows)
+        $('.nomination-person-select').each(function() {
+            if (!$(this).hasClass('select2-hidden-accessible')) {
+                $(this).select2({
+                    ajax: { url: window.editClientConfig.searchContactPersonRoute, dataType: 'json', delay: 250, data: function(p) { return { q: p.term, exclude_id: window.currentClientId }; }, processResults: function(d) { return { results: d.results || [] }; } },
+                    minimumInputLength: 2, allowClear: true, placeholder: 'Search client/lead...'
+                });
+            }
+        });
     });
 
     function addTradingName() {
@@ -671,6 +1067,66 @@
             $(this).find('input[name="trading_name_primary"]').val(i);
         });
     }
+
+    function addDirectorRow() {
+        const container = $('#directorsContainer');
+        const idx = container.find('.director-row').length;
+        const row = '<div class="director-row repeatable-section" style="display:flex;gap:10px;margin-bottom:10px;align-items:center;flex-wrap:wrap;">' +
+            '<input type="hidden" name="director_ids[]" value="">' +
+            '<input type="text" name="director_names[]" placeholder="Director name" style="flex:1;min-width:150px;">' +
+            '<input type="date" name="director_dobs[]" placeholder="DOB">' +
+            '<input type="text" name="director_roles[]" placeholder="Role" style="width:120px;">' +
+            '<label><input type="radio" name="director_primary" value="' + idx + '"> Primary</label>' +
+            '<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeDirectorRow(this)"><i class="fas fa-times"></i></button>' +
+            '</div>';
+        container.append(row);
+        container.find('.director-row').each(function(i) { $(this).find('input[name="director_primary"]').val(i); });
+    }
+    function removeDirectorRow(btn) {
+        const container = $('#directorsContainer');
+        if (container.find('.director-row').length <= 1) return;
+        $(btn).closest('.director-row').remove();
+        $('#directorsContainer .director-row').each(function(i) { $(this).find('input[name="director_primary"]').val(i); });
+    }
+
+    function addNominationRow() {
+        const container = $('#nominationsContainer');
+        const row = '<div class="nomination-row repeatable-section" style="border:1px solid #dee2e6;padding:15px;margin-bottom:15px;border-radius:6px;">' +
+            '<input type="hidden" name="nomination_ids[]" value="">' +
+            '<div class="content-grid" style="margin-bottom:10px;">' +
+            '<div class="form-group"><label>Position Title</label><input type="text" name="nomination_position_titles[]" placeholder="Position title"></div>' +
+            '<div class="form-group"><label>ANZSCO Code</label><input type="text" name="nomination_anzsco_codes[]" placeholder="e.g. 261312"></div>' +
+            '<div class="form-group full-width"><label>Description</label><textarea name="nomination_descriptions[]" rows="2" placeholder="Position description"></textarea></div>' +
+            '<div class="form-group"><label>Salary</label><input type="number" name="nomination_salaries[]" step="0.01" placeholder="0"></div>' +
+            '<div class="form-group"><label>Duration</label><input type="text" name="nomination_durations[]" placeholder="e.g. 2 years"></div></div>' +
+            '<div class="form-group" style="margin-bottom:10px;"><label>Nominated Person (Visa Applicant)</label>' +
+            '<div style="display:flex;gap:15px;align-items:center;flex-wrap:wrap;">' +
+            '<div style="flex:1;min-width:200px;"><select name="nomination_nominated_client_ids[]" class="nomination-person-select form-control" data-placeholder="Search client/lead..." style="width:100%;"></select></div>' +
+            '<span>OR</span><div style="flex:1;min-width:200px;"><input type="text" name="nomination_person_names[]" placeholder="Not in system - enter name only"></div></div></div>' +
+            '<div class="content-grid"><div class="form-group"><label>TRN</label><input type="text" name="nomination_trns[]" placeholder="TRN"></div>' +
+            '<div class="form-group"><label>Status</label><input type="text" name="nomination_statuses[]" placeholder="Status"></div>' +
+            '<div class="form-group"><label>Nomination Date</label><input type="date" name="nomination_dates[]"></div>' +
+            '<div class="form-group"><label>Expiry Date</label><input type="date" name="nomination_expiries[]"></div>' +
+            '<div class="form-group" style="align-self:end;"><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeNominationRow(this)"><i class="fas fa-times"></i> Remove</button></div></div></div>';
+        container.append(row);
+        if (typeof $().select2 === 'function') {
+            container.find('.nomination-person-select').last().select2({
+                ajax: { url: window.editClientConfig.searchContactPersonRoute, dataType: 'json', delay: 250, data: function(p) { return { q: p.term, exclude_id: window.currentClientId }; }, processResults: function(d) { return { results: d.results || [] }; } },
+                minimumInputLength: 2, allowClear: true, placeholder: 'Search client/lead...'
+            });
+        }
+    }
+    function removeNominationRow(btn) {
+        const container = $('#nominationsContainer');
+        if (container.find('.nomination-row').length <= 1) return;
+        $(btn).closest('.nomination-row').remove();
+    }
+
+    function saveSection(sectionName, callback) {
+        const form = document.getElementById('editCompanyForm');
+        const formData = new FormData(form);
+        saveSectionData(sectionName, formData, function() { (callback || function(){})(); window.location.reload(); });
+    }
     
     // Save functions - use saveSectionData for AJAX save (fixes broken form.submit to clients.update)
     function saveCompanyInfo() {
@@ -690,6 +1146,17 @@
             window.location.reload();
         });
     }
+    @if($company && $company->company_type === 'Trust')
+    function saveTrustInfo() { saveSection('trust', function() { toggleEditMode('trust'); }); }
+    @endif
+    function saveSponsorshipInfo() { saveSection('sponsorship', function() { toggleEditMode('sponsorship'); }); }
+    function saveDirectorsInfo() { saveSection('directors', function() { toggleEditMode('directors'); }); }
+    function saveFinancialInfo() { saveSection('financial', function() { toggleEditMode('financial'); }); }
+    function saveWorkforceInfo() { saveSection('workforce', function() { toggleEditMode('workforce'); }); }
+    function saveOperationsInfo() { saveSection('operations', function() { toggleEditMode('operations'); }); }
+    function saveLmtInfo() { saveSection('lmt', function() { toggleEditMode('lmt'); }); }
+    function saveTrainingInfo() { saveSection('training', function() { toggleEditMode('training'); }); }
+    function saveNominationsInfo() { saveSection('nominations', function() { toggleEditMode('nominations'); }); }
     </script>
     @endpush
 @endsection

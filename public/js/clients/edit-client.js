@@ -1985,6 +1985,10 @@ window.saveSectionData = function(sectionName, formData, successCallback) {
     }
     const clientId = form.querySelector('input[name="id"]')?.value;
     const type = form.querySelector('input[name="type"]')?.value;
+    if (!clientId || !type) {
+        showNotification('Invalid form data. Please refresh the page and try again.', 'error');
+        return;
+    }
     
     // Get CSRF token from meta tag or form
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') 
