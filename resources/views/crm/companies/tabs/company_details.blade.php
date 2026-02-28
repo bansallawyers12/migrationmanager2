@@ -1,4 +1,5 @@
 <div class="tab-pane active" id="companydetails-tab">
+    @php $comp = $fetchedData->company ?? null; @endphp
     <div class="content-grid">
         {{-- Company Information Card --}}
         <div class="card" style="margin-bottom: 20px;">
@@ -15,9 +16,10 @@
                     <span class="field-value">{{ $fetchedData->company->company_name ?? 'N/A' }}</span>
                 </div>
                 @php
-                    $tradingNamesDisplay = $fetchedData->company && $fetchedData->company->tradingNames->isNotEmpty()
-                        ? $fetchedData->company->tradingNames->pluck('trading_name')->join(', ')
-                        : ($fetchedData->company->trading_name ?? null);
+                    $comp = $fetchedData->company ?? null;
+                    $tradingNamesDisplay = $comp && ($comp->tradingNames?->isNotEmpty() ?? false)
+                        ? $comp->tradingNames->pluck('trading_name')->join(', ')
+                        : ($comp->trading_name ?? null);
                 @endphp
                 @if($tradingNamesDisplay)
                 <div class="field-group">
@@ -25,25 +27,25 @@
                     <span class="field-value">{{ $tradingNamesDisplay }}</span>
                 </div>
                 @endif
-                @if($fetchedData->company->ABN_number)
+                @if(optional($fetchedData->company)->ABN_number)
                 <div class="field-group">
                     <span class="field-label">ABN:</span>
                     <span class="field-value">{{ $fetchedData->company->ABN_number }}</span>
                 </div>
                 @endif
-                @if($fetchedData->company->ACN)
+                @if(optional($fetchedData->company)->ACN)
                 <div class="field-group">
                     <span class="field-label">ACN:</span>
                     <span class="field-value">{{ $fetchedData->company->ACN }}</span>
                 </div>
                 @endif
-                @if($fetchedData->company->company_type)
+                @if(optional($fetchedData->company)->company_type)
                 <div class="field-group">
                     <span class="field-label">Business Type:</span>
                     <span class="field-value">{{ $fetchedData->company->company_type }}</span>
                 </div>
                 @endif
-                @if($fetchedData->company->company_website)
+                @if(optional($fetchedData->company)->company_website)
                 <div class="field-group">
                     <span class="field-label">Website:</span>
                     <span class="field-value">
@@ -53,18 +55,124 @@
                     </span>
                 </div>
                 @endif
-                @if($fetchedData->company->company_type === 'Trust' && ($fetchedData->company->trust_name || $fetchedData->company->trust_abn || $fetchedData->company->trustee_name))
+                @if(optional($fetchedData->company)->company_type === 'Trust' && (optional($fetchedData->company)->trust_name || optional($fetchedData->company)->trust_abn || optional($fetchedData->company)->trustee_name))
                 <div class="field-group" style="grid-column: 1 / -1;">
                     <span class="field-label">Trust Details:</span>
                     <span class="field-value">
-                        @if($fetchedData->company->trust_name) Trust: {{ $fetchedData->company->trust_name }}@endif
-                        @if($fetchedData->company->trust_abn) | ABN: {{ $fetchedData->company->trust_abn }}@endif
-                        @if($fetchedData->company->trustee_name) | Trustee: {{ $fetchedData->company->trustee_name }}@endif
-                        @if($fetchedData->company->trustee_details) | {{ $fetchedData->company->trustee_details }}@endif
+                        @if($comp->trust_name) Trust: {{ $comp->trust_name }}@endif
+                        @if($comp->trust_abn) | ABN: {{ $comp->trust_abn }}@endif
+                        @if($comp->trustee_name) | Trustee: {{ $comp->trustee_name }}@endif
+                        @if($comp->trustee_details) | {{ $comp->trustee_details }}@endif
                     </span>
                 </div>
                 @endif
-                
+            </div>
+        </div>
+
+        {{-- Sponsorship Card --}}
+        @if($comp && ($comp->sponsorship_type || $comp->sponsorship_status || $comp->trn))
+        <div class="card" style="margin-bottom: 20px;">
+            <h3><i class="fas fa-file-contract"></i> Sponsorship</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+                @if($comp->sponsorship_type)<div class="field-group"><span class="field-label">Type:</span><span class="field-value">{{ $comp->sponsorship_type }}</span></div>@endif
+                @if($comp->sponsorship_status)<div class="field-group"><span class="field-label">Status:</span><span class="field-value">{{ $comp->sponsorship_status }}</span></div>@endif
+                @if($comp->trn)<div class="field-group"><span class="field-label">TRN:</span><span class="field-value">{{ $comp->trn }}</span></div>@endif
+                @if($comp->sponsorship_start_date)<div class="field-group"><span class="field-label">Start:</span><span class="field-value">{{ $comp->sponsorship_start_date->format('d/m/Y') }}</span></div>@endif
+                @if($comp->sponsorship_end_date)<div class="field-group"><span class="field-label">End:</span><span class="field-value">{{ $comp->sponsorship_end_date->format('d/m/Y') }}</span></div>@endif
+            </div>
+        </div>
+        @endif
+
+        {{-- Directors Card --}}
+        @if($comp && $comp->directors->isNotEmpty())
+        <div class="card" style="margin-bottom: 20px;">
+            <h3><i class="fas fa-users-cog"></i> Directors</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
+                @foreach($comp->directors as $dir)
+                <div class="field-group"><span class="field-label">{{ $dir->director_name }}</span><span class="field-value">{{ $dir->director_role ?? '' }}@if($dir->director_dob) (DOB: {{ $dir->director_dob->format('d/m/Y') }})@endif</span></div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
+        {{-- Financial Card --}}
+        @if($comp && ($comp->annual_turnover || $comp->wages_expenditure))
+        <div class="card" style="margin-bottom: 20px;">
+            <h3><i class="fas fa-dollar-sign"></i> Financial</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+                @if($comp->annual_turnover)<div class="field-group"><span class="field-label">Annual Turnover:</span><span class="field-value">${{ number_format($comp->annual_turnover, 2) }}</span></div>@endif
+                @if($comp->wages_expenditure)<div class="field-group"><span class="field-label">Wages Expenditure:</span><span class="field-value">${{ number_format($comp->wages_expenditure, 2) }}</span></div>@endif
+            </div>
+        </div>
+        @endif
+
+        {{-- Workforce Card --}}
+        @if($comp && ($comp->workforce_total !== null || $comp->workforce_australian_citizens !== null))
+        <div class="card" style="margin-bottom: 20px;">
+            <h3><i class="fas fa-users"></i> Workforce</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-top: 15px;">
+                @if($comp->workforce_australian_citizens !== null)<div class="field-group"><span class="field-label">Australian Citizens:</span><span class="field-value">{{ $comp->workforce_australian_citizens }}</span></div>@endif
+                @if($comp->workforce_permanent_residents !== null)<div class="field-group"><span class="field-label">Permanent Residents:</span><span class="field-value">{{ $comp->workforce_permanent_residents }}</span></div>@endif
+                @if($comp->workforce_temp_visa_holders !== null)<div class="field-group"><span class="field-label">Temp Visa Holders:</span><span class="field-value">{{ $comp->workforce_temp_visa_holders }}</span></div>@endif
+                @if($comp->workforce_total !== null)<div class="field-group"><span class="field-label">Total:</span><span class="field-value">{{ $comp->workforce_total }}</span></div>@endif
+            </div>
+        </div>
+        @endif
+
+        {{-- Operations Card --}}
+        @if($comp && ($comp->business_operating_since || $comp->main_business_activity))
+        <div class="card" style="margin-bottom: 20px;">
+            <h3><i class="fas fa-briefcase"></i> Operations</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
+                @if($comp->business_operating_since)<div class="field-group"><span class="field-label">Operating Since:</span><span class="field-value">{{ $comp->business_operating_since->format('d/m/Y') }}</span></div>@endif
+                @if($comp->main_business_activity)<div class="field-group"><span class="field-label">Main Activity:</span><span class="field-value">{{ $comp->main_business_activity }}</span></div>@endif
+            </div>
+        </div>
+        @endif
+
+        {{-- LMT Card --}}
+        @if($comp && ($comp->lmt_required !== null || $comp->lmt_start_date || $comp->lmt_notes))
+        <div class="card" style="margin-bottom: 20px;">
+            <h3><i class="fas fa-clipboard-check"></i> Labour Market Testing (LMT)</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+                @if($comp->lmt_required !== null)<div class="field-group"><span class="field-label">LMT Required:</span><span class="field-value">{{ $comp->lmt_required ? 'Yes' : 'No' }}</span></div>@endif
+                @if($comp->lmt_start_date)<div class="field-group"><span class="field-label">Start:</span><span class="field-value">{{ $comp->lmt_start_date->format('d/m/Y') }}</span></div>@endif
+                @if($comp->lmt_end_date)<div class="field-group"><span class="field-label">End:</span><span class="field-value">{{ $comp->lmt_end_date->format('d/m/Y') }}</span></div>@endif
+                @if($comp->lmt_notes)<div class="field-group" style="grid-column:1/-1"><span class="field-label">Notes:</span><span class="field-value">{{ $comp->lmt_notes }}</span></div>@endif
+            </div>
+        </div>
+        @endif
+
+        {{-- Training Card --}}
+        @if($comp && ($comp->training_position_title || $comp->trainer_name))
+        <div class="card" style="margin-bottom: 20px;">
+            <h3><i class="fas fa-graduation-cap"></i> Training</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+                @if($comp->training_position_title)<div class="field-group"><span class="field-label">Position Title:</span><span class="field-value">{{ $comp->training_position_title }}</span></div>@endif
+                @if($comp->trainer_name)<div class="field-group"><span class="field-label">Trainer Name:</span><span class="field-value">{{ $comp->trainer_name }}</span></div>@endif
+            </div>
+        </div>
+        @endif
+
+        {{-- Nominations Card --}}
+        @if($comp && $comp->nominations->isNotEmpty())
+        <div class="card" style="margin-bottom: 20px;">
+            <h3><i class="fas fa-user-check"></i> Nominations</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-top: 15px;">
+                @foreach($comp->nominations as $nom)
+                <div class="field-group">
+                    <span class="field-label">{{ $nom->position_title ?? 'Position' }}:</span>
+                    <span class="field-value">{{ $nom->nominatedClient ? $nom->nominatedClient->first_name.' '.$nom->nominatedClient->last_name : ($nom->nominated_person_name ?? 'N/A') }}@if($nom->trn) (TRN: {{ $nom->trn }})@endif</span>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
+        {{-- Company Phone & Email Card --}}
+        <div class="card" style="margin-bottom: 20px;">
+            <h3><i class="fas fa-phone"></i> Contact Information</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
                 {{-- Company Phone Number --}}
                 <div class="field-group">
                     <span class="field-label">Phone:</span>

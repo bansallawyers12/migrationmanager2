@@ -294,14 +294,25 @@
                                     </div>
                                     
                                     <div class="form-group">
-                                        <label for="tradingName">Trading Name</label>
-                                        <input type="text" id="tradingName" name="trading_name" 
-                                               value="{{ old('trading_name') }}" 
-                                               class="company-field" 
-                                               placeholder="If different from company name">
-                                        @error('trading_name')
-                                            <span class="text-danger">{{ $message }}</span>
-                                        @enderror
+                                        <label>Does this company have a trading name?</label>
+                                        <div style="display: flex; gap: 20px; margin-top: 5px;">
+                                            <label><input type="radio" name="has_trading_name" value="1" {{ old('has_trading_name', 0) ? 'checked' : '' }} class="company-field"> Yes</label>
+                                            <label><input type="radio" name="has_trading_name" value="0" {{ !old('has_trading_name', 0) ? 'checked' : '' }} class="company-field"> No</label>
+                                        </div>
+                                    </div>
+                                    <div id="leadTradingNamesContainer" class="form-group" style="{{ !old('has_trading_name', 0) ? 'display:none;' : '' }}">
+                                        <label>Trading Names</label>
+                                        <div id="leadTradingNamesList">
+                                            @php $leadTradingNames = old('trading_names', ['']); $leadTradingNames = is_array($leadTradingNames) ? $leadTradingNames : ['']; @endphp
+                                            @foreach($leadTradingNames as $idx => $tn)
+                                            <div class="trading-name-row" style="display: flex; gap: 10px; margin-bottom: 8px; align-items: center;">
+                                                <input type="text" name="trading_names[]" value="{{ is_string($tn) ? $tn : '' }}" placeholder="Trading name" class="company-field" style="flex: 1;">
+                                                <label><input type="radio" name="trading_name_primary" value="{{ $idx }}" {{ $idx === 0 ? 'checked' : '' }}> Primary</label>
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLeadTradingName(this)"><i class="fas fa-times"></i></button>
+                                            </div>
+                                            @endforeach
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addLeadTradingName()"><i class="fas fa-plus"></i> Add another</button>
                                     </div>
                                     
                                     <div class="form-group">
@@ -916,7 +927,28 @@
             initContactPersonSearch();
             initContactMatchCheck();
         @endif
+
+        // Has trading name toggle (company leads)
+        $('input[name="has_trading_name"]').on('change', function() {
+            $('#leadTradingNamesContainer').toggle($(this).val() === '1');
+        });
     });
+
+    function addLeadTradingName() {
+        const container = $('#leadTradingNamesList');
+        const idx = container.find('.trading-name-row').length;
+        container.append('<div class="trading-name-row" style="display: flex; gap: 10px; margin-bottom: 8px; align-items: center;">' +
+            '<input type="text" name="trading_names[]" placeholder="Trading name" class="company-field" style="flex: 1;">' +
+            '<label><input type="radio" name="trading_name_primary" value="' + idx + '"> Primary</label>' +
+            '<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLeadTradingName(this)"><i class="fas fa-times"></i></button></div>');
+        container.find('.trading-name-row').each(function(i) { $(this).find('input[name="trading_name_primary"]').val(i); });
+    }
+    function removeLeadTradingName(btn) {
+        const container = $('#leadTradingNamesList');
+        if (container.find('.trading-name-row').length <= 1) return;
+        $(btn).closest('.trading-name-row').remove();
+        $('#leadTradingNamesList .trading-name-row').each(function(i) { $(this).find('input[name="trading_name_primary"]').val(i); });
+    }
     
     // Toggle between personal and company fields
     function toggleCompanyFields(isCompany) {

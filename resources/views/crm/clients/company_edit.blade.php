@@ -208,7 +208,7 @@
                         <!-- Edit View -->
                         <div id="companyInfoEdit" class="edit-view hidden">
                             @php
-                                $defaultHasTrading = $company && ($company->has_trading_name || $company->trading_name || $company->tradingNames->isNotEmpty()) ? 1 : 0;
+                                $defaultHasTrading = $company && ($company->has_trading_name || $company->trading_name || ($company->tradingNames?->isNotEmpty() ?? false)) ? 1 : 0;
                             @endphp
                             <div class="content-grid">
                                 <div class="form-group">
@@ -232,7 +232,7 @@
                                     <label>Trading Names</label>
                                     <div id="tradingNamesList">
                                         @php
-                                            $tradingNames = $company && $company->tradingNames->isNotEmpty() ? $company->tradingNames : collect();
+                                            $tradingNames = ($company && ($company->tradingNames?->isNotEmpty() ?? false)) ? $company->tradingNames : collect();
                                             if ($tradingNames->isEmpty() && $company && $company->trading_name) {
                                                 $tradingNames = collect([(object)['trading_name' => $company->trading_name, 'is_primary' => true]]);
                                             }

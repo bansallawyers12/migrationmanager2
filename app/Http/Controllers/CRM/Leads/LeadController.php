@@ -654,15 +654,23 @@ class LeadController extends Controller
                 
                 // Create company record if this is a company lead
                 if ($isCompany) {
-                    Company::create([
+                    $hasTradingName = (int) ($requestData['has_trading_name'] ?? 0) === 1;
+                    $tradingNames = $hasTradingName && !empty($requestData['trading_names'])
+                        ? array_values(array_filter(array_map('trim', (array) $requestData['trading_names'])))
+                        : [];
+                    $primaryIdx = min((int) ($requestData['trading_name_primary'] ?? 0), max(0, count($tradingNames) - 1));
+                    $primaryTradingName = $tradingNames[$primaryIdx] ?? $tradingNames[0] ?? null;
+
+                    $company = Company::create([
                         'admin_id' => $admin->id,
                         'company_name' => $requestData['company_name'],
-                        'trading_name' => $requestData['trading_name'] ?? null,
-                        'ABN_number' => isset($requestData['ABN_number']) && !empty($requestData['ABN_number']) 
-                            ? preg_replace('/\D/', '', $requestData['ABN_number']) // Strip non-digits
+                        'trading_name' => $primaryTradingName,
+                        'has_trading_name' => $hasTradingName,
+                        'ABN_number' => isset($requestData['ABN_number']) && !empty($requestData['ABN_number'])
+                            ? preg_replace('/\D/', '', $requestData['ABN_number'])
                             : null,
                         'ACN' => isset($requestData['ACN']) && !empty($requestData['ACN'])
-                            ? preg_replace('/\D/', '', $requestData['ACN']) // Strip non-digits
+                            ? preg_replace('/\D/', '', $requestData['ACN'])
                             : null,
                         'company_type' => $requestData['company_type'] ?? null,
                         'company_website' => $requestData['company_website'] ?? null,
@@ -671,6 +679,17 @@ class LeadController extends Controller
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
+                    if ($hasTradingName && !empty($tradingNames)) {
+                        foreach ($tradingNames as $idx => $name) {
+                            if ($name !== '') {
+                                $company->tradingNames()->create([
+                                    'trading_name' => $name,
+                                    'is_primary' => ($idx === $primaryIdx),
+                                    'sort_order' => $idx,
+                                ]);
+                            }
+                        }
+                    }
                     Log::info('Company record created for admin ID: ' . $admin->id);
                 }
                 

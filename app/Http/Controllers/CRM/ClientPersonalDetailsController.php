@@ -2083,7 +2083,11 @@ class ClientPersonalDetailsController extends Controller
             $clientId = $nominatedClientIds[$i] ?? null;
             $personName = trim($personNames[$i] ?? '');
             if ($clientId && $personName) {
-                $personName = null;
+                return response()->json([
+                    'success' => false,
+                    'message' => "Nomination " . ($i + 1) . ": Provide either a searchable client/lead OR a name (not in system), not both.",
+                    'errors' => ['nomination_nominated' => ['Cannot have both nominated client and nominated person name.']]
+                ], 422);
             }
             if (!$clientId && !$personName && !$positionTitle) {
                 continue;
