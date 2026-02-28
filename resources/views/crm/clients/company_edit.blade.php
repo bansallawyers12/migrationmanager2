@@ -127,10 +127,15 @@
                                     <span class="summary-label">Company Name:</span>
                                     <span class="summary-value">{{ $company ? $company->company_name : 'Not set' }}</span>
                                 </div>
-                                @if($company && $company->trading_name)
+                                @php
+                                    $tradingNamesDisplay = $company && $company->tradingNames->isNotEmpty()
+                                        ? $company->tradingNames->pluck('trading_name')->join(', ')
+                                        : ($company && $company->trading_name ? $company->trading_name : null);
+                                @endphp
+                                @if($tradingNamesDisplay)
                                 <div class="summary-item">
-                                    <span class="summary-label">Trading Name:</span>
-                                    <span class="summary-value">{{ $company->trading_name }}</span>
+                                    <span class="summary-label">Trading Name(s):</span>
+                                    <span class="summary-value">{{ $tradingNamesDisplay }}</span>
                                 </div>
                                 @endif
                                 @if($company && $company->ABN_number)
@@ -176,10 +181,31 @@
                                 </div>
                                 
                                 <div class="form-group">
-                                    <label for="tradingName">Trading Name</label>
-                                    <input type="text" id="tradingName" name="trading_name" 
-                                           value="{{ old('trading_name', $company ? $company->trading_name : '') }}" 
-                                           placeholder="If different from company name">
+                                    <label>Does this company have a trading name?</label>
+                                    <div style="display: flex; gap: 20px; margin-top: 5px;">
+                                        <label><input type="radio" name="has_trading_name" value="1" {{ old('has_trading_name', $company && $company->has_trading_name ? 1 : ($company && $company->trading_name ? 1 : 0)) ? 'checked' : '' }}> Yes</label>
+                                        <label><input type="radio" name="has_trading_name" value="0" {{ !old('has_trading_name', $company && ($company->has_trading_name || $company->trading_name) ? 1 : 0) ? 'checked' : '' }}> No</label>
+                                    </div>
+                                </div>
+                                <div id="tradingNamesContainer" class="form-group full-width" style="{{ !old('has_trading_name', $company && ($company->has_trading_name || $company->trading_name) ? 1 : 0) ? 'display:none;' : '' }}">
+                                    <label>Trading Names</label>
+                                    <div id="tradingNamesList">
+                                        @php
+                                            $tradingNames = $company && $company->tradingNames->isNotEmpty() ? $company->tradingNames : collect();
+                                            if ($tradingNames->isEmpty() && $company && $company->trading_name) {
+                                                $tradingNames = collect([(object)['trading_name' => $company->trading_name, 'is_primary' => true]]);
+                                            }
+                                            if ($tradingNames->isEmpty()) { $tradingNames = collect([(object)['trading_name' => '', 'is_primary' => false]]); }
+                                        @endphp
+                                        @foreach($tradingNames as $idx => $tn)
+                                        <div class="trading-name-row" style="display: flex; gap: 10px; margin-bottom: 8px; align-items: center;">
+                                            <input type="text" name="trading_names[]" value="{{ old("trading_names.{$idx}", is_object($tn) ? $tn->trading_name : $tn) }}" placeholder="Trading name" style="flex: 1;">
+                                            <label><input type="radio" name="trading_name_primary" value="{{ $idx }}" {{ ($tn->is_primary ?? ($idx === 0)) ? 'checked' : '' }}> Primary</label>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeTradingName(this)"><i class="fas fa-times"></i></button>
+                                        </div>
+                                        @endforeach
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addTradingName()"><i class="fas fa-plus"></i> Add another</button>
                                 </div>
                                 
                                 <div class="form-group">
@@ -215,6 +241,7 @@
                                         <option value="Proprietary Company" {{ old('company_type', $company ? $company->company_type : '') == 'Proprietary Company' ? 'selected' : '' }}>Proprietary Company (Pty Ltd)</option>
                                         <option value="Public Company" {{ old('company_type', $company ? $company->company_type : '') == 'Public Company' ? 'selected' : '' }}>Public Company</option>
                                         <option value="Not-for-Profit" {{ old('company_type', $company ? $company->company_type : '') == 'Not-for-Profit' ? 'selected' : '' }}>Not-for-Profit Organization</option>
+                                        <option value="Trust" {{ old('company_type', $company ? $company->company_type : '') == 'Trust' ? 'selected' : '' }}>Trust</option>
                                         <option value="Other" {{ old('company_type', $company ? $company->company_type : '') == 'Other' ? 'selected' : '' }}>Other</option>
                                     </select>
                                 </div>
@@ -574,22 +601,23 @@
         });
     });
     
-    // Save functions (these should be in edit-client.js, but adding here for company-specific saves)
+    // Save functions - use saveSectionData for AJAX save (fixes broken form.submit to clients.update)
     function saveCompanyInfo() {
-        // Submit form with section identifier
         const form = document.getElementById('editCompanyForm');
         const formData = new FormData(form);
-        formData.append('section', 'company');
-        
-        // Use AJAX or form submission
-        form.submit();
+        saveSectionData('companyInfo', formData, function() {
+            toggleEditMode('companyInfo');
+            window.location.reload();
+        });
     }
     
     function saveContactPersonInfo() {
         const form = document.getElementById('editCompanyForm');
         const formData = new FormData(form);
-        formData.append('section', 'contact_person');
-        form.submit();
+        saveSectionData('contactPersonInfo', formData, function() {
+            toggleEditMode('contactPersonInfo');
+            window.location.reload();
+        });
     }
     </script>
     @endpush

@@ -26,6 +26,7 @@ use App\Models\ClientCharacter;
 use App\Models\ClientRelationship;
 use App\Models\ClientEoiReference;
 use App\Models\ClientMatter;
+use App\Models\Company;
 use App\Models\ActivitiesLog;
 use Illuminate\Support\Facades\Log;
 use App\Traits\LogsClientActivity;
@@ -1769,6 +1770,10 @@ class ClientPersonalDetailsController extends Controller
                     return $this->saveTestScoreInfoSection($request, $client);
                 case 'relatedFilesInfo':
                     return $this->saveRelatedFilesInfoSection($request, $client);
+                case 'companyInfo':
+                    return $this->saveCompanySection($request, $client);
+                case 'contactPersonInfo':
+                    return $this->saveContactPersonSection($request, $client);
                 default:
                     return response()->json([
                         'success' => false,
@@ -1781,6 +1786,66 @@ class ClientPersonalDetailsController extends Controller
                 'message' => 'An error occurred while saving: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Save company info section (company_name, trading_name, ABN, ACN, company_type, website).
+     * Only for company clients (is_company = true).
+     */
+    private function saveCompanySection($request, $client)
+    {
+        if (!$client->is_company) {
+            return response()->json(['success' => false, 'message' => 'Not a company client'], 400);
+        }
+
+        $validated = $request->validate([
+            'company_name' => 'required|max:255',
+            'trading_name' => 'nullable|max:255',
+            'ABN_number' => 'nullable|string|max:20',
+            'ACN' => 'nullable|string|max:20',
+            'company_type' => 'nullable|string|max:50',
+            'company_website' => 'nullable|url|max:255',
+        ]);
+
+        $company = Company::firstOrCreate(['admin_id' => $client->id], ['company_name' => $validated['company_name']]);
+        $company->company_name = $validated['company_name'];
+        $company->trading_name = $validated['trading_name'] ?? null;
+        $company->ABN_number = !empty($validated['ABN_number']) ? preg_replace('/\D/', '', $validated['ABN_number']) : null;
+        $company->ACN = !empty($validated['ACN']) ? preg_replace('/\D/', '', $validated['ACN']) : null;
+        $company->company_type = $validated['company_type'] ?? null;
+        $company->company_website = $validated['company_website'] ?? null;
+        $company->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Company information updated successfully',
+        ]);
+    }
+
+    /**
+     * Save contact person section (contact_person_id, contact_person_position).
+     * Only for company clients (is_company = true).
+     */
+    private function saveContactPersonSection($request, $client)
+    {
+        if (!$client->is_company) {
+            return response()->json(['success' => false, 'message' => 'Not a company client'], 400);
+        }
+
+        $validated = $request->validate([
+            'contact_person_id' => 'nullable|exists:admins,id',
+            'contact_person_position' => 'nullable|string|max:255',
+        ]);
+
+        $company = Company::firstOrCreate(['admin_id' => $client->id], ['company_name' => 'Unnamed Company']);
+        $company->contact_person_id = $validated['contact_person_id'] ?? null;
+        $company->contact_person_position = $validated['contact_person_position'] ?? null;
+        $company->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Contact person updated successfully',
+        ]);
     }
 
     private function saveBasicInfoSection($request, $client)

@@ -1978,9 +1978,13 @@ window.cancelEdit = function(sectionType) {
  * Generic function to save section data via AJAX
  */
 window.saveSectionData = function(sectionName, formData, successCallback) {
-    const form = document.getElementById('editClientForm');
-    const clientId = form.querySelector('input[name="id"]').value;
-    const type = form.querySelector('input[name="type"]').value;
+    const form = document.getElementById('editCompanyForm') || document.getElementById('editClientForm');
+    if (!form) {
+        showNotification('Form not found. Please refresh the page and try again.', 'error');
+        return;
+    }
+    const clientId = form.querySelector('input[name="id"]')?.value;
+    const type = form.querySelector('input[name="type"]')?.value;
     
     // Get CSRF token from meta tag or form
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') 
@@ -4977,7 +4981,7 @@ window.goBackWithRefresh = function() {
         const urlParts = currentUrl.split('/');
         const clientId = urlParts[urlParts.indexOf('edit') + 1];
 
-        const typeInput = document.querySelector('#editClientForm input[name="type"]');
+        const typeInput = document.querySelector('#editCompanyForm input[name="type"]') || document.querySelector('#editClientForm input[name="type"]');
         const clientType = (typeInput ? typeInput.value : window.currentClientType || '').toLowerCase();
         let detailPath = '/clients/detail/' + clientId;
 

@@ -349,6 +349,9 @@
                                             <option value="Not-for-Profit" {{ old('company_type') == 'Not-for-Profit' ? 'selected' : '' }}>
                                                 Not-for-Profit Organization
                                             </option>
+                                            <option value="Trust" {{ old('company_type') == 'Trust' ? 'selected' : '' }}>
+                                                Trust
+                                            </option>
                                             <option value="Other" {{ old('company_type') == 'Other' ? 'selected' : '' }}>
                                                 Other
                                             </option>

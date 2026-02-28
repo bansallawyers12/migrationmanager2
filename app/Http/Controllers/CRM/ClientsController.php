@@ -2434,6 +2434,7 @@ class ClientsController extends Controller
                     $matterNoPartLower = strtolower($matterNoPart);
                     $matterResults = DB::table('admins')
                         ->join('client_matters', 'admins.id', '=', 'client_matters.client_id')
+                        ->leftJoin('companies', 'companies.admin_id', '=', 'admins.id')
                         ->whereIn('admins.type', ['client', 'lead'])
                         ->whereNull('admins.is_deleted')
                         ->where('admins.is_archived', 0)
@@ -2444,20 +2445,26 @@ class ClientsController extends Controller
                             'admins.id as client_id',
                             'admins.first_name',
                             'admins.last_name',
+                            'admins.is_company',
                             'admins.email',
                             'admins.is_archived',
                             'admins.type',
+                            'companies.company_name',
                             'client_matters.client_unique_matter_no'
                         )
                         ->get();
                     
                     foreach ($matterResults as $result) {
+                        $displayName = ($result->is_company && $result->company_name)
+                            ? $result->company_name
+                            : trim(($result->first_name ?? '') . ' ' . ($result->last_name ?? ''));
                         $results[] = [
                             'id' => base64_encode(convert_uuencode($result->client_id)) . '/Matter/' . $result->client_unique_matter_no,
-                            'name' => $result->first_name . ' ' . $result->last_name,
+                            'name' => $displayName,
                             'email' => $result->email,
                             'status' => $result->is_archived ? 'Archived' : $result->type,
                             'cid' => $result->client_id,
+                            'is_company' => (bool) $result->is_company,
                         ];
                     }
                 }
@@ -2469,6 +2476,7 @@ class ClientsController extends Controller
              */
             $matterMatches = DB::table('client_matters')
                 ->join('admins', 'client_matters.client_id', '=', 'admins.id')
+                ->leftJoin('companies', 'companies.admin_id', '=', 'admins.id')
                 ->whereIn('admins.type', ['client', 'lead'])
                 ->whereNull('admins.is_deleted')
                 ->where('admins.is_archived', 0)
@@ -2482,9 +2490,11 @@ class ClientsController extends Controller
                     'admins.id as client_id',
                     'admins.first_name',
                     'admins.last_name',
+                    'admins.is_company',
                     'admins.email',
                     'admins.is_archived',
                     'admins.type',
+                    'companies.company_name',
                     'client_matters.client_unique_matter_no'
                 )
                 ->get();
@@ -2493,12 +2503,16 @@ class ClientsController extends Controller
             Log::info('Matter matches found: ' . count($matterMatches) . ' for query: ' . $squery);
 
             foreach ($matterMatches as $matter) {
+                $displayName = ($matter->is_company && $matter->company_name)
+                    ? $matter->company_name
+                    : trim(($matter->first_name ?? '') . ' ' . ($matter->last_name ?? ''));
                 $results[] = [
                     'id' => base64_encode(convert_uuencode($matter->client_id)) . '/Matter/' . $matter->client_unique_matter_no,
-                    'name' => $matter->first_name . ' ' . $matter->last_name,
+                    'name' => $displayName,
                     'email' => $matter->email,
                     'status' => $matter->is_archived ? 'Archived' : $matter->type,
                     'cid' => $matter->client_id,
+                    'is_company' => (bool) $matter->is_company,
                 ];
             }
 
@@ -2522,6 +2536,7 @@ class ClientsController extends Controller
             $isUniversalPhone = ($squery === '4444444444');
             
             $clientsQuery = \App\Models\Admin::query()
+                ->with('company')
                 ->whereIn('admins.type', ['client', 'lead'])
                 ->whereNull('admins.is_deleted')
                 ->where('admins.is_archived', 0)
@@ -2563,6 +2578,11 @@ class ClientsController extends Controller
                     $query->orWhereRaw('LOWER(admins.first_name) LIKE ?', ["%$squeryLower%"])
                         ->orWhereRaw('LOWER(admins.last_name) LIKE ?', ["%$squeryLower%"])
                         ->orWhereRaw('LOWER(admins.client_id) LIKE ?', ["%$squeryLower%"]);
+                    
+                    // Search by company name (for company clients/leads)
+                    $query->orWhereHas('company', function($q) use ($squeryLower) {
+                        $q->whereRaw('LOWER(company_name) LIKE ?', ["%{$squeryLower}%"]);
+                    });
                     
                     // Handle universal phone search in admins.phone
                     if ($isUniversalPhone) {
@@ -2669,15 +2689,32 @@ class ClientsController extends Controller
 
                     $results[] = [
                         'id' => $resultFinalId,
-                        'name' => $client->first_name . ' ' . $client->last_name,
+                        'name' => $client->company_name_or_personal_name,
                         'email' => $client->email,
                         'status' => $client->is_archived ? 'Archived' : $client->type,
                         'cid' => $client->id,
                         'phones' => $allPhones,
                         'emails' => $allEmails,
+                        'is_company' => (bool) $client->is_company,
                     ];
                 }
             }
+
+            // Exclude contact persons when their company is already in results (avoid duplicates)
+            $cidsInResults = array_column($results, 'cid');
+            $companyIdsInResults = \App\Models\Admin::whereIn('id', $cidsInResults)
+                ->where('is_company', 1)
+                ->pluck('id')
+                ->toArray();
+            $contactPersonIdsToExclude = \App\Models\Company::whereIn('admin_id', $companyIdsInResults)
+                ->pluck('contact_person_id')
+                ->filter()
+                ->unique()
+                ->values()
+                ->toArray();
+            $results = array_values(array_filter($results, function($r) use ($contactPersonIdsToExclude) {
+                return !in_array($r['cid'], $contactPersonIdsToExclude);
+            }));
 
             return response()->json(['items' => $results]);
         }
