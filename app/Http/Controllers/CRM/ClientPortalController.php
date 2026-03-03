@@ -1951,6 +1951,61 @@ class ClientPortalController extends Controller
 
 		$count = count($inserted);
 
+		// When "Allow For Client" is set, notify client (in-app notification + push) so they see new checklist(s)
+		if ($count > 0 && $allowClient === 1 && !empty($matter->client_id)) {
+			$matterNo = $matter->client_unique_matter_no ?? 'ID: ' . $clientMatterId;
+			$namesPreview = implode(', ', array_slice($names, 0, 3));
+			if ($count > 3) {
+				$namesPreview .= '...';
+			}
+			$notificationMessage = $count > 1
+				? "{$count} new checklist items added for matter {$matterNo}: {$namesPreview}"
+				: "New checklist \"{$namesPreview}\" added for matter {$matterNo}";
+
+			DB::table('notifications')->insert([
+				'sender_id'      => $userId,
+				'receiver_id'    => $matter->client_id,
+				'module_id'      => $clientMatterId,
+				'url'            => '/documents',
+				'notification_type' => 'checklist_added',
+				'message'        => $notificationMessage,
+				'created_at'     => $now,
+				'updated_at'     => $now,
+				'sender_status'  => 1,
+				'receiver_status' => 0,
+				'seen'           => 0,
+			]);
+
+			// Broadcast notification count for live bell badge (client portal / mobile)
+			try {
+				$clientCount = DB::table('notifications')->where('receiver_id', $matter->client_id)->where('receiver_status', 0)->count();
+				broadcast(new \App\Events\NotificationCountUpdated($matter->client_id, $clientCount, $notificationMessage, '/documents'));
+			} catch (\Exception $e) {
+				Log::warning('Failed to broadcast notification count after checklist add', ['client_id' => $matter->client_id, 'error' => $e->getMessage()]);
+			}
+
+			// Push notification to client mobile app
+			try {
+				$fcmService = new FCMService();
+				$pushTitle = $count > 1 ? 'New checklists added' : 'New checklist added';
+				$pushBody = $count > 1
+					? "{$count} checklist items added for matter {$matterNo}"
+					: "Checklist \"{$namesPreview}\" added for matter {$matterNo}";
+				$pushData = [
+					'type'             => 'checklist_added',
+					'clientMatterId'   => (string) $clientMatterId,
+					'matterNo'         => $matterNo,
+					'checklistCount'   => (string) $count,
+				];
+				$fcmService->sendToUser($matter->client_id, $pushTitle, $pushBody, $pushData);
+			} catch (\Exception $e) {
+				Log::warning('Failed to send push notification for checklist add', [
+					'client_id' => $matter->client_id,
+					'error'    => $e->getMessage(),
+				]);
+			}
+		}
+
 		return response()->json([
 			'success' => true,
 			'message' => $count . ' checklist' . ($count > 1 ? 's' : '') . ' added successfully.',
