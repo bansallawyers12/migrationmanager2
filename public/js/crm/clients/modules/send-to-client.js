@@ -376,6 +376,149 @@
         });
     }
 
+    /**
+     * Send Invoice to Hubdoc
+     */
+    function handleSendToHubdoc($btn) {
+        if ($btn.data('hubdoc-sent') === 1 || $btn.data('hubdoc-sent') === true) {
+            return;
+        }
+        var invoiceId = $btn.data('invoice-id');
+        if (!invoiceId) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Invoice ID is missing.' });
+            } else {
+                alert('Invoice ID is missing.');
+            }
+            return;
+        }
+
+        var baseUrl = (window.ClientDetailConfig && window.ClientDetailConfig.urls && window.ClientDetailConfig.urls.sendToHubdoc)
+            ? window.ClientDetailConfig.urls.sendToHubdoc
+            : null;
+        if (!baseUrl) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Configuration not available.' });
+            } else {
+                alert('Configuration not available.');
+            }
+            return;
+        }
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Send to Hubdoc?',
+                text: 'This will send the invoice to Hubdoc for processing.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, send it!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    sendToHubdocAjax(invoiceId, $btn);
+                }
+            });
+        } else {
+            if (confirm('Send this invoice to Hubdoc for processing?')) {
+                sendToHubdocAjax(invoiceId, $btn);
+            }
+        }
+    }
+
+    function sendToHubdocAjax(invoiceId, $btn) {
+        var originalHtml = $btn.html();
+        $btn.html('<i class="fas fa-spinner fa-spin"></i> Sending...');
+        $btn.prop('disabled', true);
+
+        var baseUrl = window.ClientDetailConfig.urls.sendToHubdoc;
+        $.ajax({
+            url: baseUrl + '/' + invoiceId,
+            type: 'POST',
+            dataType: 'json',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                if (response.status) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: response.message || 'Invoice sent to Hubdoc successfully!',
+                            timer: 2000
+                        }).then(function() {
+                            location.reload();
+                        });
+                    } else {
+                        alert(response.message || 'Invoice sent to Hubdoc successfully!');
+                        location.reload();
+                    }
+                } else {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: response.message || 'Failed to send to Hubdoc.'
+                        });
+                    } else {
+                        alert('Error: ' + (response.message || 'Failed to send to Hubdoc.'));
+                    }
+                    $btn.html(originalHtml);
+                    $btn.prop('disabled', false);
+                }
+            },
+            error: function(xhr) {
+                console.error('Error sending invoice to Hubdoc:', xhr);
+                var errorMsg = 'Failed to send to Hubdoc. Please try again.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                }
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: errorMsg
+                    });
+                } else {
+                    alert('Error: ' + errorMsg);
+                }
+                $btn.html(originalHtml);
+                $btn.prop('disabled', false);
+            }
+        });
+    }
+
+    /**
+     * Refresh Hubdoc status (reload so dropdown shows current status)
+     */
+    function handleRefreshHubdocStatus($btn) {
+        var invoiceId = $btn.data('invoice-id');
+        if (!invoiceId) return;
+
+        var checkUrl = (window.ClientDetailConfig && window.ClientDetailConfig.urls && window.ClientDetailConfig.urls.checkHubdocStatus)
+            ? window.ClientDetailConfig.urls.checkHubdocStatus
+            : null;
+        if (!checkUrl) {
+            location.reload();
+            return;
+        }
+
+        $btn.prop('disabled', true);
+        $.ajax({
+            url: checkUrl + '/' + invoiceId,
+            type: 'GET',
+            dataType: 'json',
+            success: function() {
+                location.reload();
+            },
+            error: function() {
+                location.reload();
+            }
+        });
+    }
+
     function attachSendToClientHandlers() {
         $('.dropdown-menu .send-invoice-to-client').off('click').on('click', function(e) {
             e.preventDefault();
@@ -399,6 +542,18 @@
             e.preventDefault();
             e.stopPropagation();
             handleSendInvoiceToClientApplication($(this));
+        });
+
+        $('.dropdown-menu .send-to-hubdoc-btn').off('click').on('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            handleSendToHubdoc($(this));
+        });
+
+        $('.dropdown-menu .refresh-hubdoc-status').off('click').on('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            handleRefreshHubdocStatus($(this));
         });
     }
 
@@ -436,6 +591,20 @@
             return;
         }
         handleSendInvoiceToClientApplication($(this));
+    });
+
+    $(document).on('click', '.send-to-hubdoc-btn', function() {
+        if ($(this).closest('.dropdown-menu').length > 0) {
+            return;
+        }
+        handleSendToHubdoc($(this));
+    });
+
+    $(document).on('click', '.refresh-hubdoc-status', function() {
+        if ($(this).closest('.dropdown-menu').length > 0) {
+            return;
+        }
+        handleRefreshHubdocStatus($(this));
     });
 
 })();
