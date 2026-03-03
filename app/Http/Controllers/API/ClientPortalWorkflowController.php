@@ -170,15 +170,12 @@ class ClientPortalWorkflowController extends Controller
 
     /**
      * Get case summary for a client matter
-     * Returns: case_name, case_status, migration_agent, person_responsible, person_assisting
+     * Returns: case_name, case_status
      */
     private function getCaseSummaryForClientMatter($clientId, $clientMatterId)
     {
         $matter = DB::table('client_matters')
             ->leftJoin('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
-            ->leftJoin('staff as migration_agent', 'client_matters.sel_migration_agent', '=', 'migration_agent.id')
-            ->leftJoin('staff as person_responsible', 'client_matters.sel_person_responsible', '=', 'person_responsible.id')
-            ->leftJoin('staff as person_assisting', 'client_matters.sel_person_assisting', '=', 'person_assisting.id')
             ->where('client_matters.client_id', $clientId)
             ->where('client_matters.id', $clientMatterId)
             ->select(
@@ -186,13 +183,7 @@ class ClientPortalWorkflowController extends Controller
                 'client_matters.matter_status',
                 'client_matters.sel_matter_id',
                 'matters.title as matter_title',
-                'matters.nick_name as matter_nick_name',
-                'migration_agent.first_name as migration_agent_first_name',
-                'migration_agent.last_name as migration_agent_last_name',
-                'person_responsible.first_name as person_responsible_first_name',
-                'person_responsible.last_name as person_responsible_last_name',
-                'person_assisting.first_name as person_assisting_first_name',
-                'person_assisting.last_name as person_assisting_last_name'
+                'matters.nick_name as matter_nick_name'
             )
             ->first();
 
@@ -216,9 +207,6 @@ class ClientPortalWorkflowController extends Controller
         return [
             'case_name' => $caseName,
             'case_status' => $matter->matter_status == 1 ? 'Active' : 'Inactive',
-            'migration_agent' => trim(($matter->migration_agent_first_name ?? '') . ' ' . ($matter->migration_agent_last_name ?? '')) ?: 'Unassigned',
-            'person_responsible' => trim(($matter->person_responsible_first_name ?? '') . ' ' . ($matter->person_responsible_last_name ?? '')) ?: 'Unassigned',
-            'person_assisting' => trim(($matter->person_assisting_first_name ?? '') . ' ' . ($matter->person_assisting_last_name ?? '')) ?: 'Unassigned'
         ];
     }
 
