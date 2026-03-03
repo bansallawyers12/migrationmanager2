@@ -62,7 +62,8 @@ class ClientPortalBillingController extends Controller
                         ->orWhere('void_invoice', 0);
                 })
                 ->groupBy('trans_no', 'receipt_id')
-                ->orderByDesc('latest_trans_date');
+                ->orderByDesc(DB::raw('MAX(client_portal_sent_at)'))
+                ->orderByDesc(DB::raw('MAX(trans_date)'));
 
             $total = DB::table(DB::raw('(' . $baseQuery->toSql() . ') as sub'))
                 ->mergeBindings($baseQuery)
