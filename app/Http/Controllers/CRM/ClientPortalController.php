@@ -413,6 +413,13 @@ class ClientPortalController extends Controller
                     'seen' => 0
                 ]);
 
+                // Create action for Action page Client Portal tab
+                $clientMatterModel = ClientMatter::find($clientMatterId);
+                if ($clientMatterModel) {
+                    $desc = 'Basic detail ' . $fieldLabel . ' approved for matter ' . $matterNo;
+                    $this->createClientPortalAction($clientMatterModel, $desc);
+                }
+
                 DB::commit();
 
                 return response()->json([
@@ -603,6 +610,13 @@ class ClientPortalController extends Controller
                     'receiver_status' => 0,
                     'seen' => 0
                 ]);
+
+                // Create action for Action page Client Portal tab
+                $clientMatterModel = ClientMatter::find($clientMatterId);
+                if ($clientMatterModel) {
+                    $desc = 'Basic detail ' . $fieldLabel . ' rejected for matter ' . $matterNo;
+                    $this->createClientPortalAction($clientMatterModel, $desc);
+                }
 
                 DB::commit();
 
@@ -2119,6 +2133,13 @@ $docType = $docList ? $docList->cp_checklist_name : ($appdoc->file_name ?? 'Docu
 						'receiver_status' => 0,
 						'seen' => 0
 					]);
+
+					// Create action for Action page Client Portal tab
+					$clientMatterModel = ClientMatter::find($clientMatterId);
+					if ($clientMatterModel) {
+						$desc = 'Document "' . $docType . '" deleted for matter ' . $matterNo;
+						$this->createClientPortalAction($clientMatterModel, $desc);
+					}
 				}
 
 				$clientMatterId = $appdoc->client_matter_id ?? null;
@@ -2226,6 +2247,13 @@ $docType = $docList ? $docList->cp_checklist_name : ($appdoc->file_name ?? 'Docu
 						'receiver_status' => 0,
 						'seen' => 0
 					]);
+
+					// Create action for Action page Client Portal tab
+					$clientMatterModel = ClientMatter::find($clientMatterId);
+					if ($clientMatterModel) {
+						$desc = 'Document "' . $docType . '" deleted for matter ' . $matterNo;
+						$this->createClientPortalAction($clientMatterModel, $desc);
+					}
 				}
 
 				$clientMatterId = $appdoc->client_matter_id ?? null;
@@ -2426,6 +2454,13 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 							'receiver_status' => 0,
 							'seen' => 0
 						]);
+
+						// Create action for Action page Client Portal tab
+						$clientMatterModel = ClientMatter::find($clientMatterId);
+						if ($clientMatterModel) {
+							$desc = 'Document "' . $docType . '" approved for matter ' . $matterNo;
+							$this->createClientPortalAction($clientMatterModel, $desc);
+						}
 					}
 				}
 				$response['status'] = true;
@@ -2507,6 +2542,13 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 							'receiver_status' => 0,
 							'seen' => 0
 						]);
+
+						// Create action for Action page Client Portal tab
+						$clientMatterModel = ClientMatter::find($clientMatterId);
+						if ($clientMatterModel) {
+							$desc = 'Document "' . $docType . '" rejected for matter ' . $matterNo;
+							$this->createClientPortalAction($clientMatterModel, $desc);
+						}
 					}
 				}
 				$response['status'] = true;
@@ -3077,6 +3119,14 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 					'created_at' => now(),
 					'updated_at' => now()
 				]);
+
+				// Create action for Action page Client Portal tab so it appears in the list
+				$clientMatterModel = ClientMatter::find($clientMatterId);
+				if ($clientMatterModel) {
+					$matterNoForAction = $clientMatterModel->client_unique_matter_no ?? 'ID: ' . $clientMatterId;
+					$desc = 'Message sent to client ' . $recipientUser->full_name . ' for matter ' . $matterNoForAction;
+					$this->createClientPortalAction($clientMatterModel, $desc);
+				}
 
 				// Notify client (for List Notifications API)
 				$matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatterId) : 'ID: ' . $clientMatterId;
