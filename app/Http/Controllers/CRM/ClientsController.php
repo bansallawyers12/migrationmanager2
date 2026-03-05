@@ -4090,7 +4090,67 @@ class ClientsController extends Controller
                 Log::info('Using template: ' . $templateFileName . ' for matter type: ' . ($matterNickName ?? 'default'));
             }
 
-            $templateProcessor = new TemplateProcessor($templatePath);
+            // Option 2: Patch template so "Amount incl Surcharge" total cell uses TotalDoHAChargesInclSurcharge
+            // (replaces last occurrence of ${TotalDoHASurcharges} in word/document.xml to fix the total display)
+            $pathToLoad = $templatePath;
+            $patchedTempPath = null; // used for cleanup after saveAs; set only when patch is applied
+            try {
+                $tempDir = storage_path('app/temp');
+                if (!is_dir($tempDir)) {
+                    @mkdir($tempDir, 0755, true);
+                }
+                $patchedTempPath = $tempDir . '/agreement_patch_' . getmypid() . '_' . time() . '.docx';
+                if (@copy($templatePath, $patchedTempPath)) {
+                    $zip = new \ZipArchive();
+                    if ($zip->open($patchedTempPath) === true) {
+                        $xml = $zip->getFromName('word/document.xml');
+                        if ($xml !== false) {
+                            $patched = false;
+                            // Try full placeholder first (PhpWord format)
+                            $oldPlaceholder = '${TotalDoHASurcharges}';
+                            $newPlaceholder = '${TotalDoHAChargesInclSurcharge}';
+                            $lastPos = strrpos($xml, $oldPlaceholder);
+                            if ($lastPos !== false) {
+                                $xml = substr_replace($xml, $newPlaceholder, $lastPos, strlen($oldPlaceholder));
+                                $patched = true;
+                            } else {
+                                // Word may split placeholder across XML runs; try name only (last occurrence)
+                                $oldName = 'TotalDoHASurcharges';
+                                $newName = 'TotalDoHAChargesInclSurcharge';
+                                $lastPos = strrpos($xml, $oldName);
+                                if ($lastPos !== false) {
+                                    $xml = substr_replace($xml, $newName, $lastPos, strlen($oldName));
+                                    $patched = true;
+                                }
+                            }
+                            if ($patched) {
+                                $zip->deleteName('word/document.xml');
+                                $zip->addFromString('word/document.xml', $xml);
+                                $zip->close();
+                                $pathToLoad = $patchedTempPath;
+                                Log::info('Patched template: Amount incl Surcharge total cell now uses TotalDoHAChargesInclSurcharge');
+                            } else {
+                                $zip->close();
+                            }
+                        } else {
+                            $zip->close();
+                        }
+                    }
+                    if ($pathToLoad === $templatePath && file_exists($patchedTempPath)) {
+                        @unlink($patchedTempPath);
+                        $patchedTempPath = null;
+                    }
+                }
+            } catch (\Throwable $patchEx) {
+                Log::warning('Template patch skipped: ' . $patchEx->getMessage());
+                $pathToLoad = $templatePath;
+                if ($patchedTempPath && file_exists($patchedTempPath)) {
+                    @unlink($patchedTempPath);
+                    $patchedTempPath = null;
+                }
+            }
+
+            $templateProcessor = new TemplateProcessor($pathToLoad);
 
             // Log the values we're trying to set
             Log::info('Generating document for client: ' . $client->client_id);
@@ -4171,6 +4231,7 @@ class ClientsController extends Controller
 
             $TotalDoHACharges = 0;
             $TotalDoHASurcharges = 0;
+            $TotalDoHAChargesInclSurcharge = '0.00';
             $TotalEstimatedOtherCosts = 0;
             $GrandTotalFeesAndCosts = 0;
 
@@ -4259,9 +4320,18 @@ class ClientsController extends Controller
 
                     $TotalDoHACharges = $matter_info->TotalDoHACharges ?? 0;
                     $TotalDoHASurcharges = $matter_info->TotalDoHASurcharges ?? 0;
+                    // Total for "Amount incl Surcharge" column = sum of per-row Amount incl Surcharge (matches table total)
+                    $TotalDoHAChargesInclSurcharge = number_format(
+                        floatval($DoHAMainApplicantSurcharge ?? 0) + floatval($DoHAAdditional18PlusSurcharge ?? 0)
+                        + floatval($DoHAAdditionalUnder18Surcharge ?? 0) + floatval($DoHASecondInstalmentMainSurcharge ?? 0)
+                        + floatval($DoHASubsequentApplicantCharge18PlusSurcharge ?? 0) + floatval($DoHASubsequentTempAppSurcharge ?? 0)
+                        + floatval($DoHANonInternetSurcharge ?? 0),
+                        2, '.', ''
+                    );
 
                     $TotalEstimatedOtherCosts = $matter_info->additional_fee_1 ?? 0;
-                    $GrandTotalFeesAndCosts = floatval($Blocktotalfeesincltax) + floatval($TotalDoHASurcharges) + floatval($TotalEstimatedOtherCosts);
+                    // Total Fees, Charges & Costs = professional fees + full DoHA charges (incl surcharge) + estimated costs
+                    $GrandTotalFeesAndCosts = floatval($Blocktotalfeesincltax) + floatval($TotalDoHAChargesInclSurcharge) + floatval($TotalEstimatedOtherCosts);
                     $GrandTotalFeesAndCostsFormated = number_format($GrandTotalFeesAndCosts, 2, '.', '');
                 }
             }
@@ -4335,6 +4405,7 @@ class ClientsController extends Controller
 
                 'TotalDoHACharges'=>$TotalDoHACharges,
                 'TotalDoHASurcharges'=>$TotalDoHASurcharges,
+                'TotalDoHAChargesInclSurcharge'=>$TotalDoHAChargesInclSurcharge,
 
                 'TotalEstimatedOthCosts'=>$TotalEstimatedOtherCosts,
                 'GrandTotalFeesAndCosts'=>$GrandTotalFeesAndCostsFormated
@@ -4376,6 +4447,11 @@ class ClientsController extends Controller
 
             $outputPath = $outputDir . '/agreement_' . $client->client_id . '.docx'; //dd($outputPath);
             $templateProcessor->saveAs($outputPath);
+
+            // Remove patched temp template if Option 2 was used
+            if (isset($patchedTempPath) && $patchedTempPath !== null && file_exists($patchedTempPath)) {
+                @unlink($patchedTempPath);
+            }
 
             Log::info('Document generated successfully at: ' . $outputPath);
             
