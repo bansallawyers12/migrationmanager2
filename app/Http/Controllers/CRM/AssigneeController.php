@@ -255,6 +255,7 @@ class AssigneeController extends Controller
             'Query' => $groupedCounts['Query'] ?? 0,
             'Urgent' => $groupedCounts['Urgent'] ?? 0,
             'Personal Action' => $groupedCounts['Personal Action'] ?? 0,
+            'Client Portal' => $groupedCounts['Client Portal'] ?? 0,
         ];
 
         return $counts;
@@ -300,10 +301,12 @@ class AssigneeController extends Controller
                     } elseif ($request->filter == 'completed') {
                         $query->where('notes.status', '1');
                     } else {
-                        // Handle special case for personal_action to convert underscore to space
+                        // Handle special cases for filter keys that use underscores (convert to correct task_group value)
                         $actionGroup = $request->filter;
                         if ($actionGroup == 'personal_action') {
                             $actionGroup = 'Personal Action';
+                        } elseif ($actionGroup == 'client_portal') {
+                            $actionGroup = 'Client Portal';
                         } else {
                             $actionGroup = ucfirst($actionGroup);
                         }
@@ -504,7 +507,8 @@ class AssigneeController extends Controller
             'review' => 0,
             'query' => 0,
             'urgent' => 0,
-            'personal_action' => 0
+            'personal_action' => 0,
+            'client_portal' => 0
         ];
 
         $query = Note::where('status', '<>', '1')
@@ -522,6 +526,7 @@ class AssigneeController extends Controller
         $counts['query'] = (clone $query)->where('task_group', 'Query')->count();
         $counts['urgent'] = (clone $query)->where('task_group', 'Urgent')->count();
         $counts['personal_action'] = (clone $query)->where('task_group', 'Personal Action')->count();
+        $counts['client_portal'] = (clone $query)->where('task_group', 'Client Portal')->count();
 
         return response()->json($counts);
     }
@@ -695,7 +700,7 @@ class AssigneeController extends Controller
             'client_id' => 'nullable|string', // Client ID is optional for Personal Actions
             'assigned_to' => 'required|exists:staff,id',
             'description' => 'required|string',
-            'task_group' => 'required|string|in:Call,Checklist,Review,Query,Urgent,Personal Action', // Include Personal Action
+            'task_group' => 'required|string|in:Call,Checklist,Review,Query,Urgent,Personal Action,Client Portal',
         ]);
 
         try {

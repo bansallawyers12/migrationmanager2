@@ -14,6 +14,8 @@ use App\Models\ActivitiesLog;
 // clientServiceTaken model removed - table client_service_takens does not exist
 use App\Models\AccountClientReceipt;
 use App\Models\AccountAllInvoiceReceipt;
+use App\Models\ClientMatter;
+use App\Models\Note;
 use App\Mail\HubdocInvoiceMail;
 use App\Services\FinancialStatsService;
 use App\Services\FCMService;
@@ -5655,6 +5657,31 @@ public function getInvoiceAmount(Request $request)
             $objs->task_status = 0;
             $objs->pin = 0;
             $objs->save();
+
+            // Create an action (Note) so it appears in the Client Portal tab on the Action page.
+            // assigned_to = Person Assisting for the client matter; fallback to current user if not set.
+            $assignedToStaffId = Auth::user()->id;
+            $clientMatterId = $receipt_entry->client_matter_id ?? $record_get->client_matter_id ?? null;
+            if ($clientMatterId) {
+                $clientMatter = ClientMatter::find($clientMatterId);
+                if ($clientMatter && !empty($clientMatter->sel_person_assisting)) {
+                    $assignedToStaffId = $clientMatter->sel_person_assisting;
+                }
+            }
+
+            $actionNote = new Note;
+            $actionNote->user_id = Auth::user()->id;
+            $actionNote->client_id = $record_get->client_id;
+            $actionNote->assigned_to = $assignedToStaffId;
+            $actionNote->description = 'Invoice #' . $invoiceNo . ' sent to Client Portal';
+            $actionNote->action_date = now()->toDateString();
+            $actionNote->task_group = 'Client Portal';
+            $actionNote->type = 'client';
+            $actionNote->is_action = 1;
+            $actionNote->status = '0';
+            $actionNote->pin = 0;
+            $actionNote->unique_group_id = 'group_' . uniqid('', true);
+            $actionNote->save();
 
             return response()->json([
                 'status' => true,
