@@ -3225,10 +3225,38 @@ document.addEventListener('DOMContentLoaded', function() {
     if (backStageBtn) {
         backStageBtn.addEventListener('click', function() {
             const matterId = this.getAttribute('data-matter-id');
-            if (confirm('Are you sure you want to move back to the previous stage?')) {
-                // TODO: Implement API call to move to previous stage
-                alert('Back to previous stage functionality will be implemented');
+            if (!matterId) {
+                alert('Error: Matter ID not found');
+                return;
             }
+            if (!confirm('Are you sure you want to move back to the previous stage?')) return;
+            const originalText = this.innerHTML;
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            fetch('{{ route("clients.matter.update-previous-stage") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                },
+                body: JSON.stringify({ matter_id: matterId, source: 'client_portal' })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status) {
+                    alert(data.message || 'Matter has been successfully moved to the previous stage.');
+                    window.location.reload();
+                } else {
+                    alert(data.message || 'Failed to move to previous stage. Please try again.');
+                    backStageBtn.disabled = false;
+                    backStageBtn.innerHTML = originalText;
+                }
+            })
+            .catch(function() {
+                alert('Failed to move to previous stage. Please try again.');
+                backStageBtn.disabled = false;
+                backStageBtn.innerHTML = originalText;
+            });
         });
     }
     

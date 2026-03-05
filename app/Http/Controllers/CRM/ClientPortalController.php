@@ -16,6 +16,7 @@ use App\Models\CpDocChecklist;
 use App\Models\Document;
 use App\Models\ClientPortalDetailAudit;
 use App\Models\ClientMatter;
+use App\Models\Note;
 use App\Models\WorkflowStage;
 use App\Models\Message;
 use App\Models\MessageRecipient;
@@ -945,6 +946,12 @@ class ClientPortalController extends Controller
 				$activityLog->source = 'client_portal_web';
 				$activityLog->save();
 
+				// Create action for Action page Client Portal tab (only when triggered from Client Portal tab)
+				if ($request->input('source') === 'client_portal') {
+					$desc = 'Matter ' . $matterNo . ' moved to next stage: ' . $currentStage->name . ' → ' . $nextStage->name;
+					$this->createClientPortalAction($clientMatter, $desc);
+				}
+
 				// Notify client of stage change (for List Notifications API)
 				$notificationMessage = 'Stage moved from ' . $currentStage->name . ' to ' . $nextStage->name . ' for matter ' . $matterNo;
 				DB::table('notifications')->insert([
@@ -1102,6 +1109,13 @@ class ClientPortalController extends Controller
 				$activityLog->pin = 0;
 				$activityLog->source = 'client_portal_web';
 				$activityLog->save();
+
+				// Create action for Action page Client Portal tab (only when triggered from Client Portal tab)
+				if ($request->input('source') === 'client_portal') {
+					$desc = 'Matter ' . $matterNo . ' moved to previous stage: ' . $currentStage->name . ' → ' . $prevStage->name;
+					$this->createClientPortalAction($clientMatter, $desc);
+				}
+
 				$notificationMessage = 'Stage moved from ' . $currentStage->name . ' to ' . $prevStage->name . ' for matter ' . $matterNo;
 				DB::table('notifications')->insert([
 					'sender_id' => Auth::user()->id,
@@ -1143,6 +1157,36 @@ class ClientPortalController extends Controller
 				'message' => 'An error occurred while updating the stage. Please try again.'
 			], 500);
 		}
+	}
+
+	/**
+	 * Create an action (Note) so it appears in the Action page Client Portal tab.
+	 * assigned_to = Person Assisting for the client matter; fallback to current user if not set.
+	 *
+	 * @param ClientMatter $clientMatter
+	 * @param string $description
+	 * @return void
+	 */
+	private function createClientPortalAction(ClientMatter $clientMatter, string $description)
+	{
+		$assignedToStaffId = Auth::user()->id;
+		if (!empty($clientMatter->sel_person_assisting)) {
+			$assignedToStaffId = $clientMatter->sel_person_assisting;
+		}
+
+		$actionNote = new Note;
+		$actionNote->user_id = Auth::user()->id;
+		$actionNote->client_id = $clientMatter->client_id;
+		$actionNote->assigned_to = $assignedToStaffId;
+		$actionNote->description = $description;
+		$actionNote->action_date = now()->toDateString();
+		$actionNote->task_group = 'Client Portal';
+		$actionNote->type = 'client';
+		$actionNote->is_action = 1;
+		$actionNote->status = '0';
+		$actionNote->pin = 0;
+		$actionNote->unique_group_id = 'group_' . uniqid('', true);
+		$actionNote->save();
 	}
 
 	/**
@@ -2004,6 +2048,20 @@ class ClientPortalController extends Controller
 					'error'    => $e->getMessage(),
 				]);
 			}
+		}
+
+		// Create action for Action page Client Portal tab so it appears in the list
+		$clientMatter = ClientMatter::find($clientMatterId);
+		if ($clientMatter) {
+			$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatterId;
+			$namesPreview = implode(', ', array_slice($names, 0, 5));
+			if (count($names) > 5) {
+				$namesPreview .= '...';
+			}
+			$desc = $count > 1
+				? 'New checklists added for matter ' . $matterNo . ': ' . $namesPreview
+				: 'New checklist added for matter ' . $matterNo . ': ' . $namesPreview;
+			$this->createClientPortalAction($clientMatter, $desc);
 		}
 
 		return response()->json([
