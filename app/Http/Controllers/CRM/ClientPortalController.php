@@ -3121,24 +3121,30 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 					'updated_at' => now()
 				]);
 
-				// Create action for Action page Client Portal tab so it appears in the list
+				// Actor name for notification and Action page: Super admin or PERSON ASSISTING / staff name
+				$actor = Auth::guard('admin')->user();
+				$actorName = ($actor && (int) $actor->role === 1) ? 'Super admin' : ($actor ? trim(($actor->first_name ?? '') . ' ' . ($actor->last_name ?? '')) : 'Staff');
+				if ($actorName === '') {
+					$actorName = 'Staff';
+				}
+				$matterName = $clientMatter->client_unique_matter_no ?? ('ID: ' . $clientMatterId);
+				$messageExcerpt = $message !== '' ? (mb_strlen($message) > 80 ? mb_substr($message, 0, 77) . '...' : $message) : ($hasFiles ? 'attachment(s)' : 'message');
+				$actionMessage = $actorName . ' sent message - "' . $messageExcerpt . '" in ' . $matterName . '.';
+
+				// Create action for Action page Client Portal tab (message format: Actor sent message - "..." in MatterName)
 				$clientMatterModel = ClientMatter::find($clientMatterId);
 				if ($clientMatterModel) {
-					$matterNoForAction = $clientMatterModel->client_unique_matter_no ?? 'ID: ' . $clientMatterId;
-					$desc = 'Message sent to client ' . $recipientUser->full_name . ' for matter ' . $matterNoForAction;
-					$this->createClientPortalAction($clientMatterModel, $desc);
+					$this->createClientPortalAction($clientMatterModel, $actionMessage);
 				}
 
-				// Notify client (for List Notifications API)
-				$matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatterId) : 'ID: ' . $clientMatterId;
-				$notificationMessage = 'New message from ' . $senderName . ' for matter ' . $matterNo;
+				// Notify client (for List Notifications API) with same message format
 				DB::table('notifications')->insert([
 					'sender_id' => $senderId,
 					'receiver_id' => $clientId,
 					'module_id' => $clientMatterId,
 					'url' => '/messages',
 					'notification_type' => 'message',
-					'message' => $notificationMessage,
+					'message' => $actionMessage,
 					'created_at' => now(),
 					'updated_at' => now(),
 					'sender_status' => 1,
@@ -3148,8 +3154,8 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 
 				// Broadcast notification count update for live bell badge (client receives new notification)
 				try {
-					$clientCount = DB::table('notifications')->where('receiver_id', $clientId)->where('receiver_status', 0)->count();
-					broadcast(new \App\Events\NotificationCountUpdated($clientId, $clientCount));
+					$clientCount = (int) DB::table('notifications')->where('receiver_id', $clientId)->where('receiver_status', 0)->count();
+					broadcast(new \App\Events\NotificationCountUpdated($clientId, $clientCount, $actionMessage, '/messages'));
 				} catch (\Exception $e) {
 					Log::warning('Failed to broadcast notification count to client', ['client_id' => $clientId, 'error' => $e->getMessage()]);
 				}
@@ -3362,12 +3368,25 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 			return response()->json(['success' => false, 'message' => 'Document not found.'], 404);
 		}
 
+		$clientMatterId = $document->client_matter_id ?? null;
+		$cpListId = $document->cp_list_id ?? null;
+		$checklistName = 'checklist';
+		if ($cpListId) {
+			$cl = DB::table('cp_doc_checklists')->where('id', $cpListId)->first();
+			$checklistName = $cl->cp_checklist_name ?? $checklistName;
+		} elseif (!empty($document->checklist)) {
+			$checklistName = $document->checklist;
+		}
+
 		// Remove the file from S3 before deleting the DB record (best-effort)
 		$this->deleteS3File($document->myfile);
 
 		$deleted = DB::table('documents')->where('id', $documentId)->delete();
 
 		if ($deleted) {
+			if ($clientMatterId) {
+				$this->notifyClientAndCreateActionForDocumentStatusChangeByMatter((int) $clientMatterId, $checklistName, 'deleted');
+			}
 			return response()->json(['success' => true]);
 		}
 
@@ -3398,10 +3417,110 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 		$updated = DB::table('documents')->where('id', $documentId)->update($data);
 
 		if ($updated !== false) {
+			$this->notifyClientAndCreateActionForDocumentStatusChange($documentId, $status === 1 ? 'approved' : 'rejected');
 			return response()->json(['success' => true]);
 		}
 
 		return response()->json(['success' => false, 'message' => 'Document not found.'], 404);
+	}
+
+	/**
+	 * Notify client (List Notifications API + badge) and create Client Portal action for document approve/reject/delete from website.
+	 * Message format: "{Super admin or PERSON ASSISTING name} approved/rejected/deleted document of {ChecklistName} checklist in {MatterName}."
+	 */
+	private function notifyClientAndCreateActionForDocumentStatusChange(int $documentId, string $action): void
+	{
+		$doc = DB::table('documents')->where('id', $documentId)->first();
+		if (!$doc || !$doc->client_matter_id) {
+			return;
+		}
+		$clientMatter = DB::table('client_matters')->where('id', $doc->client_matter_id)->first();
+		if (!$clientMatter || empty($clientMatter->client_id)) {
+			return;
+		}
+		$checklistRow = $doc->cp_list_id ? DB::table('cp_doc_checklists')->where('id', $doc->cp_list_id)->first() : null;
+		$checklistName = $checklistRow->cp_checklist_name ?? ($doc->checklist ?? 'checklist');
+		$matterName = $clientMatter->client_unique_matter_no ?? ('ID: ' . $clientMatter->id);
+
+		$actor = Auth::guard('admin')->user();
+		$actorName = ($actor && (int) $actor->role === 1) ? 'Super admin' : ($actor ? trim(($actor->first_name ?? '') . ' ' . ($actor->last_name ?? '')) : 'Staff');
+		if ($actorName === '') {
+			$actorName = 'Staff';
+		}
+
+		$notificationType = $action === 'approved' ? 'document_approved' : ($action === 'rejected' ? 'document_rejected' : 'document_deleted');
+		$message = $actorName . ' ' . $action . ' document of ' . $checklistName . ' checklist in ' . $matterName . '.';
+
+		DB::table('notifications')->insert([
+			'sender_id'         => Auth::guard('admin')->id(),
+			'receiver_id'       => $clientMatter->client_id,
+			'module_id'         => (int) $clientMatter->id,
+			'url'               => '/documents',
+			'notification_type' => $notificationType,
+			'message'           => $message,
+			'created_at'        => now(),
+			'updated_at'        => now(),
+			'sender_status'     => 1,
+			'receiver_status'   => 0,
+			'seen'              => 0,
+		]);
+
+		try {
+			$clientCount = (int) DB::table('notifications')->where('receiver_id', $clientMatter->client_id)->where('receiver_status', 0)->count();
+			broadcast(new \App\Events\NotificationCountUpdated($clientMatter->client_id, $clientCount, $message, '/documents'));
+		} catch (\Exception $e) {
+			Log::warning('Document status change: broadcast failed', ['client_id' => $clientMatter->client_id, 'error' => $e->getMessage()]);
+		}
+
+		$clientMatterModel = ClientMatter::find($clientMatter->id);
+		if ($clientMatterModel) {
+			$this->createClientPortalAction($clientMatterModel, $message);
+		}
+	}
+
+	/**
+	 * Notify client and create Client Portal action when document is deleted (document no longer exists).
+	 */
+	private function notifyClientAndCreateActionForDocumentStatusChangeByMatter(int $clientMatterId, string $checklistName, string $action): void
+	{
+		$clientMatter = DB::table('client_matters')->where('id', $clientMatterId)->first();
+		if (!$clientMatter || empty($clientMatter->client_id)) {
+			return;
+		}
+		$matterName = $clientMatter->client_unique_matter_no ?? ('ID: ' . $clientMatter->id);
+		$actor = Auth::guard('admin')->user();
+		$actorName = ($actor && (int) $actor->role === 1) ? 'Super admin' : ($actor ? trim(($actor->first_name ?? '') . ' ' . ($actor->last_name ?? '')) : 'Staff');
+		if ($actorName === '') {
+			$actorName = 'Staff';
+		}
+		$notificationType = 'document_deleted';
+		$message = $actorName . ' ' . $action . ' document of ' . $checklistName . ' checklist in ' . $matterName . '.';
+
+		DB::table('notifications')->insert([
+			'sender_id'         => Auth::guard('admin')->id(),
+			'receiver_id'       => $clientMatter->client_id,
+			'module_id'         => (int) $clientMatter->id,
+			'url'               => '/documents',
+			'notification_type' => $notificationType,
+			'message'           => $message,
+			'created_at'        => now(),
+			'updated_at'        => now(),
+			'sender_status'     => 1,
+			'receiver_status'   => 0,
+			'seen'              => 0,
+		]);
+
+		try {
+			$clientCount = (int) DB::table('notifications')->where('receiver_id', $clientMatter->client_id)->where('receiver_status', 0)->count();
+			broadcast(new \App\Events\NotificationCountUpdated($clientMatter->client_id, $clientCount, $message, '/documents'));
+		} catch (\Exception $e) {
+			Log::warning('Document delete: broadcast failed', ['client_id' => $clientMatter->client_id, 'error' => $e->getMessage()]);
+		}
+
+		$clientMatterModel = ClientMatter::find($clientMatter->id);
+		if ($clientMatterModel) {
+			$this->createClientPortalAction($clientMatterModel, $message);
+		}
 	}
 
 	/**

@@ -15,6 +15,7 @@ use App\Models\Message;
 use App\Models\MessageRecipient;
 use App\Models\Staff;
 use App\Models\Admin;
+use App\Models\Note;
 use App\Events\MessageSent;
 use App\Events\MessageReceived;
 use App\Events\MessageDeleted;
@@ -520,6 +521,12 @@ class ClientPortalMessageController extends Controller
                     ]);
                 }
 
+                // Build message for notifications and Action page: "{ClientName} sent message - \"{excerpt}\" in {MatterName}."
+                $clientName = $sender ? trim(($sender->first_name ?? '') . ' ' . ($sender->last_name ?? '')) : 'Client';
+                $matterName = $clientMatter && !empty($clientMatter->client_unique_matter_no) ? $clientMatter->client_unique_matter_no : ('ID: ' . $clientMatterId);
+                $messageExcerpt = $message ? (mb_strlen($message) > 80 ? mb_substr($message, 0, 80) . '...' : $message) : 'attachment(s)';
+                $actionMessage = $clientName . ' sent message - "' . $messageExcerpt . '" in ' . $matterName . '.';
+
                 // Send notifications to recipients (excluding sender)
                 $messageNotificationUrl = '/clients';
                 if ($clientMatter) {
@@ -531,15 +538,13 @@ class ClientPortalMessageController extends Controller
                 }
                 foreach ($targetRecipients as $recipientId) {
                     if ($recipientId != $clientId) {
-                        $notificationMessage = 'New message received by Client Portal Mobile App from ' . ($sender ? $sender->first_name . ' ' . $sender->last_name : 'Client') . ' for matter ' . ($clientMatter ? $clientMatter->client_unique_matter_no : 'ID: ' . $clientMatterId);
-
                         DB::table('notifications')->insert([
                             'sender_id' => $clientId,
                             'receiver_id' => $recipientId,
                             'module_id' => $clientMatterId,
                             'url' => $messageNotificationUrl,
                             'notification_type' => 'message',
-                            'message' => $notificationMessage,
+                            'message' => $actionMessage,
                             'created_at' => now(),
                             'updated_at' => now(),
                             'sender_status' => 1,
@@ -613,6 +618,34 @@ class ClientPortalMessageController extends Controller
                     'created_at' => now(),
                     'updated_at' => now()
                 ]);
+
+                // Create Client Portal action: "{Client name} sent message - \"{excerpt}\" in {Matter name}."
+                if ($clientMatter && isset($clientMatter->client_id)) {
+                    try {
+                        $assignedToStaffId = $clientMatter->sel_person_assisting ?? (isset($targetRecipients[0]) ? $targetRecipients[0] : null);
+                        if ($assignedToStaffId) {
+                            $actionNote = new Note();
+                            $actionNote->user_id = $clientId;
+                            $actionNote->client_id = $clientMatter->client_id;
+                            $actionNote->matter_id = $clientMatterId;
+                            $actionNote->assigned_to = $assignedToStaffId;
+                            $actionNote->description = $actionMessage;
+                            $actionNote->action_date = now()->toDateString();
+                            $actionNote->task_group = 'Client Portal';
+                            $actionNote->type = 'client';
+                            $actionNote->is_action = 1;
+                            $actionNote->status = '0';
+                            $actionNote->pin = 0;
+                            $actionNote->unique_group_id = 'group_' . uniqid('', true);
+                            $actionNote->save();
+                        }
+                    } catch (\Exception $e) {
+                        Log::warning('API send message: failed to create Client Portal action', [
+                            'client_matter_id' => $clientMatterId,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
+                }
 
                 return response()->json([
                     'success' => true,
