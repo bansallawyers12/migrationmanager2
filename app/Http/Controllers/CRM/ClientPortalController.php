@@ -325,7 +325,7 @@ class ClientPortalController extends Controller
                 $senderId = $sender ? $sender->id : null;
                 $senderName = $sender ? ($sender->first_name . ' ' . $sender->last_name) : 'Admin';
 
-                // Create approval message
+                // Create approval message (for chat)
                 $message = "Your Basic Detail {$fieldLabel} related changes approved by Admin. Please check at your end.";
 
                 // Create message record
@@ -395,17 +395,20 @@ class ClientPortalController extends Controller
                     }
                 }
 
-                // Notify client (for List Notifications API)
+                // Notify client (List Notifications API), badge broadcast, FCM push, and Action page
                 $clientMatter = DB::table('client_matters')->where('id', $clientMatterId)->first();
                 $matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatterId) : 'ID: ' . $clientMatterId;
-                $notificationMessage = 'Basic detail ' . $fieldLabel . ' change approved for matter ' . $matterNo;
+                $actorName = ($sender && (int) $sender->role === 1) ? 'Super admin' : ($senderName ?: 'Staff');
+                $fieldUpdateText = 'Field - ' . $fieldLabel . ' update to ' . (is_string($newValue) ? $newValue : (string) $newValue);
+                $actionMessage = $actorName . ' approved your detail update request - "' . $fieldUpdateText . '" in ' . $matterNo . '.';
+
                 DB::table('notifications')->insert([
                     'sender_id' => $senderId,
                     'receiver_id' => $clientId,
                     'module_id' => $clientMatterId,
                     'url' => '/details',
                     'notification_type' => 'detail_approved',
-                    'message' => $notificationMessage,
+                    'message' => $actionMessage,
                     'created_at' => now(),
                     'updated_at' => now(),
                     'sender_status' => 1,
@@ -413,11 +416,27 @@ class ClientPortalController extends Controller
                     'seen' => 0
                 ]);
 
-                // Create action for Action page Client Portal tab
+                try {
+                    $clientCount = (int) DB::table('notifications')->where('receiver_id', $clientId)->where('receiver_status', 0)->count();
+                    broadcast(new \App\Events\NotificationCountUpdated($clientId, $clientCount, $actionMessage, '/details'));
+                } catch (\Exception $e) {
+                    Log::warning('Detail approved: broadcast failed', ['client_id' => $clientId, 'error' => $e->getMessage()]);
+                }
+
+                try {
+                    $fcmService = new FCMService();
+                    $fcmService->sendToUser($clientId, 'Detail update approved', mb_strlen($actionMessage) > 100 ? mb_substr($actionMessage, 0, 100) . '...' : $actionMessage, [
+                        'type' => 'detail_approved',
+                        'clientMatterId' => (string) $clientMatterId,
+                        'matterNo' => $matterNo,
+                    ]);
+                } catch (\Exception $e) {
+                    Log::warning('Detail approved: FCM push failed', ['client_id' => $clientId, 'error' => $e->getMessage()]);
+                }
+
                 $clientMatterModel = ClientMatter::find($clientMatterId);
                 if ($clientMatterModel) {
-                    $desc = 'Basic detail ' . $fieldLabel . ' approved for matter ' . $matterNo;
-                    $this->createClientPortalAction($clientMatterModel, $desc);
+                    $this->createClientPortalAction($clientMatterModel, $actionMessage);
                 }
 
                 DB::commit();
@@ -593,17 +612,21 @@ class ClientPortalController extends Controller
                     }
                 }
 
-                // Notify client (for List Notifications API)
+                // Notify client (List Notifications API), badge broadcast, FCM push, and Action page
                 $clientMatter = DB::table('client_matters')->where('id', $clientMatterId)->first();
                 $matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatterId) : 'ID: ' . $clientMatterId;
-                $notificationMessage = 'Basic detail ' . $fieldLabel . ' change rejected for matter ' . $matterNo;
+                $actorName = ($sender && (int) $sender->role === 1) ? 'Super admin' : ($senderName ?: 'Staff');
+                $rejectedValue = $auditEntry->new_value ?? '';
+                $fieldUpdateText = 'Field - ' . $fieldLabel . ' update to ' . (is_string($rejectedValue) ? $rejectedValue : (string) $rejectedValue);
+                $actionMessage = $actorName . ' rejected your detail update request - "' . $fieldUpdateText . '" in ' . $matterNo . '.';
+
                 DB::table('notifications')->insert([
                     'sender_id' => $senderId,
                     'receiver_id' => $clientId,
                     'module_id' => $clientMatterId,
                     'url' => '/details',
                     'notification_type' => 'detail_rejected',
-                    'message' => $notificationMessage,
+                    'message' => $actionMessage,
                     'created_at' => now(),
                     'updated_at' => now(),
                     'sender_status' => 1,
@@ -611,11 +634,27 @@ class ClientPortalController extends Controller
                     'seen' => 0
                 ]);
 
-                // Create action for Action page Client Portal tab
+                try {
+                    $clientCount = (int) DB::table('notifications')->where('receiver_id', $clientId)->where('receiver_status', 0)->count();
+                    broadcast(new \App\Events\NotificationCountUpdated($clientId, $clientCount, $actionMessage, '/details'));
+                } catch (\Exception $e) {
+                    Log::warning('Detail rejected: broadcast failed', ['client_id' => $clientId, 'error' => $e->getMessage()]);
+                }
+
+                try {
+                    $fcmService = new FCMService();
+                    $fcmService->sendToUser($clientId, 'Detail update rejected', mb_strlen($actionMessage) > 100 ? mb_substr($actionMessage, 0, 100) . '...' : $actionMessage, [
+                        'type' => 'detail_rejected',
+                        'clientMatterId' => (string) $clientMatterId,
+                        'matterNo' => $matterNo,
+                    ]);
+                } catch (\Exception $e) {
+                    Log::warning('Detail rejected: FCM push failed', ['client_id' => $clientId, 'error' => $e->getMessage()]);
+                }
+
                 $clientMatterModel = ClientMatter::find($clientMatterId);
                 if ($clientMatterModel) {
-                    $desc = 'Basic detail ' . $fieldLabel . ' rejected for matter ' . $matterNo;
-                    $this->createClientPortalAction($clientMatterModel, $desc);
+                    $this->createClientPortalAction($clientMatterModel, $actionMessage);
                 }
 
                 DB::commit();

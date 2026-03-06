@@ -6,11 +6,14 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Admin;
 use App\Models\ClientPortalDetailAudit;
+use App\Models\ClientMatter;
+use App\Models\Note;
 use App\Models\Notification;
 use App\Models\Staff;
 use App\Events\NotificationCountUpdated;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class ClientPortalPersonalDetailsController extends Controller
@@ -413,65 +416,8 @@ class ClientPortalPersonalDetailsController extends Controller
                     }
                 }
 
-                // Create notification for staff when client updates basic detail via mobile API
-                // Recipients: super admin(s) + all migration agent, person responsible, person assisting for client's matters
                 if (count($updatedFields) > 0) {
-                    $clientName = trim(($admin->first_name ?? '') . ' ' . ($admin->last_name ?? ''));
-                    $encodedClientId = base64_encode(convert_uuencode($clientId));
-                    $notificationUrl = url('/clients/detail/' . $encodedClientId);
-                    $notificationMessage = ($clientName ? $clientName . ' has ' : 'Client has ') . 'updated basic detail. Please check Client Portal >> Details Tab.';
-
-                    // Collect all recipient staff IDs: super admins + matter-related staff (migration agent, person responsible, person assisting)
-                    $recipientIds = collect();
-
-                    // Super admins (role = 1)
-                    $superAdminIds = Staff::where('role', 1)->where('status', 1)->pluck('id');
-                    $recipientIds = $recipientIds->merge($superAdminIds);
-
-                    // All staff from client's matters
-                    $matterStaffIds = DB::table('client_matters')
-                        ->where('client_id', $clientId)
-                        ->select('sel_migration_agent', 'sel_person_responsible', 'sel_person_assisting')
-                        ->get()
-                        ->flatMap(function ($row) {
-                            return array_filter([
-                                $row->sel_migration_agent ?? null,
-                                $row->sel_person_responsible ?? null,
-                                $row->sel_person_assisting ?? null,
-                            ]);
-                        });
-                    $recipientIds = $recipientIds->merge($matterStaffIds)->unique()->filter();
-
-                    foreach ($recipientIds as $receiverStaffId) {
-                        if (!$receiverStaffId || !Staff::where('id', $receiverStaffId)->exists()) {
-                            continue;
-                        }
-
-                        Notification::create([
-                            'sender_id' => $clientId,
-                            'receiver_id' => $receiverStaffId,
-                            'module_id' => $clientId,
-                            'url' => $notificationUrl,
-                            'notification_type' => 'client_detail_update',
-                            'message' => $notificationMessage,
-                            'receiver_status' => 0,
-                            'seen' => 0,
-                        ]);
-
-                        // Broadcast real-time notification count update for staff bell badge
-                        try {
-                            $unreadCount = DB::table('notifications')
-                                ->where('receiver_id', $receiverStaffId)
-                                ->where('receiver_status', 0)
-                                ->count();
-                            broadcast(new NotificationCountUpdated($receiverStaffId, $unreadCount, $notificationMessage, $notificationUrl));
-                        } catch (\Exception $e) {
-                            \Illuminate\Support\Facades\Log::warning('Failed to broadcast notification count for client detail update', [
-                                'receiver_id' => $receiverStaffId,
-                                'error' => $e->getMessage(),
-                            ]);
-                        }
-                    }
+                    $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Basic detail updated');
                 }
 
                 DB::commit();
@@ -909,6 +855,8 @@ class ClientPortalPersonalDetailsController extends Controller
                 }
 
                 DB::commit();
+
+                $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Phone detail updated');
 
                 return response()->json([
                     'success' => true,
@@ -4384,6 +4332,8 @@ class ClientPortalPersonalDetailsController extends Controller
 
                 DB::commit();
 
+                $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Passport detail updated');
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Passport details updated successfully',
@@ -4539,6 +4489,8 @@ class ClientPortalPersonalDetailsController extends Controller
 
                 DB::commit();
 
+                $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Passport detail deleted');
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Passport deleted successfully',
@@ -4668,6 +4620,8 @@ class ClientPortalPersonalDetailsController extends Controller
 
             DB::commit();
 
+            $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Passport detail deleted');
+
             return response()->json([
                 'success' => true,
                 'message' => 'Passport deleted successfully',
@@ -4722,6 +4676,8 @@ class ClientPortalPersonalDetailsController extends Controller
                     ]);
 
                 DB::commit();
+
+                $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Visa detail deleted');
 
                 return response()->json([
                     'success' => true,
@@ -4867,6 +4823,8 @@ class ClientPortalPersonalDetailsController extends Controller
 
             DB::commit();
 
+            $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Visa detail deleted');
+
             $client = Admin::find($clientId);
             return response()->json([
                 'success' => true,
@@ -4941,6 +4899,8 @@ class ClientPortalPersonalDetailsController extends Controller
                     ]);
 
                 DB::commit();
+
+                $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Phone detail deleted');
 
                 return response()->json([
                     'success' => true,
@@ -5044,6 +5004,8 @@ class ClientPortalPersonalDetailsController extends Controller
 
             DB::commit();
 
+            $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Phone detail deleted');
+
             return response()->json([
                 'success' => true,
                 'message' => 'Phone deleted successfully',
@@ -5117,6 +5079,8 @@ class ClientPortalPersonalDetailsController extends Controller
 
                 DB::commit();
 
+                $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Email detail deleted');
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Email deleted successfully',
@@ -5188,6 +5152,8 @@ class ClientPortalPersonalDetailsController extends Controller
 
             DB::commit();
 
+            $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Email detail deleted');
+
             return response()->json([
                 'success' => true,
                 'message' => 'Email deleted successfully',
@@ -5241,6 +5207,8 @@ class ClientPortalPersonalDetailsController extends Controller
                     ]);
 
                 DB::commit();
+
+                $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Address detail deleted');
 
                 return response()->json([
                     'success' => true,
@@ -5465,6 +5433,8 @@ class ClientPortalPersonalDetailsController extends Controller
 
             DB::commit();
 
+            $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Address detail deleted');
+
             return response()->json([
                 'success' => true,
                 'message' => 'Address deleted successfully',
@@ -5524,6 +5494,8 @@ class ClientPortalPersonalDetailsController extends Controller
                     ]);
 
                 DB::commit();
+
+                $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Travel detail deleted');
 
                 return response()->json([
                     'success' => true,
@@ -5657,6 +5629,8 @@ class ClientPortalPersonalDetailsController extends Controller
 
             DB::commit();
 
+            $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Travel detail deleted');
+
             return response()->json([
                 'success' => true,
                 'message' => 'Travel deleted successfully',
@@ -5709,6 +5683,8 @@ class ClientPortalPersonalDetailsController extends Controller
                     ]);
 
                 DB::commit();
+
+                $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Qualification detail deleted');
 
                 return response()->json([
                     'success' => true,
@@ -5912,6 +5888,8 @@ class ClientPortalPersonalDetailsController extends Controller
 
             DB::commit();
 
+            $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Qualification detail deleted');
+
             return response()->json([
                 'success' => true,
                 'message' => 'Qualification deleted successfully',
@@ -5969,6 +5947,8 @@ class ClientPortalPersonalDetailsController extends Controller
                     ]);
 
                 DB::commit();
+
+                $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Experience detail deleted');
 
                 return response()->json([
                     'success' => true,
@@ -6186,6 +6166,8 @@ class ClientPortalPersonalDetailsController extends Controller
 
             DB::commit();
 
+            $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Experience detail deleted');
+
             return response()->json([
                 'success' => true,
                 'message' => 'Experience deleted successfully',
@@ -6244,6 +6226,8 @@ class ClientPortalPersonalDetailsController extends Controller
                     ]);
 
                 DB::commit();
+
+                $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Occupation detail deleted');
 
                 return response()->json([
                     'success' => true,
@@ -6461,6 +6445,8 @@ class ClientPortalPersonalDetailsController extends Controller
 
             DB::commit();
 
+            $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Occupation detail deleted');
+
             return response()->json([
                 'success' => true,
                 'message' => 'Occupation deleted successfully',
@@ -6519,6 +6505,8 @@ class ClientPortalPersonalDetailsController extends Controller
                     ]);
 
                 DB::commit();
+
+                $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Test score detail deleted');
 
                 return response()->json([
                     'success' => true,
@@ -6706,6 +6694,8 @@ class ClientPortalPersonalDetailsController extends Controller
 
             DB::commit();
 
+            $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Test score detail deleted');
+
             return response()->json([
                 'success' => true,
                 'message' => 'Test score deleted successfully',
@@ -6800,6 +6790,8 @@ class ClientPortalPersonalDetailsController extends Controller
                         ]);
 
                     DB::commit();
+
+                    $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Passport detail deleted');
 
                     return response()->json([
                         'success' => true,
@@ -6928,6 +6920,8 @@ class ClientPortalPersonalDetailsController extends Controller
                 }
 
                 DB::commit();
+
+                $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Passport detail deleted');
 
                 return response()->json([
                     'success' => true,
@@ -7241,6 +7235,8 @@ class ClientPortalPersonalDetailsController extends Controller
                 }
 
                 DB::commit();
+
+                $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Visa detail updated');
 
                 return response()->json([
                     'success' => true,
@@ -7578,6 +7574,8 @@ class ClientPortalPersonalDetailsController extends Controller
                 }
 
                 DB::commit();
+
+                $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Email detail updated');
 
                 return response()->json([
                     'success' => true,
@@ -8016,6 +8014,8 @@ class ClientPortalPersonalDetailsController extends Controller
 
                 DB::commit();
 
+                $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Address detail updated');
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Address details updated successfully',
@@ -8345,6 +8345,8 @@ class ClientPortalPersonalDetailsController extends Controller
                 }
 
                 DB::commit();
+
+                $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Travel detail updated');
 
                 return response()->json([
                     'success' => true,
@@ -8742,6 +8744,8 @@ class ClientPortalPersonalDetailsController extends Controller
                 }
 
                 DB::commit();
+
+                $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Qualification detail updated');
 
                 return response()->json([
                     'success' => true,
@@ -9184,6 +9188,8 @@ class ClientPortalPersonalDetailsController extends Controller
 
                 DB::commit();
 
+                $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Experience detail updated');
+
                 $responseData = [
                     'success' => true,
                     'message' => 'Experience details updated successfully',
@@ -9606,6 +9612,8 @@ class ClientPortalPersonalDetailsController extends Controller
 
                 DB::commit();
 
+                $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Occupation detail updated');
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Occupation details updated successfully',
@@ -9985,6 +9993,8 @@ class ClientPortalPersonalDetailsController extends Controller
 
                 DB::commit();
 
+                $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Test score detail updated');
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Test score details updated successfully',
@@ -10009,6 +10019,88 @@ class ClientPortalPersonalDetailsController extends Controller
                 'success' => false,
                 'message' => 'An error occurred: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Notify PERSON ASSISTING and super admins once, and create one Client Portal action.
+     * Message format: "Client name updated detail with message - \"{detailMessage}\"." (no matter name, show once)
+     *
+     * @param int $clientId
+     * @param string $detailMessage e.g. "Basic detail updated", "Visa detail updated"
+     */
+    private function notifyStaffAndCreateActionForDetailUpdate(int $clientId, string $detailMessage): void
+    {
+        $clientRow = DB::table('admins')->where('id', $clientId)->select('first_name', 'last_name')->first();
+        $clientName = $clientRow ? trim(($clientRow->first_name ?? '') . ' ' . ($clientRow->last_name ?? '')) : 'Client';
+
+        $matters = DB::table('client_matters')->where('client_id', $clientId)->get();
+        if ($matters->isEmpty()) {
+            return;
+        }
+
+        $actionMessage = $clientName . ' updated detail with message - "' . $detailMessage . '".';
+
+        $superAdminIds = Staff::where('role', 1)->where('status', 1)->pluck('id')->toArray();
+        $personAssistingIds = $matters->pluck('sel_person_assisting')->filter()->unique()->values()->all();
+        $recipientIds = array_values(array_unique(array_filter(array_merge($superAdminIds, $personAssistingIds))));
+        $recipientIds = array_values(array_filter($recipientIds, function ($id) use ($clientId) {
+            return $id && $id != $clientId;
+        }));
+
+        $firstMatter = $matters->first();
+        $clientMatterId = (int) $firstMatter->id;
+        $notificationUrl = url('/clients/detail/' . base64_encode(convert_uuencode($firstMatter->client_id)));
+        if (!empty($firstMatter->client_unique_matter_no)) {
+            $notificationUrl .= '/' . $firstMatter->client_unique_matter_no;
+        }
+        $notificationUrl .= '/client_portal';
+
+        foreach ($recipientIds as $receiverStaffId) {
+            if (!$receiverStaffId || !Staff::where('id', $receiverStaffId)->exists()) {
+                continue;
+            }
+            try {
+                Notification::create([
+                    'sender_id' => $clientId,
+                    'receiver_id' => $receiverStaffId,
+                    'module_id' => $clientMatterId,
+                    'url' => $notificationUrl,
+                    'notification_type' => 'client_detail_update',
+                    'message' => $actionMessage,
+                    'receiver_status' => 0,
+                    'seen' => 0,
+                ]);
+                $unreadCount = (int) DB::table('notifications')->where('receiver_id', $receiverStaffId)->where('receiver_status', 0)->count();
+                broadcast(new NotificationCountUpdated($receiverStaffId, $unreadCount, $actionMessage, $notificationUrl));
+            } catch (\Exception $e) {
+                Log::warning('Detail update: failed to notify staff', ['receiver_id' => $receiverStaffId, 'error' => $e->getMessage()]);
+            }
+        }
+
+        try {
+            $clientMatterModel = ClientMatter::find($clientMatterId);
+            if ($clientMatterModel) {
+                $assignedTo = $firstMatter->sel_person_assisting ?? ($recipientIds[0] ?? null);
+                if ($assignedTo) {
+                    $actionNote = new Note();
+                    $actionNote->user_id = $clientId;
+                    $actionNote->client_id = $clientMatterModel->client_id;
+                    $actionNote->matter_id = $clientMatterId;
+                    $actionNote->assigned_to = $assignedTo;
+                    $actionNote->description = $actionMessage;
+                    $actionNote->action_date = now()->toDateString();
+                    $actionNote->task_group = 'Client Portal';
+                    $actionNote->type = 'client';
+                    $actionNote->is_action = 1;
+                    $actionNote->status = '0';
+                    $actionNote->pin = 0;
+                    $actionNote->unique_group_id = 'group_' . uniqid('', true);
+                    $actionNote->save();
+                }
+            }
+        } catch (\Exception $e) {
+            Log::warning('Detail update: failed to create Action page entry', ['client_matter_id' => $clientMatterId, 'error' => $e->getMessage()]);
         }
     }
 }

@@ -1055,6 +1055,75 @@ class ClientPortalMessageController extends Controller
                         'error' => $e->getMessage()
                     ]);
                 }
+
+                // Notify PERSON ASSISTING and super admins + Client Portal action: "Client name read this message - \"\" in Client matter name."
+                $clientMatterId = (int) $message->client_matter_id;
+                $clientMatter = $clientMatterId ? DB::table('client_matters')->where('id', $clientMatterId)->first() : null;
+                if ($clientMatter && isset($clientMatter->client_id)) {
+                    $clientRow = DB::table('admins')->where('id', $clientId)->select('first_name', 'last_name')->first();
+                    $clientName = $clientRow ? trim(($clientRow->first_name ?? '') . ' ' . ($clientRow->last_name ?? '')) : 'Client';
+                    $matterName = !empty($clientMatter->client_unique_matter_no) ? $clientMatter->client_unique_matter_no : ('ID: ' . $clientMatterId);
+                    $messageExcerpt = $message->message ? (mb_strlen($message->message) > 80 ? mb_substr($message->message, 0, 80) . '...' : $message->message) : 'attachment(s)';
+                    $actionMessage = $clientName . ' read this message - "' . $messageExcerpt . '" in ' . $matterName . '.';
+
+                    $notificationUrl = '/clients';
+                    $path = '/clients/detail/' . base64_encode(convert_uuencode($clientMatter->client_id));
+                    if (!empty($clientMatter->client_unique_matter_no)) {
+                        $path .= '/' . $clientMatter->client_unique_matter_no;
+                    }
+                    $notificationUrl = url($path . '/client_portal');
+
+                    $targetRecipients = array_filter([$clientMatter->sel_person_assisting]);
+                    $superadmins = Staff::where('role', 1)->where('status', 1)->pluck('id')->toArray();
+                    $targetRecipients = array_values(array_unique(array_merge($targetRecipients, $superadmins)));
+                    $targetRecipients = array_values(array_filter($targetRecipients, function ($userId) use ($clientId) {
+                        return $userId != $clientId;
+                    }));
+
+                    foreach ($targetRecipients as $recipientId) {
+                        try {
+                            DB::table('notifications')->insert([
+                                'sender_id' => $clientId,
+                                'receiver_id' => $recipientId,
+                                'module_id' => $clientMatterId,
+                                'url' => $notificationUrl,
+                                'notification_type' => 'message_read',
+                                'message' => $actionMessage,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                                'sender_status' => 1,
+                                'receiver_status' => 0,
+                                'seen' => 0
+                            ]);
+                            $count = (int) DB::table('notifications')->where('receiver_id', $recipientId)->where('receiver_status', 0)->count();
+                            broadcast(new NotificationCountUpdated($recipientId, $count));
+                        } catch (\Exception $e) {
+                            Log::warning('Mark message read: failed to notify staff', ['receiver_id' => $recipientId, 'error' => $e->getMessage()]);
+                        }
+                    }
+
+                    try {
+                        $assignedToStaffId = $clientMatter->sel_person_assisting ?? (isset($targetRecipients[0]) ? $targetRecipients[0] : null);
+                        if ($assignedToStaffId) {
+                            $actionNote = new Note();
+                            $actionNote->user_id = $clientId;
+                            $actionNote->client_id = $clientMatter->client_id;
+                            $actionNote->matter_id = $clientMatterId;
+                            $actionNote->assigned_to = $assignedToStaffId;
+                            $actionNote->description = $actionMessage;
+                            $actionNote->action_date = now()->toDateString();
+                            $actionNote->task_group = 'Client Portal';
+                            $actionNote->type = 'client';
+                            $actionNote->is_action = 1;
+                            $actionNote->status = '0';
+                            $actionNote->pin = 0;
+                            $actionNote->unique_group_id = 'group_' . uniqid('', true);
+                            $actionNote->save();
+                        }
+                    } catch (\Exception $e) {
+                        Log::warning('Mark message read: failed to create Client Portal action', ['client_matter_id' => $clientMatterId, 'error' => $e->getMessage()]);
+                    }
+                }
             }
 
             return response()->json([
