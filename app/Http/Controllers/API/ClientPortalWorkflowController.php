@@ -3,6 +3,11 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Events\NotificationCountUpdated;
+use App\Models\ClientMatter;
+use App\Models\Note;
+use App\Models\Notification;
+use App\Models\Staff;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -538,6 +543,8 @@ class ClientPortalWorkflowController extends Controller
                 'updated_at'      => now(),
             ]);
 
+            $this->notifyStaffAndCreateActionForChecklistUpload($clientId, $clientMatterId, [$checklistItem->cp_checklist_name ?? 'checklist']);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Allowed checklist document uploaded successfully',
@@ -723,6 +730,14 @@ class ClientPortalWorkflowController extends Controller
             $uploadedCount = count($uploadedDocuments);
             $errorCount    = count($errors);
 
+            if ($uploadedCount > 0) {
+                $checklistNamesForMessage = [];
+                foreach ($uploadedDocuments as $doc) {
+                    $checklistNamesForMessage[] = $doc['checklist_name'] ?? 'checklist';
+                }
+                $this->notifyStaffAndCreateActionForChecklistUpload($clientId, $clientMatterId, $checklistNamesForMessage);
+            }
+
             if ($uploadedCount === 0) {
                 return response()->json([
                     'success' => false,
@@ -754,6 +769,96 @@ class ClientPortalWorkflowController extends Controller
                 'message' => 'Failed to upload documents',
                 'error'   => $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Notify PERSON ASSISTING and super admin(s) for the client matter, update their notification badges,
+     * and create a Client Portal action on the Action page with the given message.
+     *
+     * @param int $clientId Admin ID of the client who uploaded
+     * @param int $clientMatterId Client matter ID
+     * @param array $checklistNames List of checklist names (e.g. ['Academic Records'])
+     */
+    private function notifyStaffAndCreateActionForChecklistUpload(int $clientId, int $clientMatterId, array $checklistNames): void
+    {
+        $matter = DB::table('client_matters')->where('id', $clientMatterId)->first();
+        if (!$matter || !isset($matter->client_id)) {
+            return;
+        }
+
+        $clientRow = DB::table('admins')->where('id', $clientId)->select('first_name', 'last_name')->first();
+        $clientName = $clientRow ? trim(($clientRow->first_name ?? '') . ' ' . ($clientRow->last_name ?? '')) : 'Client';
+        $checklistList = implode(', ', array_unique(array_filter($checklistNames)));
+        $checklistWord = count(array_unique(array_filter($checklistNames))) > 1 ? 'checklists' : 'checklist';
+        $message = $clientName . ' have uploaded document in ' . $checklistList . ' ' . $checklistWord . ' from mobile app.';
+
+        $notificationUrl = url('/clients/detail/' . base64_encode(convert_uuencode($matter->client_id)));
+
+        $recipientIds = collect();
+        $superAdminIds = Staff::where('role', 1)->where('status', 1)->pluck('id');
+        $recipientIds = $recipientIds->merge($superAdminIds);
+        if (!empty($matter->sel_person_assisting)) {
+            $recipientIds->push($matter->sel_person_assisting);
+        }
+        $recipientIds = $recipientIds->unique()->filter()->values();
+
+        foreach ($recipientIds as $receiverStaffId) {
+            if (!$receiverStaffId || !Staff::where('id', $receiverStaffId)->exists()) {
+                continue;
+            }
+            try {
+                Notification::create([
+                    'sender_id'       => $clientId,
+                    'receiver_id'     => $receiverStaffId,
+                    'module_id'       => $clientMatterId,
+                    'url'             => $notificationUrl,
+                    'notification_type' => 'checklist',
+                    'message'         => $message,
+                    'receiver_status' => 0,
+                    'seen'            => 0,
+                ]);
+                $unreadCount = (int) DB::table('notifications')
+                    ->where('receiver_id', $receiverStaffId)
+                    ->where('receiver_status', 0)
+                    ->count();
+                broadcast(new NotificationCountUpdated($receiverStaffId, $unreadCount, $message, $notificationUrl));
+            } catch (\Exception $e) {
+                Log::warning('Checklist upload: failed to notify staff', [
+                    'receiver_id' => $receiverStaffId,
+                    'error'       => $e->getMessage(),
+                ]);
+            }
+        }
+
+        $clientMatterModel = ClientMatter::find($clientMatterId);
+        if (!$clientMatterModel) {
+            return;
+        }
+        $assignedToStaffId = $clientMatterModel->sel_person_assisting ?? $recipientIds->first();
+        if (!$assignedToStaffId) {
+            $assignedToStaffId = $recipientIds->first();
+        }
+        try {
+            $actionNote = new Note();
+            $actionNote->user_id = $clientId;
+            $actionNote->client_id = $clientMatterModel->client_id;
+            $actionNote->matter_id = $clientMatterId;
+            $actionNote->assigned_to = $assignedToStaffId;
+            $actionNote->description = $message;
+            $actionNote->action_date = now()->toDateString();
+            $actionNote->task_group = 'Client Portal';
+            $actionNote->type = 'client';
+            $actionNote->is_action = 1;
+            $actionNote->status = '0';
+            $actionNote->pin = 0;
+            $actionNote->unique_group_id = 'group_' . uniqid('', true);
+            $actionNote->save();
+        } catch (\Exception $e) {
+            Log::warning('Checklist upload: failed to create Action page entry', [
+                'client_matter_id' => $clientMatterId,
+                'error'            => $e->getMessage(),
+            ]);
         }
     }
 

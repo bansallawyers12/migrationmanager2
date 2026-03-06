@@ -417,6 +417,12 @@ class AssigneeController extends Controller
                     })
                     ->addColumn('assigner_name', function($data) {
                         try {
+                            // Client Portal actions created by client (e.g. upload from mobile): show client name as assigner
+                            if (isset($data->task_group) && (string) $data->task_group === 'Client Portal' && (int) $data->user_id === (int) $data->client_id && $data->noteClient) {
+                                $firstName = Utf8Helper::safeSanitize($data->noteClient->first_name ?? '');
+                                $lastName = Utf8Helper::safeSanitize($data->noteClient->last_name ?? '');
+                                return trim($firstName . ' ' . $lastName) ?: 'N/P';
+                            }
                             if ($data->noteStaff) {
                                 $firstName = Utf8Helper::safeSanitize($data->noteStaff->first_name ?? '');
                                 $lastName = Utf8Helper::safeSanitize($data->noteStaff->last_name ?? '');
