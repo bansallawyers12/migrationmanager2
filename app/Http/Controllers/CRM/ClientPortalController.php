@@ -1191,6 +1191,7 @@ class ClientPortalController extends Controller
 		$actionNote = new Note;
 		$actionNote->user_id = Auth::user()->id;
 		$actionNote->client_id = $clientMatter->client_id;
+		$actionNote->matter_id = $clientMatter->id; // so action_completed notification gets correct client_matter_id (module_id)
 		$actionNote->assigned_to = $assignedToStaffId;
 		$actionNote->description = $description;
 		$actionNote->action_date = now()->toDateString();

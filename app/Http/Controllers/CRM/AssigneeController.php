@@ -10,6 +10,7 @@ use Spatie\QueryBuilder\QueryBuilder;
 // WARNING: Appointment and AppointmentLog models have been removed - old appointment system deleted
 // use App\Models\Appointment;
 use App\Models\Note;
+use App\Models\ClientMatter;
 // use App\Models\AppointmentLog;
 use App\Models\Notification;
 use Carbon\Carbon;
@@ -19,6 +20,8 @@ use App\Models\ActivitiesLog;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Services\FCMService;
+use App\Events\NotificationCountUpdated;
 use Yajra\DataTables\Facades\DataTables;
 use App\Helpers\Utf8Helper;
 use Illuminate\Support\Facades\URL;
@@ -72,12 +75,18 @@ class AssigneeController extends Controller
     public function updateActionCompleted(Request $request)
     {
         $data = $request->all(); //dd($data);
-        $note = Note::where('unique_group_id',$data['unique_group_id'])
+        $uniqueGroupId = $data['unique_group_id'] ?? '';
+        // Try group update first (notes with same unique_group_id)
+        $updated = Note::where('unique_group_id', $uniqueGroupId)
                 ->whereNotNull('assigned_to')
                 ->whereNotNull('unique_group_id')
-                ->update(['status'=>'1']);
-        if($note){
-            $note_data = Note::where('id',$data['id'])->first(); //dd($note_data);
+                ->update(['status' => '1']);
+        // Fallback: when unique_group_id is null/empty, update single note by id so completion still works
+        if ($updated === 0) {
+            $updated = Note::where('id', $data['id'])->update(['status' => '1']);
+        }
+        if ($updated) {
+            $note_data = Note::where('id', $data['id'])->first(); //dd($note_data);
             if($note_data){
                 $admin_data = Staff::where('id',$note_data['assigned_to'])->first(); //dd($admin_data);
                 if($admin_data){
@@ -119,6 +128,51 @@ class AssigneeController extends Controller
                 $objs->task_status = 1; //marked completed
                 $objs->pin = 0;
                 $objs->save();
+
+                // Client Portal category only: notify client (notification list API + push + real-time)
+                $taskGroup = $note_data['task_group'] ?? '';
+                $clientId = $note_data['client_id'] ?? null;
+                if ($clientId && (string) $taskGroup === 'Client Portal') {
+                    $messageText = trim(strip_tags(preg_replace('/<br\s*\/?>/i', "\n", (string) ($note_data['description'] ?? ''))));
+                    if (mb_strlen($messageText) > 200) {
+                        $messageText = mb_substr($messageText, 0, 197) . '...';
+                    }
+                    $notificationMessage = 'This action is completed. ' . ($messageText ?: 'An action has been completed for your matter.');
+                    // module_id = client matter id so notification appears in List API when client filters by client_matter_id
+                    $moduleId = !empty($note_data['matter_id']) ? (int) $note_data['matter_id'] : null;
+                    if ($moduleId === null) {
+                        $moduleId = ClientMatter::where('client_id', $clientId)->orderByDesc('id')->value('id') ?? $clientId;
+                    }
+                    DB::table('notifications')->insert([
+                        'sender_id' => Auth::user()->id,
+                        'receiver_id' => $clientId,
+                        'module_id' => $moduleId,
+                        'url' => '/activities',
+                        'notification_type' => 'action_completed',
+                        'message' => $notificationMessage,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                        'sender_status' => 1,
+                        'receiver_status' => 0,
+                        'seen' => 0,
+                    ]);
+                    try {
+                        $fcm = new FCMService();
+                        $fcm->sendToUser($clientId, 'Action completed', $notificationMessage, [
+                            'type' => 'action_completed',
+                            'client_matter_id' => (string) $moduleId,
+                            'url' => '/activities',
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::warning('FCM send failed on action complete (Client Portal)', ['client_id' => $clientId, 'error' => $e->getMessage()]);
+                    }
+                    try {
+                        $clientCount = (int) DB::table('notifications')->where('receiver_id', $clientId)->where('receiver_status', 0)->count();
+                        broadcast(new NotificationCountUpdated($clientId, $clientCount, $notificationMessage, '/activities'));
+                    } catch (\Exception $e) {
+                        Log::warning('Broadcast failed on action complete (Client Portal)', ['client_id' => $clientId, 'error' => $e->getMessage()]);
+                    }
+                }
             }
             $response['status'] 	= 	true;
             $response['message']	=	'Action completed successfully';

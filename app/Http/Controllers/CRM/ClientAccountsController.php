@@ -5672,6 +5672,7 @@ public function getInvoiceAmount(Request $request)
             $actionNote = new Note;
             $actionNote->user_id = Auth::user()->id;
             $actionNote->client_id = $record_get->client_id;
+            $actionNote->matter_id = $clientMatterId; // so action_completed notification gets correct client_matter_id (module_id)
             $actionNote->assigned_to = $assignedToStaffId;
             $actionNote->description = 'Invoice #' . $invoiceNo . ' sent to Client Portal';
             $actionNote->action_date = now()->toDateString();

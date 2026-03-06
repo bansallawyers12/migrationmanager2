@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
+use App\Services\FCMService;
+use App\Events\NotificationCountUpdated;
 
 class DashboardService
 {
@@ -519,6 +521,50 @@ class DashboardService
                 'task_status' => 1,
                 'pin' => 0,
             ]);
+
+            // Client Portal category only: notify client (notification list API + push + real-time)
+            $taskGroup = $noteData->task_group ?? '';
+            if ((string) $taskGroup === 'Client Portal') {
+                $messageText = trim(strip_tags(preg_replace('/<br\s*\/?>/i', "\n", (string) ($noteData->description ?? ''))));
+                if (mb_strlen($messageText) > 200) {
+                    $messageText = mb_substr($messageText, 0, 197) . '...';
+                }
+                $notificationMessage = 'This action is completed. ' . ($messageText ?: 'An action has been completed for your matter.');
+                // module_id = client matter id so notification appears in List API when client filters by client_matter_id
+                $moduleId = !empty($noteData->matter_id) ? (int) $noteData->matter_id : null;
+                if ($moduleId === null) {
+                    $moduleId = ClientMatter::where('client_id', $noteData->client_id)->orderByDesc('id')->value('id') ?? $noteData->client_id;
+                }
+                DB::table('notifications')->insert([
+                    'sender_id' => Auth::id(),
+                    'receiver_id' => $noteData->client_id,
+                    'module_id' => $moduleId,
+                    'url' => '/activities',
+                    'notification_type' => 'action_completed',
+                    'message' => $notificationMessage,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                    'sender_status' => 1,
+                    'receiver_status' => 0,
+                    'seen' => 0,
+                ]);
+                try {
+                    $fcm = new FCMService();
+                    $fcm->sendToUser($noteData->client_id, 'Action completed', $notificationMessage, [
+                        'type' => 'action_completed',
+                        'client_matter_id' => (string) $moduleId,
+                        'url' => '/activities',
+                    ]);
+                } catch (\Exception $e) {
+                    Log::warning('FCM send failed on action complete (Client Portal)', ['client_id' => $noteData->client_id, 'error' => $e->getMessage()]);
+                }
+                try {
+                    $clientCount = (int) DB::table('notifications')->where('receiver_id', $noteData->client_id)->where('receiver_status', 0)->count();
+                    broadcast(new NotificationCountUpdated($noteData->client_id, $clientCount, $notificationMessage, '/activities'));
+                } catch (\Exception $e) {
+                    Log::warning('Broadcast failed on action complete (Client Portal)', ['client_id' => $noteData->client_id, 'error' => $e->getMessage()]);
+                }
+            }
         }
 
         return ['success' => true, 'message' => 'Action completed successfully'];
